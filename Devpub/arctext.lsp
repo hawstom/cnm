@@ -1,0 +1,1 @@
+(defun c:haws-at () (command "._arctext"))

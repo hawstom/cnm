@@ -1,0 +1,26 @@
+;Contributed by Craig Hendricks
+;Modified by Thomas Gail Haws
+(defun c:haws-DATE (/ AP DN CD MX HR MN LM LX DX TH DS MO YR TM TX LN)
+  (HAWS-VSAVE '("cmdecho" "clayer"))
+  (setvar "cmdecho" 0)
+  (setq
+    DN (getdnpath)
+    AP "AM"                        LN (getvar "LOGINNAME")
+    CD (rtos (getvar "CDATE") 2 4) MX (atoi (substr CD 5 2))
+    HR (atoi (substr CD 10 2))     MN (substr CD 12 2)
+    LM (getvar "LIMMIN")           LX (getvar "LIMMAX")
+    DX (distance LM LX)            TH (/ DX 500)
+    DS (polar LM 0 (/ DX 47))
+    MO (nth MX '(nil "JAN" "FEB" "MAR" "APR" "MAY" "JUN"
+    "JUL" "AUG" "SEP" "OCT" "NOV" "DEC"))
+  )
+  (if (>= HR 12) (setq AP "PM"))
+  (if (>= HR 13) (setq HR (itoa (- HR 12))) (setq HR (itoa HR)))
+  (setq YR (strcat "DATE: " MO " " (substr CD 7 2) ", " (substr CD 1 4)))
+  (setq TM (strcat DN ".DWG  " YR "  TIME: " HR ":" MN " " AP " "LN))
+  (command ".LAYER" "N" "DATESTAMP" "T" "DATESTAMP" "S" "DATESTAMP" "C" 10 "" "")
+  (setq TX (ssget "X" (list (cons 8 "DATESTAMP"))))
+  (command ".ERASE" TX "")
+  (HAWS-MKTEXT "BL" DS TH (/ pi 2) TM)
+  (HAWS-VRSTOR)(print)(print TM)(princ)
+)

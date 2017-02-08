@@ -1,0 +1,18 @@
+
+
+FATAL ERROR: Unhandled Access Violation Reading 0x890851ff Exception at 890851ffh
+
+10/21/2011 at 09:42:14.975 drawing: 
+-------------
+
+
+INTERNAL ERROR:  !dbobji.cpp@7227: eNotOpenForWrite
+
+03/22/2012 at 17:28:13.734  Drawing: 
+-------------
+
+
+FATAL ERROR: Unhandled Access Violation Reading 0x10a832cf Exception at 7712dfe4h
+
+03/22/2012 at 17:32:23.427 drawing: 
+-------------

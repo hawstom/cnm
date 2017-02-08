@@ -1,0 +1,214 @@
+                                PRO 5.0
+                                2/2/99
+
+                        Profile drawing program
+
+                              By Tom Haws
+
+                         Program instructions
+
+1.0 PROGRAM INTRODUCTION
+
+        1.1 Program purpose.  PRO 5.0 allows Autocad users to draw
+        civil engineering street and utility profiles in Autocad by
+        entering station and elevation at the command line.
+
+        Optionally, the program will allow the input of offsets,
+        slopes, and labels to be plotted on the profile.
+
+        1.2 Program Input options.  The program has a command line
+        input option and a data file input option.  Command line
+        input can be saved to a data file as it is entered.
+
+        1.3 What's new in version 5.0?  PRO 5.0 adds the capability to
+        draw catch basins as well as manholes and can draw both
+        broken.  PRO 5.0 also adds the capability to draw labeled,
+        aligned dimensions.  For data file input, PRO 5.0 uses the
+        standard station, offset, elevation, slope, and label fields
+        plus one extra field between slope and label.  The extra field
+        allows the plotting of broken manholes and catch basins.  It
+        also provides a place other than the label to put ellipse size 
+        for pipe crossings.  The extra field features are available 
+        only by using data file input.  A file conversion utility -- 
+        PROFC -- is provided with PRO 5.0 to convert groups of data 
+        files that were made for other versions or to change the data 
+        field width for groups of files.
+
+2.0 PROGRAM STYLE DEFAULTS
+
+        2.1 Overall appearance.  PRO draws profiles to look
+        like a compromise combination of several typical profiles.
+        Suggestions for style changes will be gladly considered.
+
+        2.2 Size.  For profile annotation and feature scaling, the
+        program uses the current Autocad drawing text style, dimscale
+        value, and dimtxt value.  This follows the convention of the
+        other standard custom commands.
+
+        2.3 Numeric precision.  The program uses the current linear
+        units precision for all numeric values except slopes, which are
+        given to the nearest 0.001% unless the Precision option is used
+        (see section 4.4).
+
+        2.4 Layers.  By default, the program draws on layers with a
+        "PPRO-" prefix.  Layer names, colors, and linetypes can be
+        changed by editing the LAYERS.DAT file.
+
+2.0 STARTING THE PROGRAM
+
+        Start the program by typing PRO at the Autocad command prompt.
+
+        2.1  The first time the program runs in a drawing session,
+        certain setup tasks must be performed before the profile can be
+        drawn.  A reference point for the profile and the profile type
+        must be specified.  The vertical exaggeration must be set if it
+        is different than the default of ten.   Because the profile
+        can't be drawn until the initial setup is done, the following
+        setup options are displayed until a reference point and profile
+        type have been set.
+
+        Reference point/profile Type/Vertical exaggeration/New profile/File:
+
+        Type R to set the reference point.  The following prompts are
+        displayed:
+
+        Pick a reference point:
+	Select any convenient point with known station and elevation.
+
+	Enter reference point station as a real no.:
+	Enter the station of the reference point (eg. 1200).
+
+	Enter reference point elevation:
+	Enter the elevation of the reference point (eg. 1264 or 64).
+	(see section 4.1 for more information)
+
+	Type T to set the profile type (see section 4.2
+        for more information).  When finished, type [Enter] to exit the
+        setup options and start plotting points.
+
+        2.2  After the first time the program is run in the current
+        drawing session, points may be plotted without additional
+        setup.
+
+3.0 PLOTTING POINTS
+
+        When the program has been set up, the following prompt is
+        displayed:
+
+        <Station>/Label/Setup:
+
+        The default response to this prompt is the station to be
+        plotted (eg. 6732.54).  This prompt also gives the options of
+        first entering a label to be plotted on the profile or
+        returning to the setup options.  Keying [Enter] at this point
+        exits the program.
+
+        Once a station has been entered, the following prompt is
+        displayed:
+
+        <Elevation>/Offset:
+
+        The default response to this prompt is the elevation to
+        be plotted (eg. 1234.5).  This prompt also gives the option of
+        first entering an offset to be plotted on the profile.  Keying
+        [Enter] at this point returns to the station prompt.
+
+4.0 PROGRAM SETUP
+
+        To change the program setup after the profile has been
+        initially set up, type S at the following prompt:
+
+        <Station>/Label/Setup:
+
+        The following prompt is displayed:
+
+        Ref. point/prof. Type/Vert. exag./Precision/New prof./File:
+
+        4.1  The Reference point option changes the location of the
+        profile.  First pick a point using osnaps or enter a point from
+        the keyboard.  Then enter the station and elevation of that
+        point.
+
+        4.2  The profile Type option displays the following profile
+        Type options:
+
+        Mesa/Gutter/PAvement/PIpe/Line only/POints only:
+
+        The Mesa option draws a curb and gutter profile with
+        elevations labeled on a 45 degree leader.  The Gutter option
+        draws a fully annotated curb and gutter profile with gutter
+        elevation input.  The PAvement option draws a fully annotated
+        single pavement profile.  The PIpe option draws a fully
+        annotated pipe profile of a specified type.  The Line only
+        option plots a non-annotated single line profile on the P-LINE
+        layer.  The POints only option either plots annotated utility
+        crossing ellipses (by interpreting a provided Label input) or
+        simply plots circles on the DEFPOINTS layer (they do not plot)
+        at the specified stations and elevations.
+
+        4.3  The Vertical exaggeration option changes the ratio of the
+        horizontal scale to the vertical scale.  The default is 10 (eg.
+        1"=20' horiz. and 1"=2' vert. or 1"=40' horiz. and 1"=4' vert.)
+        Calculate the vertical exaggeration as horiz. scale divided by
+        vert. scale.
+
+        4.4  The Precision option allows the user to change the
+        labeling precision of Station, Offset, Elevation, or Slope
+        text from the defaults (see section 2.2).
+
+
+        4.5  The New profile option tells the program not to connect
+        the next point to the last point.  In other words, it keeps the
+        program from connecting two separate profiles with a
+        meaningless line and slope.  Exiting the program also causes a
+        new profile to be started.
+
+        4.5  The File option is discussed in section six,
+        Using Data Files.
+
+        Key [Enter] to exit the setup options and plot more points.
+
+5.0 EXITING THE PROGRAM
+
+        Exit the program by keying [Enter] at the following prompts:
+
+        Reference point/profile Type/Vertical exaggeration/New profile/File:
+        <Station>/Label/Setup:
+
+6.0  USING DATA FILES
+
+        In the Setup options (see section 4), selecting File displays
+        the following prompt:
+
+        Read from file/Save to file:
+
+        6.1  The Read from file option reads profile information from a
+        text file with a .PRO extension.  A file selection dialogue box
+        is displayed.  After selecting a file to read from, key
+        [Enter] to exit setup and begin plotting from the file.
+
+        Note that any profile setup information in the data file will
+        override any profile setup done from the console
+        (keyboard/digitizer).  On the other hand, if there is no setup
+        information in the data file, setup information must be entered
+        before starting to read from the file.
+
+        6.2  The Save to file option saves all subsequent console input
+        to a data file for later reading or editing.  The following
+        prompt is displayed.
+
+        Create new file/Append existing file:
+
+        The Append option adds more data to a file which was started
+        previously.  Since ending PRO ends input to a file, the Append
+        option is useful for continuing a file you didn't mean to
+        finish.
+
+        See the Appendix for detailed information about the format of
+        data files.
+
+
+                              APPENDIX
+                          DATA FILE FORMAT
+
+

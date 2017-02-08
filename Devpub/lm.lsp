@@ -1,0 +1,6 @@
+(defun c:haws-LM (/ col name lt )
+  (setq name (getstring "\New Layer name: ") col (getstring "\Color: ")
+  lt (getstring "\Linetype: "))
+  (command "Layer" "m" name "c" col name "L" lt name "")
+  (princ)
+)

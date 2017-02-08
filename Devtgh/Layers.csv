@@ -1,0 +1,138 @@
+;HawsEDC stock version 1.0, 1999
+;
+;LAYERS.DAT
+;By Thomas Gail Haws
+;
+;Layers defaults file for lisp routines
+;
+;Use this file to change HawsEDC layer names, colors, or linetypes.
+;
+;The commands depend on the lines in this file.
+;If you remove any of the lines in this file or modify the key names,
+;the commands will use the current layer.
+;
+;Format:
+;("Key Name" "Layer Name" "Color" "Linetype");Description (optional)
+;If the color or linetype field is left empty, the Autocad default is used.
+("0" "0" "" "");Layer to insert multilayer or explode blocks on (usually "0")
+("ANNOMISC" "C-ANNO" "m" "");Misc annotation objects
+("BB" "C-ANNO-BUBL" "" "");BB command
+("BERM" "C-TOPO-BERM" "2" "");BERM command
+("BWLDR" "C-ANNO-LEAD" "1" "");BW command
+("CLOUD" "C-ANNO-CLOU" "3" "");CLD command revision clouds
+("CONTLBL" "C-TOPO-IDEN" "" "");CONTXT command
+("DELTA" "C-ANNO-DELT" "2" "");DELTA command
+("DIM" "C-ANNO-DIMS" "2" "");STDIM command
+("DRIVEWAY" "C-ROAD-DWAY" "6" "");DW command driveway
+("DRIVEWAYTX" "C-ROAD-DWAY-CL" "2" "CENTER2");DW command driveway centerline and text
+("NOTESEXP"          "C-ANNO-HCNM-TABL-EXPT"      "g"                 "")                 ;CNM standard key notes table.  (Exports quantities to data file.)
+("NOTESIMP"          "C-ANNO-HCNM-TABL-IMPT"    "c"                 "")                 ;CNM imported key notes table.
+("NOTESKEYGRID"      "C-ANNO-HCNM-TABL-GRID"       "13"                 "")                ;CNM Key Notes table grid.
+("NOTESKEYQTYS"      "C-ANNO-HCNM-TABL-QTTY"        "2"                 "")                 ;CNM Key Notes table quantities attributes.
+("NOTESLDR"          "C-ANNO-HCNM-BUBL"           "c"                 "")                 ;CNM BOXL, CIRL, DIAL, ELLL, HEXL, PENL, etc. bubble notes
+("NOTESTAL"          "C-ANNO-HCNM-TABL-TOTL"       "m"                 "")                 ;CNM quantity take-off table
+("NOTESNOPLOT"       "C-ANNO-HCNM-NPLT"        "252"               "")                 ;CNM layer to hide attributes on.
+("PCB" "C-ANNO-PROF-STRM-INLT" "8" "");PROCB command profile catch basin
+("PEL" "C-ANNO-PROF-UTIL-ELPS" "8" "");PROE command profile pipe ellipse
+("PELEVLBL" "C-ANNO-PROF-ELEV" "3" "");ELV command profile side elevations
+("PGB" "C-ANNO-PROF-TEXT" "" "");GRB command grade break
+("PGC" "C-ANNO-PROF-TEXT" "" "");GRC command grade change
+("PLDR" "C-ANNO-PROF-TEXT" "2" "");PLDR command profile label leader
+("PMH" "C-ANNO-PROF-MHOL" "8" "");PROMH command profile manhole
+;
+;Note about layers for PRO:
+;PRO can avoid labelling conflicts only if you use a consistent prefix
+;for all PRO layer names and a consistent suffix for all PRO text layers.
+;See the PROPRE and PROTXSUF layer keys.
+;
+;For profile utilities, you can add new layers whose key is PRO and
+;the data file protyp utility name.  Eg: "PRO" and "WAT" = PROWAT
+;
+("PROCB" "C-ANNO-PPRO-STRM-CBAS" "8" "");PRO command profile catch basin
+("PRODIM" "C-ANNO-PPRO-DIMS" "2" "");PRO command dimensions
+("PROEL" "C-ANNO-PPRO-UTIL-ELPS" "4" "");PRO command profile pipe ellipse
+("PROELTX" "C-ANNO-PPRO-UTIL-ELPS-TEXT" "2" "");PRO command profile pipe ellipse text
+("PROEXMID" "EXST-" "9" "HIDDEN");PRO command existing layers flag (goes between prefix and root)
+("PROLINE" "C-ANNO-PPRO-LINE" "" "");PRO command line only profile
+("PROMH" "C-ANNO-PPRO-MH" "8" "");PRO command profile manhole
+("PROPNT" "DEFPOINTS" "" "");PRO command profile point circle
+("PROPRE" "C-ANNO-PPRO-" "4" "");PRO command layer prefix (for building layer names)
+("PROSD" "C-ANNO-PPRO-STRM" "3" "");PRO command SD profile lines
+("PROSEW" "C-ANNO-PPRO-SSWR" "4" "");PRO command SEW profile lines
+("PROSTRT" "C-ANNO-PPRO-CG" "7" "");PRO command street profile lines
+("PROTXSUF" "-TEXT" "2" "");PRO command text layer suffix (for building layer names)
+("PROWAT" "C-ANNO-PPRO-WATR" "7" "");PRO command WAT profile lines
+("PROXCB" "C-ANNO-PPRO-STRM-CBAS-E" "9" "");PRO command profile existing catch basin
+("PROXDIM" "C-ANNO-PPRO-DIMS-E" "9" "HIDDEN");PRO command existing dimensions
+("PROXEL" "C-ANNO-PPRO-ELPS-E" "9" "HIDDEN");PRO command profile existing pipe ellipse
+("PROXELTX" "C-ANNO-PPRO-ELPS-TEXT-E" "9" "");PRO command profile existing pipe ellipse text
+("PROXLINE" "C-PPRO-LINE-E" "9" "HIDDEN");PRO command existing line only profile
+("PROXMH" "C-PPRO-MHOL-E" "9" "");PRO command profile existing manhole
+("PROXSTRT" "C-PPRO-CURB-E" "9" "HIDDEN");PRO command existing street profile lines
+("PROXTXSUF" "-TEXT" "9" "");PRO command existing text layer suffix (for building layer names)
+("PSTALBL" "C-PROF-STAT" "3" "");STALABEL command profile bottom stations
+("PSUP" "C-PROF-SUPP" "1" "");PROSUP command pipe support
+("PXCB" "C-PROF-CBAS-E" "9" "");PROCB command profile existing catch basin
+("PXEL" "C-PROF-ELPS-E" "9" "");PROE command profile pipe ellipse
+("PXLDR" "C-PROF-TEXT-E" "9" "");PLDR command profile existing label leader
+("PXMH" "C-PROF-MHOL-E" "9" "");PROMH command profile existing manhole
+("SEWTAP" "C-SSWR-TAP" "8" "");TAP command sewer taps
+("SEWTAPTX" "C-SSWR-TAP-DIM" "5" "");TAP command sewer tap text
+("SHTMVW" "DEFPOINTS" "" "");SHEET command paper space viewports
+("STDIM" "C-ANNO-ROAD-DIMS" "2" "");STDIM command
+("TCGLDR" "C-ANNO-ELEV" "2" "");TCG with leader command
+("UTCATVOD" "C-CATV-OD~~" "1" "");UT command thick CATV OD lines
+("UTCATVPL" "C-CATV-INNR" "9" "UTILPL");UT command thick CATV polylines
+("UTCATVSNG" "C-CATV" "1" "");UT command single line CATV lines
+("UTELECOD" "C-ELEC-OD~~" "3" "");UT command thick ELEC OD lines
+("UTELECPL" "C-ELEC-INNR" "9" "UTILPL");UT command thick ELEC polylines
+("UTELECSNG" "C-ELEC" "3" "BLDG");UT command single line ELEC lines
+("UTGASOD" "C-NGAS-OD~~" "5" "");UT command thick GAS OD lines
+("UTGASPL" "C-NGAS-INNR" "9" "UTILPL");UT command thick GAS polylines
+("UTGASSNG" "C-NGAS" "5" "PHANTOM3");UT command single line GAS lines
+("UTIRROD" "C-IRRG-OD~~" "2" "");UT command thick IRR OD lines
+("UTIRRPL" "C-IRRG-INNR" "9" "UTILPL");UT command thick IRR polylines
+("UTIRRSNG" "C-IRRG" "2" "HIDDEN");UT command single line IRR lines
+("UTSDOD" "C-STRM-OD~~" "1" "");UT command thick SD OD lines
+("UTSDPL" "C-STRM-INNR" "9" "UTILPL");UT command thick SD line polylines
+("UTSDSNG" "C-STRM" "1" "HIDDEN");UT command single SD lines
+("UTSEWOD" "C-SSWR-OD~~" "4" "");UT command thick sewer OD lines
+("UTSEWPL" "C-SSWR-INNR" "9" "UTILPL");UT command thick sewer polylines
+("UTSEWSNG" "C-SSWR" "4" "");UT command single line sewer lines
+("UTTELOD" "C-TELE-OD~~" "5" "BLDG");UT command thick TEL OD lines
+("UTTELPL" "C-TELE-INNR" "9" "UTILPL");UT command thick  TEL polylines
+("UTTELSNG" "C-TEL" "5" "BLDG");UT command single line TEL lines
+("UTWATOD" "C-WATR-OD~~" "3" "WATER");UT command thick water OD lines
+("UTWATPL" "C-WATR-INNR" "9" "UTILPL");UT command thick water polylines
+("UTWATSNG" "C-WATR" "3" "WATER");UT command single line water lines
+("UTXCATVOD" "C-CATV-OD~~-E" "9" "");UT command thick existing CATV OD lines
+("UTXCATVPL" "C-CATV-INNR-E" "9" "DOT");UT command thick existing CATV polylines
+("UTXCATVSNG" "C-CATV-E" "9" "");UT command single line existing CATV lines
+("UTXELECOD" "C-ELEC-OD~~-E" "9" "");UT command thick existing ELEC OD lines
+("UTXELECPL" "C-ELEC-INNR-E" "9" "DOT");UT command thick existing ELEC polylines
+("UTXELECSNG" "C-ELEC-E" "9" "BLDG");UT command single line existing ELEC lines
+("UTXGASOD" "C-NGAS-OD~~-E" "9" "");UT command thick existing GAS OD lines
+("UTXGASPL" "C-NGAS-INNR-E" "9" "DOT");UT command thick existing GAS polylines
+("UTXGASSNG" "C-NGAS-E" "9" "BLDG");UT command single line existing GAS lines
+("UTXIRROD" "C-IRRG-OD~~-E" "9" "");UT command thick existing IRR OD lines
+("UTXIRRPL" "C-IRRG-INNR-E" "9" "DOT");UT command thick existing IRR polylines
+("UTXIRRSNG" "C-IRRG-E" "9" "BLDG");UT command single line existing IRR lines
+("UTXSDOD" "C-STRM-OD~~-E" "9" "");UT command thick existing SD OD lines
+("UTXSDPL" "C-STRM-INNR-E" "9" "DOT");UT command thick existing SD line polylines
+("UTXSDSNG" "C-STRM-E" "9" "HIDDEN");UT command existing single SD lines
+("UTXSEWOD" "C-SEWR-OD~~-E" "9" "");UT command thick existing sewer OD lines
+("UTXSEWPL" "C-SEWR-INNR-E" "9" "DOT");UT command thick existing sewer polylines
+("UTXSEWSNG" "C-SEWR-E" "9" "");UT command single line existing sewer lines
+("UTXTELOD" "C-TELE-OD~~-E" "9" "");UT command thick existing TEL OD lines
+("UTXTELPL" "C-TELE-INNR-E" "9" "DOT");UT command thick existing  TEL polylines
+("UTXTELSNG" "C-TELE-E" "9" "BLDG");UT command single line existing TEL lines
+("UTXWATOD" "C-WATR-OD~~-E" "9" "");UT command thick existing water OD lines
+("UTXWATPL" "C-WATR-INNR-E" "9" "DOT");UT command thick existing water polylines
+("UTXWATSNG" "C-WATR-E" "9" "WATER");UT command single line existing water lines
+("WALLEDGE" "C-WALL" "7" "");WALL command outside edge
+("WALLPL" "C-WALL-PL" "7" "DOT");WALL command pline
+("WALLXEDGE" "C-WALL-E" "10" "");WALL command existing outside edge
+("WALLXPL" "C-WALL-INNR-E" "10" "DOT");WALL command existing pline
+("WATSER" "C-WATR-SERV" "3" "WATER");WS command water service lines
+("WATSERTX" "C-WATR-SERV-DIM" "5" "");WS command water service labels
+("XDIM" "C-ANNO-DIMS-E" "9" "");STDIM command

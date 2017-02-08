@@ -1,0 +1,38 @@
+;(C) Copyright 1997 by Thomas Gail Haws
+(defun
+  c:haws-txtavg
+  ( / ss1 i sum enamei blname AVG ELISTI TS TXPT)
+  (setq
+    ss1
+    (ssget                       ;Get a selection set, ss1
+      (list                      ;Add all entities matching the following list
+        (cons 0  "*TEXT")        ;Insertion entities (blocks, xrefs, etc.)
+      )
+    )
+    i 0                          ;Set a counter, i, to 0
+    sum 0
+  )
+  (if ss1                        ;If there were any entities found in the set,
+    (while                       ;Start a loop to repeat as long as
+      (setq enamei               ;you can set enamei
+        (ssname ss1 i)           ;the ith entity in the set.
+      )
+      (setq                      ;Set
+        elisti                   ;elisti to
+        (entget enamei)          ;the association list for enamei
+      )
+      (setq sum (+ sum (atof (cdr (assoc 1 elisti)))))
+      (setq i (1+ i))            ;Bump up i to move to the next entity.
+    )
+  )                              ;Close the while loop.
+  (setq avg (/ sum i))
+  (prompt "\nAvg: ")
+  (princ avg)
+  (setq
+    txpt (getpoint "\nMiddle point for text:")
+    ts (* (getvar"dimscale")(getvar "dimtxt"))
+  )
+  (if txpt(HAWS-MKTEXT "m" txpt ts 0 (strcat (rtos avg) " AVERAGE")))
+  (princ)
+)
+

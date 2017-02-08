@@ -1,0 +1,22 @@
+;Units setting routines
+;Written by Thomas Gail Haws
+(defun HAWS-unitset (lu lp au ap dp uprmpt)
+  (setvar "lunits" lu)
+  (setvar "luprec" lp)
+  (if (/= (getvar "dimdec") lp)(setvar "dimdec" lp))
+  (setvar "aunits" au)
+  (setvar "auprec" ap)
+  (setvar "dimaunit" au)
+  (setvar "dimadec" ap)
+  (command "dim" "dimpost" dp "exit" )
+  (prompt "\nUnits now set to " )
+  (princ uprmpt)
+  (princ)
+)
+(defun c:haws-U0 (/)(HAWS-unitset 2 0 0 0 "'" "0 decimal places."))
+(defun c:haws-U1 (/)(HAWS-unitset 2 1 0 1 "'" "1 decimal place."))
+(defun c:haws-U2 (/)(HAWS-unitset 2 2 0 2 "'" "2 decimal places."))
+(defun c:haws-U3 (/)(HAWS-unitset 2 3 0 3 "'" "3 decimal places."))
+(defun c:haws-U8 (/)(HAWS-unitset 2 8 0 8 "'" "8 decimal places."))
+(defun c:haws-US (/)(HAWS-unitset 2 2 4 4 "'" "2 decimal places and surveyor's angles."))
+;end unit setting routines

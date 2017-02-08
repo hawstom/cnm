@@ -1,0 +1,191 @@
+attreq 0
+(if (dictsearch (cdr (assoc -1 (dictsearch (namedobjdict) "ACAD_GROUP"))) "BUBREDEF")(command "group" "explode" "bubredef"))
+insert noteboxl=noteboxl1 0,0   
+explode l (setq *hcnm-bubredefss* (ssget "p")) select
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTENUM")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTEPHASE")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETYPE")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTEGAP")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT1")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT2")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT3")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT4")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT5")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT6")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT0")))
+!*hcnm-bubredefss* 
+group c bubredef 
+p 
+attredef
+noteboxl
+group bubredef 
+0,0
+(if (dictsearch (cdr (assoc -1 (dictsearch (namedobjdict) "ACAD_GROUP"))) "BUBREDEF")(command "group" "explode" "bubredef"))
+insert notecirl=notecirl1 0,0   
+explode l (setq *hcnm-bubredefss* (ssget "p")) select
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTENUM")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTEPHASE")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETYPE")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTEGAP")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT1")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT2")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT3")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT4")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT5")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT6")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT0")))
+!*hcnm-bubredefss* 
+group c bubredef 
+p 
+attredef
+notecirl
+group bubredef 
+0,0
+(if (dictsearch (cdr (assoc -1 (dictsearch (namedobjdict) "ACAD_GROUP"))) "BUBREDEF")(command "group" "explode" "bubredef"))
+insert notediar=notediar1 0,0   
+explode l (setq *hcnm-bubredefss* (ssget "p")) select
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTENUM")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTEPHASE")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETYPE")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTEGAP")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT1")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT2")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT3")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT4")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT5")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT6")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT0")))
+!*hcnm-bubredefss* 
+group c bubredef 
+p 
+attredef
+notediar
+group bubredef 
+0,0
+(if (dictsearch (cdr (assoc -1 (dictsearch (namedobjdict) "ACAD_GROUP"))) "BUBREDEF")(command "group" "explode" "bubredef"))
+insert noteellr=noteellr1 0,0   
+explode l (setq *hcnm-bubredefss* (ssget "p")) select
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTENUM")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTEPHASE")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETYPE")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTEGAP")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT1")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT2")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT3")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT4")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT5")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT6")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT0")))
+!*hcnm-bubredefss* 
+group c bubredef 
+p 
+attredef
+noteellr
+group bubredef 
+0,0
+(if (dictsearch (cdr (assoc -1 (dictsearch (namedobjdict) "ACAD_GROUP"))) "BUBREDEF")(command "group" "explode" "bubredef"))
+insert notehexl=notehexl1 0,0   
+explode l (setq *hcnm-bubredefss* (ssget "p")) select
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTENUM")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTEPHASE")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETYPE")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTEGAP")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT1")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT2")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT3")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT4")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT5")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT6")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT0")))
+!*hcnm-bubredefss* 
+group c bubredef 
+p 
+attredef
+notehexl
+group bubredef 
+0,0
+(if (dictsearch (cdr (assoc -1 (dictsearch (namedobjdict) "ACAD_GROUP"))) "BUBREDEF")(command "group" "explode" "bubredef"))
+insert notehexr=notehexr1 0,0   
+explode l (setq *hcnm-bubredefss* (ssget "p")) select
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTENUM")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTEPHASE")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETYPE")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTEGAP")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT1")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT2")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT3")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT4")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT5")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT6")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT0")))
+!*hcnm-bubredefss* 
+group c bubredef 
+p 
+attredef
+notehexr
+group bubredef 
+0,0
+(if (dictsearch (cdr (assoc -1 (dictsearch (namedobjdict) "ACAD_GROUP"))) "BUBREDEF")(command "group" "explode" "bubredef"))
+insert notehexr1= 0,0   
+explode l (setq *hcnm-bubredefss* (ssget "p")) select
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTENUM")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTEPHASE")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETYPE")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTEGAP")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT1")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT2")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT3")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT4")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT5")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT6")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT0")))
+!*hcnm-bubredefss* 
+group c bubredef 
+p 
+attredef
+notehexr1
+group bubredef 
+0,0
+(if (dictsearch (cdr (assoc -1 (dictsearch (namedobjdict) "ACAD_GROUP"))) "BUBREDEF")(command "group" "explode" "bubredef"))
+insert notehexr2= 0,0   
+explode l (setq *hcnm-bubredefss* (ssget "p")) select
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTENUM")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTEPHASE")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETYPE")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTEGAP")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT1")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT2")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT3")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT4")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT5")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT6")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT0")))
+!*hcnm-bubredefss* 
+group c bubredef 
+p 
+attredef
+notehexr2
+group bubredef 
+0,0
+(if (dictsearch (cdr (assoc -1 (dictsearch (namedobjdict) "ACAD_GROUP"))) "BUBREDEF")(command "group" "explode" "bubredef"))
+insert noterecl=noterecl1 0,0   
+explode l (setq *hcnm-bubredefss* (ssget "p")) select
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTENUM")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTEPHASE")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETYPE")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTEGAP")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT1")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT2")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT3")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT4")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT5")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT6")))
+(ssget "X" '((0 . "ATTDEF")(2 . "NOTETXT0")))
+!*hcnm-bubredefss* 
+group c bubredef 
+p 
+attredef
+noterecl
+group bubredef 
+0,0
+view r bubredef view d bubredef attreq 1 ._undo e

@@ -1,0 +1,77 @@
+;;;JOB:  HAWSEDC SAMPLE
+;;;DO NOT USE THE [TAB] KEY.  USE SPACES.
+;;;
+;;;IN THIS SAMPLE PROJECT, THE FIRST 8 SHAPES ALL HAVE 
+;;;  A NOTE 1 THAT ADDS LINE 1 QUANTITIES FROM BUBBLES ON SHEET AND
+;;;  A NOTE 2 THAT JUST COUNTS UP THE NUMBER OF BUBBLES ON SHEET
+;;;INSERT BUBBLE NOTE NUMBERS 1 AND 2 OF ANY SHAPE TO TRY OUT CNM.
+;;;
+;;;SEE CNM.INI, HELP, OR WWW.CONSTRUCTIONNOTESMANAGER.COM
+;;;FOR ADDITIONAL OPTIONS
+;;;
+SET CNMVERSION 4.2
+NUM  |<------------------------- DESCRIPTION ----------------------UN|QTY>
+BOX NOTES
+;    The next line gives a title that is added to the notes list if there
+;    are any box notes in the drawing.
+TITLE
+TITLE WATER NOTES
+1    8" WATER PVC WATER LINE                                       LF LINE1
+2    8" VALVE, BOX & COVER                                         EA COUNT
+3    WATER FITTING OR BEND                                         EA COUNT
+;
+CIR NOTES
+TITLE PAVING NOTES
+1    SAWCUT LINE                                                   LF LINE1
+2    SURVEY MONUMENT                                               EA COUNT
+3    2" A/C ON 7" ABC                                              SY LINE1
+4    ADJUST MANHOLE COVER                                          EA COUNT
+;
+DIAMOND NOTES
+TITLE
+TITLE SEWER NOTES
+1    8" SEWER LINE                                                 LF LINE1
+2    SEWER MANHOLE                                                 EA COUNT
+3    SEWER CLEANOUT                                                EA COUNT
+4    SAWCUT, REMOVE AND REPLACE EXISTING                           LF LINE1
+     A/C PAVEMENT
+;
+HEX NOTES
+TITLE
+TITLE STORM DRAIN NOTES
+1    36" STORM DRAIN                                               LF LINE1
+2    CATCH BASIN                                                   EA COUNT
+;
+ELLIPSE NOTES
+TITLE IRRIGATION NOTES
+1    CONNECT TO EXISTING                                           NPI
+2    2" VALVE                                                      EA COUNT
+;
+OCTAGON NOTES
+TITLE TRAFFIC NOTES
+1    2" CONDUIT                                                    LF LINE2
+2    STOP SIGN                                                     EA COUNT
+;
+PENTAGON NOTES
+TITLE STREET LIGHTING NOTES
+1    2" CONDUIT                                                    LF LINE1
+2    LUMINAIRE                                                     EA COUNT
+;
+RECTANGLE NOTES
+TITLE WORK BY OTHERS
+1    WATER LINE REALIGNMENT BY CITY CREWS                          LF LINE1
+2    POWER POLE RELOCATION BY ELECTRIC CO.                         EA COUNT
+3    TELEPHONE PEDESTAL RELOCATION BY OTHERS                       NPI
+;
+SST NOTES
+TITLE STRIPING NOTES
+1    4" SOLID WHITE
+2    4" BROKEN YELLOW
+8SW  8" SOLID WHITE 
+RTA  RIGHT TURN ARROW (THERMOPLASTIC)
+;
+TRIANGLE NOTES
+TITLE REVISIONS
+1    12/02/2003 CITY OF NEW HAMPTON COMMENTS
+2    01/16/2004 WASHINGTON COUNTY FIRE DEPT. COMMENTS
+
