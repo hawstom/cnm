@@ -10,7 +10,7 @@
   (setq sp (getpoint  "\n Arrow start point:")
     angp (getpoint sp "\n Arrow angle:")
     arrang (angle sp angp)
-    as (* (getvar "dimasz")(getvar "dimscale"))
+    as (* (getvar "dimasz")(HAWS-DWGSCALE))
     ep (polar sp arrang as)
   )
   (command "pline" sp "w" "0.0" (/ as 3.0) ep "w" "0.0" "0.0" "arc")

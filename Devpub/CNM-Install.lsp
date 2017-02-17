@@ -9,6 +9,7 @@
 (VL-LOAD-COM)
 (DEFUN
    HAWS-CNMINSTALL (CNMPATH / PATHS)
+   ;; Add paths in reverse order (top path at bottom)
   (SETQ PATHS
     (LIST
       CNMPATH

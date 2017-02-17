@@ -3,7 +3,7 @@
   (HAWS-ERDF$@ 0)
   (HAWS-VSAVE '("clayer"))
   (setvar "cmdecho" 0)
-  (setq txtht (* (getvar "dimscale")(getvar"dimtxt")))
+  (setq txtht (* (HAWS-DWGSCALE)(getvar"dimtxt")))
   (setq txtstr (getstring "\nContour text:"))
   (HAWS-MKLAYR "CONTLBL")
   (setq inspt (getpoint "\nMiddle point:") rot (getangle inspt " Rotation: "))

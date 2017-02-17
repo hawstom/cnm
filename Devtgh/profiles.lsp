@@ -459,7 +459,7 @@
   (SETQ
     P1 (GETPOINT "\nStart point for leader:")
     P2 (GETPOINT P1 "\nEnd point for leader:")
-    DS (GETVAR "dimscale")
+    DS (HAWS-DWGSCALE)
     TS (* DS (GETVAR "dimtxt"))
     AS (* DS (GETVAR "dimasz"))
     DG (* DS (ABS (GETVAR "dimgap")))
@@ -2314,7 +2314,7 @@
   (TERPRI)
   (SETQ
     I 1
-    TS (* (GETVAR "dimtxt") (GETVAR "dimscale"))
+    TS (* (GETVAR "dimtxt") (HAWS-DWGSCALE))
     LINGAP
      0.5
     LUP
@@ -2528,7 +2528,7 @@
     (SETQ PT5 (GETPOINT "\nSecond elevation point: "))
   ) ;_ end of WHILE
   (SETQ
-    TS (* (GETVAR "dimscale") (GETVAR "dimtxt"))
+    TS (* (HAWS-DWGSCALE) (GETVAR "dimtxt"))
     FLPANG
      (COND
        (FLPANG)
@@ -2685,7 +2685,7 @@
     (HAWS-MKTEXT
       "tc"
       (LIST (+ (CAR PNT1) (- STA STA1)) (CADR PNT1))
-      (* (GETVAR "dimscale") 0.12)
+      (* (HAWS-DWGSCALE) 0.12)
       0
       (HAWS-RTOSTA STA NIL)
     ) ;_ end of mktext
@@ -2723,7 +2723,7 @@
         (CAR PNT1)
         (+ (* HVEXAG *HAWS-ELVSCL* (- ELV ELV1)) (CADR PNT1))
       ) ;_ end of list
-      (* (GETVAR "dimscale") 0.12)
+      (* (HAWS-DWGSCALE) 0.12)
       0
       (ITOA ELV)
     ) ;_ end of mktext
@@ -2804,7 +2804,7 @@
     "._insert"
     BLNAME
     PT1
-    (* (GETVAR "dimscale") (GETVAR "dimtxt"))
+    (* (HAWS-DWGSCALE) (GETVAR "dimtxt"))
     ""
   ) ;_ end of command
 ) ;_ end of DEFUN

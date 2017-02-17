@@ -810,7 +810,7 @@
          ((AND (= "TXTHT" USRVAR) (SETQ USRVAR (CADDR ENTRY)))
           (SETQ
             TXTHT
-             (* (GETVAR "DIMSCALE")
+             (* (HAWS-DWGSCALE)
                 (COND
                   ((DISTOF USRVAR))
                   ((GETVAR "dimtxt"))
@@ -1797,7 +1797,7 @@
          ((AND (= "TXTHT" USRVAR) (SETQ USRVAR (CADDR ENTRY)))
           (SETQ
             TXTHT
-             (* (GETVAR "DIMSCALE")
+             (* (HAWS-DWGSCALE)
                 (COND
                   ((DISTOF USRVAR))
                   ((GETVAR "dimtxt"))
@@ -2096,7 +2096,7 @@
     PROJNOTES
      (HCNM-GETPROJNOTES)
     TXTHT
-     (* (GETVAR "dimtxt") (GETVAR "dimscale"))
+     (* (GETVAR "dimtxt") (HAWS-DWGSCALE))
     ;;Column and line spacing widths (half width for middle justified columns)
     ;;line spacing
     LINSPC
@@ -4162,7 +4162,7 @@ ImportLayerSettings=No
   )
   (SETQ
     P1 (GETPOINT "\nStart point for leader:")
-    DS (GETVAR "dimscale")
+    DS (HAWS-DWGSCALE)
     TS (* DS (GETVAR "dimtxt"))
     AS (* DS (GETVAR "dimasz"))
   )

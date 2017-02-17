@@ -51,7 +51,7 @@
 	 sideel	(side / ds el1 ho hvexag pt1 ts vs y1)
 	(setq
 	  hvexag 10                          ;Vertical exaggeration
-	  ds (getvar "dimscale")             ;Dimscale
+	  ds (HAWS-DWGSCALE)             ;Dimscale
 	  vs 0.5                             ;Vertical text spacing in plotted inches
 	  ho 0.5                             ;Horizontal text offset from selected point in plotted inches
 	  ts 0.2                             ;Text height in plotted inches 

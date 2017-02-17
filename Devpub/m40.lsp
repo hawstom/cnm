@@ -47,7 +47,7 @@
     hcwid (if hcwid hcwid 4.0)
     dwlen(if dwlen dwlen 20.0)
     swwid (if swwid swwid 4.0)
-    ts (* (getvar "dimscale")(getvar"dimtxt"))
+    ts (* (HAWS-DWGSCALE)(getvar"dimtxt"))
   )
   (HAWS-MKLAYR "DRIVEWAY")
   (while

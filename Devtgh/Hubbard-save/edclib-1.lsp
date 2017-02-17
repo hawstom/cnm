@@ -3096,7 +3096,7 @@ ImportLayerSettings=No
 ;;; from the folder that contains this file edclib.lsp
 ;;;
 (DEFUN
-   HAWS-LOAD (FILENAME)
+   HAWS-LOAD-FROM-APP-DIR (FILENAME)
   ;;Make sure app folder is set.
   (IF (NOT *HAWS-APPFOLDER*)
     (SETQ
@@ -3369,7 +3369,7 @@ ImportLayerSettings=No
         40
         (COND
           (H)
-          ((* (GETVAR "dimscale") (GETVAR "dimtxt")))
+          ((* (HAWS-DWGSCALE) (GETVAR "dimtxt")))
         )
       )
       (ASSOC 41 (TBLSEARCH "STYLE" (GETVAR "textstyle")))
@@ -4223,16 +4223,16 @@ ImportLayerSettings=No
 ;;; Load other utilities
 ;; LISPUTIL.LSP has library functions for legacy routines some legacy users have.
 (IF (NOT MKLAYR)
-  (HAWS-LOAD "lisputil")
+  (HAWS-LOAD-FROM-APP-DIR "lisputil")
 )
 ;; CNM.LSP has the HCNM-GETVAR function that is being called by
 ;; HAWS-MKLAYR (This is a messy, sloppy workaround.)
 (IF (NOT HCNM-GETVAR)
-  (HAWS-LOAD "cnm")
+  (HAWS-LOAD-FROM-APP-DIR "cnm")
 )
 ;;Can't autoload AH.LSP the normal way.  Load here.
 (IF (NOT AH)
-  (HAWS-LOAD "ah")
+  (HAWS-LOAD-FROM-APP-DIR "ah")
 )
 (PROMPT "\nloaded.")
  ;|«Visual LISP© Format Options»

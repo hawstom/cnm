@@ -292,7 +292,7 @@
 	(setq
 		p1 (getpoint "\nStart point for leader:")
 		p2 (getpoint p1 "\nEnd point for leader:")
-		ds (getvar "dimscale")
+		ds (HAWS-DWGSCALE)
 		ts (* ds (getvar "dimtxt"))
 		as (* ds (getvar "dimasz"))
 		dg (* ds (abs (getvar "dimgap")))
@@ -1840,7 +1840,7 @@
 	(terpri)
 	(setq
 		i	1
-		ts (* (getvar "dimtxt") (getvar "dimscale"))
+		ts (* (getvar "dimtxt") (HAWS-DWGSCALE))
 		lingap 0.5
 		lup
 		 (getvar "luprec")
@@ -2024,7 +2024,7 @@
 			(setq pt5 (getpoint "\nSecond elevation point: "))
 		) ;_ end of WHILE
 		(setq
-			ts (* (getvar "dimscale") (getvar "dimtxt"))
+			ts (* (HAWS-DWGSCALE) (getvar "dimtxt"))
 			flpang
 			 (cond
 				 (flpang)
@@ -2158,7 +2158,7 @@
 		(HAWS-MKTEXT
 			"tc"
 			(list (+ (car pnt1) (- sta sta1)) (cadr pnt1))
-			(* (getvar "dimscale") 0.12)
+			(* (HAWS-DWGSCALE) 0.12)
 			0
 			(HAWS-RTOSTA sta nil)
 		) ;_ end of mktext
@@ -2191,7 +2191,7 @@
 		(HAWS-MKTEXT
 			"br"
 			(list (car pnt1) (+ (* hvexag elvscl (- elv elv1)) (cadr pnt1)))
-			(* (getvar "dimscale") 0.12)
+			(* (HAWS-DWGSCALE) 0.12)
 			0
 			(itoa elv)
 		) ;_ end of mktext
@@ -2259,7 +2259,7 @@
 	(command "._pline" pt1)
 	(while (setq pt2 (getpoint pt1 "Next point: ")) (command pt2) (setq pt1 pt2))
 	(command "")
-	(command "._insert" blname pt1 (* (getvar "dimscale") (getvar "dimtxt")) "")
+	(command "._insert" blname pt1 (* (HAWS-DWGSCALE) (getvar "dimtxt")) "")
 ) ;_ end of DEFUN
 
 (defun

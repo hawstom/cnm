@@ -3,7 +3,7 @@
   (HAWS-VSAVE'("clayer"))
   (c:haws-0)
   (HAWS-MKLAYR '("defpoints" "" ""))
-  (setq ds (getvar "dimscale"))
+  (setq ds (HAWS-DWGSCALE))
   (command
     "._pspace"
     "._mview" "0.7,0.39" "35.8,23.61"

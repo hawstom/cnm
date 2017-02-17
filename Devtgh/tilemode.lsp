@@ -8,7 +8,7 @@
 )
 (defun c:haws-1 ( / ds LT)
   (setvar"regenmode"0)
-  (setq ds (getvar "dimscale")lt (getvar"ltscale"))
+  (setq ds (HAWS-DWGSCALE)lt (getvar"ltscale"))
   (if(=(getvar"psltscale")1)
     (cond
       ( (and(= ds 1)(/= lt 1))(setvar "tilemode" 1))

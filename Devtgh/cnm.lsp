@@ -67,7 +67,7 @@
 (VL-LOAD-COM)
 
 (DEFUN
-   HAWS-GETPHASELISTFROMTBLQTY (/ EL EN I DSCTAG NOTEQTYONDISK OLDTAGS
+   HCNM-GETPHASELISTFROMTBLQTY (/ EL EN I DSCTAG NOTEQTYONDISK OLDTAGS
                                 PHASEALIAS PHASELIST
                                )
   ;;Check for phasing in qty table block.  Phasing is controlled by presence of TBLQTY? attributes.
@@ -77,9 +77,9 @@
   ;;
   ;;Insert table line NOTEQTY block if not exist
   (SETQ
-    J (IF (= (HCNM-GETVAR "InsertTablePhases") "No")
+    J (IF (= (hcnm-config-GETVAR "InsertTablePhases") "No")
         ""
-        (HCNM-GETVAR "InsertTablePhases")
+        (hcnm-config-GETVAR "InsertTablePhases")
       )
   )
   (COND
@@ -157,7 +157,7 @@
   (IF (NOT PHASELIST)
     (SETQ PHASELIST '(("" 1 "")))
   )
-  ;;Add phasealias settings to the phaselist.
+  ;;Add phasealias configs to the phaselist.
   (MAPCAR
     '(LAMBDA (PHASE)
        (SETQ
@@ -165,7 +165,7 @@
           (SUBST
             (REVERSE
               (CONS
-                (HCNM-GETVAR (CADR PHASE))
+                (hcnm-config-GETVAR (CADR PHASE))
                 (CDR (ASSOC (ITOA (CAR PHASE)) PHASELIST))
               )
             )
@@ -249,7 +249,7 @@
 ;;;
 ;;;Set up list from CONSTNOT.TXT and NOTEQTY block.
 (DEFUN
-   HAWS-SEARCHANDSAVE (DN PROJNOTES / ALIASLIST AT AV BLKI BLKSS COUNT
+   HHCNM-TABLE-FROM-SEARCHANDSAVE (DN PROJNOTES / ALIASLIST AT AV BLKI BLKSS COUNT
                        CTABONLY EL EN ET I J MVPORT MVSSET N NFNAME
                        NOTEFND NOTEI NOTELINES NOTELIST NOTENUM
                        NOTEPHASE NOTEQTY NOTETXT NOTETYPE NOTNUM NOTTYP
@@ -261,9 +261,9 @@
 ;;;
   (SETQ
     PHASELIST
-     (HAWS-GETPHASELISTFROMTBLQTY)
+     (HCNM-GETPHASELISTFROMTBLQTY)
     CTABONLY
-     (= "1" (HCNM-GETVAR "DoCurrentTabOnly"))
+     (= "1" (hcnm-config-GETVAR "DoCurrentTabOnly"))
     NOTTYP ""
   )
   (FOREACH
@@ -721,13 +721,13 @@
 ;;Puts table at qtypt.
 ;; TGH to use this for TALLY, maybe I just need to read NOTELIST as an argument instead of from a file in this function.
 (DEFUN
-   HAWS-MAKENOTETABLE (NFSOURCE QTYPT QTYSET DN TXTHT / CTABONLY ICOL
+   HCNM-MAKENOTETABLE (NFSOURCE QTYPT QTYSET DN TXTHT / CTABONLY ICOL
                        IPHASE IROW FIRSTLINE JROW NFNAME NOTDSC NOTELIST
                        NOTESMAXROWS NOTETITLES NOTNUM NOTQTY NOTTYP
                        NOTUNT NUMFND PHASELIST PROMPTEACHCOL QTY QTYPT1
                        RDLIN TXTHTTEMP TYPFND USRVAR
                       )
-  (SETQ PHASELIST (HAWS-GETPHASELISTFROMTBLQTY))
+  (SETQ PHASELIST (HCNM-GETPHASELISTFROMTBLQTY))
   (SETVAR "osmode" 0)
   (SETVAR "attreq" 1)
   (INITGET "Prompt")
@@ -750,7 +750,7 @@
      )
     )
   )
-  (SETQ CTABONLY (= (HCNM-GETVAR "DoCurrentTabOnly") "1"))
+  (SETQ CTABONLY (= (hcnm-config-GETVAR "DoCurrentTabOnly") "1"))
   (IF (= NFSOURCE "E")
     (SETQ
       NFNAME
@@ -784,13 +784,13 @@
   (HCNM-READCF (HCNM-PROJNOTES))
   (SETQ
     LINSPC
-     (ATOF (HCNM-GETVAR "LineSpacing"))
+     (ATOF (hcnm-config-GETVAR "LineSpacing"))
     NOTSPC
-     (ATOF (HCNM-GETVAR "NoteSpacing"))
+     (ATOF (hcnm-config-GETVAR "NoteSpacing"))
     TBLWID
-     (ATOF (HCNM-GETVAR "TableWidth"))
+     (ATOF (hcnm-config-GETVAR "TableWidth"))
     PHASEWID
-     (ATOF (HCNM-GETVAR "PhaseWidthAdd"))
+     (ATOF (hcnm-config-GETVAR "PhaseWidthAdd"))
     IROW 0
     ICOL 1
     IPHASE 1
@@ -828,14 +828,14 @@
   (FOREACH
      ENTRY *HCNM-CNMPROJECTNOTES*
     (COND
-      ;;If it's a variable setting, set it.
+      ;;If it's a variable config, set it.
       ((= 1 (CAR ENTRY))
        (SETQ USRVAR (CADR ENTRY))
        (COND
          ((AND (= "TXTHT" USRVAR) (SETQ USRVAR (CADDR ENTRY)))
           (SETQ
             TXTHT
-             (* (GETVAR "DIMSCALE")
+             (* (HAWS-DWGSCALE)
                 (COND
                   ((DISTOF USRVAR))
                   ((GETVAR "dimtxt"))
@@ -1110,7 +1110,7 @@
       )
     )
   )
-  ;;Apply ini table display settings.  If no settings (legacy), show both.
+  ;;Apply ini table display configs.  If no configs (legacy), show both.
   (MAPCAR
     '(LAMBDA (LAYERKEY / LAYERSHOW LAYERLIST)
        (SETQ
@@ -1120,9 +1120,9 @@
             (CAR (HAWS-GETLAYR (CAR LAYERKEY)))
           )
          LAYERSHOW
-          (/= "0" (HCNM-GETVAR (CADR LAYERKEY)))
+          (/= "0" (hcnm-config-GETVAR (CADR LAYERKEY)))
        )
-       ;;If layer exists and is showing in drawing, freeze it if setting says.
+       ;;If layer exists and is showing in drawing, freeze it if config says.
        (IF (AND
              (CDR (ASSOC 70 LAYERLIST))
              (/= 1 (LOGAND 1 (CDR (ASSOC 70 LAYERLIST))))
@@ -1150,13 +1150,13 @@
   )
   (COMMAND "._undo" "end")
 )
-;;CNM-SEARCH
+;;HCNM-TABLE-FROM-SEARCH
 ;;In the NOTES strategy, this routine is first of three main routines.
 ;;Gets project info from CONSTNOT.TXT
 ;;Gets drawing info from bubbles or table.
 ;;Saves all in .NOT file for other two routines
 (DEFUN
-   CNM-SEARCH (DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID / EL EN I
+   HCNM-TABLE-FROM-SEARCH (DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID / EL EN I
                NOTELIST QTYPT QTYSET TABLESPACE
               )
   (SETQ
@@ -1202,13 +1202,13 @@
   (IF (NOT QTYPT)
     (SETQ QTYPT (GETPOINT "\nStart point for key notes table: "))
   )
-  (HAWS-SEARCHANDSAVE DN PROJNOTES)
+  (HHCNM-TABLE-FROM-SEARCHANDSAVE DN PROJNOTES)
   ;;Make a new notes table
-  (HAWS-MAKENOTETABLE "E" QTYPT QTYSET DN TXTHT)
+  (HCNM-MAKENOTETABLE "E" QTYPT QTYSET DN TXTHT)
 )
 ;;CNM-IMPORT
 ;;In the NOTES strategy, this routine is second of three main routines.
-;;Reads from .NOT file, created by CNM-SEARCH, everything necessary and creates a table. 
+;;Reads from .NOT file, created by HCNM-TABLE-FROM-SEARCH, everything necessary and creates a table. 
 (DEFUN
    CNM-IMPORT (DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID / EL EN I QTYPT
                QTYSET TABLESPACE
@@ -1260,7 +1260,7 @@
     )
   )
   ;;Make a new notes table after erasing qtyset
-  (HAWS-MAKENOTETABLE "I" QTYPT QTYSET DN TXTHT)
+  (HCNM-MAKENOTETABLE "I" QTYPT QTYSET DN TXTHT)
 )
 ;;CNM-TALLY
 ;;In the NOTES strategy, this routine is the third of three main routines.
@@ -1279,12 +1279,12 @@
 ;;   '((shti (typj (notek qty1 qty2 qtyk))))
 (DEFUN
    CNM-TALLY (DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID / ALLNOT COL1X
-              COLUMN DQWID DWGFIL EL F1 F2 FLSPEC I LSTFIL NDWID NFNAME
-              NOTDSC NOTELIST NOTFIL NOTNUM NOTQTY NOTTYP NOTUNT NUMFND
-              NUMLIST PGPMOD PHASE PHASELIST PHASENUMI PT1Z Q QQWID
-              QTYLIST QTYPT1 QTYSET QUWID RDLIN RDLN1 ROW1Y SHTLST
-              TABLESPACE TEMP TOTAL TNWID TYPFND USRVAR USERS1OLD
-              USERS2OLD USERS3OLD USERS4OLD WRITELIST X Y Z
+              COLUMN DQWID DWGFIL EL FIRSTLINE FLSPEC I LSTFIL NDWID
+              NFNAME NOTELIST NOTETITLES NOTFIL NOTNUM NOTQTY NOTSPC
+              NOTTYP NOTUNT NUMFND NUMLIST PGPMOD PHASE PHASELIST
+              PHASENUMI PT1Z Q QQWID QTYLIST QTYPT1 QTYSET QUWID ROW1Y
+              SHTLST TABLESPACE TEMP TOTAL TXTHTTEMP USERS1OLD USERS2OLD
+              USERS3OLD USERS4OLD USRVAR WRITELIST X Y Z
              )
 ;;;
 ;;;  Section 1.
@@ -1292,7 +1292,10 @@
 ;;;
   (COND
     ;; The VBA years.
-    ((and (< (ATOF (GETVAR "acadver")) 18)(>= (ATOF (GETVAR "acadver")) 15))
+    ((AND
+       (< (ATOF (GETVAR "acadver")) 18)
+       (>= (ATOF (GETVAR "acadver")) 15)
+     )
      (AND (HAWS-VLISP-P) (NOT (HAWS-ICAD-P)))
      (SETQ
        USERS1OLD
@@ -1367,7 +1370,7 @@
          "\n(CNM will automatically use tally.lst if present), "
          "\nenter Wildcards (eg. * or grad\\unit1*), "
          "\nor Select drawings one at a time from a dialogue box?"
-       )
+        )
      )
      (INITGET 1 "List Wildcards Select")
      (SETQ
@@ -1728,13 +1731,13 @@
   (HCNM-READCF (HCNM-PROJNOTES))
   (SETQ
     LINSPC
-     (ATOF (HCNM-GETVAR "LineSpacing"))
+     (ATOF (hcnm-config-GETVAR "LineSpacing"))
     NOTSPC
-     (ATOF (HCNM-GETVAR "NoteSpacing"))
+     (ATOF (hcnm-config-GETVAR "NoteSpacing"))
     TBLWID
-     (ATOF (HCNM-GETVAR "TableWidth"))
+     (ATOF (hcnm-config-GETVAR "TableWidth"))
     PHASEWID
-     (ATOF (HCNM-GETVAR "PhaseWidthAdd"))
+     (ATOF (hcnm-config-GETVAR "PhaseWidthAdd"))
     COL1X
      (CAR QTYPT1)
     ROW1Y
@@ -1746,16 +1749,16 @@
     Z PT1Z
     ;;width from middle of number to left point of description text
     NDWID
-     (ATOF (HCNM-GETVAR "NumberToDescriptionWidth"))
+     (ATOF (hcnm-config-GETVAR "NumberToDescriptionWidth"))
     ;;width from left point of description text to right point of quantity
     DQWID
-     (ATOF (HCNM-GETVAR "DescriptionToQuantityWidth"))
+     (ATOF (hcnm-config-GETVAR "DescriptionToQuantityWidth"))
     ;;width from right point of one quantity phase to right point of next quantity phase
     QQWID
-     (ATOF (HCNM-GETVAR "QuantityToQuantityWidth"))
+     (ATOF (hcnm-config-GETVAR "QuantityToQuantityWidth"))
     ;;width from right point of quantity to left point of unit
     QUWID
-     (ATOF (HCNM-GETVAR "QuantityToUnitsWidth"))
+     (ATOF (hcnm-config-GETVAR "QuantityToUnitsWidth"))
   )
   (SETVAR "osmode" 0)
   ;;Write column headings to the file
@@ -1820,14 +1823,14 @@
   (FOREACH
      ENTRY *HCNM-CNMPROJECTNOTES*
     (COND
-      ;;If it's a variable setting, set it.
+      ;;If it's a config setting, set it.
       ((= 1 (CAR ENTRY))
        (SETQ USRVAR (CADR ENTRY))
        (COND
          ((AND (= "TXTHT" USRVAR) (SETQ USRVAR (CADDR ENTRY)))
           (SETQ
             TXTHT
-             (* (GETVAR "DIMSCALE")
+             (* (HAWS-DWGSCALE)
                 (COND
                   ((DISTOF USRVAR))
                   ((GETVAR "dimtxt"))
@@ -1909,7 +1912,7 @@
             (WRITE-LINE (CADR NOTETITLE) F2)
           )
           (SETQ
-            Y         (- Y (* TXTHT (- NOTSPC LINSPC)))
+            Y     (- Y (* TXTHT (- NOTSPC LINSPC)))
             TXTHT TXTHTTEMP
           )
          )
@@ -2131,22 +2134,22 @@
     PROJNOTES
      (HCNM-PROJNOTES)
     TXTHT
-     (* (GETVAR "dimtxt") (GETVAR "dimscale"))
+     (* (GETVAR "dimtxt") (HAWS-DWGSCALE))
     ;;Column and line spacing widths (half width for middle justified columns)
     ;;line spacing
     LINSPC
-     (ATOF (HCNM-GETVAR "LineSpacing"))
+     (ATOF (hcnm-config-GETVAR "LineSpacing"))
     ;;width of single sheet table with only one phase
     TBLWID
-     (ATOF (HCNM-GETVAR "TableWidth"))
+     (ATOF (hcnm-config-GETVAR "TableWidth"))
     ;;width for each extra phase on single sheet table.
     PHASEWID
-     (ATOF (HCNM-GETVAR "PhaseWidthAdd"))
+     (ATOF (hcnm-config-GETVAR "PhaseWidthAdd"))
   )
   (HCNM-READCF PROJNOTES)
   (COND
     ((= OPT "Search")
-     (CNM-SEARCH DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID)
+     (HCNM-TABLE-FROM-SEARCH DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID)
     )
     ((= OPT "Import")
      (CNM-IMPORT DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID)
@@ -2180,7 +2183,7 @@
 (DEFUN
    HCNM-PROJINIT ()
   (SETQ
-    *HCNM-CNMSETTINGS* NIL
+    *HCNM-CONFIG* NIL
     *HCNM-CNMPROJECTROOT* NIL
     *HCNM-CNMPROJECTNOTES* NIL
   )
@@ -2189,67 +2192,74 @@
 
 ;;Does nothing but strcat, since the existence of the file
 ;;is validated by (HCNM-PROJ)
-(DEFUN HCNM-INI (PROJ) (STRCAT PROJ "\\cnm.ini"))
+(DEFUN
+   HCNM-INI-NAME (PROJ)
+  (HCNM-PROJECT-FOLDER-TO-INI PROJ)
+)
 
 ;; HCNM-PROJ gets a valid project root folder for this drawing's folder.
 ;; While it returns the folder only, that folder is qualified to have CNM.INI in it.
 ;; It should resolve all errors and user conditions
 ;; and return a "drive:\\...\\projroot" path to other functions.
 (DEFUN
-   HCNM-PROJ (/ I DWGDIR PROJROOT PROJTXT SIMPLECNM)
+   HCNM-PROJ (/ DWGDIR LINKED-PROJECT-FOLDER LINKED-PROJECT-MARKER
+              LOCAL-PROJECT-FOLDER LOCAL-PROJECT-MARKER
+             )
   (SETQ
     DWGDIR
      (HAWS-FILENAME-DIRECTORY (GETVAR "dwgprefix"))
+    LOCAL-PROJECT-MARKER
+     (HCNM-LOCAL-PROJECT-MARKER DWGDIR)
+    LINKED-PROJECT-MARKER
+     (HCNM-LINKED-PROJECT-MARKER DWGDIR)
+  )
+  (COND
+    (LOCAL-PROJECT-MARKER
+     (SETQ
+       LOCAL-PROJECT-FOLDER
+        (HCNM-ASSURE-LOCAL-PROJECT
+          LOCAL-PROJECT-MARKER
+        )
+     )
+    )
+  )
+  (COND
+    (LINKED-PROJECT-MARKER
+     (SETQ
+       LINKED-PROJECT-FOLDER
+        (HCNM-ASSURE-LINKED-PROJECT
+          LINKED-PROJECT-MARKER
+        )
+     )
+    )
+  )
+  (SETQ
     *HCNM-CNMPROJECTROOT*
      (COND
        ;;If project is already defined this session, use it.
        ;;(Assume it's valid.  Calling function should init project if there's been a chance of change or loss by user.)
        (*HCNM-CNMPROJECTROOT*)
-       ;;Else Well-formed simple (single-folder) projects. CNM.INI is here.
-       ((SETQ
-          SIMPLECNM
-           (FINDFILE
-             (STRCAT DWGDIR "\\cnm.ini")
-           )
+       ((AND
+          LOCAL-PROJECT-MARKER
+          LINKED-PROJECT-MARKER
         )
-        (HAWS-FILENAME-DIRECTORY SIMPLECNM)
+        (HCNM-ERROR-AMBIGUOUS-PROJECT-MARKERS
+          LOCAL-PROJECT-FOLDER
+          LINKED-PROJECT-FOLDER
+        )
+       )
+       ;;Else Well-formed simple (single-folder) projects. CNM.INI is here.
+       (LOCAL-PROJECT-MARKER
+        (HCNM-ASSURE-LOCAL-PROJECT
+          LOCAL-PROJECT-MARKER
+        )
        )
        ;;Well-formed complex (multi-folder) projects.  CNMPROJ.TXT is here and
        ;;we'll make sure it really points to a CNM.INI.
-       ((AND
-          (FINDFILE (SETQ PROJTXT (STRCAT DWGDIR "\\cnmproj.txt")))
-          (SETQ F1 (OPEN PROJTXT "r"))
-          (PROGN
-            (WHILE (SETQ RDLIN (READ-LINE F1))
-              ;;Bricscad option
-              (COND
-                ((HAWS-VLISP-P)
-                 (IF (VL-FILE-DIRECTORY-P RDLIN)
-                   (SETQ PROJROOT RDLIN)
-                 )
-                )
-                (T
-                 (IF (/= ";" (SUBSTR RDLIN 1 1))
-                   (SETQ PROJROOT RDLIN)
-                 )
-                )
-              )
-            )
-            (SETQ F1 (CLOSE F1))
-            PROJROOT
-          )
+       (LINKED-PROJECT-MARKER
+        (HCNM-ASSURE-LINKED-PROJECT
+          LINKED-PROJECT-MARKER
         )
-         (IF (NOT (FINDFILE (HCNM-INI PROJROOT)))
-           (HCNM-GETINIDEFAULTS PROJROOT)
-         )
-         (PRINC
-           (STRCAT
-             "Using project settings in CNM.INI located at "
-             PROJROOT
-             " as directed by CNMPROJ.TXT in this drawing's folder."
-           )
-         )
-         PROJROOT
        )
        ;;Make a project in this drawing's folder.
        (T
@@ -2260,12 +2270,144 @@
             )
           )
         )
-        (HCNM-GETINIDEFAULTS DWGDIR)
+        (HCNM-INITIALIZE-PROJECT DWGDIR)
         DWGDIR
        )
      )
   )
 )
+
+(DEFUN
+   HCNM-LOCAL-PROJECT-MARKER (DWGDIR)
+  (FINDFILE (HCNM-PROJECT-FOLDER-TO-INI DWGDIR))
+)
+
+(DEFUN
+   HCNM-LINKED-PROJECT-MARKER (DWGDIR)
+  (FINDFILE (HCNM-PROJECT-FOLDER-TO-LINK DWGDIR))
+)
+
+(DEFUN
+   HCNM-ERROR-AMBIGUOUS-PROJECT-MARKERS
+   (LOCAL-PROJECT-FOLDER LINKED-PROJECT-FOLDER)
+  (ALERT
+    (PRINC
+      (STRCAT
+        "Error:\nThis drawing's folder\n" LOCAL-PROJECT-FOLDER
+        "\nhas both its own project settings (CNM.ini) and a link (in CNMPROJ.TXT) to a project in another folder:\n"
+        LINKED-PROJECT-FOLDER
+        "\n\nCNM cannot continue. File names will be printed to the command history for your use resolving the ambiguity."
+       )
+    )
+  )
+  (PRINC
+    (STRCAT
+      "\nLocal project: "
+      (HCNM-PROJECT-FOLDER-TO-INI LOCAL-PROJECT-FOLDER)
+    )
+  )
+  (PRINC
+    (STRCAT
+      "\nLink to another project: "
+      (HCNM-PROJECT-FOLDER-TO-LINK LOCAL-PROJECT-FOLDER)
+    )
+  )
+  (EXIT)
+)
+
+
+(DEFUN
+   HCNM-ASSURE-LOCAL-PROJECT (LOCAL-MARKER-FILE)
+  (HCNM-CHECK-MOVED-PROJECT LOCAL-MARKER-FILE)
+  (HAWS-FILENAME-DIRECTORY LOCAL-MARKER-FILE)
+)
+
+(DEFUN
+   HCNM-ASSURE-LINKED-PROJECT (LINK-MARKER / PROJROOT RDLIN)
+  (COND
+    ((AND
+       (SETQ F1 (OPEN LINK-MARKER "r"))
+       (PROGN
+         (WHILE (AND (SETQ RDLIN (READ-LINE F1)) (NOT PROJROOT))
+           (COND
+             ((HAWS-VLISP-P)
+              (IF (VL-FILE-DIRECTORY-P RDLIN)
+                (SETQ PROJROOT RDLIN)
+              )
+             )
+             ;;Bricscad option
+             (T
+              (IF (/= ";" (SUBSTR RDLIN 1 1))
+                (SETQ PROJROOT RDLIN)
+              )
+             )
+           )
+         )
+         (SETQ F1 (CLOSE F1))
+         PROJROOT
+       )
+     )
+    )
+  )
+  (IF (NOT (FINDFILE (HCNM-INI-NAME PROJROOT)))
+    (HCNM-INITIALIZE-PROJECT PROJROOT)
+  )
+  (HCNM-CHECK-MOVED-PROJECT
+    (HCNM-PROJECT-FOLDER-TO-INI PROJROOT)
+  )
+  (PRINC
+    (STRCAT
+      "Using project settings from another folder located at "
+      PROJROOT
+      "\\CNM.INI as directed by CNMPROJ.TXT in this drawing's folder."
+    )
+  )
+  PROJROOT
+)
+
+(DEFUN
+   HCNM-CHECK-MOVED-PROJECT (PROJECT-FILE-NAME / THISFILE-VALUE)
+  (COND
+    ((AND
+       (SETQ
+         THISFILE-VALUE
+          (INI_READENTRY
+            PROJECT-FILE-NAME
+            "CNM"
+            "ThisFile"
+          )
+       )
+       (/= THISFILE-VALUE "")
+       (/= THISFILE-VALUE PROJECT-FILE-NAME)
+     )
+     (ALERT
+       (PRINC
+         (STRCAT
+           "Error:\nYou need to check the CNM project settings file (CNM.INI) for this project:\n"
+           PROJECT-FILE-NAME
+           "\n\nIt has been copied or moved, and it may be pointing to the WRONG PROJECT NOTES!!!.\n\nCheck the file, then fix the value of ThisFile in the CNM section:\nCurrent ThisFile value: "
+           THISFILE-VALUE "\nIt does not match the actual file name."
+           "\n\nCNM cannot continue.  You need to check the CNM.ini file then change that value.  Or delete the file."
+          )
+       )
+     )
+     (EXIT)
+    )
+  )
+)
+
+(defun hcnm-project-ini-name () "cnm.ini")
+(defun hcnm-project-link-name () "cnmproj.txt")
+
+(DEFUN
+   HCNM-PROJECT-FOLDER-TO-INI (PROJECT-FOLDER)
+  (STRCAT PROJECT-FOLDER "\\" (hcnm-project-ini-name))
+)
+(DEFUN
+   HCNM-PROJECT-FOLDER-TO-LINK (PROJECT-FOLDER)
+  (STRCAT PROJECT-FOLDER "\\" (hcnm-project-link-name))
+)
+
 
 ;;as posted the autodesk discussion customization group by Tony Tanzillo
 (DEFUN
@@ -2303,12 +2445,15 @@
 ;;returns project root
 (DEFUN C:HCNM-LINKPROJ () (HCNM-LINKPROJ) (PRINC))
 (DEFUN
-   HCNM-LINKPROJ (/ DWGDIR)             ;  (ARXLOAD "winapi.arx")
-  (IF (NOT *HCNM-CNMPROJECTROOT*)
-    (HCNM-PROJ)
-  )
-  (SETQ DWGDIR (HAWS-FILENAME-DIRECTORY (GETVAR "dwgprefix")))
+   HCNM-LINKPROJ (/ DWGDIR localproj localprojbak PROJ)
   (SETQ
+    DWGDIR
+     (HAWS-FILENAME-DIRECTORY (GETVAR "dwgprefix"))
+    *HCNM-CNMPROJECTROOT*
+     (COND
+       (*HCNM-CNMPROJECTROOT*)
+       (DWGDIR)
+     )
     PROJ
      (COND
        ((HAWS-VLISP-P)
@@ -2340,13 +2485,52 @@
     (PROJ
      (SETQ *HCNM-CNMPROJECTROOT* PROJ)
      (COND
-       ((= PROJ DWGDIR) DWGDIR)
+       ((= PROJ DWGDIR)
+        (COND
+          ((SETQ OLDLINK (FINDFILE (HCNM-PROJECT-FOLDER-TO-LINK PROJ)))
+           (ALERT
+             (PRINC
+               "Setting project to this drawing's folder by deleting an existing link to another folder."
+             )
+           )
+           (VL-FILE-DELETE OLDLINK)
+          )
+          (T
+           (ALERT
+             (STRCAT
+               "Project Folder\n"
+               *HCNM-CNMPROJECTROOT*
+               "\nnot changed."
+             )
+           )
+          )
+        )
+       )
        (PROJ
         (HCNM-MAKEPROJTXT PROJ DWGDIR)
-        (IF (NOT (FINDFILE (HCNM-INI PROJ)))
-          (HCNM-GETINIDEFAULTS PROJ)
+        (ALERT
+          (PRINC
+            (STRCAT
+              "Created link in this drawing's folder to CNM project settings in\n"
+              PROJ
+            )
+          )
         )
-        PROJ
+        (COND
+          ((SETQ LOCALPROJ (FINDFILE (HCNM-PROJECT-FOLDER-TO-INI DWGDIR)))
+           (SETQ LOCALPROJBAK (STRCAT LOCALPROJ ".bak"))
+           (ALERT
+             (PRINC
+               (STRCAT
+                 "Note: CNM renamed the existing\n" LOCALPROJ "\nto\n"
+                 LOCALPROJBAK
+                 "\nbecause you linked to a project in another folder."
+                )
+             )
+           )
+           (VL-FILE-RENAME LOCAlPROJ LOCALPROJBAK)
+          )
+        )
        )
      )
     )
@@ -2367,7 +2551,7 @@
 ;;Returns nil.
 (DEFUN
    HCNM-MAKEPROJTXT (PROJDIR DWGDIR)
-  (SETQ F2 (OPEN (STRCAT DWGDIR "\\cnmproj.txt") "w"))
+  (SETQ F2 (OPEN (HCNM-PROJECT-FOLDER-TO-LINK DWGDIR) "w"))
   (PRINC
     (STRCAT
       ";For simple projects, all project drawings are in one folder, 
@@ -2388,37 +2572,184 @@
 
 ;;;================================================================================================================
 ;;;
-;;; Begin Settings functions
+;;; Begin Settings Config functions
 ;;;
 ;;;================================================================================================================
+;;; CONFIG: Name of the app
+;;; DEFINITIONS: Name of an entry in the def
+;;; SCOPE-KEY: eg. "User"
+;;; SCOPE-CODE: eg. 4
+;;; ENTRY: An entry in the var list
+;;; VAR: The string name of a var
+;;; VAL: The string value of a var
+;;;
 (DEFUN
-   HCNM-GETSETTINGS ()
+   HCNM-CONFIG-DEFINITIONS (/)
+  '(("Scope"
+     ("Session" 0)
+     ("Drawing" 1)
+     ("Project"2)
+     ("App" 3)
+     ("User" 4)
+    )
+    ("Var"
+     ("ProjectNotes" "constnot.txt" 4)
+     ("ProjectNotesEditor" "notepad.exe" 4)
+     ("ThisFile" "" 2)
+     ("NoteTypes" "BOX,CIR,DIA,ELL,HEX,OCT,PEN,REC,SST,TRI" 2)
+     ("DoCurrentTabOnly" "0" 2)
+     ("PhaseAlias1" "1" 2)
+     ("PhaseAlias2" "2" 2)
+     ("PhaseAlias3" "3" 2)
+     ("PhaseAlias4" "4" 2)
+     ("PhaseAlias5" "5" 2)
+     ("PhaseAlias6" "6" 2)
+     ("PhaseAlias7" "7" 2)
+     ("PhaseAlias8" "8" 2)
+     ("PhaseAlias9" "9" 2)
+     ("InsertTablePhases" "No" 2)
+     ("TableWidth" "65" 2)
+     ("PhaseWidthAdd" "9" 2)
+     ("LineSpacing" "1.5" 2)
+     ("NoteSpacing" "3" 2)
+     ("NumberToDescriptionWidth" "2.5" 2)
+     ("DescriptionToQuantityWidth" "56" 2)
+     ("QuantityToQuantityWidth" "9" 2)
+     ("QuantityToUnitsWidth" "1" 2)
+     ("ShowKeyTableGrid" "0" 2)
+     ("ShowKeyTableQuantities" "1" 2)
+     ("BubbleHooks" "0" 2)
+     ("BubbleLeaderConnectOsnap" "mid,end" 2)
+     ("ImportLayerSettings" "No" 2)
+     ("LayersEditor" "notepad.exe" 4)
+     ("NotesLeaderDimstyle" "" 2)
+     ("NotesKeyTableDimstyle" "" 2)
+     ("TCGLeaderDimstyle" "TCG Leader" 2)
+    )
+   )
+)
+
+;; Strips scope stuff and returns just defaults list
+(DEFUN
+   HCNM-CONFIG-DEFAULTS ()
+  (COND
+    (*HCNM-CONFIG-DEFAULTS*)
+    ((MAPCAR
+       '(LAMBDA (VAR) (HCNM-CONFIG-ENTRY-STRIP-SCOPE VAR))
+       (CDR (ASSOC "Var" (HCNM-CONFIG-DEFINITIONS)))
+     )
+    )
+  )
+)
+
+(defun hcnm-config-entry-strip-scope (entry)
+  (reverse (cdr (reverse entry)))
+)
+
+(DEFUN
+   HCNM-CONFIG-DEFAULTS-SINGLE-SCOPE (SCOPE-key / scope-code SCOPE-LIST)
+  (setq scope-code (HCNM-CONFIG-SCOPE-code SCOPE-key))
+  (FOREACH
+     entry (CDR (ASSOC "Var" (HCNM-CONFIG-DEFINITIONS)))
+    (COND
+      ((= (HCNM-CONFIG-entry-scope-code entry) scope-code)
+       (SETQ SCOPE-LIST (cons (hcnm-config-entry-strip-scope entry) scope-list))
+      )
+    )
+  )
+  (reverse SCOPE-LIST)
+)
+
+(DEFUN
+   HCNM-CONFIG-SCOPE-code (SCOPE-key)
+  (CADR
+    (ASSOC
+      SCOPE-key
+      (CDR (ASSOC "Scope" (HCNM-CONFIG-DEFINITIONS)))
+    )
+  )
+)
+
+(DEFUN
+   HCNM-config-SCOPE-EQ (VAR SCOPE-KEY)
+  (= (HCNM-CONFIG-entry-scope-code (ASSOC VAR (CDR (assoc "Var" (HCNM-CONFIG-DEFINITIONS)))))
+     (HCNM-CONFIG-SCOPE-code SCOPE-KEY)
+  )
+)
+
+(DEFUN
+   HCNM-CONFIG-entry-var (entry)
+  (CAR entry)
+)
+
+(DEFUN
+   HCNM-CONFIG-entry-val (entry)
+  (CADR entry)
+)
+
+(DEFUN
+   HCNM-CONFIG-entry-scope-code (entry)
+  (CADdR entry)
+)
+
+(DEFUN
+   HCNM-CONFIG-GET-DEFAULT (VAR)
+  (HCNM-CONFIG-entry-val (ASSOC VAR (HCNM-CONFIG-DEFAULTS)))
+)
+
+(DEFUN
+   HCNM-CONFIG-READ-ALL (/ INI-CONFIGS)
   (SETQ
-    *HCNM-CNMSETTINGS*
-     (INI_READSECTION (HCNM-INI (HCNM-PROJ)) "CNM")
+    INI-CONFIGS
+     (INI_READSECTION (HCNM-INI-NAME (HCNM-PROJ)) "CNM")
+    *HCNM-CONFIG*
+     (APPEND
+       (MAPCAR
+         '(LAMBDA (ENTRY / VAR VAL)
+            (SETQ
+              VAR (HCNM-CONFIG-ENTRY-VAR ENTRY)
+              VAL (HCNM-CONFIG-ENTRY-VAL
+                    (ASSOC VAR INI-CONFIGS)
+                  )
+            )
+            (LIST VAR VAL)
+          )
+         (HCNM-CONFIG-DEFAULTS-SINGLE-SCOPE "Project")
+       )
+       (MAPCAR
+         '(LAMBDA (ENTRY / VAR VAL)
+            (SETQ
+              VAR (HCNM-CONFIG-ENTRY-VAR ENTRY)
+              VAL (HCNM-CONFIG-READ-USER VAR)
+            )
+            (LIST VAR VAL)
+          )
+         (HCNM-CONFIG-DEFAULTS-SINGLE-SCOPE "User")
+       )
+     )
   )
 )
 
 ;;;Sets a variable in a temporary global lisp list
 (DEFUN
-   HCNM-SETVARTEMP (VAR VAL)
+   hcnm-CONFIG-TEMP-SETVAR (VAR VAL)
   (COND
-    ((ASSOC VAR *HCNM-CNMTEMPSETTINGS*)
+    ((ASSOC VAR *HCNM-CONFIG-TEMP*)
      (SETQ
-       *HCNM-CNMTEMPSETTINGS*
+       *HCNM-CONFIG-TEMP*
         (SUBST
           (LIST VAR VAL)
-          (ASSOC VAR *HCNM-CNMTEMPSETTINGS*)
-          *HCNM-CNMTEMPSETTINGS*
+          (ASSOC VAR *HCNM-CONFIG-TEMP*)
+          *HCNM-CONFIG-TEMP*
         )
      )
     )
     (T
      (SETQ
-       *HCNM-CNMTEMPSETTINGS*
+       *HCNM-CONFIG-TEMP*
         (CONS
           (LIST VAR VAL)
-          *HCNM-CNMTEMPSETTINGS*
+          *HCNM-CONFIG-TEMP*
         )
      )
     )
@@ -2428,71 +2759,63 @@
 ;;;Gets a variable in a temporary global lisp list
 ;;;If it's not present there, gets real value.
 (DEFUN
-   HCNM-GETVARTEMP (VAR)
+   hcnm-config-TEMP-GETVAR (VAR)
   (COND
-    ((CADR (ASSOC VAR *HCNM-CNMTEMPSETTINGS*)))
-    (T (HCNM-GETVAR VAR))
+    ((CADR (ASSOC VAR *HCNM-CONFIG-TEMP*)))
+    (T (hcnm-config-GETVAR VAR))
   )
 )
 
-;;;Saves the global list of temporary settings in the real global lisp list and in CNM.INI
+;;;Saves the global list of temporary configs in the real global lisp list and in CNM.INI
 (DEFUN
-   HCNM-SAVETEMPSETTINGS ()
+   HCNM-CONFIG-TEMP-SAVE ()
   (FOREACH
-     SETTING *HCNM-CNMTEMPSETTINGS*
-    (HCNM-SETVAR (CAR SETTING) (CADR SETTING))
+     ENTRY *HCNM-CONFIG-TEMP*
+    (hcnm-CONFIG-SETVAR (HCNM-CONFIG-entry-vaR ENTRY) (HCNM-CONFIG-entry-val ENTRY))
   )
 )
 
 ;;;Sets a variable in the global lisp list and in CNM.INI
 (DEFUN
-   HCNM-SETVAR (VAR VAL)
+   hcnm-CONFIG-SETVAR (VAR VAL)
   (SETQ
-    *HCNM-CNMSETTINGS*
+    *HCNM-CONFIG*
      (COND
-       ((ASSOC VAR *HCNM-CNMSETTINGS*)
+       ((ASSOC VAR *HCNM-CONFIG*)
         (SUBST
           (LIST VAR VAL)
-          (ASSOC VAR *HCNM-CNMSETTINGS*)
-          *HCNM-CNMSETTINGS*
+          (ASSOC VAR *HCNM-CONFIG*)
+          *HCNM-CONFIG*
         )
        )
-       (T (CONS (LIST VAR VAL) *HCNM-CNMSETTINGS*))
+       (T (CONS (LIST VAR VAL) *HCNM-CONFIG*))
      )
   )
-  (INI_WRITEENTRY (HCNM-INI (HCNM-PROJ)) "CNM" VAR VAL)
+  (COND
+    ((HCNM-config-SCOPE-EQ VAR "User")(HCNM-config-WRITE-USER var VAL))
+    (T
+     (INI_WRITEENTRY (HCNM-INI-NAME (HCNM-PROJ)) "CNM" VAR VAL)
+    )
+  )
   VAL
 )
 
-;;; HCNM-GETVAR
-(DEFUN
-   HCNM-GETVAR (VAR / ADDTOLIST ADDTOPROJ DIR INI PROJROOT VAL)
+;;; hcnm-config-GETVAR
 ;;; Var is case sensitive
+(DEFUN
+   hcnm-config-GETVAR (VAR / setvar-p DEFINE-configS DIR INI PROJROOT config VAL)
   (SETQ
-    ADDTOLIST T
-    ADDTOPROJ T
+    setvar-p T
+    DEFINE-configS (HCNM-CONFIG-DEFINITIONS)
   )
-  ;;Get list if no list
-  (IF (NOT *HCNM-CNMSETTINGS*)
-    (HCNM-GETSETTINGS)
+  (IF (NOT *HCNM-CONFIG*)
+    (HCNM-config-READ-ALL)
   )
   (COND
     ;;Try getting from list
-    ((SETQ VAL (CADR (ASSOC VAR *HCNM-CNMSETTINGS*)))
+    ((SETQ VAL (CADR (ASSOC VAR *HCNM-CONFIG*)))
      (SETQ
-       ADDTOLIST NIL
-       ADDTOPROJ NIL
-     )
-    )
-    ;;Try getting from project ini.
-    ((AND
-       (SETQ DIR (HCNM-PROJ))
-       (SETQ INI (FINDFILE (STRCAT DIR "\\" "cnm.ini")))
-       (SETQ
-         VAL
-          (INI_READENTRY INI "CNM" SETTING)
-         ADDTOPROJ NIL
-       )
+       setvar-p NIL
      )
     )
     ;;Get from app ini if not.
@@ -2502,13 +2825,13 @@
          ;;Behavior change 20080414 TGH
          ;;Made it get the random CNM.INI in path instead of app folder.
          INI
-          (FINDFILE "cnm.ini")
+          (FINDFILE (hcnm-project-ini-name))
        )
-       (SETQ VAL (INI_READENTRY INI "CNM" SETTING))
+       (SETQ VAL (INI_READENTRY INI "CNM" config))
      )
     )
     ;;Use default if there is one
-    ((SETQ VAL (HCNM-VARTODEFAULTVAL VAR)))
+    ((SETQ VAL (HCNM-CONFIG-GET-DEFAULT VAR)))
     ;;Otherwise fail.
     (T
      (ALERT
@@ -2518,75 +2841,55 @@
        )
      )
      (SETQ
-       ADDTOLIST NIL
-       ADDTOPROJ NIL
+       setvar-p NIL
      )
     )
   )
-  (IF ADDTOLIST
-    (SETQ
-      *HCNM-CNMSETTINGS*
-       (CONS (LIST SETTING VAL) *HCNM-CNMSETTINGS*)
-    )
-  )
-  (IF ADDTOPROJ
-    (INI_WRITEENTRY (HCNM-INI (HCNM-PROJ)) "CNM" SETTING VAL)
+  (IF SETVAR-P
+    (HCNM-CONFIG-SETVAR VAR VAL)
   )
   VAL
 )
 
 (DEFUN
-   HCNM-VARTODEFAULTVAL (VAR)
-  (CADR (ASSOC VAR (HCNM-VARDEFAULTS)))
+   HCNM-CONFIG-READ-USER (VAR / NOTESEDITOR)
+  (COND
+    ((HAWS-VLISP-P)
+     (VL-REGISTRY-READ
+       "HKEY_CURRENT_USER\\Software\\HawsEDC\\CNM"
+       VAR
+     )
+    )
+    (T NIL)
+  )
 )
 
+
 (DEFUN
-   HCNM-VARDEFAULTS ()
-  '(("ProjectNotes" "constnot.txt")
-    ("ProjectNotesEditor" "notepad.exe")
-    ("NoteTypes" "BOX,CIR,DIA,ELL,HEX,OCT,PEN,REC,SST,TRI")
-    ("DoCurrentTabOnly" "0")
-    ("PhaseAlias1" "1")
-    ("PhaseAlias2" "2")
-    ("PhaseAlias3" "3")
-    ("PhaseAlias4" "4")
-    ("PhaseAlias5" "5")
-    ("PhaseAlias6" "6")
-    ("PhaseAlias7" "7")
-    ("PhaseAlias8" "8")
-    ("PhaseAlias9" "9")
-    ("InsertTablePhases" "No")
-    ("TableWidth" "65")
-    ("PhaseWidthAdd" "9")
-    ("LineSpacing" "1.5")
-    ("NoteSpacing" "3")
-    ("NumberToDescriptionWidth" "2.5")
-    ("DescriptionToQuantityWidth" "56")
-    ("QuantityToQuantityWidth" "9")
-    ("QuantityToUnitsWidth" "1")
-    ("ShowKeyTableGrid" "0")
-    ("ShowKeyTableQuantities" "1")
-    ("BubbleHooks" "0")
-    ("BubbleLeaderConnectOsnap" "mid,end")
-    ("ImportLayerSettings" "No")
-    ("LayersEditor" "notepad.exe")
-    ("NotesLeaderDimstyle" "")
-    ("NotesKeyTableDimstyle" "")
-    ("TCGLeaderDimstyle" "TCG Leader")
-   )
+   HCNM-config-WRITE-USER (VAR VAL)
+  (COND
+    ((HAWS-VLISP-P)
+     (VL-REGISTRY-WRITE
+       "HKEY_CURRENT_USER\\Software\\HawsEDC\\CNM"
+       VAR
+       VAL
+     )
+    )
+  )
 )
+
 
 ;;Gets an entire ini file (per CNM forum) from app folder
 ;;or else writes defaults to a fresh ini.
 ;;Doesn't add to existing ini.
 ;;Returns ini file name.
 (DEFUN
-   HCNM-GETINIDEFAULTS (PROJ / APP APPINI PROJINI)
-  (SETQ PROJINI (STRCAT PROJ "\\" "cnm.ini"))
+   HCNM-INITIALIZE-PROJECT (PROJ / APP APPINI PROJINI MARK-FILE-P)
+  (SETQ PROJINI (HCNM-PROJECT-FOLDER-TO-INI PROJ))
   (COND
     ((AND
        (SETQ APP (HAWS-FILENAME-DIRECTORY (FINDFILE "cnm.mnl")))
-       (SETQ APPINI (FINDFILE (STRCAT APP "\\" "cnm.ini")))
+       (SETQ APPINI (FINDFILE (HCNM-PROJECT-FOLDER-TO-INI app)))
      )
      (ALERT
        (PRINC
@@ -2598,6 +2901,7 @@
      )
      (HAWS-FILE-COPY APPINI PROJINI)
      (WHILE (NOT (FINDFILE PROJINI)))
+     (SETQ MARK-FILE-P T)
      PROJINI
     )
     (T
@@ -2610,29 +2914,35 @@
           )
        )
      )
-     (SETQ F2 (OPEN PROJINI "w"))
-     (PRINC "[CNM]" F2)
-     (SETQ F2 (CLOSE F2))
-     (SETQ *HCNM-CNMSETTINGS* (HCNM-VARDEFAULTS))
-     (HCNM-SAVECNMTOINI PROJ)
+     ;|(SETQ F2 (OPEN PROJINI "w"))
+     (PRINC "[CNM]" F2) ; TODO TEST AND REMOVE
+     (SETQ F2 (CLOSE F2))|;
+     (SETQ *HCNM-CONFIG* (HCNM-CONFIG-DEFAULTS-SINGLE-SCOPE "Project"))
+     (HCNM-config-WRITE-PROJECT PROJ)
+     (SETQ *HCNM-CONFIG* (HCNM-CONFIG-DEFAULTS))
+     (SETQ MARK-FILE-P T)
      PROJINI
+    )
+  )
+  (COND
+    (MARK-FILE-P
+     (INI_WRITEENTRY PROJINI "CNM" "ThisFile" PROJINI)
     )
   )
 )
 
-
-;;Saves *hcnm-cnmsettings* to this project's ini
+;;Saves *HCNM-CONFIG* to this project's ini
 (DEFUN
-   HCNM-SAVECNMTOINI (PROJ)
+   HCNM-config-WRITE-PROJECT (PROJ)
   (INI_WRITESECTION
-    (HCNM-INI
+    (HCNM-INI-NAME
       (COND
         (PROJ)
         ((HCNM-PROJ))
       )
     )
     "CNM"
-    *HCNM-CNMSETTINGS*
+    *HCNM-CONFIG*
   )
 )
 
@@ -2640,7 +2950,7 @@
    HCNM-SET-DIMSTYLE (KEY / DSTY)
   ;;Set dimstyle as requested by calling function and set by user
   ;;First, get dimstyle name
-  (SETQ DSTY (HCNM-GETVAR KEY))
+  (SETQ DSTY (hcnm-config-GETVAR KEY))
   ;;Second, if the style is TCGLeader and doesn't already exist, set the _DotSmall ldrblk.
   (COND
     ((AND
@@ -2652,8 +2962,8 @@
   )
   ;;Third, if the desired style exists, save current style for later, then restore the desired style.
   (COND
-    ((AND (/= KEY "")(TBLSEARCH "DIMSTYLE" DSTY))
-	(ALERT (VL-PRIN1-TO-STRING  (TBLSEARCH "DIMSTYLE" DSTY)))
+    ((AND (/= KEY "") (TBLSEARCH "DIMSTYLE" DSTY))
+     (ALERT (VL-PRIN1-TO-STRING (TBLSEARCH "DIMSTYLE" DSTY)))
      (SETQ *HCNM-DIMSTYLEOLD* (GETVAR "dimstyle"))
      (COMMAND "._dimstyle" "_restore" DSTY)
     )
@@ -2680,9 +2990,9 @@
 ;; and return a "drive:\\...\\projroot\\pnname" filename to other functions.
 (DEFUN
    HCNM-PROJNOTES (/ APP APPPN OPT1 PNNAME PROJNOTES)
-  (SETQ PNNAME (HCNM-GETVAR "ProjectNotes"))
+  (SETQ PNNAME (hcnm-config-GETVAR "ProjectNotes"))
   (IF (= PNNAME "")
-    (HCNM-SETVAR "ProjectNotes" (SETQ PNNAME "constnot.txt"))
+    (hcnm-CONFIG-SETVAR "ProjectNotes" (SETQ PNNAME "constnot.txt"))
   )
   (HAWS-MILEPOST
     (STRCAT
@@ -2712,7 +3022,7 @@
        )
      )
      ;;Record the find in the INI
-     (HCNM-SETVAR "ProjectNotes" PROJNOTES)
+     (hcnm-CONFIG-SETVAR "ProjectNotes" PROJNOTES)
     )
     ;;Third choice, we couldn't find the Project Notes specified,
     ;;so try to get Project Notes from the app folder (where CNM.MNL is)
@@ -2743,7 +3053,7 @@
      ;;try to copy it to this project.
      (HAWS-FILE-COPY APPPN PROJNOTES)
      ;;Record the find in the INI
-     (HCNM-SETVAR "ProjectNotes" PROJNOTES)
+     (hcnm-CONFIG-SETVAR "ProjectNotes" PROJNOTES)
     )
     ;;Third and last choice, fail with alert.
     (T
@@ -2767,7 +3077,7 @@
 
 (DEFUN
    HCNM-CHANGEPROJNOTES ()
-  (HCNM-SETVAR "ProjectNotes" (HCNM-GETPROJNOTES))
+  (hcnm-CONFIG-SETVAR "ProjectNotes" (HCNM-GETPROJNOTES))
 )
 
 (DEFUN
@@ -2779,7 +3089,7 @@
     PROJNOTES
      (GETFILED
        "Select Project Notes Filename"
-       (HCNM-GETVAR "ProjectNotes")
+       (hcnm-config-GETVAR "ProjectNotes")
        ""
        37
      )
@@ -2806,9 +3116,9 @@
 ;; TXT1 Fixed field ;Comment\nSET VAR VAL\nNUM (comment)\nBOX (type)\nTITLE \n1    Text thru column 67...UNTCOUNT\n     Cont. text.
 ;; TXT2 White space delimited ;Comment\n
 ;; Excel CSV
-;; Doesn't do project management except to write txt2 settings to cnm.ini in the same folder as projnotes.
+;; Doesn't do project management except to write txt2 configs to cnm.ini in the same folder as projnotes.
 (DEFUN
-   HCNM-READCF (PROJNOTES / BAKPROJNOTES PNFORMAT)
+   HCNM-READCF (PROJNOTES / BAKPROJNOTES PNFORMAT RDLIN)
   ;;Do a file read to figure out what the file format is.
   ;;For now, assume that a file that has any of the shape keys followed by a comma ("BOX,", etc.) is CSV
   ;;any other file is TXT2
@@ -2828,7 +3138,7 @@
        )
        (SETQ PNFORMAT "csv")
       )
-      ((WCMATCH (SUBSTR RDLIN 1 3) (HCNM-GETVAR "NoteTypes"))
+      ((WCMATCH (SUBSTR RDLIN 1 3) (hcnm-config-GETVAR "NoteTypes"))
        (SETQ PNFORMAT "txt2")
       )
     )
@@ -2931,11 +3241,11 @@
 (DEFUN
    HCNM-READCFTXT2 (PROJNOTES / ALERTNOTE ALERTTITLE CFITEM CFLIST
                     CFLIST2 COMMENTBEGIN FILEV42 ILINE ININAME NOTTYP
-                    RDLIN VAL1 VAL2 VAR VARLIST
+                    RDLIN VAL1 VAL2 VAR VARLIST N NOTNUM TEMP TYPWC
                    )
   (SETQ
     TYPWC
-     (HCNM-GETVAR "NoteTypes")          ; Get typwc (which may open f1) before opening f1
+     (hcnm-config-GETVAR "NoteTypes")          ; Get typwc (which may open f1) before opening f1
     F1 (OPEN PROJNOTES "r")
   )
   (WHILE (SETQ RDLIN (READ-LINE F1))
@@ -2944,7 +3254,7 @@
       ((= ";" (SUBSTR RDLIN 1 1))
        (SETQ CFLIST (CONS (CONS 0 (SUBSTR RDLIN 2)) CFLIST))
       )
-      ;;Variable setting
+      ;;Config setting
       ((= "SET" (HAWS-RDFLD 1 RDLIN "W" 1))
        (SETQ
          VAR  (HAWS-RDFLD 2 RDLIN "W" 1)
@@ -2963,7 +3273,7 @@
          ((= VAR "TXTHT")
           (SETQ CFLIST (CONS (LIST 1 VAR VAL1) CFLIST))
          )
-         ;;If file hasn't been converted yet (settings put in ini)
+         ;;If file hasn't been converted yet (configs put in ini)
          ;;All others (unless deprecated) get put in CNM.INI
          ;;and left in with a note for backward compatibility.
          ((NOT FILEV42)
@@ -3126,7 +3436,7 @@
       )
     )
   )
-  ;;Put settings from v4 Project Notes into CNM.INI and alert.
+  ;;Put configs from v4 Project Notes into CNM.INI and alert.
   (COND
     ((AND (NOT FILEV42) VARLIST)
      (ALERT
@@ -3134,8 +3444,13 @@
          "\nCNM is moving project settings from version 4.1 Project Notes to CNM.INI."
        )
      )
-     (SETQ *HCNM-CNMSETTINGS* VARLIST)
-     (HCNM-SAVECNMTOINI NIL)
+     (FOREACH
+        ENTRY VARLIST
+       (HCNM-CONFIG-SETVAR
+         (HCNM-CONFIG-ENTRY-VAR ENTRY)
+         (HCNM-CONFIG-ENTRY-VAL ENTRY)
+       )
+     )
     )
   )
   (SETQ *HCNM-CNMPROJECTNOTES* (REVERSE CFLIST))
@@ -3174,7 +3489,7 @@
      )
      (WHILE (SETQ RDLIN (READ-LINE F1))
        (SETQ ILINE (1+ ILINE))
-       ;;If the line is recognizable as a vestige of version 4.1 variable settings,
+       ;;If the line is recognizable as a vestige of version 4.1 config settings,
        ;;make a note of it for adding a comment.
        (IF (OR (AND
                  (NOT COMMENTBEGIN)
@@ -3219,11 +3534,11 @@
 
 (DEFUN
    HCNM-READCFCSV (PROJNOTES / CFLIST I IPREV NOTDSCLST NOTDSCSTR NOTTYP
-                   RDLIN
+                   RDLIN TYPWC
                   )
   (SETQ
     TYPWC
-     (HCNM-GETVAR "NoteTypes")          ; Get typwc (which may open f1) before opening f1
+     (hcnm-config-GETVAR "NoteTypes")          ; Get typwc (which may open f1) before opening f1
     F1 (OPEN PROJNOTES "r")
   )
   (WHILE (SETQ RDLIN (READ-LINE F1))
@@ -3436,10 +3751,10 @@
 ;;; Begin Project Notes Editor functions section
 ;;;
 ;;;================================================================================================================
-(DEFUN C:HCNM-NOTESEDITOR () (HCNM-NOTESEDITOR))
+(DEFUN C:HCNM-CHANGENOTESEDITOR () (HCNM-CHANGENOTESEDITOR))
 
 (DEFUN
-   HCNM-NOTESEDITOR (/ NEWEDITOR)
+   HCNM-CHANGENOTESEDITOR (/ NEWEDITOR)
   (SETQ NEWEDITOR (HCNM-GETNOTESEDITOR))
   (HCNM-WRITENOTESEDITOR NEWEDITOR)
 )
@@ -3465,7 +3780,7 @@
           "NotesEditor"
         )
        )
-       (T (HCNM-GETVAR "ProjectNotesEditor"))
+       (T (hcnm-config-GETVAR "ProjectNotesEditor"))
      )
   )
   (COND
@@ -3491,7 +3806,7 @@
      )
     )
   )
-  (HCNM-SETVAR "ProjectNotesEditor" NEWEDITOR)
+  (hcnm-CONFIG-SETVAR "ProjectNotesEditor" NEWEDITOR)
   (ALERT
     (PRINC
       (STRCAT "Editor for project notes is now \n" NEWEDITOR)
@@ -3520,17 +3835,6 @@
   ;;refresh project root at beginning.
   (HCNM-PROJINIT)                       ;Initialize project after user pauses
   (HCNM-READCF (HCNM-PROJNOTES))        ;Read to convert project notes if necessary before editing
-  ;; The code below replaced because it locked the drawings until project notes editor closed.
-  ;;(SETQ WSHSHELL (VLAX-CREATE-OBJECT "WScript.Shell"))
-  ;;(SETQ
-  ;;  OEXEC
-  ;;   (VLAX-INVOKE-METHOD
-  ;;     WSHSHELL
-  ;;     'EXEC
-  ;;     (STRCAT "\"" NOTESEDITOR "\" \"" (HCNM-PROJNOTES) "\"" (IF CNMEDITP (STRCAT " \"" (HCNM-PROJ) "\\cnm.ini\"") ""))
-  ;;   )
-  ;;)
-  ;;(princ "\nOpening Project Notes for editing.  Please close editor before saving drawings.")
   (PRINC (STRCAT "\nEditing " (HCNM-PROJNOTES) "."))
   (STARTAPP
     (STRCAT "\"" NOTESEDITOR "\"")
@@ -3544,6 +3848,7 @@
       )
     )
   )
+  (princ)
 )
 
 ;;;================================================================================================================
@@ -3552,23 +3857,23 @@
 ;;;
 ;;;================================================================================================================
 ;; Change layer defaults editor
-(DEFUN C:HCNM-LAYEREDITOR () (HCNM-LAYEREDITOR))
+(DEFUN C:HCNM-CHANGELAYERSEDITOR () (HCNM-CHANGELAYERSEDITOR))
 
 (DEFUN
-   HCNM-LAYEREDITOR (/ OLDEDITOR NEWEDITOR)
+   HCNM-CHANGELAYERSEDITOR (/ OLDEDITOR NEWEDITOR)
   (SETQ
     OLDEDITOR
-     (HCNM-READLAYEREDITOR)
+     (HCNM-READLAYERSEDITOR)
     NEWEDITOR
      (GETFILED "Select editor" OLDEDITOR "" 0)
   )
-  (HCNM-WRITELAYEREDITOR NEWEDITOR)
+  (HCNM-WRITELAYERSEDITOR NEWEDITOR)
 )
 
 (DEFUN
-   HCNM-READLAYEREDITOR (/ LAYEREDITOR)
+   HCNM-READLAYERSEDITOR (/ LAYERSEDITOR)
   (SETQ
-    LAYEREDITOR
+    LAYERSEDITOR
      (COND
        ((HAWS-VLISP-P)
         (VL-REGISTRY-READ
@@ -3576,17 +3881,17 @@
           "LayersEditor"
         )
        )
-       (T (HCNM-GETVAR "LayersEditor"))
+       (T (hcnm-config-GETVAR "LayersEditor"))
      )
   )
   (COND
-    (LAYEREDITOR)
+    (LAYERSEDITOR)
     ("notepad.exe")
   )
 )
 
 (DEFUN
-   HCNM-WRITELAYEREDITOR (NEWEDITOR)
+   HCNM-WRITELAYERSEDITOR (NEWEDITOR)
   (COND
     ((OR (NOT NEWEDITOR) (NOT (FINDFILE NEWEDITOR)))
      (ALERT "File not found.  Using notepad.exe.")
@@ -3602,7 +3907,7 @@
      )
     )
   )
-  (HCNM-SETVAR "LayersEditor" NEWEDITOR)
+  (hcnm-CONFIG-SETVAR "LayersEditor" NEWEDITOR)
   (ALERT
     (PRINC
       (STRCAT
@@ -3620,7 +3925,7 @@
   (SETQ *HAWS:LAYERS* NIL)
   (SETQ
     LAYERSEDITOR
-     (HCNM-READLAYEREDITOR)
+     (HCNM-READLAYERSEDITOR)
     LAYERSFILE
      (FINDFILE "layers.dat")
   )
@@ -3681,7 +3986,13 @@
      )
   )
   (IF BUBBLEHOOKS
-    (HCNM-SETVAR "BubbleHooks" (COND((= BUBBLEHOOKS "Yes") "1")("0")))
+    (hcnm-CONFIG-SETVAR
+      "BubbleHooks"
+      (COND
+        ((= BUBBLEHOOKS "Yes") "1")
+        ("0")
+      )
+    )
   )
   (PRINC)
 )
@@ -4023,7 +4334,7 @@
 
 (DEFUN
    C:HAWS-CNMSETUP (/ ACADPATHPREFIX ACADPATHSUFFIX I OLDACADPATH
-                    OLDPROGRAMFOLDER PROGRAMFOLDER
+                    OLDPROGRAMFOLDER PROGRAMFOLDER MATCHLENGTH
                    )
   (SETQ
     PROGRAMFOLDER
@@ -4154,79 +4465,79 @@
 ;;; -------------------------------------------------------------------------
 (DEFUN
    C:HAWS-BOXL ()
-  (HAWS-LDRBLK
+  (HCNM-LDRBLK
     "noteboxl" "noteboxr" "noteboxd" "NOTESLDR" "NotesLeader"
    )
 )
 (DEFUN
    C:HAWS-CIRL ()
-  (HAWS-LDRBLK
+  (HCNM-LDRBLK
     "notecirl" "notecirr" "notecird" "NOTESLDR" "NotesLeader"
    )
 )
 (DEFUN
    C:HAWS-DIAL ()
-  (HAWS-LDRBLK
+  (HCNM-LDRBLK
     "notedial" "notediar" "notediad" "NOTESLDR" "NotesLeader"
    )
 )
 (DEFUN
    C:HAWS-ELLL ()
-  (HAWS-LDRBLK
+  (HCNM-LDRBLK
     "noteelll" "noteellr" "noteelld" "NOTESLDR" "NotesLeader"
    )
 )
 (DEFUN
    C:HAWS-HEXL ()
-  (HAWS-LDRBLK
+  (HCNM-LDRBLK
     "notehexl" "notehexr" "notehexd" "NOTESLDR" "NotesLeader"
    )
 )
 (DEFUN
    C:HAWS-OCTL ()
-  (HAWS-LDRBLK
+  (HCNM-LDRBLK
     "noteoctl" "noteoctr" "noteoctd" "NOTESLDR" "NotesLeader"
    )
 )
 (DEFUN
    C:HAWS-PENL ()
-  (HAWS-LDRBLK
+  (HCNM-LDRBLK
     "notepenl" "notepenr" "notepend" "NOTESLDR" "NotesLeader"
    )
 )
 (DEFUN
    C:HAWS-RECL ()
-  (HAWS-LDRBLK
+  (HCNM-LDRBLK
     "noterecl" "noterecr" "noterecd" "NOTESLDR" "NotesLeader"
    )
 )
 (DEFUN
    C:HAWS-SSTL ()
-  (HAWS-LDRBLK
+  (HCNM-LDRBLK
     "notesstl" "notesstr" "notesstd" "NOTESLDR" "NotesLeader"
    )
 )
 (DEFUN
    C:HAWS-TRIL ()
-  (HAWS-LDRBLK
+  (HCNM-LDRBLK
     "notetril" "notetrir" "notetrid" "NOTESLDR" "NotesLeader"
    )
 )
 (DEFUN
    C:HAWS-TCG ()
-  (HAWS-LDRBLK
+  (HCNM-LDRBLK
     "ldrtcgl" "ldrtcgr" "ldrtcgd" "TCGLDR" "TCGLeader"
    )
 )
 (DEFUN
    C:HAWS-TXTL ()
-  (HAWS-LDRBLK
+  (HCNM-LDRBLK
     "ldrtxtl" "ldrtxtr" "ldrtxtd" "NOTESLDR" "NotesLeader"
    )
 )
 
 (DEFUN
-   HAWS-LDRBLK (BLLEFT BLRGHT BLDRAG BLLAY BLDSTY / APOLD AS ANG AUOLD
+   HCNM-LDRBLK (BLLEFT BLRGHT BLDRAG BLLAY BLDSTY / APOLD AS ANG AUOLD
                 BLGF BLLINE BLK BUBBLEHOOKS BUBBLELEADERCONNECTOSNAP
                 DSTY DSTYOLD DTOLD EL EN ENBLK ENDRAG FIXHOOK FIXPHASE
                 FIXTXT3 I P1 P2 P3 P4 P5 P6 P7 P8 PFOUND R1 DS TS LEFT
@@ -4239,19 +4550,20 @@
      )
   )
   (COMMAND "._undo" "_g")
+  (SETQ ASSOCIATE-P (COND ((= (GETVAR "DIMANNO") 1)NIL)(T)))
+  (HCNM-PROJINIT)
   (HCNM-SET-DIMSTYLE (STRCAT BLDSTY "Dimstyle"))
   (SETVAR "osmode" 0)
-  (HCNM-PROJINIT)
   ;;Find out what bubble style to use
   (SETQ
     BUBBLEHOOKS
      (COND
        ((= (SUBSTR BLLEFT 1 3) "ldr") "1")
-       ((= (HCNM-GETVAR "BubbleHooks") "0") "2")
+       ((= (hcnm-config-GETVAR "BubbleHooks") "0") "2")
        ("1")
      )
     BUBBLELEADERCONNECTOSNAP
-     (HCNM-GETVAR "BubbleLeaderConnectOsnap")
+     (hcnm-config-GETVAR "BubbleLeaderConnectOsnap")
     BLLEFT
      (STRCAT BLLEFT BUBBLEHOOKS)
     BLRGHT
@@ -4262,7 +4574,7 @@
   (HAWS-MKLAYR BLLAY)
   (SETQ
     P1 (GETPOINT "\nStart point for leader:")
-    DS (GETVAR "dimscale")
+    DS (HAWS-DWGSCALE)
     TS (* DS (GETVAR "dimtxt"))
     AS (* DS (GETVAR "dimasz"))
   )
@@ -4376,7 +4688,8 @@
      (SETVAR "attreq" 1)
      (COND
        ((>= (ATOF (GETVAR "acadver")) 14)
-        (COMMAND "._leader" P1 P3 "" "" "_block")
+        (COMMAND "._leader" P1 P3 "" "")
+        (COND (ASSOCIATE-P (COMMAND "_block"))(t (COMMAND "._INSERT")))
        )
      )
      (SETQ AUOLD (GETVAR "aunits"))
@@ -4443,7 +4756,8 @@
      (SETVAR "attreq" 1)
      (COND
        ((>= (ATOF (GETVAR "acadver")) 14)
-        (COMMAND "._leader" P1 P2 "" "" "_block")
+        (COMMAND "._leader" P1 P2 "" "")
+        (COND (ASSOCIATE-P (COMMAND "_block"))(t (COMMAND "._INSERT")))
        )
      )
      (SETQ AUOLD (GETVAR "aunits"))
@@ -4546,86 +4860,83 @@
   (SETQ CNMDCL (LOAD_DIALOG "cnm.dcl"))
   (NEW_DIALOG "CNMOptions" CNMDCL)
   ;; Dialog Actions
-  (SET_TILE "ProjectNotes" (HCNM-GETVAR "ProjectNotes"))
+  (SET_TILE "ProjectNotes" (hcnm-config-GETVAR "ProjectNotes"))
   (ACTION_TILE
     "ProjectNotes"
-    "(HCNM-SETVARTEMP \"ProjectNotes\" (get_tile \"ProjectNotes\"))"
+    "(hcnm-CONFIG-TEMP-SETVAR \"ProjectNotes\" (get_tile \"ProjectNotes\"))"
   )
   (ACTION_TILE
     "ProjectNotesBrowse"
-    "(HCNM-SETVARTEMP \"ProjectNotes\"(HCNM-changeprojnotes))(set_tile \"ProjectNotes\" (hcnm-getvartemp \"ProjectNotes\"))"
+    "(hcnm-CONFIG-TEMP-SETVAR \"ProjectNotes\"(HCNM-changeprojnotes))(set_tile \"ProjectNotes\" (hcnm-config-TEMP-GETVAR \"ProjectNotes\"))"
   )
   (SET_TILE
     "ProjectNotesEditor"
-    (HCNM-GETVAR "ProjectNotesEditor")
+    (hcnm-config-GETVAR "ProjectNotesEditor")
   )
   (ACTION_TILE
     "ProjectNotesEditor"
-    "(HCNM-SETVARTEMP \"ProjectNotesEditor\" (HCNM-WRITENOTESEDITOR (get_tile \"ProjectNotesEditor\")))(set_tile \"ProjectNotesEditor\" (HCNM-GETVARTEMP \"ProjectNotesEditor\"))"
+    "(hcnm-CONFIG-TEMP-SETVAR \"ProjectNotesEditor\" (HCNM-WRITENOTESEDITOR (get_tile \"ProjectNotesEditor\")))(set_tile \"ProjectNotesEditor\" (hcnm-config-TEMP-GETVAR \"ProjectNotesEditor\"))"
   )
   (ACTION_TILE
     "ProjectNotesEditorBrowse"
-    "(HCNM-SETVARTEMP \"ProjectNotesEditor\"(HCNM-noteseditor))(set_tile \"ProjectNotesEditor\" (hcnm-getvartemp \"ProjectNotesEditor\"))"
+    "(hcnm-CONFIG-TEMP-SETVAR \"ProjectNotesEditor\"(HCNM-CHANGENOTESEDITOR))(set_tile \"ProjectNotesEditor\" (hcnm-config-TEMP-GETVAR \"ProjectNotesEditor\"))"
   )
-  (SET_TILE
-    "LayersEditor"
-    (HCNM-GETVAR "LayersEditor")
-  )
+  (SET_TILE "LayersEditor" (hcnm-config-GETVAR "LayersEditor"))
   (ACTION_TILE
-    "ProjectNotesEditor"
-    "(HCNM-SETVARTEMP \"LayersEditor\" (HCNM-WRITELAYEREDITOR (get_tile \"LayersEditor\")))(set_tile \"LayersEditor\" (HCNM-GETVARTEMP \"LayersEditor\"))"
+    "LayersEditor"
+    "(hcnm-CONFIG-TEMP-SETVAR \"LayersEditor\" (HCNM-WRITElayerseditor (get_tile \"LayersEditor\")))(set_tile \"LayersEditor\" (hcnm-config-TEMP-GETVAR \"LayersEditor\"))"
   )
   (ACTION_TILE
     "LayersEditorBrowse"
-    "(HCNM-SETVARTEMP \"LayersEditor\"(HCNM-layereditor))(set_tile \"LayersEditor\" (hcnm-getvartemp \"LayersEditor\"))"
+    "(hcnm-CONFIG-TEMP-SETVAR \"LayersEditor\"(HCNM-CHANGELAYERSEDITOR))(set_tile \"LayersEditor\" (hcnm-config-TEMP-GETVAR \"LayersEditor\"))"
   )
-  (HCNM-VAR-SET-ACTION-TILE "NoteTypes")
+  (HCNM-config-SET-ACTION-TILE "NoteTypes")
   (SETQ LIST1 '("No" "1" "2" "3" "4" "5" "6" "7" "8" "9" "10"))
   (HAWS-SET_TILE_LIST
     "InsertTablePhases"
     LIST1
-    (HCNM-GETVAR "InsertTablePhases")
+    (hcnm-config-GETVAR "InsertTablePhases")
   )
   (ACTION_TILE
     "InsertTablePhases"
-    "(HCNM-SETVARTEMP \"InsertTablePhases\" (nth (read $value) list1))"
+    "(hcnm-CONFIG-TEMP-SETVAR \"InsertTablePhases\" (nth (read $value) list1))"
   )
-  (HCNM-VAR-SET-ACTION-TILE "PhaseAlias1")
-  (HCNM-VAR-SET-ACTION-TILE "PhaseAlias2")
-  (HCNM-VAR-SET-ACTION-TILE "PhaseAlias3")
-  (HCNM-VAR-SET-ACTION-TILE "PhaseAlias4")
-  (HCNM-VAR-SET-ACTION-TILE "PhaseAlias5")
-  (HCNM-VAR-SET-ACTION-TILE "PhaseAlias6")
-  (HCNM-VAR-SET-ACTION-TILE "PhaseAlias7")
-  (HCNM-VAR-SET-ACTION-TILE "PhaseAlias8")
-  (HCNM-VAR-SET-ACTION-TILE "PhaseAlias9")
-  (HCNM-VAR-SET-ACTION-TILE "BubbleHooks")
-  (HCNM-VAR-SET-ACTION-TILE "DoCurrentTabOnly")
-  (HCNM-VAR-SET-ACTION-TILE "BubbleLeaderConnectOsnap")
-  (HCNM-VAR-SET-ACTION-TILE "LineSpacing")
-  (HCNM-VAR-SET-ACTION-TILE "NoteSpacing")
-  (HCNM-VAR-SET-ACTION-TILE "ShowKeyTableQuantities")
-  (HCNM-VAR-SET-ACTION-TILE "ShowKeyTableGrid")
-  (HCNM-VAR-SET-ACTION-TILE "TableWidth")
-  (HCNM-VAR-SET-ACTION-TILE "PhaseWidthAdd")
-  (HCNM-VAR-SET-ACTION-TILE "NumberToDescriptionWidth")
-  (HCNM-VAR-SET-ACTION-TILE "DescriptionToQuantityWidth")
-  (HCNM-VAR-SET-ACTION-TILE "QuantityToQuantityWidth")
-  (HCNM-VAR-SET-ACTION-TILE "QuantityToUnitsWidth")
+  (HCNM-config-SET-ACTION-TILE "PhaseAlias1")
+  (HCNM-config-SET-ACTION-TILE "PhaseAlias2")
+  (HCNM-config-SET-ACTION-TILE "PhaseAlias3")
+  (HCNM-config-SET-ACTION-TILE "PhaseAlias4")
+  (HCNM-config-SET-ACTION-TILE "PhaseAlias5")
+  (HCNM-config-SET-ACTION-TILE "PhaseAlias6")
+  (HCNM-config-SET-ACTION-TILE "PhaseAlias7")
+  (HCNM-config-SET-ACTION-TILE "PhaseAlias8")
+  (HCNM-config-SET-ACTION-TILE "PhaseAlias9")
+  (HCNM-config-SET-ACTION-TILE "BubbleHooks")
+  (HCNM-config-SET-ACTION-TILE "DoCurrentTabOnly")
+  (HCNM-config-SET-ACTION-TILE "BubbleLeaderConnectOsnap")
+  (HCNM-config-SET-ACTION-TILE "LineSpacing")
+  (HCNM-config-SET-ACTION-TILE "NoteSpacing")
+  (HCNM-config-SET-ACTION-TILE "ShowKeyTableQuantities")
+  (HCNM-config-SET-ACTION-TILE "ShowKeyTableGrid")
+  (HCNM-config-SET-ACTION-TILE "TableWidth")
+  (HCNM-config-SET-ACTION-TILE "PhaseWidthAdd")
+  (HCNM-config-SET-ACTION-TILE "NumberToDescriptionWidth")
+  (HCNM-config-SET-ACTION-TILE "DescriptionToQuantityWidth")
+  (HCNM-config-SET-ACTION-TILE "QuantityToQuantityWidth")
+  (HCNM-config-SET-ACTION-TILE "QuantityToUnitsWidth")
   (ACTION_TILE "accept" "(done_dialog 1)")
   (ACTION_TILE "cancel" "(done_dialog 0)")
   (SETQ RETN (START_DIALOG))
   (UNLOAD_DIALOG CNMDCL)
-  (COND ((= RETN 1) (HCNM-SAVETEMPSETTINGS)))
+  (COND ((= RETN 1) (HCNM-CONFIG-TEMP-SAVE)))
   (PRINC)
 )
 
 (DEFUN
-   HCNM-VAR-SET-ACTION-TILE (VAR)
-  (SET_TILE VAR (HCNM-GETVAR VAR))
+   HCNM-config-SET-ACTION-TILE (VAR)
+  (SET_TILE VAR (hcnm-config-GETVAR VAR))
   (ACTION_TILE
     VAR
-    (STRCAT "(hcnm-setvartemp \"" VAR "\" $value)")
+    (STRCAT "(hcnm-CONFIG-TEMP-SETVAR \"" VAR "\" $value)")
   )
 )
 

@@ -48,7 +48,7 @@
     dwwid(if dwwid dwwid 20.0)
     swwid (if swwid swwid 4.0)
     totdep (if totdep totdep (+ (max swwid 5.0) hcdep))
-    ts (* (getvar "dimscale")(getvar"dimtxt"))
+    ts (* (HAWS-DWGSCALE)(getvar"dimtxt"))
   )
   (HAWS-MKLAYR "DRIVEWAY")
   (while

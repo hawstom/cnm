@@ -67,7 +67,7 @@
     blexpl (= 2 (logand blopt 2))
   )
   (cond
-    ( (and (= 1 (logand blopt 1)) (= 0 (getvar "dimscale")))
+    ( (and (= 1 (logand blopt 1)) (= 0 (HAWS-DWGSCALE)))
       (prompt "\nPlease enter dimscale (scale of drawing):")
       (command "dimscale" pause)
     )
@@ -78,7 +78,7 @@
   (if bllay (mklayr bllay))
   (prompt (strcat "\nInsertion point for " blname ":"))
   (command "._insert" blname pause)
-  (setq blsclx (if (= 1 (logand blopt 1)) (getvar "dimscale") 1))
+  (setq blsclx (if (= 1 (logand blopt 1)) (HAWS-DWGSCALE) 1))
   (if (= 8 (logand blopt 8)) (setq blsclx (* blsclx (getvar "dimtxt"))))
   (setq blscly (if (= 4 (logand blopt 4))(* -1 blsclx) blsclx))
   (if (= blrot "P")

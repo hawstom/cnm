@@ -5,7 +5,7 @@
   (setq
     area (strcat (rtos (getvar "AREA") 2 (getvar "luprec")) " SF")
     txpt (getpoint "\nMiddle point for text:")
-    ts (* (getvar"dimscale")(getvar "dimtxt"))
+    ts (* (HAWS-DWGSCALE)(getvar "dimtxt"))
   )
   (if txpt
     (HAWS-MKTEXT "m" txpt ts 0 area)

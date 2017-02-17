@@ -1,7 +1,7 @@
 (PROMPT "\nHawsEDC library functions...")
 
 ;;;This is the current version of HawsEDC and CNM
-(DEFUN HAWS-UNIFIED-VERSION () "4.2.27\n\nCopyright 2015")
+(DEFUN HAWS-UNIFIED-VERSION () "4.2.29\n\nCopyright 2015")
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 (SETQ *HAWS-DEBUGLEVEL* 0)
 ;;This function returns the current setting of nagmode.
@@ -16,7 +16,9 @@
 ;;; scheme.
 ;;;
 ;;; About version control
-;;; 20111021 4.2.27 TGH Fixed (command) incompatibility with v2015+ in lambdas.  Using (command-s).
+;;; 20151001 4.2.29 TGH Added BIOS date registry location for Windows 10.
+;;; 20150921 4.2.28 TGH Added LWP and LWPX.
+;;; 20150916 4.2.27 TGH Fixed (command) incompatibility with v2015+ in lambdas.  Using (command-s).
 ;;; 20111021 4.2.21 TGH Made MSCRIPT use VBA only for releases 15 through 17 (2000 through 2009).  CNM QT had already been fixed that way.
 ;;; 20090923 4.2.20 TGH Changed authorization scheme in many ways to fix bugs.  Works with setcfg and still gets old stuff from registry.
 ;;; 20090923 4.2.19 TGH Changed authorization scheme (for Jared Cox) to use only HKCU section.
@@ -788,68 +790,37 @@
 
 ;;GetBiosDate uses BIOSDATE.EXE to return system bios date as a
 ;;list in the form '(mm dd yy).
-;; In Win 95/98/Me, Bios Date is in
-;; HKEY_LOCAL_MACHINE\Enum\Root\*PNP0C01\0000
-;; In Win NT 4.0, Bios Date is in
-;; HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System
-;; In Win 2000 and XP, Bios Date is in
-;; HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Biosinfo
-;; SystemBiosDate
 (DEFUN
    HAWS-GETBIOSDATE (/ BIOSDATEFULL X)
   (SETQ
     BIOSDATEFULL
      (COND
        (*HAWS-BIOSDATEFULL*)
+	   ;; Win 10
        ((HAWS-REGISTRY-READ
-          "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Biosinfo"
-          "SystemBiosDate"
+          "HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System\\BIOS"
+          "BIOSReleaseDate"
         )
        )
-       ((HAWS-REGISTRY-READ
-          "HKEY_LOCAL_MACHINE\\Enum\\Root\\*PNP0C01\\0000"
-          "BIOSDate"
-        )
-       )
+	   ;; Win NT 4.0 and Win 10
        ((HAWS-REGISTRY-READ
           "HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System"
           "SystemBiosDate"
         )
        )
-       (T
-        (HAWS-VSAVE '("cmdecho"))
-        (SETVAR "cmdecho" 0)
-        (COMMAND
-          "sh"
-          (STRCAT
-            (SETQ
-              X (SUBSTR
-                  (SETQ X (FINDFILE "cnmloader.lsp"))
-                  1
-                  (- (STRLEN X) 13)
-                )
-            )
-            "biosdate.exe>"
-            X
-            "biosdate.txt"
-          )
+	   ;; Win 2000 and XP
+       ((HAWS-REGISTRY-READ
+          "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Biosinfo"
+          "SystemBiosDate"
         )
-        (WHILE
-          (NOT
-            (SETQ F1 (OPEN (STRCAT X "biosdate.txt") "r"))
-          )
-           (COMMAND "delay" "100")
-        )
-        (READ-LINE F1)
-        (SETQ
-          BIOSDATEFULL
-           (READ-LINE F1)
-          F1 (CLOSE F1)
-        )
-        (VL-FILE-DELETE (STRCAT X "biosdate.txt"))
-        (HAWS-VRSTOR)
-        BIOSDATEFULL
        )
+	   ;; Win 95/98/Me
+       ((HAWS-REGISTRY-READ
+          "HKEY_LOCAL_MACHINE\\Enum\\Root\\*PNP0C01\\0000"
+          "BIOSDate"
+        )
+       )
+       (T "01\\01\\01" )
      )
   )
   (SETQ *HAWS-BIOSDATEFULL* BIOSDATEFULL)
@@ -874,7 +845,7 @@
        "ComputerName"
      )
     )
-    ("ONO NAME FOUNDO")
+    ("O NO NAME FOUND O")
   )
 )
 
@@ -3090,13 +3061,13 @@ ImportLayerSettings=No
   OUTPUTSTRING
 )
 
-;;; HAWS-LOAD
+;;; HAWS-LOAD-APP-DIR
 ;;; loads a vlx, fas, or lsp, in that preferred order (AutoLISP
 ;;; default),
-;;; from the folder that contains this file edclib.lsp
+;;; from the folder that contains cnm.mnl
 ;;;
 (DEFUN
-   HAWS-LOAD (FILENAME)
+   HAWS-LOAD-FROM-APP-DIR (FILENAME)
   ;;Make sure app folder is set.
   (IF (NOT *HAWS-APPFOLDER*)
     (SETQ
@@ -3319,6 +3290,14 @@ ImportLayerSettings=No
   )
   (COMMAND "")
   LAOPT
+)
+
+(DEFUN
+   HAWS-DWGSCALE ()
+  (COND
+    ((= (GETVAR "DIMANNO") 1) (/ 1 (GETVAR "CANNOSCALEVALUE")))
+    ((GETVAR "DIMSCALE"))
+  )
 )
 
 (DEFUN
@@ -4219,18 +4198,18 @@ ImportLayerSettings=No
 ;;; Load other utilities
 ;; LISPUTIL.LSP has library functions for legacy routines some legacy users have.
 (IF (NOT MKLAYR)
-  (HAWS-LOAD "lisputil")
+  (HAWS-LOAD-FROM-APP-DIR "lisputil")
 )
 ;; CNM.LSP has the HCNM-GETVAR function that is being called by
 ;; HAWS-MKLAYR (This is a messy, sloppy workaround.)
 (IF (NOT HCNM-GETVAR)
-  (HAWS-LOAD "cnm")
+  (HAWS-LOAD-FROM-APP-DIR "cnm")
 )
 ;;Can't autoload AH.LSP the normal way.  Load here.
 (IF (NOT AH)
-  (HAWS-LOAD "ah")
+  (HAWS-LOAD-FROM-APP-DIR "ah")
 )
-(PROMPT "\nloaded.")
+(PROMPT "loaded.")
  ;|«Visual LISP© Format Options»
 (72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)
 ;*** DO NOT add text below the comment! ***|;

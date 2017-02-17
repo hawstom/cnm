@@ -253,7 +253,7 @@
           (SUBST (CONS 1 UTTXT) (ASSOC 1 ELNEXT) ELNEXT)
           (ENTMOD
             (SUBST
-              (CONS 40 (* (GETVAR "dimscale") (GETVAR "dimtxt")))
+              (CONS 40 (* (HAWS-DWGSCALE) (GETVAR "dimtxt")))
               (ASSOC 40 ELNEXT)
               (SUBST
                 (CONS 8 (GETVAR "clayer"))

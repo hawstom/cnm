@@ -4,7 +4,7 @@
   (vsave '("CMDECHO" "BLIPMODE" "ATTDIA" "CLAYER"))
   (vset '(("orthomode"0)("cmdecho"0)("blipmode"0)("dragmode"2)("attdia"1)))
   (mklayr "BB")
-  (SETQ TS(*(GETVAR "DIMSCALE")(GETVAR "DIMTXT"))  CR(* TS 1.2)
+  (SETQ TS(*(HAWS-DWGSCALE)(GETVAR "DIMTXT"))  CR(* TS 1.2)
     SP(getpoint "\nArrow start point: ") EP(getpoint sp "\nLeader endpoint: ")
     ANG (angle SP EP)  DIST (distance SP EP)  CPL (polar SP ANG (+ CR DIST))
   )

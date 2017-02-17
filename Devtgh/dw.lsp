@@ -23,7 +23,7 @@
   )
   (SETVAR "osmode" 0)
   (HAWS-MKLAYR "DRIVEWAY")
-  (SETQ TS (* (GETVAR "dimscale") (GETVAR "dimtxt")))
+  (SETQ TS (* (HAWS-DWGSCALE) (GETVAR "dimtxt")))
   (WHILE
     (PROGN
       (INITGET "Length Sw")

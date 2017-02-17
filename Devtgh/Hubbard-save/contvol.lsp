@@ -135,7 +135,7 @@
   (HAWS-MKTEXT
     "m"
     pt1
-    (* (getvar "dimscale") (getvar "dimtxt"))
+    (* (HAWS-DWGSCALE) (getvar "dimtxt"))
     0
     (rtos cvvol)
   )

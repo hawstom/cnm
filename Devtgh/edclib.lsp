@@ -1,7 +1,7 @@
 (PROMPT "\nHawsEDC library functions...")
 
 ;;;This is the current version of HawsEDC and CNM
-(DEFUN HAWS-UNIFIED-VERSION () "4.2.29\n\nCopyright 2017")
+(DEFUN HAWS-UNIFIED-VERSION () "4.2.29\n\nCopyright 2015")
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 (SETQ *HAWS-DEBUGLEVEL* 0)
 ;;This function returns the current setting of nagmode.
@@ -1443,8 +1443,7 @@
     ;; ini section
     "Test"
     ;; Scope of setting.  Can be "a" (application)  "u" (user)  "p" (project) or "d" (drawing).  Determines where to store and get setting.
-    "a" 
-	;;Fallback defaults
+    "a" ;;Fallback defaults
         '
          (("1" "1val")
           ("2" "2val")
@@ -3062,13 +3061,13 @@ ImportLayerSettings=No
   OUTPUTSTRING
 )
 
-;;; HAWS-LOAD
+;;; HAWS-LOAD-APP-DIR
 ;;; loads a vlx, fas, or lsp, in that preferred order (AutoLISP
 ;;; default),
-;;; from the folder that contains this file edclib.lsp
+;;; from the folder that contains cnm.mnl
 ;;;
 (DEFUN
-   HAWS-LOAD (FILENAME)
+   HAWS-LOAD-FROM-APP-DIR (FILENAME)
   ;;Make sure app folder is set.
   (IF (NOT *HAWS-APPFOLDER*)
     (SETQ
@@ -3291,6 +3290,14 @@ ImportLayerSettings=No
   )
   (COMMAND "")
   LAOPT
+)
+
+(DEFUN
+   HAWS-DWGSCALE ()
+  (COND
+    ((OR (= (GETVAR "DIMANNO") 1) (= (GETVAR "DIMSCALE") 0)) (/ 1 (GETVAR "CANNOSCALEVALUE")))
+    ((GETVAR "DIMSCALE"))
+  )
 )
 
 (DEFUN
@@ -3556,8 +3563,8 @@ ImportLayerSettings=No
 ;;;In this function, I'm trying to honor readability in a new (2008) way.
 ;;;And I am trying a new commenting style.
 ;;;Tests
-;;;(alert (apply 'strcat (mapcar '(lambda (x) (strcat "\n----\n" x)) (haws-strtolst "1 John,\"2 2\"\" pipe,\nheated\",3 the end,,,,," "`," "\"" nil))))
-;;;(alert (apply 'strcat (mapcar '(lambda (x) (strcat "\n----\n" x)) (haws-strtolst "1 John,\"2 2\"\" pipe,\nheated\",3 the end,,,,," "`," "\"" T))))
+;;;(alert (apply 'strcat (mapcar '(lambda (x) (strcat "\n----\n" x)) (haws-strtolst "1 John,\"2 2\"\" pipe,\nheated\",3 the end,,,,," "," "\"" nil))))
+;;;(alert (apply 'strcat (mapcar '(lambda (x) (strcat "\n----\n" x)) (haws-strtolst "1 John,\"2 2\"\" pipe,\nheated\",3 the end,,,,," "," "\"" T))))
 (DEFUN
    HAWS-STRTOLST (INPUTSTRING FIELDSEPARATORWC TEXTDELIMITER
                   EMPTYFIELDSDOCOUNT / CHARACTERCOUNTER CONVERSIONISDONE
@@ -4191,12 +4198,16 @@ ImportLayerSettings=No
 ;;; Load other utilities
 ;; LISPUTIL.LSP has library functions for legacy routines some legacy users have.
 (IF (NOT MKLAYR)
-  (HAWS-LOAD "lisputil")
+  (HAWS-LOAD-FROM-APP-DIR "lisputil")
 )
 ;; CNM.LSP has the HCNM-GETVAR function that is being called by
 ;; HAWS-MKLAYR (This is a messy, sloppy workaround.)
 (IF (NOT HCNM-GETVAR)
-  (HAWS-LOAD "cnm")
+  (HAWS-LOAD-FROM-APP-DIR "cnm")
+)
+;;Can't autoload AH.LSP the normal way.  Load here.
+(IF (NOT AH)
+  (HAWS-LOAD-FROM-APP-DIR "ah")
 )
 (PROMPT "loaded.")
  ;|«Visual LISP© Format Options»

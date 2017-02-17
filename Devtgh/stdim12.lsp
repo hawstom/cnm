@@ -26,7 +26,7 @@
     ang (angle pt1 pt2)
     upsdwn (minusp (cos ang))
     d1 (/ (distance pt1 pt2) 2)
-    txht (* (getvar "dimscale")(getvar "dimtxt"))
+    txht (* (HAWS-DWGSCALE)(getvar "dimtxt"))
     pt3 (polar (polar pt1 ang d1) (+ (/ pi (if upsdwn 2 -2)) ang) txht)
     ang (+ ang (if upsdwn pi 0))
   )

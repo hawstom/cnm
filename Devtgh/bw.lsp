@@ -6,7 +6,7 @@
   (HAWS-MKLAYR "BWLDR")
   (setvar "dimpost" "")
   (setq
-    as (* (getvar "dimscale")(getvar "dimasz"))
+    as (* (HAWS-DWGSCALE)(getvar "dimasz"))
     pt1 (getpoint "\nLeader connection point: ")
     pt2 (getpoint pt1 "\nLeader arrow point: ")
     pt3 (polar pt1 (if (minusp (cos (angle pt1 pt2))) pi 0) as)

@@ -21,6 +21,14 @@
   (if x (distof x) nil)
 )
 
+(DEFUN
+   HAWS-DWGSCALE ()
+  (COND
+    ((= (GETVAR "dimanno") 1) (/ 1 (GETVAR "CANNOSCALEVALUE")))
+    ((HAWS-DWGSCALE))
+  )
+)
+
 (defun dxf (gcode entlst) (cdr (assoc gcode entlst)))
 
 ;;; Endstr returns a substring of s starting with the ith to last character

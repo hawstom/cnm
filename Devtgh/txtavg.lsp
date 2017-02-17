@@ -30,7 +30,7 @@
   (princ avg)
   (setq
     txpt (getpoint "\nMiddle point for text:")
-    ts (* (getvar"dimscale")(getvar "dimtxt"))
+    ts (* (HAWS-DWGSCALE)(getvar "dimtxt"))
   )
   (if txpt(HAWS-MKTEXT "m" txpt ts 0 (strcat (rtos avg) " AVERAGE")))
   (princ)

@@ -113,8 +113,8 @@
              (CRVDATA PICKPT / ANG1 DG LEFT PTXT TXHT LLINE PT10 PT11 LBEAR LDIST PT1 PT2 PT3 PT4 ROT
              )
   (SETQ
-    DG   (* (GETVAR "dimgap") (GETVAR "dimscale"))
-    TXHT (* (GETVAR "dimscale") (GETVAR "dimtxt"))
+    DG   (* (GETVAR "dimgap") (HAWS-DWGSCALE))
+    TXHT (* (HAWS-DWGSCALE) (GETVAR "dimtxt"))
     PT1  (OSNAP PICKPT "nea")
     PTXT (GETPOINT PT1 "\nPick text location: ")
     ANG1 (ANGLE PT1 PTXT)

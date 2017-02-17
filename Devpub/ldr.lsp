@@ -31,15 +31,15 @@
 
 (defun firstpt (dst)
   (if (< (car p1) (car p2))
-    (progn (setq p2 (list (+ (car p2) (* dst (getvar "dimscale")))
+    (progn (setq p2 (list (+ (car p2) (* dst (HAWS-DWGSCALE)))
     (- (cadr p2) (/ thgt 2.0)))))
-    (progn (setq p2 (list (- (car p2) (* dst (getvar "dimscale")))
+    (progn (setq p2 (list (- (car p2) (* dst (HAWS-DWGSCALE)))
   (- (cadr p2) (/ thgt 2.0))))))
 )
 
 (Defun c:haws-LDR ()
   (erdf$@)
-  (Setq X "S" DS (Getvar "Dimscale")
+  (Setq X "S" DS (HAWS-DWGSCALE)
     THGT (* DS (Getvar "Dimtxt"))
   txt "a")
   (Initget "C S")

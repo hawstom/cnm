@@ -5,7 +5,7 @@
   (HAWS-VSAVE '("osmode" "clayer"))
   (setq
     osuser (getvar "osmode")
-    ts (* (getvar "dimscale")(getvar "dimtxt"))
+    ts (* (HAWS-DWGSCALE)(getvar "dimtxt"))
   )
   (if (= 0 (getvar "chamfera"))
     (progn(setvar "chamfera" 3.0)(setvar "chamferb" 3.0))

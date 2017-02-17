@@ -27,7 +27,7 @@
   )
   (setq
     txht
-     (* (getvar "dimscale") (getvar "dimtxt"))
+     (* (HAWS-DWGSCALE) (getvar "dimtxt"))
     pt1
      (osnap (cadr lline) "nea")
     lline

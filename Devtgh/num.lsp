@@ -4,7 +4,7 @@
   (setvar "cmdecho" 0)
   (setq
     i (getint "\nFirst number of series: ")
-    th (* (getvar"dimscale")(getvar"dimtxt"))
+    th (* (HAWS-DWGSCALE)(getvar"dimtxt"))
     rot (getreal "\nText rotation <0>: ")
     just (progn
         (initget "C M R TL TC TR ML MC MR BL BC BR")

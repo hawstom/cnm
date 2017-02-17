@@ -11,7 +11,7 @@
     ucsp T
   )
   (setq
-    txht (* (getvar "dimscale")(getvar "dimtxt"))
+    txht (* (HAWS-DWGSCALE)(getvar "dimtxt"))
     lbear (HAWS-RTOB (angle pt1 pt2) 4)        ldist (strcat(rtos (distance pt1 pt2))"'")
     pt3
     (list

@@ -33,7 +33,7 @@
          (SETQ FUNCTION-NAME (STRCAT "C:" CMD))
          (EVAL
            (READ
-             (STRCAT "(defun " FUNCTION-NAME "() (haws-load " QFN ") (" FUNCTION-NAME "))")
+             (STRCAT "(defun " FUNCTION-NAME "() (HAWS-LOAD-FROM-APP-DIR " QFN ") (" FUNCTION-NAME "))")
            )
          )
        )

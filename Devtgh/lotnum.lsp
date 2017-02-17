@@ -24,7 +24,7 @@
         (/ (+ (caddr pt1)(caddr pt2))2)
     ) )
     (setvar "osmode" 0)
-    (command "text" "j" "m" txpt (* (getvar "dimtxt")(getvar "dimscale")) 0 i)
+    (command "text" "j" "m" txpt (* (getvar "dimtxt")(HAWS-DWGSCALE)) 0 i)
     (setvar "osmode" osmold)
     (setq i (1+ i) pt1 pt2)
   )

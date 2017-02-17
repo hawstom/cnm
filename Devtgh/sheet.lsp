@@ -64,7 +64,7 @@
       ( (setq plnblk (caar(HAWS-attfind "*" (list(list"SHTNO" shtnm))'("SHTNO") T)))
         (command
           "ucs" "d" "plan" "ucs" "e" plnblk "ucs" "s" "plan" "plan" ""
-          "zoom" "c" "0,0" (strcat"1/"(rtos (getvar "dimscale") 2 0)"xp")
+          "zoom" "c" "0,0" (strcat"1/"(rtos (HAWS-DWGSCALE) 2 0)"xp")
           "view""s""plan"
           "ucs" "p"
         )
@@ -79,7 +79,7 @@
         (setq shtang (getangle "\nSheet rotation: "))
         (command
           "ucs" "d" "plan" "ucs" "o" ptmcen "ucs" "z" shtang "ucs" "s" "plan" "plan" ""
-          "zoom" "c" "0,0" (strcat"1/"(rtos (getvar "dimscale") 2 0)"xp")
+          "zoom" "c" "0,0" (strcat"1/"(rtos (HAWS-DWGSCALE) 2 0)"xp")
           "view""s""plan"
           "ucs" "p" "ucs" "p"
         )
@@ -131,7 +131,7 @@
   (defun HAWS-shtpnp ()
     (setq
       xrname (strcat(substr dn 1 (- 9 (strlen shtnm)))"n"(substr shtnm 3))
-      insscl (/ 1.0 (getvar "dimscale"))
+      insscl (/ 1.0 (HAWS-DWGSCALE))
     )
     (if
       (and ptpcen shtang (findfile (strcat xrname ".dwg")))
@@ -144,7 +144,7 @@
     (setq
       xrname (strcat(substr dn 1 (- 9 (strlen shtnm)))"r"(substr shtnm 3))
       xrpath xrname
-      insscl (/ 1.0 (getvar "dimscale"))
+      insscl (/ 1.0 (HAWS-DWGSCALE))
     )
     (while
       (not(findfile (strcat xrpath ".dwg")))

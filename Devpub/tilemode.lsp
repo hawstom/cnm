@@ -20,9 +20,9 @@
     ;;Else if the space we are going to has its ltscale mode at 0, set ltscale to dimscale or 1/cannoscalevalue.
     ((= (GETVAR (STRCAT NEWSPACE "ltscale")) 0)
      (COND
-       ((/= (GETVAR "dimscale") 0)
-        (SETVAR "ltscale" (GETVAR "dimscale"))
-        (PRINC (strcat "\nSetting ltscale equal to current dimscale value (" (rtos(getvar "dimscale") 2) ")."))
+       ((/= (HAWS-DWGSCALE) 0)
+        (SETVAR "ltscale" (HAWS-DWGSCALE))
+        (PRINC (strcat "\nSetting ltscale equal to current dimscale value (" (rtos(HAWS-DWGSCALE) 2) ")."))
        )
        (T
         (SETVAR "ltscale" (/ 1 (GETVAR "cannoscalevalue")))

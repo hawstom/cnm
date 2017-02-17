@@ -22,7 +22,7 @@
   (prompt"\n\nCurrent style will be used for text.")
   (prompt"\n\nDimscale and dimtxt will be used to scale text.")
   (setq
-    ds (getvar "dimscale")
+    ds (HAWS-DWGSCALE)
     style0 (= 0 (cdr (assoc 40 (tblsearch "STYLE" (getvar "textstyle")))))
     txht (* ds (getvar "dimtxt"))
     blpt1 (list 0 (* -0.5 txht) 0)  blpt2 (list 0 (* 0.5 txht) 0)

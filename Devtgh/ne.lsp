@@ -3,7 +3,7 @@
 (defun c:haws-NE (/ dg txht pnt1 p1e p1n ang1 left ptxt)
   (HAWS-ERDF$@ 0)
   (setq
-    txht (* (getvar "dimscale")(getvar "dimtxt"))
+    txht (* (HAWS-DWGSCALE)(getvar "dimtxt"))
     pnt1 (getpoint "\nPick coordinate point:")
     p1n (strcat "N " (rtos(cadr pnt1)))   p1e (strcat "E " (rtos(car pnt1)))
     ptxt (getpoint pnt1 "\nPick text location: ")

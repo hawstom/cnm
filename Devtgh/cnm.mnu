@@ -48,6 +48,7 @@ ID_HCNMSETUP      [S&et Scale && Sizes	SETUP]^C^Chaws-setup;
 ID_HCNMPOLARSET   [Angle Snaps O&n (15 deg)	POLARSET]^C^Chaws-polarset;
 ID_HCNMPOLAROFF   [Angle Snaps O&ff	POLAROFF]^C^Chaws-polaroff;
 ID_HCNMCNMLAYER   [<-&Layer Settings]^C^Chcnm-cnmlayer;
+ID_HCNMLINKPROJ [Link to Project]^C^CHCNM-LINKPROJ;
                 [--]
 ID_HCNMBOXL     [&Box Note	BOXL]^C^Chaws-boxl;
 ID_HCNMCIRL     [&Circle Note	CIRL]^C^Chaws-cirl;
@@ -514,9 +515,8 @@ ID_HCNMLAMUFFX  [Thaws layers frozen by previous picking: UFFX]
 ID_HCNMLAMTHA   [Thawas all layers: THA]
 ID_HCNMLAMOFI   [Turns off all but selected layers to isolate them for editing: OFI]
 ID_HCNMLAMONA   [Turns on all layers: ONA]
-ID_HCNMNOTESEDC [Changes the default notes editor: HCNM-NOTESEDITOR]
+ID_HCNMLINKPROJ [Sets another project folder for all drawings in this folder: HCNM-LINKPROJ]
 ID_HCNMNOTESEDE [Edits project notes: HCNM-NOTESEDIT]
-ID_HCNMNOTESEDI [Imports project notes file from template in HawsEDC folder to this dwg's folder: NOTESFILEIN]
 ID_HCNMNTPURGE  [Erases the notes table so you can move it to a new location: NTPURGE]
 ID_HCNMOCTL     [Inserts an octagon bubble note.  Uses 3 customizable blocks (NOTEOCT?#: left, right, or double, style 1 or 2): OCTL]
 ID_HCNMOPTIONS  [Edits Construction Notes Manager options:  HCNM-HCO]
@@ -524,8 +524,6 @@ ID_HCNMPENL     [Inserts a pentagon bubble note.  Uses 3 customizable blocks (NO
 ID_HCNMPHASEDIT [Searches and replaces phases in bubble notes: ATTEDIT]
 ID_HCNMPOLAROFF [Turns off polar tracking: POLAROFF]
 ID_HCNMPOLARSET [Sets polar tracking to 30 deg increments.  Acts as magnet to precise angle alignments: POLARSET]
-ID_HCNMPROJNOTES [Sets current Project Notes file: HCNM-CHANGEPROJNOTES]
-ID_HCNMPROJROOT [Sets project folder for all drawings in this folder: HCNM-LINKPROJ]
 ID_HCNMQTYNOPLOT [Changes bubble note attributes to a non-plotting layer: HCNM-ATTNOPLOT]
 ID_HCNMQTYPLOT  [Changes bubble note attributes to layer 0: HCNM-ATTPLOT]
 ID_HCNMRECL     [Inserts a rectangle bubble note.  Uses 3 customizable blocks (NOTEREC?#: left, right, or double, style 1 or 2): RECL]
