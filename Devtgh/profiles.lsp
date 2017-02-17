@@ -79,7 +79,8 @@
 
 (DEFUN
    c:haws-PROSUP
-           (/ PT1 PT2 PTBOT PTCEN BOTPIP VRAD PT3 PT4 ELLIP1 LINE1 LINE2 LINE3
+           (/  BOTPIP ELLIP1 HVEXAG LEFT LINE1 LINE2 LINE3
+              PT1 PT2 PT3 PT4 PTCEN RIGHT UCSYDIR VRAD
            )
   (HAWS-ERDF$@ 0)
   (HAWS-VSAVE '("ucsfollow" "osmode" "clayer"))
@@ -2808,30 +2809,3 @@
     ""
   ) ;_ end of command
 ) ;_ end of DEFUN
-
-(DEFUN
-   c:haws-CU
-       (/ PO_IN)
-  ;;Previously named po (profile offset)
-  (HAWS-ERDF$@ 0)
-  (SETQ
-    PO_IN
-     (GETSTRING
-       (STRCAT
-         "\nDistance to copy (negative for down)<"
-         (IF POFSET
-           POFSET
-           "0"
-         ) ;_ end of IF
-         ">:"
-       ) ;_ end of STRCAT
-     ) ;_ end of GETSTRING
-  ) ;_ end of SETQ
-  (IF (/= PO_IN "")
-    (SETQ POFSET PO_IN)
-  ) ;_ end of IF
-  (PROMPT "Select profile line to copy:")
-  (COMMAND "copy" PAUSE "" "0,0" (STRCAT "0," POFSET))
-  (HAWS-ERRRST)
-) ;_ end of DEFUN
-(PRINC)

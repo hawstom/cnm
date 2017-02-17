@@ -6,10 +6,11 @@
 ;;;
 ;;; Don't forget to copy this file to a safe place for safekeeping.
 ;;;
+;;; Order of commands: 1. Section 2. Random
+;;;
 ;;Profile Drafter
 (defun c:pro () (c:haws-pro))
 (defun c:eop () (c:haws-eop))
-(defun c:cu () (c:haws-cu))
 (defun c:ellabel () (c:haws-ellabel))
 (defun c:elv () (c:haws-elv))
 (defun c:eop () (c:haws-eop))
@@ -43,7 +44,6 @@
 (defun c:gd () (c:haws-geodata))
 (defun c:dm () (c:haws-dm))
 (defun c:dw () (c:haws-dw))
-(defun c:elev0 () (c:haws-elev0))
 (defun c:m40 () (c:haws-m40))
 (defun c:m42 () (c:haws-m42))
 (defun c:mc2033 () (c:haws-mc2033))
@@ -55,7 +55,7 @@
 (defun c:ws () (c:haws-ws))
 (defun c:zero () (c:haws-zero))
 ;;;---------------Construction Notes Section---------------
-(defun c:bb () (c:haws-bb))
+;(defun c:bb () (c:haws-bb)); Retire
 (defun c:boxl () (c:haws-boxl))
 (defun c:cirl () (c:haws-cirl))
 (defun c:dial () (c:haws-dial))
@@ -80,21 +80,26 @@
 (defun c:setnotephases () (c:haws-setnotephases))
 (defun c:ntpurge () (c:haws-ntpurge))
 (defun c:setnotesbubblestyle () (c:hcnm-setnotesbubblestyle))
-(defun c:invl () (c:haws-invl))
-(defun c:invr () (c:haws-invr))
-(defun c:lotel () (c:haws-lotel))
-(defun c:pad () (c:haws-pad))
-(defun c:sll () (c:haws-sll))
-(defun c:slope () (c:haws-slope))
-(defun c:spotel () (c:haws-spotel))
-(defun c:slr () (c:haws-slr))
-(defun c:tcelev () (c:haws-tcelev))
-(defun c:tcelevl () (c:haws-tcelevl))
-(defun c:tcelevr () (c:haws-tcelevr))
-(defun c:tcl () (c:haws-tcl))
-(defun c:tcr () (c:haws-tcr))
-(defun c:rev () (c:haws-rev))
-(defun c:tc () (c:haws-tc))
+;;;INSBLK sub-section
+(defun c:GB      () (c:haws-GB)      )
+(defun c:GC      () (c:haws-GC)      )
+(defun c:INVL    () (c:haws-INVL)    )
+(defun c:INVR    () (c:haws-INVR)    )
+(defun c:LOTEL   () (c:haws-LOTEL)   )
+(defun c:PAD     () (c:haws-PAD)     )
+(defun c:REV     () (c:haws-REV)     ) ; From civil command group
+(defun c:secb    () (c:haws-secb)    )
+(defun C:secl    () (C:haws-secl)    )
+(defun c:secr    () (c:haws-secr)    )
+(defun c:sect    () (c:haws-sect)    )
+(defun c:haws-SLL() (c:haws-SLL))
+(defun c:SLOPE   () (c:haws-SLOPE)   )
+(defun c:SLR     () (c:haws-SLR)     )
+(defun c:SPOTEL  () (c:haws-SPOTEL)  )
+(defun c:TC      () (c:haws-TC)      ) ; From profiles command group
+(defun c:TCELEV  () (c:haws-TCELEV)  )
+(defun c:TCL     () (c:haws-TCL)     )
+(defun c:TCR     () (c:haws-TCR)     )
 ;;last two from the profiles and civil groups
 ;;;---------------Horizontal Control Section---------------
 (defun c:bdl () (c:haws-bdl))
@@ -130,7 +135,6 @@
 (defun c:cs () (c:haws-cs))
 (defun c:ee () (c:haws-ee))
 (defun c:facnum () (c:haws-facnum))
-(defun c:helv () (c:haws-helv))
 (defun c:imp_exp () (c:haws-imp_exp))
 (defun c:incnum () (c:haws-incnum))
 (defun c:l80 () (c:haws-l80))
@@ -195,7 +199,6 @@
 (defun c:lxxx () (c:haws-lxxx))
 (defun c:oo () (c:haws-oo))
 (defun c:offsetx () (c:haws-offsetx))
-(defun c:as () (c:haws-as))
 (defun c:ul () (c:haws-ul))
 ;;;---------------Block Management Section---------------
 (defun c:a2t () (c:haws-a2t))
@@ -317,9 +320,10 @@
 (defun c:mren () (c:haws-mren))
 (defun c:mv () (c:haws-mv))
 (defun c:mvhp () (c:haws-mvhp))
-(defun c:ns () (c:haws-ns))
 (defun c:polarset () (c:haws-polarset))
 (defun c:pall () (c:haws-pall))
+(defun c:proto () (c:haws-proto))
+(defun c:protox () (c:haws-protox))
 (defun c:setup () (c:haws-setup))
 (defun c:10 () (c:haws-10))
 (defun c:12 () (c:haws-12))

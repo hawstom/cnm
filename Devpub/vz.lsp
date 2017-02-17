@@ -6,7 +6,6 @@
 (DEFUN c:haws-ZW ()(COMMAND "'ZOOM" "W")(PRINC))
 (DEFUN c:haws-Z0 ()(COMMAND "'ZOOM" "W" "0,0" "36,24")(PRINC))
 (DEFUN c:haws-ZA ()(COMMAND "'ZOOM" "A")(PRINC))
-(DEFUN c:haws-ZD ()(COMMAND "'ZOOM" "D")(PRINC))
 (DEFUN c:haws-ZE ()(COMMAND "'ZOOM" "E")(PRINC))
 (DEFUN c:haws-ZI ()(COMMAND "'ZOOM" "1.5X")(PRINC))
 (DEFUN c:haws-ZO ()(COMMAND "'ZOOM" "0.5X")(PRINC))

@@ -27,7 +27,7 @@ DDINOUT : dialog {
     }
   }
   : text {
-  	key = "TITLE";
+  	key = "TIP";
 	value = "Not the list you want?  Fix it. INOUT.LSP is Open Source!";
   }
 }

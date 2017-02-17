@@ -21,13 +21,14 @@
 ("NOTESTAL"     "C-ANNO-HCNM-TABL-TOTL"           "m"   "")         ;Color of Quantity Take-off table generated for multiple dwg files.
 ("NOTESNOPLOT"  "C-ANNO-HCNM-NPLT"                "252" "")         ;CNM layer to hide attributes on.
 ("0"            "0"                               ""    "")         ;Layer to insert multilayer or explode blocks on (usually"0")
-("ANNOMISC"     "C-ANNO"                          "m"   "")         ;Misc annotation objects
+("ANNOMISC"     "C-ANNO"                          "m"   "")         ;Misc annotation objects and INSBLK commands
 ("BB"           "C-ANNO-BUBL"                     ""    "")         ;BB command
 ("BERM"         "C-TOPO-BERM"                     "2"   "")         ;BERM command
 ("BWLDR"        "C-ANNO-LEAD"                     "1"   "")         ;BW command
 ("CLOUD"        "C-ANNO-CLOU"                     "3"   "")         ;CLD command revision clouds
 ("CONTLBL"      "C-TOPO-IDEN"                     ""    "")         ;CONTXT command
-("DELTA"        "C-ANNO-DELT"                     "2"   "")         ;DELTA command
+("IB-DELTA"     "C-ANNO-REVS"                     "2"   "")         ;DELTA command
+("IB-SEC"       "C-ANNO-SECN"                     "2"   "")         ;SEC? commands
 ("DIM"          "C-ANNO-DIMS"                     "2"   "")         ;STDIM command
 ("DRIVEWAY"     "C-ROAD-DWAY"                     "6"   "")         ;DW command driveway
 ("DRIVEWAYTX"   "C-ROAD-DWAY-CL"                  "2"   "CENTER2")  ;DW command driveway centerline and text

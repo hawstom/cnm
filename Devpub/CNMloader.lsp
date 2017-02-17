@@ -52,7 +52,7 @@
 
 ;;---------------Profiles Section---------------
 (haws-autoload "eop"      '("haws-eop"))
-(haws-autoload "profiles" '( "haws-cu" "haws-ellabel" "haws-elv" "haws-eop" "haws-grb" "haws-grc" "haws-grd" "haws-lst" "haws-newpro"
+(haws-autoload "profiles" '("haws-ellabel" "haws-elv" "haws-eop" "haws-grb" "haws-grc" "haws-grd" "haws-lst" "haws-newpro"
                        "haws-pc" "haws-pldr" "haws-pm" "haws-pred" "haws-pro" "haws-procb" "haws-proe"
                        "haws-profc" "haws-promh" "haws-propipe" "haws-prosup" "haws-stalabel")
 )
@@ -92,8 +92,10 @@
                         "haws-ntpurge" "hcnm-setnotesbubblestyle"
                         "hcnm-cnmoptions")
 )
-(haws-autoload "insblk"   '("haws-invl" "haws-invr" "haws-lotel" "haws-pad" "haws-sll" "haws-slope" "haws-spotel" "haws-slr"
-                        "haws-tcelev" "haws-tcelevl" "haws-tcelevr" "haws-tcl" "haws-tcr"
+(haws-autoload "insblk"   '("haws-gb" "haws-gc" "haws-invl" "haws-invr" "haws-lotel" "haws-pad"
+                            "haws-secb" "haws-secl" "haws-secr" "haws-sect"
+                            "haws-sll" "haws-slope" "haws-spotel" "haws-slr"
+                        "haws-tcelev" "haws-tcelevl" "haws-tcelevr"
                         "haws-rev" "haws-tc") ;;last two from the profiles and civil groups
 )
 
@@ -167,7 +169,7 @@
 (haws-autoload "ca"       '("haws-ca"))
 (haws-autoload "chattrib" '("haws-chattrib"))
 (haws-autoload "incatt"   '("haws-incatt"))
-(haws-autoload "inout"    '("haws-xin" "haws-xout" ))
+(haws-autoload "inout"    '("haws-xin" "haws-xout"))
 (haws-autoload "xd"       '("haws-xd"))
 (haws-autoload "xroffset" '("haws-xro" "haws-xroffet"))
 (haws-autoload "xu"       '("haws-xu"))
@@ -186,7 +188,7 @@
 
 ;;---------------Editing Section---------------
 (haws-autoload "edt"      '("haws-bf" "haws-mp" "haws-pj" "haws-r1" "haws-r2" "haws-r4" "haws-r9" "haws-s" "haws-ub" "haws-um"))
-(haws-autoload "addleng"  '("haws-adl"))
+(haws-autoload "addleng"  '("haws-adl" ))
 (haws-autoload "brkmat"   '("haws-bm"))
 (haws-autoload "brk"      '("haws-brk"))
 (haws-autoload "copyrot"  '("haws-cr" "haws-copyrot"))
@@ -217,7 +219,7 @@
 
 ;;---------------Setup and Drawing Environment Section---------------
 (haws-autoload "sde"      '("haws-aa" "haws-adt" "haws-cet" "haws-cmd" "haws-dia" "haws-fd" "haws-ib" "haws-il" "haws-io" "haws-ir" "haws-it"
-                        "haws-llt" "haws-mn" "haws-ose" "haws-osi" "haws-osm" "haws-osn" "haws-proto" "haws-protox" "haws-pslt" "haws-rga"
+                        "haws-llt" "haws-ose" "haws-osi" "haws-osm" "haws-osn" "haws-proto" "haws-protox" "haws-pslt" "haws-rga"
                         "haws-qt" "haws-uf" "haws-uf0" "haws-uf1")
 )
 (haws-autoload "clean"    '("haws-clean"))
@@ -227,7 +229,6 @@
 (haws-autoload "mrename"  '("haws-mren"))
 (haws-autoload "mv"       '("haws-mv"))
 (haws-autoload "mvhp"     '("haws-mvhp"))
-(haws-autoload "notesnap" '("haws-ns"))
 (haws-autoload "polarset" '("haws-polarset"))
 (haws-autoload "purge"    '("haws-pall"))
 (haws-autoload "setup"    '("haws-setup" "haws-10" "haws-12" "haws-setdim10" "haws-setdim12"))

@@ -1,7 +1,7 @@
 (PROMPT "\nHawsEDC library functions...")
 
 ;;;This is the current version of HawsEDC and CNM
-(DEFUN HAWS-UNIFIED-VERSION () "4.2.29\n\nCopyright 2015")
+(DEFUN HAWS-UNIFIED-VERSION () "4.2.30.aaa\n\nCopyright 2017")
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 (SETQ *HAWS-DEBUGLEVEL* 0)
 ;;This function returns the current setting of nagmode.
@@ -3193,8 +3193,8 @@ ImportLayerSettings=No
   )
   (IF (OR (NOT *HAWS:LAYERS*)
           (COND
-            ((= (HCNM-GETVAR "ImportLayerSettings") "Yes")
-             (HCNM-SETVAR "ImportLayerSettings" "No")
+            ((= (HCNM-CONFIG-GETVAR "ImportLayerSettings") "Yes")
+             (HCNM-CONFIG-SETVAR "ImportLayerSettings" "No")
              T
             )
           )
@@ -4202,8 +4202,11 @@ ImportLayerSettings=No
 )
 ;; CNM.LSP has the HCNM-GETVAR function that is being called by
 ;; HAWS-MKLAYR (This is a messy, sloppy workaround.)
-(IF (NOT HCNM-GETVAR)
-  (HAWS-LOAD-FROM-APP-DIR "cnm")
+(COND
+  ((NOT HCNM-CONFIG-GETVAR)
+   (ALERT "Loading CNM on startup just because mklayr needs to know whether to import layer settings.  Need to fix!")
+   (HAWS-LOAD-FROM-APP-DIR "cnm")
+  )
 )
 ;;Can't autoload AH.LSP the normal way.  Load here.
 (IF (NOT AH)
