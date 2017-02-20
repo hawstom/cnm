@@ -1,7 +1,7 @@
 (DEFUN
    C:HAWS-CLEAN ( / inp)
   (initget "Yes No")
-  (setq inp (getkword "\nClean uses the wlock * command, which does not preserve layouts or UCS settings.  Continue? [Yes/No]: "))
+  (setq inp (getkword "\nClean uses the wlock * command, which does not preserve Civil 3D styles.  Continue? [Yes/No]: "))
   (cond 
     ((= inp "Yes")
       (SETVAR "expert" 0)

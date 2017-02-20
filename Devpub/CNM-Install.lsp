@@ -7,20 +7,6 @@
 ;;; This file licensed to the public under the terms of the GNU General Public License
 ;;; This file is Free Software. For more info read the license at fsf.org.
 (VL-LOAD-COM)
-(DEFUN
-   HAWS-CNMINSTALL (CNMPATH / PATHS)
-   ;; Add paths in reverse order (top path at bottom)
-  (SETQ PATHS
-    (LIST
-      CNMPATH
-    )
-  )
-  (HAWS-UPDATE-SUPPORTPATHS PATHS)
-  (HAWS-UPDATE-TRUSTEDPATHS PATHS)
-  (HAWS-RELOAD-MENUS)
-  ;;Exit quietly
-  (PRINC)
-)
 ;; Use the snippet below to explore the AutoCAD object model
 ;; (SETQ ACADAPP (VLAX-GET-ACAD-OBJECT))
 ;; (VLAX-DUMP-OBJECT (VLAX-GET-PROPERTY ACADAPP 'PREFERENCES) T)
@@ -168,5 +154,17 @@
   )
 )
 
+(DEFUN
+   HAWS-CNMINSTALL (CNMPATH / PATHS)
+   ;; Add paths in reverse order (top path at bottom)
+  (SETQ PATHS
+    (LIST
+      CNMPATH
+    )
+  )
+  (HAWS-UPDATE-SUPPORTPATHS PATHS)
+  (HAWS-UPDATE-TRUSTEDPATHS PATHS)
+  (HAWS-RELOAD-MENUS)
+  (LOAD "cnmloader")
+)
 
-(HAWS-CNMINSTALL 

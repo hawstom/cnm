@@ -3075,10 +3075,11 @@ ImportLayerSettings=No
        (HAWS-FILENAME-DIRECTORY (FINDFILE "cnm.mnl"))
     )
   )
+  (PRINC "\nLoading ")
   (IF (= "failed"
-         (LOAD (STRCAT *HAWS-APPFOLDER* "\\" FILENAME) "failed")
+         (LOAD (PRINC (STRCAT *HAWS-APPFOLDER* "\\" FILENAME)) "failed")
       )
-    (LOAD FILENAME)
+    (LOAD (PRINC (FINDFILE FILENAME)))
   )
 )
 
@@ -3178,13 +3179,22 @@ ImportLayerSettings=No
 (DEFUN
    HAWS-GETLAYR (KEY / TEMP)
   (DEFUN
-     HAWS-GETUSL (/ RDLIN TEMP)
+     HAWS-GETUSL (/ I RDLIN TEMP)
     (SETQ TEMP (FINDFILE "layers.dat"))
-    (IF (NOT TEMP)
+    (COND
+      (TEMP
+       (PROMPT "\nReading layer settings from ")
+       (PRINC TEMP)
+       (PRINC "\n)")
+      )
       ((PROMPT "\nLayer settings file not found.") (EXIT))
     )
-    (SETQ F3 (OPEN TEMP "r"))
+    (SETQ
+      F3 (OPEN TEMP "r")
+      I 0
+    )
     (WHILE (SETQ RDLIN (READ-LINE F3))
+      (princ "\rReading line ")(princ (setq I (1+ i)))
       (IF (= 'LIST (TYPE (SETQ TEMP (READ RDLIN))))
         (SETQ *HAWS:LAYERS* (CONS TEMP *HAWS:LAYERS*))
       )
@@ -4200,18 +4210,7 @@ ImportLayerSettings=No
 (IF (NOT MKLAYR)
   (HAWS-LOAD-FROM-APP-DIR "lisputil")
 )
-;; CNM.LSP has the HCNM-GETVAR function that is being called by
-;; HAWS-MKLAYR (This is a messy, sloppy workaround.)
-(COND
-  ((NOT HCNM-CONFIG-GETVAR)
-   (ALERT "Loading CNM on startup just because mklayr needs to know whether to import layer settings.  Need to fix!")
-   (HAWS-LOAD-FROM-APP-DIR "cnm")
-  )
-)
-;;Can't autoload AH.LSP the normal way.  Load here.
-(IF (NOT AH)
-  (HAWS-LOAD-FROM-APP-DIR "ah")
-)
+
 (PROMPT "loaded.")
  ;|«Visual LISP© Format Options»
 (72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)

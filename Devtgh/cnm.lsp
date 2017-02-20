@@ -4465,79 +4465,79 @@
 ;;; -------------------------------------------------------------------------
 (DEFUN
    C:HAWS-BOXL ()
-  (HCNM-LDRBLK
+  (HAWS-LDRBLK
     "noteboxl" "noteboxr" "noteboxd" "NOTESLDR" "NotesLeader"
    )
 )
 (DEFUN
    C:HAWS-CIRL ()
-  (HCNM-LDRBLK
+  (HAWS-LDRBLK
     "notecirl" "notecirr" "notecird" "NOTESLDR" "NotesLeader"
    )
 )
 (DEFUN
    C:HAWS-DIAL ()
-  (HCNM-LDRBLK
+  (HAWS-LDRBLK
     "notedial" "notediar" "notediad" "NOTESLDR" "NotesLeader"
    )
 )
 (DEFUN
    C:HAWS-ELLL ()
-  (HCNM-LDRBLK
+  (HAWS-LDRBLK
     "noteelll" "noteellr" "noteelld" "NOTESLDR" "NotesLeader"
    )
 )
 (DEFUN
    C:HAWS-HEXL ()
-  (HCNM-LDRBLK
+  (HAWS-LDRBLK
     "notehexl" "notehexr" "notehexd" "NOTESLDR" "NotesLeader"
    )
 )
 (DEFUN
    C:HAWS-OCTL ()
-  (HCNM-LDRBLK
+  (HAWS-LDRBLK
     "noteoctl" "noteoctr" "noteoctd" "NOTESLDR" "NotesLeader"
    )
 )
 (DEFUN
    C:HAWS-PENL ()
-  (HCNM-LDRBLK
+  (HAWS-LDRBLK
     "notepenl" "notepenr" "notepend" "NOTESLDR" "NotesLeader"
    )
 )
 (DEFUN
    C:HAWS-RECL ()
-  (HCNM-LDRBLK
+  (HAWS-LDRBLK
     "noterecl" "noterecr" "noterecd" "NOTESLDR" "NotesLeader"
    )
 )
 (DEFUN
    C:HAWS-SSTL ()
-  (HCNM-LDRBLK
+  (HAWS-LDRBLK
     "notesstl" "notesstr" "notesstd" "NOTESLDR" "NotesLeader"
    )
 )
 (DEFUN
    C:HAWS-TRIL ()
-  (HCNM-LDRBLK
+  (HAWS-LDRBLK
     "notetril" "notetrir" "notetrid" "NOTESLDR" "NotesLeader"
    )
 )
 (DEFUN
    C:HAWS-TCG ()
-  (HCNM-LDRBLK
+  (HAWS-LDRBLK
     "ldrtcgl" "ldrtcgr" "ldrtcgd" "TCGLDR" "TCGLeader"
    )
 )
 (DEFUN
    C:HAWS-TXTL ()
-  (HCNM-LDRBLK
+  (HAWS-LDRBLK
     "ldrtxtl" "ldrtxtr" "ldrtxtd" "NOTESLDR" "NotesLeader"
    )
 )
 
 (DEFUN
-   HCNM-LDRBLK (BLLEFT BLRGHT BLDRAG BLLAY BLDSTY / APOLD AS ANG AUOLD
+   HAWS-LDRBLK (BLLEFT BLRGHT BLDRAG BLLAY BLDSTY / APOLD AS ANG AUOLD
                 BLGF BLLINE BLK BUBBLEHOOKS BUBBLELEADERCONNECTOSNAP
                 DSTY DSTYOLD DTOLD EL EN ENBLK ENDRAG FIXHOOK FIXPHASE
                 FIXTXT3 I P1 P2 P3 P4 P5 P6 P7 P8 PFOUND R1 DS TS LEFT

@@ -33,7 +33,7 @@
          (SETQ FUNCTION-NAME (STRCAT "C:" CMD))
          (EVAL
            (READ
-             (STRCAT "(defun " FUNCTION-NAME "() (HAWS-LOAD-FROM-APP-DIR " QFN ") (" FUNCTION-NAME "))")
+             (STRCAT "(defun " FUNCTION-NAME "() (PRINC \"" (STRCAT "\nCNM command: " CMD ) "\") (HAWS-LOAD-FROM-APP-DIR " QFN ") (" FUNCTION-NAME "))")
            )
          )
        )
@@ -61,6 +61,7 @@
 ;;---------------Civil Drafting Section---------------
 (haws-autoload "2l"       '("haws-2l"))
 (haws-autoload "berm"     '("haws-berm"))
+(haws-autoload "contelev"  '("haws-contelev"))
 (haws-autoload "contvol"  '("haws-contvol"))
 (haws-autoload "curve"    '("haws-curve"))
 (haws-autoload "geodata"  '("haws-geodata"))
@@ -137,7 +138,6 @@
 (haws-autoload "presuf"   '("haws-presuf"))
 (haws-autoload "romans"   '("haws-romans"))
 (haws-autoload "round"    '("haws-round"))
-(haws-autoload "rrr"      '("haws-rrr"))
 (haws-autoload "selstyle" '("haws-selstyle"))
 (haws-autoload "textsize" '("haws-th"))
 (haws-autoload "to"       '("haws-to"))
@@ -176,9 +176,8 @@
 
 ;;---------------Inquiry Section---------------
 (haws-autoload "inq"      '("haws-eg" "haws-egn"))
-(haws-autoload "acres"    '("haws-acres"))
 (haws-autoload "aee"      '("haws-aee"))
-(haws-autoload "aet"      '("haws-aet"))
+(haws-autoload "aet"      '("haws-acres" "haws-aet" "haws-sf" "haws-sm" "haws-sy"))
 (haws-autoload "geodata"  '("haws-al"))
 (haws-autoload "goto"     '("haws-goto"))
 (haws-autoload "istan"    '("haws-istan"))
@@ -187,15 +186,16 @@
 (haws-autoload "wl"       '("haws-wl"))
 
 ;;---------------Editing Section---------------
-(haws-autoload "edt"      '("haws-bf" "haws-mp" "haws-pj" "haws-r1" "haws-r2" "haws-r4" "haws-r9" "haws-s" "haws-ub" "haws-um"))
+(haws-autoload "edt"      '("haws-bf" "haws-cb" "haws-mp" "haws-pj" "haws-r1" "haws-r2" "haws-r4" "haws-r9" "haws-s" "haws-ub" "haws-um" "haws-vb"))
 (haws-autoload "addleng"  '("haws-adl" ))
 (haws-autoload "brkmat"   '("haws-bm"))
 (haws-autoload "brk"      '("haws-brk"))
 (haws-autoload "copyrot"  '("haws-cr" "haws-copyrot"))
 (haws-autoload "chcoord"  '("haws-chcoord"))
 (haws-autoload "chwidth"  '("haws-cw"))
+(haws-autoload "clone"    '("haws-clone"))
 (haws-autoload "cmpro"    '("haws-cmpro"))
-(haws-autoload "linedit"  '("haws-le"))
+(haws-autoload "lengthen"  '("haws-lengthen"))
 (haws-autoload "mfillet"  '("haws-mf"))
 (haws-autoload "moffset"  '("haws-mof"))
 (haws-autoload "mscript"  '("haws-mscr"))
@@ -203,6 +203,7 @@
 (haws-autoload "newscale" '("haws-newscale"))
 (haws-autoload "pjl"      '("haws-pjl"))
 (haws-autoload "rescale"  '("haws-rescale"))
+(haws-autoload "rotatebase"'("haws-rotatebase"))
 (haws-autoload "ssx"      '("haws-ssx"))
 (haws-autoload "ssxpro"   '("haws-ssxpro"))
 (haws-autoload "swap"     '("haws-swap"))
@@ -212,15 +213,17 @@
 (haws-autoload "box"      '("haws-bx"))
 
 ;;---------------Views and Zooms Section---------------
-(haws-autoload "vz"       '("haws-2x" "haws-5x" "haws-9x" "haws-x2" "haws-z0" "haws-za" "haws-ze" "haws-zi" "haws-zo" "haws-zv"
+(haws-autoload "vz"       '("haws-2x" "haws-5x" "haws-9x" "haws-twz" "haws-x2" "haws-z0" "haws-za" "haws-ze" "haws-zi" "haws-zo" "haws-zv"
                         "haws-zz" "haws-zw")
 )
 (haws-autoload "tw"       '("haws-tw"))
 
 ;;---------------Setup and Drawing Environment Section---------------
-(haws-autoload "sde"      '("haws-aa" "haws-adt" "haws-cet" "haws-cmd" "haws-dia" "haws-fd" "haws-ib" "haws-il" "haws-io" "haws-ir" "haws-it"
-                        "haws-llt" "haws-ose" "haws-osi" "haws-osm" "haws-osn" "haws-proto" "haws-protox" "haws-pslt" "haws-rga"
-                        "haws-qt" "haws-uf" "haws-uf0" "haws-uf1")
+(haws-autoload "sde"      '("haws-0" "haws-1" "haws-aa" "haws-adt" "haws-cet" "haws-cmd" "haws-dia" 
+                            "haws-fd" "haws-ib" "haws-il" "haws-io" "haws-ir" "haws-it"
+                            "haws-llt" "haws-mvl" "haws-mvu" "haws-ose" "haws-osi" "haws-osm" 
+                            "haws-osn" "haws-proto" "haws-protox" "haws-pslt" "haws-rga"
+                            "haws-qt" "haws-uf" "haws-uf0" "haws-uf1")
 )
 (haws-autoload "clean"    '("haws-clean"))
 (haws-autoload "edcmenu"  '("haws-edcmenu" "haws-hawsedc"))
@@ -233,11 +236,11 @@
 (haws-autoload "purge"    '("haws-pall"))
 (haws-autoload "setup"    '("haws-setup" "haws-10" "haws-12" "haws-setdim10" "haws-setdim12"))
 (haws-autoload "sheet"    '("haws-sheet"))
-;;(haws-autoload "tilemode" '("haws-0" "haws-1"))
 (haws-autoload "unitset"  '("haws-u0" "haws-u1" "haws-u2" "haws-u3" "haws-u8" "haws-us"))
+(defun ah () (alert (princ "\nAH has been retired.  Please use the built in m2p osnap.")))
 
 ;;---------------Miscellaneous Section---------------
-(haws-autoload "misc"     '("haws-ffa" "haws-user"))
+(haws-autoload "misc"     '("haws-ffa" "haws-hawsalias" "haws-pgpedit" "haws-user"))
 (haws-autoload "loadandrun"       '("haws-LoadAndRun"))
 ;-------------MODIFY THE ABOVE--------------------------------------
 

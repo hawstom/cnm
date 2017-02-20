@@ -1,15 +1,26 @@
 ;Written by Thomas Gail Haws
-(defun c:haws-AET (/ area TS TXPT)
-  (prompt "\nSelect circle or polyline:")
-  (command "area" "e" pause)
-  (setq
-    area (strcat (rtos (getvar "AREA") 2 (getvar "luprec")) " SF")
-    txpt (getpoint "\nMiddle point for text:")
-    ts (* (HAWS-DWGSCALE)(getvar "dimtxt"))
+(DEFUN C:HAWS-AC () (HAWS-AET (/ 1.0 43560) "AC"))
+(DEFUN C:HAWS-SF () (HAWS-AET 1 "SF"))
+(DEFUN C:HAWS-AET () (HAWS-SF))
+(DEFUN C:HAWS-SM () (HAWS-AET (/ 1.0 27878400) "SQ. MI."))
+(DEFUN C:HAWS-SY () (HAWS-AET (/ 1.0 9) "SY"))
+(DEFUN
+   HAWS-AET (FACTOR LABEL / AREA TS TXPT)
+  (PROMPT "\nSelect circle or polyline:")
+  (COMMAND "area" "e" PAUSE)
+  (SETQ
+    AREA (STRCAT
+           (RTOS (* (GETVAR "AREA") FACTOR) 2 (GETVAR "luprec"))
+           " "
+           LABEL
+         )
+    TXPT (GETPOINT "\nMiddle point for text:")
+    TS   (* (GETVAR "dimscale") (GETVAR "dimtxt"))
   )
-  (if txpt
-    (HAWS-MKTEXT "m" txpt ts 0 area)
-    (command "text" "" area)
+  (PRINC TXPT)
+  (IF TXPT
+    (HAWS-MKTEXT "m" TXPT TS 0 AREA)
   )
-  (princ)
+  (PRINC (STRCAT "\n" AREA))
+  (PRINC)
 )

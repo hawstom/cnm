@@ -286,18 +286,24 @@
 (defun getlayr ( key / temp)
   (defun getusl (/ rdlin temp)
     (setq temp (findfile"layers.dat"))
-    (cond
-      ( (not temp)
-        (prompt "\nLayer settings file LAYERS.DAT not found.")
+    (COND
+      (TEMP
+       (PROMPT "\nReading layer settings from ")
+       (PRINC TEMP)
       )
-      ( T
-        (setq f3 (open temp "r"))
-        (while (setq rdlin (read-line f3))
-          (if (setq temp (read rdlin))(setq *HAWS:LAYERS* (cons temp *HAWS:LAYERS*)))
-        )
-        (setq f3 (close f3))
+      ((PROMPT "\nLayer settings file not found.") (EXIT))
+    )
+    (SETQ
+      F3 (OPEN TEMP "r")
+      I 0
+    )
+    (WHILE (SETQ RDLIN (READ-LINE F3))
+      (princ "\rReading line ")(princ (setq I (1+ i)))
+      (IF (= 'LIST (TYPE (SETQ TEMP (READ RDLIN))))
+        (SETQ *HAWS:LAYERS* (CONS TEMP *HAWS:LAYERS*))
       )
     )
+    (SETQ F3 (CLOSE F3))
   )
   (if (not *HAWS:LAYERS*)(getusl))
   (cond
