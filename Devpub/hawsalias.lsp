@@ -36,7 +36,7 @@
 ;;;---------------Civil Drafting Section---------------
 (defun c:2l () (c:haws-2l))
 (defun c:berm () (c:haws-berm))
-(defun c:acres () (c:haws-acres))
+(defun c:ac () (c:haws-acres))
 (defun c:cel () (c:haws-contelev))
 (defun c:cv () (c:haws-contvol))
 (defun c:contvol () (c:haws-contvol))

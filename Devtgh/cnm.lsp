@@ -249,7 +249,7 @@
 ;;;
 ;;;Set up list from CONSTNOT.TXT and NOTEQTY block.
 (DEFUN
-   HHCNM-TABLE-FROM-SEARCHANDSAVE (DN PROJNOTES / ALIASLIST AT AV BLKI
+   HCNM-TABLE-FROM-SEARCHANDSAVE (DN PROJNOTES / ALIASLIST AT AV BLKI
                                    BLKSS COUNT CTABONLY EL EN ET I J
                                    MVPORT MVSSET N NFNAME NOTEFND NOTEI
                                    NOTELINES NOTELIST NOTENUM NOTEPHASE
@@ -417,7 +417,15 @@
   (WHILE (AND BLKSS (SETQ BLKI (SSNAME BLKSS (SETQ I (1+ I)))))
     (SETQ
       EN BLKI
-      NOTETYPE NIL
+      NOTETYPE
+       (COND
+         ((LM:GETDYNPROPVALUE
+            (VLAX-ENAME->VLA-OBJECT EN)
+            "Shape"
+          )
+         )
+         (T NIL)
+       )
       NOTENUM NIL
       NOTETXT
        '(0 1 2 3 4 5 6 7 8 9)
@@ -1206,15 +1214,15 @@
   (IF (NOT QTYPT)
     (SETQ QTYPT (GETPOINT "\nStart point for key notes table: "))
   )
-  (HHCNM-TABLE-FROM-SEARCHANDSAVE DN PROJNOTES)
+  (HCNM-TABLE-FROM-SEARCHANDSAVE DN PROJNOTES)
   ;;Make a new notes table
   (HCNM-MAKENOTETABLE "E" QTYPT QTYSET DN TXTHT)
 )
-;;CNM-IMPORT
+;;HCNM-IMPORT
 ;;In the NOTES strategy, this routine is second of three main routines.
 ;;Reads from .NOT file, created by HCNM-TABLE-FROM-SEARCH, everything necessary and creates a table. 
 (DEFUN
-   CNM-IMPORT (DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID / EL EN I QTYPT
+   HCNM-IMPORT (DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID / EL EN I QTYPT
                QTYSET TABLESPACE
               )
   (SETQ
@@ -1266,7 +1274,7 @@
   ;;Make a new notes table after erasing qtyset
   (HCNM-MAKENOTETABLE "I" QTYPT QTYSET DN TXTHT)
 )
-;;CNM-TALLY
+;;HCNM-TALLY
 ;;In the NOTES strategy, this routine is the third of three main routines.
 ;;Reads from a group of .NOT files everything necessary to create a list of total quantities for job.
 ;;Reads CONSTNOT.TXT to put the .NOT files in order.
@@ -1282,7 +1290,7 @@
 ;;   put the qtys.  Use "" for any unused phases on a sheet.
 ;;   '((shti (typj (notek qty1 qty2 qtyk))))
 (DEFUN
-   CNM-TALLY (DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID / ALLNOT COL1X
+   HCNM-TALLY (DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID / ALLNOT COL1X
               COLUMN DQWID DWGFIL EL FIRSTLINE FLSPEC I LSTFIL NDWID
               NFNAME NOTELIST NOTETITLES NOTFIL NOTNUM NOTQTY NOTSPC
               NOTTYP NOTUNT NUMFND NUMLIST PGPMOD PHASE PHASELIST
@@ -2158,10 +2166,10 @@
       )
     )
     ((= OPT "Import")
-     (CNM-IMPORT DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID)
+     (HCNM-IMPORT DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID)
     )
     ((= OPT "Tally")
-     (CNM-TALLY DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID)
+     (HCNM-TALLY DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID)
     )
   )
   ;;Restore old dimstyle
@@ -2602,9 +2610,11 @@
      ("User" 4)
     )
     ("Var"
-     ("ProjectNotes" "constnot.txt" 4)
      ("ProjectNotesEditor" "notepad.exe" 4)
+     ("LayersEditor" "notepad.exe" 4)
+     ("ProjectNotes" "constnot.txt" 2)
      ("ThisFile" "" 2)
+     ("ImportLayerSettings" "No" 2)
      ("NoteTypes" "BOX,CIR,DIA,ELL,HEX,OCT,PEN,REC,SST,TRI" 2)
      ("DoCurrentTabOnly" "0" 2)
      ("PhaseAlias1" "1" 2)
@@ -2629,8 +2639,6 @@
      ("ShowKeyTableQuantities" "1" 2)
      ("BubbleHooks" "0" 2)
      ("BubbleLeaderConnectOsnap" "mid,end" 2)
-     ("ImportLayerSettings" "No" 2)
-     ("LayersEditor" "notepad.exe" 4)
      ("NotesLeaderDimstyle" "" 2)
      ("NotesKeyTableDimstyle" "" 2)
      ("TCGLeaderDimstyle" "TCG Leader" 2)
@@ -4458,10 +4466,24 @@
   (PRINC)
 )
 
+(DEFUN C:HAWS-BOXL () (HCNM-LDRBLK-DYNAMIC "BOX"))
+(DEFUN C:HAWS-CIRL () (HCNM-LDRBLK-DYNAMIC "CIR"))
+(DEFUN C:HAWS-DIAL () (HCNM-LDRBLK-DYNAMIC "DIA"))
+(DEFUN C:HAWS-ELLL () (HCNM-LDRBLK-DYNAMIC "ELL"))
+(DEFUN C:HAWS-HEXL () (HCNM-LDRBLK-DYNAMIC "HEX"))
+(DEFUN C:HAWS-OCTL () (HCNM-LDRBLK-DYNAMIC "OCT"))
+(DEFUN C:HAWS-PENL () (HCNM-LDRBLK-DYNAMIC "PEN"))
+(DEFUN C:HAWS-RECL () (HCNM-LDRBLK-DYNAMIC "REC"))
+(DEFUN C:HAWS-SSTL () (HCNM-LDRBLK-DYNAMIC "SST"))
+(DEFUN C:HAWS-TRIL () (HCNM-LDRBLK-DYNAMIC "TRI"))
 (DEFUN
-   C:HCNM-BUBBLE ()
+   HCNM-LDRBLK-DYNAMIC (NOTETYPE / ASSOCIATE-P AUOLD BLOCKNAME DT EN NUM
+                        P1 P2 FLIPPED FLIPSTATE ss1 TXT1 TXT2
+                       )
   (HAWS-ERDF$@ 1)
-  (HAWS-VSAVE '("attdia" "attreq" "aunits" "clayer" "cmdecho"))
+  (HAWS-VSAVE
+    '("attreq" "aunits" "clayer" "cmdecho")
+  )
   (COMMAND "._undo" "_g")
   (SETQ
     ASSOCIATE-P
@@ -4477,27 +4499,55 @@
      (STRCAT "cnm-bubble-" (HCNM-CONFIG-GETVAR "BubbleHooks"))
     P1 (GETPOINT "\nStart point for leader:")
     DT (GETVAR "dimtxt")
+    ss1 (ssadd)
   )
   (HAWS-MKLAYR "NOTESLDR")
   (SETVAR "attreq" 0)
-  (COMMAND
-    "._insert"
-    BLOCKNAME
-    "s"
-    DT
-    P1
-    (ANGTOS (GETVAR "snapang"))
+  (FOREACH
+     FLIPSTATE '(0 1)
+    (COMMAND
+      "._insert"
+      BLOCKNAME
+      "s"
+      DT
+      P1
+      (ANGTOS (GETVAR "snapang"))
+    )
+    (setq en (entlast))
+    (LM:SETDYNPROPVALUE
+      (VLAX-ENAME->VLA-OBJECT en)
+      "Shape"
+      NOTETYPE
+    )
+    (LM:SETDYNPROPVALUE
+      (VLAX-ENAME->VLA-OBJECT en)
+      "Text side"
+      FLIPSTATE
+    )
+    (ssadd en ss1)
   )
-  (SETQ EN (ENTLAST))
   (PROMPT "\nLocation for bubble: ")
-  (COMMAND "._move" EN "" P1 PAUSE)
-  (SETQ P2 (TRANS (CDR (ASSOC 10 (ENTGET EN))) EN 1))
-  (ENTDEL EN)                      ;delete block
-  (SETVAR "attdia" 0)
-  (SETVAR "attreq" 1)
+  (COMMAND "._MOVE" ss1 "" P1 PAUSE)
+  (SETQ
+    P2 (TRANS (CDR (ASSOC 10 (ENTGET EN))) EN 1)
+    ANG1
+     (ANGLE P1 P2)
+    FLIPPED
+     (COND
+       ((MINUSP (COS ANG1)) 1)
+       (0)
+     )
+    NUM
+     (GETSTRING "\nNote number <XX>: ")
+    TXT1
+     (GETSTRING 1 "Line 1 text: ")
+    TXT2
+     (GETSTRING 1 "Line 2 text: ")
+  )
+  (command "._erase" ss1 "")
   (COND
     ((>= (ATOF (GETVAR "acadver")) 14)
-     (COMMAND "._leader" P1 P2 "" "")
+     (COMMAND "._leader" P1 P2 "_Annotation" "")
      (COND
        (ASSOCIATE-P (COMMAND "_block"))
        (T (COMMAND "_none" "._INSERT"))
@@ -4516,30 +4566,49 @@
   (COMMAND BLOCKNAME P2 DT DT (GETVAR "snapang"))
   (SETVAR "aunits" AUOLD)
   (SETQ
-    NUM  (GETSTRING "\nNote number <XX>: ")
-    TXT1 (GETSTRING 1 "Line 1 text: ")
-    TXT2 (GETSTRING 1 "Line 2 text: ")
+    ATTRIBUTE-LIST
+     (LIST
+       (LIST "NOTENUM" NUM)
+       (LIST
+         "NOTEGAP"
+         (IF (OR (/= TXT1 "") (/= TXT2 ""))
+           "%%u "
+           ""
+         )
+       )
+       (LIST "NOTETXT0" "")
+       (LIST
+         "NOTETXT1"
+         (IF (= TXT1 "")
+           ""
+           (STRCAT "%%u" TXT1)
+         )
+       )
+       (LIST
+         "NOTETXT2"
+         (IF (= TXT2 "")
+           ""
+           (STRCAT "%%o" TXT2)
+         )
+       )
+       (LIST "NOTETXT3" "")
+       (LIST "NOTETXT4" "")
+       (LIST "NOTETXT5" "")
+       (LIST "NOTETXT6" "")
+     )
   )
-  (COMMAND
-    NUM
-    (IF (OR (/= TXT1 "") (/= TXT2 ""))
-      "%%u "
-      ""
-    )
-    (IF (= TXT1 "")
-      ""
-      (STRCAT "%%u" TXT1)
-    )
-    (IF (= TXT2 "")
-      ""
-      (STRCAT "%%o" TXT2)
-    )
+  (SETQ ENAME-BLOCK (ENTLAST))
+  (HCNM-SET-ATTRIBUTES ENAME-BLOCK ATTRIBUTE-LIST)
+  (LM:SETDYNPROPVALUE
+    (VLAX-ENAME->VLA-OBJECT ENAME-BLOCK)
+    "Shape"
+    NOTETYPE
   )
-  (SETVAR "cmdecho" 1)
-  (WHILE (= 1 (LOGAND (GETVAR "cmdactive") 1))
-    (COMMAND PAUSE)
+  (LM:SETDYNPROPVALUE
+    (VLAX-ENAME->VLA-OBJECT ENAME-BLOCK)
+    "Text side"
+    FLIPPED
   )
-  (SETVAR "cmdecho" 0)
   (HCNM-RESTORE-DIMSTYLE)
   (HAWS-VRSTOR)
   (COMMAND "._undo" "_e")
@@ -4568,66 +4637,6 @@
 ;;; 
 ;;;|COMMAND|LEFT BLK |RIGHT BLK |DRAG BLK |LAYER KEY |DIMSTYLE KEY
 ;;; -------------------------------------------------------------------------
-(DEFUN
-   C:HAWS-BOXL ()
-  (HAWS-LDRBLK
-    "noteboxl" "noteboxr" "noteboxd" "NOTESLDR" "NotesLeader"
-   )
-)
-(DEFUN
-   C:HAWS-CIRL ()
-  (HAWS-LDRBLK
-    "notecirl" "notecirr" "notecird" "NOTESLDR" "NotesLeader"
-   )
-)
-(DEFUN
-   C:HAWS-DIAL ()
-  (HAWS-LDRBLK
-    "notedial" "notediar" "notediad" "NOTESLDR" "NotesLeader"
-   )
-)
-(DEFUN
-   C:HAWS-ELLL ()
-  (HAWS-LDRBLK
-    "noteelll" "noteellr" "noteelld" "NOTESLDR" "NotesLeader"
-   )
-)
-(DEFUN
-   C:HAWS-HEXL ()
-  (HAWS-LDRBLK
-    "notehexl" "notehexr" "notehexd" "NOTESLDR" "NotesLeader"
-   )
-)
-(DEFUN
-   C:HAWS-OCTL ()
-  (HAWS-LDRBLK
-    "noteoctl" "noteoctr" "noteoctd" "NOTESLDR" "NotesLeader"
-   )
-)
-(DEFUN
-   C:HAWS-PENL ()
-  (HAWS-LDRBLK
-    "notepenl" "notepenr" "notepend" "NOTESLDR" "NotesLeader"
-   )
-)
-(DEFUN
-   C:HAWS-RECL ()
-  (HAWS-LDRBLK
-    "noterecl" "noterecr" "noterecd" "NOTESLDR" "NotesLeader"
-   )
-)
-(DEFUN
-   C:HAWS-SSTL ()
-  (HAWS-LDRBLK
-    "notesstl" "notesstr" "notesstd" "NOTESLDR" "NotesLeader"
-   )
-)
-(DEFUN
-   C:HAWS-TRIL ()
-  (HAWS-LDRBLK
-    "notetril" "notetrir" "notetrid" "NOTESLDR" "NotesLeader"
-   )
-)
 (DEFUN
    C:HAWS-TCG ()
   (HAWS-LDRBLK
@@ -5063,6 +5072,64 @@
     VAR
     (STRCAT "(hcnm-CONFIG-TEMP-SETVAR \"" VAR "\" $value)")
   )
+)
+
+(DEFUN
+   HCNM-SET-ATTRIBUTES (ENAME-BLOCK ATTRIBUTE-LIST)
+  (WHILE (AND
+           (SETQ ENAME-BLOCK (ENTNEXT ENAME-BLOCK))
+           (/= "SEQEND"
+               (SETQ ETYPE (CDR (ASSOC 0 (SETQ ELIST (ENTGET ENAME-BLOCK)))))
+           )
+         )
+    (COND
+      ((AND
+         (= ETYPE "ATTRIB")
+         (SETQ ATAG (CDR (ASSOC 2 ELIST)))
+         (ASSOC ATAG ATTRIBUTE-LIST)
+       ) ;_ end of and
+       (ENTMOD
+         (SUBST (CONS 1 (CADR (ASSOC ATAG ATTRIBUTE-LIST))) (ASSOC 1 ELIST) ELIST)
+       )
+       (ENTUPD ENAME-BLOCK)
+      )
+    )
+  )
+)
+
+
+;; Get Dynamic Block Property Value  -  Lee Mac
+;; Returns the value of a Dynamic Block property (if present)
+;; blk - [vla] VLA Dynamic Block Reference object
+;; prp - [str] Dynamic Block property name (case-insensitive)
+
+(defun LM:getdynpropvalue ( blk prp )
+    (setq prp (strcase prp))
+    (vl-some '(lambda ( x ) (if (= prp (princ (strcase (vla-get-propertyname x)))) (vlax-get x 'value)))
+        (vlax-invoke blk 'getdynamicblockproperties)
+    )
+)
+
+;; Set Dynamic Block Property Value  -  Lee Mac
+;; Modifies the value of a Dynamic Block property (if present)
+;; blk - [vla] VLA Dynamic Block Reference object
+;; prp - [str] Dynamic Block property name (case-insensitive)
+;; val - [any] New value for property
+;; Returns: [any] New value if successful, else nil
+
+(defun LM:setdynpropvalue ( blk prp val )
+    (setq prp (strcase prp))
+    (vl-some
+       '(lambda ( x )
+            (if (= prp (strcase (vla-get-propertyname x)))
+                (progn
+                    (vla-put-value x (vlax-make-variant val (vlax-variant-type (vla-get-value x))))
+                    (cond (val) (t))
+                )
+            )
+        )
+        (vlax-invoke blk 'getdynamicblockproperties)
+    )
 )
 
 (LOAD "ini-edit")

@@ -1,13 +1,19 @@
 INSTALL
-To finish installing CNM into any AutoCAD profile, you must drag CNM-Install.lsp 
-from the desktop into an open drawing.  CNM-Install.lsp is open source in case 
-you want to customize it.  A copy has also been placed in the application directory.
+To finish installing CNM into any AutoCAD profile, you must do one of the following:
+
+a) Drag CNM-Install.lsp from the desktop into an open drawing.  CNM-Install.lsp is 
+open source in case you want to customize it.  A copy has also been placed in the 
+application directory.
+
+b) Add the installation folder to your AutoCAD Support Files and Trusted paths.
+Then use MENULOAD to load CNM.mnu (and optionally FUNKY.MNU function key osnaps).
 
 ACTIVATE OLD PGP ALIASES (Quick Keys)
 Type HawsPGP to activate old Haws PGP aliases.
 
 VERSION 4.2.30aaa (pre-pre-alpha)
 -New Cool Stuff
+--Bubble notes now can flip sides and are all-shapes-in-one.
 --Contour Elevate and/or Label (CEL)
 --Show nested layer in Layer palette after LX report (LXX)
 --Show layers for selected objects in Layer palette (LXXX)
@@ -20,7 +26,8 @@ VERSION 4.2.30aaa (pre-pre-alpha)
 
 -Fixes and improvements
 --Bubble notes gracefully stay away from Annotative dimension styles.  They don't associate.
---CNM checks for project mistakes like a copied CNM.ini.
+--CNM checks for project mistakes like a copied CNM.ini or 
+  a CNM.INI and CNMPROJ.TXT in the same folder.
 --"Link to Project" added to CNM menu to link multi-folder projects to a single CNM.ini.
 --All commands work with Annotative scaling or DIMSCALE=0.
 
@@ -39,7 +46,7 @@ VERSION 4.2.30aaa (pre-pre-alpha)
 
 -Commands retired
 --BB Bubble
---CU Copy up
+--CU Copy up (use polar or ortho)
 --ELEV0
 --HELV
 --JOIN (now an AutoCAD command)
