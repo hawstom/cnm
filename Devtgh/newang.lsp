@@ -3,7 +3,7 @@
 (defun c:haws-na () (HAWS-newang))
 (defun
 	 HAWS-newang	(/ basept flip i sset metype men nested mel mes meang nested etype organg rotang shells sslen ent entlst)
-	(HAWS-ERDF$@ 0) ;_ end of if
+	(haws-errdef 0) ;_ end of if
 	(HAWS-VSAVE '("aunits"))
 	(command "._undo" "g")
 	(setq sset (ssget) flip nil)

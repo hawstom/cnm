@@ -1,3 +1,10 @@
+;; 2017-02-26 This is the only way I know at the moment to control dropping of functions
+;; and make them export to AutoCAD.
+(defun haws-prevent-function-drop ()
+  (haws-load-from-app-dir "lisputil")
+  (hcnm-config-getvar "Dummy")
+  (hcnm-config-getvar "Dummy" "dummy")
+)
 ;;; Vintage HawsEDC Lisp library
 ;;; Utility functions including the error trapper
 

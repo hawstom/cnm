@@ -200,7 +200,7 @@
       )
     )
   )
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (command "._undo" "g")
   (HAWS-VSAVE '("aunits""clayer""ucsfollow""attdia" "regenmode"))
   (setvar "ucsfollow" 0)

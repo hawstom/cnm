@@ -1,5 +1,5 @@
 (defun c:haws-mvhp ( / ds)
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (HAWS-VSAVE'("clayer"))
   (c:haws-0)
   (HAWS-MKLAYR '("defpoints" "" ""))

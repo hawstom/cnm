@@ -51,7 +51,7 @@
             (setq ang1 (+ (/ pi 2) (angle p1 p2)))
         ) )
   ) ) )
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (prompt "\nIs it Tangent?")
   (setq
     e1 (HAWS-chktyp)

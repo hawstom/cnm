@@ -8,7 +8,7 @@
     )
     (princ)
   )
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (HAWS-VSAVE '("dimzin"))
   (setvar "dimzin" 0)
   (if(not 2elinc)(HAWS-2lset))

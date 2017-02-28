@@ -12,7 +12,7 @@
     (HAWS-VRSTOR)
     timdia
   )
-  (HAWS-ERRDEF 0)
+  (haws-errdef 0)
   (graphscr)
   (while
     (cond

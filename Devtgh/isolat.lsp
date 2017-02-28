@@ -5,7 +5,7 @@
 (defun c:haws-FFI () (HAWS-isolat "freeze" nil))
 (defun c:haws-LKI () (HAWS-isolat "lock" nil))
 (defun HAWS-isolat (lopera nested / ss1 i en)
-  (HAWS-ERDF$@ 1)
+  (haws-errdef 1)
   (HAWS-VSAVE '("EXPERT"))
   (SETVAR "EXPERT" 5)
   (prompt "\nLayers to isolate")

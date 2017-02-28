@@ -115,7 +115,7 @@
 )
 
 (defun c:haws-xin ( / i j xr XRLIST)
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (HAWS-VSAVE'("dragmode""clayer""ucsfollow"))
   (setvar "ucsfollow" 0)
   (setvar "dragmode" 0)
@@ -133,7 +133,7 @@
 )
 
 (defun c:haws-xout ( / xr xrlist)
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (setq xrlist (HAWS-xrfind T))
   (foreach xr xrlist
     (princ xr)

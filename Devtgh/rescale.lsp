@@ -1,7 +1,7 @@
 ;(C) Copyright 1997 by Thomas Gail Haws
 ;SCALE A SELECTION SET OF ENTITIES ABOUT A USER SPECIFIED ENTITY POINT.
 (defun c:haws-rescale ( / dxfpt sset sslen ent xfactr ins ed SFACTR)
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (setvar "cmdecho" 0)
   (command "._undo" "group")
   (setq sset (ssget))

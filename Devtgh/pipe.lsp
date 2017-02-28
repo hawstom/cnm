@@ -1,6 +1,6 @@
 ;Written by Thomas Gail Haws
 (defun c:haws-pipe (/ p1 p2 p3 p4 d1 d2 a1)
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (setvar "cmdecho" 0)
   (setq p1 (getpoint "\nPipe centerline start point: ")
     p2 (getpoint p1 "\nEnd point: ")

@@ -1,6 +1,6 @@
 ;(C) Copyright 1997 by Thomas Gail Haws
 (DEFUN c:haws-ROMANS ( / st sn sf)
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (HAWS-VSAVE '("cmddia" "filedia" "regenmode"))
   (command "style" "romans" "romans" "0" ".95" "0" "" "" "")
   (command "dim1" "style" "romans");For R13 compatibility

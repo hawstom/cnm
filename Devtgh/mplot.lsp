@@ -27,7 +27,7 @@
   )
   ;Rev. 7/22/99
   ;Plots multiple drawings.
-  (HAWS-ERDF$@ 0);requires library function
+  (haws-errdef 0);requires library function
   (textpage)
   (prompt temp)
   (prompt "\n\nMPLOT must have the following conditions to run trouble-free.")

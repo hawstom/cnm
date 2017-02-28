@@ -7,7 +7,7 @@
 
 (DEFUN
    HAWS-LASTAT (LOPERA NESTED)
-  (HAWS-ERDF$@ 1)
+  (haws-errdef 1)
   (HAWS-VSAVE '("EXPERT"))
   (SETVAR "EXPERT" 5)
   (INITGET 1 "Viewport Normal")
@@ -84,7 +84,7 @@
 
 (DEFUN
    HAWS-NLSTAT (LOPERA / NESTED)
-  (HAWS-ERDF$@ 1)
+  (haws-errdef 1)
   (HAWS-VSAVE '("EXPERT"))
   (SETVAR "EXPERT" 5)
   (IF (AND

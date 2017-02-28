@@ -1,7 +1,7 @@
 ;Backwards leader, the arrow is the last point picked
 ;(C) Copyright 1997 by Thomas Gail Haws
 (defun c:haws-bw ( / ANG1 PT4 as pt1 pt2 pt3)
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (HAWS-VSAVE '("dimpost"))
   (HAWS-MKLAYR "BWLDR")
   (setvar "dimpost" "")

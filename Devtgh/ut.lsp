@@ -96,10 +96,10 @@
     (IF UEXIST
       (SETQ UTIL (STRCAT "X" UTIL))
     ) ;_ end of if
-    (SETQ ULAYPL (CAR (MKLAYR (STRCAT "UT" UTIL "PL"))))
-    (SETQ ULAYOD (CAR (MKLAYR (STRCAT "UT" UTIL "OD"))))
+    (SETQ ULAYPL (CAR (HAWS-MKLAYR (STRCAT "UT" UTIL "PL"))))
+    (SETQ ULAYOD (CAR (HAWS-MKLAYR (STRCAT "UT" UTIL "OD"))))
   ) ;_ end of defun
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (HAWS-VSAVE '("ucsfollow" "clayer" "filedia" "cmdecho" "expert"))
   (HAWS-VSET
     '(("ucsfollow" 0) ("plinegen" 1) ("cmdecho" 0) ("expert" 5))
@@ -114,7 +114,7 @@
     ) ;_ end of progn
      (HAWS-GETUTL)
   ) ;_ end of while
-  (MKLAYR (STRCAT "UT" UTIL "SNG"))
+  (HAWS-MKLAYR (STRCAT "UT" UTIL "SNG"))
   (COMMAND "pline" PT1 "w" 0 "")
   (SETVAR "cmdecho" 1)
   (WHILE

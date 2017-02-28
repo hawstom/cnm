@@ -46,7 +46,7 @@
       (T nil)
     )
   )
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (while(HAWS-mo))
   (HAWS-ERRRST)
 )

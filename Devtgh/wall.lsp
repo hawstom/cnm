@@ -2,7 +2,7 @@
 ;(C) Copyright 1997 by Thomas Gail Haws
 (defun c:haws-WALL
   ( / wexist rtemp  WALLPL wlt wltpl wlaclr wlayer wlaypl pt1 pt2 pt3 pt4 r e1)
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (HAWS-VSAVE '("ucsfollow" "clayer"))
   (setvar "ucsfollow" 0)
   (if(not (tblsearch "LTYPE" "utilpl"))

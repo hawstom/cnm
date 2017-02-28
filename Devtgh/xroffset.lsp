@@ -2,7 +2,7 @@
 (defun c:haws-xro () (c:haws-xroffset))
 (defun
 	 c:haws-xroffset	(/ ofdist temp xrodistr PT1 PT2 XRODISTS)
-	(HAWS-ERDF$@ 0)
+	(haws-errdef 0)
 	(setq ofdist (getvar "offsetdist"))
 	(if	(not *HAWS-xrosetupdone*)
 		(progn

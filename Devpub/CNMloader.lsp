@@ -13,6 +13,10 @@
 
 ;;;Load utilities
 (if(not haws-mklayr) (load "edclib"))
+;;; Load other utilities
+;; LISPUTIL.LSP has library functions for legacy routines some legacy users have.
+;(if (not mklayr) (load "lisputil"))
+
 ;;;Load aliases
 ;;;HAWSALIAS.LSP has short names for all the commands.
 (COND

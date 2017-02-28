@@ -2,7 +2,7 @@
 ;COMPLETELY OVERLINES THE TEXT IN A SELECTION SET.
 ;Written by Thomas Gail Haws
 (defun c:haws-TO (/ sset en1 ent entlst i oldstr newstr sslen)
-  (HAWS-ERDF$@ 1)
+  (haws-errdef 1)
   (prompt "\nText to overline/<RETURN to overline an attribute>:")
   (setq sset (ssget '((0 . "*TEXT"))))
   (cond

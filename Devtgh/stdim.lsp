@@ -1,6 +1,6 @@
 ;(C) Copyright 1997 by Thomas Gail Haws
 (defun c:haws-dm ( / addtxt dimstr pt1 pt2)
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (HAWS-VSAVE '("osmode" "clayer"))
   (HAWS-VSET'(("osmode" 512)))
   (while

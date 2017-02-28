@@ -1,5 +1,27 @@
 (PROMPT "\nHawsEDC library functions...")
 
+;;; 4.2.30 deprecation section
+(MAPCAR
+  '(LAMBDA (FUNCTION-NAME)
+     (EVAL
+       (READ
+         (STRCAT
+           "defun " FUNCTION-NAME
+           "() (princ \"\nCNM can no longer expose functions that have names without reserved safe prefixes like HAWS- and HCNM-. Something you invoked called the HAWSEDC legacy "
+           FUNCTION-NAME
+           " routine.  Please find the call and replace it with HAWS-"
+           FUNCTION-NAME
+           ".  As a temporary workaround, you can enable the legacy routine by removing the commenting semi-colon from beginning of the line near the top of CNMLOADER.lsp that includes (load \"lisputil\")."
+          )
+       )
+     )
+   )
+  (list "errdef"
+    "erdf$@" "errrst" "mklayr" "mktext" "vrstor" "vsave" "vset"
+   )
+)
+
+
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN HAWS-UNIFIED-VERSION () "4.2.30.aaa\n\nCopyright 2017")
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
@@ -100,7 +122,7 @@
 
 ;;;HawsEDC general function handler
 ;;;Includes banner, error handler, and validator.
-;;; Internal error handler function.  Call HAWS-ERDF$@ at the
+;;; Internal error handler function.  Call haws-errdef at the
 ;;; beginning
 ;;; of a
 ;;; routine.
@@ -108,9 +130,10 @@
 ;;;To restore previous UCS, set a global symbol 'ucsp to non-nil.
 ;;; To restore another previous UCS, set a global symbol 'ucspp to
 ;;; non-nil.
-(DEFUN HAWS-ERRDEF (APPGROUP) (HAWS-ERDF$@ APPGROUP))
+(defun haws-erdf$@ () (haws-errdef 0))
+(defun haws-errdef () (haws-errdef 0))
 (DEFUN
-   HAWS-ERDF$@ (APPGROUP / VALIDATED)
+   haws-errdef (APPGROUP / VALIDATED)
   ;; If computer already has authorization,
   (COND
     ((OR (HAWS-VALIDATEAPPGROUP APPGROUP)
@@ -1340,6 +1363,10 @@
 )
 
 ;;; ===================================================================
+;;;
+;;; 2017 note: Looking over all this 10 years later, I think the best
+;;; path forward is to implement this in CNM.LSP little by little.  Then
+;;; when it is functional, copy it here.
 ;;;
 ;;; Begin Settings input/output functions  NOT YET FUNCTIONAL
 ;;;
@@ -3061,7 +3088,7 @@ ImportLayerSettings=No
   OUTPUTSTRING
 )
 
-;;; HAWS-LOAD-APP-DIR
+;;; HAWS-LOAD-FROM-APP-DIR
 ;;; loads a vlx, fas, or lsp, in that preferred order (AutoLISP
 ;;; default),
 ;;; from the folder that contains cnm.mnl
@@ -3082,6 +3109,13 @@ ImportLayerSettings=No
     (LOAD (PRINC (FINDFILE FILENAME)))
   )
 )
+
+(DEFUN
+   HAWS-TOM ()
+  ;;Make sure app folder is set.
+  (PRINC "HI, tOM")(PRINC)
+)
+(VL-ACAD-DEFUN 'HAWS-TOM)
 
 ;;; HAWS-LOG
 ;;; Writes a message to a log file including the username and timestamp
@@ -3174,7 +3208,7 @@ ImportLayerSettings=No
   MKFLD_FIELD
 )
 ;; MKLAYR sub-function defines and makes current a layer for another routine.
-;; Usage: (mklayr (list "laname" "lacolr" "laltyp"))
+;; Usage: (haws-mklayr (list "laname" "lacolr" "laltyp"))
 ;; Use empty quotes for default color and linetype (eg. (mklay (list "AZ" "" ""))
 (DEFUN
    HAWS-GETLAYR (KEY / TEMP)
@@ -4203,13 +4237,6 @@ ImportLayerSettings=No
   (HAWS-MILEPOST "Finished checkstoredstrings")
 )
 (CHECKSTOREDSTRINGS)
-
-
-;;; Load other utilities
-;; LISPUTIL.LSP has library functions for legacy routines some legacy users have.
-(IF (NOT MKLAYR)
-  (HAWS-LOAD-FROM-APP-DIR "lisputil")
-)
 
 (PROMPT "loaded.")
  ;|«Visual LISP© Format Options»

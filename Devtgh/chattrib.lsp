@@ -1,6 +1,6 @@
 ;(C) Copyright 1997 by Thomas Gail Haws
 (defun c:haws-chattrib ( / a b c d z)
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (HAWS-VSAVE '("cmdecho"))
   (setq
     blname (HAWS-GETSTRINGX "Block name specification" blname "*")

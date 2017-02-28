@@ -12,7 +12,7 @@
 ;;Function to save layer settings to a file
 (defun
 	 c:haws-las (/ fname layer count mvsset mvlist layers)
-	(HAWS-ERDF$@ 0) ;_ end of if
+	(haws-errdef 0) ;_ end of if
 	(setq
 		f1 (if (= (getvar "filedia") 1)
 				 (open (GETFILED "Layer settings file" (getdnpath) "lyr" 1) "w")
@@ -51,7 +51,7 @@
 ;;Dialogue box function to restore layer settings saved by previous function.
 (defun
 	 c:haws-lar (/ mvsset laline)
-	(HAWS-ERDF$@ 0) ;_ end of if
+	(haws-errdef 0) ;_ end of if
 	(HAWS-resfun)
 	(HAWS-VSAVE '("clayer" "regenmode" "tilemode"))
 	(command "._undo" "group")

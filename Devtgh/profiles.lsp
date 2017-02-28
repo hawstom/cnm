@@ -32,7 +32,7 @@
 (DEFUN
    c:haws-PROPIPE
             (/ P1 P2 D1 PIPSLD D2 P3 P4)
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (HAWS-VSAVE '("filedia"))
   (HAWS-GETHVX)
   (SETQ
@@ -82,7 +82,7 @@
            (/  BOTPIP ELLIP1 HVEXAG LEFT LINE1 LINE2 LINE3
               PT1 PT2 PT3 PT4 PTCEN RIGHT UCSYDIR VRAD
            )
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (HAWS-VSAVE '("ucsfollow" "osmode" "clayer"))
   (HAWS-MKLAYR "PSUP")
   (SETVAR "ucsfollow" 0)
@@ -174,7 +174,7 @@
 (DEFUN
    c:haws-PROCB
           (/ TOPPT BOTPT CBVIEW WIDTH)
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (IF (NOT HVEXAG)
     (HAWS-GETHVX)
   ) ;_ end of IF
@@ -299,7 +299,7 @@
 (DEFUN
    c:haws-PROMH
           (/ TOPPT BOTPT)
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (HAWS-VSAVE '("clayer"))
   (INITGET "Exist Prop")
   (SETQ
@@ -376,7 +376,7 @@
    c:haws-PROE
          (/ LANAME INVERT DIAM PIPSLD WALTHK CENPT INRAD OUTRAD
          )
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (IF (NOT HVEXAG)
     (HAWS-GETHVX)
   ) ;_ end of IF
@@ -456,7 +456,7 @@
 (DEFUN
    c:haws-PLDR
          (/ P1 P2 DS TS AS DG ANG LEFT P3 P4 P5 STR TEMP)
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (SETQ
     P1 (GETPOINT "\nStart point for leader:")
     P2 (GETPOINT P1 "\nEnd point for leader:")
@@ -577,7 +577,7 @@
 (DEFUN
    c:haws-PROFC
           (/ COLWID FLIST FM FNAME I M N RDLIN TEMP TEMPFILE)
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (SETQ
     F1 (OPEN
          (GETFILED "List of files to convert" (GETDNPATH) "lst" 0)
@@ -799,11 +799,11 @@
       )
       ((= PROHT -10000) (SETQ LAYLIN (GETLAYR "PROLINE")))
       ((AND (= PROHT 1000) (WCMATCH PROTYP "X*"))
-       (MKLAYR "PROPNT")
+       (HAWS-MKLAYR "PROPNT")
        (SETQ LAYLIN (GETLAYR "PROXEL"))
       )
       ((= PROHT 1000)
-       (MKLAYR "PROPNT")
+       (HAWS-MKLAYR "PROPNT")
        (SETQ LAYLIN (GETLAYR "PROEL"))
       )
       ((AND (>= PROHT 0) (WCMATCH PROTYP "X*,MESA"))
@@ -858,10 +858,10 @@
     ) ;_ end of IF
     (SETQ LAYTX (SUBST (STRCAT (CAR LAYLIN) (CAR LAYTX)) (CAR LAYTX) LAYTX))
     (IF (NOT (TBLSEARCH "LAYER" (CAR LAYLIN)))
-      (MKLAYR LAYLIN)
+      (HAWS-MKLAYR LAYLIN)
     ) ;_ end of IF
     (IF (NOT (TBLSEARCH "LAYER" (CAR LAYTX)))
-      (MKLAYR LAYTX)
+      (HAWS-MKLAYR LAYTX)
     ) ;_ end of IF
     (SETQ
       LAYLIN
@@ -1842,7 +1842,7 @@
   (DEFUN
      HAWS-PLTLBL1
                  (/ I)
-    (HAWS-MKLAYR (LIST LAYTX "" ""))
+    (HAWS-HAWS-MKLAYR (LIST LAYTX "" ""))
     (COND
       ((= PROTYP "MESA")
        ;;Slanted label
@@ -1917,15 +1917,15 @@
           (COND
             (MHRIM
              (IF PEXIST
-               (HAWS-MKLAYR "PROXMH")
-               (HAWS-MKLAYR "PROMH")
+               (HAWS-HAWS-MKLAYR "PROXMH")
+               (HAWS-HAWS-MKLAYR "PROMH")
              ) ;_ end of IF
              (HAWS-DRAWMH BOTPT MHRIM BRKPT)
             )
             (CBTC
              (IF PEXIST
-               (HAWS-MKLAYR "PPROXCB")
-               (HAWS-MKLAYR "PROCB")
+               (HAWS-HAWS-MKLAYR "PPROXCB")
+               (HAWS-HAWS-MKLAYR "PROCB")
              ) ;_ end of IF
              (HAWS-DRAWCB
                BOTPT
@@ -1948,7 +1948,7 @@
   (DEFUN
      HAWS-PLTLBL2
                  (/ I)
-    (HAWS-MKLAYR (LIST LAYTX "" ""))
+    (HAWS-HAWS-MKLAYR (LIST LAYTX "" ""))
     (HAWS-MKLINE PLTPT1 TXPT6)
     (HAWS-MKLINE TXPT6 TXPT7)
     (HAWS-MKTEXT
@@ -1972,7 +1972,7 @@
        (PROMPT
          "Point circles are on DEFPOINTS layer. Will not plot."
        ) ;_ end of prompt
-       (HAWS-MKLAYR (LIST "defpoints" "" ""))
+       (HAWS-HAWS-MKLAYR (LIST "defpoints" "" ""))
        (ENTMAKE
          (LIST
            (CONS 0 "CIRCLE")
@@ -2045,7 +2045,7 @@
          XCENTER
           (POLAR XINVERT (/ PI 2.0) (* XINRAD HVEXAG *HAWS-ELVSCL*))
        ) ;_ end of SETQ
-       (HAWS-MKLAYR (LIST LAYLIN "" ""))
+       (HAWS-HAWS-MKLAYR (LIST LAYLIN "" ""))
        (ENTMAKE
          (LIST
            '(0 . "ELLIPSE")
@@ -2086,7 +2086,7 @@
        ) ;_ end of IF
        (COND
          ((/= LBLTXT "")
-          (HAWS-MKLAYR (LIST LAYTX "" ""))
+          (HAWS-HAWS-MKLAYR (LIST LAYTX "" ""))
           (HAWS-MKLINE PLTPT1 TXPT6)
           (HAWS-MKLINE TXPT6 TXPT7)
           (SETQ I -1)
@@ -2121,7 +2121,7 @@
   (DEFUN
      HAWS-CONNECTHARD
                      ()
-    (HAWS-MKLAYR (LIST LAYLIN "" ""))
+    (HAWS-HAWS-MKLAYR (LIST LAYLIN "" ""))
     (COND
       ((/= -20000 PROHT) (HAWS-MKLINE PLTPT1A PLTPT1))
       ((= PROHT -20000)
@@ -2206,7 +2206,7 @@
         ) ;_ end of AND
       (SETQ SLOPE TEMP)
     ) ;_ end of IF
-    (HAWS-MKLAYR (LIST LAYTX "" ""))
+    (HAWS-HAWS-MKLAYR (LIST LAYTX "" ""))
     ;;Build slope string
     (SETQ
       SLOPE
@@ -2311,7 +2311,7 @@
     (SETQ SLOPE NIL)
   ) ;_ end of DEFUN
   ;;End of subfunctions, begin main function.
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (TERPRI)
   (SETQ
     I 1
@@ -2637,7 +2637,7 @@
 (DEFUN
    c:haws-ELLABEL
             (/ PT1)
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (HAWS-VSAVE '("osmode"))
   (SETVAR "dimzin" 0)
   (IF (NOT HVEXAG)
@@ -2665,8 +2665,8 @@
 (DEFUN
    c:haws-STALABEL
              (/ PNT1 INC N STA1 ENDSTA STA)
-  (HAWS-ERDF$@ 0)
-  (HAWS-MKLAYR "PSTALBL")
+  (haws-errdef 0)
+  (HAWS-HAWS-MKLAYR "PSTALBL")
   (HAWS-VSAVE '("luprec"))
   (SETVAR "luprec" 0)
   (SETQ
@@ -2703,7 +2703,7 @@
   (IF (NOT HVEXAG)
     (HAWS-GETHVX)
   ) ;_ end of IF
-  (HAWS-MKLAYR "PELEVLBL")
+  (HAWS-HAWS-MKLAYR "PELEVLBL")
   (SETQ
     PNT1
      (GETPOINT "\nBottom right point of first label: ")
@@ -2793,7 +2793,7 @@
 (DEFUN
    HAWS-LINBLK
               (BLNAME BLLAY / PT1 PT2)
-  (HAWS-MKLAYR BLLAY)
+  (HAWS-HAWS-MKLAYR BLLAY)
   (SETQ PT1 (GETPOINT "\nFirst point: "))
   (COMMAND "._pline" PT1)
   (WHILE (SETQ PT2 (GETPOINT PT1 "Next point: "))

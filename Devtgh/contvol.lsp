@@ -4,7 +4,7 @@
    c:haws-contvol (/ cvcont cvadd cv-area-twice-previous
               cv-area-previous cv-area-current pt1
              )
-  (HAWS-ERRDEF 0)
+  (haws-errdef 0)
   (command "._undo" "g")
   (setq
     cvvol 0

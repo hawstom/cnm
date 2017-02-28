@@ -4,10 +4,10 @@
 ;Author:       Craig Allen (415) 842-8350
 
 (defun c:haws-cld ()
-  (erdf$@)(vsave'("clayer"))
-  (mklayr "CLOUD")
+  (haws-errdef)(haws-vsave'("clayer"))
+  (haws-mklayr "CLOUD")
   (cond ((c:haws-revcloud))((c:haws-cld)))
-  (vrstor)(errrst)(PRINC)
+  (haws-vrstor)(haws-errrst)(PRINC)
 )
 (DEFUN c:haws-CLOUD (/ PT1 PT2 oldlay)
   (SETQ PT1 (GETPOINT "\nEnter first point: "))

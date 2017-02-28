@@ -1,6 +1,6 @@
 ;(C) Copyright 1997 by Thomas Gail Haws
 (defun c:haws-dm12 ( / pt1 pt2 ang upsdwn d1 pt3 txht)
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (HAWS-VSAVE '("osmode" "clayer"))
   (HAWS-VSET'(("dimse1"1)("dimse2"1)("dimsoxd"1)("dimtad"1)("dimtih"0)("dimtix" 1)("dimtofl"1)("osmode" 512)))
   (princ "\nDM just set the following dimension variables:\nDIMSE1  1\nDIMSE2  1\nDIMSOXD 1\nDIMTAD  1\nDIMTIH  0\nDIMTIX  1\nDIMTOFL 1")

@@ -1,7 +1,7 @@
 ;X,Y Coordinates on Leader Lines
 ;Written by Thomas Gail Haws
 (defun c:haws-XY (/ dg txht pnt1 p1x p1y ang1 left ptxt)
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (setq
     txht (* (HAWS-DWGSCALE)(getvar "dimtxt"))
     pnt1 (getpoint "\nPick coordinate point:")

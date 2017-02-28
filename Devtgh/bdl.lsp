@@ -4,7 +4,7 @@
 (defun
    c:haws-bdl
 	(/ ANG1 DG LBEAR LDIST LEFT LLINE LTOP PT1 PT10 PT11 PT2 PT3 PT4 PTXT ROT TXHT UCSP)
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (HAWS-VSAVE
     '("lunits" "luprec" "aunits" "auprec" "dimtad" "ucsfollow")
   )

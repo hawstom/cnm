@@ -361,42 +361,50 @@
 (defun c:lr () (c:haws-loadandrun))
 (defun c:run () (alert (princ "\nRUN has been replaced with LR (lisprun).")))
 ;;;---------------Old HawsEDC ACAD.PGP aliases
-;;; Change the number below from 0 to 1 or 2 to activate the old PGP aliases.
-;;; These will override their respective PGP settings if you activate them.
 (defun
-   haws-pgp-activate-aliases (/ activatepgpaliases)
+   haws-pgp-activate-aliases (/ activatepgpaliases is_custom)
   ;; Tells which aliases of those in the list below to define as AutoLISP commands.
   ;; 0 = none, 1 = custom (different from stock ACAD.PGP) only, 2 = all
+  ;; Make the number below 0, 1, or 2
   (setq activatepgpaliases 0)
+  ;; Edit the line above
   (cond
-    (activatepgpaliases
+    ((> activatepgpaliases 0)
      (foreach
         alias (haws-pgp-aliases)
-       (eval
-         (read
-           (strcat
-             "(defun c:"
-             (car alias)
-             "() (princ \""
-             (strcat
-               "HawsAlias.lsp "
-               (cond
-                 ((caddr alias) "custom")
-                 (t "standard")
-               )
-               " PGP alias: "
-               (cadr alias)
-             )
-             "\")(command \"._"
-             (cadr alias)
-             "\")(princ))"
-           )
+       (setq is_custom (caddr alias))
+       (cond
+         ((or (> activatepgpaliases 1) is_custom)
+          (eval
+            (read
+              (strcat
+                "(defun c:"
+                (car alias)
+                "() (princ \""
+                (strcat
+                  "HawsAlias.lsp "
+                  (cond
+                    ((caddr alias) "custom")
+                    (t "standard")
+                  )
+                  " PGP alias: "
+                  (cadr alias)
+                )
+                "\")(command \"._"
+                (cadr alias)
+                "\")(princ))"
+              )
+            )
+          )
          )
        )
      )
     )
   )
 )
+
+
+
 
 (defun
    haws-pgp-aliases ()
@@ -454,7 +462,7 @@
     ("OS" "Ddosnap" nil)
     ("P" "Pan" nil)
     ("PE" "Pedit" nil)
-    ("PL" "Polyline" nil)
+    ("PL" "Pline" nil)
     ("PS" "Pspace" nil)
     ("SC" "Scale" nil)
     ("SN" "Snap" nil)
@@ -466,7 +474,7 @@
 )
 
 (defun
-   c:hawspgp ()
+   c:hawspgp ( / input1)
   (textpage)
   (princ "\n;HawsEDC aliases")
   (foreach alias (haws-pgp-aliases) (princ (strcat "\n" (car alias) ",\t*" (cadr alias))))
@@ -475,17 +483,29 @@
       "\n==================================================================================="
       "\nCNM provides two ways to restore the Haws PGP aliases:"
       "\n\n1. PGP method:\n\ta) Copy the aliases above."
-      "\n\tb) Use the PGP command to open your acad.pgp, and paste the aliases to the bottom of the file."
-      "\n\tc) Use the REINIT command to reload your acad.pgp file."
-      "\n\n2. LSP method:\n\ta) Open HawsAlias.lsp in the CNM installation folder."
+      "\n\tb) Use the CNM PGP command to open your acad.pgp. Then paste the aliases to the bottom of the file."
+      "\n\tc) Use the AutoCAD REINIT command to reload your acad.pgp file."
+      "\n\n2. LISP method (works in scripts; changes behavior of EXPLODE command.):\n\ta) Open HawsAlias.lsp in the CNM installation folder."
       "\n\tb) Find \"ActivatePgpAliases 0\" and change it as instructed there.  "
-      "\n\tc) Save the file and use the HawsAlias command to reload it."
+      "\n\tc) Save the file and use the CNM HawsAlias command to reload it."
      )
   )
+;  (initget "Pgp Lsp None")
+;  (setq input1 (getkword "\nSpecify an option to activate [Pgp/Lsp/None] <None>: "))
+;  (cond
+;    ((= input1 "Pgp") (hcnm-config-setvar "HawsPgpLisp" "No")(c:haws-pgpedit))
+;    ((= input1 "Lsp") (hcnm-config-setvar "HawsPgpLisp" "Yes"))
+;    (T (hcnm-config-setvar "HawsPgpLisp" "No"))
+;  )
   (princ)
 )
 
-(haws-pgp-activate-aliases)
+;; This may slow things down too much.  Wait and see.
+;(cond
+; ((= (hcnm-config-getvar "HawsPgpLisp") "Yes")
+   (haws-pgp-activate-aliases)
+;  )
+;)
 
 ;;;---------------Set a flag that aliases have been loaded
 (setq *HAWS-HAWSALIASLOADED* T)

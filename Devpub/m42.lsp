@@ -41,7 +41,7 @@
     )
     (HAWS-MKLAYR "DRIVEWAY")
   )
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (HAWS-VSAVE '("clayer"))
   (setq
     osmold (getvar "osmode")

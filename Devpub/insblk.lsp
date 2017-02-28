@@ -61,8 +61,8 @@
 (defun insblk
   (blname bllay blrot blopt /
   blsclx blscly bllayc blexpl)
-  (erdf$@)
-  (vsave '("clayer" "cmdecho"))
+  (haws-errdef)
+  (haws-vsave '("clayer" "cmdecho"))
   (setvar "cmdecho" 0)
   (setq
     blexpl (= 2 (logand blopt 2))
@@ -76,7 +76,7 @@
       (prompt "\nPlease enter dimtxt (plotted text height):")
       (command "dimtxt" pause)
   ) )
-  (if bllay (mklayr bllay))
+  (if bllay (haws-mklayr bllay))
   (prompt (strcat "\nInsertion point for " blname ":"))
   (command "._insert" blname pause)
   (setq blsclx (if (= 1 (logand blopt 1)) (HAWS-DWGSCALE) 1))
@@ -97,7 +97,7 @@
     )
   )
   ;;; (if (= (cdr(assoc 0(entget(entlast)))) "TEXT")(command "._._textedit" (entlast)))
-  (vrstor)(errrst)(princ)
+  (haws-vrstor)(haws-errrst)(princ)
 )
 ;;;ROTATION note: Enter insertion rotation or "P" to prompt for rotation.
 ;;;

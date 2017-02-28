@@ -1,7 +1,7 @@
 ;(C) Copyright 1997 by Thomas Gail Haws
 ;CHANGE ANY GROUP CODE OF A SELECTION SET OF ENTITIES TO MATCH SELECTED ENTITY.
 (defun c:haws-cmpro ( / group mg me sset sslen ent ed eg)
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (setvar "cmdecho" 0)
   (command "._undo" "group")
   (textpage)

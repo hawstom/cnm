@@ -6,7 +6,7 @@
 
 ;Set layer, error trapper, undo group, etc.
 
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (if HAWS-VSAVE (HAWS-VSAVE '("clayer" "osmode" "expert")))
   (command "._undo" "group")
   (command "._layer" "n" "sta" "t" "sta" "s" "sta" "c" 1 "" "")

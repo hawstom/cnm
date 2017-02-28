@@ -1,5 +1,5 @@
 (defun c:haws-goto ( / i ss1 en ept vwctr opt crad)
-  (HAWS-ERRDEF 0)
+  (haws-errdef 0)
   (HAWS-VSAVE '("osmode"))
   (setvar "osmode" 0)
   (setq i 0 ss1 (ssget))

@@ -38,7 +38,7 @@
      )
     DN (HAWS-GETDNPATH)
   )
-  (HAWS-ERDF$@ 0)                       ;requires library function
+  (haws-errdef 0)                       ;requires library function
   (TEXTPAGE)
   (PROMPT TEMP)
   (PROMPT

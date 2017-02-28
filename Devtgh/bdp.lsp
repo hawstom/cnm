@@ -1,7 +1,7 @@
 ;Label bearing and distance between two picks
 ;(C) Copyright 1997 by Thomas Gail Haws
 (defun c:haws-bdp (/ txht lline pt10 pt11 lbear ldist pt1 pt2 pt3 pt4 PT5 rot ltop)
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (HAWS-VSAVE '("lunits" "aunits" "auprec" "ucsfollow"))
   (HAWS-VSET '(("lunits" 2)("aunits" 4)("auprec" 4)("ucsfollow" 0)))
   (command "._ucs" "w")

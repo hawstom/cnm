@@ -4,7 +4,7 @@
 ;; Modified by Thomas Gail Haws
 
 (DEFUN c:haws-TW (/ TWIST)
-  (HAWS-ERRDEF 0)
+  (haws-errdef 0)
   (HAWS-VSAVE '("AUNITS"))
   (SETQ UCSP T)
   (COMMAND "._UCS" "_WORLD")

@@ -2111,7 +2111,7 @@
 (DEFUN
    HCNM-CNM (OPT / CFNAME DN LINSPC PHASEWID TBLWID TXTHT)
   ;;Main function
-  (HAWS-ERDF$@ 1)
+  (haws-errdef 1)
   (HAWS-VSAVE
     '("attdia" "attreq" "cmdecho" "clayer" "osmode")
   )
@@ -2610,6 +2610,7 @@
      ("User" 4)
     )
     ("Var"
+     ("HawsPgpLisp" "No" 4)
      ("ProjectNotesEditor" "notepad.exe" 4)
      ("LayersEditor" "notepad.exe" 4)
      ("ProjectNotes" "constnot.txt" 2)
@@ -3849,8 +3850,8 @@
     (SETQ CNMEDITP T)
   )
   (IF CNMEDITP
-    (HAWS-ERRDEF 2)
-    (HAWS-ERRDEF 1)
+    (haws-errdef 2)
+    (haws-errdef 1)
   )
   ;;Since this is a user command, possibly after deletion of project root files,
   ;;refresh project root at beginning.
@@ -4051,7 +4052,7 @@
 (DEFUN C:HCNM-ATTPLOT () (HCNM-ATTLAYER "0"))
 (DEFUN
    HCNM-ATTLAYER (LAYER / AT EL EN ET NPLAYER NPLIST SSET SSLEN)
-  (HAWS-ERDF$@ 1)
+  (haws-errdef 1)
   (HAWS-VSAVE '("CLAYER"))
   (COMMAND "._undo" "_g")
   (SETQ NPLAYER (CAR (HAWS-GETLAYR LAYER)))
@@ -4120,7 +4121,7 @@
 )
 (DEFUN
    C:HAWS-BUBREDEF (/ SS1)
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (IF (NOT (FINDFILE "attredef.lsp"))
     (ALERT
       (PRINC
@@ -4477,10 +4478,10 @@
 (DEFUN C:HAWS-SSTL () (HCNM-LDRBLK-DYNAMIC "SST"))
 (DEFUN C:HAWS-TRIL () (HCNM-LDRBLK-DYNAMIC "TRI"))
 (DEFUN
-   HCNM-LDRBLK-DYNAMIC (NOTETYPE / ASSOCIATE-P AUOLD BLOCKNAME DT EN NUM
+   HCNM-LDRBLK-DYNAMIC (NOTETYPE / ANG1 ASSOCIATE-P AUOLD BLOCKNAME DT EN NUM
                         P1 P2 FLIPPED FLIPSTATE ss1 TXT1 TXT2
                        )
-  (HAWS-ERDF$@ 1)
+  (haws-errdef 1)
   (HAWS-VSAVE
     '("attreq" "aunits" "clayer" "cmdecho")
   )
@@ -4657,7 +4658,7 @@
                 FIXTXT3 I P1 P2 P3 P4 P5 P6 P7 P8 PFOUND R1 DS TS LEFT
                 NUM TXT1 TXT2 ANG1 ANG2 FIXORDER OSMOLD
                )
-  (HAWS-ERDF$@ 1)
+  (haws-errdef 1)
   (HAWS-VSAVE
     '("aperture" "attdia" "attreq" "aunits" "clayer" "cmdecho" "osmode"
       "plinegen" "regenmode"

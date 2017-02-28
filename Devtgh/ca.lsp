@@ -3,7 +3,7 @@
 (defun
    c:haws-CA
        (/ at av el en et sset mlist mv en sslen)
-    (HAWS-ERDF$@ 1)
+    (haws-errdef 1)
   (prompt "\nBlocks to change: ")
   (setq sset (ssget '((0 . "INSERT"))))
   (if (not sset)
@@ -88,31 +88,3 @@
   (HAWS-ERRRST) ;_ end of if
   (princ)
 ) ;_ end of defun
-
-;;; Attribute Set/Get Fields/TEXT
-;;; blk = The attribute block
-;;; mode = T for Field Values
-;;;      = nil for String Values
-;;; lst = If supplied, function in Set Mode
-;;;    = nil for Get Mode
-(defun haws-FieldsVal (blk mode lst / m f)
-    (setq f (if	mode
-	      (lambda (e)
-		(strcat "%<\\AcObjProp Object(%<\\_ObjId "
-			(itoa (vla-get-ObjectId e))
-			">%).TextString>%")
-	      )
-	      (lambda (e) (vla-get-textstring e))
-	    )
-    )
-    (mapcar '(lambda (at)
-	       (if lst
-		 (if (setq m (assoc (vla-get-tagstring at) lst))
-		   (vla-put-textstring at (cadr m))
-		 )
-		 (list (vla-get-tagstring at) (f at))
-	       )
-	       )
-	    (vlax-invoke (vlax-ename->vla-object blk) 'Getattributes)
-    )
-  )

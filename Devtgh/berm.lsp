@@ -1,6 +1,6 @@
 ;Written by Thomas Gail Haws
 (defun c:haws-berm ( / dbvar dbold)
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (HAWS-VSAVE '("clayer""cmdecho"))
   (HAWS-MKLAYR "BERM")
   (cond

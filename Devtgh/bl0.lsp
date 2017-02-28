@@ -1,6 +1,6 @@
 ;change all entities within selected block to layer 0
 (defun c:haws-bl0 (/ cl en ent)
-	(HAWS-ERDF$@ 0)
+	(haws-errdef 0)
 	(HAWS-VSAVE '("clayer" "highlight"))
   (setvar "highlight" 0)
   (command ".layer" "s" "0" "")

@@ -1,6 +1,6 @@
 ;Written by Thomas Gail Haws
 (defun c:haws-contxt (/ txtht txtstr inspt rot)
-  (HAWS-ERDF$@ 0)
+  (haws-errdef 0)
   (HAWS-VSAVE '("clayer"))
   (setvar "cmdecho" 0)
   (setq txtht (* (HAWS-DWGSCALE)(getvar"dimtxt")))
