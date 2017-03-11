@@ -1,4 +1,4 @@
-(load "attfind")
+(if (not haws-attfind) (load "attfind"))
 (defun
 	 c:haws-incatt	(/ blki blklst ss1)
 	(command ".undo" "g")

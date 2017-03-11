@@ -11,11 +11,9 @@
 
 (prompt "\nConstruction Notes Manager menu utilities loading.")
 
-;;;Load utilities
-(if(not haws-mklayr) (load "edclib"))
-;;; Load other utilities
+;;; Load legacy utilities
 ;; LISPUTIL.LSP has library functions for legacy routines some legacy users have.
-;(if (not mklayr) (load "lisputil"))
+(if (not haws-mklayr) (load "lisputil"))
 
 ;;;Load aliases
 ;;;HAWSALIAS.LSP has short names for all the commands.
@@ -37,7 +35,7 @@
          (SETQ FUNCTION-NAME (STRCAT "C:" CMD))
          (EVAL
            (READ
-             (STRCAT "(defun " FUNCTION-NAME "() (PRINC \"" (STRCAT "\nCNM command: " CMD ) "\") (HAWS-LOAD-FROM-APP-DIR " QFN ") (" FUNCTION-NAME "))")
+             (STRCAT "(defun " FUNCTION-NAME "() (PRINC \"" (STRCAT "\nCNM command: " CMD ) "\") (c:HAWS-LOAD-FROM-APP-DIR " QFN ") (" FUNCTION-NAME "))")
            )
          )
        )
@@ -150,13 +148,12 @@
 
 ;;---------------Layer Management Section---------------
 (haws-autoload "lam"      '("haws-l0" "haws-lk" "haws-lka" "haws-lka" "haws-ona" "haws-tha" "haws-ul" "haws-ula"))
-(haws-autoload "chm"      '("haws-chm"))
-(haws-autoload "cl"       '("haws-cl"))
-(haws-autoload "lastat"   '("haws-ff" "haws-ffx" "haws-off" "haws-offx" "haws-uff" "haws-uoff" "haws-uffx" "haws-uoffx"))
+;(haws-autoload "chm"      '("haws-chm"))
+;(haws-autoload "cl"       '("haws-cl"))
+(haws-autoload "lastat"   '("haws-ff" "haws-ffx" "haws-ltp" "haws-ltpx" "haws-off" "haws-offx" "haws-uff" "haws-uoff" "haws-uffx" "haws-uoffx"))
 (haws-autoload "isolat"   '("haws-ffi" "haws-lki" "haws-ofi"))
 (haws-autoload "layersav" '("haws-lar" "haws-las"))
 (haws-autoload "lcp"      '("haws-lcp" "haws-lcpx"))
-(haws-autoload "ltp"      '("haws-ltp" "haws-ltpx"))
 (haws-autoload "lwp"      '("haws-lwp" "haws-lwpx"))
 (haws-autoload "lk"       '("haws-lk"))
 (haws-autoload "layrprn"  '("haws-laprn"))
@@ -247,6 +244,9 @@
 (haws-autoload "misc"     '("haws-ffa" "haws-hawsalias" "haws-pgpedit" "haws-user"))
 (haws-autoload "loadandrun"       '("haws-LoadAndRun"))
 ;-------------MODIFY THE ABOVE--------------------------------------
+;;; Load application
+;;; Important for this to come after the autoloaders.
+(load "cnm")
 
 ;;; Place the CNM pulldown to the left of the last pulldown already loaded
 ;;;     Created 2/21/97 by Dominic Panholzer
@@ -268,6 +268,6 @@
   )
 )
 
-(if (not(haws-icad-p))(hcnm-PlaceCNMMenu)) ;Do it if not in icad
+(if (not(c:haws-icad-p))(hcnm-PlaceCNMMenu)) ;Do it if not in icad
 
 (princ)

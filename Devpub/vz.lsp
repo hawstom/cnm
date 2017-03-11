@@ -2,7 +2,7 @@
 (DEFUN c:haws-2X ()(COMMAND "'ZOOM" ".2X")(PRINC))
 (DEFUN c:haws-5X ()(COMMAND "'ZOOM" ".5X")(PRINC))
 (DEFUN c:haws-9X ()(COMMAND "'ZOOM" ".9X")(PRINC))
-(defun c:haws-twz()(c:haws-tw) (command "._ucs" "_view")(PRING))
+(defun c:haws-twz()(c:haws-tw) (command "._ucs" "_view")(PRINC))
 (DEFUN c:haws-X2 ()(COMMAND "'ZOOM" "2X")(PRINC))
 (DEFUN c:haws-ZW ()(COMMAND "'ZOOM" "W")(PRINC))
 (DEFUN c:haws-Z0 ()(COMMAND "'ZOOM" "W" "0,0" "36,24")(PRINC))

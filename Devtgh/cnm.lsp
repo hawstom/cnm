@@ -1178,7 +1178,7 @@
   (COND
     (QTYSET
      (SETQ
-       I (IF (HAWS-ICAD-P)
+       I (IF (c:haws-icad-p)
            1
            (SSLENGTH QTYSET)
          )
@@ -1188,7 +1188,7 @@
        (COND
          ((OR (= (GETVAR "CTAB") (SETQ TABLESPACE (CDR (ASSOC 410 EL))))
               (AND (= "Model" TABLESPACE) (< 1 (GETVAR "cvport")))
-              (HAWS-ICAD-P)             ;If we are in intellicad, which doesn't have the tab information in the entget data
+              (c:haws-icad-p)             ;If we are in intellicad, which doesn't have the tab information in the entget data
           )
           (IF (NOT QTYPT)
             (SETQ
@@ -1232,7 +1232,7 @@
   (COND
     (QTYSET
      (SETQ
-       I (IF (HAWS-ICAD-P)
+       I (IF (c:haws-icad-p)
            1
            (SSLENGTH QTYSET)
          )
@@ -1242,7 +1242,7 @@
        (COND
          ((OR (= (GETVAR "CTAB") (SETQ TABLESPACE (CDR (ASSOC 410 EL))))
               (AND (= "Model" TABLESPACE) (< 1 (GETVAR "cvport")))
-              (HAWS-ICAD-P)             ;If we are in intellicad, which doesn't have the tab information in the entget data
+              (c:haws-icad-p)             ;If we are in intellicad, which doesn't have the tab information in the entget data
           )
           (IF (NOT QTYPT)
             (SETQ
@@ -1308,7 +1308,7 @@
        (< (ATOF (GETVAR "acadver")) 18)
        (>= (ATOF (GETVAR "acadver")) 15)
      )
-     (AND (HAWS-VLISP-P) (NOT (HAWS-ICAD-P)))
+     (AND (HAWS-VLISP-P) (NOT (c:haws-icad-p)))
      (SETQ
        USERS1OLD
         (GETVAR "users1")
@@ -1709,7 +1709,7 @@
             EL (ENTGET
                  (SSNAME
                    QTYSET
-                   (IF (HAWS-ICAD-P)
+                   (IF (c:haws-icad-p)
                      0
                      (1- (SSLENGTH QTYSET))
                    )
@@ -1720,7 +1720,7 @@
                  (SETQ TABLESPACE (CDR (ASSOC 410 EL)))
               )
               (AND (< 1 (GETVAR "cvport")) (= TABLESPACE "Model"))
-              (HAWS-ICAD-P)
+              (c:haws-icad-p)
           )
         )
         (TRANS
@@ -2591,6 +2591,417 @@
 ;;;
 ;;; Begin Settings Config functions
 ;;;
+;;;================================================================================================================
+;;; Multi-app planning thoughts and code
+;;; ===================================================================
+;;;
+;;; 2017 note: Looking over all this 10 years later, I think the best
+;;; path forward is to implement this in CNM.LSP little by little.  Then
+;;; when it is functional, copy it to EDCLIB.
+;;; Most of this code is obsolete, but there are some ideas here I still want to implement.
+;;;
+;;; Begin Settings input/output functions  NOT YET FUNCTIONAL
+;;;
+;;; Should FILE be an argument to HAWS-GETVAR and HAWS-SETVAR?  If
+;;; so,
+;;; how does it affect
+;;; (HAWS-INI)?
+;;; I don't at this moment 2008-09-14 know what the above question means.
+;;;
+;;; I can make these into generic input/output functions,
+;;; but to do so, I need to have the calling application provide the following
+;;; (in its own wrapper function):
+;;; 1.  section name for its section in *HAWS-SETTINGS*
+;;; 2.  app name for ini file name or other storage division
+;;; 3.  scope code indicating the scope of the settings, which determines the method of storage and retrieval: 
+;;;      "a" APPLICATION settings are currently stored in the program folder in a given section of a given ini file
+;;;      "u" USER settings are currently stored in ACAD.CGF with (setcfg)/(getcfg) or the Windows registry
+;;;      "p" PROJECT settings are kept in the current project folder in a given section of a given ini file, with editable defaults in the the program folder
+;;;      "d" DRAWING settings are kept in the current drawing
+;;; 4.  location indicator file name in case we have to find an ini
+;;;     (indicator file can be optionally a fully qualified path)
+;;; 5.  application defaults for all variables
+;;;
+;;; Here's how this can work:
+;;; In the application, you have a function like (app-getvar key)
+;;; Then in that function you pass this general-purpose getvar the key along with the
+;;; application name, application defaults, ini file name, and location test file
+;;;
+;;; PROJECTS
+;;;
+;;; Projects are sets of drawings grouped by folder.  Normally an ini file
+;;; in a folder applies just to the drawings in that folder.
+;;; But multiple folders can use a single project ini file in a project root folder.
+;;; This is controlled by placing a pointer file in all folders other than the project root.
+;;; For CNM, this file was called CNMPROJ.TXT.  I suppose that same convention could be followed
+;;; for other apps by pasting the app key name to "PROJ.TXT".
+;;;
+;;; ===================================================================
+;;; One question or to-do here is the method of initializing (erasing) the settings in the event of a pause when user could edit them.
+;;; On the other hand, it seems common for programs to ignore any changes to settings that are made directly while the program is running.
+;;; This could be turned on an off by the calling application.  See HAWS-REMOVESETTINGS
+;;;
+;;; Settings are stored in *HAWS-SETTINGS*, which is in the likeness
+;;; of multiple ini files:
+;;; I removed the inifile path from here, but maybe it's really needed.
+;;; *HAWS-SETTINGS*
+;;; '("SCOPE"            Every scope may have a different storage mechanism
+;;;    ("APPNAME"        Key Name of an application using a single inifile the settings are stored in
+;;;      (0 . "INIFILE") Known path to settings for this scope and application
+;;;      ("SECTION"      Ini section or path to variable
+;;;        ("VAR"        Ini variable
+;;;         "VAL"        Ini value
+;;;        )
+;;;      )
+;;;    )
+;;;  )
+;;;
+
+;;;Test functions
+(DEFUN
+   C:TESTSET ()
+  (hcnm-concept-TESTSETVAR
+    (GETSTRING "\nVariable name: ")
+    (GETSTRING "\nValue: ")
+  )
+)
+(DEFUN
+   C:TESTGET ()
+  (hcnm-concept-TESTGETVAR (GETSTRING "\nVariable name: "))
+)
+(DEFUN
+   hcnm-concept-TESTSETVAR (VAR VAL)
+  (hcnm-concept-SETVAR
+    ;; variable
+    VAR
+    ;;value
+    VAL
+    ;; application name for its section in *hcnm-concept-SETTINGS*
+    "test"
+    ;; indicator file name for default location of ini or vanilla ini
+    ;; (indicator file can be optionally a fully qualified path)
+    "hawsedc.mnl"
+    ;; ini section
+    "Test"
+    ;; Scope of setting.  Can be "a" (application)  "u" (user)  "p" (project) or "d" (drawing).  Determines where to store and get setting.
+    "a"
+   )
+)
+;;This is a sample wrapper function that an application would use
+;;to call hcnm-concept-GETVAR.
+(DEFUN
+   hcnm-concept-TESTGETVAR (VAR)
+  (hcnm-concept-GETVAR
+    ;;variable
+    VAR
+    ;; application name for its section in *hcnm-concept-SETTINGS*
+    "test"
+    ;; indicator file name for default location of ini or vanilla ini
+    ;; (indicator file can be optionally a fully qualified path)
+    "hawsedc.mnl"
+    ;; ini section
+    "Test"
+    ;; Scope of setting.  Can be "a" (application)  "u" (user)  "p" (project) or "d" (drawing).  Determines where to store and get setting.
+    "a" ;;Fallback defaults
+        '
+         (("1" "1val")
+          ("2" "2val")
+         )
+   )
+)
+
+;; hcnm-concept-INI
+;; Finds INI file
+;; Returns a fully qualified path, that folder is qualified to have
+;; HAWSEDC.INI in it.
+;; It should resolve all errors and user conditions
+;; and return a "drive:\\...\\INIFOLDER" path to other functions.
+
+
+;;; hcnm-concept-INIFOLDER gets a valid INI folder.
+;;; This function is wrong because there isn't a single *hcnm-concept-INIFOLDER* that this function
+;;; can throw around globally.
+(DEFUN
+   hcnm-concept-INIFILE (APP SCOPE TESTFILE / INIFILE ASSUMEDINIFOLDER
+                 ASSUMEDINIFILE
+                )
+  (COND ((NOT TESTFILE) (SETQ TESTFILE (STRCAT APP ".cui"))))
+  (COND
+    ;; Project already defined this session
+    ;; (Assume it's valid.  Calling function should init project
+    ;; if there's been a chance of loss.)
+    ((CDR
+       (ASSOC
+         0
+         (CDR (ASSOC APP (CDR (ASSOC SCOPE *hcnm-concept-SETTINGS*))))
+       )
+     )
+    )
+    ;;TGH OK.  Here we need to take the case of each scope and treat them differently
+    ;;App scope ini needs to be searched using testfile in all cases.  Project scope only needs to be search with testfile
+    ;;if project ini isn't found.  But wait, for project scope, you want to know the project ini location, but then
+    ;;if you need to make a project ini from the app default, you have to find the application default ini.
+    ;;so for project scope, there are two ini path building searches.
+    ;;
+    ;;Or try to find inifile in folder with testfile
+    ((AND
+       (SETQ ASSUMEDINIFOLDER (FINDFILE TESTFILE))
+       (SETQ
+         ASSUMEDINIFOLDER
+          (hcnm-concept-FILENAME-DIRECTORY ASSUMEDINIFOLDER)
+       )
+       (SETQ
+         ASSUMEDINIFILE
+          (FINDFILE (STRCAT ASSUMEDINIFOLDER APP ".ini"))
+       )
+     )
+     ASSUMEDINIFILE
+    )
+    ;;Or make an ini file in folder with testfile in it or in proj folder
+    ((hcnm-concept-GETINIDEFAULTS ASSUMEDINIFOLDER) ASSUMEDINIFOLDER)
+  )
+)
+
+
+;;Gets all settings from an inifile if it can.
+(DEFUN
+   hcnm-concept-GETSETTINGS (INIFILE TESTFILE APPORPROJ)
+  (SETQ
+    *hcnm-concept-SETTINGS*
+     (INI_READINI
+       (hcnm-concept-INI (hcnm-concept-INIFOLDER INIFILE TESTFILE))
+     )
+  )
+)
+
+;;Sets a variable in the global lisp list and in HAWSEDC.INI
+(DEFUN
+   hcnm-concept-SETVAR (INIFILE INISECTION VAR VAL / SETTING)
+  ;; Call GETVAR before setting var.  Why?  To populate *hcnm-concept-SETTINGS*?
+  (hcnm-concept-GETVAR
+    VAR INISECTION INIFILE TESTFILE APPORPROJ DEFAULTS
+   )
+  (hcnm-concept-ADDVARTOLIST VAR VAL INISECTION INIFILE)
+  (INI_WRITEENTRY
+    (hcnm-concept-INI (hcnm-concept-INIFOLDER))
+    INISECTION
+    SETTING
+    VAL
+  )
+)
+
+;; hcnm-concept-GETVAR
+;; hcnm-concept-GETVAR is called by wrapper functions like HCNM-GETVAR or hcnm-concept-EDCGETVAR
+;; It gets a variable without opening a file if it can.
+;; (Higher calling functions may use functions like HCNM-PROJINIT or
+;; hcnm-concept-REMOVESETTINGS to remove settings and force a file
+;; read.)
+;; hcnm-concept-GETVAR gets a program setting from
+;; 1. The global *hcnm-concept-SETTINGS* list if found
+;; 2. An ini file or other location
+;; 3. reverts to a default value without fail
+;;
+;; INIFILE is an ini filename. Ini file might not be used for a given scope in the current strategy.  
+;; If there is no such ini file found and is needed, hcnm-concept-getvar creates it.
+;; If hcnm-concept-getvar can't create the file, it sends an alert.
+;;
+;; SECTION is the ini section/path/tree path/location the var is in or goes in
+;;
+;; DEFAULTS is a list of defaults in the HawsEDC standard settings format as follows:
+;;  '((VAR1 DEFAULT1)(VAR2 DEFAULT2))
+;;
+;; variable to get
+;; ini section name
+;; ini file name
+;; test file name for location of ini defaults or app based active ini
+;; A flag indicating whether the active settings are to be kept in the
+;; app folder or the project folder ("app" "prj")
+;; application defaults for all variables
+(DEFUN
+   hcnm-concept-GETVAR (VAR SECT APP SCOPE TESTFILE DEFAULTS / ADDTOLIST
+                ADDTOINI DIR INI SETTING VAL
+               )
+  (SETQ
+    ;; Does the variable need to be added to the *hcnm-concept-SETTINGS* list? Assume yes initially.
+    ADDTOLIST
+     T
+    ;; Does the variable need to be added to the appropriate ini file? Assume yes initially
+    ADDTOINI
+     T
+  )
+  ;;Get var list if no var list
+  (IF (NOT *hcnm-concept-SETTINGS*)
+    (hcnm-concept-GETSETTINGS)
+  )
+  (COND
+    ;;Try getting from list
+    ((SETQ
+       VAL
+        (hcnm-concept-VARTOVAL
+          VAR
+          (CADR (ASSOC SECT (CADDR (ASSOC APP *hcnm-concept-SETTINGS*))))
+        )
+     )
+     (SETQ
+       ADDTOLIST NIL
+       ADDTOINI NIL
+     )
+    )
+    ;;Try getting from ini.
+    ((SETQ
+       VAL
+        (INI_READENTRY APP SECT SETTING)
+       ADDTOINI NIL
+     )
+    )
+    ;;Get from app ini if not.
+    ((AND
+       (SETQ DIR (FINDFILE TESTFILE))
+       (SETQ
+         INI
+          (FINDFILE (STRCAT (hcnm-concept-FILENAME-DIRECTORY DIR) "\\" APP))
+       )
+       (SETQ VAL (INI_READENTRY INI SECT SETTING))
+     )
+    )
+    ;;Use default if there is one
+    ((SETQ VAL (hcnm-concept-VARTOVAL VAR DEFAULTS)))
+    ;;Otherwise fail.
+    (T
+     (ALERT
+       (STRCAT
+         "Fatal error in "
+         SECT
+         ":\nCould not initialize the variable\n"
+         VAR
+       )
+     )
+     (SETQ
+       ADDTOLIST NIL
+       ADDTOINI NIL
+     )
+    )
+  )
+  (IF ADDTOLIST
+    (hcnm-concept-ADDVARTOLIST VAR VAL SECT APP)
+  )
+  (IF ADDTOINI
+    (INI_WRITEENTRY (hcnm-concept-INI (hcnm-concept-INIFOLDER)) APP SETTING VAL)
+  )
+  VAL
+)
+
+(DEFUN
+   hcnm-concept-ADDVARTOLIST (VAR VAL INISECTION INIFILE)
+  (SETQ
+    SETTING
+     (hcnm-concept-VARTOSETTING VAR)
+    *hcnm-concept-SETTINGS*
+     (SUBST
+       (SUBST
+         (SUBST
+           (LIST SETTING VAL)
+           (ASSOC
+             INISETTING
+             (ASSOC
+               INISECTION
+               (ASSOC INIFILE *hcnm-concept-SETTINGS*)
+             )
+           )
+           (ASSOC
+             INISECTION
+             (ASSOC INIFILE *hcnm-concept-SETTINGS*)
+           )
+         )
+         (ASSOC INISECTION (ASSOC FILE *hcnm-concept-SETTINGS*))
+         (ASSOC INIFILE *hcnm-concept-SETTINGS*)
+       )
+       (ASSOC INIFILE *hcnm-concept-SETTINGS*)
+       *hcnm-concept-SETTINGS*
+     )
+  )
+)
+
+
+;;Gets an entire ini file from app folder
+;;or else writes defaults to a fresh ini.
+;;Doesn't add to existing ini.
+;;Returns ini file name.
+(DEFUN
+   hcnm-concept-GETINIDEFAULTS (PROJ / APP APPINI PROJINI)
+  (ALERT
+    (PRINC
+      (STRCAT
+        "Note: Program settings not found in program folder\n"
+        PROJ
+        "\n\nUsing default settings."
+      )
+    )
+  )
+  (SETQ PROJINI (STRCAT PROJ "\\" "cnm.ini"))
+  (COND
+    ((AND
+       (SETQ APP (FINDFILE "cnm.mnl"))
+       (SETQ
+         APPINI
+          (FINDFILE
+            (STRCAT (hcnm-concept-FILENAME-DIRECTORY APP) "\\" "cnm.ini")
+          )
+       )
+       (hcnm-concept-FILE-COPY APPINI PROJINI)
+     )
+     (WHILE (NOT (FINDFILE PROJINI)))
+     PROJINI
+    )
+    (T
+     (SETQ F2 (OPEN PROJINI "w"))
+     (PRINC
+       "[CNM]
+ProjectNotes=constnot.txt
+NoteTypes=BOX,CIR,DIA,ELL,HEX,OCT,PEN,REC,SST,TRI
+DoCurrentTabOnly=0
+PhaseAlias1=1
+PhaseAlias2=2
+PhaseAlias3=3
+PhaseAlias4=4
+PhaseAlias5=5
+PhaseAlias6=6
+PhaseAlias7=7
+PhaseAlias8=8
+PhaseAlias9=9
+InsertTablePhases=No
+TableWidth=65
+PhaseWidthAdd=9
+LineSpacing=1.5
+NoteSpacing=3
+NumberToDescriptionWidth=2.5
+DescriptionToQuantityWidth=56
+QuantityToQuantityWidth=9
+QuantityToUnitsWidth=1
+ShowKeyTableGrid=0
+ShowKeyTableQuantities=1
+BubbleHooks=Yes
+BubbleLeaderConnectOsnap=mid,end
+ImportLayerSettings=No
+"      F2
+     )
+     (SETQ F2 (CLOSE F2))
+     PROJINI
+    )
+  )
+)
+
+;;Saves *hcnm-concept-SETTINGS* to the requested inifile
+(DEFUN
+   hcnm-concept-SAVESETTINGSTOINI (INIFILE TESTFILE APPORPROJ)
+  (INI_WRITESECTION
+    (hcnm-concept-INI (hcnm-concept-INIFOLDER INIFILE TESTFILE))
+    INIFILE
+    *hcnm-concept-SETTINGS*
+  )
+)
+;;;================================================================================================================
+;;; End multi-app planning thoughts and code
 ;;;================================================================================================================
 ;;; CONFIG: Name of the app
 ;;; DEFINITIONS: Name of an entry in the def
@@ -4478,13 +4889,12 @@
 (DEFUN C:HAWS-SSTL () (HCNM-LDRBLK-DYNAMIC "SST"))
 (DEFUN C:HAWS-TRIL () (HCNM-LDRBLK-DYNAMIC "TRI"))
 (DEFUN
-   HCNM-LDRBLK-DYNAMIC (NOTETYPE / ANG1 ASSOCIATE-P AUOLD BLOCKNAME DT EN NUM
-                        P1 P2 FLIPPED FLIPSTATE ss1 TXT1 TXT2
+   HCNM-LDRBLK-DYNAMIC (NOTETYPE / ANG1 ASSOCIATE-P ATTRIBUTE-LIST AUOLD
+                        BLOCKNAME DT ENAME-BLOCK FLIPSTATE GR NUM P1 P1W
+                        P2 P2W SNAPANG1 SS1 TXT1 TXT2 VLAOBJ
                        )
-  (haws-errdef 1)
-  (HAWS-VSAVE
-    '("attreq" "aunits" "clayer" "cmdecho")
-  )
+  (HAWS-ERRDEF 1)
+  (HAWS-VSAVE '("attreq" "aunits" "clayer" "cmdecho"))
   (COMMAND "._undo" "_g")
   (SETQ
     ASSOCIATE-P
@@ -4499,8 +4909,13 @@
     BLOCKNAME
      (STRCAT "cnm-bubble-" (HCNM-CONFIG-GETVAR "BubbleHooks"))
     P1 (GETPOINT "\nStart point for leader:")
+    P1W
+     (TRANS P1 1 0)
     DT (GETVAR "dimtxt")
-    ss1 (ssadd)
+    SNAPANG1
+     (GETVAR "snapang")
+    SS1
+     (SSADD)
   )
   (HAWS-MKLAYR "NOTESLDR")
   (SETVAR "attreq" 0)
@@ -4514,38 +4929,33 @@
       P1
       (ANGTOS (GETVAR "snapang"))
     )
-    (setq en (entlast))
-    (LM:SETDYNPROPVALUE
-      (VLAX-ENAME->VLA-OBJECT en)
-      "Shape"
-      NOTETYPE
+    (SETQ
+      ENAME-BLOCK
+       (ENTLAST)
+      VLAOBJ
+       (VLAX-ENAME->VLA-OBJECT ENAME-BLOCK)
     )
-    (LM:SETDYNPROPVALUE
-      (VLAX-ENAME->VLA-OBJECT en)
-      "Text side"
-      FLIPSTATE
-    )
-    (ssadd en ss1)
+    (LM:SETDYNPROPVALUE VLAOBJ "Shape" NOTETYPE)
+    (LM:SETDYNPROPVALUE VLAOBJ "Text side" FLIPSTATE)
+    (SSADD ENAME-BLOCK SS1)
   )
   (PROMPT "\nLocation for bubble: ")
-  (COMMAND "._MOVE" ss1 "" P1 PAUSE)
+  (COMMAND "._MOVE" SS1 "" P1 PAUSE)
   (SETQ
-    P2 (TRANS (CDR (ASSOC 10 (ENTGET EN))) EN 1)
-    ANG1
-     (ANGLE P1 P2)
-    FLIPPED
-     (COND
-       ((MINUSP (COS ANG1)) 1)
-       (0)
-     )
-    NUM
-     (GETSTRING "\nNote number <XX>: ")
-    TXT1
-     (GETSTRING 1 "Line 1 text: ")
-    TXT2
-     (GETSTRING 1 "Line 2 text: ")
+    P2        (TRANS (CDR (ASSOC 10 (ENTGET ENAME-BLOCK))) ENAME-BLOCK 1)
+    P2W       (TRANS P2 1 0)
+    ANG1      (- (ANGLE P1W P2W) SNAPANG1)
+    FLIPSTATE (COND
+                ((MINUSP (COS ANG1)) 1)
+                (0)
+              )
   )
-  (command "._erase" ss1 "")
+  (SETQ
+    NUM  (GETSTRING "\nNote number <XX>: ")
+    TXT1 (GETSTRING 1 "Line 1 text: ")
+    TXT2 (GETSTRING 1 "Line 2 text: ")
+  )
+  (COMMAND "._erase" SS1 "")
   (COND
     ((>= (ATOF (GETVAR "acadver")) 14)
      (COMMAND "._leader" P1 P2 "_Annotation" "")
@@ -4598,24 +5008,24 @@
        (LIST "NOTETXT6" "")
      )
   )
-  (SETQ ENAME-BLOCK (ENTLAST))
+  (SETQ
+    ENAME-BLOCK
+     (ENTLAST)
+    VLAOBJ
+     (VLAX-ENAME->VLA-OBJECT ENAME-BLOCK)
+  )
   (HCNM-SET-ATTRIBUTES ENAME-BLOCK ATTRIBUTE-LIST)
-  (LM:SETDYNPROPVALUE
-    (VLAX-ENAME->VLA-OBJECT ENAME-BLOCK)
-    "Shape"
-    NOTETYPE
-  )
-  (LM:SETDYNPROPVALUE
-    (VLAX-ENAME->VLA-OBJECT ENAME-BLOCK)
-    "Text side"
-    FLIPPED
-  )
+  (LM:SETDYNPROPVALUE VLAOBJ "Shape" NOTETYPE)
+  (LM:SETDYNPROPVALUE VLAOBJ "Text side" FLIPSTATE)
   (HCNM-RESTORE-DIMSTYLE)
   (HAWS-VRSTOR)
   (COMMAND "._undo" "_e")
   (HAWS-ERRRST)
   (PRINC)
 )
+
+
+
 
 ;;; ------------------------------------------------------------------------------
 ;;; LDRBLK.LSP
@@ -5101,35 +5511,35 @@
 
 ;; Get Dynamic Block Property Value  -  Lee Mac
 ;; Returns the value of a Dynamic Block property (if present)
-;; blk - [vla] VLA Dynamic Block Reference object
-;; prp - [str] Dynamic Block property name (case-insensitive)
+;; block-object-1 - [vla] VLA Dynamic Block Reference object
+;; dynamic-property-name - [str] Dynamic Block property name (case-insensitive)
 
-(defun LM:getdynpropvalue ( blk prp )
-    (setq prp (strcase prp))
-    (vl-some '(lambda ( x ) (if (= prp (princ (strcase (vla-get-propertyname x)))) (vlax-get x 'value)))
-        (vlax-invoke blk 'getdynamicblockproperties)
+(defun LM:getdynpropvalue ( block-object-1 dynamic-property-name /  dynamic-property-name-upper)
+    (setq dynamic-property-name-upper (strcase dynamic-property-name))
+    (vl-some '(lambda ( x ) (if (= dynamic-property-name-upper (strcase (vla-get-propertyname x)))) (vlax-get x 'value))
+        (vlax-invoke block-object-1 'getdynamicblockproperties)
     )
 )
 
 ;; Set Dynamic Block Property Value  -  Lee Mac
 ;; Modifies the value of a Dynamic Block property (if present)
-;; blk - [vla] VLA Dynamic Block Reference object
-;; prp - [str] Dynamic Block property name (case-insensitive)
+;; block-object-1 - [vla] VLA Dynamic Block Reference object
+;; dynamic-property-name - [str] Dynamic Block property name (case-insensitive)
 ;; val - [any] New value for property
 ;; Returns: [any] New value if successful, else nil
 
-(defun LM:setdynpropvalue ( blk prp val )
-    (setq prp (strcase prp))
+(defun LM:setdynpropvalue ( block-object-1 dynamic-property-name val / dynamic-property-name-upper)
+    (setq dynamic-property-name-upper (strcase dynamic-property-name))
     (vl-some
        '(lambda ( x )
-            (if (= prp (strcase (vla-get-propertyname x)))
-                (progn
+            (if (eq dynamic-property-name-upper (strcase (vlax-get x 'propertyname)))
+                (progn                  
                     (vla-put-value x (vlax-make-variant val (vlax-variant-type (vla-get-value x))))
                     (cond (val) (t))
                 )
             )
         )
-        (vlax-invoke blk 'getdynamicblockproperties)
+        (vlax-invoke block-object-1 'getdynamicblockproperties)
     )
 )
 

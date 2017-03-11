@@ -1,10 +1,24 @@
-;; 2017-02-26 This is the only way I know at the moment to control dropping of functions
-;; and make them export to AutoCAD.
-(defun haws-prevent-function-drop ()
-  (haws-load-from-app-dir "lisputil")
-  (hcnm-config-getvar "Dummy")
-  (hcnm-config-getvar "Dummy" "dummy")
+;;; 4.2.30 deprecation section
+(MAPCAR
+  '(LAMBDA (FUNCTION-NAME)
+     (EVAL
+       (READ
+         (STRCAT
+           "defun " FUNCTION-NAME
+           "() (princ \"\nCNM can no longer expose functions that have names without reserved safe prefixes like HAWS- and HCNM-. Something you invoked called the HAWSEDC legacy "
+           FUNCTION-NAME
+           " routine.  Please find the call and replace it with HAWS-"
+           FUNCTION-NAME
+           "."
+          )
+       )
+     )
+   )
+  (list "errdef"
+    "errrst" "mklayr" "mktext" "vrstor" "vsave" "vset"
+   )
 )
+
 ;;; Vintage HawsEDC Lisp library
 ;;; Utility functions including the error trapper
 
@@ -13,7 +27,7 @@
 ;;; Type 0 tries to match the wild cards with text preceding a number.
 ;;; Type 1 tries to match the wild cards with text following a number
 ;;;Returns 0.0 if search unsuccesful
-(defun atofx (s wc opt / x)
+(defun haws-atofx (s wc opt / x)
   (setq x (cadr (extractx s wc opt)))
   (if x (atof x) 0.0)
 )
@@ -23,29 +37,28 @@
 ;;; Type 0 tries to match the wild cards with text preceding a number.
 ;;; Type 1 tries to match the wild cards with text following a number
 ;;; Returns nil if search unsuccesful
-(defun distofx (s wc opt / x)
+(defun haws-distofx (s wc opt / x)
   (setq x (cadr (extractx s wc opt)))
   (if x (distof x) nil)
 )
 
-(defun dxf (gcode entlst) (cdr (assoc gcode entlst)))
+(defun haws-dxf (gcode entlst) (cdr (assoc gcode entlst)))
 
 ;;; Endstr returns a substring of s starting with the ith to last character
 ;;; and continuing l characters.
-(defun endstr (s i l)
+(defun haws-endstr (s i l)
   (substr s (1+(-(max(strlen s)1)i))l)
 )
 
 ;;; Legacy errdef.
 ;;; The new standard HawsEDC error trapper in EDCLIB is called HAWS-ERRDEF.
 ;;; Only legacy routines (not maintained with the HawsEDC set) will call these routines.
-;;; Internal error handler function.  Call erdf$@ at the beginning of a routine.
+;;; Internal error handler function.  Call (errdef) at the beginning of a routine.
 ;;; Call errrst at the end to restore old *error* handler.
 ;;; To restore previous UCS, set a global symbol 'ucsp to non-nil.
 ;;; To restore another previous UCS, set a global symbol 'ucspp to non-nil.
-(defun errdef () (erdf$@))
 (DEFUN
-   ERDF$@ ()
+   haws-errdef ()
   (PRINC "\nThank you for using this HawsEDC tool.  See HawsEDC.com for support.")
   ;;Load extended visual lisp functions
   (VL-LOAD-COM)
@@ -59,7 +72,7 @@
 
 ;;; Stperr replaces the standard error function.
 ;;; It sets everything back in case of an error.
-(defun stperr (s)
+(defun haws-stperr (s)
   (cond
     ( (/= s "Function cancelled")
       (princ (strcat "\nTrapped error: " s))
@@ -78,13 +91,21 @@
   (if olderr (setq *error* olderr olderr nil))   ; Restore old *error* handler
   (princ)
 )
-(defun errrst ()
+(defun haws-errrst ()
   (setq ucsp nil ucspp nil enm nil f1 nil f2 nil *error* olderr olderr nil)
 )
 ;;; END ERROR HANDLER
 
+(DEFUN
+   HAWS-DWGSCALE ()
+  (COND
+    ((OR (= (GETVAR "DIMANNO") 1) (= (GETVAR "DIMSCALE") 0)) (/ 1 (GETVAR "CANNOSCALEVALUE")))
+    ((GETVAR "DIMSCALE"))
+  )
+)
+
 ;;; Extract used to extract numerical info from a text string.
-(defun extract (s / c i prefix number suffix)
+(defun haws-extract (s / c i prefix number suffix)
    (setq i 0 prefix "" number "" suffix "")
    (repeat (strlen s)
       (setq c (substr s (setq i (1+ i)) 1))
@@ -109,7 +130,7 @@
 )
 
 ;;; Extractx used to extract numerical info from a text string with extended options.
-(defun extractx (s wc opt / c done i pre prei number suf sufi)
+(defun haws-extractx (s wc opt / c done i pre prei number suf sufi)
   (setq
     i (if(= opt 0) 0 (1+ (strlen s)))
     pre "" number "" suf ""
@@ -156,20 +177,20 @@
 )
 
 ;;; ----  GETANGLE WITH DEFAULT PROMPT  ------------------------------------------
-(defun getanglex (anchor prmpt curval dflt / input)
+(defun haws-getanglex (anchor prmpt curval dflt / input)
   (if (equal curval nil) (setq curval dflt))
   (setq prmpt (strcat prmpt " <" (angtos curval) ">: "))
   (setq input (if anchor (getangle anchor prmpt)(getangle prmpt)))
   (if (equal input nil) (setq curval curval) input)
 )
 ;;; ----  GETDIST WITH DEFAULT PROMPT  -------------------------------------------
-(defun getdistx (anchor prmpt curval dflt / input)
+(defun haws-getdistx (anchor prmpt curval dflt / input)
   (if (equal curval nil) (setq curval dflt))
   (setq prmpt (strcat prmpt " <" (rtos curval) ">: "))
   (setq input (if anchor (getdist anchor prmpt)(getdist prmpt)))
   (if (equal input nil) (setq curval curval) input)
 )
-(defun getdn ( / dn)
+(defun haws-getdn ( / dn)
   (setq
     dn (getvar "dwgname")
   )
@@ -181,7 +202,7 @@
   dn
 )
 
-(defun getdnpath ( / dnpath)
+(defun haws-getdnpath ( / dnpath)
   (setq
     dnpath (getvar "dwgname")
   )
@@ -195,7 +216,7 @@
   dnpath
 )
 
-(defun getfil (fprmpt fdflt ftype fext / file fname fninp)
+(defun haws-getfil (fprmpt fdflt ftype fext / file fname fninp)
   (setq file nil)
   (while
     (not file)
@@ -220,26 +241,26 @@
 )
 
 ;;; ----  GETSTRING WITH DEFAULT PROMPT  -----------------------------------------
-(defun getstringx (prmpt curval dflt / input)
+(defun haws-getstringx (prmpt curval dflt / input)
   (if (not curval) (setq curval dflt))
   (setq input (getstring T (strcat prmpt " <"  curval ">: ")))
   (if (= input "") curval input)
 )
 
 ;;; ----  GETINT WITH DEFAULT PROMPT  --------------------------------------------
-(defun getintx (prmpt curval dflt / input)
+(defun haws-getintx (prmpt curval dflt / input)
   (if (not curval) (setq curval dflt))
   (setq input (getint (strcat prmpt " <" (itoa curval) ">: ")))
   (if (not input) curval input)
 )
 ;;; ----  GETREAL WITH DEFAULT PROMPT  -------------------------------------------
-(defun getrealx (prmpt curval dflt / input)
+(defun haws-getrealx (prmpt curval dflt / input)
   (if (not curval) (setq curval dflt))
   (setq input (getreal (strcat prmpt " <" (rtos curval) ">: ")))
   (if (not input) curval input)
 )
 ;;; ----  GETPOINT WITH DEFAULT PROMPT  ------------------------------------------
-(defun getpointx (anchor prmpt curval dflt / input)
+(defun haws-getpointx (anchor prmpt curval dflt / input)
   (if (equal curval nil) (setq curval dflt))
   (setq prmpt (strcat prmpt
       " <"(rtos(car curval))
@@ -257,7 +278,7 @@
 ;;;         [string to place into a field]
 ;;;         [uniform field width or field delimiter character]
 ;;;       )
-(defun mkfld (string format / char i mkfld_field mkfld_literal)
+(defun haws-mkfld (string format / char i mkfld_field mkfld_literal)
   (cond
     ((= (type format) 'STR)
      (setq i 0 mkfld_field "")
@@ -290,8 +311,7 @@
 ;;; MKLAYR sub-function defines and makes current a layer for another routine.
 ;;;  Usage: (mklayr (list "laname" "lacolr" "laltyp"))
 ;;;  Use empty quotes for default color and linetype (eg. (mklay (list "AZ" "" ""))
-(defun getlayr ( key / temp)
-  (defun getusl (/ rdlin temp)
+  (defun haws-getusl (/ rdlin temp)
     (setq temp (findfile"layers.dat"))
     (COND
       (TEMP
@@ -312,7 +332,8 @@
     )
     (SETQ F3 (CLOSE F3))
   )
-  (if (not *HAWS:LAYERS*)(getusl))
+(defun haws-getlayr ( key / temp)
+  (if (not *HAWS:LAYERS*)(haws-getusl))
   (cond
     ( (cdr (assoc key *HAWS:LAYERS*)))
     ( T
@@ -320,10 +341,10 @@
     )
   )
 )
-(defun mklayr (laopt / laname lacolr laltyp ltfile)
+(defun haws-mklayr (laopt / laname lacolr laltyp ltfile)
   (if
     (= 'STR (type laopt))
-    (setq laopt (cond ((getlayr laopt)) ('("" "" "")) ))
+    (setq laopt (cond ((haws-getlayr laopt)) ('("" "" "")) ))
   )
   (setq laname (car laopt) lacolr (cadr laopt) laltyp (caddr laopt) ltfile "acad")
   (if (not (or (= laltyp "")(tblsearch "LTYPE" laltyp)))
@@ -357,7 +378,7 @@
   laopt
 )
 
-(defun mktext (j i h r s / jx jy)
+(defun haws-mktext (j i h r s / jx jy)
   (setq
     i (trans (if (= 2 (length i)) (append i '(0.0)) i) 1 0)
     j (if (= j nil) "L" (strcase j))
@@ -397,7 +418,7 @@
   )
   (entmod ent)
 )
-(defun mkline (pt1 pt2)
+(defun haws-mkline (pt1 pt2)
   (setq
     pt1 (if (= 2 (length pt1)) (append pt1 '(0.0)) pt1)
     pt2 (if (= 2 (length pt2)) (append pt2 '(0.0)) pt2)
@@ -420,7 +441,7 @@
 ;;;                           2 (unlimited length field at end of string)
 ;;;          ]
 ;;;        )
-(defun rdfld
+(defun haws-rdfld
   (fldno string fldwid opt / ischr islong i j atomx char literal firstquote)
   (setq ischr (= 1 (logand 1 opt)) islong (= 2 (logand 2 opt)))
   (cond
@@ -473,7 +494,7 @@
 )
 
 ;;; Convert a radian angle to a presentation quality bearing.
-(defun rtob (rad au / b i)
+(defun haws-rtob (rad au / b i)
   (setq
     b (angtos rad au)
   )
@@ -492,7 +513,7 @@
 )
 
 ;;; RTOSTA sub-function converts a real number to a base 100 road station.
-(defun rtosta (sta lup / isneg after before)
+(defun haws-rtosta (sta lup / isneg after before)
   (setq
     lup (cond (lup)((getvar "luprec")))
     isneg (minusp sta)
@@ -509,11 +530,11 @@
   (if isneg (setq before (strcat "-(" before) after (strcat after ")")))
   (strcat before "+" after)
 )
-(defun vset (vlst)
+(defun haws-vset (vlst)
   (foreach v vlst (if (getvar (car v))(setvar (car v)(cadr v))))
 )
 
-(defun vtog (vlst)
+(defun haws-vtog (vlst)
   (foreach v vlst
     (princ (strcat "\n" v " toggled to "))
     (setvar v (princ(if (= (getvar v) 0) 1 0)))
@@ -521,7 +542,7 @@
   (princ)
 )
 
-(defun vsave (vlst)
+(defun haws-vsave (vlst)
   (setq vstr '())
   (repeat (length vlst)
     (setq vstr (append vstr (list (list (car vlst) (getvar (car vlst)))))
@@ -529,7 +550,7 @@
   )
 )
 
-(defun vrstor ()
+(defun haws-vrstor ()
   (repeat (length vstr)
     (setvar (caar vstr) (cadar vstr))
     (setq vstr (cdr vstr))
@@ -542,7 +563,7 @@
 ;;; characters are stripped.
 ;;; Example: (wrap "Go home, eat dinner, comb, brush, sleep" 15 ",")
 ;;; Returns  ("Go home" "eat dinner" "comb, brush" "sleep")
-(defun wrap (strng1 maxlen char / first i lstrni stripc strips
+(defun haws-wrap (strng1 maxlen char / first i lstrni stripc strips
   strng2 strngi temp wlist)
   (setq
     i 1 char (strcat "`" char) first T
@@ -607,7 +628,7 @@
 ;;; Functions for oo, selstyle, and le
 
 ;;;Selcerob--Selects a certain type of object. Returns entsel list.
-(defun selcerob (prmpt serch / e ok)
+(defun haws-selcerob (prmpt serch / e ok)
   (while (not ok)
    (while (not (setq e (entsel prmpt))))
     (setq elst (entget (setq enm (car e))))
@@ -619,7 +640,7 @@
   e
 )
 
-(defun fld (f elst)
+(defun haws-fld (f elst)
   (cdr (assoc f elst))
 )
 

@@ -38,7 +38,7 @@
 )
 
 (Defun c:haws-LDR ()
-  (erdf$@)
+  (errdef)
   (Setq X "S" DS (HAWS-DWGSCALE)
     THGT (* DS (Getvar "Dimtxt"))
   txt "a")

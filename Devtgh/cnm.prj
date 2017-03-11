@@ -1,7 +1,7 @@
-;;; VLisp project file [V2.0] hawsedc saved to:[W:/programming/hawsedc/develop/Devtgh] at:[2/26/17] 
+;;; VLisp project file [V2.0] cnm saved to:[W:/programming/hawsedc/develop/Devtgh] at:[3/5/17] 
 (VLISP-PROJECT-LIST
   :NAME
-  HAWSEDC
+  CNM
   :OWN-LIST
   ("W:/programming/hawsedc/develop/Devtgh/2l"
     "W:/programming/hawsedc/develop/Devtgh/add"
@@ -43,10 +43,8 @@
     "W:/programming/hawsedc/develop/Devtgh/lcp"
     "W:/programming/hawsedc/develop/Devtgh/leader"
     "W:/programming/hawsedc/develop/Devtgh/letter"
-    "W:/programming/hawsedc/develop/Devtgh/lisputil"
     "W:/programming/hawsedc/develop/Devtgh/lotnum"
     "W:/programming/hawsedc/develop/Devtgh/ltchang"
-    "W:/programming/hawsedc/develop/Devtgh/ltp"
     "W:/programming/hawsedc/develop/Devtgh/lwp"
     "W:/programming/hawsedc/develop/Devtgh/lx"
     "W:/programming/hawsedc/develop/Devtgh/mfillet"
@@ -94,15 +92,7 @@
   :TMP-DIRECTORY
   "W:/programming/hawsedc/compile/temp"
   :PROJECT-KEYS
-  (:BUILD
-    (:OPTIMIZE :LOCALIZE :MAKE-INTERNAL)
-    :MERGED
-    nil
-    :SAFE-MODE
-    T
-    :MSGLEVEL
-    2
-  )
+  (:BUILD (:STANDARD) :MERGED T :SAFE-MODE T :MSGLEVEL 2)
   :CONTEXT-ID
   :AUTOLISP
 )

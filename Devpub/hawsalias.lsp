@@ -8,6 +8,8 @@
 ;;;
 ;;; Order of commands: 1. Section 2. Random
 ;;;
+;;; Define as AutoCAD command.
+;;; https://www.theswamp.org/index.php?topic=51409.msg565523#msg565523
 ;;Profile Drafter
 (defun c:pro () (c:haws-pro))
 (defun c:eop () (c:haws-eop))
@@ -171,6 +173,7 @@
 (defun c:chm () (princ "\nConsider using Y, YY, and YYY instead of AS, CL, and CHM.")(c:haws-chm))
 (defun c:cl () (princ "\nConsider using Y, YY, and YYY instead of AS, CL, and CHM.")(c:haws-cl))
 (defun c:ff () (c:haws-ff))
+(defun c:fff () (princ "\nConsider using FFF instead of FFX.")(c:haws-ffx))
 (defun c:ffx () (c:haws-ffx))
 (defun c:off () (c:haws-off))
 (defun c:offx () (c:haws-offx))
@@ -201,6 +204,8 @@
 (defun c:oo () (c:haws-oo))
 (defun c:offsetx () (c:haws-offsetx))
 (defun c:ul () (c:haws-ul))
+(defun c:yy () (c:haws-cl))
+(defun c:yyy () (c:haws-chm))
 ;;;---------------Block Management Section---------------
 (defun c:a2t () (c:haws-a2t))
 (defun c:att2txt () (c:haws-att2txt))
@@ -222,7 +227,7 @@
 ;;;---------------Inquiry Section---------------
 (defun c:eg () (c:haws-eg))
 (defun c:egn () (c:haws-egn))
-(defun c:ac () (c:haws-ac))
+(defun c:ac () (c:haws-acres))
 (defun c:aee () (c:haws-aee))
 (defun c:aet () (c:haws-aet))
 (defun c:al () (c:haws-al))

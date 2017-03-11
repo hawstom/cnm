@@ -24,4 +24,3 @@
   (HAWS-MKTEXT (if left "mr" "ml") ptxt txht 0 p1y)
   (HAWS-ERRRST)(princ)
 ) ;end
-(princ)

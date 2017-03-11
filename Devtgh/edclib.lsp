@@ -1,27 +1,5 @@
 (PROMPT "\nHawsEDC library functions...")
 
-;;; 4.2.30 deprecation section
-(MAPCAR
-  '(LAMBDA (FUNCTION-NAME)
-     (EVAL
-       (READ
-         (STRCAT
-           "defun " FUNCTION-NAME
-           "() (princ \"\nCNM can no longer expose functions that have names without reserved safe prefixes like HAWS- and HCNM-. Something you invoked called the HAWSEDC legacy "
-           FUNCTION-NAME
-           " routine.  Please find the call and replace it with HAWS-"
-           FUNCTION-NAME
-           ".  As a temporary workaround, you can enable the legacy routine by removing the commenting semi-colon from beginning of the line near the top of CNMLOADER.lsp that includes (load \"lisputil\")."
-          )
-       )
-     )
-   )
-  (list "errdef"
-    "erdf$@" "errrst" "mklayr" "mktext" "vrstor" "vsave" "vset"
-   )
-)
-
-
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN HAWS-UNIFIED-VERSION () "4.2.30.aaa\n\nCopyright 2017")
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
@@ -130,8 +108,6 @@
 ;;;To restore previous UCS, set a global symbol 'ucsp to non-nil.
 ;;; To restore another previous UCS, set a global symbol 'ucspp to
 ;;; non-nil.
-(defun haws-erdf$@ () (haws-errdef 0))
-(defun haws-errdef () (haws-errdef 0))
 (DEFUN
    haws-errdef (APPGROUP / VALIDATED)
   ;; If computer already has authorization,
@@ -1362,717 +1338,6 @@
   )
 )
 
-;;; ===================================================================
-;;;
-;;; 2017 note: Looking over all this 10 years later, I think the best
-;;; path forward is to implement this in CNM.LSP little by little.  Then
-;;; when it is functional, copy it here.
-;;;
-;;; Begin Settings input/output functions  NOT YET FUNCTIONAL
-;;;
-;;; Should FILE be an argument to HAWS-GETVAR and HAWS-SETVAR?  If
-;;; so,
-;;; how does it affect
-;;; (HAWS-INI)?
-;;; I don't at this moment 2008-09-14 know what the above question means.
-;;;
-;;; I can make these into generic input/output functions,
-;;; but to do so, I need to have the calling application provide the following
-;;; (in its own wrapper function):
-;;; 1.  section name for its section in *HAWS-SETTINGS*
-;;; 2.  app name for ini file name or other storage division
-;;; 3.  scope code indicating the scope of the settings, which determines the method of storage and retrieval: 
-;;;      "a" APPLICATION settings are currently stored in the program folder in a given section of a given ini file
-;;;      "u" USER settings are currently stored in ACAD.CGF with (setcfg)/(getcfg) or the Windows registry
-;;;      "p" PROJECT settings are kept in the current project folder in a given section of a given ini file, with editable defaults in the the program folder
-;;;      "d" DRAWING settings are kept in the current drawing
-;;; 4.  location indicator file name in case we have to find an ini
-;;;     (indicator file can be optionally a fully qualified path)
-;;; 5.  application defaults for all variables
-;;;
-;;; Here's how this can work:
-;;; In the application, you have a function like (app-getvar key)
-;;; Then in that function you pass this general-purpose getvar the key along with the
-;;; application name, application defaults, ini file name, and location test file
-;;;
-;;; PROJECTS
-;;;
-;;; Projects are sets of drawings grouped by folder.  Normally an ini file
-;;; in a folder applies just to the drawings in that folder.
-;;; But multiple folders can use a single project ini file in a project root folder.
-;;; This is controlled by placing a pointer file in all folders other than the project root.
-;;; For CNM, this file was called CNMPROJ.TXT.  I suppose that same convention could be followed
-;;; for other apps by pasting the app key name to "PROJ.TXT".
-;;;
-;;; ===================================================================
-;;; One question or to-do here is the method of initializing (erasing) the settings in the event of a pause when user could edit them.
-;;; On the other hand, it seems common for programs to ignore any changes to settings that are made directly while the program is running.
-;;; This could be turned on an off by the calling application.  See HAWS-REMOVESETTINGS
-;;;
-;;; Settings are stored in *HAWS-SETTINGS*, which is in the likeness
-;;; of multiple ini files:
-;;; I removed the inifile path from here, but maybe it's really needed.
-;;; *HAWS-SETTINGS*
-;;; '("SCOPE"            Every scope may have a different storage mechanism
-;;;    ("APPNAME"        Key Name of an application using a single inifile the settings are stored in
-;;;      (0 . "INIFILE") Known path to settings for this scope and application
-;;;      ("SECTION"      Ini section or path to variable
-;;;        ("VAR"        Ini variable
-;;;         "VAL"        Ini value
-;;;        )
-;;;      )
-;;;    )
-;;;  )
-;;;
-
-;;;Test functions
-(DEFUN
-   C:TESTSET ()
-  (HAWS-TESTSETVAR
-    (GETSTRING "\nVariable name: ")
-    (GETSTRING "\nValue: ")
-  )
-)
-(DEFUN
-   C:TESTGET ()
-  (HAWS-TESTGETVAR (GETSTRING "\nVariable name: "))
-)
-(DEFUN
-   HAWS-TESTSETVAR (VAR VAL)
-  (HAWS-SETVAR
-    ;; variable
-    VAR
-    ;;value
-    VAL
-    ;; application name for its section in *HAWS-SETTINGS*
-    "test"
-    ;; indicator file name for default location of ini or vanilla ini
-    ;; (indicator file can be optionally a fully qualified path)
-    "hawsedc.mnl"
-    ;; ini section
-    "Test"
-    ;; Scope of setting.  Can be "a" (application)  "u" (user)  "p" (project) or "d" (drawing).  Determines where to store and get setting.
-    "a"
-   )
-)
-;;This is a sample wrapper function that an application would use
-;;to call HAWS-GETVAR.
-(DEFUN
-   HAWS-TESTGETVAR (VAR)
-  (HAWS-GETVAR
-    ;;variable
-    VAR
-    ;; application name for its section in *HAWS-SETTINGS*
-    "test"
-    ;; indicator file name for default location of ini or vanilla ini
-    ;; (indicator file can be optionally a fully qualified path)
-    "hawsedc.mnl"
-    ;; ini section
-    "Test"
-    ;; Scope of setting.  Can be "a" (application)  "u" (user)  "p" (project) or "d" (drawing).  Determines where to store and get setting.
-    "a" ;;Fallback defaults
-        '
-         (("1" "1val")
-          ("2" "2val")
-         )
-   )
-)
-
-;; HAWS-INI
-;; Finds INI file
-;; Returns a fully qualified path, that folder is qualified to have
-;; HAWSEDC.INI in it.
-;; It should resolve all errors and user conditions
-;; and return a "drive:\\...\\INIFOLDER" path to other functions.
-
-
-;;; HAWS-INIFOLDER gets a valid INI folder.
-;;; This function is wrong because there isn't a single *HAWS-INIFOLDER* that this function
-;;; can throw around globally.
-(DEFUN
-   HAWS-INIFILE (APP SCOPE TESTFILE / INIFILE ASSUMEDINIFOLDER
-                 ASSUMEDINIFILE
-                )
-  (COND ((NOT TESTFILE) (SETQ TESTFILE (STRCAT APP ".cui"))))
-  (COND
-    ;; Project already defined this session
-    ;; (Assume it's valid.  Calling function should init project
-    ;; if there's been a chance of loss.)
-    ((CDR
-       (ASSOC
-         0
-         (CDR (ASSOC APP (CDR (ASSOC SCOPE *HAWS-SETTINGS*))))
-       )
-     )
-    )
-    ;;TGH OK.  Here we need to take the case of each scope and treat them differently
-    ;;App scope ini needs to be searched using testfile in all cases.  Project scope only needs to be search with testfile
-    ;;if project ini isn't found.  But wait, for project scope, you want to know the project ini location, but then
-    ;;if you need to make a project ini from the app default, you have to find the application default ini.
-    ;;so for project scope, there are two ini path building searches.
-    ;;
-    ;;Or try to find inifile in folder with testfile
-    ((AND
-       (SETQ ASSUMEDINIFOLDER (FINDFILE TESTFILE))
-       (SETQ
-         ASSUMEDINIFOLDER
-          (HAWS-FILENAME-DIRECTORY ASSUMEDINIFOLDER)
-       )
-       (SETQ
-         ASSUMEDINIFILE
-          (FINDFILE (STRCAT ASSUMEDINIFOLDER APP ".ini"))
-       )
-     )
-     ASSUMEDINIFILE
-    )
-    ;;Or make an ini file in folder with testfile in it or in proj folder
-    ((HAWS-GETINIDEFAULTS ASSUMEDINIFOLDER) ASSUMEDINIFOLDER)
-  )
-)
-
-
-;;Gets all settings from an inifile if it can.
-(DEFUN
-   HAWS-GETSETTINGS (INIFILE TESTFILE APPORPROJ)
-  (SETQ
-    *HAWS-SETTINGS*
-     (INI_READINI
-       (HAWS-INI (HAWS-INIFOLDER INIFILE TESTFILE))
-     )
-  )
-)
-
-;;Sets a variable in the global lisp list and in HAWSEDC.INI
-(DEFUN
-   HAWS-SETVAR (INIFILE INISECTION VAR VAL / SETTING)
-  ;; Call GETVAR before setting var.  Why?  To populate *HAWS-SETTINGS*?
-  (HAWS-GETVAR
-    VAR INISECTION INIFILE TESTFILE APPORPROJ DEFAULTS
-   )
-  (HAWS-ADDVARTOLIST VAR VAL INISECTION INIFILE)
-  (INI_WRITEENTRY
-    (HAWS-INI (HAWS-INIFOLDER))
-    INISECTION
-    SETTING
-    VAL
-  )                                     ; _
-)
-
-;; HAWS-GETVAR
-;; HAWS-GETVAR is called by wrapper functions like HCNM-GETVAR or HAWS-EDCGETVAR
-;; It gets a variable without opening a file if it can.
-;; (Higher calling functions may use functions like HCNM-PROJINIT or
-;; HAWS-REMOVESETTINGS to remove settings and force a file
-;; read.)
-;; HAWS-GETVAR gets a program setting from
-;; 1. The global *HAWS-SETTINGS* list if found
-;; 2. An ini file or other location
-;; 3. reverts to a default value without fail
-;;
-;; INIFILE is an ini filename. Ini file might not be used for a given scope in the current strategy.  
-;; If there is no such ini file found and is needed, haws-getvar creates it.
-;; If haws-getvar can't create the file, it sends an alert.
-;;
-;; SECTION is the ini section/path/tree path/location the var is in or goes in
-;;
-;; DEFAULTS is a list of defaults in the HawsEDC standard settings format as follows:
-;;  '((VAR1 DEFAULT1)(VAR2 DEFAULT2))
-;;
-;; variable to get
-;; ini section name
-;; ini file name
-;; test file name for location of ini defaults or app based active ini
-;; A flag indicating whether the active settings are to be kept in the
-;; app folder or the project folder ("app" "prj")
-;; application defaults for all variables
-(DEFUN
-   HAWS-GETVAR (VAR SECT APP SCOPE TESTFILE DEFAULTS / ADDTOLIST
-                ADDTOINI DIR INI SETTING VAL
-               )
-  (SETQ
-    ;; Does the variable need to be added to the *HAWS-SETTINGS* list? Assume yes initially.
-    ADDTOLIST
-     T
-    ;; Does the variable need to be added to the appropriate ini file? Assume yes initially
-    ADDTOINI
-     T
-  )
-  ;;Get var list if no var list
-  (IF (NOT *HAWS-SETTINGS*)
-    (HAWS-GETSETTINGS)
-  )
-  (COND
-    ;;Try getting from list
-    ((SETQ
-       VAL
-        (HAWS-VARTOVAL
-          VAR
-          (CADR (ASSOC SECT (CADDR (ASSOC APP *HAWS-SETTINGS*))))
-        )
-     )
-     (SETQ
-       ADDTOLIST NIL
-       ADDTOINI NIL
-     )
-    )
-    ;;Try getting from ini.
-    ((SETQ
-       VAL
-        (INI_READENTRY APP SECT SETTING)
-       ADDTOINI NIL
-     )
-    )
-    ;;Get from app ini if not.
-    ((AND
-       (SETQ DIR (FINDFILE TESTFILE))
-       (SETQ
-         INI
-          (FINDFILE (STRCAT (HAWS-FILENAME-DIRECTORY DIR) "\\" APP))
-       )
-       (SETQ VAL (INI_READENTRY INI SECT SETTING))
-     )
-    )
-    ;;Use default if there is one
-    ((SETQ VAL (HAWS-VARTOVAL VAR DEFAULTS)))
-    ;;Otherwise fail.
-    (T
-     (ALERT
-       (STRCAT
-         "Fatal error in "
-         SECT
-         ":\nCould not initialize the variable\n"
-         VAR
-       )
-     )
-     (SETQ
-       ADDTOLIST NIL
-       ADDTOINI NIL
-     )
-    )
-  )
-  (IF ADDTOLIST
-    (HAWS-ADDVARTOLIST VAR VAL SECT APP)
-  )
-  (IF ADDTOINI
-    (INI_WRITEENTRY (HAWS-INI (HAWS-INIFOLDER)) APP SETTING VAL)
-  )
-  VAL
-)
-
-(DEFUN
-   HAWS-ADDVARTOLIST (VAR VAL INISECTION INIFILE)
-  (SETQ
-    SETTING
-     (HAWS-VARTOSETTING VAR)
-    *HAWS-SETTINGS*
-     (SUBST
-       (SUBST
-         (SUBST
-           (LIST SETTING VAL)
-           (ASSOC
-             INISETTING
-             (ASSOC
-               INISECTION
-               (ASSOC INIFILE *HAWS-SETTINGS*)
-             )
-           )
-           (ASSOC
-             INISECTION
-             (ASSOC INIFILE *HAWS-SETTINGS*)
-           )
-         )
-         (ASSOC INISECTION (ASSOC FILE *HAWS-SETTINGS*))
-         (ASSOC INIFILE *HAWS-SETTINGS*)
-       )
-       (ASSOC INIFILE *HAWS-SETTINGS*)
-       *HAWS-SETTINGS*
-     )
-  )
-)
-
-
-;;Gets an entire ini file from app folder
-;;or else writes defaults to a fresh ini.
-;;Doesn't add to existing ini.
-;;Returns ini file name.
-(DEFUN
-   HAWS-GETINIDEFAULTS (PROJ / APP APPINI PROJINI)
-  (ALERT
-    (PRINC
-      (STRCAT
-        "Note: Program settings not found in program folder\n"
-        PROJ
-        "\n\nUsing default settings."
-      )
-    )
-  )
-  (SETQ PROJINI (STRCAT PROJ "\\" "cnm.ini"))
-  (COND
-    ((AND
-       (SETQ APP (FINDFILE "cnm.mnl"))
-       (SETQ
-         APPINI
-          (FINDFILE
-            (STRCAT (HAWS-FILENAME-DIRECTORY APP) "\\" "cnm.ini")
-          )
-       )
-       (HAWS-FILE-COPY APPINI PROJINI)
-     )
-     (WHILE (NOT (FINDFILE PROJINI)))
-     PROJINI
-    )
-    (T
-     (SETQ F2 (OPEN PROJINI "w"))
-     (PRINC
-       "[CNM]
-ProjectNotes=constnot.txt
-NoteTypes=BOX,CIR,DIA,ELL,HEX,OCT,PEN,REC,SST,TRI
-DoCurrentTabOnly=0
-PhaseAlias1=1
-PhaseAlias2=2
-PhaseAlias3=3
-PhaseAlias4=4
-PhaseAlias5=5
-PhaseAlias6=6
-PhaseAlias7=7
-PhaseAlias8=8
-PhaseAlias9=9
-InsertTablePhases=No
-TableWidth=65
-PhaseWidthAdd=9
-LineSpacing=1.5
-NoteSpacing=3
-NumberToDescriptionWidth=2.5
-DescriptionToQuantityWidth=56
-QuantityToQuantityWidth=9
-QuantityToUnitsWidth=1
-ShowKeyTableGrid=0
-ShowKeyTableQuantities=1
-BubbleHooks=Yes
-BubbleLeaderConnectOsnap=mid,end
-ImportLayerSettings=No
-"      F2
-     )
-     (SETQ F2 (CLOSE F2))
-     PROJINI
-    )
-  )
-)
-
-;;Saves *HAWS-SETTINGS* to the requested inifile
-(DEFUN
-   HAWS-SAVESETTINGSTOINI (INIFILE TESTFILE APPORPROJ)
-  (INI_WRITESECTION
-    (HAWS-INI (HAWS-INIFOLDER INIFILE TESTFILE))
-    INIFILE
-    *HAWS-SETTINGS*
-  )
-)
-
-
-;;;================================================================================================================
-;;;
-;;; Begin Project Management functions
-;;;
-;;;================================================================================================================
-
-;;
-;;HCNM-PROJINIT initializes the CNM project variables
-;;because there is good reason to believe they need to
-;;be checked again (a pause for user input or a new user command)
-;;All the functions assume if they are present they are valid.
-;;
-(DEFUN
-   HCNM-PROJINIT ()
-  (SETQ
-    *HCNM-CNMSETTINGS* NIL
-    *HCNM-CNMPROJECTROOT* NIL
-    *HCNM-CNMPROJECTNOTES* NIL
-  )
-)
-
-
-;;Does nothing but strcat, since the existence of the file is
-;;is validated by (HCNM-PROJ)
-(DEFUN HCNM-INI (PROJ) (STRCAT PROJ "\\cnm.ini"))
-
-;; HCNM-PROJ gets a valid project root folder for this drawing's folder.
-;; While it returns the folder only, that folder is qualified to have CNM.INI in it.
-;; It should resolve all errors and user conditions
-;; and return a "drive:\\...\\projroot" path to other functions.
-(DEFUN
-   HCNM-PROJ (/ I DWGDIR PROJROOT PROJTXT SIMPLECNM)
-  (SETQ
-    DWGDIR
-     (HAWS-FILENAME-DIRECTORY (GETVAR "dwgprefix"))
-    *HCNM-CNMPROJECTROOT*
-     (COND
-       ;;Project already defined this session
-       ;;(Assume it's valid.  Calling function should init project if there's been a chance of loss.)
-       (*HCNM-CNMPROJECTROOT*)
-       ;;Well-formed simple (single-folder) projects. CNM.INI is here.
-       ((SETQ
-          SIMPLECNM
-           (FINDFILE
-             (STRCAT DWGDIR "\\cnm.ini")
-           )
-        )
-        (HAWS-FILENAME-DIRECTORY SIMPLECNM)
-       )
-       ;;Well-formed complex (multi-folder) projects.  CNMPROJ.TXT is here and
-       ;;we'll make sure it really points to a CNM.INI.
-       ((AND
-          (FINDFILE
-            (SETQ
-              PROJTXT
-               (STRCAT
-                 DWGDIR
-                 "\\cnmproj.txt"
-               )
-            )
-          )
-          (SETQ F1 (OPEN PROJTXT "r"))
-          (PROGN
-            (WHILE (SETQ RDLIN (READ-LINE F1))
-              ;;Bricscad option
-              (COND
-                ((HAWS-VLISP-P)
-                 (IF (VL-FILE-DIRECTORY-P RDLIN)
-                   (SETQ PROJROOT RDLIN)
-                 )
-                )
-                (T
-                 (IF (/= ";" (SUBSTR RDLIN 1 1))
-                   (SETQ PROJROOT RDLIN)
-                 )
-                )
-              )
-            )
-            (SETQ F1 (CLOSE F1))
-            PROJROOT
-          )
-        )
-        (IF (NOT (FINDFILE (HCNM-INI PROJROOT)))
-          (HCNM-GETINIDEFAULTS PROJROOT)
-        )
-        PROJROOT
-       )
-       ;;Old style projects.
-       ((SETQ PROJROOT (HCNM-PROJ4))
-        (HCNM-GETINIDEFAULTS PROJROOT)
-        PROJROOT
-       )
-       ;;Make a project in this drawing's folder.
-       ((HCNM-GETINIDEFAULTS DWGDIR) DWGDIR)
-     )
-  )
-)
-
-;;Converts settings from version 4.1 project management scheme.
-;;Returns project root if found.  Otherwise nil.
-;;Doesn't set *hcnm-cnmsettings* or *HCNM-CNMPROJECTNOTES*
-(DEFUN
-   HCNM-PROJ4 (/ PROJNOTES DWGPREF I PROJROOT RDLIN STRTEMP TFNAME)
-  (SETQ
-    PROJROOT
-     (COND
-       ;;First choice is DWGPREFIX, whether there be an actual CONSTNOT.TXT
-       ;;or a pointer file
-       ((SETQ
-          F1 (OPEN
-               (SETQ
-                 TFNAME
-                  (STRCAT
-                    (SETQ DWGPREF (GETVAR "dwgprefix"))
-                    "constnot.txt"
-                  )
-               )
-               "r"
-             )
-        )
-        (SETQ I 0)
-        (WHILE (AND
-                 (< (SETQ I (1+ I)) 2)
-                 (SETQ RDLIN (READ-LINE F1))
-               )
-          (IF (SETQ PROJNOTES (FINDFILE RDLIN))
-            (SETQ I 10)
-          )
-        )
-        (SETQ F1 (CLOSE F1))
-        ;;If it had a filepath in it, that's the projnotes, otherwise the file itself is it.
-        (COND
-          (PROJNOTES
-           (HCNM-MAKEPROJTXT
-             (SETQ PROJROOT (HAWS-FILENAME-DIRECTORY PROJNOTES))
-             DWGPREF
-           )
-           PROJROOT
-          )
-          (TFNAME (HAWS-FILENAME-DIRECTORY TFNAME))
-        )
-       )
-       ;;Next choice is to look upward in the path.
-       ;;If found, use.
-       ((WHILE (AND
-                 (< 1
-                    (STRLEN
-                      (COND
-                        (STRTEMP)
-                        ((SETQ STRTEMP DWGPREF))
-                      )
-                    )
-                 )
-                 (NOT PROJNOTES)
-               )
-          (SETQ
-            STRTEMP
-             (SUBSTR STRTEMP 1 (1- (STRLEN STRTEMP)))
-            TFNAME
-             (STRCAT STRTEMP "constnot.txt")
-          )
-          (SETQ PROJNOTES (FINDFILE TFNAME))
-        )
-        (COND
-          (PROJNOTES
-           (HCNM-MAKEPROJTXT
-             (SETQ PROJROOT (HAWS-FILENAME-DIRECTORY PROJNOTES))
-             (HAWS-FILENAME-DIRECTORY DWGPREF)
-           )
-           PROJROOT
-          )
-        )
-       )
-     )
-  )
-  PROJROOT
-)
-
-;;as posted the autodesk discussion customization group by Tony Tanzillo
-(DEFUN
-   ALE_BROWSEFORFOLDER
-   (PRMSTR IOPTNS DEFFLD / SHLOBJ FOLDER FLDOBJ OUTVAL)
-  (VL-LOAD-COM)
-  (SETQ
-    SHLOBJ
-     (VLA-GETINTERFACEOBJECT
-       (VLAX-GET-ACAD-OBJECT)
-       "Shell.Application"
-     )
-    FOLDER
-     (VLAX-INVOKE-METHOD
-       SHLOBJ 'BROWSEFORFOLDER 0 PRMSTR IOPTNS DEFFLD
-      )
-  )
-  (VLAX-RELEASE-OBJECT SHLOBJ)
-  (IF FOLDER
-    (PROGN
-      (SETQ
-        FLDOBJ
-         (VLAX-GET-PROPERTY FOLDER 'SELF)
-        OUTVAL
-         (VLAX-GET-PROPERTY FLDOBJ 'PATH)
-      )
-      (VLAX-RELEASE-OBJECT FOLDER)
-      (VLAX-RELEASE-OBJECT FLDOBJ)
-      OUTVAL
-    )
-  )
-)
-
-
-
-
-
-
-;;Prompts user for a Project Root folder and links to it by creating
-;;or modifying this drawing's folder's cnmproj.txt
-;;returns project root
-(DEFUN C:HCNM-LINKPROJ () (HCNM-LINKPROJ) (PRINC))
-(DEFUN
-   HCNM-LINKPROJ (/ DWGDIR)             ;  (ARXLOAD "winapi.arx")
-  (IF (NOT *HCNM-CNMPROJECTROOT*)
-    (HCNM-PROJ)
-  )
-  (SETQ DWGDIR (HAWS-FILENAME-DIRECTORY (GETVAR "dwgprefix")))
-                                        ;  (SETQ PROJ (API_BROWSE "Select CNM Project Folder" DWGDIR))
-  (SETQ
-    PROJ
-     (COND
-       ((HAWS-VLISP-P)
-        (ALE_BROWSEFORFOLDER
-          (COND
-            ((< (STRLEN *HCNM-CNMPROJECTROOT*) 50)
-             *HCNM-CNMPROJECTROOT*
-            )
-            ((STRCAT
-               "Cancel to keep current Project Folder:\n"
-               (SUBSTR *HCNM-CNMPROJECTROOT* 1 3)
-               "..."
-               (HAWS-ENDSTR *HCNM-CNMPROJECTROOT* 47 47)
-             )
-            )
-          )
-          48
-          ""
-        )
-       )
-       (T
-        (HAWS-FILENAME-DIRECTORY
-          (GETFILED "Select any file in Project Folder" "" "" 0)
-        )
-       )
-     )
-  )
-  (COND
-    (PROJ
-     (SETQ *HCNM-CNMPROJECTROOT* PROJ)
-     (COND
-       ((= PROJ DWGDIR) DWGDIR)
-       (PROJ
-        (HCNM-MAKEPROJTXT PROJ DWGDIR)
-        (IF (NOT (FINDFILE (HCNM-INI PROJ)))
-          (HCNM-GETINIDEFAULTS PROJ)
-        )
-        PROJ
-       )
-     )
-    )
-    (*HCNM-CNMPROJECTROOT*
-     (ALERT
-       (STRCAT
-         "Project Folder\n"
-         *HCNM-CNMPROJECTROOT*
-         "\nnot changed."
-       )
-     )
-    )
-  )
-  (PRINC)
-)
-
-;;Makes a project root reference file CNMPROJ.TXT in this drawing's folder
-;;Returns nil.
-(DEFUN
-   HCNM-MAKEPROJTXT (PROJDIR DWGDIR)
-  (SETQ F2 (OPEN (STRCAT DWGDIR "\\cnmproj.txt") "w"))
-  (PRINC
-    (STRCAT
-      ";For simple projects, all project drawings are in one folder, 
-;and Construction Notes Manager keeps settings (CNM.INI) 
-;in that folder with the drawings.
-;
-;For complex projects (ones that that have drawings in
-;multiple folders all using the same Project Notes file and settings), 
-;CNMPROJ.TXT (this file) points from each folder to 
-;the Project Root Folder, given below:
-"     PROJDIR
-    )
-    F2
-  )
-  (SETQ F2 (CLOSE F2))
-)
-
 ;;; ======================================================================
 ;;;
 ;;;                 Miscellaneous Utility functions
@@ -2086,6 +1351,7 @@ ImportLayerSettings=No
 ;;Type 0 tries to match the wild cards with text preceding a number.
 ;;Type 1 tries to match the wild cards with text following a number
 ;;Returns 0.0 if search unsuccesful
+(VL-ACAD-DEFUN 'HAWS-ATOFX)
 (DEFUN
    HAWS-ATOFX (S WC OPT / X)
   (SETQ X (CADR (HAWS-EXTRACTX S WC OPT)))
@@ -2097,12 +1363,13 @@ ImportLayerSettings=No
 
 
 ;;;
-;;; HAWS-icad-P
+;;; c:haws-icad-p
 ;;;
 ;;;Tests whether intellicad behavior is current.
 ;;;Bricscad has advanced to the point we no longer have to use a special mode for it.
+(VL-ACAD-DEFUN 'c:haws-icad-p)
 (DEFUN
-   HAWS-ICAD-P ()
+   c:haws-icad-p ()
   (OR *HAWS-ICADMODE*
       (SETQ *HAWS-ICADMODE* (WCMATCH (GETVAR "acadver") "*i"))
   )
@@ -2115,6 +1382,7 @@ ImportLayerSettings=No
 ;;Type 0 tries to match the wild cards with text preceding a number.
 ;;Type 1 tries to match the wild cards with text following a number
 ;;Returns nil if search unsuccesful
+(VL-ACAD-DEFUN 'HAWS-DISTOFX)
 (DEFUN
    HAWS-DISTOFX (S WC OPT / X)
   (SETQ X (CADR (HAWS-EXTRACTX S WC OPT)))
@@ -2124,11 +1392,21 @@ ImportLayerSettings=No
   )
 )
 
+(VL-ACAD-DEFUN 'HAWS-DWGSCALE)
+(DEFUN
+   HAWS-DWGSCALE ()
+  (COND
+    ((OR (= (GETVAR "DIMANNO") 1) (= (GETVAR "DIMSCALE") 0)) (/ 1 (GETVAR "CANNOSCALEVALUE")))
+    ((GETVAR "DIMSCALE"))
+  )
+)
+
 (DEFUN HAWS-DXF (GCODE ENTLST) (CDR (ASSOC GCODE ENTLST)))
 
 ;; Endstr returns a substring of s starting with the ith to last
 ;; character
 ;;and continuing l characters.
+(VL-ACAD-DEFUN 'HAWS-ENDSTR)
 (DEFUN
    HAWS-ENDSTR (S I L)
   (SUBSTR S (1+ (- (MAX (STRLEN S) 1) I)) L)
@@ -2136,6 +1414,7 @@ ImportLayerSettings=No
 
 ;;Extract used to extract numerical info from a text string.
 ;;Ignores commas in numbers.  Not international compatible.
+(VL-ACAD-DEFUN 'HAWS-EXTRACT)
 (DEFUN
    HAWS-EXTRACT (S / C I PREFIX NUMBER SUFFIX)
   (SETQ
@@ -2181,6 +1460,7 @@ ImportLayerSettings=No
 ;; Extractx used to extract numerical info from a text string with
 ;; extended
 ;; options.
+(VL-ACAD-DEFUN 'HAWS-EXTRACTX)
 (DEFUN
    HAWS-EXTRACTX (S WC OPT / C DONE I PRE PREI NUMBER SUF SUFI)
   (SETQ
@@ -2285,6 +1565,7 @@ ImportLayerSettings=No
 ;;
 ;; CAUTION: May not return the same value as vl-file-copy.
 ;;
+(VL-ACAD-DEFUN 'HAWS-FILE-COPY)
 (DEFUN
    HAWS-FILE-COPY (SOURCE DESTINATION / RDLIN RETURN)
   (COND
@@ -2310,6 +1591,7 @@ ImportLayerSettings=No
 ;;
 ;; Intellicad substitute for vl-filename-base.
 ;;
+(VL-ACAD-DEFUN 'HAWS-FILENAME-BASE)
 (DEFUN
    HAWS-FILENAME-BASE (FILENAME / BASE)
   (COND
@@ -2349,6 +1631,7 @@ ImportLayerSettings=No
 ;;
 ;; Intellicad substitute for vl-filename-directory. 
 ;;
+(VL-ACAD-DEFUN 'HAWS-FILENAME-DIRECTORY)
 (DEFUN
    HAWS-FILENAME-DIRECTORY (FILENAME / DIRECTORY)
   (COND
@@ -2383,6 +1666,7 @@ ImportLayerSettings=No
 ;;; Trims everything up to but excluding last dot from file name.
 ;;;
 ;;; Returns extension including dot.
+(VL-ACAD-DEFUN 'HAWS-FILENAME-EXTENSION)
 (DEFUN
    HAWS-FILENAME-EXTENSION (FILENAME / EXTENSION)
   (COND
@@ -2423,6 +1707,7 @@ ImportLayerSettings=No
   )
 )
 ;;;  HAWS-FLATTEN
+(VL-ACAD-DEFUN 'HAWS-FLATTEN)
 (DEFUN
    HAWS-FLATTEN (PNT)
 ;;;Returns flattened coordinates of a 3d point
@@ -2483,6 +1768,7 @@ ImportLayerSettings=No
 
 ;;;HAWS-GETDISTX
 ;;;Returns a distance
+(VL-ACAD-DEFUN 'HAWS-GETDISTX)
 (DEFUN
    HAWS-GETDISTX (GX-POINT1 GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE)
   (CAR
@@ -2497,6 +1783,7 @@ ImportLayerSettings=No
 ;;;HAWS-GETDISTPOINT
 ;;;Returns a distance, the endpoint of the distance, and the bulge used for the distance.
 ;;;'(distance endpoint bulge)
+(VL-ACAD-DEFUN 'HAWS-GETDISTPOINT)
 (DEFUN
    HAWS-GETDISTPOINT (GX-POINT1 GX-PROMPT GX-DEFAULTVALUE
                       GX-INITIALVALUE / GX-POINT2 GX-POINT3 GX-BULGE
@@ -2595,6 +1882,7 @@ ImportLayerSettings=No
   )
 )
 
+(VL-ACAD-DEFUN 'HAWS-GETDN)
 (DEFUN
    HAWS-GETDN (/ DN)
   (SETQ DN (GETVAR "dwgname"))
@@ -2607,6 +1895,7 @@ ImportLayerSettings=No
   DN
 )
 
+(VL-ACAD-DEFUN 'HAWS-GETDNPATH)
 (DEFUN
    HAWS-GETDNPATH (/ DNPATH)
   (SETQ DNPATH (GETVAR "dwgname"))
@@ -2652,6 +1941,7 @@ ImportLayerSettings=No
 
 ;;HAWS-GETINTX
 ;;Provided for legacy compatability and user experience.
+(VL-ACAD-DEFUN 'HAWS-GETINTX)
 (DEFUN
    HAWS-GETINTX (GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE)
   (HAWS-GETINTXX GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE 0)
@@ -2663,6 +1953,7 @@ ImportLayerSettings=No
 ;;;2. If no default is supplied and MODE is 0, the first prompt is for standard input, with fallback to selecting value from drawing text.
 ;;;3. If no default is supplied and MODE is 1, the first prompt is for drawing text selection, with fallback to standard input.
 ;;;Returns an INT or nil if nothing provided.
+(VL-ACAD-DEFUN 'HAWS-GETINTXX)
 (DEFUN
    HAWS-GETINTXX (GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE
                   GX-PROMPTMODE / GX-RESPONSE
@@ -2814,6 +2105,7 @@ ImportLayerSettings=No
 
 ;;HAWS-GETREALX
 ;;Provided for legacy compatability and user experience.
+(VL-ACAD-DEFUN 'HAWS-GETREALX)
 (DEFUN
    HAWS-GETREALX (GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE)
   (HAWS-GETREALXX GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE 0)
@@ -2825,6 +2117,7 @@ ImportLayerSettings=No
 ;;;2. If no default is supplied and MODE is 0, the first prompt is for standard input, with fallback to selecting value from drawing text.
 ;;;3. If no default is supplied and MODE is 1, the first prompt is for drawing text selection, with fallback to standard input.
 ;;;Returns an REAL or nil if nothing provided.
+(VL-ACAD-DEFUN 'HAWS-GETREALXX)
 (DEFUN
    HAWS-GETREALXX (GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE
                    GX-PROMPTMODE / GX-RESPONSE
@@ -2975,6 +2268,7 @@ ImportLayerSettings=No
 )
 
 ;;;HAWSGETPOINTX
+(VL-ACAD-DEFUN 'HAWS-GETPOINTX)
 (DEFUN
    HAWS-GETPOINTX (GX-STARTINGPOINT GX-PROMPT GX-DEFAULTVALUE
                    GX-INITIALVALUE / GX-INPUT
@@ -3013,6 +2307,7 @@ ImportLayerSettings=No
   )
 )
 
+(VL-ACAD-DEFUN 'HAWS-GETSTRINGX)
 (DEFUN
    HAWS-GETSTRINGX
    (GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE / GX-INPUT)
@@ -3054,6 +2349,7 @@ ImportLayerSettings=No
 ;;;Tests
 ;;;(HAWS-LSTTOSTR '("1" "2" "3") "," "\"")
 ;;;(HAWS-LSTTOSTR '("1" "2\""" "3") "," "\"")
+(VL-ACAD-DEFUN 'HAWS-LSTTOSTR)
 (DEFUN
    HAWS-LSTTOSTR (INPUTLIST FIELDSEPARATOR TEXTDELIMITER / CURRENTFIELD
                   OUTPUTSTRING
@@ -3094,7 +2390,7 @@ ImportLayerSettings=No
 ;;; from the folder that contains cnm.mnl
 ;;;
 (DEFUN
-   HAWS-LOAD-FROM-APP-DIR (FILENAME)
+   c:HAWS-LOAD-FROM-APP-DIR (FILENAME)
   ;;Make sure app folder is set.
   (IF (NOT *HAWS-APPFOLDER*)
     (SETQ
@@ -3110,15 +2406,10 @@ ImportLayerSettings=No
   )
 )
 
-(DEFUN
-   HAWS-TOM ()
-  ;;Make sure app folder is set.
-  (PRINC "HI, tOM")(PRINC)
-)
-(VL-ACAD-DEFUN 'HAWS-TOM)
 
 ;;; HAWS-LOG
 ;;; Writes a message to a log file including the username and timestamp
+(VL-ACAD-DEFUN 'HAWS-LOG)
 (DEFUN
    HAWS-LOG (MESSAGE)
             ;|
@@ -3147,6 +2438,7 @@ ImportLayerSettings=No
 )
 ;;; HAWS-MILEPOST
 ;;; Echos a progress message depending on debug level.
+(VL-ACAD-DEFUN 'HAWS-MILEPOST)
 (DEFUN
    HAWS-MILEPOST (MESSAGESTRING)
   (IF (> *HAWS-DEBUGLEVEL* 0)
@@ -3160,6 +2452,7 @@ ImportLayerSettings=No
 ;;         [string to place into a field]
 ;;         [uniform field width or field delimiter character]
 ;;       )
+(VL-ACAD-DEFUN 'HAWS-MKFLD)
 (DEFUN
    HAWS-MKFLD (STRING FORMAT / CHAR I MKFLD_FIELD MKFLD_LITERAL)
   (COND
@@ -3211,30 +2504,32 @@ ImportLayerSettings=No
 ;; Usage: (haws-mklayr (list "laname" "lacolr" "laltyp"))
 ;; Use empty quotes for default color and linetype (eg. (mklay (list "AZ" "" ""))
 (DEFUN
-   HAWS-GETLAYR (KEY / TEMP)
-  (DEFUN
-     HAWS-GETUSL (/ I RDLIN TEMP)
-    (SETQ TEMP (FINDFILE "layers.dat"))
-    (COND
-      (TEMP
-       (PROMPT "\nReading layer settings from ")
-       (PRINC TEMP)
-       (PRINC "\n)")
-      )
-      ((PROMPT "\nLayer settings file not found.") (EXIT))
+   HAWS-GETUSL (/ I RDLIN TEMP)
+  (SETQ TEMP (FINDFILE "layers.dat"))
+  (COND
+    (TEMP
+     (PROMPT "\nReading layer settings from ")
+     (PRINC TEMP)
+     (PRINC "\n)")
     )
-    (SETQ
-      F3 (OPEN TEMP "r")
-      I 0
-    )
-    (WHILE (SETQ RDLIN (READ-LINE F3))
-      (princ "\rReading line ")(princ (setq I (1+ i)))
-      (IF (= 'LIST (TYPE (SETQ TEMP (READ RDLIN))))
-        (SETQ *HAWS:LAYERS* (CONS TEMP *HAWS:LAYERS*))
-      )
-    )
-    (SETQ F3 (CLOSE F3))
+    ((PROMPT "\nLayer settings file not found.") (EXIT))
   )
+  (SETQ
+    F3 (OPEN TEMP "r")
+    I  0
+  )
+  (WHILE (SETQ RDLIN (READ-LINE F3))
+    (PRINC "\rReading line ")
+    (PRINC (SETQ I (1+ I)))
+    (IF (= 'LIST (TYPE (SETQ TEMP (READ RDLIN))))
+      (SETQ *HAWS:LAYERS* (CONS TEMP *HAWS:LAYERS*))
+    )
+  )
+  (SETQ F3 (CLOSE F3))
+)
+(VL-ACAD-DEFUN 'HAWS-GETLAYR)
+(DEFUN
+   HAWS-GETLAYR (KEY / TEMP)
   (IF (OR (NOT *HAWS:LAYERS*)
           (COND
             ((= (HCNM-CONFIG-GETVAR "ImportLayerSettings") "Yes")
@@ -3259,6 +2554,7 @@ ImportLayerSettings=No
     )
   )
 )
+(VL-ACAD-DEFUN 'HAWS-MKLAYR)
 (DEFUN
    HAWS-MKLAYR (LAOPT / LANAME LACOLR LALTYP LTFILE)
   (IF (= 'STR (TYPE LAOPT))
@@ -3336,14 +2632,7 @@ ImportLayerSettings=No
   LAOPT
 )
 
-(DEFUN
-   HAWS-DWGSCALE ()
-  (COND
-    ((OR (= (GETVAR "DIMANNO") 1) (= (GETVAR "DIMSCALE") 0)) (/ 1 (GETVAR "CANNOSCALEVALUE")))
-    ((GETVAR "DIMSCALE"))
-  )
-)
-
+(VL-ACAD-DEFUN 'HAWS-MKTEXT)
 (DEFUN
    HAWS-MKTEXT (J I H R S / ENT JX JY)
   (SETQ
@@ -3409,6 +2698,7 @@ ImportLayerSettings=No
   )
   (ENTMOD ENT)
 )
+(VL-ACAD-DEFUN 'HAWS-MKLINE)
 (DEFUN
    HAWS-MKLINE (PT1 PT2)
   (SETQ
@@ -3437,6 +2727,7 @@ ImportLayerSettings=No
 ;; VL-PRIN1-TO-STRING
 ;; substitute
 ;;
+(VL-ACAD-DEFUN 'HAWS-PRIN1-TO-STRING)
 (DEFUN
    HAWS-PRIN1-TO-STRING (ATOMX / F1 F2 STRING)
   (COND
@@ -3483,6 +2774,7 @@ ImportLayerSettings=No
 ;;;
 ;;;
 ;;;
+(VL-ACAD-DEFUN 'HAWS-3PTTOBULGE)
 (DEFUN
    HAWS-3PTTOBULGE
    (PNT1 PNT2 PNT3 / ANG1 ANG2 ANG3 BULGE CHORD DELTA DELTA1 R)
@@ -3540,6 +2832,7 @@ ImportLayerSettings=No
 
 
 ;;;  HAWS-SEGMENT-LENGTH
+(VL-ACAD-DEFUN 'HAWS-SEGMENT-LENGTH)
 (DEFUN
    HAWS-SEGMENT-LENGTH
 ;;;  Returns curve or straight length of a segment.
@@ -3568,6 +2861,7 @@ ImportLayerSettings=No
 )
 
 
+(VL-ACAD-DEFUN 'HAWS-SET_TILE_LIST )
 (DEFUN
    HAWS-SET_TILE_LIST (KEYNAME$ LISTNAME@ SELECTED / ITEM)
   (START_LIST KEYNAME$ 3)
@@ -3609,6 +2903,7 @@ ImportLayerSettings=No
 ;;;Tests
 ;;;(alert (apply 'strcat (mapcar '(lambda (x) (strcat "\n----\n" x)) (haws-strtolst "1 John,\"2 2\"\" pipe,\nheated\",3 the end,,,,," "," "\"" nil))))
 ;;;(alert (apply 'strcat (mapcar '(lambda (x) (strcat "\n----\n" x)) (haws-strtolst "1 John,\"2 2\"\" pipe,\nheated\",3 the end,,,,," "," "\"" T))))
+(VL-ACAD-DEFUN 'HAWS-STRTOLST)
 (DEFUN
    HAWS-STRTOLST (INPUTSTRING FIELDSEPARATORWC TEXTDELIMITER
                   EMPTYFIELDSDOCOUNT / CHARACTERCOUNTER CONVERSIONISDONE
@@ -3752,6 +3047,7 @@ ImportLayerSettings=No
 ;;;       )
 ;;;Tests
 ;;;(haws-rdfld 3 "1 John,\"2 2\"\" pipe,\nheated\",3 the end,,,,," "," 1))))
+(VL-ACAD-DEFUN 'HAWS-RDFLD)
 (DEFUN
    HAWS-RDFLD (FIELDNO INPUTSTRING FIELDSEPARATOR OPT / ATOMCOUNTER
                ATOMY ATOMX EMPTYFIELDSDOCOUNT ISCHRISLONG PARSEDLIST
@@ -3838,6 +3134,7 @@ ImportLayerSettings=No
 )
 
 ;;Strip white space from beginning and end of a string
+(VL-ACAD-DEFUN 'HAWS-RDFLD-UNPAD)
 (DEFUN
    HAWS-RDFLD-UNPAD (STR)
   (WHILE (WCMATCH (SUBSTR STR 1 1) " ,\t")
@@ -3850,25 +3147,28 @@ ImportLayerSettings=No
 )
 
 ;;Returns nil if in ICAD mode
+(VL-ACAD-DEFUN 'HAWS-REGISTRY-READ)
 (DEFUN
    HAWS-REGISTRY-READ (REG-KEY VAL-NAME)
   (COND
-    ((HAWS-ICAD-P) NIL)
+    ((c:haws-icad-p) NIL)
     ((VL-REGISTRY-READ REG-KEY VAL-NAME))
   )
 )
 
 ;;Returns nil if in ICAD mode
+(VL-ACAD-DEFUN 'HAWS-REGISTRY-WRITE)
 (DEFUN
    HAWS-REGISTRY-WRITE (REG-KEY VAL-NAME VAL-DATA)
   (COND
-    ((HAWS-ICAD-P) NIL)
+    ((c:haws-icad-p) NIL)
     ((VL-REGISTRY-WRITE REG-KEY VAL-NAME VAL-DATA))
   )
 )
 
 
 ;;Remove an element from a list
+(VL-ACAD-DEFUN 'HAWS-REMOVE)
 (DEFUN
    HAWS-REMOVE (ELEMENT LST)
   (APPEND
@@ -3878,6 +3178,7 @@ ImportLayerSettings=No
 )
 
 ;;Convert a radian angle to a presentation quality bearing.
+(VL-ACAD-DEFUN 'HAWS-RTOB)
 (DEFUN
    HAWS-RTOB (RAD AU / B I)
   (SETQ B (ANGTOS RAD AU))
@@ -3915,6 +3216,7 @@ ImportLayerSettings=No
 
 ;; RTOSTA sub-function converts a real number to a base 100 road
 ;; station.
+(VL-ACAD-DEFUN 'HAWS-RTOSTA)
 (DEFUN
    HAWS-RTOSTA (STA LUP / ISNEG AFTER BEFORE)
   (SETQ
@@ -3959,10 +3261,13 @@ ImportLayerSettings=No
 )
 
 ;;;  Trig functions not included with AutoLISP
+(VL-ACAD-DEFUN 'HAWS-ASIN)
 (DEFUN HAWS-ASIN (X) (ATAN X (SQRT (- 1 (* X X)))))
+(VL-ACAD-DEFUN 'HAWS-ACOS)
 (DEFUN HAWS-ACOS (X) (ATAN (SQRT (- 1 (* X X))) X))
+(VL-ACAD-DEFUN 'TAN)
 (DEFUN HAWS-TAN (X) (/ (SIN X) (COS X)))
-
+(VL-ACAD-DEFUN 'HAWS-VSET)
 (DEFUN
    HAWS-VSET (VLST)
   (FOREACH
@@ -3973,6 +3278,7 @@ ImportLayerSettings=No
   )
 )
 
+(VL-ACAD-DEFUN 'HAWS-VTOG)
 (DEFUN
    HAWS-VTOG (VLST)
   (FOREACH
@@ -3991,11 +3297,13 @@ ImportLayerSettings=No
   (PRINC)
 )
 
+(VL-ACAD-DEFUN 'HAWS-VSAVE)
 (DEFUN
    HAWS-VSAVE (VLST)
   (SETQ *HAWS-VSTR* (MAPCAR '(LAMBDA (V) (LIST V (GETVAR V))) VLST))
 )
 
+(VL-ACAD-DEFUN 'HAWS-VRSTOR)
 (DEFUN
    HAWS-VRSTOR ()
   (MAPCAR '(LAMBDA (V) (SETVAR (CAR v) (CADR V))) *HAWS-VSTR*)
@@ -4010,6 +3318,7 @@ ImportLayerSettings=No
 ;;characters are stripped.
 ;;Example: (wrap "Go home, eat dinner, comb, brush, sleep" 15 ",")
 ;;Returns  ("Go home" "eat dinner" "comb, brush" "sleep")
+(VL-ACAD-DEFUN 'HAWS-WRAP)
 (DEFUN
    HAWS-WRAP (STRNG1 MAXLEN CHAR / FIRST I LSTRNI STRIPC STRIPS STRNG2
               STRNGI TEMP WLIST
@@ -4081,6 +3390,7 @@ ImportLayerSettings=No
 ;;Functions for oo, selstyle, and le
 
 ;;Selcerob--Selects a certain type of object. Returns entsel list.
+(VL-ACAD-DEFUN 'HAWS-SELCEROB)
 (DEFUN
    HAWS-SELCEROB (PRMPT SERCH / E ELST ENM OK)
   (WHILE (NOT OK)
@@ -4099,9 +3409,10 @@ ImportLayerSettings=No
 ;;
 ;; For Intellicad compatibility
 ;;
+(VL-ACAD-DEFUN 'HAWS-TXLEN)
 (DEFUN
    HAWS-TXLEN (STRING HEIGHT)
-  (IF (HAWS-ICAD-P)
+  (IF (c:haws-icad-p)
     (* HEIGHT (STRLEN STRING) 0.80)
     (CAADR (TEXTBOX (LIST (CONS 1 STRING) (CONS 40 HEIGHT))))
   )
@@ -4111,6 +3422,7 @@ ImportLayerSettings=No
 ;; HAWS-VLISP-P
 ;;
 ;;Tests whether visual lisp functions are available.
+(VL-ACAD-DEFUN 'HAWS-VLISP-P)
 (DEFUN
    HAWS-VLISP-P ()
   (NOT (< (ATOF (GETVAR "acadver")) 15))

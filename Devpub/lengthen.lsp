@@ -1,6 +1,6 @@
 (defun c:haws-lengthen ( / opt) 
-  (initget "Total Delta") 
-  (setq opt (getkword "\nEnter an option [Total/Delta] <Dynamic>: "))
+  (initget "Delta Percent Total") 
+  (setq opt (getkword "\nEnter an option [Delta/Percent/Total] <Dynamic>: "))
   (cond ((not opt) (setq opt "Dynamic")))
   (command "._lengthen" opt)
   (princ)
