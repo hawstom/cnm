@@ -1,8 +1,8 @@
-;;; VLisp project file [V2.0] cnm saved to:[W:/programming/hawsedc/develop/Devtgh] at:[3/5/17] 
-(VLISP-PROJECT-LIST
-  :NAME
-  CNM
-  :OWN-LIST
+;;; VLisp project file [V2.0] cnm saved to:[W:/programming/hawsedc/develop/Devtgh] at:[3/11/17] 
+(vlisp-project-list
+  :name
+  cnm
+  :own-list
   ("W:/programming/hawsedc/develop/Devtgh/2l"
     "W:/programming/hawsedc/develop/Devtgh/add"
     "W:/programming/hawsedc/develop/Devtgh/aee"
@@ -87,13 +87,21 @@
     "W:/programming/hawsedc/develop/Devtgh/xu"
     "W:/programming/hawsedc/develop/Devtgh/xy"
    )
-  :FAS-DIRECTORY
+  :fas-directory
   "W:/programming/hawsedc/compile/acad"
-  :TMP-DIRECTORY
+  :tmp-directory
   "W:/programming/hawsedc/compile/temp"
-  :PROJECT-KEYS
-  (:BUILD (:STANDARD) :MERGED T :SAFE-MODE T :MSGLEVEL 2)
-  :CONTEXT-ID
-  :AUTOLISP
+  :project-keys
+  (:build
+    (:optimize :localize :make-internal)
+    :merged
+    nil
+    :safe-mode
+    t
+    :msglevel
+    2
+  )
+  :context-id
+  :autolisp
 )
 ;;; EOF
