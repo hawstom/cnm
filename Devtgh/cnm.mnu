@@ -87,6 +87,7 @@ ID_HCNMLAMONA     [<-&On all layers	ONA]^C^Chaws-ona;
                [--]
                [->&Help]
 ID_HCNMCNMWEB     [Construction Notes Manager on the &Web]^C^Cbrowser http://www.constructionnotesmanager.com;
+ID_HCNMALIASE     [Edit CNM Command Shortcuts]^C^CHAWS-ALIASEDIT;
 ID_HAWSREORDER    [&Order Licenses]^C^CHAWS-ORDERLICENSES;
 ID_HCNMABOUT      [<-&About CNM]^C^CHCNM-ABOUT;
                [->CNM Plus]
@@ -98,9 +99,7 @@ ID_TGHABOUT        [<-About HawsEDC Tools]^C^CHAWS-ABOUT;
                  [->Scale and Size]
 ID_TGHSETUP        [Set up scale and text height]^C^Chaws-setup;
 ID_TGH10           [0.10" Text Setup]^C^Chaws-10;
-ID_TGH12           [0.12" Text Setup]^C^Chaws-12;
-ID_TGHDSC          [Dimscale]^C^Cdsc;
-ID_TGHLTS          [<-Ltscale]^C^Clts;
+ID_TGH12           [<-0.12" Text Setup]^C^Chaws-12;
                  [->Units]
 ID_TGHU0           [Set 0 decimal places	U0]^C^Chaws-u0;
 ID_TGHU1           [Set 1 decimal place	U1]^C^Chaws-u1;
@@ -124,40 +123,24 @@ ID_TGHCMD          [Command dialog toggle]^C^Chaws-cmd;
 ID_TGHFD           [File dialog toggle]^C^Chaws-fd;
 ID_TGHDIA          [<-Toggle all dialogs]^C^Chaws-dia;
                  [->Paper Space Tools]
-ID_TGH0            [Activate paper space and switch LTSCALE]^C^Chaws-0;
-ID_TGH1            [Deactivate paper space and switch LTSCALE based on DIMSCALE]^C^Chaws-1;
-ID_TGHMV           [Create viewport on defpoints layer]^C^Chaws-mv;
-ID_TGHMS           [Make model space current]^C^Cms;
-ID_TGHPS           [Make paper space current]^C^Cps;
-ID_TGHPSLT         [<-Psltscale toggle]^C^Chaws-pslt;
+ID_TGH0            [Activate paper space]^C^Chaws-0;
+ID_TGH1            [Deactivate paper space]^C^Chaws-1;
+ID_TGHMV           [<-Create viewport on defpoints layer]^C^Chaws-mv;
                  [->Running osnaps]
-ID_TGHOS           [Osnap settings]^C^Cos;
 ID_TGHOSE          [Set endpoint osnap]^C^Chaws-ose;
 ID_TGHOSI          [Set intersection osnap]^C^Chaws-osi;
 ID_TGHOSM          [Running midpoint osnap]^C^Chaws-osm;
 ID_TGHOSN          [<-Turn off all running osnaps]^C^Chaws-osn;
                  [->Display]
 ID_TGHCET          [Command echo toggle]^C^Chaws-cet;
-ID_TGHAP           [Osnap aperture size]^C^Cap;
-ID_TGHGS           [Grip size]^C^Cgs;
-ID_TGHPB           [Object pick box size]^C^Cpb;
-ID_TGHQT           [Quick text mode toggle]^C^Chaws-qt;
-ID_TGHRES          [View resolution]^C^Cres;
-ID_TGHR            [Redraw]^C^Cr;
-ID_TGHRG           [Regens all vports]^C^Crg;
 ID_TGHRGA          [<-Regenauto toggle]^C^Chaws-rga;
                  [->Import defaults]
 ID_TGHLLT          [<-Load All Acad.lin]^C^Chaws-llt;
                  [->Clean Up Drawing]
 ID_TGHCLEAN        [Power purge]^C^Chaws-clean;
 ID_TGHPALL         [<-Purge all]^C^Chaws-pall;
-ID_TGHMN         [Menu]^C^Chaws-mn;
 ID_TGHMREN       [Multiple rename]^C^Chaws-mren;
-ID_TGHMVHP       [Create HP Design Jet sized viewport]^C^Chaws-mvhp;
-ID_TGHRD         [Redo]^C^Crd;
 ID_TGHSHEET      [Sheet setup program]^C^Chaws-sheet;
-ID_TGHSN         [Snap]^C^Csn;
-ID_TGHTY         [Linetype]^C^Clt;
 ID_TGHUF         [<-Uscfollow toggle]^C^Chaws-uf;
                [->Draw Profiles]
 ID_TGHNEWPRO     [Redraw profile from file]^C^Chaws-newpro;
@@ -220,26 +203,20 @@ ID_TGHSTACL      [Add station ticks to polyline]^C^Chaws-stacl;
 ID_TGHXY         [<-X/Y coordinates on leader]^C^Chaws-xy;
                [->Construction Notes]
 ID_TGHTXTL       [Text note]^C^Chaws-txtl;
-ID_TGHBB         [Simple circle bubble note]^C^Chaws-bb;
-ID_TGHBW         [Backwards leader]^C^Chaws-bw;
-ID_TGHSLL        [Slant leader left]^C^Chaws-sll;
-ID_TGHSLR        [<-Slant leader right]^C^Chaws-slr;
-               [->Dimensioning]
-ID_TGHCHDIM      [Change dimension text globally]^C^Chaws-chdim;
-ID_TGHDA         [Aligned dimension]^C^Cda;
-ID_TGHDANG       [Angular Dimension]^C^Cdang;
-ID_TGHDC         [Center Dimension]^C^Cdc;
-ID_TGHDH         [Horizontal Dimension]^C^Cdh;
-                 [--]
-ID_TGHDU         [Update Dimensions]^C^Chaws-du;
-ID_TGHHT         [Dimension Text Home]^C^Chaws-ht;
-ID_TGHTE         [Dimension Text Alignment]^C^Chaws-te;
-                 [--]
-ID_TGHAAR      [Arc Leader]^C^Chaws-aar;
+ID_TGHAAR        [Arc Leader]^C^Chaws-aar;
 ID_TGHDOT        [Leader with Dot]^C^Chaws-dot;
 ID_TGHLOOP       [Leader with Loop]^C^Chaws-loop;
 ID_TGHNONE       [Leader with No arrow]^C^Chaws-none;
 ID_TGHTILDE      [Leader with Tilde]^C^Chaws-tilde;
+ID_TGHBB         [Simple circle bubble note]^C^Chaws-bb;
+ID_TGHSLL        [Slant leader left]^C^Chaws-sll;
+ID_TGHSLR        [<-Slant leader right]^C^Chaws-slr;
+               [->Dimensioning]
+ID_TGHCHDIM      [Change dimension text globally]^C^Chaws-chdim;
+                 [--]
+ID_TGHDU         [Update Dimensions]^C^Chaws-du;
+ID_TGHHT         [Dimension Text Home]^C^Chaws-ht;
+ID_TGHTE         [Dimension Text Alignment]^C^Chaws-te;
                  [--]
 ID_TGHD1         [First Extension Line Hide Toggle]^C^Chaws-d1;
 ID_TGHD2         [Second Extension Line Hide Toggle]^C^Chaws-d2;
@@ -279,6 +256,7 @@ ID_TGHTO         [Overline Text]^C^Chaws-to;
 ID_TGHTU         [Underline Text]^C^Chaws-tu;
 ID_TGHTXTSUM     [<-Sum Text]^C^Chaws-txtsum;
                [->Layer Management]
+ID_TGHLX         [List Nesting]^C^Chaws-lx;
 ID_TGHAS         [Set Layer by Picking]^C^Chaws-as;
 ID_TGHL0         [Set Layer 0]^C^Chaws-l0;
                  [--]
@@ -324,15 +302,6 @@ ID_TGHLTH        [Make Objects Hidden]^C^Chaws-lth;
                  [--]
 ID_TGHLAPRN      [<-Layer List To File]^C^Chaws-laprn;
                [->Manage Blocks/Xrefs]
-ID_TGHBL         [Block]^C^Cbl;
-ID_TGHW          [Wblock (Command Line)]^C^C-w;
-ID_TGHWW         [Wblock (Dialog Box)]^C^Cw;
-ID_TGHIB         [Insbase]^C^Cib;
-ID_TGHI          [Insert (Command Line)]^C^C-i;
-ID_TGHII         [Insert (Dialog Box)]^C^Ci;
-ID_TGHEX         [Explode]^C^Cex;
-                 [--]
-ID_TGHSC         [Scale]^C^Csc;
 ID_TGHRESCALE    [Rescale Objects Individually]^C^Chaws-rescale;
 ID_TGHNEWSCALE   [Set New Scale Individually]^C^Chaws-newscale;
                  [--]
@@ -341,19 +310,19 @@ ID_TGHINCATT     [Increment Numeric Attributes]^C^Chaws-incatt;
 ID_TGHCA         [Copy Attributes]^C^Chaws-ca;
 ID_TGHBL0        [Block Parts To Layer 0]^C^Chaws-bl0;
                  [--]
-ID_TGHXR         [Xref (Command Line)]^C^Cxr;
 ID_TGHXD         [Detach Selected Xref]^C^Chaws-xd;
 ID_TGHXDA        [<-Detach All Xrefs]^C^Chaws-xda;
                [->Get Info]
 ID_TGHAEE        [Area of Entity]^C^Chaws-aee;
 ID_TGHAET        [Area of Entity to Text]^C^Chaws-aet;
+ID_TGHAET        [Acres to Text]^C^Chaws-acres;
+ID_TGHAET        [Square Feet to Text]^C^Chaws-sf;
+ID_TGHAET        [Square Yards to Text]^C^Chaws-sy;
+ID_TGHAET        [Square Miles to Text]^C^Chaws-sm;
 ID_TGHAL         [Arc Length]^C^Chaws-al;
-ID_TGHDI         [Distance]^C^Cdi;
 ID_TGHEG         [Object Information]^C^Chaws-eg;
 ID_TGHEGN        [Nested Object Information	LX]^C^Chaws-egn;
 ID_TGHISTAN      [Are Ends Tangent?	ISTAN]^C^Chaws-istan;
-ID_TGHLI         [List]^C^Cli;
-ID_TGHLX         [List Nesting]^C^Chaws-lx;
 ID_TGHMD         [Multiple Distance]^C^Chaws-md;
 ID_TGHWL         [Object and Layer Info]^C^Chaws-wlRRRevision?LAM?;
 ID_TGHFFA        [<-Find File AutoCAD]^C^Chaws-ffa;
@@ -365,42 +334,29 @@ ID_TGHCH         [Change]^C^Cch;
 ID_TGHCHCOORD    [Align Objects]^C^Chaws-chcoord;
 ID_TGHCMPRO      [Change to Match Advanced]^C^Chaws-cmpro;
                  [--]
-ID_TGHCX         [Copy]^C^Ccx;
 ID_TGHCR         [Copy Rotate]^C^Chaws-cr;
                  [--]
-ID_TGHE          [Erase]^C^Ce;
-                 [--]
-ID_TGHT          [Trim]^C^Ct;
-ID_TGHX          [Extend]^C^Chaws-x;
-ID_TGHLE         [Lengthen]^C^Cle;
-ID_TGHF          [Fillet]^C^Cf;
+ID_TGHLE         [Lengthen with Dynamic default]^C^Chaws-lengthen;
 ID_TGHMF         [Multiple Concentric Fillet]^C^Chaws-mf;
-ID_TGHCF         [Chamfer]^C^Ccf;
-ID_TGHB          [Break]^C^Cb;
 ID_TGHBF         [Break First]^C^Chaws-bf;
 ID_TGHBM         [Break and Fill to Match]^C^Chaws-bm;
 ID_TGHBRK        [Break at Intersection]^C^Chaws-brk;
                  [--]
-ID_TGHM          [Move]^C^Cm;
 ID_TGHMP         [Move Previous]^C^Chaws-mp;
 ID_TGHSWAP       [Swap Locations]^C^Chaws-swap;
                  [--]
-ID_TGHO          [Offset]^C^Co;
 ID_TGHOO         [Offset to Current Layer]^C^Chaws-oo;
 ID_TGHMOF        [Multiple Offset]^C^Chaws-mof;
                  [--]
 ID_TGHMM         [Mirror]^C^Cmm;
-ID_TGHS          [Stretch Crossing]^C^Chaws-s;
                  [--]
-ID_TGHRR         [Rotate]^C^Crr;
+ID_TGHRR         [Rotate by reference]^C^Chaws-rotatebase;
 ID_TGHR1         [Rotate 180	R1]^C^Cr1;
 ID_TGHR2         [Rotate 270	R2]^C^Cr2;
 ID_TGHR4         [Rotate 45	R4]^C^Cr4;
 ID_TGHR9         [Rotate 90	R9]^C^Cr9;
-ID_TGHRRR        [Rotate from Reference	RRR]^C^Chaws-rrr;
 ID_TGHNA         [New Angle	NA]^C^Chaws-na;
                  [--]
-ID_TGHPE         [Polyline Edit]^C^Cpe;
 ID_TGHCW         [Change Polyline Widths]^C^Chaws-cw;
 ID_TGHP0         [Polyline Running Width to 0]^C^Chaws-p0;
 ID_TGHPJ         [Polyline Join Selection Set	PJ]^C^Chaws-pj;
@@ -411,20 +367,9 @@ ID_TGHUB         [Undo Back]^C^Chaws-ub;
                  [--]
 ID_TGHMSCR       [<-Multiple Script Processor]^C^Chaws-mscr;
                [->Draw]
-ID_TGHAH         [Snap to midway](ah);
-ID_TGHA          [Arc]^C^Ca;
-ID_TGHAR         [Array]^C^Car;
-ID_TGHBX         [Box]^C^Chaws-bx;
                  [--]
-ID_TGHC          [Circle]^C^Cc;
 ID_TGHC2         [Circle by Two Points]^C^Chaws-c2;
-ID_TGHCT         [Circle by Tangents]^C^Chaws-ct;
-                 [--]
-ID_TGHELL        [Ellipse]^C^Cell;
-ID_TGHH          [Hatch]^C^Ch;
-ID_TGHL          [Line]^C^Cl;
-ID_TGHPG         [Polygon]^C^Cpg;
-ID_TGHPL         [<-Polyline]^C^Cpl;
+ID_TGHCT         [<-Circle by Tangents]^C^Chaws-ct;
                [->Views and Zooms]
 ID_TGHX2         [Zoom 2x]^C^Chaws-x2;
 ID_TGH9X         [Zoom 0.9X]^C^Chaws-9x;
@@ -433,35 +378,29 @@ ID_TGH2X         [Zoom 0.2X]^C^Chaws-2x;
 ID_TGHZI         [Zoom In]^C^Chaws-zi;
 ID_TGHZO         [Zoom Out]^C^Chaws-zo;
                  [--]
-ID_TGHZ          [Zoom]^C^Cz;
 ID_TGHZA         [Zoom All]^C^Chaws-za;
-ID_TGHZD         [Zoom Dynamic]^C^Chaws-zd;
 ID_TGHZE         [Zoom Extents]^C^Chaws-ze;
 ID_TGHZV         [Zoom Viewmax]^C^Chaws-zv;
 ID_TGHZW         [Zoom Window]^C^Chaws-zw;
 ID_TGHZZ         [Zoom Previous]^C^Chaws-zz;
 ID_TGHZ0         [Zoom 0,0 to 24,36]^C^Chaws-z0;
-ID_TGHP          [Pan]^C^Cp;
                  [--]
-ID_TGHDV         [Dview]^C^Cdview;
+ID_TGHTW         [View Twist and UCS]^C^Chaws-tz;
 ID_TGHTW         [View Twist]^C^Chaws-tw;
 ID_TGHV          [View (dialog box)]^C^Cv;
 ID_TGHVSR        [<-Visretain]^C^Cvs;
                [->Plotting and Saving]
-ID_TGHQS         [Quick Save]^C^Cqs;
 ID_TGHQS14       [Save as AutoCAD 14]^C^Chaws-qs14;
 ID_TGHQS2004     [Save as AutoCAD 2004]^C^Chaws-qs2004;
 ID_TGHQS2000     [<-Save as AutoCAD 2000]^C^Chaws-qs2000;
-               [->Operating System Commands]
-ID_TGHDEL        [Delete File]^C^Chaws-del;
-ID_TGHDIR        [Directory]^C^Chaws-dir;
-ID_TGHEDIT       [Edit File]^C^Chaws-edit;
-ID_TGHSET        [OS Environment Variables]^C^Chaws-set;
-ID_TGHSHELL      [Shell]^C^Chaws-sh;
-ID_TGHTYPE       [<-Type File]^C^Chaws-type;
                [->Miscellaneous]
-ID_TGHRUN        [Load and Run LISP File	LR]^C^Chaws-ll;
-ID_TGHUSER       [<-<-Load User.lsp]^C^Chaws-user;
+ID_TGHRUN        [Load and Run LISP File	LR]^C^Chaws-loadandrun;
+ID_TGHFFA        [Find on Search Path	FFA]^C^Chaws-ffa;
+ID_TGHHAWSALIAS  [Load HawsAlias.lsp	HAWSALIAS]^C^Chaws-hawsalias;
+ID_TGHHAE        [Edit CNM's HawsAlias Shortcuts	HAE]^C^Chaws-aliasedit;
+ID_TGHPGP        [Edit Acad.pgp	PGP]^C^Chaws-pgp;
+ID_TGHRUN        [Load and Run LISP File	LR]^C^Chaws-loadandrun;
+ID_TGHUSER       [<-<-Load User.lsp	USER]^C^Chaws-user;
 
 //
 //   Begin Construction Notes Manager Toolbars
@@ -485,6 +424,9 @@ ID_HCNMNOTESEDE [_Button("Edit Project Notes", "cnmedt.bmp", "cnmedt.bmp")]^C^CH
 ID_HCNMNTPURGE  [_Button("Purge Key Notes Table", "cnmpurge.bmp", "cnmpurge.bmp")]^C^CNTPURGE;
 ID_HCNMCNMS   [_Button("Key Notes Table", "cnmcnms.bmp", "cnmcnms.bmp")]^C^CHCNM-CNMKT;
 ID_HCNMCNMT   [_Button("Quantity Take-off", "cnmcnmt.bmp", "cnmcnmt.bmp")]^C^CHCNM-CNMQT;
+               [--]
+ID_HCNMALIASE [_Button("Edit CNM Command Shortcuts", "cnmaliasedt.bmp", "cnmaliasedt.bmp")]^C^CHAWS-ALIASEDIT;
+ID_HCNMPGPE [_Button("Edit PGP Command Shortcuts", "cnmpgpedt.bmp", "cnmpgpedt.bmp")]^C^CHAWS-PGPEDIT;
 
 
 ***HELPSTRINGS
@@ -501,6 +443,8 @@ ID_HCNMCNMS     [Makes a key notes table by searching through bubble notes: HCNM
 ID_HCNMCNMI     [Makes a key notes table by importing a file from another drawing or tab: HCNM-CNM I]
 ID_HCNMCNMLAYER [Edits Construction Notes Manager layer settings: HCNM-CNMLAYER]
 ID_HCNMCNMT     [Adds up project quantities.  Lists project totals in drawing and sheet-by-sheet in CSV file: HCNM-CNM T]
+ID_HCNMALIASE   [Opens CNM's HawsAlias.lsp command alias file with Notepad so you can change keyboard shortcuts: HAWS-ALIASEDIT]
+ID_HCNMPGPE [Opens your Acad.php command alias file with Notepad so you can change or add keyboard shortcuts for AutoCAD commands: HAWS-PGPEDIT]
 ID_HCNMCNMWEB   [Displays the Construction Notes Manager web site in the default browser: BROWSER http://www.ConstructionNotesManager.com]
 ID_HCNMCS       [Changes one text string to match another by picking: CS]
 ID_HCNMDIAL     [Inserts a diamond bubble note.  Uses 3 customizable blocks (NOTEDIA?#: left, right, or double, style 1 or 2): DIAL]

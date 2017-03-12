@@ -1,7 +1,7 @@
 (PROMPT "\nHawsEDC library functions...")
 
 ;;;This is the current version of HawsEDC and CNM
-(DEFUN HAWS-UNIFIED-VERSION () "4.2.30.aaa\n\nCopyright 2017")
+(DEFUN HAWS-UNIFIED-VERSION () "4.2.30.aa\n\nCopyright 2017")
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 (SETQ *HAWS-DEBUGLEVEL* 0)
 ;;This function returns the current setting of nagmode.
@@ -2390,22 +2390,31 @@
 ;;; from the folder that contains cnm.mnl
 ;;;
 (DEFUN
-   c:HAWS-LOAD-FROM-APP-DIR (FILENAME)
+   C:HAWS-LOAD-FROM-APP-DIR (FILENAME / FILE-PATH)
   ;;Make sure app folder is set.
-  (IF (NOT *HAWS-APPFOLDER*)
-    (SETQ
-      *HAWS-APPFOLDER*
-       (HAWS-FILENAME-DIRECTORY (FINDFILE "cnm.mnl"))
+  (COND
+    ((NOT *HAWS-APPFOLDER*)
+     (SETQ
+       *HAWS-APPFOLDER*
+        (HAWS-FILENAME-DIRECTORY (FINDFILE "cnm.mnl"))
+     )
     )
   )
   (PRINC "\nLoading ")
-  (IF (= "failed"
-         (LOAD (PRINC (STRCAT *HAWS-APPFOLDER* "\\" FILENAME)) "failed")
-      )
-    (LOAD (PRINC (FINDFILE FILENAME)))
+  (COND
+    ((findfile (princ(setq file-path (STRCAT *HAWS-APPFOLDER* "\\" FILENAME))))
+     
+        (LOAD
+          file-path
+        )
+     )
+    (T
+     (PRINC " ... not found in app folder. Searching in support files search path.")
+     (LOAD FILENAME)
+    )
   )
+  (PRINC)
 )
-
 
 ;;; HAWS-LOG
 ;;; Writes a message to a log file including the username and timestamp

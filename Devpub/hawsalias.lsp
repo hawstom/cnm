@@ -6,6 +6,10 @@
 ;;;
 ;;; Don't forget to copy this file to a safe place for safekeeping.
 ;;;
+;;; An even better strategy is to copy only the commands you change
+;;; to a USER.LSP file in the AutoCAD support files search path above
+;;; the CNM application folder.
+;;;
 ;;; Order of commands: 1. Section 2. Random
 ;;;
 ;;; Define as AutoCAD command.
@@ -358,9 +362,9 @@
 (defun c:u8 () (c:haws-u8))
 (defun c:us () (c:haws-us))
 ;;;---------------Miscellaneous Section---------------
-(defun c:edchelp () (c:haws-edchelp))
 (defun c:ffa () (c:haws-ffa))
 (defun c:hawsalias () (c:haws-hawsalias))
+(defun c:hae () (c:haws-aliasedit))
 (defun c:user () (c:haws-user))
 (defun c:pgp () (c:haws-pgpedit))
 (defun c:lr () (c:haws-loadandrun))
@@ -371,7 +375,7 @@
   ;; Tells which aliases of those in the list below to define as AutoLISP commands.
   ;; 0 = none, 1 = custom (different from stock ACAD.PGP) only, 2 = all
   ;; Make the number below 0, 1, or 2
-  (setq activatepgpaliases 0)
+  (setq ActivatePgpAliases 0)
   ;; Edit the line above
   (cond
     ((> activatepgpaliases 0)
@@ -407,9 +411,6 @@
     )
   )
 )
-
-
-
 
 (defun
    haws-pgp-aliases ()
@@ -479,29 +480,44 @@
 )
 
 (defun
-   c:hawspgp ( / input1)
-  (textpage)
-  (princ "\n;HawsEDC aliases")
-  (foreach alias (haws-pgp-aliases) (princ (strcat "\n" (car alias) ",\t*" (cadr alias))))
-  (princ
-    (strcat
-      "\n==================================================================================="
-      "\nCNM provides two ways to restore the Haws PGP aliases:"
-      "\n\n1. PGP method:\n\ta) Copy the aliases above."
-      "\n\tb) Use the CNM PGP command to open your acad.pgp. Then paste the aliases to the bottom of the file."
-      "\n\tc) Use the AutoCAD REINIT command to reload your acad.pgp file."
-      "\n\n2. LISP method (works in scripts; changes behavior of EXPLODE command.):\n\ta) Open HawsAlias.lsp in the CNM installation folder."
-      "\n\tb) Find \"ActivatePgpAliases 0\" and change it as instructed there.  "
-      "\n\tc) Save the file and use the CNM HawsAlias command to reload it."
+   c:haws-aliasedit (/ input1)
+  (initget "Yes No")
+  (setq
+    input1
+     (getkword
+       "\nLearn about restoring the old HawsEDC PGP keyboard shortcuts? [Yes/No] <No>: "
      )
   )
-;  (initget "Pgp Lsp None")
-;  (setq input1 (getkword "\nSpecify an option to activate [Pgp/Lsp/None] <None>: "))
-;  (cond
-;    ((= input1 "Pgp") (hcnm-config-setvar "HawsPgpLisp" "No")(c:haws-pgpedit))
-;    ((= input1 "Lsp") (hcnm-config-setvar "HawsPgpLisp" "Yes"))
-;    (T (hcnm-config-setvar "HawsPgpLisp" "No"))
-;  )
+  (cond
+    ((= input1 "Yes")
+     (textpage)
+     (princ "\n;HawsEDC aliases")
+     (foreach
+        alias (haws-pgp-aliases)
+       (princ (strcat "\n" (car alias) ",\t*" (cadr alias)))
+     )
+     (princ
+       (strcat
+         "\n==================================================================================="
+         "\nCNM provides two ways to restore the Haws PGP aliases:"
+         "\n\n1. PGP method:\n\ta) Copy the aliases above."
+         "\n\tb) Use the CNM PGP command to open your acad.pgp. Then paste the aliases to the bottom of the file."
+         "\n\tc) Use the AutoCAD REINIT command to reload your acad.pgp file."
+         "\n\n2. LISP method (works in scripts; changes behavior of EXPLODE command.):\n\ta) Open HawsAlias.lsp in the CNM installation folder."
+         "\n\tb) Find \"ActivatePgpAliases 0\" and change it as instructed there.  "
+         "\n\tc) Save the file and use the CNM HawsAlias command to reload it."
+        )
+     )
+     ;;  (initget "Pgp Lsp None")
+     ;;  (setq input1 (getkword "\nSpecify an option to activate [Pgp/Lsp/None] <None>: "))
+     ;;  (cond
+     ;;    ((= input1 "Pgp") (hcnm-config-setvar "HawsPgpLisp" "No")(c:haws-pgpedit))
+     ;;    ((= input1 "Lsp") (hcnm-config-setvar "HawsPgpLisp" "Yes"))
+     ;;    (T (hcnm-config-setvar "HawsPgpLisp" "No"))
+     ;;  )
+    )
+  )
+  (princ "\nEditing ")(command "._notepad" (princ(findfile "hawsalias.lsp")))
   (princ)
 )
 

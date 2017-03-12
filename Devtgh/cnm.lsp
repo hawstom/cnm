@@ -3021,6 +3021,7 @@ ImportLayerSettings=No
      ("User" 4)
     )
     ("Var"
+     ("LXXListMode" "yes" 4)
      ("HawsPgpLisp" "No" 4)
      ("ProjectNotesEditor" "notepad.exe" 4)
      ("LayersEditor" "notepad.exe" 4)
@@ -5514,12 +5515,25 @@ ImportLayerSettings=No
 ;; block-object-1 - [vla] VLA Dynamic Block Reference object
 ;; dynamic-property-name - [str] Dynamic Block property name (case-insensitive)
 
-(defun LM:getdynpropvalue ( block-object-1 dynamic-property-name /  dynamic-property-name-upper)
-    (setq dynamic-property-name-upper (strcase dynamic-property-name))
-    (vl-some '(lambda ( x ) (if (= dynamic-property-name-upper (strcase (vla-get-propertyname x)))) (vlax-get x 'value))
-        (vlax-invoke block-object-1 'getdynamicblockproperties)
-    )
+(DEFUN
+   LM:GETDYNPROPVALUE (BLOCK-OBJECT-1
+                       DYNAMIC-PROPERTY-NAME
+                       /
+                       DYNAMIC-PROPERTY-NAME-UPPER
+                      )
+  (SETQ DYNAMIC-PROPERTY-NAME-UPPER (STRCASE DYNAMIC-PROPERTY-NAME))
+  (VL-SOME
+    '(LAMBDA (X)
+       (IF (= DYNAMIC-PROPERTY-NAME-UPPER
+              (STRCASE (VLA-GET-PROPERTYNAME X))
+           )
+         (VLAX-GET X 'VALUE)
+       )
+     )
+    (VLAX-INVOKE BLOCK-OBJECT-1 'GETDYNAMICBLOCKPROPERTIES)
+  )
 )
+
 
 ;; Set Dynamic Block Property Value  -  Lee Mac
 ;; Modifies the value of a Dynamic Block property (if present)
@@ -5528,20 +5542,35 @@ ImportLayerSettings=No
 ;; val - [any] New value for property
 ;; Returns: [any] New value if successful, else nil
 
-(defun LM:setdynpropvalue ( block-object-1 dynamic-property-name val / dynamic-property-name-upper)
-    (setq dynamic-property-name-upper (strcase dynamic-property-name))
-    (vl-some
-       '(lambda ( x )
-            (if (eq dynamic-property-name-upper (strcase (vlax-get x 'propertyname)))
-                (progn                  
-                    (vla-put-value x (vlax-make-variant val (vlax-variant-type (vla-get-value x))))
-                    (cond (val) (t))
-                )
-            )
-        )
-        (vlax-invoke block-object-1 'getdynamicblockproperties)
-    )
+(DEFUN
+   LM:SETDYNPROPVALUE (BLOCK-OBJECT-1 DYNAMIC-PROPERTY-NAME VAL /
+                       DYNAMIC-PROPERTY-NAME-UPPER
+                      )
+  (SETQ DYNAMIC-PROPERTY-NAME-UPPER (STRCASE DYNAMIC-PROPERTY-NAME))
+  (VL-SOME
+    '(LAMBDA (X)
+       (IF (EQ DYNAMIC-PROPERTY-NAME-UPPER
+               (STRCASE (VLAX-GET X 'PROPERTYNAME))
+           )
+         (PROGN
+           (VLA-PUT-VALUE
+             X
+             (VLAX-MAKE-VARIANT
+               VAL
+               (VLAX-VARIANT-TYPE (VLA-GET-VALUE X))
+             )
+           )
+           (COND
+             (VAL)
+             (T)
+           )
+         )
+       )
+     )
+    (VLAX-INVOKE BLOCK-OBJECT-1 'GETDYNAMICBLOCKPROPERTIES)
+  )
 )
+
 
 (LOAD "ini-edit")
  ;|«Visual LISP© Format Options»

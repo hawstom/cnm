@@ -1,8 +1,9 @@
 ;;;(C) Copyright 2017 by Thomas Gail Haws
 ;;; This AutoLISP program lists a nested entity inside a XREF, BLOCK, or PLINE
+(if (not hcnm-config-getvar)(c:haws-load-from-app-dir "cnm"))
+
 (DEFUN C:HAWS-LX () (HAWS-XLIST 0))
-(DEFUN C:HAWS-LXX () (HAWS-XLIST 2))
-(DEFUN C:HAWS-LXXX () (HAWS-XLIST-MULTI))
+(DEFUN C:HAWS-LXX () (HAWS-XLIST-MULTI))
 
 (DEFUN
    HAWS-XLIST (EDIT-MODE / NENTSEL-RESULTS)
@@ -42,21 +43,40 @@
 )
 
 (DEFUN
-   HAWS-XLIST-MULTI-NENTSEL (/ CONTINUE-P ENAMELIST INPUT1 SS-P)
-  (INITGET "Selection Continue")
+   HAWS-XLIST-MULTI-NENTSEL (/ CONTINUE-P ENAMELIST INPUT1 SS-P NENTSEL-RESULTS)
+  (INITGET "Selection List Continue")
   (SETQ
     INPUT1
      (NENTSEL
-       "\nSelect object or [Selection set/Continue] <Continue>: "
+       (STRCAT
+         "\nSelect object or [Selection set/List mode ("
+         (HCNM-CONFIG-GETVAR "LXXListMode")
+         ")/Continue] <Continue>: "
+       )
      )
     CONTINUE-P
      (NOT INPUT1)
     SS-P
      (= INPUT1 "Selection")
+    NENTSEL-RESULTS
+     (HAWS-XLIST-NENTSEL INPUT1)
     ENAMELIST
-     (CADR (HAWS-XLIST-NENTSEL INPUT1))
+     (CADR NENTSEL-RESULTS)
   )
+  (COND ((= INPUT1 "List") (HAWS-XLIST-TOGGLE-LIST-MODE)))
+  (COND ((and (= (HCNM-CONFIG-GETVAR "LXXListMode") "yes")(/= (CAR NENTSEL-RESULTS) "")) (ALERT (PRINC (CAR NENTSEL-RESULTS)))))
   (LIST ENAMELIST SS-P CONTINUE-P)
+)
+
+(DEFUN
+   HAWS-XLIST-TOGGLE-LIST-MODE ()
+  (HCNM-CONFIG-SETVAR
+    "LXXListMode"
+    (COND
+      ((= (HCNM-CONFIG-GETVAR "LXXListMode") "yes") "no")
+      (T "yes")
+    )
+  )
 )
 
 (DEFUN

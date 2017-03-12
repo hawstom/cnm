@@ -31,7 +31,7 @@
          (SETQ FUNCTION-NAME (STRCAT "C:" CMD))
          (EVAL
            (READ
-             (STRCAT "(defun " FUNCTION-NAME "() (PRINC \"" (STRCAT "\nCNM command: " CMD ) "\") (c:HAWS-LOAD-FROM-APP-DIR " QFN ") (" FUNCTION-NAME "))")
+             (STRCAT "(defun " FUNCTION-NAME "() (PRINC \"" (STRCAT "\nAutoloading CNM command: " CMD ) "\") (c:HAWS-LOAD-FROM-APP-DIR " QFN ") (" FUNCTION-NAME "))")
            )
          )
        )
@@ -144,8 +144,8 @@
 
 ;;---------------Layer Management Section---------------
 (haws-autoload "lam"      '("haws-l0" "haws-lk" "haws-lka" "haws-lka" "haws-ona" "haws-tha" "haws-ul" "haws-ula"))
-;(haws-autoload "chm"      '("haws-chm"))
-;(haws-autoload "cl"       '("haws-cl"))
+(haws-autoload "chm"      '("haws-chm"));Changes properties, where laymch does not.
+(haws-autoload "cl"       '("haws-cl"));Changes properties, where laycur does not.
 (haws-autoload "lastat"   '("haws-ff" "haws-ffx" "haws-ltp" "haws-ltpx" "haws-off" "haws-offx" "haws-uff" "haws-uoff" "haws-uffx" "haws-uoffx"))
 (haws-autoload "isolat"   '("haws-ffi" "haws-lki" "haws-ofi"))
 (haws-autoload "layersav" '("haws-lar" "haws-las"))
