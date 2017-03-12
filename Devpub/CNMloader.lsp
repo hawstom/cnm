@@ -11,10 +11,6 @@
 
 (prompt "\nConstruction Notes Manager menu utilities loading.")
 
-;;; Load legacy utilities
-;; LISPUTIL.LSP has library functions for legacy routines some legacy users have.
-(if (not haws-mklayr) (load "lisputil"))
-
 ;;;Load aliases
 ;;;HAWSALIAS.LSP has short names for all the commands.
 (COND
@@ -244,9 +240,12 @@
 (haws-autoload "misc"     '("haws-ffa" "haws-hawsalias" "haws-pgpedit" "haws-user"))
 (haws-autoload "loadandrun"       '("haws-LoadAndRun"))
 ;-------------MODIFY THE ABOVE--------------------------------------
-;;; Load application
-;;; Important for this to come after the autoloaders.
-(load "cnm")
+;;; Load Haws library
+(load "edclib")
+;;; Load legacy library
+;; LISPUTIL.LSP has library functions for legacy routines some legacy users have.
+(if (not haws-mklayr) (load "lisputil"))
+
 
 ;;; Place the CNM pulldown to the left of the last pulldown already loaded
 ;;;     Created 2/21/97 by Dominic Panholzer
