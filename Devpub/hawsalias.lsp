@@ -503,7 +503,7 @@
          "\n\n1. PGP method:\n\ta) Copy the aliases above."
          "\n\tb) Use the CNM PGP command to open your acad.pgp. Then paste the aliases to the bottom of the file."
          "\n\tc) Use the AutoCAD REINIT command to reload your acad.pgp file."
-         "\n\n2. LISP method (works in scripts; changes behavior of EXPLODE command.):\n\ta) Open HawsAlias.lsp in the CNM installation folder."
+         "\n\n2. LISP method (works in scripts; changes behavior of EXPLODE command):\n\ta) Open HawsAlias.lsp in the CNM installation folder."
          "\n\tb) Find \"ActivatePgpAliases 0\" and change it as instructed there.  "
          "\n\tc) Save the file and use the CNM HawsAlias command to reload it."
         )
