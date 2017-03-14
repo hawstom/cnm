@@ -6,19 +6,19 @@
 ;
 ;Layers defaults file for lisp routines
 ;
-;Use this file to change HawsEDC layer names, colors, or linetypes.
+;Use this file to change CNM/HawsEDC layer names, colors, or linetypes.
 ;
 ;The commands depend on the lines in this file.
 ;If you remove any of the lines in this file or modify the key names,
 ;it may cause program instability, or in the best case, the current layer
 ;will be used benignly.
 ;
-("NOTESEXP"     "C-ANNO-HCNM-TABL-EXPT"           "m"   "")         ;Color of text in the CNM notes table.
-("NOTESIMP"     "C-ANNO-HCNM-TABL-IMPT"           "m"   "")         ;Color of Imported notes and quantity table.
-("NOTESKEYGRID" "C-ANNO-HCNM-TABL-GRID"           "13"  "")         ;CNM Key Notes table grid.
-("NOTESKEYQTYS" "C-ANNO-HCNM-TABL-QTTY"           "2"   "")         ;CNM Key Notes table quantities attributes.
-("NOTESLDR"     "C-ANNO-HCNM-BUBL"                "m"   "")         ;Color of note blocks,i.e., BOX, CIR, DIA, ELL, HEX, PEN, etc.
-("NOTESTAL"     "C-ANNO-HCNM-TABL-TOTL"           "m"   "")         ;Color of Quantity Take-off table generated for multiple dwg files.
+("NOTESEXP"     "C-ANNO-HCNM-TABL-EXPT"           "m"   "")         ;Key Notes table
+("NOTESIMP"     "C-ANNO-HCNM-TABL-IMPT"           "m"   "")         ;Imported Key Notes table (from another drawing)
+("NOTESKEYGRID" "C-ANNO-HCNM-TABL-GRID"           "13"  "")         ;Key Notes table grid
+("NOTESKEYQTYS" "C-ANNO-HCNM-TABL-QTTY"           "2"   "")         ;Key Notes table quantities attributes.
+("NOTESLDR"     "C-ANNO-HCNM-BUBL"                "m"   "")         ;Bubble notes, BOX, CIR, DIA, ELL, HEX, PEN, etc.
+("NOTESTAL"     "C-ANNO-HCNM-TABL-TOTL"           "m"   "")         ;Quantity Take-off table
 ("NOTESNOPLOT"  "C-ANNO-HCNM-NPLT"                "252" "")         ;CNM layer to hide attributes on.
 ("0"            "0"                               ""    "")         ;Layer to insert multilayer or explode blocks on (usually"0")
 ("ANNOMISC"     "C-ANNO"                          "m"   "")         ;Misc annotation objects and INSBLK commands

@@ -41,14 +41,14 @@
 ***POP1
                [&CNM]
 ID_HCNMOPTIONS  [Option&s...]^C^CHCNM-CNMOPTIONS;
-                [->Drawing settin&gs]
+ID_HCNMCNMLAYER [&Layer Settings]^C^Chcnm-cnmlayer;
+ID_HCNMLINKPROJ [Lin&k to Project]^C^CHCNM-LINKPROJ;
+                [->Scale and an&gle]
 ID_HCNMDIMSCALE   [Set &Scale (dimscale) only]^C^Cdimscale;
 ID_HCNMDIMTXT     [Set &Text Size (dimtxt) only]^C^Cdimtxt;
 ID_HCNMSETUP      [S&et Scale && Sizes	SETUP]^C^Chaws-setup;
 ID_HCNMPOLARSET   [Angle Snaps O&n (15 deg)	POLARSET]^C^Chaws-polarset;
-ID_HCNMPOLAROFF   [Angle Snaps O&ff	POLAROFF]^C^Chaws-polaroff;
-ID_HCNMCNMLAYER   [<-&Layer Settings]^C^Chcnm-cnmlayer;
-ID_HCNMLINKPROJ [Link to Project]^C^CHCNM-LINKPROJ;
+ID_HCNMPOLAROFF   [<-Angle Snaps O&ff	POLAROFF]^C^Chaws-polaroff;
                 [--]
 ID_HCNMBOXL     [&Box Note	BOXL]^C^Chaws-boxl;
 ID_HCNMCIRL     [&Circle Note	CIRL]^C^Chaws-cirl;
@@ -65,7 +65,7 @@ ID_HCNMNOTESEDE [&Edit Project Notes]^C^CHCNM-notesedit;
 ID_HCNMCNMS     [&Key Notes Table]^C^CHCNM-cnmkt;
 ID_HCNMCNMI     [Key Notes Table &From...]^C^CHCNM-cnmkti;
 ID_HCNMNTPURGE  [Pur&ge Key Notes Table]^C^Chaws-ntpurge;
-ID_HCNMCNMT     [&Quantity Take-off]^C^CHCNM-cnmqt
+ID_HCNMCNMT     [&Quantity Take-off]^C^CHCNM-cnmqt;
                 [--]
                 [->B&ubble Notes Tools]
 ID_HCNMEE         [&Edit Bubble Notes	EE]^C^Chaws-ee;
