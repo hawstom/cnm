@@ -4891,8 +4891,8 @@ ImportLayerSettings=No
 (DEFUN C:HAWS-TRIL () (HCNM-LDRBLK-DYNAMIC "TRI"))
 (DEFUN
    HCNM-LDRBLK-DYNAMIC (NOTETYPE / ANG1 ASSOCIATE-P ATTRIBUTE-LIST AUOLD
-                        BLOCKNAME DT ENAME-BLOCK FLIPSTATE GR NUM P1 P1W
-                        P2 P2W SNAPANG1 SS1 TXT1 TXT2 VLAOBJ
+                        BLOCKNAME DT ENAME-BLOCK FLIPSTATE GR NUM P1
+                        P2 SNAPANG1 SS1 TXT1 TXT2 VLAOBJ
                        )
   (HAWS-ERRDEF 1)
   (HAWS-VSAVE '("attreq" "aunits" "clayer" "cmdecho"))
@@ -4910,8 +4910,6 @@ ImportLayerSettings=No
     BLOCKNAME
      (STRCAT "cnm-bubble-" (HCNM-CONFIG-GETVAR "BubbleHooks"))
     P1 (GETPOINT "\nStart point for leader:")
-    P1W
-     (TRANS P1 1 0)
     DT (GETVAR "dimtxt")
     SNAPANG1
      (GETVAR "snapang")
@@ -4921,10 +4919,10 @@ ImportLayerSettings=No
   (HAWS-MKLAYR "NOTESLDR")
   (SETVAR "attreq" 0)
   (FOREACH
-     FLIPSTATE '(0 1)
+     FLIPSTATE '("right" "left")
     (COMMAND
       "._insert"
-      BLOCKNAME
+      (strcat BLOCKNAME "-" flipstate)
       "s"
       DT
       P1
@@ -4937,18 +4935,16 @@ ImportLayerSettings=No
        (VLAX-ENAME->VLA-OBJECT ENAME-BLOCK)
     )
     (LM:SETDYNPROPVALUE VLAOBJ "Shape" NOTETYPE)
-    (LM:SETDYNPROPVALUE VLAOBJ "Text side" FLIPSTATE)
     (SSADD ENAME-BLOCK SS1)
   )
   (PROMPT "\nLocation for bubble: ")
   (COMMAND "._MOVE" SS1 "" P1 PAUSE)
   (SETQ
     P2        (TRANS (CDR (ASSOC 10 (ENTGET ENAME-BLOCK))) ENAME-BLOCK 1)
-    P2W       (TRANS P2 1 0)
-    ANG1      (- (ANGLE P1W P2W) SNAPANG1)
+    ANG1      (- (ANGLE P1 P2) SNAPANG1)
     FLIPSTATE (COND
-                ((MINUSP (COS ANG1)) 1)
-                (0)
+                ((MINUSP (COS ANG1)) "left")
+                (T "right")
               )
   )
   (SETQ
@@ -4975,7 +4971,7 @@ ImportLayerSettings=No
   )
   (SETQ AUOLD (GETVAR "aunits"))
   (SETVAR "aunits" 3)
-  (COMMAND BLOCKNAME P2 DT DT (GETVAR "snapang"))
+  (COMMAND (strcat BLOCKNAME "-" flipstate) P2 DT DT (GETVAR "snapang"))
   (SETVAR "aunits" AUOLD)
   (SETQ
     ATTRIBUTE-LIST
@@ -5017,7 +5013,6 @@ ImportLayerSettings=No
   )
   (HCNM-SET-ATTRIBUTES ENAME-BLOCK ATTRIBUTE-LIST)
   (LM:SETDYNPROPVALUE VLAOBJ "Shape" NOTETYPE)
-  (LM:SETDYNPROPVALUE VLAOBJ "Text side" FLIPSTATE)
   (HCNM-RESTORE-DIMSTYLE)
   (HAWS-VRSTOR)
   (COMMAND "._undo" "_e")

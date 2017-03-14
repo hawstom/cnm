@@ -13,11 +13,11 @@
 ;it may cause program instability, or in the best case, the current layer
 ;will be used benignly.
 ;
-("NOTESEXP"     "C-ANNO-HCNM-TABL-EXPT"           "g"   "")         ;Color of text in the CNM notes table.
-("NOTESIMP"     "C-ANNO-HCNM-TABL-IMPT"           "c"   "")         ;Color of Imported notes and quantity table.
+("NOTESEXP"     "C-ANNO-HCNM-TABL-EXPT"           "m"   "")         ;Color of text in the CNM notes table.
+("NOTESIMP"     "C-ANNO-HCNM-TABL-IMPT"           "m"   "")         ;Color of Imported notes and quantity table.
 ("NOTESKEYGRID" "C-ANNO-HCNM-TABL-GRID"           "13"  "")         ;CNM Key Notes table grid.
 ("NOTESKEYQTYS" "C-ANNO-HCNM-TABL-QTTY"           "2"   "")         ;CNM Key Notes table quantities attributes.
-("NOTESLDR"     "C-ANNO-HCNM-BUBL"                "c"   "")         ;Color of note blocks,i.e., BOX, CIR, DIA, ELL, HEX, PEN, etc.
+("NOTESLDR"     "C-ANNO-HCNM-BUBL"                "m"   "")         ;Color of note blocks,i.e., BOX, CIR, DIA, ELL, HEX, PEN, etc.
 ("NOTESTAL"     "C-ANNO-HCNM-TABL-TOTL"           "m"   "")         ;Color of Quantity Take-off table generated for multiple dwg files.
 ("NOTESNOPLOT"  "C-ANNO-HCNM-NPLT"                "252" "")         ;CNM layer to hide attributes on.
 ("0"            "0"                               ""    "")         ;Layer to insert multilayer or explode blocks on (usually"0")
