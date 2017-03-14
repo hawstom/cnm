@@ -87,6 +87,7 @@ ID_HCNMLAMONA     [<-&On all layers	ONA]^C^Chaws-ona;
                [->&Help]
 ID_HCNMCNMWEB     [Construction Notes Manager on the &Web]^C^Cbrowser http://www.constructionnotesmanager.com;
 ID_HCNMALIASE     [Edit CNM Command Shortcuts]^C^CHAWS-ALIASEDIT;
+ID_HCNMPGPE       [Edit PGP Command Shortcuts]^C^CHAWS-PGPEDIT;
 ID_HAWSREORDER    [&Order Licenses]^C^CHAWS-ORDERLICENSES;
 ID_HCNMABOUT      [<-&About CNM]^C^CHCNM-ABOUT;
                [->CNM Plus]

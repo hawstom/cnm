@@ -500,11 +500,11 @@
          "\n==================================================================================="
          "\nCNM provides two ways to restore the Haws PGP aliases:"
          "\n\n1. PGP method:\n\ta) Copy the aliases above."
-         "\n\tb) Use the CNM PGP command to open your acad.pgp. Then paste the aliases to the bottom of the file."
+         "\n\tb) Open your acad.pgp. (The CNM PGP command will open it.) Then paste the aliases to the bottom of the file."
          "\n\tc) Use the AutoCAD REINIT command to reload your acad.pgp file."
-         "\n\n2. LISP method (works in scripts; changes behavior of EXPLODE command):\n\ta) Open HawsAlias.lsp in the CNM installation folder."
-         "\n\tb) Find \"ActivatePgpAliases 0\" and change it as instructed there.  "
-         "\n\tc) Save the file and use the CNM HawsAlias command to reload it."
+         "\n\n2. LISP method (works in scripts; changes behavior of EXPLODE command):\n\ta) Open HawsAlias.lsp."
+         "\n\tb) Find \"ActivatePgpAliases 0\" in HawsAlias.lsp and change it as instructed there.  "
+         "\n\tc) Save the file and reload it. (The CNM HawsAlias command will reload it.)"
         )
      )
      ;;  (initget "Pgp Lsp None")
@@ -514,6 +514,7 @@
      ;;    ((= input1 "Lsp") (hcnm-config-setvar "HawsPgpLisp" "Yes"))
      ;;    (T (hcnm-config-setvar "HawsPgpLisp" "No"))
      ;;  )
+     (getstring "\n<continue>: ")
     )
   )
   (STARTAPP
