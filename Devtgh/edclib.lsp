@@ -2541,8 +2541,8 @@
    HAWS-GETLAYR (KEY / TEMP)
   (IF (OR (NOT *HAWS:LAYERS*)
           (COND
-            ((= (HCNM-CONFIG-GETVAR "ImportLayerSettings") "Yes")
-             (HCNM-CONFIG-SETVAR "ImportLayerSettings" "No")
+            ((= (c:hcnm-config-getvar "ImportLayerSettings") "Yes")
+             (c:hcnm-config-setvar "ImportLayerSettings" "No")
              T
             )
           )

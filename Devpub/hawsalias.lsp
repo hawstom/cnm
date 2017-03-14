@@ -510,9 +510,9 @@
      ;;  (initget "Pgp Lsp None")
      ;;  (setq input1 (getkword "\nSpecify an option to activate [Pgp/Lsp/None] <None>: "))
      ;;  (cond
-     ;;    ((= input1 "Pgp") (hcnm-config-setvar "HawsPgpLisp" "No")(c:haws-pgpedit))
-     ;;    ((= input1 "Lsp") (hcnm-config-setvar "HawsPgpLisp" "Yes"))
-     ;;    (T (hcnm-config-setvar "HawsPgpLisp" "No"))
+     ;;    ((= input1 "Pgp") (c:hcnm-config-setvar "HawsPgpLisp" "No")(c:haws-pgpedit))
+     ;;    ((= input1 "Lsp") (c:hcnm-config-setvar "HawsPgpLisp" "Yes"))
+     ;;    (T (c:hcnm-config-setvar "HawsPgpLisp" "No"))
      ;;  )
      (getstring "\n<continue>: ")
     )

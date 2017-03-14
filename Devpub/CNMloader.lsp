@@ -10,7 +10,6 @@
 ;;; which contains all the old HawsEDC commands.
 
 (prompt "\nConstruction Notes Manager menu utilities loading.")
-(alert "CNM is currently broken.  LXX relies on HCNM-CONFIG-SETVAR, but CNMLOADER is not ready for single VLX. Need to get CNMLOADER ready.  Probably should do before releasing.")
 ;;;Load aliases
 ;;;HAWSALIAS.LSP has short names for all the commands.
 (COND
