@@ -85,7 +85,7 @@
                         "hcnm-linkproj" "hcnm-changeprojnotes" "hcnm-noteseditor"
                         "hcnm-layereditor" "hcnm-cnmlayer"
                         "hcnm-attnoplot" "hcnm-attplot"
-                        "haws-bubredef" "hcnm-noteseditor" "hcnm-notesedit"
+                        "hcnm-noteseditor" "hcnm-notesedit"
                         "haws-cnmmenu" "hcnm-about" "haws-cnmsetup"
                         "haws-phaseedit" "haws-setnotephases"
                         "haws-ntpurge" "hcnm-setnotesbubblestyle"

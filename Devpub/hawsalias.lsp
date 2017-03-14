@@ -77,7 +77,6 @@
 (defun c:bw () (c:haws-bw))
 (defun c:cnm () (c:hcnm-cnm))
 (defun c:cnmop () (c:hcnm-cnmoptions))
-(defun c:bubredef () (c:haws-bubredef))
 (defun c:noteseditor () (c:hcnm-noteseditor))
 (defun c:notesedit () (c:hcnm-notesedit))
 (defun c:notesfilein () (c:haws-notesfilein))
@@ -517,16 +516,19 @@
      ;;  )
     )
   )
-  (princ "\nEditing ")(command "._notepad" (princ(findfile "hawsalias.lsp")))
+  (STARTAPP
+    (STRCAT "\"notepad\" \"" (findfile "hawsalias.lsp") "\"")
+  )
+  (ALERT
+    (STRCAT
+      "Click OK to load aliases after editing and saving."
+    )
+  )
+  (load "hawsalias")
   (princ)
 )
 
-;; This may slow things down too much.  Wait and see.
-;(cond
-; ((= (hcnm-config-getvar "HawsPgpLisp") "Yes")
-   (haws-pgp-activate-aliases)
-;  )
-;)
+(haws-pgp-activate-aliases)
 
 ;;;---------------Set a flag that aliases have been loaded
 (setq *HAWS-HAWSALIASLOADED* T)

@@ -77,7 +77,6 @@ ID_HCNMCS         [Copy S&tring	CS]^C^Chaws-cs;
 ID_HCNMCA         [Copy &Attributes	CA]^C^Chaws-ca;
 ID_HCNMTO         [&Overline Text	TO]^C^Chaws-to;
 ID_HCNMTU         [&Underline Text	TU]^C^Chaws-tu;
-ID_HCNMBUBREDEF   [<-Redefine Bubble Note &Blocks]^C^Chaws-bubredef;
                 [->La&yer Tools]
 ID_HCNMLAMFFX     [&Freeze layer by picking	FFX]^C^Chaws-ffx;
 ID_HCNMLAMUFFX    [&Undo freeze layer by picking	UFFX]^C^Chaws-uffx;
@@ -434,7 +433,6 @@ ID_HCNMPGPE [_Button("Edit PGP Command Shortcuts", "cnmpgpedt.bmp", "cnmpgpedt.b
 ID_HAWSREORDER  [Generates an order code to send for authorization: HAWS-ORDERLICENSES]
 ID_HCNMABOUT    [Displays copyright and version information: HCNM-ABOUT]
 ID_HCNMBOXL     [Inserts a box bubble note.  Uses 3 customizable blocks (NOTEBOX?#: left, right, or double, style 1 or 2): BOXL]
-ID_HCNMBUBREDEF [Redefines all bubble note blocks and attributes in the current drawing: BUBREDEF]
 ID_HCNMBUBSTYLE [Sets the current bubble notes style: HCNM-SETNOTESBUBBLESTYLE]
 ID_HCNMCA       [Copies all the values for matching attributes from one block to another: CA]
 ID_HCNMCAPHASE  [Sets a new phase for selected bubble notes: CA]
