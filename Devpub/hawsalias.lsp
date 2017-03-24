@@ -522,7 +522,7 @@
   )
   (ALERT
     (STRCAT
-      "Click OK to load aliases after editing and saving."
+      "HawsAlias.lsp has been opened in Notepad for you to edit.\n\nClick OK to load aliases after editing and saving."
     )
   )
   (load "hawsalias")

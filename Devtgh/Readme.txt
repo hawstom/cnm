@@ -8,12 +8,12 @@ application directory.
 b) Add the installation folder to your AutoCAD Support Files and Trusted paths.
 Then use MENULOAD to load CNM.mnu (and optionally FUNKY.MNU function key osnaps).
 
-ACTIVATE OLD PGP ALIASES (Quick Keys)
-Type HawsPGP to activate old Haws PGP aliases.
+ACTIVATE OLD PGP ALIASES OR CUSTOMIZE COMMAND ALIASES (Quick Keys)
+Type Haws-AliasEdit (or HAE) to activate old Haws PGP aliases or customize CNM/HawsEDC command aliases.
 
 VERSION 4.2.30aaa (pre-pre-alpha)
 -New Cool Stuff
---Bubble notes now can flip sides and are all-shapes-in-one.
+--Bubble notes now are all-shapes-in-one.
 --Contour Elevate and/or Label (CEL)
 --Show nested layer in Layer palette after LX report (LXX)
 --Show layers for selected objects in Layer palette (LXXX)
