@@ -295,7 +295,7 @@
 (defun c:2x () (c:haws-2x))
 (defun c:5x () (c:haws-5x))
 (defun c:9x () (c:haws-9x))
-(defun c:tz () (c:haws-tz))
+(defun c:tz () (c:haws-twz))
 (defun c:x2 () (c:haws-x2))
 (defun c:z0 () (c:haws-z0))
 (defun c:za () (c:haws-za))
@@ -372,7 +372,9 @@
 (defun
    haws-pgp-activate-aliases (/ activatepgpaliases is_custom)
   ;; Tells which aliases of those in the list below to define as AutoLISP commands.
-  ;; 0 = none, 1 = custom (different from stock ACAD.PGP) only, 2 = all
+  ;; 0 = none, 
+  ;; 1 = custom only (only those that are different from stock ACAD.PGP),
+  ;; 2 = all
   ;; Make the number below 0, 1, or 2
   (setq ActivatePgpAliases 0)
   ;; Edit the line above
@@ -502,9 +504,9 @@
          "\n\n1. PGP method:\n\ta) Copy the aliases above."
          "\n\tb) Open your acad.pgp. (The CNM PGP command will open it.) Then paste the aliases to the bottom of the file."
          "\n\tc) Use the AutoCAD REINIT command to reload your acad.pgp file."
-         "\n\n2. LISP method (works in scripts; changes behavior of EXPLODE command):\n\ta) Open HawsAlias.lsp."
-         "\n\tb) Find \"ActivatePgpAliases 0\" in HawsAlias.lsp and change it as instructed there.  "
-         "\n\tc) Save the file and reload it. (The CNM HawsAlias command will reload it.)"
+         "\n\n2. LISP method (works in scripts; changes behavior of EXPLODE command):\n\ta) Open HawsAlias.lsp. (This Haws-AliasEdit (HAE) command opens it for you)."
+         "\n\tb) Find (CTRL+F) \"ActivatePgpAliases 0\" in HawsAlias.lsp and change it as instructed there.  "
+         "\n\tc) Save the file and reload it. (This command reloads it for you.)"
         )
      )
      ;;  (initget "Pgp Lsp None")
@@ -514,7 +516,7 @@
      ;;    ((= input1 "Lsp") (c:hcnm-config-setvar "HawsPgpLisp" "Yes"))
      ;;    (T (c:hcnm-config-setvar "HawsPgpLisp" "No"))
      ;;  )
-     (getstring "\n<continue>: ")
+     (getstring "\n<continue to edit HawsAlias.lsp>: ")
     )
   )
   (STARTAPP

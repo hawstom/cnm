@@ -1,7 +1,10 @@
 (PROMPT "\nHawsEDC library functions...")
 
 ;;;This is the current version of HawsEDC and CNM
-(DEFUN HAWS-UNIFIED-VERSION () "4.2.30.aa.02\n\nCopyright 2017")
+(DEFUN
+   HAWS-UNIFIED-VERSION ()
+  "4.2.30.aa.03\n\nCopyright 2017"
+)
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 (SETQ *HAWS-DEBUGLEVEL* 0)
 ;;This function returns the current setting of nagmode.
@@ -109,7 +112,7 @@
 ;;; To restore another previous UCS, set a global symbol 'ucspp to
 ;;; non-nil.
 (DEFUN
-   haws-core-borrow (APPGROUP / VALIDATED)
+   HAWS-CORE-BORROW (APPGROUP / VALIDATED)
   ;; If computer already has authorization,
   (COND
     ((OR (HAWS-VALIDATEAPPGROUP APPGROUP)
@@ -129,7 +132,7 @@
   )
   (SETQ
     OLDERR *ERROR*
-    *ERROR* HAWS-STPERR
+    *ERROR* HAWS-CORE-STPERR
   )
   VALIDATED
 )
@@ -137,7 +140,14 @@
 ;;Stperr replaces the standard error function.
 ;;It sets everything back in case of an error.
 (DEFUN
-   HAWS-STPERR (S)
+   HAWS-CORE-STPERR (S)
+  ;; Restore old *error* handler
+  (IF OLDERR
+    (SETQ
+      *ERROR* OLDERR
+      OLDERR NIL
+    )
+  )
   (COND
     ((/= S "Function cancelled")
      (PRINC (STRCAT "\nTrapped error: " S))
@@ -182,17 +192,10 @@
     UCSPP NIL
     ENM NIL
   )
-  (IF OLDERR
-    (SETQ
-      *ERROR* OLDERR
-      OLDERR NIL
-    )
-  )
-  ;; Restore old *error* handler
   (PRINC)
 )
 (DEFUN
-   haws-core-return ()
+   HAWS-CORE-RETURN ()
   (SETQ
     UCSP NIL
     UCSPP NIL
@@ -795,31 +798,31 @@
     BIOSDATEFULL
      (COND
        (*HAWS-BIOSDATEFULL*)
-	   ;; Win 10
+       ;; Win 10
        ((HAWS-REGISTRY-READ
           "HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System\\BIOS"
           "BIOSReleaseDate"
         )
        )
-	   ;; Win NT 4.0 and Win 10
+       ;; Win NT 4.0 and Win 10
        ((HAWS-REGISTRY-READ
           "HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System"
           "SystemBiosDate"
         )
        )
-	   ;; Win 2000 and XP
+       ;; Win 2000 and XP
        ((HAWS-REGISTRY-READ
           "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Biosinfo"
           "SystemBiosDate"
         )
        )
-	   ;; Win 95/98/Me
+       ;; Win 95/98/Me
        ((HAWS-REGISTRY-READ
           "HKEY_LOCAL_MACHINE\\Enum\\Root\\*PNP0C01\\0000"
           "BIOSDate"
         )
        )
-       (T "01\\01\\01" )
+       (T "01\\01\\01")
      )
   )
   (SETQ *HAWS-BIOSDATEFULL* BIOSDATEFULL)
@@ -1367,9 +1370,9 @@
 ;;;
 ;;;Tests whether intellicad behavior is current.
 ;;;Bricscad has advanced to the point we no longer have to use a special mode for it.
-(VL-ACAD-DEFUN 'c:haws-icad-p)
+(VL-ACAD-DEFUN 'C:HAWS-ICAD-P)
 (DEFUN
-   c:haws-icad-p ()
+   C:HAWS-ICAD-P ()
   (OR *HAWS-ICADMODE*
       (SETQ *HAWS-ICADMODE* (WCMATCH (GETVAR "acadver") "*i"))
   )
@@ -1396,7 +1399,9 @@
 (DEFUN
    HAWS-DWGSCALE ()
   (COND
-    ((OR (= (GETVAR "DIMANNO") 1) (= (GETVAR "DIMSCALE") 0)) (/ 1 (GETVAR "CANNOSCALEVALUE")))
+    ((OR (= (GETVAR "DIMANNO") 1) (= (GETVAR "DIMSCALE") 0))
+     (/ 1 (GETVAR "CANNOSCALEVALUE"))
+    )
     ((GETVAR "DIMSCALE"))
   )
 )
@@ -2402,14 +2407,15 @@
   )
   (PRINC "\nLoading ")
   (COND
-    ((findfile (princ(setq file-path (STRCAT *HAWS-APPFOLDER* "\\" FILENAME))))
-     
-        (LOAD
-          file-path
-        )
+    ((VL-CATCH-ALL-ERROR-P
+       (VL-CATCH-ALL-APPLY
+         'LOAD
+         (LIST (PRINC (STRCAT *HAWS-APPFOLDER* "\\" FILENAME)))
+       )
      )
-    (T
-     (PRINC " ... not found in app folder. Searching in support files search path.")
+     (PRINC
+       " ... not found in app folder. Searching in support files search path."
+     )
      (LOAD FILENAME)
     )
   )
@@ -2541,8 +2547,8 @@
    HAWS-GETLAYR (KEY / TEMP)
   (IF (OR (NOT *HAWS:LAYERS*)
           (COND
-            ((= (c:hcnm-config-getvar "ImportLayerSettings") "Yes")
-             (c:hcnm-config-setvar "ImportLayerSettings" "No")
+            ((= (C:HCNM-CONFIG-GETVAR "ImportLayerSettings") "Yes")
+             (C:HCNM-CONFIG-SETVAR "ImportLayerSettings" "No")
              T
             )
           )
@@ -2870,7 +2876,7 @@
 )
 
 
-(VL-ACAD-DEFUN 'HAWS-SET_TILE_LIST )
+(VL-ACAD-DEFUN 'HAWS-SET_TILE_LIST)
 (DEFUN
    HAWS-SET_TILE_LIST (KEYNAME$ LISTNAME@ SELECTED / ITEM)
   (START_LIST KEYNAME$ 3)
@@ -3160,7 +3166,7 @@
 (DEFUN
    HAWS-REGISTRY-READ (REG-KEY VAL-NAME)
   (COND
-    ((c:haws-icad-p) NIL)
+    ((C:HAWS-ICAD-P) NIL)
     ((VL-REGISTRY-READ REG-KEY VAL-NAME))
   )
 )
@@ -3170,7 +3176,7 @@
 (DEFUN
    HAWS-REGISTRY-WRITE (REG-KEY VAL-NAME VAL-DATA)
   (COND
-    ((c:haws-icad-p) NIL)
+    ((C:HAWS-ICAD-P) NIL)
     ((VL-REGISTRY-WRITE REG-KEY VAL-NAME VAL-DATA))
   )
 )
@@ -3315,7 +3321,7 @@
 (VL-ACAD-DEFUN 'HAWS-VRSTOR)
 (DEFUN
    HAWS-VRSTOR ()
-  (MAPCAR '(LAMBDA (V) (SETVAR (CAR v) (CADR V))) *HAWS-VSTR*)
+  (MAPCAR '(LAMBDA (V) (SETVAR (CAR V) (CADR V))) *HAWS-VSTR*)
 )
 
 ;; This function does a word wrap on a string by cutting the string
@@ -3421,7 +3427,7 @@
 (VL-ACAD-DEFUN 'HAWS-TXLEN)
 (DEFUN
    HAWS-TXLEN (STRING HEIGHT)
-  (IF (c:haws-icad-p)
+  (IF (C:HAWS-ICAD-P)
     (* HEIGHT (STRLEN STRING) 0.80)
     (CAADR (TEXTBOX (LIST (CONS 1 STRING) (CONS 40 HEIGHT))))
   )

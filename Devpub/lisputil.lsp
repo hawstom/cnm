@@ -66,29 +66,29 @@
     OLDERR
      *ERROR*
     *ERROR*
-     STPERR
+     haws-STPERR
   ) ;_ end of setq
 ) ;_ end of defun
 
 ;;; Stperr replaces the standard error function.
 ;;; It sets everything back in case of an error.
 (defun haws-stperr (s)
+  (if olderr (setq *error* olderr olderr nil))   ; Restore old *error* handler
   (cond
     ( (/= s "Function cancelled")
       (princ (strcat "\nTrapped error: " s))
   ) )
-  (command)
+  (command-s)
   (if (= (type f1) (quote FILE))(setq f1(close f1))); Close files
   (if (= (type f2) (quote FILE))(setq f2(close f2)))
   (if (= (type f3) (quote FILE))(setq f3(close f3)))
-  (if (= 8 (logand (getvar"undoctl") 8))(command "._undo" "end")); End undo group
+  (if (= 8 (logand (getvar"undoctl") 8))(command-s "._undo" "end")); End undo group
   (if (and vrstor vstr) (vrstor))     ; Restore variables to previous values
-  (if ucsp (command"._UCS""P"))       ; Restore previous UCS
-  (if ucspp (command"._UCS""P"))      ; Restore previous UCS
+  (if ucsp (command-s "._UCS""P"))       ; Restore previous UCS
+  (if ucspp (command-s "._UCS""P"))      ; Restore previous UCS
   (if enm (redraw enm))               ; Redraw work entity
   (if errosm (setvar "osmode" errosm))
   (setq ucsp nil ucspp nil enm nil)
-  (if olderr (setq *error* olderr olderr nil))   ; Restore old *error* handler
   (princ)
 )
 (defun haws-errrst ()

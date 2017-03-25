@@ -11,13 +11,12 @@ Then use MENULOAD to load CNM.mnu (and optionally FUNKY.MNU function key osnaps)
 ACTIVATE OLD PGP ALIASES OR CUSTOMIZE COMMAND ALIASES (Quick Keys)
 Type Haws-AliasEdit (or HAE) to activate old Haws PGP aliases or customize CNM/HawsEDC command aliases.
 
-VERSION 4.2.30aaa (pre-pre-alpha)
+VERSION 4.2.30
 -New Cool Stuff
 --Bubble notes now are all-shapes-in-one.
 --Contour Elevate and/or Label (CEL)
---Show nested layer in Layer palette after LX report (LXX)
---Show layers for selected objects in Layer palette (LXXX)
---Lengthen command optimized Dynamic default. LE/LLL
+--LX report plus show layers for selected objects in Layer palette (LXX)
+--Lengthen command optimized with Dynamic default. LE/LLL
 --CB/VB copy/paste at 0,0
 --Acres, SF, SY, and SM (sq. mi.) commands.
 --Printable keyboard commands list spreadsheet
