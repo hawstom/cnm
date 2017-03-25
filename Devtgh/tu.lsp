@@ -2,7 +2,7 @@
 ;COMPLETELY UNDERLINES THE TEXT IN A SELECTION SET.
 ;Written by Thomas Gail Haws
 (defun c:haws-TU (/ sset en1 ent entlst i oldstr newstr sslen)
-  (haws-errdef 1)
+  (haws-borrow 1)
   (prompt "\nText to completely underline/<RETURN to underline an attribute>:")
   (setq sset (ssget '((0 . "*TEXT"))))
   (cond
@@ -41,6 +41,6 @@
       )
       (prompt "done.")
   ) )
-  (HAWS-ERRRST)
+  (haws-return)
   (princ)
 )

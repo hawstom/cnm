@@ -1,6 +1,6 @@
 ;Written by Thomas Gail Haws
 (defun c:haws-pipe (/ p1 p2 p3 p4 d1 d2 a1)
-  (haws-errdef 0)
+  (haws-borrow 0)
   (setvar "cmdecho" 0)
   (setq p1 (getpoint "\nPipe centerline start point: ")
     p2 (getpoint p1 "\nEnd point: ")
@@ -17,5 +17,5 @@
   (command "line" p3 p4 "")
   (setq p3 (polar  p1 (- a1 (/ pi 2)) d1)  p4 (polar  p2 (- a1 (/ pi 2)) d1))
   (command "line" p3 p4 "")
-  (HAWS-ERRRST)
+  (haws-return)
 )

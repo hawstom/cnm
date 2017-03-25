@@ -32,7 +32,7 @@
 (DEFUN
    c:haws-PROPIPE
             (/ P1 P2 D1 PIPSLD D2 P3 P4)
-  (haws-errdef 0)
+  (haws-borrow 0)
   (HAWS-VSAVE '("filedia"))
   (HAWS-GETHVX)
   (SETQ
@@ -74,7 +74,7 @@
      (COMMAND "line" P3 P4 "")
     )
   ) ;_ end of COND
-  (HAWS-ERRRST)
+  (haws-return)
 ) ;_ end of DEFUN
 
 (DEFUN
@@ -82,7 +82,7 @@
            (/  BOTPIP ELLIP1 HVEXAG LEFT LINE1 LINE2 LINE3
               PT1 PT2 PT3 PT4 PTCEN RIGHT UCSYDIR VRAD
            )
-  (haws-errdef 0)
+  (haws-borrow 0)
   (HAWS-VSAVE '("ucsfollow" "osmode" "clayer"))
   (HAWS-MKLAYR "PSUP")
   (SETVAR "ucsfollow" 0)
@@ -166,7 +166,7 @@
   (COMMAND "._erase" ELLIP1 LINE3 "")
   (REDRAW)
   (HAWS-VRSTOR)
-  (HAWS-ERRRST)
+  (haws-return)
   (PRINC)
 ) ;_ end of DEFUN
 
@@ -174,7 +174,7 @@
 (DEFUN
    c:haws-PROCB
           (/ TOPPT BOTPT CBVIEW WIDTH)
-  (haws-errdef 0)
+  (haws-borrow 0)
   (IF (NOT HVEXAG)
     (HAWS-GETHVX)
   ) ;_ end of IF
@@ -204,7 +204,7 @@
   ) ;_ end of IF
   (HAWS-DRAWCB BOTPT TOPPT CBVIEW WIDTH NIL)
   (HAWS-VRSTOR)
-  (HAWS-ERRRST)
+  (haws-return)
   (PRINC)
 ) ;_ end of DEFUN
 
@@ -299,7 +299,7 @@
 (DEFUN
    c:haws-PROMH
           (/ TOPPT BOTPT)
-  (haws-errdef 0)
+  (haws-borrow 0)
   (HAWS-VSAVE '("clayer"))
   (INITGET "Exist Prop")
   (SETQ
@@ -316,7 +316,7 @@
   ) ;_ end of IF
   (HAWS-DRAWMH BOTPT TOPPT NIL)
   (HAWS-VRSTOR)
-  (HAWS-ERRRST)
+  (haws-return)
   (PRINC)
 ) ;_ end of DEFUN
 
@@ -376,7 +376,7 @@
    c:haws-PROE
          (/ LANAME INVERT DIAM PIPSLD WALTHK CENPT INRAD OUTRAD
          )
-  (haws-errdef 0)
+  (haws-borrow 0)
   (IF (NOT HVEXAG)
     (HAWS-GETHVX)
   ) ;_ end of IF
@@ -449,14 +449,14 @@
     ) ;_ end of entmake
   ) ;_ end of IF
   (HAWS-VRSTOR)
-  (HAWS-ERRRST)
+  (haws-return)
   (PRINC)
 ) ;_ end of DEFUN
 
 (DEFUN
    c:haws-PLDR
          (/ P1 P2 DS TS AS DG ANG LEFT P3 P4 P5 STR TEMP)
-  (haws-errdef 0)
+  (haws-borrow 0)
   (SETQ
     P1 (GETPOINT "\nStart point for leader:")
     P2 (GETPOINT P1 "\nEnd point for leader:")
@@ -550,7 +550,7 @@
      ) ;_ end of mktext
     )
   ) ;_ end of COND
-  (HAWS-ERRRST)
+  (haws-return)
 ) ;_ end of DEFUN
 
 (DEFUN
@@ -577,7 +577,7 @@
 (DEFUN
    c:haws-PROFC
           (/ COLWID FLIST FM FNAME I M N RDLIN TEMP TEMPFILE)
-  (haws-errdef 0)
+  (haws-borrow 0)
   (SETQ
     F1 (OPEN
          (GETFILED "List of files to convert" (GETDNPATH) "lst" 0)
@@ -2311,7 +2311,7 @@
     (SETQ SLOPE NIL)
   ) ;_ end of DEFUN
   ;;End of subfunctions, begin main function.
-  (haws-errdef 0)
+  (haws-borrow 0)
   (TERPRI)
   (SETQ
     I 1
@@ -2455,7 +2455,7 @@
   ) ;_ end of SETQ
   ;;Close files
   (HAWS-VRSTOR)
-  (HAWS-ERRRST)
+  (haws-return)
   (PRINC)
   ;;and end program.
 ) ;_ end of DEFUN
@@ -2637,7 +2637,7 @@
 (DEFUN
    c:haws-ELLABEL
             (/ PT1)
-  (haws-errdef 0)
+  (haws-borrow 0)
   (HAWS-VSAVE '("osmode"))
   (SETVAR "dimzin" 0)
   (IF (NOT HVEXAG)
@@ -2657,7 +2657,7 @@
     ) ;_ end of COND
   ) ;_ end of WHILE
   (HAWS-VRSTOR)
-  (HAWS-ERRRST)
+  (haws-return)
   (PRINC)
 ) ;_ end of DEFUN
 
@@ -2665,7 +2665,7 @@
 (DEFUN
    c:haws-STALABEL
              (/ PNT1 INC N STA1 ENDSTA STA)
-  (haws-errdef 0)
+  (haws-borrow 0)
   (HAWS-HAWS-MKLAYR "PSTALBL")
   (HAWS-VSAVE '("luprec"))
   (SETVAR "luprec" 0)
@@ -2693,7 +2693,7 @@
     (SETQ STA (+ INC STA))
   ) ;_ end of WHILE
   (HAWS-VRSTOR)
-  (HAWS-ERRRST)
+  (haws-return)
   (PRINC)
 ) ;_ end of DEFUN
 ;;---------------------------ELEVATION LABEL------------------------

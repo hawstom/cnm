@@ -1,6 +1,6 @@
 ;change all entities within selected block to layer 0
 (defun c:haws-bl0 (/ cl en ent)
-	(haws-errdef 0)
+	(haws-borrow 0)
 	(HAWS-VSAVE '("clayer" "highlight"))
   (setvar "highlight" 0)
   (command ".layer" "s" "0" "")
@@ -18,7 +18,7 @@
     )
     (progn (princ "\nError: A block must be selected.") (c:haws-bl0))
   )
-	(HAWS-VRSTOR)(HAWS-ERRRST)
+	(HAWS-VRSTOR)(haws-return)
   (princ)
 )
 (defun HAWS-block0 (en / en2 ent inspt blkname ssblk)

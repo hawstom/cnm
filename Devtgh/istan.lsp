@@ -51,7 +51,7 @@
             (setq ang1 (+ (/ pi 2) (angle p1 p2)))
         ) )
   ) ) )
-  (haws-errdef 0)
+  (haws-borrow 0)
   (prompt "\nIs it Tangent?")
   (setq
     e1 (HAWS-chktyp)
@@ -64,4 +64,4 @@
   )
   (princ "\n      Distance between selected ends=")(princ dist1)
   (princ "  Angular difference=")(princ angdif)
-  (HAWS-ERRRST))(princ)
+  (haws-return))(princ)

@@ -1,7 +1,7 @@
 ;Used to set the current text style. User can select an existing text string
 ;to retrieve a style name. Rev 7/01/96
 (defun c:haws-SELSTYLE (/ ans tstyl)
-  (errdef)
+  (haws-errdef)
   (setq tstyl nil ans nil)
   (while (not ans)
     (princ (strcat "\nCurrent text style " (getvar "TEXTSTYLE")))
@@ -19,6 +19,6 @@
   )
   (princ tstyl)
   (command ".STYLE" tstyl "" "" "" "" "" "" "")
-  (errrst)(princ)
+  (haws-errrst)(princ)
 )
 ;end selstyle

@@ -4,12 +4,12 @@
      (EVAL
        (READ
          (STRCAT
-           "defun " FUNCTION-NAME
-           "() (princ \"\nCNM can no longer expose functions that have names without reserved safe prefixes like HAWS- and HCNM-. Something you invoked called the HAWSEDC legacy "
+           "(defun " FUNCTION-NAME
+           "() (alert(princ \"\nCNM can no longer expose functions that have names without reserved safe prefixes like HAWS- and HCNM-. Something you invoked called the HAWSEDC legacy "
            FUNCTION-NAME
            " routine.  Please find the call and replace it with HAWS-"
            FUNCTION-NAME
-           "."
+           ".\")))"
           )
        )
      )

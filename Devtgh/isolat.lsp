@@ -5,7 +5,7 @@
 (defun c:haws-FFI () (HAWS-isolat "freeze" nil))
 (defun c:haws-LKI () (HAWS-isolat "lock" nil))
 (defun HAWS-isolat (lopera nested / ss1 i en)
-  (haws-errdef 1)
+  (haws-borrow 1)
   (HAWS-VSAVE '("EXPERT"))
   (SETVAR "EXPERT" 5)
   (prompt "\nLayers to isolate")
@@ -25,5 +25,5 @@
     (setq i (1+ i))
   )
   (command "")
-  (HAWS-VRSTOR)(HAWS-ERRRST)
+  (HAWS-VRSTOR)(haws-return)
 );end freeze/off/lock isolate by picking

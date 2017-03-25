@@ -3,7 +3,7 @@
 ;Thomas Gail Haws, Feb. 1996
 (defun c:haws-mf ()(c:haws-mfillet))
 (defun c:haws-mfillet ( / oldrad frad fcen p1 p2)
-  (haws-errdef 0)
+  (haws-borrow 0)
   (setq oldrad (getvar "filletrad") radj 1)
   (initget "Adjust")
   (while
@@ -45,5 +45,5 @@
     (command "._fillet" "r" frad "._fillet" es1 p2)
   )
   (setvar "filletrad" frad1)
-  (HAWS-ERRRST)(HAWS-VRSTOR)(princ)
+  (haws-return)(HAWS-VRSTOR)(princ)
 )

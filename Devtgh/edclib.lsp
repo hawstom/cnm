@@ -100,7 +100,7 @@
 
 ;;;HawsEDC general function handler
 ;;;Includes banner, error handler, and validator.
-;;; Internal error handler function.  Call haws-errdef at the
+;;; Internal error handler function.  Call haws-borrow at the
 ;;; beginning
 ;;; of a
 ;;; routine.
@@ -109,7 +109,7 @@
 ;;; To restore another previous UCS, set a global symbol 'ucspp to
 ;;; non-nil.
 (DEFUN
-   haws-errdef (APPGROUP / VALIDATED)
+   haws-borrow (APPGROUP / VALIDATED)
   ;; If computer already has authorization,
   (COND
     ((OR (HAWS-VALIDATEAPPGROUP APPGROUP)
@@ -192,7 +192,7 @@
   (PRINC)
 )
 (DEFUN
-   HAWS-ERRRST ()
+   haws-return ()
   (SETQ
     UCSP NIL
     UCSPP NIL

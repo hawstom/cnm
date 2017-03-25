@@ -38,11 +38,11 @@
 )
 
 (Defun c:haws-LDR ()
-  (errdef)
+  (haws-errdef)
   (Setq X "S" DS (HAWS-DWGSCALE)
     THGT (* DS (Getvar "Dimtxt"))
   txt "a")
   (Initget "C S")
   (Setq X (Getkword "\nCurved leader/<Std leader>: "))
-(graphscr) (If (/= X "C")(SLA)(CLA))(errrst));end Leader
+(graphscr) (If (/= X "C")(SLA)(CLA))(haws-errrst));end Leader
 ;end LDR

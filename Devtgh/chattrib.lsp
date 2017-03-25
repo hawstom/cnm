@@ -1,6 +1,6 @@
 ;(C) Copyright 1997 by Thomas Gail Haws
 (defun c:haws-chattrib ( / a b c d z)
-  (haws-errdef 0)
+  (haws-borrow 0)
   (HAWS-VSAVE '("cmdecho"))
   (setq
     blname (HAWS-GETSTRINGX "Block name specification" blname "*")
@@ -37,5 +37,5 @@
     (command a)(if b (command b))(if c (command c))(command z "n")
   )
   (command "zoom" "p")(setq viewp nil)
-  (HAWS-VRSTOR)(HAWS-ERRRST)
+  (HAWS-VRSTOR)(haws-return)
 )

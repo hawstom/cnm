@@ -1,7 +1,7 @@
 ;(C) Copyright 1997 by Thomas Gail Haws
 ;GIVE A SELECTION SET OF ENTITIES A NEW SCALE ABOUT A USER SPECIFIED ENTITY POINT.
 (defun c:haws-newscale ( / dxfpt dxfsc sset sslen svalue ent xfactr ins ed)
-  (haws-errdef 0)
+  (haws-borrow 0)
   (setvar "cmdecho" 0)
   (command "._undo" "group")
   (textpage)
@@ -46,6 +46,6 @@
   )
   (prompt "done.")
   (command "._undo" "end")
-  (HAWS-ERRRST)
+  (haws-return)
   (princ)
 )

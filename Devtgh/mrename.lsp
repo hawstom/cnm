@@ -3,7 +3,7 @@
 ;Thomas Gail Haws, Feb. 1996
 (defun c:haws-mren ()(c:haws-mrename))
 (defun c:haws-mrename ( / opt entry)
-  (haws-errdef 0)
+  (haws-borrow 0)
   (setq opt (HAWS-mren_opt) entry nil)
   (while (setq entry (tblnext (car opt) (not entry)))
     (setq entry (cdr (assoc 2 entry)))

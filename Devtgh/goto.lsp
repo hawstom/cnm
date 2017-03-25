@@ -1,5 +1,5 @@
 (defun c:haws-goto ( / i ss1 en ept vwctr opt crad)
-  (haws-errdef 0)
+  (haws-borrow 0)
   (HAWS-VSAVE '("osmode"))
   (setvar "osmode" 0)
   (setq i 0 ss1 (ssget))
@@ -23,5 +23,5 @@
       ( (or (not opt)(= opt "Next")) (setq i (1+ i)))
       ( T (setq i -2))
   ) )
-  (HAWS-VRSTOR)(HAWS-ERRRST)(princ)
+  (HAWS-VRSTOR)(haws-return)(princ)
 )

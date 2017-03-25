@@ -27,7 +27,7 @@
   )
   ;Rev. 7/22/99
   ;Plots multiple drawings.
-  (haws-errdef 0);requires library function
+  (haws-borrow 0);requires library function
   (textpage)
   (prompt temp)
   (prompt "\n\nMPLOT must have the following conditions to run trouble-free.")
@@ -149,6 +149,6 @@
     (progn (command "script" msname))
     (prompt (strcat "Done.  Run script file '"msname"' to plot."))
   )
-  (HAWS-ERRRST);requires library function
+  (haws-return);requires library function
   (princ)
 );end MPLOT

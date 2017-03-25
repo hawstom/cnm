@@ -1,6 +1,6 @@
 ;Written by Thomas Gail Haws
 (defun c:haws-berm ( / dbvar dbold)
-  (haws-errdef 0)
+  (haws-borrow 0)
   (HAWS-VSAVE '("clayer""cmdecho"))
   (HAWS-MKLAYR "BERM")
   (cond
@@ -17,5 +17,5 @@
   (command "._Leader" pause)
   (prompt "\nBottom of berm: ")
   (command pause "" "" "n")
-  (HAWS-VRSTOR)(HAWS-ERRRST)(princ)
+  (HAWS-VRSTOR)(haws-return)(princ)
 )
