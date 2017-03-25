@@ -1,7 +1,7 @@
 (PROMPT "\nHawsEDC library functions...")
 
 ;;;This is the current version of HawsEDC and CNM
-(DEFUN HAWS-UNIFIED-VERSION () "4.2.30.aaa-Build-7\n\nCopyright 2017")
+(DEFUN HAWS-UNIFIED-VERSION () "4.2.30.aa.02\n\nCopyright 2017")
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 (SETQ *HAWS-DEBUGLEVEL* 0)
 ;;This function returns the current setting of nagmode.
