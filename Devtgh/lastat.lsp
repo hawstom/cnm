@@ -7,7 +7,7 @@
 
 (DEFUN
    HAWS-LASTAT (LOPERA NESTED)
-  (haws-borrow 1)
+  (haws-core-borrow 1)
   (HAWS-VSAVE '("EXPERT"))
   (SETVAR "EXPERT" 5)
   (INITGET 1 "Viewport Normal")
@@ -35,7 +35,7 @@
     )
   )
   (HAWS-VRSTOR)
-  (haws-return)
+  (haws-core-return)
 )
 
 (DEFUN
@@ -84,7 +84,7 @@
 
 (DEFUN
    HAWS-NLSTAT (LOPERA / NESTED)
-  (haws-borrow 1)
+  (haws-core-borrow 1)
   (HAWS-VSAVE '("EXPERT"))
   (SETVAR "EXPERT" 5)
   (IF (AND
@@ -111,7 +111,7 @@
     )
   )
   (HAWS-VRSTOR)
-  (haws-return)
+  (haws-core-return)
 )
 (DEFUN
    HAWS-LSPICK (LOPERA VP / ES EN LA PARNTL LALIST LOPERAkey)

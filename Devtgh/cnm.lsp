@@ -2111,7 +2111,7 @@
 (DEFUN
    HCNM-CNM (OPT / CFNAME DN LINSPC PHASEWID TBLWID TXTHT)
   ;;Main function
-  (haws-borrow 1)
+  (haws-core-borrow 1)
   (HAWS-VSAVE
     '("attdia" "attreq" "cmdecho" "clayer" "osmode")
   )
@@ -2175,7 +2175,7 @@
   ;;Restore old dimstyle
   (HCNM-RESTORE-DIMSTYLE)
   (HAWS-VRSTOR)
-  (haws-return)
+  (haws-core-return)
   (PRINC)
 )
 ;;;
@@ -4262,8 +4262,8 @@ ImportLayerSettings=No
     (SETQ CNMEDITP T)
   )
   (IF CNMEDITP
-    (haws-borrow 2)
-    (haws-borrow 1)
+    (haws-core-borrow 2)
+    (haws-core-borrow 1)
   )
   ;;Since this is a user command, possibly after deletion of project root files,
   ;;refresh project root at beginning.
@@ -4453,7 +4453,7 @@ ImportLayerSettings=No
 (DEFUN C:HCNM-ATTPLOT () (HCNM-ATTLAYER "0"))
 (DEFUN
    HCNM-ATTLAYER (LAYER / AT EL EN ET NPLAYER NPLIST SSET SSLEN)
-  (haws-borrow 1)
+  (haws-core-borrow 1)
   (HAWS-VSAVE '("CLAYER"))
   (COMMAND "._undo" "_g")
   (SETQ NPLAYER (CAR (HAWS-GETLAYR LAYER)))
@@ -4517,7 +4517,7 @@ ImportLayerSettings=No
   )
   (COMMAND "._undo" "_e")
   (HAWS-VRSTOR)
-  (haws-return)
+  (haws-core-return)
   (PRINC)
 )
 
@@ -4733,7 +4733,7 @@ ImportLayerSettings=No
                         BLOCKNAME DT ENAME-BLOCK FLIPSTATE GR NUM P1
                         P2 SNAPANG1 SS1 TXT1 TXT2 VLAOBJ
                        )
-  (haws-borrow 1)
+  (haws-core-borrow 1)
   (HAWS-VSAVE '("attreq" "aunits" "clayer" "cmdecho"))
   (COMMAND "._undo" "_g")
   (SETQ
@@ -4855,7 +4855,7 @@ ImportLayerSettings=No
   (HCNM-RESTORE-DIMSTYLE)
   (HAWS-VRSTOR)
   (COMMAND "._undo" "_e")
-  (haws-return)
+  (haws-core-return)
   (PRINC)
 )
 
@@ -4903,7 +4903,7 @@ ImportLayerSettings=No
                 FIXTXT3 I P1 P2 P3 P4 P5 P6 P7 P8 PFOUND R1 DS TS LEFT
                 NUM TXT1 TXT2 ANG1 ANG2 FIXORDER OSMOLD
                )
-  (haws-borrow 1)
+  (haws-core-borrow 1)
   (HAWS-VSAVE
     '("aperture" "attdia" "attreq" "aunits" "clayer" "cmdecho" "osmode"
       "plinegen" "regenmode"
@@ -5195,7 +5195,7 @@ ImportLayerSettings=No
   (HCNM-RESTORE-DIMSTYLE)
   (HAWS-VRSTOR)
   (COMMAND "._undo" "_e")
-  (haws-return)
+  (haws-core-return)
   (IF (OR FIXHOOK FIXPHASE FIXTXT3 FIXORDER)
     (PROMPT
       (STRCAT

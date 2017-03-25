@@ -1,7 +1,7 @@
 ;Written by Thomas Gail Haws
 ;ADD
 (defun c:haws-ADD (/ sset addt addtstr ent entlst sslen stri enta1)
-  (haws-borrow 1)
+  (haws-core-borrow 1)
   (prompt "\nText to change:")(setq sset (ssget '((0 . "*TEXT"))))
   (if (not sset)
     (progn (prompt "\nNone found.")(exit))
@@ -21,6 +21,6 @@
       )
       (prompt "done.")
   ) )
-  (haws-return)
+  (haws-core-return)
   (princ)
 )

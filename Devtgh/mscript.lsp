@@ -38,7 +38,7 @@
      )
     DN (HAWS-GETDNPATH)
   )
-  (haws-borrow 0)                       ;requires library function
+  (haws-core-borrow 0)                       ;requires library function
   (TEXTPAGE)
   (PROMPT TEMP)
   (PROMPT
@@ -372,7 +372,7 @@
       )
     )
   ) ;_ end of if
-  (haws-return)                         ;requires library function
+  (haws-core-return)                         ;requires library function
   (PRINC)
 ) ;_ end of DEFUN
 

@@ -1,6 +1,6 @@
 ;(C) Copyright 1997 by Thomas Gail Haws
 (defun c:haws-WS (/ stubpt mainpt ang1 LEFT TS)
-  (haws-borrow 0)
+  (haws-core-borrow 0)
   (HAWS-VSAVE '("clayer"))
   (setq ts (* (HAWS-DWGSCALE)(getvar "dimtxt")))
   (while (setq stubpt (getpoint "\nEnd of service line (Return to quit):"))
@@ -20,6 +20,6 @@
       "WS"
     )
   )
-  (HAWS-VRSTOR)(haws-return)
+  (HAWS-VRSTOR)(haws-core-return)
   (princ)
 )

@@ -4,7 +4,7 @@
 (defun
    c:haws-bdl
 	(/ ANG1 DG LBEAR LDIST LEFT LLINE LTOP PT1 PT10 PT11 PT2 PT3 PT4 PTXT ROT TXHT UCSP)
-  (haws-borrow 0)
+  (haws-core-borrow 0)
   (HAWS-VSAVE
     '("lunits" "luprec" "aunits" "auprec" "dimtad" "ucsfollow")
   )
@@ -116,6 +116,6 @@
   (IF UCSP (command "._ucs" "p"))
   (setq ucsp nil)
   (HAWS-VRSTOR)
-  (haws-return)
+  (haws-core-return)
   (princ)
 )

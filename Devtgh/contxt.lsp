@@ -1,6 +1,6 @@
 ;Written by Thomas Gail Haws
 (defun c:haws-contxt (/ txtht txtstr inspt rot)
-  (haws-borrow 0)
+  (haws-core-borrow 0)
   (HAWS-VSAVE '("clayer"))
   (setvar "cmdecho" 0)
   (setq txtht (* (HAWS-DWGSCALE)(getvar"dimtxt")))
@@ -8,5 +8,5 @@
   (HAWS-MKLAYR "CONTLBL")
   (setq inspt (getpoint "\nMiddle point:") rot (getangle inspt " Rotation: "))
   (HAWS-MKTEXT "m" inspt txtht rot txtstr)
-  (HAWS-VRSTOR)(haws-return)(princ)
+  (HAWS-VRSTOR)(haws-core-return)(princ)
 )

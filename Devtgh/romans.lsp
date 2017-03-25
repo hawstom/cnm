@@ -1,6 +1,6 @@
 ;(C) Copyright 1997 by Thomas Gail Haws
 (DEFUN c:haws-ROMANS ( / st sn sf)
-  (haws-borrow 0)
+  (haws-core-borrow 0)
   (HAWS-VSAVE '("cmddia" "filedia" "regenmode"))
   (command "style" "romans" "romans" "0" ".95" "0" "" "" "")
   (command "dim1" "style" "romans");For R13 compatibility
@@ -32,5 +32,5 @@
         (command "._style" sn "ROMANS" "" "0.95" "" "" "" "")
   ) ) )
   (setvar "textstyle" "ROMANS")
-  (HAWS-VRSTOR)(haws-return)(princ)
+  (HAWS-VRSTOR)(haws-core-return)(princ)
 )

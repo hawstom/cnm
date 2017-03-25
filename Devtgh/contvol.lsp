@@ -4,7 +4,7 @@
    c:haws-contvol (/ cvcont cvadd cv-area-twice-previous
               cv-area-previous cv-area-current pt1
              )
-  (haws-borrow 0)
+  (haws-core-borrow 0)
   (command "._undo" "g")
   (setq
     cvvol 0
@@ -118,7 +118,7 @@
     (rtos cvvol)
   )
   (command "._undo" "e")
-  (haws-return)
+  (haws-core-return)
   (princ)
 )
 (defun

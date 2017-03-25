@@ -1,6 +1,6 @@
 ;(C) Copyright 1997 by Thomas Gail Haws
 (defun c:haws-TAP (/ ANG1 LEFT MAINLN OSUSER STUBPT TAPLIN TMPSEW TS)
-  (haws-borrow 0)
+  (haws-core-borrow 0)
   (setvar "cmdecho" 0)
   (HAWS-VSAVE '("osmode" "clayer"))
   (setq
@@ -40,6 +40,6 @@
     )
   )
   (command "redraw")
-  (HAWS-VRSTOR)(haws-return)
+  (HAWS-VRSTOR)(haws-core-return)
   (princ)
 )

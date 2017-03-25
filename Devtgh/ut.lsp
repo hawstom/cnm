@@ -99,7 +99,7 @@
     (SETQ ULAYPL (CAR (HAWS-MKLAYR (STRCAT "UT" UTIL "PL"))))
     (SETQ ULAYOD (CAR (HAWS-MKLAYR (STRCAT "UT" UTIL "OD"))))
   ) ;_ end of defun
-  (haws-borrow 0)
+  (haws-core-borrow 0)
   (HAWS-VSAVE '("ucsfollow" "clayer" "filedia" "cmdecho" "expert"))
   (HAWS-VSET
     '(("ucsfollow" 0) ("plinegen" 1) ("cmdecho" 0) ("expert" 5))
@@ -270,6 +270,6 @@
   ) ;_ end of cond
   (REDRAW)
   (HAWS-VRSTOR)
-  (haws-return)
+  (haws-core-return)
   (PRINC)
 ) ;_ end of defun

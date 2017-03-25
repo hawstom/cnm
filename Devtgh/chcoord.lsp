@@ -1,7 +1,7 @@
 ;(C) Copyright 1997 by Thomas Gail Haws
 ;CHANGE A COORDINATE OF AN ENTITY TO A SPECIFIED VALUE.
 (defun c:haws-chcoord ( / dxfpt el en newpt newval n oldpt sset sslen xyz)
-  (haws-borrow 0)
+  (haws-core-borrow 0)
   (setvar "cmdecho" 0)
   (command "._undo" "group")
   (textpage)
@@ -46,6 +46,6 @@
     (entmod el)
   )
   (command "._undo" "end")
-  (haws-return)
+  (haws-core-return)
   (princ)
 )

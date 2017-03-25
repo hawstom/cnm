@@ -5,7 +5,7 @@
              INCANG LEFT OSMOLD PT1 PT2 PT3 PT4 PT5 PT6 PT7 PT8 TS RAD
              WNGANG
             )
-  (haws-borrow 0)
+  (haws-core-borrow 0)
   (HAWS-VSAVE '("clayer"))
   (SETQ
     OSMOLD
@@ -151,7 +151,7 @@
      )
   )
   (HAWS-VRSTOR)
-  (haws-return)
+  (haws-core-return)
 )
 (DEFUN
    HAWS-DRAWDW

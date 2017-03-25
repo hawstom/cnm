@@ -12,7 +12,7 @@
     (HAWS-VRSTOR)
     timdia
   )
-  (haws-borrow 0)
+  (haws-core-borrow 0)
   (graphscr)
   (while
     (cond
@@ -55,6 +55,6 @@
       ( T nil)
     )
   )
-  (haws-return)
+  (haws-core-return)
   (princ)
 )

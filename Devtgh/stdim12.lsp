@@ -1,6 +1,6 @@
 ;(C) Copyright 1997 by Thomas Gail Haws
 (defun c:haws-dm12 ( / pt1 pt2 ang upsdwn d1 pt3 txht)
-  (haws-borrow 0)
+  (haws-core-borrow 0)
   (HAWS-VSAVE '("osmode" "clayer"))
   (HAWS-VSET'(("dimse1"1)("dimse2"1)("dimsoxd"1)("dimtad"1)("dimtih"0)("dimtix" 1)("dimtofl"1)("osmode" 512)))
   (princ "\nDM just set the following dimension variables:\nDIMSE1  1\nDIMSE2  1\nDIMSOXD 1\nDIMTAD  1\nDIMTIH  0\nDIMTIX  1\nDIMTOFL 1")
@@ -40,5 +40,5 @@
     "\nOutside dimension arrows have been suppressed."
     "\nIf dim is short and you want arrows back, use DIMSOXD 0 to allow arrows outside."
   ) )
-  (HAWS-VRSTOR)(haws-return)(princ)
+  (HAWS-VRSTOR)(haws-core-return)(princ)
 )

@@ -1,5 +1,5 @@
 (defun c:haws-mvhp ( / ds)
-  (haws-borrow 0)
+  (haws-core-borrow 0)
   (HAWS-VSAVE'("clayer"))
   (c:haws-0)
   (HAWS-MKLAYR '("defpoints" "" ""))
@@ -14,5 +14,5 @@
     "._pspace"
   )
   (prompt "\nHP plotter sized floating viewport created.\nCurrent UCS origin assumed to be at sheet corner.")
-  (HAWS-VRSTOR)(haws-return)
+  (HAWS-VRSTOR)(haws-core-return)
 )

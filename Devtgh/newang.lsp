@@ -5,7 +5,7 @@
    haws-newang (/ basept flip i sset metype men nested mel mes meang
                 nested etype organg rotang shells sslen ent entlst
                )
-  (haws-borrow 0) ;_ end of if
+  (haws-core-borrow 0) ;_ end of if
   (haws-vsave '("aunits"))
   (command "._undo" "g")
   (setq
@@ -234,7 +234,7 @@
     )
   ) ;_ end of cond
   (haws-vrstor)
-  (haws-return) ;_ end of if
+  (haws-core-return) ;_ end of if
   (princ)
 ) ;_ end of defun
 ;|«Visual LISP© Format Options»
