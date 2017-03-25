@@ -243,7 +243,7 @@
 (load "edclib")
 ;;; Load legacy library
 ;; LISPUTIL.LSP has library functions for legacy routines some legacy users have.
-(if (not haws-mklayr) (load "lisputil"))
+(if (not haws-errdef) (load "lisputil"))
 
 
 ;;; Place the CNM pulldown to the left of the last pulldown already loaded
