@@ -80,7 +80,7 @@
 ("UTELECSNG"    "C-ELEC"                          "3"   "BLDG")     ;UT command single line ELEC lines
 ("UTGASOD"      "C-NGAS-OD~~"                     "5"   "")         ;UT command thick GAS OD lines
 ("UTGASPL"      "C-NGAS-INNR"                     "9"   "UTILPL")   ;UT command thick GAS polylines
-("UTGASSNG"     "C-NGAS"                          "5"   "PHANTOM3") ;UT command single line GAS lines
+("UTGASSNG"     "C-NGAS"                          "5"   "PHANTOM2") ;UT command single line GAS lines
 ("UTIRROD"      "C-IRRG-OD~~"                     "2"   "")         ;UT command thick IRR OD lines
 ("UTIRRPL"      "C-IRRG-INNR"                     "9"   "UTILPL")   ;UT command thick IRR polylines
 ("UTIRRSNG"     "C-IRRG"                          "2"   "HIDDEN")   ;UT command single line IRR lines
@@ -93,9 +93,9 @@
 ("UTTELOD"      "C-TELE-OD~~"                     "5"   "BLDG")     ;UT command thick TEL OD lines
 ("UTTELPL"      "C-TELE-INNR"                     "9"   "UTILPL")   ;UT command thick  TEL polylines
 ("UTTELSNG"     "C-TEL"                           "5"   "BLDG")     ;UT command single line TEL lines
-("UTWATOD"      "C-WATR-OD~~"                     "3"   "WATER")    ;UT command thick water OD lines
+("UTWATOD"      "C-WATR-OD~~"                     "3"   "")    ;UT command thick water OD lines
 ("UTWATPL"      "C-WATR-INNR"                     "9"   "UTILPL")   ;UT command thick water polylines
-("UTWATSNG"     "C-WATR"                          "3"   "WATER")    ;UT command single line water lines
+("UTWATSNG"     "C-WATR"                          "3"   "")    ;UT command single line water lines
 ("UTXCATVOD"    "C-CATV-OD~~-E"                   "9"   "")         ;UT command thick existing CATV OD lines
 ("UTXCATVPL"    "C-CATV-INNR-E"                   "9"   "DOT")      ;UT command thick existing CATV polylines
 ("UTXCATVSNG"   "C-CATV-E"                        "9"   "")         ;UT command single line existing CATV lines
@@ -119,11 +119,11 @@
 ("UTXTELSNG"    "C-TELE-E"                        "9"   "BLDG")     ;UT command single line existing TEL lines
 ("UTXWATOD"     "C-WATR-OD~~-E"                   "9"   "")         ;UT command thick existing water OD lines
 ("UTXWATPL"     "C-WATR-INNR-E"                   "9"   "DOT")      ;UT command thick existing water polylines
-("UTXWATSNG"    "C-WATR-E"                        "9"   "WATER")    ;UT command single line existing water lines
+("UTXWATSNG"    "C-WATR-E"                        "9"   "")    ;UT command single line existing water lines
 ("WALLEDGE"     "C-WALL"                          "7"   "")         ;WALL command outside edge
 ("WALLPL"       "C-WALL-PL"                       "7"   "DOT")      ;WALL command pline
 ("WALLXEDGE"    "C-WALL-E"                        "10"  "")         ;WALL command existing outside edge
 ("WALLXPL"      "C-WALL-INNR-E"                   "10"  "DOT")      ;WALL command existing pline
-("WATSER"       "C-WATR-SERV"                     "3"   "WATER")    ;WS command water service lines
+("WATSER"       "C-WATR-SERV"                     "3"   "")    ;WS command water service lines
 ("WATSERTX"     "C-WATR-SERV-DIM"                 "5"   "")         ;WS command water service labels
 ("XDIM"         "C-ANNO-DIMS-E"                   "9"   "")         ;STDIM command

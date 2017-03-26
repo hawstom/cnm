@@ -3,7 +3,7 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "4.2.30.aa.03\n\nCopyright 2017"
+  "4.2.30.aa.04\n\nCopyright 2017"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 (SETQ *HAWS-DEBUGLEVEL* 0)
@@ -2590,6 +2590,7 @@
      (CADDR LAOPT)
     LTFILE "acad"
   )
+  ;|
   (IF (NOT (OR (= LALTYP "") (TBLSEARCH "LTYPE" LALTYP)))
     (PROGN
       (COMMAND "._linetype" "l" LALTYP "acad")
@@ -2631,7 +2632,7 @@
     )
     (COMMAND "._linetype" "l" LALTYP LTFILE)
     (COMMAND)
-  )
+  )|;
   (COMMAND "._layer")
   (IF (NOT (TBLSEARCH "LAYER" LANAME))
     (COMMAND "m" LANAME)

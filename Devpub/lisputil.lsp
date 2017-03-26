@@ -484,7 +484,7 @@
           (while (= " " (substr atomx 1 1))
             (setq atomx (substr atomx 2))
           )
-          (while (= " " (endstr atomx 1 1))
+          (while (= " " (HAWS-ENDSTR atomx 1 1))
             (setq atomx (substr atomx 1 (1- (strlen atomx))))
           )
       ) )

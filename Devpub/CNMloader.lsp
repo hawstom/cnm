@@ -78,7 +78,7 @@
 (haws-autoload "bw"       '("haws-bw"))
 (haws-autoload "cnm"   '("haws-boxl" "haws-cirl" "haws-dial" "haws-elll"
                         "haws-hexl" "haws-octl" "haws-penl" "haws-recl"
-                        "haws-sstl" "haws-tcg" "haws-tril" "haws-txtl" 
+                        "haws-sstl" "haws-tcg" "haws-tril" "haws-txtl"
                         "hcnm-cnmoptions"
                          "hcnm-cnm" "hcnm-cnmkt" "hcnm-cnmkti" "hcnm-cnmqt"
                         "hcnm-linkproj" "hcnm-changeprojnotes" "hcnm-noteseditor"
@@ -239,12 +239,13 @@
 (haws-autoload "misc"     '("haws-ffa" "haws-hawsalias" "haws-pgpedit" "haws-user"))
 (haws-autoload "loadandrun"       '("haws-LoadAndRun"))
 ;-------------MODIFY THE ABOVE--------------------------------------
-;;; Load Haws library
-(load "edclib")
 ;;; Load legacy library
 ;; LISPUTIL.LSP has library functions for legacy routines some legacy users have.
 (if (not haws-errdef) (load "lisputil"))
-
+;;; Load Haws library
+(load "edclib")
+;;; Load CNM for its library functions
+(load "cnm")
 
 ;;; Place the CNM pulldown to the left of the last pulldown already loaded
 ;;;     Created 2/21/97 by Dominic Panholzer

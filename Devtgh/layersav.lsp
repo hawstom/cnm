@@ -15,8 +15,8 @@
 	(haws-core-borrow 0) ;_ end of if
 	(setq
 		f1 (if (= (getvar "filedia") 1)
-				 (open (GETFILED "Layer settings file" (getdnpath) "lyr" 1) "w")
-				 (car (HAWS-GETFIL "Layer settings file" (getdnpath) "w" "lyr"))
+				 (open (GETFILED "Layer settings file" (HAWS-GETDNPATH) "lyr" 1) "w")
+				 (car (HAWS-GETFIL "Layer settings file" (HAWS-GETDNPATH) "w" "lyr"))
 			 ) ;_ end of if
 		count	0
 		mvsset
@@ -59,8 +59,8 @@
 	(setvar "regenmode" 0)
 	(setq
 		f1 (if (= (getvar "filedia") 1)
-				 (open (GETFILED "Layer settings file" (getdnpath) "lyr" 0) "r")
-				 (car (HAWS-GETFIL "Layer settings file" (getdnpath) "r" "lyr"))
+				 (open (GETFILED "Layer settings file" (HAWS-GETDNPATH) "lyr" 0) "r")
+				 (car (HAWS-GETFIL "Layer settings file" (HAWS-GETDNPATH) "r" "lyr"))
 			 ) ;_ end of if
 	) ;_ end of setq
 	(prompt "\nNow getting layer settings from file.  Please wait.  ")

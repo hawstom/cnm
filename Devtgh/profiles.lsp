@@ -369,7 +369,7 @@
 (DEFUN
    c:haws-PRED
          ()
-  (command "_ai_editcustfile" (STRCAT (GETDNPATH) ".pro"))
+  (command "_ai_editcustfile" (STRCAT (HAWS-GETDNPATH) ".pro"))
 ) ;_ end of defun
 
 (DEFUN
@@ -563,7 +563,7 @@
   (SETQ
     prolayWC (STRCAT (CAR(HAWS-GETLAYR "PROPRE")) "*")
     SS1          (SSGET "X" (LIST (CONS 8 prolayWC)))
-    PROINPUTFILE (OPEN (STRCAT (GETDNPATH) ".pro") "r")
+    PROINPUTFILE (OPEN (STRCAT (HAWS-GETDNPATH) ".pro") "r")
   ) ;_ end of SETQ
   (COMMAND "._erase" SS1 "" "._layer" "u" prolayWC "")
   (c:HAWS-PRO)
@@ -580,7 +580,7 @@
   (haws-core-borrow 0)
   (SETQ
     F1 (OPEN
-         (GETFILED "List of files to convert" (GETDNPATH) "lst" 0)
+         (GETFILED "List of files to convert" (HAWS-GETDNPATH) "lst" 0)
          "r"
        ) ;_ end of open
   ) ;_ end of setq
@@ -791,32 +791,32 @@
            (/ LLINC LLINLT LTXC LTXLT)
     (COND
       ((AND (= PROHT -20000) (WCMATCH PROTYP "X*"))
-       (SETQ LAYLIN (GETLAYR "PROXDIM"))
+       (SETQ LAYLIN (HAWS-GETLAYR "PROXDIM"))
       )
-      ((= PROHT -20000) (SETQ LAYLIN (GETLAYR "PRODIM")))
+      ((= PROHT -20000) (SETQ LAYLIN (HAWS-GETLAYR "PRODIM")))
       ((AND (= PROHT -10000) (WCMATCH PROTYP "X*"))
-       (SETQ LAYLIN (GETLAYR "PROXLINE"))
+       (SETQ LAYLIN (HAWS-GETLAYR "PROXLINE"))
       )
-      ((= PROHT -10000) (SETQ LAYLIN (GETLAYR "PROLINE")))
+      ((= PROHT -10000) (SETQ LAYLIN (HAWS-GETLAYR "PROLINE")))
       ((AND (= PROHT 1000) (WCMATCH PROTYP "X*"))
        (HAWS-MKLAYR "PROPNT")
-       (SETQ LAYLIN (GETLAYR "PROXEL"))
+       (SETQ LAYLIN (HAWS-GETLAYR "PROXEL"))
       )
       ((= PROHT 1000)
        (HAWS-MKLAYR "PROPNT")
-       (SETQ LAYLIN (GETLAYR "PROEL"))
+       (SETQ LAYLIN (HAWS-GETLAYR "PROEL"))
       )
       ((AND (>= PROHT 0) (WCMATCH PROTYP "X*,MESA"))
-       (SETQ LAYLIN (GETLAYR "PROXSTRT"))
+       (SETQ LAYLIN (HAWS-GETLAYR "PROXSTRT"))
       )
-      ((>= PROHT 0) (SETQ LAYLIN (GETLAYR "PROSTRT")))
+      ((>= PROHT 0) (SETQ LAYLIN (HAWS-GETLAYR "PROSTRT")))
       ((AND (< PROHT 0) (WCMATCH PROTYP "X*"))
        (SETQ
          LAYLIN
           (LIST
             (STRCAT
-              (CAR (GETLAYR "PROPRE"))
-              (CAR (SETQ LAYLIN (GETLAYR "PROEXMID")))
+              (CAR (HAWS-GETLAYR "PROPRE"))
+              (CAR (SETQ LAYLIN (HAWS-GETLAYR "PROEXMID")))
               (SUBSTR PROTYP 2)
             ) ;_ end of strcat
             (CADR LAYLIN)
@@ -828,9 +828,9 @@
        (SETQ
          LAYLIN
           (COND
-            ((GETLAYR (STRCAT "PRO" PROTYP)))
+            ((HAWS-GETLAYR (STRCAT "PRO" PROTYP)))
             ((LIST
-               (STRCAT (CAR (SETQ LAYLIN (GETLAYR "PROPRE"))) PROTYP)
+               (STRCAT (CAR (SETQ LAYLIN (HAWS-GETLAYR "PROPRE"))) PROTYP)
                (CADR LAYLIN)
                (CADDR LAYLIN)
              ) ;_ end of list
@@ -841,9 +841,9 @@
     ) ;_ end of COND
     (SETQ
       LAYTX
-       (GETLAYR "PROTXSUF")
+       (HAWS-GETLAYR "PROTXSUF")
       LAYXTX
-       (GETLAYR "PROXTXSUF")
+       (HAWS-GETLAYR "PROXTXSUF")
     ) ;_ end of SETQ
     (IF (WCMATCH PROTYP "X*")
       (SETQ
@@ -869,9 +869,9 @@
       LAYTX
        (CAR LAYTX)
       LAYPRE
-       (CAR (GETLAYR "PROPRE"))
+       (CAR (HAWS-GETLAYR "PROPRE"))
       LAYTXS
-       (CAR (GETLAYR "PROTXSUF"))
+       (CAR (HAWS-GETLAYR "PROTXSUF"))
     ) ;_ end of SETQ
   ) ;_ end of DEFUN
   ;;Get the type of profile and set up layers.
@@ -1002,11 +1002,11 @@
            )
            ((= (GETVAR "filedia") 1)
             (OPEN
-              (SETQ FNAME (GETFILED "File to increment" (GETDNPATH) "pro" 0))
+              (SETQ FNAME (GETFILED "File to increment" (HAWS-GETDNPATH) "pro" 0))
               "r"
             ) ;_ end of open
            )
-           (T (CAR (GETFIL "File to increment" (GETDNPATH) "r" "pro")))
+           (T (CAR (GETFIL "File to increment" (HAWS-GETDNPATH) "r" "pro")))
          ) ;_ end of COND
     ) ;_ end of SETQ
     (WHILE (IF F1
@@ -1114,11 +1114,11 @@
           (COND
             ((= (GETVAR "filedia") 1)
              (OPEN
-               (SETQ FNAME (GETFILED FPRMPT (GETDNPATH) "pro" FBIT))
+               (SETQ FNAME (GETFILED FPRMPT (HAWS-GETDNPATH) "pro" FBIT))
                RDWRT
              ) ;_ end of open
             )
-            (T (CAR (GETFIL FPRMPT (GETDNPATH) RDWRT "pro")))
+            (T (CAR (GETFIL FPRMPT (HAWS-GETDNPATH) RDWRT "pro")))
           ) ;_ end of COND
        ) ;_ end of SETQ
        (IF (= RDWRT "r")
@@ -1388,16 +1388,16 @@
       LBLNUM2
        (COND
          ((WCMATCH (STRCASE LBLTXT) "*RIM=#*")
-          (ATOFX LBLTXT "*RIM=*" 0)
+          (HAWS-ATOFX LBLTXT "*RIM=*" 0)
          )                              ;Manhole rim
          ((WCMATCH (STRCASE LBLTXT) "*TC=*")
-          (ATOFX LBLTXT "*TC=*" 0)
+          (HAWS-ATOFX LBLTXT "*TC=*" 0)
          )                              ;Inlet TC
          ((WCMATCH (STRCASE LBLTXT) "*GRATE=*")
-          (+ 0.67 (ATOFX LBLTXT "*GRATE=*" 0))
+          (+ 0.67 (HAWS-ATOFX LBLTXT "*GRATE=*" 0))
          )                              ;Grate TC
          ((= PROHT 1000)
-          (ATOFX (STRCASE LBLTXT) "*\"*,* IN*" 1) ;Ellipse diameter
+          (HAWS-ATOFX (STRCASE LBLTXT) "*\"*,* IN*" 1) ;Ellipse diameter
          )
        ) ;_ end of COND
       LBLACADY2
@@ -1842,7 +1842,7 @@
   (DEFUN
      HAWS-PLTLBL1
                  (/ I)
-    (HAWS-HAWS-MKLAYR (LIST LAYTX "" ""))
+    (HAWS-MKLAYR (LIST LAYTX "" ""))
     (COND
       ((= PROTYP "MESA")
        ;;Slanted label
@@ -1917,15 +1917,15 @@
           (COND
             (MHRIM
              (IF PEXIST
-               (HAWS-HAWS-MKLAYR "PROXMH")
-               (HAWS-HAWS-MKLAYR "PROMH")
+               (HAWS-MKLAYR "PROXMH")
+               (HAWS-MKLAYR "PROMH")
              ) ;_ end of IF
              (HAWS-DRAWMH BOTPT MHRIM BRKPT)
             )
             (CBTC
              (IF PEXIST
-               (HAWS-HAWS-MKLAYR "PPROXCB")
-               (HAWS-HAWS-MKLAYR "PROCB")
+               (HAWS-MKLAYR "PPROXCB")
+               (HAWS-MKLAYR "PROCB")
              ) ;_ end of IF
              (HAWS-DRAWCB
                BOTPT
@@ -1948,7 +1948,7 @@
   (DEFUN
      HAWS-PLTLBL2
                  (/ I)
-    (HAWS-HAWS-MKLAYR (LIST LAYTX "" ""))
+    (HAWS-MKLAYR (LIST LAYTX "" ""))
     (HAWS-MKLINE PLTPT1 TXPT6)
     (HAWS-MKLINE TXPT6 TXPT7)
     (HAWS-MKTEXT
@@ -1972,7 +1972,7 @@
        (PROMPT
          "Point circles are on DEFPOINTS layer. Will not plot."
        ) ;_ end of prompt
-       (HAWS-HAWS-MKLAYR (LIST "defpoints" "" ""))
+       (HAWS-MKLAYR (LIST "defpoints" "" ""))
        (ENTMAKE
          (LIST
            (CONS 0 "CIRCLE")
@@ -2045,7 +2045,7 @@
          XCENTER
           (POLAR XINVERT (/ PI 2.0) (* XINRAD HVEXAG *HAWS-ELVSCL*))
        ) ;_ end of SETQ
-       (HAWS-HAWS-MKLAYR (LIST LAYLIN "" ""))
+       (HAWS-MKLAYR (LIST LAYLIN "" ""))
        (ENTMAKE
          (LIST
            '(0 . "ELLIPSE")
@@ -2086,7 +2086,7 @@
        ) ;_ end of IF
        (COND
          ((/= LBLTXT "")
-          (HAWS-HAWS-MKLAYR (LIST LAYTX "" ""))
+          (HAWS-MKLAYR (LIST LAYTX "" ""))
           (HAWS-MKLINE PLTPT1 TXPT6)
           (HAWS-MKLINE TXPT6 TXPT7)
           (SETQ I -1)
@@ -2121,7 +2121,7 @@
   (DEFUN
      HAWS-CONNECTHARD
                      ()
-    (HAWS-HAWS-MKLAYR (LIST LAYLIN "" ""))
+    (HAWS-MKLAYR (LIST LAYLIN "" ""))
     (COND
       ((/= -20000 PROHT) (HAWS-MKLINE PLTPT1A PLTPT1))
       ((= PROHT -20000)
@@ -2206,7 +2206,7 @@
         ) ;_ end of AND
       (SETQ SLOPE TEMP)
     ) ;_ end of IF
-    (HAWS-HAWS-MKLAYR (LIST LAYTX "" ""))
+    (HAWS-MKLAYR (LIST LAYTX "" ""))
     ;;Build slope string
     (SETQ
       SLOPE
@@ -2666,7 +2666,7 @@
    c:haws-STALABEL
              (/ PNT1 INC N STA1 ENDSTA STA)
   (haws-core-borrow 0)
-  (HAWS-HAWS-MKLAYR "PSTALBL")
+  (HAWS-MKLAYR "PSTALBL")
   (HAWS-VSAVE '("luprec"))
   (SETVAR "luprec" 0)
   (SETQ
@@ -2703,7 +2703,7 @@
   (IF (NOT HVEXAG)
     (HAWS-GETHVX)
   ) ;_ end of IF
-  (HAWS-HAWS-MKLAYR "PELEVLBL")
+  (HAWS-MKLAYR "PELEVLBL")
   (SETQ
     PNT1
      (GETPOINT "\nBottom right point of first label: ")
@@ -2793,7 +2793,7 @@
 (DEFUN
    HAWS-LINBLK
               (BLNAME BLLAY / PT1 PT2)
-  (HAWS-HAWS-MKLAYR BLLAY)
+  (HAWS-MKLAYR BLLAY)
   (SETQ PT1 (GETPOINT "\nFirst point: "))
   (COMMAND "._pline" PT1)
   (WHILE (SETQ PT2 (GETPOINT PT1 "Next point: "))

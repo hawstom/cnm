@@ -84,8 +84,10 @@
   )
   (COND
     ((NOT (TBLSEARCH "BLOCK" "NOTEQTY"))
-     (COMMAND "._insert" (STRCAT "NOTEQTY=NOTEQTY" J))
-     (COMMAND)
+     (setvar "attreq" 0)
+     (COMMAND "._insert" (STRCAT "NOTEQTY=NOTEQTY" J) "0,0" "1" "1" "0")
+     (setvar "attreq" 1)
+     (entdel (entlast))
     )
   )
   ;;Check how many phases are in current block.
@@ -740,9 +742,6 @@
   (SETVAR "osmode" 0)
   (SETVAR "attreq" 1)
   (INITGET "Prompt")
-  ;; Update fields in bubbles
-  (princ "\nRegenerating to update bubble fields.")
-  (command "regen")
   (SETQ
     NOTESMAXROWS
      (HAWS-GETINTX

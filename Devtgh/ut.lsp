@@ -147,7 +147,7 @@
        UTTXT
        (NOT (TBLSEARCH "BLOCK" "uttxtjm"))
      ) ;_ end of and
-     (MKTEXT "m" PT1 1.0 0 "X")
+     (HAWS-MKTEXT "m" PT1 1.0 0 "X")
      (COMMAND "._block" "uttxtjm" PT1 (ENTLAST) "")
     )
   ) ;_ end of cond
@@ -157,7 +157,7 @@
        UTTXT
        (NOT (TBLSEARCH "BLOCK" "uttxtjbc"))
      ) ;_ end of and
-     (MKTEXT "bc" PT1 1.0 0 "X")
+     (HAWS-MKTEXT "bc" PT1 1.0 0 "X")
      (COMMAND "._block" "uttxtjbc" PT1 (ENTLAST) "")
     )
   ) ;_ end of cond

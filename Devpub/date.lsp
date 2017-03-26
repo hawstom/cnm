@@ -4,7 +4,7 @@
   (HAWS-VSAVE '("cmdecho" "clayer"))
   (setvar "cmdecho" 0)
   (setq
-    DN (getdnpath)
+    DN (HAWS-GETDNPATH)
     AP "AM"                        LN (getvar "LOGINNAME")
     CD (rtos (getvar "CDATE") 2 4) MX (atoi (substr CD 5 2))
     HR (atoi (substr CD 10 2))     MN (substr CD 12 2)
