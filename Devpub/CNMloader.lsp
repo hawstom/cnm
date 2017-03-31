@@ -10,15 +10,6 @@
 ;;; which contains all the old HawsEDC commands.
 
 (prompt "\nConstruction Notes Manager menu utilities loading.")
-;;;Load aliases
-;;;HAWSALIAS.LSP has short names for all the commands.
-(COND
-  ((not *HAWS-HAWSALIASLOADED*)
-   (IF(= (LOAD "hawsalias.lsp" "failed") "failed")(ALERT "Couldn't find hawsalias.lsp command aliases."))
-  )
-  (T (PRINC "\nSkipping hawsalias.lsp command aliases.  Already loaded."))
-)
-
 (DEFUN
    HAWS-autoload (FILENAME COMMANDS / QFN)
   (SETQ
@@ -246,6 +237,15 @@
 (load "edclib")
 ;;; Load CNM for its library functions
 (load "cnm")
+;;;Load aliases
+;;;HAWSALIAS.LSP has short names for all the commands.
+(COND
+  ((not *HAWS-HAWSALIASLOADED*)
+   (IF(= (LOAD "hawsalias.lsp" "failed") "failed")(ALERT "Couldn't find hawsalias.lsp command aliases."))
+  )
+  (T (PRINC "\nSkipping hawsalias.lsp command aliases.  Already loaded."))
+)
+
 
 ;;; Place the CNM pulldown to the left of the last pulldown already loaded
 ;;;     Created 2/21/97 by Dominic Panholzer

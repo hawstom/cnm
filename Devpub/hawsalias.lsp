@@ -371,12 +371,7 @@
 ;;;---------------Old HawsEDC ACAD.PGP aliases
 (defun
    haws-pgp-activate-aliases (/ activatepgpaliases is_custom)
-  ;; Tells which aliases of those in the list below to define as AutoLISP commands.
-  ;; 0 = none, 
-  ;; 1 = custom only (only those that are different from stock ACAD.PGP),
-  ;; 2 = all
-  ;; Make the number below 0, 1, or 2
-  (setq ActivatePgpAliases 0)
+  (setq ActivatePgpAliases (atoi(c:hcnm-config-getvar "HawsPgpLisp")))
   ;; Edit the line above
   (cond
     ((> activatepgpaliases 0)
@@ -486,37 +481,46 @@
   (setq
     input1
      (getkword
-       "\nLearn about restoring the old HawsEDC PGP keyboard shortcuts? [Yes/No] <No>: "
+       "\nLearn about managing the old HawsEDC PGP keyboard shortcuts? [Yes/No] <No>: "
      )
   )
   (cond
     ((= input1 "Yes")
      (textpage)
-     (princ "\n;HawsEDC aliases")
+     (princ "\n;Standard AutoCAD aliases")
      (foreach
         alias (haws-pgp-aliases)
-       (princ (strcat "\n" (car alias) ",\t*" (cadr alias)))
+       (cond ((not (caddr alias))(princ (strcat "\n" (car alias) ",\t*" (cadr alias)))))
+     )
+     (princ "\n;Custom CNM/HawsEDC aliases")
+     (foreach
+        alias (haws-pgp-aliases)
+       (cond ((caddr alias)(princ (strcat "\n" (car alias) ",\t*" (cadr alias)))))
      )
      (princ
        (strcat
          "\n==================================================================================="
-         "\nCNM provides two ways to restore the Haws PGP aliases:"
-         "\n\n1. PGP method:\n\ta) Copy the aliases above."
+         "\nCNM/HawsEDC is opinionated about command shortcuts (aliases)."
+         "\nOnce upon a time, CNM/HawsEDC included command aliases in a version of ACAD.PGP."
+         "\nThis is no longer true. But CNM still installs with its legacy aliases included as LISP commands."
+         "\nIt's recommended that you paste the Custom CNM/HawsEDC Aliases above into your ACAD.PGP and turn off the LISP aliases as described below."
+          "\n\n1. Add to ACAD.PGP:\n\ta) Copy the desired aliases above."
          "\n\tb) Open your acad.pgp. (The CNM PGP command will open it.) Then paste the aliases to the bottom of the file."
          "\n\tc) Use the AutoCAD REINIT command to reload your acad.pgp file."
-         "\n\n2. LISP method (works in scripts; changes behavior of EXPLODE command):\n\ta) Open HawsAlias.lsp. (This Haws-AliasEdit (HAE) command opens it for you)."
-         "\n\tb) Find (CTRL+F) \"ActivatePgpAliases 0\" in HawsAlias.lsp and change it as instructed there.  "
-         "\n\tc) Save the file and reload it. (This command reloads it for you.)"
+         "\n\n2. Choose which LISP aliases are active below (LISP aliases work in scripts; EXPLODE command acts differently):"
+         "\n\ta) None; you will have none of the aliases shown above unless you paste the above into your ACAD.PGP."
+         "\n\tb) Custom; you will have the Custom aliases shown above as LISP commands that will override your ACAD.PGP settings."
+         "\n\tc) All: You will have all the aliases shown above as LISP commands that will override your ACAD.PGP settings."
         )
      )
-     ;;  (initget "Pgp Lsp None")
-     ;;  (setq input1 (getkword "\nSpecify an option to activate [Pgp/Lsp/None] <None>: "))
-     ;;  (cond
-     ;;    ((= input1 "Pgp") (c:hcnm-config-setvar "HawsPgpLisp" "No")(c:haws-pgpedit))
-     ;;    ((= input1 "Lsp") (c:hcnm-config-setvar "HawsPgpLisp" "Yes"))
-     ;;    (T (c:hcnm-config-setvar "HawsPgpLisp" "No"))
-     ;;  )
-     (getstring "\n<continue to edit HawsAlias.lsp>: ")
+     (initget 1 "None Custom All")
+      (setq input1 (getkword "\nSpecify which LISP shortcuts to activate [None/Custom/All]: "))
+      (cond
+        ((= input1 "None") (c:hcnm-config-setvar "HawsPgpLisp" "0"))
+        ((= input1 "Custom") (c:hcnm-config-setvar "HawsPgpLisp" "1"))
+        ((= input1 "All") (c:hcnm-config-setvar "HawsPgpLisp" "2"))
+      )
+     (getstring "\n<continue to edit HawsAlias.lsp aliases>: ")
     )
   )
   (STARTAPP
@@ -524,7 +528,7 @@
   )
   (ALERT
     (STRCAT
-      "HawsAlias.lsp has been opened in Notepad for you to edit.\n\nClick OK to load aliases after editing and saving."
+      "HawsAlias.lsp has been opened in Notepad for you to edit.\n\nClick OK to load CNM/HawsEDC aliases after editing and saving."
     )
   )
   (load "hawsalias")

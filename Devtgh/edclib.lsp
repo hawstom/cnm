@@ -3,7 +3,7 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "4.2.30.aa.04\n\nCopyright 2017"
+  "4.2.30.aa.06\n\nCopyright 2017"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 (SETQ *HAWS-DEBUGLEVEL* 0)
@@ -2572,6 +2572,7 @@
 (VL-ACAD-DEFUN 'HAWS-MKLAYR)
 (DEFUN
    HAWS-MKLAYR (LAOPT / LANAME LACOLR LALTYP LTFILE)
+  (princ "\nHAWS-MKLAYR in edclib")
   (IF (= 'STR (TYPE LAOPT))
     (SETQ
       LAOPT

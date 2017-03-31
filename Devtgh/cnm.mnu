@@ -76,7 +76,7 @@ ID_HCNMQTYPLOT    [Quantity &Plot]^C^CHCNM-ATTPLOT
 ID_HCNMCS         [Copy S&tring	CS]^C^Chaws-cs;
 ID_HCNMCA         [Copy &Attributes	CA]^C^Chaws-ca;
 ID_HCNMTO         [&Overline Text	TO]^C^Chaws-to;
-ID_HCNMTU         [&Underline Text	TU]^C^Chaws-tu;
+ID_HCNMTU         [<-&Underline Text	TU]^C^Chaws-tu;
                 [->La&yer Tools]
 ID_HCNMLAMFFX     [&Freeze layer by picking	FFX]^C^Chaws-ffx;
 ID_HCNMLAMUFFX    [&Undo freeze layer by picking	UFFX]^C^Chaws-uffx;

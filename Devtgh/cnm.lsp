@@ -433,6 +433,12 @@
        '(0 1 2 3 4 5 6 7 8 9)
       NOTEPHASE ""
     )
+  (HAWS-MILEPOST
+    (STRCAT
+      "After CNM examined Dynamic Shape with LM:GETDYNPROPVALUE, NOTETYPE="
+      (vl-prin1-to-string NOTETYPE)
+    )
+  )   
     ;;Substitute the value of each NOTETXT attribute for its respective member of the pre-filled NOTETXT list.
     (WHILE
       (AND
@@ -3021,7 +3027,7 @@ ImportLayerSettings=No
     )
     ("Var"
      ("LXXListMode" "yes" 4)
-     ("HawsPgpLisp" "No" 4)
+     ("HawsPgpLisp" "1" 4)
      ("ProjectNotesEditor" "notepad.exe" 4)
      ("LayersEditor" "notepad.exe" 4)
      ("ProjectNotes" "constnot.txt" 2)
@@ -3129,34 +3135,38 @@ ImportLayerSettings=No
 
 (DEFUN
    HCNM-CONFIG-READ-ALL (/ INI-CONFIGS)
-  (SETQ
-    INI-CONFIGS
-     (INI_READSECTION (HCNM-INI-NAME (HCNM-PROJ)) "CNM")
-    *HCNM-CONFIG*
-     (APPEND
-       (MAPCAR
-         '(LAMBDA (ENTRY / VAR VAL)
-            (SETQ
-              VAR (HCNM-CONFIG-ENTRY-VAR ENTRY)
-              VAL (HCNM-CONFIG-ENTRY-VAL
-                    (ASSOC VAR INI-CONFIGS)
-                  )
-            )
-            (LIST VAR VAL)
-          )
-         (HCNM-CONFIG-DEFAULTS-SINGLE-SCOPE "Project")
+  (APPEND
+    (HCNM-CONFIG-READ-ALL-USER)
+    (HCNM-CONFIG-READ-ALL-PROJECT)
+  )
+)
+
+(DEFUN
+   HCNM-CONFIG-READ-ALL-USER (/ INI-CONFIGS)
+  (MAPCAR
+    '(LAMBDA (ENTRY / VAR VAL)
+       (SETQ
+         VAR (HCNM-CONFIG-ENTRY-VAR ENTRY)
+         VAL (HCNM-CONFIG-READ-USER VAR)
        )
-       (MAPCAR
-         '(LAMBDA (ENTRY / VAR VAL)
-            (SETQ
-              VAR (HCNM-CONFIG-ENTRY-VAR ENTRY)
-              VAL (HCNM-CONFIG-READ-USER VAR)
-            )
-            (LIST VAR VAL)
-          )
-         (HCNM-CONFIG-DEFAULTS-SINGLE-SCOPE "User")
-       )
+       (LIST VAR VAL)
      )
+    (HCNM-CONFIG-DEFAULTS-SINGLE-SCOPE "User")
+  )
+)
+
+(DEFUN
+   HCNM-CONFIG-READ-ALL-PROJECT (/ INI-CONFIGS)
+  (SETQ INI-CONFIGS (INI_READSECTION (HCNM-INI-NAME (HCNM-PROJ)) "CNM"))
+  (MAPCAR
+    '(LAMBDA (ENTRY / VAR VAL)
+       (SETQ
+         VAR (HCNM-CONFIG-ENTRY-VAR ENTRY)
+         VAL (HCNM-CONFIG-ENTRY-VAL (ASSOC VAR INI-CONFIGS))
+       )
+       (LIST VAR VAL)
+     )
+    (HCNM-CONFIG-DEFAULTS-SINGLE-SCOPE "Project")
   )
 )
 
@@ -3232,32 +3242,38 @@ ImportLayerSettings=No
 ;;; c:hcnm-config-getvar
 ;;; Var is case sensitive
 (DEFUN
-   c:hcnm-config-getvar
+   C:HCNM-CONFIG-GETVAR
    (VAR / SETVAR-P DEFINE-CONFIGS DIR INI PROJROOT CONFIG VAL)
-  (SETQ
-    SETVAR-P T
-    DEFINE-CONFIGS
-     (HCNM-CONFIG-DEFINITIONS)
-  )
-  (IF (NOT *HCNM-CONFIG*)
-    (HCNM-CONFIG-READ-ALL)
+  (SETQ SETVAR-P T)
+  (COND
+    ;; Initialize configs as needed
+    ((NOT (ASSOC VAR *HCNM-CONFIG*))
+     (COND
+       ((HCNM-CONFIG-SCOPE-EQ VAR "Project")
+        (SETQ
+          *HCNM-CONFIG*
+           (APPEND
+             *HCNM-CONFIG*
+             (HCNM-CONFIG-READ-ALL-PROJECT)
+           )
+        )
+       )
+       (T
+        (SETQ
+          *HCNM-CONFIG*
+           (APPEND
+             *HCNM-CONFIG*
+             (HCNM-CONFIG-READ-ALL-USER)
+           )
+        )
+       )
+     )
+    )
   )
   (COND
-    ;;Try getting from list
+    ;;Try getting from list or read
     ((SETQ VAL (CADR (ASSOC VAR *HCNM-CONFIG*)))
      (SETQ SETVAR-P NIL)
-    )
-    ;;Get from app ini if not.
-    ((AND
-       (SETQ DIR (FINDFILE "cnm.mnl"))
-       (SETQ
-         ;;Behavior change 20080414 TGH
-         ;;Made it get the random CNM.INI in path instead of app folder.
-         INI
-          (FINDFILE (HCNM-PROJECT-INI-NAME))
-       )
-       (SETQ VAL (INI_READENTRY INI "CNM" CONFIG))
-     )
     )
     ;;Use default if there is one
     ((SETQ VAL (HCNM-CONFIG-GET-DEFAULT VAR)))
@@ -3273,7 +3289,7 @@ ImportLayerSettings=No
     )
   )
   (IF SETVAR-P
-    (c:hcnm-config-setvar VAR VAL)
+    (C:HCNM-CONFIG-SETVAR VAR VAL)
   )
   VAL
 )
@@ -5342,69 +5358,7 @@ ImportLayerSettings=No
   )
 )
 
-
-;; Get Dynamic Block Property Value  -  Lee Mac
-;; Returns the value of a Dynamic Block property (if present)
-;; block-object-1 - [vla] VLA Dynamic Block Reference object
-;; dynamic-property-name - [str] Dynamic Block property name (case-insensitive)
-
-(DEFUN
-   LM:GETDYNPROPVALUE (BLOCK-OBJECT-1
-                       DYNAMIC-PROPERTY-NAME
-                       /
-                       DYNAMIC-PROPERTY-NAME-UPPER
-                      )
-  (SETQ DYNAMIC-PROPERTY-NAME-UPPER (STRCASE DYNAMIC-PROPERTY-NAME))
-  (VL-SOME
-    '(LAMBDA (X)
-       (IF (= DYNAMIC-PROPERTY-NAME-UPPER
-              (STRCASE (VLA-GET-PROPERTYNAME X))
-           )
-         (VLAX-GET X 'VALUE)
-       )
-     )
-    (VLAX-INVOKE BLOCK-OBJECT-1 'GETDYNAMICBLOCKPROPERTIES)
-  )
-)
-
-
-;; Set Dynamic Block Property Value  -  Lee Mac
-;; Modifies the value of a Dynamic Block property (if present)
-;; block-object-1 - [vla] VLA Dynamic Block Reference object
-;; dynamic-property-name - [str] Dynamic Block property name (case-insensitive)
-;; val - [any] New value for property
-;; Returns: [any] New value if successful, else nil
-
-(DEFUN
-   LM:SETDYNPROPVALUE (BLOCK-OBJECT-1 DYNAMIC-PROPERTY-NAME VAL /
-                       DYNAMIC-PROPERTY-NAME-UPPER
-                      )
-  (SETQ DYNAMIC-PROPERTY-NAME-UPPER (STRCASE DYNAMIC-PROPERTY-NAME))
-  (VL-SOME
-    '(LAMBDA (X)
-       (IF (EQ DYNAMIC-PROPERTY-NAME-UPPER
-               (STRCASE (VLAX-GET X 'PROPERTYNAME))
-           )
-         (PROGN
-           (VLA-PUT-VALUE
-             X
-             (VLAX-MAKE-VARIANT
-               VAL
-               (VLAX-VARIANT-TYPE (VLA-GET-VALUE X))
-             )
-           )
-           (COND
-             (VAL)
-             (T)
-           )
-         )
-       )
-     )
-    (VLAX-INVOKE BLOCK-OBJECT-1 'GETDYNAMICBLOCKPROPERTIES)
-  )
-)
-
-
+(LOAD "lee-mac")
 (LOAD "ini-edit")
  ;|«Visual LISP© Format Options»
 (72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)

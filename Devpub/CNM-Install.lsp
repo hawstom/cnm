@@ -98,7 +98,7 @@
        ;;2.  Load the menu.
        (VLAX-INVOKE-METHOD 
          (VLAX-GET-PROPERTY (HAWS-ACAD-OBJECT) 'MENUGROUPS)
-		 'LOAD
+          'LOAD
          (FINDFILE (STRCAT GROUP ".mnu"))
        )
       )
@@ -108,7 +108,7 @@
 
 (DEFUN HAWS-ALIASES-WIZARD ( / input-1)
   (INITGET "Yes No")
-  (setq input-1 (getkword "\n(Recommended) Learn about activating legacy Haws PGP keyboard shortcuts and customizing CNM/HawsEDC command aliases? [Yes/No] <Yes>: "))
+  (setq input-1 (getkword "\n(Recommended) Learn about choosing legacy Haws PGP keyboard shortcuts and customizing CNM/HawsEDC command aliases? [Yes/No] <Yes>: "))
   (cond ((/= input-1 "No") (alert(princ "\nYou can do this later by using the Haws-AliasEdit (HAE) command. You can find this tip later near the top of README.TXT in the CNM folder.")) (load "hawsalias.lsp") (c:haws-aliasedit)))
 )
 

@@ -23,13 +23,13 @@
       )
     (PROGN
       (PROMPT "\nPick layers to freeze in current viewport:")
-      (COMMAND "mspace" "vplayer")
+      (COMMAND "._mspace" "._vplayer")
       (HAWS-LALOOP T)
       (COMMAND "" "")
     )
     (PROGN
       (PROMPT (STRCAT "\nPick layers for " LOPERA ":"))
-      (COMMAND "layer")
+      (COMMAND "._layer")
       (HAWS-LALOOP NIL)
       (COMMAND "")
     )
@@ -123,7 +123,7 @@
     )
     (COND
       ((AND (= LA "0") (NOT PARNTL))
-       (PROMPT "\nCan't find non-0 layer to freeze.")
+       (PROMPT (strcat "\nCan't find non-0 layer to " lopera "."))
       )
       (T
        (WHILE (= LA "0")
@@ -186,7 +186,7 @@
 	)
        )
        (T
-	(COMMAND "layer")
+	(COMMAND "._layer")
 	(FOREACH
 	   LA (CDR (ASSOC LKEY *HAWS-LASTATLIST*))
 	  (COMMAND LOPERA LA)
@@ -198,101 +198,6 @@
   )
   (PRINC)
 )
-(DEFUN
-   C:HAWS-LTP
-             (/ SS CC I EC LC)
-  (COND
-    ((/= (SETQ CC (GETSTRING "\nNew layer linetype (return to pick):"))
-         ""
-     )
-     CC
-    )
-    ((SETQ
-       CC (CDR
-            (ASSOC
-              6
-              (SETQ EC (ENTGET (CAR (NENTSEL "\nSelect linetype: "))))
-            )
-          )
-     )
-     CC
-    )
-    (T
-     (SETQ
-       CC
-        (CDR (ASSOC 6 (TBLSEARCH "layer" (CDR (ASSOC 8 EC)))))
-     )
-     (COND
-       ((WCMATCH CC "*|*")
-        (ALERT
-          "Can't set to external linetype.\nWill try using bare linetype name."
-        )
-        (WHILE (WCMATCH (SETQ CC (SUBSTR CC 2)) "*|*"))
-       )
-     )
-    )
-  )
-  (PROMPT
-    "\nLayers to change by picking (Linetypes by entity won't change):"
-  )
-  (SETQ
-    SS (SSGET)
-    I  0
-  )
-  (COMMAND "layer")
-  (WHILE (SETQ EC (SSNAME SS I))
-    (SETQ LC (CDR (ASSOC 8 (ENTGET EC))))
-    (COMMAND "lt" CC LC)
-    (SETQ I (1+ I))
-  )
-  (COMMAND "")
-  (PRINC "Linetype ")
-  CC
-)
-;;; (C) Copyright 1997 by Thomas Gail Haws
-;;; Change layer color by picking nested entities
-(DEFUN
-   C:HAWS-LTPX
-              (/ CC EC LOPERA NESTED)
-  (COND
-    ((/= (SETQ CC (GETSTRING "\nNew layer linetype (return to pick):"))
-         ""
-     )
-     CC
-    )
-    ((SETQ
-       CC (CDR
-            (ASSOC
-              6
-              (SETQ EC (ENTGET (CAR (NENTSEL "\nSelect linetype: "))))
-            )
-          )
-     )
-     CC
-    )
-    (T
-     (SETQ
-       CC (CDR (ASSOC 6 (TBLSEARCH "layer" (CDR (ASSOC 8 EC)))))
-     )
-     (COND
-       ((WCMATCH CC "*|*")
-        (ALERT
-          "Can't set to external linetype.\nWill try using bare linetype name."
-        )
-        (WHILE (WCMATCH (SETQ CC (SUBSTR CC 2)) "*|*"))
-       )
-     )
-    )
-  )
-  (SETQ FLIST NIL)
-  (PROMPT (STRCAT "\nNested layers to change by picking: "))
-  (COMMAND "layer")
-  (HAWS-LSPICK nil)
-  (COMMAND "")
-  (PRINC "Linetype ")
-  CC
-)
-
  ;|«Visual LISP© Format Options»
 (72 2 40 2 nil "end of " 60 2 2 2 1 T nil nil T)
 ;*** DO NOT add text below the comment! ***|;
