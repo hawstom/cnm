@@ -363,7 +363,8 @@
 ;;;---------------Miscellaneous Section---------------
 (defun c:ffa () (c:haws-ffa))
 (defun c:hawsalias () (c:haws-hawsalias))
-(defun c:hae () (c:haws-aliasedit))
+(defun c:hae () (c:haws-aliasmanage))
+(defun c:ham () (c:haws-aliasmanage))
 (defun c:user () (c:haws-user))
 (defun c:pgp () (c:haws-pgpedit))
 (defun c:lr () (c:haws-loadandrun))
@@ -476,7 +477,7 @@
 )
 
 (defun
-   c:haws-aliasedit (/ input1)
+   c:haws-aliasmanage (/ HawsPgpLispOptions input1)
   (initget "Yes No")
   (setq
     input1
@@ -501,25 +502,47 @@
        (strcat
          "\n==================================================================================="
          "\nCNM/HawsEDC is opinionated about command shortcuts (aliases)."
-         "\nOnce upon a time, CNM/HawsEDC included command aliases in a version of ACAD.PGP."
-         "\nThis is no longer true. But CNM still installs with its legacy aliases included as LISP commands."
-         "\nIt's recommended that you paste the Custom CNM/HawsEDC Aliases above into your ACAD.PGP and turn off the LISP aliases as described below."
+         "\nOnce upon a time, CNM/HawsEDC included command aliases\nin a version of ACAD.PGP."
+         "\nThis is no longer true. But CNM still installs with its\nlegacy aliases included as LISP commands. It's recommended\nthat you paste the Custom CNM/HawsEDC Aliases shown above into\nyour ACAD.PGP and turn off the LISP aliases as described below."
           "\n\n1. Add to ACAD.PGP:\n\ta) Copy the desired aliases above."
-         "\n\tb) Open your acad.pgp. (The CNM PGP command will open it.) Then paste the aliases to the bottom of the file."
+         "\n\tb) Open your acad.pgp. (The CNM PGP command will open it.)\n\tThen paste the aliases to the bottom of the file."
          "\n\tc) Use the AutoCAD REINIT command to reload your acad.pgp file."
-         "\n\n2. Choose which LISP aliases are active below (LISP aliases work in scripts; EXPLODE command acts differently):"
-         "\n\ta) None; you will have none of the aliases shown above unless you paste the above into your ACAD.PGP."
-         "\n\tb) Custom; you will have the Custom aliases shown above as LISP commands that will override your ACAD.PGP settings."
-         "\n\tc) All: You will have all the aliases shown above as LISP commands that will override your ACAD.PGP settings."
+         "\n\n2. Choose which LISP aliases are active below (LISP aliases work in scripts;\nEXPLODE command acts differently):"
+         "\n\ta) None; you will have none of the aliases shown above unless\n\tyou paste the above into your ACAD.PGP."
+         "\n\tb) Custom; you will have the Custom aliases shown above as LISP commands\n\tthat will override your ACAD.PGP settings."
+         "\n\tc) All: You will have all the aliases shown above as LISP commands\n\tthat will override your ACAD.PGP settings."
         )
      )
-     (initget 1 "None Custom All")
-      (setq input1 (getkword "\nSpecify which LISP shortcuts to activate [None/Custom/All]: "))
-      (cond
-        ((= input1 "None") (c:hcnm-config-setvar "HawsPgpLisp" "0"))
-        ((= input1 "Custom") (c:hcnm-config-setvar "HawsPgpLisp" "1"))
-        ((= input1 "All") (c:hcnm-config-setvar "HawsPgpLisp" "2"))
-      )
+     (setq HawsPgpLispOptions '(("0" "None")("1" "Custom")("2" "All")))
+     (initget "None Custom All")
+     (setq
+       input1
+        (getkword
+          (strcat
+            "\nSpecify which LISP shortcuts to activate [None/Custom/All] <"
+            (cadr
+              (assoc
+                (c:hcnm-config-getvar "HawsPgpLisp")
+                hawspgplispoptions
+              )
+            )
+            ">: "
+          )
+        )
+     )
+     (cond
+       (input1
+        (c:hcnm-config-setvar
+          "HawsPgpLisp"
+          (cadr
+            (assoc
+              input1
+              (mapcar '(lambda (x) (reverse x)) hawspgplispoptions)
+            )
+          )
+        )
+       )
+     )
      (getstring "\n<continue to edit HawsAlias.lsp aliases>: ")
     )
   )
@@ -535,7 +558,7 @@
   (princ)
 )
 
-(haws-pgp-activate-aliases)
+;(haws-pgp-activate-aliases)
 
 ;;;---------------Set a flag that aliases have been loaded
 (setq *HAWS-HAWSALIASLOADED* T)

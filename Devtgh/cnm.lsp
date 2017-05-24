@@ -3027,7 +3027,7 @@ ImportLayerSettings=No
     )
     ("Var"
      ("LXXListMode" "yes" 4)
-     ("HawsPgpLisp" "1" 4)
+     ("HawsPgpLisp" "0" 4)
      ("ProjectNotesEditor" "notepad.exe" 4)
      ("LayersEditor" "notepad.exe" 4)
      ("ProjectNotes" "constnot.txt" 2)

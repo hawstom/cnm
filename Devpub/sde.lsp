@@ -7,6 +7,7 @@
 (DEFUN c:haws-CMD ()(HAWS-VTOG '("CMDDIA")))
 (DEFUN c:haws-DIA ()(HAWS-VTOG '("FILEDIA" "CMDDIA" "ATTDIA")))
 (DEFUN c:haws-FDT ()(HAWS-VTOG '("FILEDIA")))
+(DEFUN c:haws-MBT ()(HAWS-VTOG '("MENUBAR")))
 (DEFUN c:haws-QT ()(HAWS-VTOG '("QTEXTmoDE")))
 (DEFUN c:haws-IB ()(COMMAND "INSBASE")(PRINC))
 (DEFUN c:haws-IL ()(COMMAND "SNAP""S""I" "" "SNAP""OF" "ISOPLANE" "L")(PRINC))

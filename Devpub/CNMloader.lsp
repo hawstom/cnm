@@ -136,7 +136,7 @@
 (haws-autoload "lam"      '("haws-l0" "haws-lk" "haws-lka" "haws-lka" "haws-ona" "haws-tha" "haws-ul" "haws-ula"))
 (haws-autoload "chm"      '("haws-chm"));Changes properties, where laymch does not.
 (haws-autoload "cl"       '("haws-cl"));Changes properties, where laycur does not.
-(haws-autoload "lastat"   '("haws-ff" "haws-ffx" "haws-ltp" "haws-ltpx" "haws-off" "haws-offx" "haws-uff" "haws-uoff" "haws-uffx" "haws-uoffx"))
+(haws-autoload "lastat"   '("haws-ff" "haws-ffx" "haws-off" "haws-offx" "haws-uff" "haws-uoff" "haws-uffx" "haws-uoffx"))
 (haws-autoload "isolat"   '("haws-ffi" "haws-lki" "haws-ofi"))
 (haws-autoload "layersav" '("haws-lar" "haws-las"))
 (haws-autoload "lcp"      '("haws-lcp" "haws-lcpx"))
@@ -145,6 +145,7 @@
 (haws-autoload "layrprn"  '("haws-laprn"))
 (haws-autoload "ltchang"  '("haws-ltb" "haws-ltc" "haws-lth"))
 (haws-autoload "lm"       '("haws-lm"))
+(haws-autoload "ltp"      '("haws-ltp" "haws-ltpx"))
 (haws-autoload "lx"       '("haws-lx" "haws-lxx" "haws-lxxx"))
 (haws-autoload "offsetx"  '("haws-oo" "haws-offsetx"))
 (haws-autoload "ul"       '("haws-ul"))
@@ -168,7 +169,6 @@
 (haws-autoload "geodata"  '("haws-al"))
 (haws-autoload "goto"     '("haws-goto"))
 (haws-autoload "istan"    '("haws-istan"))
-(haws-autoload "sf"       '("haws-sf"))
 (haws-autoload "cumdist"  '("haws-md"))
 (haws-autoload "wl"       '("haws-wl"))
 
@@ -208,7 +208,7 @@
 ;;---------------Setup and Drawing Environment Section---------------
 (haws-autoload "sde"      '("haws-0" "haws-1" "haws-aa" "haws-adt" "haws-cet" "haws-cmd" "haws-dia" 
                             "haws-fd" "haws-ib" "haws-il" "haws-io" "haws-ir" "haws-it"
-                            "haws-llt" "haws-mvl" "haws-mvu" "haws-ose" "haws-osi" "haws-osm" 
+                            "haws-llt" "haws-mbt" "haws-mvl" "haws-mvu" "haws-ose" "haws-osi" "haws-osm" 
                             "haws-osn" "haws-proto" "haws-protox" "haws-pslt" "haws-rga"
                             "haws-qt" "haws-uf" "haws-uf0" "haws-uf1")
 )
@@ -245,6 +245,12 @@
   )
   (T (PRINC "\nSkipping hawsalias.lsp command aliases.  Already loaded."))
 )
+;;;The following line loads user.lsp if found.
+(if (setq temp(findfile "user.lsp"))(load temp))
+;;;You can put personally preferred routines in user.lsp.
+;;;It is suggested that you keep a user.lsp in a reserved user support files folder
+;;;added to AutoCAD's Support Files Search Path.
+;;;Keep user.lsp out of the program folder or it may be deleted.
 
 
 ;;; Place the CNM pulldown to the left of the last pulldown already loaded

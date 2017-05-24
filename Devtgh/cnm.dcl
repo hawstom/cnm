@@ -157,15 +157,6 @@ CNMOptions : dialog {
       key = "DoCurrentTabOnly";
       label = "Limit bubble note search to current tab";
     }
-    : row {
-	    : edit_box {
-	      key = "BubbleLeaderConnectOsnap";
-	    }
-	    : text {
-	      key = "BubbleLeaderConnectOsnapPrompt";
-	      label = "Osnap for connection of leader to bubble notes without landings";
-	    }
-    }
   }
   : boxed_column {
     label = "Tables";
