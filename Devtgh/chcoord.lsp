@@ -18,7 +18,7 @@
   (setq dxfpt (getint))
   (initget "X Y Z")
   (setq
-    xyz (getkword "\nCoordinate to change <X/Y/Z>: ")
+    xyz (getkword "\nCoordinate to change [X/Y/Z]: ")
     newval (getreal "\nNew value in current UCS: ")
     n (cond ((= xyz "X") 1)((= xyz "Y") 2)((= xyz "Z") 3))
   )

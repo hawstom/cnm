@@ -10,7 +10,7 @@
     d (getreal "\nText rotation <0>: ")
     e (progn
         (initget "C M R TL TC TR ML MC MR BL BC BR")
-        (getkword "\nJustification C/M/R/TL/TC/TR/ML/MC/MR/BL/BC/BR <Left>: ")
+        (getkword "\nJustification [C/M/R/TL/TC/TR/ML/MC/MR/BL/BC/BR] <Left>: ")
       )
   )
   (if (= d nil)

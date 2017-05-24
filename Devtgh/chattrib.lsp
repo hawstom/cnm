@@ -19,7 +19,7 @@
     ( (= a "Value")
       (command a)
       (initget "Change Replace")
-      (setq b (getkword "Change or Replace <R>: "))
+      (setq b (getkword "[Change/Replace] <R>: "))
       (if (not b) (setq b "Replace"))
       (cond
         ( (= b "Change")(setq c (getstring "\nOld string: "))

@@ -124,7 +124,7 @@
 (defun
    HAWS-cvmethset ()
   (initget "Average Conic")
-  (setq *cvmeth* (getkword "\nVolume method <Average/Conic>: "))
+  (setq *cvmeth* (getkword "\nVolume method [Average/Conic]: "))
   (princ)
 ) ;_ end of defun
 (defun

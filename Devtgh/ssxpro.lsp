@@ -25,12 +25,12 @@
   ) )
   (while (setq dxfi (getint "roup code to use for selection: "))
     (initget "Numeric String Coordinate")
-    (setq vtype (getkword "\nGroup value type <Numeric/String/Coordinate>: "))
+    (setq vtype (getkword "\nGroup value type [Numeric/String/Coordinate]: "))
     (cond
       ( (= vtype "Numeric")
         (initget "Yes No")
         (cond
-          ( (= "Yes"(getkword "\nUse a relational test( *, <, >, etc.)? <Yes/No>: "))
+          ( (= "Yes"(getkword "\nUse a relational test( *, <, >, etc.)? [Yes/No]: "))
             (textpage)
             (prompt
         "\nThe following relational operators can be used.

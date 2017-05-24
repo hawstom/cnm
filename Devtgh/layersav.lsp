@@ -148,8 +148,8 @@
 			((or (= (getvar "tilemode") 0)
 					 (progn
 						 (prompt "\nViewport specific layer settings found in file.")
-						 (initget 1 "Y N")
-						 (= (getkword "\nRestore viewport layers to drawing?<Y/N>:") "Y")
+						 (initget 1 "Yes No")
+						 (= (getkword "\nRestore viewport layers to drawing?[Yes/No]:") "Y")
 					 ) ;_ end of progn
 			 ) ;_ end of or
 			 (command "tilemode" "0" "pspace" "._vplayer")

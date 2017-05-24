@@ -7,7 +7,7 @@
     (setq ept (trans(cdr (assoc 10 (entget en))) en 1) vwctr (getvar "viewctr"))
     (command "._pan" ept vwctr)
     (initget "Save Circle In Out eXit Previous Next")
-    (setq opt (getkword "\nSave view/Circle area/zoom In/zoom Out/eXit/Previous/<Next>: "))
+    (setq opt (getkword "\n[Save view/Circle area/zoom In/zoom Out/eXit/Previous/Next] <Next>: "))
     (cond
       ( (= opt "Save")
         (setq vn(getstring "\nNew view name: "))

@@ -30,7 +30,7 @@
         (command "ucs" "d" "plan" "ucs" "e" plnblk "ucs" "s" "plan" "ucs" "p")
         (initget "Yes No")
         (cond
-          ( (= "Yes" (getkword "\nErase other plan view insertions \"SHT*\"?<Yes/No>: "))
+          ( (= "Yes" (getkword "\nErase other plan view insertions \"SHT*\"? [Yes/No]: "))
             (setq ssblk (ssget "X" '((2 . "SHT*"))))
             (command "._erase" ssblk "r" plnblk "" "ucs" "w")
           )
@@ -72,7 +72,7 @@
       ;If not found, prompt for view points.
       ( T
         (initget 1 "Yes No")
-        (if (= (getkword "\nZoom extents in model space?<Yes/No>: ") "Yes")
+        (if (= (getkword "\nZoom extents in model space? [Yes/No]: ") "Yes")
           (command "._zoom" "e")
         )
         (setq ptmcen (getpoint "\nCenter of sheet: "))

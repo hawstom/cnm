@@ -3,7 +3,7 @@
 (defun c:haws-PRESUF (/ a n i e presuf frag string)
   (setq a (ssget) n (sslength a) i 0)
   (initget 1 "Prefix Suffix")
-  (setq presuf (getkword "Add a prefix or a suffix?<Prefix/Suffix>:"))
+  (setq presuf (getkword "Specify what to add [Prefix/Suffix]:"))
   (initget 1)
   (setq frag (getstring T "\nEnter string to add:"))
   (while (setq e (ssname a i))

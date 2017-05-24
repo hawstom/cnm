@@ -178,6 +178,7 @@
        "offset"
        UTRAD
        (LIST UTPL '(0 0))
+       "_non"
        (SETQ PT1 (LIST 0 (* 3 UTRAD) 0))
        ""
      ) ;_ end of command
@@ -193,6 +194,7 @@
        "offset"
        UTRAD
        (LIST UTPL '(0 0))
+       "_non"
        (LIST 0 (* -3 UTRAD) 0)
        ""
      ) ;_ end of command

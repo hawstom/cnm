@@ -8,7 +8,7 @@
     rot (getreal "\nText rotation <0>: ")
     just (progn
         (initget "C M R TL TC TR ML MC MR BL BC BR")
-        (getkword "\nJustification L/C/M/R/TL/TC/ML/MC/MR/BL/BC/BR <Left>: ")
+        (getkword "\nJustification [L/C/M/R/TL/TC/ML/MC/MR/BL/BC/BR] <Left>: ")
       )
   )
   (if (= rot nil)

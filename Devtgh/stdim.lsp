@@ -7,7 +7,7 @@
     (=
       (progn
         (initget "Set")
-        (setq pt1 (getpoint "\nSet dimension layer/<Entity to dimension>: "))
+        (setq pt1 (getpoint "\nEntity to dimension or [Set dimension layer]: "))
       )
       "Set"
     )

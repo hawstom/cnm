@@ -35,7 +35,7 @@
       (SETQ
         DWMID
          (GETPOINT
-           "\nLength/Sw width(neg. for inside)/<Select drive midpoint at back of curb>: "
+           "\nSelect drive midpoint at back of curb or [Length/Sw width]: "
          )
       )
     )

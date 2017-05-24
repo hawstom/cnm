@@ -84,6 +84,8 @@
   )
   (COND
     ((NOT (TBLSEARCH "BLOCK" "NOTEQTY"))
+     (HAWS-MKLAYR "NOTESKEYGRID")
+     (HAWS-MKLAYR "NOTESKEYQTYS")
      (setvar "attreq" 0)
      (COMMAND "._insert" (STRCAT "NOTEQTY=NOTEQTY" J) "0,0" "1" "1" "0")
      (setvar "attreq" 1)
@@ -112,6 +114,8 @@
        (SETQ J (ATOI J))
        (/= J I)                         ;Wrong number of phases currently inserted
      )
+     (HAWS-MKLAYR "NOTESKEYGRID")
+     (HAWS-MKLAYR "NOTESKEYQTYS")   
      (COMMAND "._insert" (STRCAT "noteqty=noteqty" (ITOA J)))
      (COMMAND)
     )
@@ -189,6 +193,8 @@
   )
   (COND
     ((OR OLDTAGS (NOT DSCTAG))
+     (HAWS-MKLAYR "NOTESKEYGRID")
+     (HAWS-MKLAYR "NOTESKEYQTYS")
      (COMMAND
        "._insert"
        (STRCAT
@@ -1392,7 +1398,7 @@
      (INITGET 1 "List Wildcards Select")
      (SETQ
        TEMP
-        (GETKWORD "\n<List file/Wildcards/Select one at a time>: ")
+        (GETKWORD "\n[List file/Wildcards/Select one at a time]: ")
      )
      (COND
        ((= TEMP "List")
@@ -2986,7 +2992,6 @@ QuantityToUnitsWidth=1
 ShowKeyTableGrid=0
 ShowKeyTableQuantities=1
 BubbleHooks=Yes
-BubbleLeaderConnectOsnap=mid,end
 ImportLayerSettings=No
 "      F2
      )
@@ -3056,7 +3061,6 @@ ImportLayerSettings=No
      ("ShowKeyTableGrid" "0" 2)
      ("ShowKeyTableQuantities" "1" 2)
      ("BubbleHooks" "0" 2)
-     ("BubbleLeaderConnectOsnap" "mid,end" 2)
      ("NotesLeaderDimstyle" "" 2)
      ("NotesKeyTableDimstyle" "" 2)
      ("TCGLeaderDimstyle" "TCG Leader" 2)
@@ -4423,7 +4427,7 @@ ImportLayerSettings=No
   (SETQ
     BUBBLEHOOKS
      (GETKWORD
-       "\nInsert bubble notes with hooks? <Yes/No>: "
+       "\nInsert bubble notes with hooks? [Yes/No]: "
      )
   )
   (IF BUBBLEHOOKS
@@ -4913,12 +4917,12 @@ ImportLayerSettings=No
 
 (DEFUN
    HAWS-LDRBLK (BLLEFT BLRGHT BLDRAG BLLAY BLDSTY / APOLD AS ANG AUOLD
-                BLGF BLLINE BLK BUBBLEHOOKS BUBBLELEADERCONNECTOSNAP
-                DSTY DSTYOLD DTOLD EL EN ENBLK ENDRAG FIXHOOK FIXPHASE
-                FIXTXT3 I P1 P2 P3 P4 P5 P6 P7 P8 PFOUND R1 DS TS LEFT
-                NUM TXT1 TXT2 ANG1 ANG2 FIXORDER OSMOLD
+                BLGF BLLINE BLK DSTY DSTYOLD DTOLD EL EN ENBLK ENDRAG
+                FIXHOOK FIXPHASE FIXTXT3 I P1 P2 P3 P4 P5 P6 P7 P8
+                PFOUND R1 DS TS LEFT NUM TXT1 TXT2 ANG1 ANG2 FIXORDER
+                OSMOLD
                )
-  (haws-core-borrow 1)
+  (HAWS-CORE-BORROW 1)
   (HAWS-VSAVE
     '("aperture" "attdia" "attreq" "aunits" "clayer" "cmdecho" "osmode"
       "plinegen" "regenmode"
@@ -4935,25 +4939,6 @@ ImportLayerSettings=No
   (HCNM-PROJINIT)
   (HCNM-SET-DIMSTYLE (STRCAT BLDSTY "Dimstyle"))
   (SETVAR "osmode" 0)
-  ;;Find out what bubble style to use
-  (SETQ
-    BUBBLEHOOKS
-     (COND
-       ((= (SUBSTR BLLEFT 1 3) "ldr") "1")
-       ((= (c:hcnm-config-getvar "BubbleHooks") "0") "2")
-       ("1")
-     )
-    BUBBLELEADERCONNECTOSNAP
-     (c:hcnm-config-getvar
-       "BubbleLeaderConnectOsnap"
-     )
-    BLLEFT
-     (STRCAT BLLEFT BUBBLEHOOKS)
-    BLRGHT
-     (STRCAT BLRGHT BUBBLEHOOKS)
-    BLDRAG
-     (STRCAT BLDRAG BUBBLEHOOKS)
-  )
   (HAWS-MKLAYR BLLAY)
   (SETQ
     P1 (GETPOINT "\nStart point for leader:")
@@ -5011,159 +4996,75 @@ ImportLayerSettings=No
     (ANGTOS (GETVAR "snapang"))
   )
   (SETQ EN (ENTLAST))
+  (PROMPT "\nEnd point for leader: ")
+  (COMMAND "._move" EN "" P1 PAUSE)
+  (SETQ
+    P2     (TRANS (CDR (ASSOC 10 (ENTGET (ENTLAST)))) (ENTLAST) 1)
+    ANG    (ANGLE P1 P2)
+    LEFT   (MINUSP (COS (+ ANG (GETVAR "snapang"))))
+    P3     (POLAR P1 ANG AS)
+    P4     (POLAR
+             P2
+             (IF LEFT
+               PI
+               0
+             )
+             AS
+           )
+    P5     (POLAR P4 (/ PI 2) (* TS 3.0))
+    P6     (POLAR
+             (POLAR
+               P5
+               (IF LEFT
+                 PI
+                 0
+               )
+               (* TS 10)
+             )
+             (/ PI -2)
+             (* TS 6.0)
+           )
+    ENDRAG (ENTLAST)
+  )
   (COND
-    ((= BUBBLEHOOKS "2")
-     (PROMPT "\nLocation for bubble: ")
-     (COMMAND "._move" EN "" P1 PAUSE)
-     (SETQ
-       P2   (TRANS (CDR (ASSOC 10 (ENTGET EN))) EN 1)
-       ANG1 (ANGLE P1 P2)
-       R1   1.5
-       I    -1
-     )
-     (WHILE (AND (NOT PFOUND) (< (SETQ I (1+ I)) 20))
-       (SETQ
-         P3 (POLAR
-              P2
-              (+ PI ANG1)
-              (* TS (+ R1 (* 0.1 (- I (REM I 2)) (- (REM I 2) 0.5))))
-            )
-       )
-       ;;Get candidate osnaps with block present
-       (SETQ P4 (OSNAP P3 BUBBLELEADERCONNECTOSNAP))
-       (HAWS-MKLINE P1 P2)
-       (SETQ P5 (OSNAP P3 "int"))       ;int with block and line present
-       ;;Get comparison int osnap with just block gone
-       (ENTDEL EN)                      ;delete block
-       (SETQ P6 (OSNAP P3 "int"))
-       ;;Get comparison int osnap with just line gone
-       (ENTDEL (ENTLAST))               ;delete line
-       (ENTDEL EN)                      ;bring back block
-       (SETQ P7 (OSNAP P3 "int"))
-       ;;Get comparison multi osnap without either present
-       (ENTDEL EN)                      ;delete block
-       (SETQ P8 (OSNAP P3 BUBBLELEADERCONNECTOSNAP))
-       (ENTDEL EN)                      ;bring back block
-       ;;Decide whether there is a point worth using as endpoint of leader
-       (SETQ
-         PFOUND
-          (NOT
-            (OR (AND (NOT P4) (NOT P5)) ;neither candidate point found
-                (AND P4 (EQUAL P8 P4))  ;multi found didn't depend on block
-                (EQUAL P6 P5)           ;int didn't depend on block
-                                        ;       (EQUAL P7 P5)  ;int didn't depend on line
-            )
-          )
-       )
-     )
-     (SETQ
-       P3     (COND
-                ((AND PFOUND P4) P4)    ;Use multi if found good
-                ((AND PFOUND P5) P5)    ;Use int otherwise if found good
-                (T (POLAR P2 (+ PI ANG1) (* TS R1)))
-              )
-       ANG2   (ANGLE P1 P3)
-       LEFT   (MINUSP (COS (- ANG1 (GETVAR "snapang"))))
-       P4     (POLAR P1 ANG2 AS)
-       ENDRAG (ENTLAST)
-     )
-     (SETVAR "attdia" 0)
-     (SETVAR "attreq" 1)
-     (COND
-       ((>= (ATOF (GETVAR "acadver")) 14)
-        (COMMAND "._leader" P1 P3 "" "")
-        (COND
-          (ASSOCIATE-P (COMMAND "_block"))
-          (T (COMMAND "._INSERT"))
-        )
-       )
-     )
-     (SETQ AUOLD (GETVAR "aunits"))
-     (SETVAR "aunits" 3)
+    ((WCMATCH (STRCASE BLLEFT) "NOTE*")
      (COMMAND
+       "._insert"
        (IF LEFT
-         BLLEFT
-         BLRGHT
+         "notehkl"
+         "notehkr"
        )
        P2
        TS
        TS
-       (GETVAR "snapang")
+       0
      )
-     (SETVAR "aunits" AUOLD)
-    )
-    (T
-     (PROMPT "\nEnd point for leader: ")
-     (COMMAND "._move" EN "" P1 PAUSE)
-     (SETQ
-       P2     (TRANS (CDR (ASSOC 10 (ENTGET (ENTLAST)))) (ENTLAST) 1)
-       ANG    (ANGLE P1 P2)
-       LEFT   (MINUSP (COS (+ ANG (GETVAR "snapang"))))
-       P3     (POLAR P1 ANG AS)
-       P4     (POLAR
-                P2
-                (IF LEFT
-                  PI
-                  0
-                )
-                AS
-              )
-       P5     (POLAR P4 (/ PI 2) (* TS 3.0))
-       P6     (POLAR
-                (POLAR
-                  P5
-                  (IF LEFT
-                    PI
-                    0
-                  )
-                  (* TS 10)
-                )
-                (/ PI -2)
-                (* TS 6.0)
-              )
-       ENDRAG (ENTLAST)
-     )
-     (COND
-       ((WCMATCH (STRCASE BLLEFT) "NOTE*")
-        (COMMAND
-          "._insert"
-          (IF LEFT
-            "notehkl"
-            "notehkr"
-          )
-          P2
-          TS
-          TS
-          0
-        )
-       )
-     )
-     (SETVAR "attdia" 0)
-     (SETVAR "attreq" 1)
-     (COND
-       ((>= (ATOF (GETVAR "acadver")) 14)
-        (COMMAND "._leader" P1 P2 "" "")
-        (COND
-          (ASSOCIATE-P (COMMAND "_block"))
-          (T (COMMAND "._INSERT"))
-        )
-       )
-     )
-     (SETQ AUOLD (GETVAR "aunits"))
-     (SETVAR "aunits" 3)
-     (COMMAND
-       (IF LEFT
-         BLLEFT
-         BLRGHT
-       )
-       P2
-       TS
-       TS
-       (GETVAR "snapang")
-     )
-     (SETVAR "aunits" AUOLD)
     )
   )
+  (SETVAR "attdia" 0)
+  (SETVAR "attreq" 1)
+  (COND
+    ((>= (ATOF (GETVAR "acadver")) 14)
+     (COMMAND "._leader" P1 P2 "" "")
+     (COND
+       (ASSOCIATE-P (COMMAND "_block"))
+       (T (COMMAND "._INSERT"))
+     )
+    )
+  )
+  (SETQ AUOLD (GETVAR "aunits"))
+  (SETVAR "aunits" 3)
+  (COMMAND
+    (IF LEFT
+      BLLEFT
+      BLRGHT
+    )
+    P2
+    TS
+    TS
+    (GETVAR "snapang")
+  )
+  (SETVAR "aunits" AUOLD)
   (COND
     ((WCMATCH (STRCASE BLLEFT) "NOTE*")
      (SETQ
@@ -5210,7 +5111,7 @@ ImportLayerSettings=No
   (HCNM-RESTORE-DIMSTYLE)
   (HAWS-VRSTOR)
   (COMMAND "._undo" "_e")
-  (haws-core-return)
+  (HAWS-CORE-RETURN)
   (IF (OR FIXHOOK FIXPHASE FIXTXT3 FIXORDER)
     (PROMPT
       (STRCAT
@@ -5307,7 +5208,6 @@ ImportLayerSettings=No
   (HCNM-CONFIG-SET-ACTION-TILE "PhaseAlias9")
   (HCNM-CONFIG-SET-ACTION-TILE "BubbleHooks")
   (HCNM-CONFIG-SET-ACTION-TILE "DoCurrentTabOnly")
-  (HCNM-CONFIG-SET-ACTION-TILE "BubbleLeaderConnectOsnap")
   (HCNM-CONFIG-SET-ACTION-TILE "LineSpacing")
   (HCNM-CONFIG-SET-ACTION-TILE "NoteSpacing")
   (HCNM-CONFIG-SET-ACTION-TILE "ShowKeyTableQuantities")

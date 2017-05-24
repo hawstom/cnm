@@ -39,7 +39,7 @@
       "\nUse an existing text file with a List of drawings, "
       "enter a Filespec with DOS wildcards (eg. \\dwg\\door*), "
       "or Select drawings one at a time from a dialogue box?"
-    "\n<List/Filespec/Select>:")
+    "\n[List/Filespec/Select]:")
   )
   (initget 1 "L F S")
   (setq listfil (getkword temp))
@@ -87,7 +87,7 @@
   (setq pltcmd
     (strcat
       "plot "
-      (setq temp (getkword "\nPlot area?<Display/Extents/Limits/View/Window>:"))
+      (setq temp (getkword "\nPlot area? [Display/Extents/Limits/View/Window]:"))
       (cond
         ( (= temp "Window")
           (strcat
@@ -145,7 +145,7 @@
   (if del (command "sh" (strcat "del \""msname".lst\"")))
   (initget "Yes No")
   (if
-    (= (getkword "\nPlot drawings now after saving current dwg?<Y/N>:") "Yes")
+    (= (getkword "\nPlot drawings now after saving current dwg?[Yes/No]:") "Yes")
     (progn (command "script" msname))
     (prompt (strcat "Done.  Run script file '"msname"' to plot."))
   )

@@ -341,7 +341,7 @@
   (setq sslen (sslength sset))
   (initget "Globally Individually Retype")
   (setq ans (getkword
-    "\nSearch and replace text.  Individually/Retype/<Globally>:"))
+    "\nSearch and replace text.  [Individually/Retype/Globally] <Globally>:"))
   (setq cht_ot (getvar "texteval"))
   (setvar "texteval" 1)
   (cond

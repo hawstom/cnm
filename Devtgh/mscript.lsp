@@ -105,7 +105,7 @@
               (STRCAT
                 "\nKeep and use existing list file, \""
                 LSTFIL
-                "\"? <Yes/No>: "
+                "\"? [Yes/No]: "
               )
             )
           )
@@ -125,7 +125,7 @@
      (INITGET 1 "List Wildcards Select")
      (SETQ
        TEMP
-        (GETKWORD "\n<List file/Wildcards/Select one at a time>: ")
+        (GETKWORD "\n[List file/Wildcards/Select one at a time]: ")
      )
      (COND
        ((= TEMP "List")
@@ -359,7 +359,7 @@
   ) ;_ end of if
   (INITGET "Yes No")
   (IF (= (GETKWORD
-           "\nProcess drawings now after saving current dwg?<Y/N>:"
+           "\nProcess drawings now after saving current dwg?[Yes/No]:"
          )
          "Yes"
       )

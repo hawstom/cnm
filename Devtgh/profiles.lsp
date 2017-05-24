@@ -182,7 +182,7 @@
   (INITGET "Exist Prop")
   (SETQ
     EXIST
-     (= (GETKWORD "Exist/Prop <Prop>: ") "Exist")
+     (= (GETKWORD "[Exist/Prop] <Prop>: ") "Exist")
     ;;    curbht (/ (getrealx "\nCurb height" (* curbht 12) 6)12)
     TOPPT
      (GETPOINT "\nTop of curb: ")
@@ -2523,7 +2523,7 @@
   (SETQ PT5 NIL)
   (WHILE (PROGN
            (INITGET 1 "Two")
-           (SETQ ANG1 (GETANGLE PT1 "\nTwo elevs/<leader rotation>: "))
+           (SETQ ANG1 (GETANGLE PT1 "\nLeader rotation or [Two elevs]: "))
            (= ANG1 "Two")
          ) ;_ end of PROGN
     (SETQ PT5 (GETPOINT "\nSecond elevation point: "))
@@ -2649,7 +2649,7 @@
   (WHILE (PROGN
            (SETVAR "osmode" 13)
            (INITGET "Setup")
-           (SETQ PT1 (GETPOINT "\nSetup/<point to label>: "))
+           (SETQ PT1 (GETPOINT "\nPoint to label or [Setup]: "))
          ) ;_ end of progn
     (COND
       ((= PT1 "Setup") (HAWS-ELLSET))

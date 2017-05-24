@@ -1927,7 +1927,7 @@
     (COND
       ((AND (= (STRCASE FTYPE) "W") (FINDFILE FNAME))
        (INITGET "Yes No")
-       (IF (= (GETKWORD "File already exists.  Overwrite?<Y/N>:")
+       (IF (= (GETKWORD "File already exists.  Overwrite? [Y/N]:")
               "Yes"
            )
          (SETQ F1 (OPEN FNAME FTYPE))

@@ -22,7 +22,7 @@
   (command "")
   (while (setq pt3
       (getpoint pt2
-    "\nLine/Undo/Arc/CEnter/Angle/Direction/Line/Radius/Second/DRag<Endpoint>:"))
+    "\nSpecify endpoint or [Line/Undo/Arc/CEnter/Angle/Direction/Line/Radius/Second/DRag]:"))
     (if (and (= (type pt3) 'LIST)(not pt4))(setq pt4 pt3))
     (if (= pt3 "DRag")
       (progn

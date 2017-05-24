@@ -28,7 +28,7 @@
           (initget "Setup")
           (and
             oflist
-            (setq p1 (entsel"\nSetup/<Entity to offset>: "))
+            (setq p1 (entsel"\nEntity to offset or [Setup]: "))
             (/= "Setup" p1)
           )
         )

@@ -23,7 +23,7 @@
             (not timdia)
             (not tismain)
             (not tishc)
-            (=(setq mh(getpoint"\nSetup/<Select downstream manhole>: "))"Setup")
+            (=(setq mh(getpoint"\nSelect downstream manhole or [Setup]: "))"Setup")
           )
         )
         (HAWS-tiset)

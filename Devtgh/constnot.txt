@@ -24,7 +24,7 @@ CIR NOTES
 TITLE PAVING NOTES
 1    SAWCUT LINE                                                   LF LINE1
 2    SURVEY MONUMENT                                               EA COUNT
-3    2" A/C ON 7" ABC                                              SY LINE1
+3    2" A/C ON 7" ABC                                              SY LINE0
 4    ADJUST MANHOLE COVER                                          EA COUNT
 ;
 DIAMOND NOTES
@@ -33,8 +33,13 @@ TITLE SEWER NOTES
 1    8" SEWER LINE                                                 LF LINE1
 2    SEWER MANHOLE                                                 EA COUNT
 3    SEWER CLEANOUT                                                EA COUNT
-4    SAWCUT, REMOVE AND REPLACE EXISTING                           LF LINE1
+4    SAWCUT, REMOVE AND REPLACE EXISTING                           LF LINE6
      A/C PAVEMENT
+;
+ELLIPSE NOTES
+TITLE IRRIGATION NOTES
+1    36" RGRCP                                                     LF LINE1
+2    2" VALVE                                                      EA COUNT
 ;
 HEX NOTES
 TITLE
@@ -42,14 +47,9 @@ TITLE STORM DRAIN NOTES
 1    36" STORM DRAIN                                               LF LINE1
 2    CATCH BASIN                                                   EA COUNT
 ;
-ELLIPSE NOTES
-TITLE IRRIGATION NOTES
-1    CONNECT TO EXISTING                                           NPI
-2    2" VALVE                                                      EA COUNT
-;
 OCTAGON NOTES
 TITLE TRAFFIC NOTES
-1    2" CONDUIT                                                    LF LINE2
+1    2" CONDUIT                                                    LF LINE1
 2    STOP SIGN                                                     EA COUNT
 ;
 PENTAGON NOTES

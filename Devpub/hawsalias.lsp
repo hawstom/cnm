@@ -258,7 +258,6 @@
 (defun c:ub () (c:haws-ub))
 (defun c:um () (c:haws-um))
 (defun c:vb () (c:haws-vb))
-(defun c:be () (c:haws-be))
 (defun c:bt () (c:haws-bt))
 (defun c:bm () (c:haws-bm))
 (defun c:brk () (c:haws-brk))
