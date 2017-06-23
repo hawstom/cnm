@@ -558,16 +558,18 @@
            (/ EXPOLD PROINPUTFILE prolaywc SS1)
   (SETQ EXPOLD (GETVAR "expert"))
   (SETVAR "expert" 0)
-  (COMMAND "._undo" "m" "._layer" "off" "*" "" "")
+  (COMMAND "._undo" "_m" "._layer" "_off" "*" "" "")
   (HAWS-MKLAYR "PROSTRT")
   (SETQ
     prolayWC (STRCAT (CAR(HAWS-GETLAYR "PROPRE")) "*")
     SS1          (SSGET "X" (LIST (CONS 8 prolayWC)))
     PROINPUTFILE (OPEN (STRCAT (HAWS-GETDNPATH) ".pro") "r")
   ) ;_ end of SETQ
-  (COMMAND "._erase" SS1 "" "._layer" "u" prolayWC "")
+  (IF SS1 (COMMAND "._erase" SS1 ""))
+  (COMMAND "._layer" "_u" prolayWC "")
   (c:HAWS-PRO)
-  (COMMAND "._layer" "on" "*" "")
+  (COMMAND "._layer" "_on" "*" "")
+  (SETVAR "expert" EXPOLD)
   (PROMPT "\nType Undo Back to undo entire profile.")
   (PRINC)
 ) ;_ end of DEFUN

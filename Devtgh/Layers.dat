@@ -57,9 +57,9 @@
 ("PROXDIM"      "C-ANNO-PPRO-DIMS-E"              "9"   "HIDDEN")   ;PRO command existing dimensions
 ("PROXEL"       "C-ANNO-PPRO-ELPS-E"              "9"   "HIDDEN")   ;PRO command profile existing pipe ellipse
 ("PROXELTX"     "C-ANNO-PPRO-ELPS-TEXT-E"         "9"   "")         ;PRO command profile existing pipe ellipse text
-("PROXLINE"     "C-PPRO-LINE-E"                   "9"   "HIDDEN")   ;PRO command existing line only profile
-("PROXMH"       "C-PPRO-MHOL-E"                   "9"   "")         ;PRO command profile existing manhole
-("PROXSTRT"     "C-PPRO-CURB-E"                   "9"   "HIDDEN")   ;PRO command existing street profile lines
+("PROXLINE"     "C-ANNO-PPRO-LINE-E"                   "9"   "HIDDEN")   ;PRO command existing line only profile
+("PROXMH"       "C-ANNO-PPRO-MHOL-E"                   "9"   "")         ;PRO command profile existing manhole
+("PROXSTRT"     "C-ANNO-PPRO-CURB-E"                   "9"   "HIDDEN")   ;PRO command existing street profile lines
 ("PROXTXSUF"    "-TEXT"                           "9"   "")         ;PRO command existing text layer suffix (for building layer names)
 ("PSTALBL"      "C-PROF-STAT"                     "3"   "")         ;STALABEL command profile bottom stations
 ("PSUP"         "C-PROF-SUPP"                     "1"   "")         ;PROSUP command pipe support

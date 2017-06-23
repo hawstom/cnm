@@ -1,6 +1,7 @@
 zoom
 0,0
 720,480
+newpro
 haws-ut
 ;Setup
 e
@@ -58,4 +59,16 @@ HCNM-CNM
 S
 420,450
 99
-newpro
+-layer
+make
+C-ANNO-HCNM-TEST
+
+mtext
+60,290
+height
+1
+justify
+tc
+530,220
+ALL TESTS COMPLETED SUCCESSFULLY. CLOSE DRAWING WITHOUT SAVING.
+

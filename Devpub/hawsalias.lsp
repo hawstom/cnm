@@ -97,14 +97,14 @@
 (defun C:secl    () (C:haws-secl)    )
 (defun c:secr    () (c:haws-secr)    )
 (defun c:sect    () (c:haws-sect)    )
-(defun c:haws-SLL() (c:haws-SLL))
+(defun c:SLL     () (c:haws-SLL))
 (defun c:SLOPE   () (c:haws-SLOPE)   )
 (defun c:SLR     () (c:haws-SLR)     )
 (defun c:SPOTEL  () (c:haws-SPOTEL)  )
 (defun c:TC      () (c:haws-TC)      ) ; From profiles command group
 (defun c:TCELEV  () (c:haws-TCELEV)  )
-(defun c:TCL     () (c:haws-TCL)     )
-(defun c:TCR     () (c:haws-TCR)     )
+(defun c:TCL     () (c:haws-TCELEVL)     )
+(defun c:TCR     () (c:haws-TCELEVR)     )
 ;;last two from the profiles and civil groups
 ;;;---------------Horizontal Control Section---------------
 (defun c:bdl () (c:haws-bdl))
@@ -131,9 +131,7 @@
 (defun c:led () (c:haws-led))
 ;;;---------------Text Section---------------
 (defun c:add () (c:haws-add))
-(defun c:at () (c:haws-at))
 (defun c:chnum () (c:haws-chnum))
-(defun c:chgcase () (c:haws-chgcase))
 (defun c:cht () (c:haws-cht))
 (defun c:cmt () (c:haws-cmt))
 (defun c:contxt () (c:haws-contxt))
@@ -159,7 +157,6 @@
 (defun c:romans () (c:haws-romans))
 (defun c:round () (c:haws-round))
 (defun c:selstyle () (c:haws-selstyle))
-(defun c:th () (c:haws-th))
 (defun c:to () (c:haws-to))
 (defun c:tu () (c:haws-tu))
 (defun c:txtsum () (c:haws-txtsum))
@@ -233,7 +230,7 @@
 (defun c:ac () (c:haws-acres))
 (defun c:aee () (c:haws-aee))
 (defun c:aet () (c:haws-aet))
-(defun c:al () (c:haws-al))
+(defun c:al () (c:haws-geodata))
 (defun c:adl () (c:haws-adl))
 (defun c:goto () (c:haws-goto))
 (defun c:istan () (c:haws-istan))
@@ -258,17 +255,15 @@
 (defun c:ub () (c:haws-ub))
 (defun c:um () (c:haws-um))
 (defun c:vb () (c:haws-vb))
-(defun c:bt () (c:haws-bt))
 (defun c:bm () (c:haws-bm))
 (defun c:brk () (c:haws-brk))
-(defun c:ccc () (c:haws-clone))
+(defun c:ccc () (command "._CopyToLayer"))
 (defun c:clone () (c:haws-clone))
 (defun c:cr () (c:haws-cr))
 (defun c:copyrot () (c:haws-copyrot))
 (defun c:chcoord () (c:haws-chcoord))
 (defun c:cw () (c:haws-cw))
 (defun c:cmpro () (c:haws-cmpro))
-(defun c:date () (c:haws-date))
 (defun c:join () (princ "\nJoin has been replaced by PJL and PJ.  Issuing command JOIN.")(command "._join")(princ))
 (defun c:le () (c:haws-lengthen))
 (defun c:lll () (c:haws-lengthen))
@@ -332,15 +327,12 @@
 (defun c:uf0 () (c:haws-uf0))
 (defun c:uf1 () (c:haws-uf1))
 (defun c:clean () (c:haws-clean))
-(defun c:edcmenu () (c:haws-edcmenu))
-(defun c:hawsedc () (c:haws-hawsedc))
 (defun c:funky () (c:haws-funky))
 (defun c:xin () (c:haws-xin))
 (defun c:xout () (c:haws-xout))
 (defun c:modestat () (c:haws-modestat))
 (defun c:mren () (c:haws-mren))
 (defun c:mv () (c:haws-mv))
-(defun c:mvhp () (c:haws-mvhp))
 (defun c:polarset () (c:haws-polarset))
 (defun c:pall () (c:haws-pall))
 (defun c:proto () (c:haws-proto))
@@ -487,12 +479,12 @@
   (cond
     ((= input1 "Yes")
      (textpage)
-     (princ "\n;Standard AutoCAD aliases")
+     (princ "\n;Standard AutoCAD aliases (for reference only)")
      (foreach
         alias (haws-pgp-aliases)
        (cond ((not (caddr alias))(princ (strcat "\n" (car alias) ",\t*" (cadr alias)))))
      )
-     (princ "\n;Custom CNM/HawsEDC aliases")
+     (princ "\n;Custom CNM/HawsEDC aliases (copy these)")
      (foreach
         alias (haws-pgp-aliases)
        (cond ((caddr alias)(princ (strcat "\n" (car alias) ",\t*" (cadr alias)))))
@@ -502,12 +494,12 @@
          "\n==================================================================================="
          "\nCNM/HawsEDC is opinionated about command shortcuts (aliases)."
          "\nOnce upon a time, CNM/HawsEDC included command aliases\nin a version of ACAD.PGP."
-         "\nThis is no longer true. But CNM still installs with its\nlegacy aliases included as LISP commands. It's recommended\nthat you paste the Custom CNM/HawsEDC Aliases shown above into\nyour ACAD.PGP and turn off the LISP aliases as described below."
+         "\nThis is no longer true. But CNM still installs with its\nlegacy aliases included as LISP commands. It's recommended\nthat you paste the Custom (not Standard) CNM/HawsEDC Aliases shown above into\nyour ACAD.PGP and turn off the LISP aliases as described below."
           "\n\n1. Add to ACAD.PGP:\n\ta) Copy the desired aliases above."
          "\n\tb) Open your acad.pgp. (The CNM PGP command will open it.)\n\tThen paste the aliases to the bottom of the file."
          "\n\tc) Use the AutoCAD REINIT command to reload your acad.pgp file."
          "\n\n2. Choose which LISP aliases are active below (LISP aliases work in scripts;\nEXPLODE command acts differently):"
-         "\n\ta) None; you will have none of the aliases shown above unless\n\tyou paste the above into your ACAD.PGP."
+         "\n\ta) None (recommended); you will have none of the aliases shown above unless\n\tyou paste the above into your ACAD.PGP."
          "\n\tb) Custom; you will have the Custom aliases shown above as LISP commands\n\tthat will override your ACAD.PGP settings."
          "\n\tc) All: You will have all the aliases shown above as LISP commands\n\tthat will override your ACAD.PGP settings."
         )

@@ -5,7 +5,7 @@
 (defun c:haws-moffset ( / HAWS-moset)
   (defun HAWS-moset ( / i offi toti p1)
     (setq i 1 oflist nil
-      toti (getint "\nNumber of offsets <return to read list from drawing text>:")
+      toti (getint "\nNumber of offsets <return to read list from saved drawing text>:")
     )
     (cond
       ( toti

@@ -128,7 +128,7 @@
 (defun c:haws-SLR     ()(insblk "sta_off"   "ANNOMISC"                 "P"  27))
 (defun c:haws-SPOTEL  ()(insblk "spotel"    "ANNOMISC"                 "P"  27))
 (defun c:haws-TC      ()(insblk "p-tcg-tx"  "ANNOMISC"                 "0"  27))
-(defun c:haws-TCELEV  ()(insblk "tcelev"    "ANNOMISC"                 "P"  27))
+(defun c:haws-TCELEV  ()(insblk "tcelev"    "ANNOMISC"                 "P"  8))
 (defun c:haws-TCELEVL ()(insblk "l-tcelev"  "ANNOMISC"                 "P"  27))
 (defun c:haws-TCELEVR ()(insblk "r-tcelev"  "ANNOMISC"                 "P"  27))
 ;;;End of block insertion definitions

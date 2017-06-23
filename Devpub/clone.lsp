@@ -1,5 +1,0 @@
-(defun C:haws-clone (/ ss)
-  (setq ss (ssget))
-  (command "._copy" ss "" "0,0" "0,0" "._change" ss "" "_p" "_layer" (getvar "clayer" ) "")
-  (princ)
-)

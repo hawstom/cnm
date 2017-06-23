@@ -2991,7 +2991,7 @@ QuantityToQuantityWidth=9
 QuantityToUnitsWidth=1
 ShowKeyTableGrid=0
 ShowKeyTableQuantities=1
-BubbleHooks=Yes
+BubbleHooks=1
 ImportLayerSettings=No
 "      F2
      )
@@ -4754,6 +4754,12 @@ ImportLayerSettings=No
                        )
   (haws-core-borrow 1)
   (HAWS-VSAVE '("attreq" "aunits" "clayer" "cmdecho"))
+  (COND
+    ((/= (getvar "wipeoutframe") 2)
+      (ALERT "Setting WIPEOUTFRAME to 2 to show but not plot")
+      (SETVAR "wipeoutframe" 2)
+    )
+  )
   (COMMAND "._undo" "_g")
   (SETQ
     ASSOCIATE-P
@@ -4765,8 +4771,9 @@ ImportLayerSettings=No
   (HCNM-PROJINIT)
   (HCNM-SET-DIMSTYLE "NotesLeaderDimstyle")
   (SETQ
+    BUBBLEHOOKS (c:hcnm-config-getvar "BubbleHooks")
     BLOCKNAME
-     (STRCAT "cnm-bubble-" (c:hcnm-config-getvar "BubbleHooks"))
+     (STRCAT "cnm-bubble-" (COND ((= (STRCASE BUBBLEHOOKS) "YES") "1")((= (STRCASE BUBBLEHOOKS) "NO") "0")(T BUBBLEHOOKS)))
     P1 (GETPOINT "\nStart point for leader:")
     DT (GETVAR "dimtxt")
     SNAPANG1

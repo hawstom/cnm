@@ -6,10 +6,10 @@ open source in case you want to customize it.  A copy has also been placed in th
 application directory.
 
 b) Add the installation folder to your AutoCAD Support Files and Trusted paths.
-Then use MENULOAD to load CNM.mnu (and optionally FUNKY.MNU function key osnaps).
+Then use MENULOAD to load CNM.CUIX (and optionally FUNKY.CUIX function key osnaps).
 
 DISABLE OLD PGP ALIASES OR CUSTOMIZE COMMAND ALIASES (Quick Keys)
-Type Haws-AliasEdit (or HAE) to manage old Haws PGP aliases or customize CNM/HawsEDC command aliases.
+Type Haws-AliasManage (or HAM) to manage old Haws PGP aliases or customize CNM/HawsEDC command aliases.
 
 VERSION 4.2.30
 -New Cool Stuff

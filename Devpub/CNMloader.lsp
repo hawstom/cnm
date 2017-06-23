@@ -40,7 +40,7 @@
 
 ;;---------------Profiles Section---------------
 (haws-autoload "eop"      '("haws-eop"))
-(haws-autoload "profiles" '("haws-ellabel" "haws-elv" "haws-eop" "haws-grb" "haws-grc" "haws-grd" "haws-lst" "haws-newpro"
+(haws-autoload "profiles" '("haws-ellabel" "haws-elv" "haws-grb" "haws-grc" "haws-grd" "haws-lst" "haws-newpro"
                        "haws-pc" "haws-pldr" "haws-pm" "haws-pred" "haws-pro" "haws-procb" "haws-proe"
                        "haws-profc" "haws-promh" "haws-propipe" "haws-prosup" "haws-stalabel")
 )
@@ -106,9 +106,7 @@
 
 ;;---------------Text Section---------------
 (haws-autoload "add"      '("haws-add"))
-(haws-autoload "arctext"  '("haws-at"))
 (haws-autoload "chnum"    '("haws-chnum"))
-(haws-autoload "chgcase"  '("haws-chgcase"))
 (haws-autoload "chtext"   '("haws-cht"))
 (haws-autoload "cmt"      '("haws-cmt"))
 (haws-autoload "contxt"   '("haws-contxt"))
@@ -166,7 +164,6 @@
 (haws-autoload "inq"      '("haws-eg" "haws-egn"))
 (haws-autoload "aee"      '("haws-aee"))
 (haws-autoload "aet"      '("haws-acres" "haws-aet" "haws-sf" "haws-sm" "haws-sy"))
-(haws-autoload "geodata"  '("haws-al"))
 (haws-autoload "goto"     '("haws-goto"))
 (haws-autoload "istan"    '("haws-istan"))
 (haws-autoload "cumdist"  '("haws-md"))
@@ -179,8 +176,6 @@
 (haws-autoload "brk"      '("haws-brk"))
 (haws-autoload "copyrot"  '("haws-cr" "haws-copyrot"))
 (haws-autoload "chcoord"  '("haws-chcoord"))
-(haws-autoload "chwidth"  '("haws-cw"))
-(haws-autoload "clone"    '("haws-clone"))
 (haws-autoload "cmpro"    '("haws-cmpro"))
 (haws-autoload "lengthen"  '("haws-lengthen"))
 (haws-autoload "mfillet"  '("haws-mf"))
@@ -213,12 +208,10 @@
                             "haws-qt" "haws-uf" "haws-uf0" "haws-uf1")
 )
 (haws-autoload "clean"    '("haws-clean"))
-(haws-autoload "edcmenu"  '("haws-edcmenu" "haws-hawsedc"))
 (haws-autoload "funky"    '("haws-funky"))
 (haws-autoload "modestat" '("haws-modestat"))
 (haws-autoload "mrename"  '("haws-mren"))
 (haws-autoload "mv"       '("haws-mv"))
-(haws-autoload "mvhp"     '("haws-mvhp"))
 (haws-autoload "polarset" '("haws-polarset"))
 (haws-autoload "purge"    '("haws-pall"))
 (haws-autoload "setup"    '("haws-setup" "haws-10" "haws-12" "haws-setdim10" "haws-setdim12"))

@@ -1,8 +1,8 @@
-;;; VLisp project file [V2.0] cnm saved to:[W:/programming/hawsedc/develop/Devtgh] at:[3/30/17] 
-(VLISP-PROJECT-LIST
-  :NAME
-  CNM
-  :OWN-LIST
+;;; VLisp project file [V2.0] cnm saved to:[W:/programming/hawsedc/develop/Devtgh] at:[6/22/17] 
+(vlisp-project-list
+  :name
+  cnm
+  :own-list
   ("W:/programming/hawsedc/develop/Devtgh/2l"
     "W:/programming/hawsedc/develop/Devtgh/add"
     "W:/programming/hawsedc/develop/Devtgh/aee"
@@ -52,7 +52,6 @@
     "W:/programming/hawsedc/develop/Devtgh/mrename"
     "W:/programming/hawsedc/develop/Devtgh/mscript"
     "W:/programming/hawsedc/develop/Devtgh/mv"
-    "W:/programming/hawsedc/develop/Devtgh/mvhp"
     "W:/programming/hawsedc/develop/Devtgh/ne"
     "W:/programming/hawsedc/develop/Devtgh/newang"
     "W:/programming/hawsedc/develop/Devtgh/newscale"
@@ -87,21 +86,21 @@
     "W:/programming/hawsedc/develop/Devtgh/xu"
     "W:/programming/hawsedc/develop/Devtgh/xy"
    )
-  :FAS-DIRECTORY
+  :fas-directory
   "W:/programming/hawsedc/compile/acad"
-  :TMP-DIRECTORY
+  :tmp-directory
   "W:/programming/hawsedc/compile/temp"
-  :PROJECT-KEYS
-  (:BUILD
-    (:OPTIMIZE :LOCALIZE :MAKE-INTERNAL)
-    :MERGED
+  :project-keys
+  (:build
+    (:optimize :localize :make-internal)
+    :merged
     nil
-    :SAFE-MODE
-    T
-    :MSGLEVEL
+    :safe-mode
+    t
+    :msglevel
     2
   )
-  :CONTEXT-ID
-  :AUTOLISP
+  :context-id
+  :autolisp
 )
 ;;; EOF

@@ -19,13 +19,13 @@
 ;;; GNU General Public License for more details.
 ;;;
 ;;; The working version of this software is located at the AutoCAD Wiki.
-;;; Please Be Bold in adding clarifying comments and improvements at
+;;; Please AutoCAD:Be_bold in adding clarifying comments and improvements at
 ;;; http://autocad.wikia.com/wiki/Contour_Elevations_at_Intervals_with_Labels_(AutoLISP_application)
 
-;;; Contour Elevations at Intervals with Labels
+;;; Contours Elevate and/or Label
 ;;; Copyleft 2017 Thomas Gail Haws licensed under the terms of the GNU GPL
 ;;; http://www.hawsedc.com tom.haws@gmail.com
-;;; Version: 1.0.0
+;;; Version: 1.0.1
 ;;; Official Repository: http://autocad.wikia.com/wiki/Contour_Elevations_at_Intervals_with_Labels_(AutoLISP_application
 ;;; Haws is a registered reserved symbol with Autodesk that will never conflict with other apps.
 ;;;
@@ -35,167 +35,36 @@
 ;;; -Lets you ignore Interval, Label Precision, Label Spacing, Temporary Color, LabelBlockName, and Elevation or change them on the fly.
 ;;; -For programmers, demonstrates small functions with self-documenting names and variable names.  Also demonstrates settings management.
 
-;; Customizable out-of-the-box defaults
-(defun
-   haws-cei:define-settings (/ luprec)
-  (setq luprec (itoa (getvar "LUPREC")))
-  (list
-    (list "CurrentElevation" "" 'real)
-    (list "ContourInterval" "1.0" 'real)
-    (list "LabelSpacing" "500.0" 'real)
-    (list "TemporaryColor" "." 'str)
-    (list "LabelPrecision" luprec 'int)
-    (list "LabelBlockName" "cei-contour-label" 'str)
-    (list "LUPREC" luprec 'int)
-    (list "ElevationPrompt" "Yes" 'str) ;"Yes" or "No"
-    (list "LabelWithFields" "Yes" 'str) ;"Yes" or "No"
-  )
-)
+;; Customizable out-of-the-box defaults you can edit are at very end of file
 
-(defun c:haws-contelev () (haws-cei:main))
+(defun c:cel () (haws-cel:main))
 
 (defun
-   haws-cei:main (/ input-main)
-  (haws-cei:initialize-settings)
-  (haws-cei:initialize-elevation)
+   haws-cel:main (/ input-main)
+  (haws-cel:initialize-settings)
+  (haws-cel:initialize-elevation)
   (command "._undo" "_group")
-  (while (setq input-main (haws-cei:get-input-main))
-    (haws-cei:do-input-main input-main)
+  (while (setq input-main (haws-cel:get-input-main))
+    (haws-cel:do-input-main input-main)
   )
   (command "._undo" "_end")
   (princ)
 )
 
-
-;; Start with default settings and supplement with stored settings.
 (defun
-   haws-cei:initialize-settings (/ luprec setting)
-  (cond ((not *haws-cei:settings*) (haws-cei:get-default-settings)))
-  (haws-cei:get-stored-settings)
-  ;; If drawing LUPREC changed, use it.
+   haws-cel:initialize-elevation ()
   (cond
-    ((/= (setq luprec (getvar "LUPREC"))
-         (haws-cei:getvar "LUPREC")
+    ((or (not (haws-cel:getvar "CurrentElevation"))
+         (= (haws-cel:getvar "ElevationPrompt") "Yes")
      )
-     (haws-cei:setvar "LUPREC" luprec)
-     (haws-cei:setvar "LabelPrecision" luprec)
-    )
-  )
-)
-
-
-;; Define-Settings is at top of file for customization convenience.
-(defun
-   haws-cei:get-default-settings ()
-  (setq *haws-cei:settings* (haws-cei:define-settings))
-)
-
-;; Get settings from AutoCAD's AutoLISP permananent storage system
-;; The setcfg/getcfg functions might be removed in a future release.
-(defun
-   haws-cei:get-stored-settings (/ settings-definition valuei)
-  (setq settings-definition (haws-cei:define-settings))
-  (cond
-    ;; If stored settings location exists
-    ((getcfg (strcat (haws-cei:storage-location) "Dummy"))
-     (foreach
-        setting settings-definition
-       (cond
-         ;; If setting exists (even missing settings return "")
-         ((/= ""
-              (setq
-                valuei
-                 (getcfg
-                   (strcat (haws-cei:storage-location) (car setting))
-                 )
-              )
-          )
-          (haws-cei:save-to-settings-list (car setting) valuei)
-         )
-       )
-     )
-    )
-  )
-)
-
-(defun haws-cei:storage-location () "Appdata/Haws/CEI/")
-
-(defun
-   haws-cei:save-to-settings-list (var val)
-  (setq
-    *haws-cei:settings*
-     (subst
-       (list var val (haws-cei:getvar-type var))
-       (assoc var *haws-cei:settings*)
-       *haws-cei:settings*
-     )
-  )
-)
-
-(defun
-   haws-cei:getvar (var / val-string)
-  (setq
-    val-string
-     (cadr (assoc var *haws-cei:settings*))
-    var-type
-     (caddr (assoc var *haws-cei:settings*))
-    val
-     (cond
-       ((= var-type 'real) (distof val-string)) ; Returns nil for ""
-       ((= var-type 'int) (atoi val-string))
-       ((= var-type 'str) val-string)
-     )
-  )
-)
-
-(defun
-   haws-cei:getvar-type (var / val-string)
-  (caddr (assoc var *haws-cei:settings*))
-)
-
-(defun
-   haws-cei:setvar (var val / var-type)
-  (setq var-type (haws-cei:getvar-type var))
-  (cond
-    ((/= (type val) var-type)
-     (alert
-       (strcat
-         "Warning in haws-cei:SETVAR.\n\nVariable: "
-         var
-         "\nType expected: "
-         (vl-prin1-to-string var-type)
-         "\nType provided: "
-         (vl-prin1-to-string (type val))
-       )
-     )
-     (exit)
-    )
-  )
-  (cond ((/= (type val) 'str) (setq val (vl-prin1-to-string val))))
-  (haws-cei:save-to-settings-list var val)
-  (haws-cei:save-to-storage var val)
-  val
-)
-
-(defun
-   haws-cei:save-to-storage (var val)
-  (setcfg (strcat (haws-cei:storage-location) var) val)
-)
-
-(defun
-   haws-cei:initialize-elevation ()
-  (cond
-    ((or (not (haws-cei:getvar "CurrentElevation"))
-         (= (haws-cei:getvar "ElevationPrompt") "Yes")
-     )
-     (haws-cei:get-elevation)
+     (haws-cel:get-elevation)
     )
   )
 )
 
 (defun
-   haws-cei:get-input-main (/ input-main current-elevation)
-  (haws-cei:print-settings)
+   haws-cel:get-input-main (/ input-main current-elevation)
+  (haws-cel:print-settings)
   (initget
     "Elevation Interval Spacing Color Precision Multilabel"
   )
@@ -205,10 +74,10 @@
 )
 
 (defun
-   haws-cei:print-settings (/ setting)
+   haws-cel:print-settings (/ setting)
   (princ "\nCurrent settings: ")
   (foreach
-     setting *haws-cei:settings*
+     setting *haws-cel:settings*
     (cond
       ((and
          (/= (car setting) "LUPREC")
@@ -224,22 +93,22 @@
 )
 
 (defun
-   haws-cei:do-input-main (input-main /)
+   haws-cel:do-input-main (input-main /)
   (cond
     ((or (= input-main "Elevation") (= input-main ""))
-     (haws-cei:get-elevation)
+     (haws-cel:get-elevation)
     )
-    ((= input-main "Interval") (haws-cei:get-contour-interval))
-    ((= input-main "Spacing") (haws-cei:get-label-spacing))
-    ((= input-main "Color") (haws-cei:get-temporary-color))
-    ((= input-main "Precision") (haws-cei:get-precision))
-    ((= input-main "Multilabel") (haws-cei:do-multilabel))
-    (t (haws-cei:do-next-contour input-main))
+    ((= input-main "Interval") (haws-cel:get-contour-interval))
+    ((= input-main "Spacing") (haws-cel:get-label-spacing))
+    ((= input-main "Color") (haws-cel:get-temporary-color))
+    ((= input-main "Precision") (haws-cel:get-precision))
+    ((= input-main "Multilabel") (haws-cel:do-multilabel))
+    (t (haws-cel:do-next-contour input-main))
   )
 )
 
 (defun
-   haws-cei:get-elevation (/ elevation-point)
+   haws-cel:get-elevation (/ elevation-point)
   (initget "Text Prompt Multilabel")
   (setq
     elevation-point
@@ -249,43 +118,43 @@
   )
   (cond
     ((= elevation-point "Prompt")
-     (haws-cei:get-elevation-prompt)
+     (haws-cel:get-elevation-prompt)
     )
-    ((= elevation-point "Multilabel") (haws-cei:do-multilabel))
+    ((= elevation-point "Multilabel") (haws-cel:do-multilabel))
     ((or (= elevation-point "Text") (not elevation-point))
-     (haws-cei:get-elevation-text)
+     (haws-cel:get-elevation-text)
     )
-    (t (haws-cei:get-elevation-from-point elevation-point))
+    (t (haws-cel:get-elevation-from-point elevation-point))
   )
 )
 
 (defun
-   haws-cei:get-elevation-from-point (elevation-point)
-  (haws-cei:setvar "CurrentElevation" (caddr elevation-point))
+   haws-cel:get-elevation-from-point (elevation-point)
+  (haws-cel:setvar "CurrentElevation" (caddr elevation-point))
 )
 
 (defun
-   haws-cei:get-elevation-text ()
-  (haws-cei:setvar
+   haws-cel:get-elevation-text ()
+  (haws-cel:setvar
     "CurrentElevation"
     (getreal "\nNew current elevation: ")
   )
 )
 
 (defun
-   haws-cei:get-elevation-prompt ()
+   haws-cel:get-elevation-prompt ()
   (initget "Yes No")
-  (haws-cei:get-input-generic
+  (haws-cel:get-input-generic
     "ElevationPrompt"
     'getkword
     "Always prompt for elevation before selecting contours? [Yes/No]"
   )
-  (haws-cei:get-elevation)
+  (haws-cel:get-elevation)
 )
 
 (defun
-   haws-cei:get-contour-interval ()
-  (haws-cei:get-input-generic
+   haws-cel:get-contour-interval ()
+  (haws-cel:get-input-generic
     "ContourInterval"
     'getreal
     "Contour interval"
@@ -293,8 +162,8 @@
 )
 
 (defun
-   haws-cei:get-label-spacing ()
-  (haws-cei:get-input-generic
+   haws-cel:get-label-spacing ()
+  (haws-cel:get-input-generic
     "LabelSpacing"
     'getreal
     "Spacing for labels along contours"
@@ -302,8 +171,8 @@
 )
 
 (defun
-   haws-cei:get-temporary-color ()
-  (haws-cei:get-input-generic
+   haws-cel:get-temporary-color ()
+  (haws-cel:get-input-generic
     "TemporaryColor"
     'getstring
     "Temporary color to distinguish elevated contours or . for none"
@@ -311,63 +180,64 @@
 )
 
 (defun
-   haws-cei:get-precision ()
-  (haws-cei:get-input-generic
+   haws-cel:get-precision ()
+  (haws-cel:get-input-generic
     "LabelPrecision"
     'getint
     "Decimal places of label precision"
   )
 )
+
 (defun
-   haws-cei:get-input-generic (var function-symbol prompt1 / input1)
+   haws-cel:get-input-generic (var function-symbol prompt1 / input1)
   (setq
     input1
      (apply
        function-symbol
        (list
-         (strcat "\n" prompt1 " <" (haws-cei:getvar var) ">: ")
+         (strcat "\n" prompt1 " <" (haws-cel:getvar-string var) ">: ")
        )
      )
   )
-  (cond ((and input1 (/= input1 "")) (haws-cei:setvar var input1)))
+  (cond ((and input1 (/= input1 "")) (haws-cel:setvar var input1)))
 )
 
 (defun
-   haws-cei:do-multilabel ( / CONTOURSET EN ENAME-CONTOUR ENTSEL-CONTOUR I)
+   haws-cel:do-multilabel ( / CONTOURSET EN ENAME-CONTOUR ENTSEL-CONTOUR I)
   (setq
     contourset (ssget)
     i   -1
   )
   (while (setq ename-contour (ssname contourset (setq i (1+ i))))
     (setq entsel-contour (list ename-contour (cdr (assoc 10 (entget ename-contour)))))
-    (haws-cei:label-contour
+    (haws-cel:label-contour
       entsel-contour
     )
   )
 )
 
 (defun
-   haws-cei:do-next-contour (entsel1 /)
-  (haws-cei:elevate-contour entsel1)
-  (haws-cei:color-contour entsel1)
-  (haws-cei:label-contour entsel1)
-  (haws-cei:setvar
+   haws-cel:do-next-contour (entsel1 /)
+  (haws-cel:elevate-contour entsel1)
+  (haws-cel:color-contour entsel1)
+  (haws-cel:label-contour entsel1)
+  (haws-cel:setvar
     "CurrentElevation"
-    (+ (haws-cei:getvar "CurrentElevation")
-       (haws-cei:getvar "ContourInterval")
+    (+ (haws-cel:getvar "CurrentElevation")
+       (haws-cel:getvar "ContourInterval")
     )
   )
 )
 
 
 (defun
-   haws-cei:elevate-contour
+   haws-cel:elevate-contour
    (entsel1 / current-elevation pline1 pline1data)
   (setq
     pline1
      (car entsel1)
     current-elevation
-     (haws-cei:getvar "CurrentElevation")
+     (haws-cel:getvar "CurrentElevation")
     pline1data
      (entget pline1)
   )
@@ -378,7 +248,7 @@
         (subst
           (reverse
             (cons
-              (haws-cei:getvar "CurrentElevation")
+              (haws-cel:getvar "CurrentElevation")
               (cdr (reverse (assoc 10 pline1data)))
             )
           )
@@ -391,14 +261,14 @@
           ((not (assoc 38 pline1data))
            (reverse
              (cons
-               (cons 38 (haws-cei:getvar "CurrentElevation"))
+               (cons 38 (haws-cel:getvar "CurrentElevation"))
                (reverse pline1data)
              )
            )
           )
           (t
            (subst
-             (cons 38 (haws-cei:getvar "CurrentElevation"))
+             (cons 38 (haws-cel:getvar "CurrentElevation"))
              (assoc 38 pline1data)
              pline1data
            )
@@ -411,41 +281,47 @@
 )
 
 (defun
-   haws-cei:color-contour (entsel1 / color)
+   haws-cel:color-contour (entsel1 / color)
   (cond
-    ((/= "." (setq color (haws-cei:getvar "TemporaryColor")))
+    ((/= "." (setq color (haws-cel:getvar "TemporaryColor")))
      (command "._chprop" entsel1 "" "_color" color "")
     )
   )
 )
 
 (defun
-   haws-cei:label-contour (entsel1 /)
-  (haws-cei:initialize-measure-block)
-  (haws-cei:add-labels entsel1)
+   haws-cel:label-contour (entsel1 /)
+  (haws-cel:initialize-measure-block)
+  (haws-cel:add-labels entsel1)
 )
 
 (defun
-   haws-cei:initialize-measure-block (/ ds ts)
+   haws-cel:initialize-measure-block (/ dimscale dimtxt preset-string text-height)
   (cond
     ((and
-       (not (tblsearch "BLOCK" "cei-contour-label"))
-       (not (findfile "cei-contour-label.dwg"))
+       (not (tblsearch "BLOCK" (haws-cel:getvar "LabelBlockName")))
+       (not (findfile (strcat (haws-cel:getvar "LabelBlockName") ".dwg")))
      )
      (alert
        (strcat
-         (strcase (haws-cei:getvar "LabelBlockName"))
-         " block not found in drawing or on disk.\nCreating vanilla label based on dimscale and dimtxt.\n\nMake your own mtext block if you need to."
+         "Creating vanilla label block\n"
+         (strcase (haws-cel:getvar "LabelBlockName"))
+         "\nbased on current text style and dimension text height.\n\nMake your own mtext block if you need to."
        )
      )
      (setq
-       ds (getvar "dimscale")
-       ts (* ds (getvar "dimtxt"))
+       preset-string
+        (cond
+          ((= (haws-cel:getvar "LabelWithFields") "Yes")
+           "%<\\AcVar Filename \\f \"%fn7\">%"
+          )
+          (t "Label")
+        )
      )
-     (haws-cei:make-masked-mtext "0,0,0" "_mc" ts "0" "%<\\AcVar Filename \\f \"%fn7\">%")
+     (haws-cel:make-masked-mtext "0,0,0" "_mc" (getvar "dimtxt") "0" preset-string)
      (command
        "._block"
-       (haws-cei:getvar "LabelBlockName")
+       (haws-cel:getvar "LabelBlockName")
        "0,0,0"
        (entlast)
        ""
@@ -454,8 +330,17 @@
   )
 )
 
+;; By Lee Mac.  Thanks!
+(defun LM:isAnnotative ( style / object annotx )
+  (and
+    (setq object (tblobjname "STYLE" style))
+    (setq annotx (cadr (assoc -3 (entget object '("AcadAnnotative")))))
+    (= 1 (cdr (assoc 1070 (reverse annotx))))
+  )
+)
+
 (defun
-   haws-cei:make-masked-mtext (i j h w s / ename-mtext)
+   haws-cel:make-masked-mtext (i j h w s / ename-mtext)
   (command "._mtext" i "_j" j "_h" h "_w" w s "")
   (setq ename-mtext (entlast))
   (entmod
@@ -467,7 +352,7 @@
 )
 
 (defun
-   haws-cei:add-labels (entsel1 / eg1 en1 enext entsel1-length)
+   haws-cel:add-labels (entsel1 / eg1 en1 enext entsel1-length)
   (setq enext (entlast))
   (command "._area" "_object" entsel1)
   (setq entsel1-length (getvar "perimeter"))
@@ -475,10 +360,10 @@
     "._divide"
     entsel1
     "b"
-    (haws-cei:getvar "LabelBlockName")
+    (haws-cel:getvar "LabelBlockName")
     "y"
     (max
-      (+ (fix (/ entsel1-length (haws-cei:getvar "LabelSpacing")))
+      (+ (fix (/ entsel1-length (haws-cel:getvar "LabelSpacing")))
          1
       )
       2
@@ -486,7 +371,7 @@
   )
   (while (setq enext (entnext enext))
     (if (= (cdr (assoc 2 (entget enext)))
-           (haws-cei:getvar "LabelBlockName")
+           (haws-cel:getvar "LabelBlockName")
         )
       (command "._explode" enext)
     )
@@ -494,11 +379,11 @@
     (cond
       ((= (cdr (assoc 0 eg1)) "MTEXT")
        (cond
-         ((= (haws-cei:getvar "LabelWithFields") "Yes")
-          (haws-cei:update-linked-elevation-field (car entsel1) en1)
+         ((= (haws-cel:getvar "LabelWithFields") "Yes")
+          (haws-cel:update-linked-elevation-field (car entsel1) en1)
          )
          (T
-          (haws-cei:make-elevation-string)
+          (haws-cel:make-elevation-string)
          )
        )
       )
@@ -507,15 +392,15 @@
 )
 
 (defun
-   haws-cei:make-elevation-string ()
+   haws-cel:make-elevation-string ()
   (entmod
     (subst
       (cons
         1
         (rtos
-          (haws-cei:getvar "CurrentElevation")
+          (haws-cel:getvar "CurrentElevation")
           2
-          (haws-cei:getvar "LabelPrecision")
+          (haws-cel:getvar "LabelPrecision")
         )
       )
       (assoc 1 eg1)
@@ -524,8 +409,9 @@
   )
 )
 
+;;; TODO: It would be good for somebody who understands this function to improve the symbol names for readability.
 (defun
-   haws-cei:update-linked-elevation-field (enamecontour enamemtext / DICT EGMTEXT ENAMEMTEXTVLA FLST NEWSTR)
+   haws-cel:update-linked-elevation-field (enamecontour enamemtext / DICT EGMTEXT ENAMEMTEXTVLA FLST NEWSTR)
   (setq egmtext (entget enamecontour))
   (setq
     dict
@@ -553,7 +439,7 @@
        (itoa
          (vla-get-objectid (vlax-ename->vla-object enamecontour))
        )
-       ">%).Elevation \\f \"%lu2%pr"(itoa(haws-cei:getvar "LabelPrecision"))"\">%"
+       ">%).Elevation \\f \"%lu2%pr"(itoa(haws-cel:getvar "LabelPrecision"))"\">%"
      )
   )
   (setq flst (subst (cons 2 newstr) (assoc 2 flst) flst))
@@ -561,9 +447,152 @@
   (setq enamemtextvla (vlax-ename->vla-object enamemtext))
   (vla-put-textstring enamemtextvla (vla-fieldcode enamemtextvla))
 )
+;;; ============================================================================
+;;; Settings stuff.  Last part of code; not fun to read for new project member.
+;;; ============================================================================
+;; Start with default settings and supplement with stored settings.
+(defun
+   haws-cel:initialize-settings (/ luprec setting)
+  (cond ((not *haws-cel:settings*) (haws-cel:get-default-settings)))
+  (haws-cel:get-stored-settings)
+  ;; If drawing LUPREC changed, use it.
+  (cond
+    ((/= (setq luprec (getvar "LUPREC"))
+         (haws-cel:getvar "LUPREC")
+     )
+     (haws-cel:setvar "LUPREC" luprec)
+     (haws-cel:setvar "LabelPrecision" luprec)
+    )
+  )
+)
 
-;; Reset settings on load
-(haws-cei:get-default-settings)
+;; Define-Settings is at bottom of code for customization convenience.
+(defun
+   haws-cel:get-default-settings ()
+  (setq *haws-cel:settings* (haws-cel:define-settings))
+)
+
+;; Get settings from AutoCAD's AutoLISP permananent storage system
+;; The setcfg/getcfg functions might be removed in a future release.
+(defun
+   haws-cel:get-stored-settings (/ settings-definition valuei)
+  (setq settings-definition (haws-cel:define-settings))
+  (cond
+    ;; If stored settings location exists
+    ((getcfg (strcat (haws-cel:storage-location) "Dummy"))
+     (foreach
+        setting settings-definition
+       (cond
+         ;; If setting exists (even missing settings return "")
+         ((/= ""
+              (setq
+                valuei
+                 (getcfg
+                   (strcat (haws-cel:storage-location) (car setting))
+                 )
+              )
+          )
+          (haws-cel:save-to-settings-list (car setting) valuei)
+         )
+       )
+     )
+    )
+  )
+)
+
+(defun haws-cel:storage-location () "Appdata/Haws/CEI/")
+
+(defun
+   haws-cel:save-to-settings-list (var val)
+  (setq
+    *haws-cel:settings*
+     (subst
+       (list var val (haws-cel:getvar-type var))
+       (assoc var *haws-cel:settings*)
+       *haws-cel:settings*
+     )
+  )
+)
+
+(defun
+   haws-cel:getvar-string (var / val-string)
+     (cadr (assoc var *haws-cel:settings*))
+)
+
+(defun
+   haws-cel:getvar (var / val-string)
+  (setq
+    val-string
+     (haws-cel:getvar-string var)
+    var-type
+     (caddr (assoc var *haws-cel:settings*))
+    val
+     (cond
+       ((= var-type 'real) (distof val-string)) ; Returns nil for ""
+       ((= var-type 'int) (atoi val-string))
+       ((= var-type 'str) val-string)
+     )
+  )
+)
+
+(defun
+   haws-cel:getvar-type (var / val-string)
+  (caddr (assoc var *haws-cel:settings*))
+)
+
+(defun
+   haws-cel:setvar (var val / var-type)
+  (setq var-type (haws-cel:getvar-type var))
+  (cond
+    ((/= (type val) var-type)
+     (alert
+       (strcat
+         "Warning in haws-cel:SETVAR.\n\nVariable: "
+         var
+         "\nType expected: "
+         (vl-prin1-to-string var-type)
+         "\nType provided: "
+         (vl-prin1-to-string (type val))
+       )
+     )
+     (exit)
+    )
+  )
+  (cond ((/= (type val) 'str) (setq val (vl-prin1-to-string val))))
+  (haws-cel:save-to-settings-list var val)
+  (haws-cel:save-to-storage var val)
+  val
+)
+
+(defun
+   haws-cel:save-to-storage (var val)
+  (setcfg (strcat (haws-cel:storage-location) var) val)
+)
+
+;; Customizable out-of-the-box defaults.  You can edit these.
+(defun
+   haws-cel:define-settings (/ luprec)
+  (setq luprec (itoa (getvar "LUPREC")))
+  (list
+    ;; Save so we know if user changes it.
+    ;; We're assuming they may expect label precision to follow AutoCAD units.
+    (list "LUPREC" luprec 'int)
+    ;; At runtime retrieval, each setting is converted 
+    ;; from it's storage as a string to the given data type.
+    ;;    Name             Value Data_type
+    (list "CurrentElevation" "" 'real)
+    (list "ContourInterval" "1.0" 'real)
+    (list "LabelSpacing" "500.0" 'real)
+    (list "TemporaryColor" "." 'str)
+    (list "LabelPrecision" luprec 'int)
+    (list "LabelBlockName" "cei-contour-label" 'str)
+    (list "ElevationPrompt" "Yes" 'str) ;"Yes" or "No"
+    (list "LabelWithFields" "Yes" 'str) ;"Yes" or "No"
+  )
+)
+
+;; Initialize settings on load
+(haws-cel:get-default-settings)
 
  ;|«Visual LISP© Format Options»
 (72 2 40 2 nil "end of " 60 2 1 1 1 nil nil nil T)
