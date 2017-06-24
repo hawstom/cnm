@@ -21,7 +21,7 @@
         elisti                   ;elisti to
         (entget enamei)          ;the association list for enamei
       )
-      (setq sum (+ sum (atof (cdr (assoc 1 elisti)))))
+      (setq sum (+ sum (atof (cadr (haws-extract (cdr (assoc 1 elisti)))))))
       (setq i (1+ i))            ;Bump up i to move to the next entity.
     )
   )                              ;Close the while loop.

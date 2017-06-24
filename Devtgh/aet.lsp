@@ -1,9 +1,9 @@
 ;Written by Thomas Gail Haws
-(DEFUN C:HAWS-ACRES () (HAWS-AET (/ 1.0 43560) "AC"))
-(DEFUN C:HAWS-SF () (HAWS-AET 1 "SF"))
-(DEFUN C:HAWS-AET () (C:HAWS-SF))
-(DEFUN C:HAWS-SM () (HAWS-AET (/ 1.0 27878400) "SQ. MI."))
-(DEFUN C:HAWS-SY () (HAWS-AET (/ 1.0 9) "SY"))
+(DEFUN C:HAWS-ACRES () (HAWS-AET (/ 1.0 43560) " AC"))
+(DEFUN C:HAWS-SF () (HAWS-AET 1 " SF"))
+(DEFUN C:HAWS-AET () (HAWS-AET 1 ""))
+(DEFUN C:HAWS-SM () (HAWS-AET (/ 1.0 27878400) " SQ. MI."))
+(DEFUN C:HAWS-SY () (HAWS-AET (/ 1.0 9) " SY"))
 (DEFUN
    HAWS-AET (FACTOR LABEL / AREA TS TXPT)
   (PROMPT "\nSelect circle or polyline:")
@@ -11,7 +11,6 @@
   (SETQ
     AREA (STRCAT
            (RTOS (* (GETVAR "AREA") FACTOR) 2 (GETVAR "luprec"))
-           " "
            LABEL
          )
     TXPT (GETPOINT "\nMiddle point for text:")
