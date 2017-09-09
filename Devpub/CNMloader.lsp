@@ -131,7 +131,7 @@
 (haws-autoload "txtsum"   '("haws-txtsum"))
 
 ;;---------------Layer Management Section---------------
-(haws-autoload "lam"      '("haws-l0" "haws-lk" "haws-lka" "haws-lka" "haws-ona" "haws-tha" "haws-ul" "haws-ula"))
+(haws-autoload "lam"      '("haws-l0" "haws-lka" "haws-ula"))
 (haws-autoload "chm"      '("haws-chm"));Changes properties, where laymch does not.
 (haws-autoload "cl"       '("haws-cl"));Changes properties, where laycur does not.
 (haws-autoload "lastat"   '("haws-ff" "haws-ffx" "haws-off" "haws-offx" "haws-uff" "haws-uoff" "haws-uffx" "haws-uoffx"))
@@ -139,14 +139,12 @@
 (haws-autoload "layersav" '("haws-lar" "haws-las"))
 (haws-autoload "lcp"      '("haws-lcp" "haws-lcpx"))
 (haws-autoload "lwp"      '("haws-lwp" "haws-lwpx"))
-(haws-autoload "lk"       '("haws-lk"))
 (haws-autoload "layrprn"  '("haws-laprn"))
 (haws-autoload "ltchang"  '("haws-ltb" "haws-ltc" "haws-lth"))
 (haws-autoload "lm"       '("haws-lm"))
 (haws-autoload "ltp"      '("haws-ltp" "haws-ltpx"))
-(haws-autoload "lx"       '("haws-lx" "haws-lxx" "haws-lxxx"))
+(haws-autoload "lx"       '("haws-lx" "haws-lxx"))
 (haws-autoload "offsetx"  '("haws-oo" "haws-offsetx"))
-(haws-autoload "ul"       '("haws-ul"))
 
 ;;---------------Block Management Section---------------
 (haws-autoload "att2txt"  '("haws-a2t" "haws-att2txt"))
@@ -170,7 +168,7 @@
 (haws-autoload "wl"       '("haws-wl"))
 
 ;;---------------Editing Section---------------
-(haws-autoload "edt"      '("haws-bf" "haws-cb" "haws-mp" "haws-pj" "haws-r1" "haws-r2" "haws-r4" "haws-r9" "haws-s" "haws-ub" "haws-um" "haws-vb"))
+(haws-autoload "edt"      '("haws-bf" "haws-cb" "haws-copy" "haws-mp" "haws-pj" "haws-r1" "haws-r2" "haws-r4" "haws-r9" "haws-s" "haws-ub" "haws-um" "haws-vb"))
 (haws-autoload "addleng"  '("haws-adl" ))
 (haws-autoload "brkmat"   '("haws-bm"))
 (haws-autoload "brk"      '("haws-brk"))

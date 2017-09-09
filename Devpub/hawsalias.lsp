@@ -164,14 +164,10 @@
 (defun c:l0 () (c:haws-l0))
 (defun c:lk0 () (c:haws-lk0))
 (defun c:lka () (c:haws-lka))
-(defun c:on () (c:haws-ona))
-(defun c:ona () (alert (princ "\nONA has been changed to ON.")) (c:haws-ona))
-(defun c:th () (c:haws-tha))
-(defun c:tha () (alert (princ "\nTHA has been changed to TH.")) (c:haws-ona))
 (defun c:ula () (c:haws-ula))
 (defun c:ca () (c:haws-ca))
-(defun c:chm () (princ "\nConsider using Y, YY, and YYY instead of AS, CL, and CHM.")(c:haws-chm))
-(defun c:cl () (princ "\nConsider using Y, YY, and YYY instead of AS, CL, and CHM.")(c:haws-cl))
+(defun c:chm () (princ "\Use YYY for improved flow (AS/CL/CHM -> Y/YY/YYY).")(c:haws-chm))
+(defun c:cl () (princ "\nUse YY for improved flow (AS/CL/CHM -> Y/YY/YYY).")(c:haws-cl))
 (defun c:ff () (c:haws-ff))
 (defun c:fff () (princ "\nConsider using FFF instead of FFX.")(c:haws-ffx))
 (defun c:ffx () (c:haws-ffx))
@@ -200,7 +196,6 @@
 (defun c:lm () (c:haws-lm))
 (defun c:lx () (c:haws-lx))
 (defun c:lxx () (c:haws-lxx))
-(defun c:lxxx () (c:haws-lxxx))
 (defun c:oo () (c:haws-oo))
 (defun c:offsetx () (c:haws-offsetx))
 (defun c:ul () (c:haws-ul))
@@ -212,7 +207,6 @@
 (defun c:attredef () (c:haws-attredef))
 (defun c:at () (c:haws-at))
 (defun c:bl0 () (c:haws-bl0))
-(defun c:w () (c:haws-w))
 (defun c:xda () (c:haws-xda))
 (defun c:xra () (c:haws-xra))
 (defun c:xrl () (c:haws-xrl))
@@ -241,6 +235,7 @@
 (defun c:wl () (c:haws-wl))
 ;;;---------------Editing Section---------------
 (defun c:bf () (c:haws-bf))
+(defun c:c () (c:haws-copy))
 (defun c:cb () (c:haws-cb))
 (defun c:ec () (c:haws-ec))
 (defun c:ew () (c:haws-ew))
@@ -307,7 +302,6 @@
 (defun c:cmd () (c:haws-cmd))
 (defun c:dia () (c:haws-dia))
 (defun c:fdt () (c:haws-fdt))
-(defun c:ib () (c:haws-ib))
 (defun c:il () (c:haws-il))
 (defun c:io () (c:haws-io))
 (defun c:ir () (c:haws-ir))
@@ -360,56 +354,18 @@
 (defun c:pgp () (c:haws-pgpedit))
 (defun c:lr () (c:haws-loadandrun))
 (defun c:run () (alert (princ "\nRUN has been replaced with LR (lisprun).")))
-;;;---------------Old HawsEDC ACAD.PGP aliases
-(defun
-   haws-pgp-activate-aliases (/ activatepgpaliases is_custom)
-  (setq ActivatePgpAliases (atoi(c:hcnm-config-getvar "HawsPgpLisp")))
-  ;; Edit the line above
-  (cond
-    ((> activatepgpaliases 0)
-     (foreach
-        alias (haws-pgp-aliases)
-       (setq is_custom (caddr alias))
-       (cond
-         ((or (> activatepgpaliases 1) is_custom)
-          (eval
-            (read
-              (strcat
-                "(defun c:"
-                (car alias)
-                "() (princ \""
-                (strcat
-                  "HawsAlias.lsp "
-                  (cond
-                    ((caddr alias) "custom")
-                    (t "standard")
-                  )
-                  " PGP alias: "
-                  (cadr alias)
-                )
-                "\")(command \"._"
-                (cadr alias)
-                "\")(princ))"
-              )
-            )
-          )
-         )
-       )
-     )
-    )
-  )
-)
-
+;;;---------------Simple keyboard aliases-------------
+;;; All of these can be disabled as a group using the Haws-AliasManage (HAM) command.
+;;; They can also be converted to custom ACAD.PGP aliases with help from the same command.
 (defun
    haws-pgp-aliases ()
 ;;;  Alias Command  Is_custom
   '
    (("AP" "Aperture" t)
-    ("AS" "LayMCur" t)
+    ("AS" "LayMCur" t "Use Y for improved flow (AS/CL/CHM -> Y/YY/YYY).")
     ("B" "Break" t)
     ("BL" "Block" t)
     ("BX" "Rectang" t)
-    ("C" "Copy" t)
     ("CC" "Circle" t)
     ("CF" "Chamfer" t)
     ("CH" "Change" t)
@@ -417,23 +373,32 @@
     ("DC" "DimCenter" t)
     ("DH" "DimHorizontal" t)
     ("DSC" "Dimscale" t)
-    ("EX" "Explode" t)
+;    ("EX" "Explode" t "To get regular explode behavior, disable Explode in HawsAlias.lsp")
     ("GS" "Gripsize" t)
     ("IB" "Insbase" t)
+    ("YU" "LayUniso" t)
+    ("LK" "LayLk" t)
     ("MM" "Mirror" t)
-    ("OFI" "Layiso" t)
+    ("MMM" "MLeader" t)
+    ("OFI" "Layiso" t "Use YI for improved flow (OFI/ONA -> YI/YU)")
+    ("ONA" "LayOn" t "Use ON for improved flow (or YU for laYUniso).")
+    ("ON"  "LayOn" t "Use YU for laYUniso")
     ("PB" "Pickbox" t)
     ("PG" "Polygon" t)
     ("RD" "Redo" t)
     ("RG" "Regenall" t)
     ("RR" "Redraw" t)
     ("T" "Trim" t)
+    ("THA" "Laythw" t "Use TH for improved flow")
     ("TH" "Laythw" t)
     ("TY" "Linetype" t)
+    ("UL" "LayUlk" t)
     ("UU" "Ddunits" t)
     ("VP" "Viewports" t)
+    ("WW" "-Wblock" t)
     ("X" "Extend" t)
     ("Y" "LayMCur" t)
+    ("YI" "Layiso" t)
     ("-I" "-Insert" nil)
     ("-W" "-Wblock" nil)
     ("-XR" "-Xref" nil)
@@ -468,80 +433,119 @@
 )
 
 (defun
-   c:haws-aliasmanage (/ HawsPgpLispOptions input1)
-  (initget "Yes No")
+   haws-pgp-activate-aliases (/ activatepgpaliases is_custom)
+  (setq ActivatePgpAliases (atoi(c:hcnm-config-getvar "HawsPgpLisp")))
+  ;; Edit the line above
+  (cond
+    ((> activatepgpaliases 0)
+     (foreach
+        alias (haws-pgp-aliases)
+       (setq is_custom (caddr alias))
+       (cond
+         ((or (> activatepgpaliases 1) is_custom)
+          (eval
+            (read
+              (strcat
+                "(defun c:"
+                (car alias)
+                "() (princ \""
+                (strcat
+                  "HawsAlias.lsp "
+                  (cond
+                    ((caddr alias) "custom")
+                    (t "stock AutoCAD")
+                  )
+                  " command alias: "
+                  (cadr alias)
+                  (cond
+                    ((cadddr alias) (strcat " (" (cadddr alias) ")"))
+                    (t "")
+                  )
+                )
+                "\")(command \"._"
+                (cadr alias)
+                "\")(princ))"
+              )
+            )
+          )
+         )
+       )
+     )
+    )
+  )
+)
+
+(defun
+   c:haws-aliasmanage (/ hawspgplispoptions input1)
+  (textpage)
+  (princ "\n;Standard AutoCAD aliases (for reference only)")
+  (foreach
+     alias (haws-pgp-aliases)
+    (cond
+      ((not (caddr alias))
+       (princ (strcat "\n" (car alias) ",\t*" (cadr alias)))
+      )
+    )
+  )
+  (princ "\n;Custom CNM/HawsEDC aliases (copy these)")
+  (foreach
+     alias (haws-pgp-aliases)
+    (cond
+      ((caddr alias)
+       (princ (strcat "\n" (car alias) ",\t*" (cadr alias)))
+      )
+    )
+  )
+  (princ
+    (strcat
+      "\n==================================================================================="
+      "\nListed above are a couple dozen optimized keyboard aliases for native AutoCAD commands."
+      "\nIf active, these aliases may override some of your custom PGP aliases. They will make your"
+      "\ndrafting easier if you take the time to learn them. If you find you cannot adapt to them"
+      "\nor if you need to change any of them, or if you prefer to manage them using ACAD.PGP,"
+      "\nyou can use the following prompts to turn them off (Step 1) or change them (Step 2)."
+      "\n\nStep 1. Choose which LISP aliases are active below (Notes: LISP aliases work in scripts;\nEXPLODE command acts differently):"
+      "\n\ta) None: turns them off; you will have none of the aliases shown above unless\n\tyou paste the above into your ACAD.PGP."
+      "\n\tb) Custom only: you will have the aliases shown above in the Custom section as LISP commands\n\tthat will override your ACAD.PGP settings."
+      "\n\tc) All: You will have all the aliases shown above as LISP commands\n\tthat will override your ACAD.PGP settings."
+     )
+  )
+  (setq hawspgplispoptions '(("0" "None") ("1" "Custom") ("2" "All")))
+  (initget "None Custom All")
   (setq
     input1
      (getkword
-       "\nLearn about managing the old HawsEDC PGP keyboard shortcuts? [Yes/No] <No>: "
+       (strcat
+         "\nSpecify which command aliases listed above to activate as LISP shortcuts [None/Custom/All] <"
+         (cadr
+           (assoc
+             (c:hcnm-config-getvar "HawsPgpLisp")
+             hawspgplispoptions
+           )
+         )
+         ">: "
+       )
      )
   )
   (cond
-    ((= input1 "Yes")
-     (textpage)
-     (princ "\n;Standard AutoCAD aliases (for reference only)")
-     (foreach
-        alias (haws-pgp-aliases)
-       (cond ((not (caddr alias))(princ (strcat "\n" (car alias) ",\t*" (cadr alias)))))
-     )
-     (princ "\n;Custom CNM/HawsEDC aliases (copy these)")
-     (foreach
-        alias (haws-pgp-aliases)
-       (cond ((caddr alias)(princ (strcat "\n" (car alias) ",\t*" (cadr alias)))))
-     )
-     (princ
-       (strcat
-         "\n==================================================================================="
-         "\nCNM/HawsEDC is opinionated about command shortcuts (aliases)."
-         "\nOnce upon a time, CNM/HawsEDC included command aliases\nin a version of ACAD.PGP."
-         "\nThis is no longer true. But CNM still installs with its\nlegacy aliases included as LISP commands. It's recommended\nthat you paste the Custom (not Standard) CNM/HawsEDC Aliases shown above into\nyour ACAD.PGP and turn off the LISP aliases as described below."
-          "\n\n1. Add to ACAD.PGP:\n\ta) Copy the desired aliases above."
-         "\n\tb) Open your acad.pgp. (The CNM PGP command will open it.)\n\tThen paste the aliases to the bottom of the file."
-         "\n\tc) Use the AutoCAD REINIT command to reload your acad.pgp file."
-         "\n\n2. Choose which LISP aliases are active below (LISP aliases work in scripts;\nEXPLODE command acts differently):"
-         "\n\ta) None (recommended); you will have none of the aliases shown above unless\n\tyou paste the above into your ACAD.PGP."
-         "\n\tb) Custom; you will have the Custom aliases shown above as LISP commands\n\tthat will override your ACAD.PGP settings."
-         "\n\tc) All: You will have all the aliases shown above as LISP commands\n\tthat will override your ACAD.PGP settings."
-        )
-     )
-     (setq HawsPgpLispOptions '(("0" "None")("1" "Custom")("2" "All")))
-     (initget "None Custom All")
-     (setq
-       input1
-        (getkword
-          (strcat
-            "\nSpecify which LISP shortcuts to activate [None/Custom/All] <"
-            (cadr
-              (assoc
-                (c:hcnm-config-getvar "HawsPgpLisp")
-                hawspgplispoptions
-              )
-            )
-            ">: "
-          )
-        )
-     )
-     (cond
-       (input1
-        (c:hcnm-config-setvar
-          "HawsPgpLisp"
-          (cadr
-            (assoc
-              input1
-              (mapcar '(lambda (x) (reverse x)) hawspgplispoptions)
-            )
-          )
-        )
+    (input1
+     (c:hcnm-config-setvar
+       "HawsPgpLisp"
+       (cadr
+         (assoc
+           input1
+           (mapcar '(lambda (x) (reverse x)) hawspgplispoptions)
+         )
        )
      )
-     (getstring "\n<continue to edit HawsAlias.lsp aliases>: ")
     )
   )
-  (STARTAPP
-    (STRCAT "\"notepad\" \"" (findfile "hawsalias.lsp") "\"")
+  (getstring "\nStep 2. <continue to edit HawsAlias.lsp aliases>: ")
+  (startapp
+    (strcat "\"notepad\" \"" (findfile "hawsalias.lsp") "\"")
   )
-  (ALERT
-    (STRCAT
+  (alert
+    (strcat
       "HawsAlias.lsp has been opened in Notepad for you to edit.\n\nClick OK to load CNM/HawsEDC aliases after editing and saving."
     )
   )
@@ -549,7 +553,8 @@
   (princ)
 )
 
-;(haws-pgp-activate-aliases)
+
+(haws-pgp-activate-aliases)
 
 ;;;---------------Set a flag that aliases have been loaded
 (setq *HAWS-HAWSALIASLOADED* T)

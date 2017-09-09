@@ -84,8 +84,6 @@
   )
   (COND
     ((NOT (TBLSEARCH "BLOCK" "NOTEQTY"))
-     (HAWS-MKLAYR "NOTESKEYGRID")
-     (HAWS-MKLAYR "NOTESKEYQTYS")
      (setvar "attreq" 0)
      (COMMAND "._insert" (STRCAT "NOTEQTY=NOTEQTY" J) "0,0" "1" "1" "0")
      (setvar "attreq" 1)
@@ -114,8 +112,6 @@
        (SETQ J (ATOI J))
        (/= J I)                         ;Wrong number of phases currently inserted
      )
-     (HAWS-MKLAYR "NOTESKEYGRID")
-     (HAWS-MKLAYR "NOTESKEYQTYS")   
      (COMMAND "._insert" (STRCAT "noteqty=noteqty" (ITOA J)))
      (COMMAND)
     )
@@ -193,8 +189,6 @@
   )
   (COND
     ((OR OLDTAGS (NOT DSCTAG))
-     (HAWS-MKLAYR "NOTESKEYGRID")
-     (HAWS-MKLAYR "NOTESKEYQTYS")
      (COMMAND
        "._insert"
        (STRCAT
@@ -2150,7 +2144,7 @@
     )
   )
   (HCNM-PROJINIT)                       ;Initialize after pauses
-  ;;Set any desired dimstyle.
+  ;;Set user's desired dimstyle.
   (HCNM-SET-DIMSTYLE "NotesKeyTableDimstyle")
   (SETQ
     DN (HAWS-GETDNPATH)
@@ -2170,6 +2164,8 @@
      (ATOF (c:hcnm-config-getvar "PhaseWidthAdd"))
   )
   (HCNM-READCF PROJNOTES)
+  (HAWS-MKLAYR "NOTESKEYGRID")
+  (HAWS-MKLAYR "NOTESKEYQTYS")
   (COND
     ((= OPT "Search")
      (HCNM-TABLE-FROM-SEARCH
@@ -3032,7 +3028,7 @@ ImportLayerSettings=No
     )
     ("Var"
      ("LXXListMode" "yes" 4)
-     ("HawsPgpLisp" "0" 4)
+     ("HawsPgpLisp" "1" 4)
      ("ProjectNotesEditor" "notepad.exe" 4)
      ("LayersEditor" "notepad.exe" 4)
      ("ProjectNotes" "constnot.txt" 2)
@@ -3410,7 +3406,6 @@ ImportLayerSettings=No
   ;;Third, if the desired style exists, save current style for later, then restore the desired style.
   (COND
     ((AND (/= KEY "") (TBLSEARCH "DIMSTYLE" DSTY))
-     (ALERT (VL-PRIN1-TO-STRING (TBLSEARCH "DIMSTYLE" DSTY)))
      (SETQ *HCNM-DIMSTYLEOLD* (GETVAR "dimstyle"))
      (COMMAND "._dimstyle" "_restore" DSTY)
     )
@@ -3492,8 +3487,8 @@ ImportLayerSettings=No
                     (STRCASE (HCNM-READNOTESEDITOR))
                     "*CNMEDIT.EXE"
                   )
-                "constnot.csv"
-                "constnot.txt"
+                "constnot-default.csv"
+                "constnot-default.txt"
               )
             )
           )
@@ -4749,7 +4744,7 @@ ImportLayerSettings=No
 (DEFUN C:HAWS-TRIL () (HCNM-LDRBLK-DYNAMIC "TRI"))
 (DEFUN
    HCNM-LDRBLK-DYNAMIC (NOTETYPE / ANG1 ASSOCIATE-P ATTRIBUTE-LIST AUOLD
-                        BLOCKNAME DT ENAME-BLOCK FLIPSTATE GR NUM P1
+                        BLOCKNAME DT ENAME-BLOCK FLIPSTATE GR INPUT1 NUM P1
                         P2 SNAPANG1 SS1 TXT1 TXT2 VLAOBJ
                        )
   (haws-core-borrow 1)
@@ -4758,6 +4753,21 @@ ImportLayerSettings=No
     ((/= (getvar "wipeoutframe") 2)
       (ALERT "Setting WIPEOUTFRAME to 2 to show but not plot")
       (SETVAR "wipeoutframe" 2)
+    )
+  )
+  (COND
+    ((= (GETVAR "ANNOALLVISIBLE") 0)
+     (INITGET "Yes No")
+     (COND
+       ((/=
+          (GETKWORD
+            "ANNOALLVISIBLE is 0. Set to 1 so that bubble notes appear at all scales? [Yes/No] <Yes>: "
+          )
+          "No"
+        )
+        (SETVAR "ANNOALLVISIBLE" 2)
+       )
+     )
     )
   )
   (COMMAND "._undo" "_g")

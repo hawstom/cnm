@@ -3,7 +3,7 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "4.2.30.a.04\n\nCopyright 2017"
+  "4.2.30.b.01\n\nCopyright 2017"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 (SETQ *HAWS-DEBUGLEVEL* 0)
@@ -19,6 +19,7 @@
 ;;; scheme.
 ;;;
 ;;; About version control
+;;; 20170907 4.2.30 TGH Revamped bubble notes. Removed PGP. Reworked installer to replace AcadInst.exe. Improved CNM project mgt. Command spreadsheet audit/enhance.
 ;;; 20151001 4.2.29 TGH Added BIOS date registry location for Windows 10.
 ;;; 20150921 4.2.28 TGH Added LWP and LWPX.
 ;;; 20150916 4.2.27 TGH Fixed (command) incompatibility with v2015+ in lambdas.  Using (command-s).
@@ -46,7 +47,7 @@
     (STRCAT
       "HawsEDC Tools version "
       (HAWS-UNIFIED-VERSION)
-      "\n\nCopyright 2015 Thomas Gail Haws\nhttp://www.hawsedc.com"
+      "\n\nCopyright 2017 Thomas Gail Haws\nhttp://www.hawsedc.com"
     )
   )
 )
@@ -2571,8 +2572,8 @@
 )
 (VL-ACAD-DEFUN 'HAWS-MKLAYR)
 (DEFUN
-   HAWS-MKLAYR (LAOPT / LANAME LACOLR LALTYP LTFILE)
-  (princ "\nHAWS-MKLAYR in edclib")
+   HAWS-MKLAYR (LAOPT / LANAME LACOLR LALTYP LTFILE LTFILES TEMP)
+  ;;(princ "\nHAWS-MKLAYR in edclib")
   (IF (= 'STR (TYPE LAOPT))
     (SETQ
       LAOPT
@@ -2589,35 +2590,24 @@
      (CADR LAOPT)
     LALTYP
      (CADDR LAOPT)
-    LTFILE "acad"
   )
-  ;|
-  (IF (NOT (OR (= LALTYP "") (TBLSEARCH "LTYPE" LALTYP)))
-    (PROGN
-      (COMMAND "._linetype" "l" LALTYP "acad")
-      (COMMAND)
-      (COMMAND "._linetype" "l" LALTYP "hawsedc")
-      (COMMAND)
-    )
-  )
-  (WHILE (NOT (OR (= LALTYP "") (TBLSEARCH "LTYPE" LALTYP)))
+  (HAWS-LOAD-LINETYPE LALTYP)
+  (WHILE 
+    (AND (/= LALTYP "") (NOT(TBLSEARCH "LTYPE" LALTYP)))
     (ALERT
       (STRCAT
-        "AutoCAD could not find "
-        LALTYP
-        " linetype in the specified file.\nPlease follow prompts to try a different linetype or file."
+        "\nLinetype " LALTYP " is still not loaded.\nPlease follow prompts to try a different linetype or file."
       )
     )
     (SETQ
-      LALTYP
+      TEMP
        (HAWS-GETSTRINGX
          "\nEnter substitute linetype name or enter to try another file"
          LALTYP
          LALTYP
        )
     )
-    (COMMAND "._linetype" "l" LALTYP LTFILE)
-    (COMMAND)
+    (COND ((/= TEMP LALTYP)(SETQ LALTYP TEMP)  (HAWS-LOAD-LINETYPE LALTYP)))
     (COND
       ((NOT (TBLSEARCH "LTYPE" LALTYP))
        (SETQ
@@ -2631,9 +2621,10 @@
        )
       )
     )
-    (COMMAND "._linetype" "l" LALTYP LTFILE)
+    (COMMAND "._linetype" "_l" LALTYP LTFILE)
     (COMMAND)
-  )|;
+  )
+  (HAWS-MILEPOST "Finished assuring linetype.")
   (COMMAND "._layer")
   (IF (NOT (TBLSEARCH "LAYER" LANAME))
     (COMMAND "m" LANAME)
@@ -2646,7 +2637,21 @@
     (COMMAND "lt" LALTYP "")
   )
   (COMMAND "")
+  (HAWS-MILEPOST "Finished making layer.")
   LAOPT
+)
+
+(DEFUN HAWS-LOAD-LINETYPE (LTYPE / I LTFILES)
+  (SETQ
+    LTFILES (LIST "acad" "hawsedc" "default")
+    I -1
+  )
+  (WHILE
+    (AND (/= LALTYP "") (NOT(TBLSEARCH "LTYPE" LTYPE)) (SETQ LTFILE (NTH (SETQ I (1+ I)) LTFILES)))
+    (PRINC (STRCAT "\nLinetype " LTYPE " is not loaded. Attempting to load from " LTFILE ".lin..."))
+    (COMMAND "._linetype" "_l" LTYPE LTFILE "")
+  )
+  (HAWS-MILEPOST (strcat "Finished trying to load linetype " LTYPE " from acad.lin, default.lin (Bricscad), and hawsedc.lin."))
 )
 
 (VL-ACAD-DEFUN 'HAWS-MKTEXT)

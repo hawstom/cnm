@@ -9,7 +9,6 @@
 (DEFUN c:haws-FDT ()(HAWS-VTOG '("FILEDIA")))
 (DEFUN c:haws-MBT ()(HAWS-VTOG '("MENUBAR")))
 (DEFUN c:haws-QT ()(HAWS-VTOG '("QTEXTmoDE")))
-(DEFUN c:haws-IB ()(COMMAND "INSBASE")(PRINC))
 (DEFUN c:haws-IL ()(COMMAND "SNAP""S""I" "" "SNAP""OF" "ISOPLANE" "L")(PRINC))
 (DEFUN c:haws-IO ()(COMMAND "SNAP""S""S" "" "SNAP""OF")(PRINC))
 (DEFUN c:haws-IR ()(COMMAND "SNAP""S""I" "" "SNAP""OF" "ISOPLANE" "R")(PRINC))

@@ -56,7 +56,7 @@
       ;;If user gives permission
       ((OR ISALLMENUSREQUESTED
            (PROGN
-             (INITGET "Yes No All")
+             (INITGET "Yes No")
              (/= "No"
                  (SETQ
                    USERINPUT
@@ -64,7 +64,7 @@
                       (STRCAT
                         "\nLoad "
                         GROUP
-                        " menu? [Yes/No/All] <Yes>: "
+                        " menu? [Yes/No] <Yes>: "
                       )
                     )
                  )
@@ -104,12 +104,6 @@
       )
     )
   )
-)
-
-(DEFUN HAWS-ALIASES-WIZARD ( / input-1)
-  (INITGET "Yes No")
-  (setq input-1 (getkword "\n(Recommended) Learn about choosing legacy Haws PGP keyboard shortcuts and customizing CNM/HawsEDC command aliases? [Yes/No] <Yes>: "))
-  (cond ((/= input-1 "No") (alert(princ "\nYou can do this later by using the Haws-AliasManage (HAM) command. You can find this tip later near the top of README.TXT in the CNM folder.")) (load "hawsalias.lsp") (c:haws-aliasmanage)))
 )
 
 (DEFUN
@@ -172,6 +166,6 @@
   (HAWS-UPDATE-TRUSTEDPATHS PATHS)
   (HAWS-RELOAD-MENUS)
   (LOAD "cnmloader")
-  (HAWS-ALIASES-WIZARD)
+  (ALERT "CNM may not work in other drawings until you restart AutoCAD.") 
   (PRINC)
 )

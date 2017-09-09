@@ -8,14 +8,27 @@ application directory.
 b) Add the installation folder to your AutoCAD Support Files and Trusted paths.
 Then use MENULOAD to load CNM.CUIX (and optionally FUNKY.CUIX function key osnaps).
 
-DISABLE OLD PGP ALIASES OR CUSTOMIZE COMMAND ALIASES (Quick Keys)
-Type Haws-AliasManage (or HAM) to manage old Haws PGP aliases or customize CNM/HawsEDC command aliases.
+TEST
+Open cnm-test.dwg from the CNM folder and run cnm-test.scr.
+
+COMMAND REFERENCE
+Open CNM-Command-Reference.ods from the CNM folder. Sort by descending coolness (columns D and B) or descending category (columns A and B)
+
+KEYBOARD ALIASES
+CNM includes a couple dozen optimized keyboard aliases for native AutoCAD commands.
+These aliases may override some of your custom PGP aliases. They will make your 
+drafting easier if you take the time to learn them. (See more below.) If you find 
+you cannot adapt to them or if you need to change any of them, or if you prefer 
+to manage them using ACAD.PGP, you can use the HAM (HawsAliasManage) command to 
+turn them off or change them.
 
 VERSION 4.2.30
 -New Cool Stuff
+--Ribbon interface
 --Bubble notes now are all-shapes-in-one.
---Contour Elevate and/or Label (CEL)
---LX report plus show layers for selected objects in Layer palette (LXX)
+--Bubble notes now include handy draggable wipeouts. Set your WIPEOUTFRAME to 2.
+--Contour Elevate and/or Label (CEL) tool
+--LX plus (LXX) isolates layers for selected objects in Layer palette
 --Lengthen command optimized with Dynamic default. LE/LLL
 --CB/VB copy/paste at 0,0
 --Acres, SF, SY, and SM (sq. mi.) commands.
@@ -24,7 +37,7 @@ VERSION 4.2.30
 --Quick mview locking and unlocking MVL/MVU
 
 -Fixes and improvements
---Bubble notes gracefully stay away from Annotative dimension styles.  They don't associate.
+--Bubble notes gracefully stay away from NonAnnotative dimension styles.  They don't associate.
 --CNM checks for project mistakes like a copied CNM.ini or 
   a CNM.INI and CNMPROJ.TXT in the same folder.
 --"Link to Project" added to CNM menu to link multi-folder projects to a single CNM.ini.
@@ -32,14 +45,13 @@ VERSION 4.2.30
 
 -Other changes
 --Lots of behind-the-scenes cleanup.
---Where appropriate, old functions (THA -> LAYTHW, ONA -> LAYON) are now aliases 
-  for standard AutoCAD commands.
---The old HawsEDC acad.pgp aliases have been deactivated.  You can choose how 
-  to activate them using the HawsPGP command.
+--Where appropriate, old custom functions (THA -> LAYTHW, ONA -> LAYON) are now aliases for standard AutoCAD commands.
+--The old HawsEDC acad.pgp aliases have been converted to LSP commands.  You can change
+  or customize this using the HAM command.
 --A few command aliases have been shortened or changed.  Please give them a chance.
 ---ONA -> ON
 ---THA -> TH
----AS, CL, CHM -> Y, YY, YYY
+---Y means Layer! AS/CL/CHM -> Y/YY/YYY and OFI/ONA -> YI/YU
 ---CLONE -> CCC (Copy=C, Circle=CC, Clone=CCC)
 ---RRR -> R (RotateBase=R, Redraw=RR)
 
@@ -52,4 +64,3 @@ VERSION 4.2.30
 --NS (Notesnap)
 
 Please send all complaints, suggestions, and praise to tom.haws@gmail.com as soon as possible.
-

@@ -2,7 +2,7 @@
 ;;; (C) Copyright 1999 by Thomas Gail Haws
 (DEFUN
    c:haws-UT
-       (/ E1 E2 ELNEXT ENEXT PT1 PT2 PT3 TEMP UCSP
+       (/ E1 E2 ELNEXT ENEXT PT1 PT2 PT3 TEMP UCSP ULAYOD ULAYPL
        )
   (DEFUN
      HAWS-GETUTL
@@ -172,10 +172,10 @@
        "._ucs"
        "e"
        E1
-       "erase"
+       "._erase"
        E1
        ""
-       "offset"
+       "._offset"
        UTRAD
        (LIST UTPL '(0 0))
        "_non"
@@ -184,14 +184,14 @@
      ) ;_ end of command
      (SETQ E1 (ENTLAST))
      (COMMAND
-       "change"
+       "._change"
        E1
        ""
-       "p"
-       "la"
+       "_p"
+       "_la"
        ULAYOD
        ""
-       "offset"
+       "._offset"
        UTRAD
        (LIST UTPL '(0 0))
        "_non"
@@ -200,23 +200,23 @@
      ) ;_ end of command
      (SETQ E2 (ENTLAST))
      (COMMAND
-       "change"
+       "._change"
        E2
        ""
-       "p"
-       "la"
+       "_p"
+       "_la"
        ULAYOD
        ""
-       "pedit"
+       "._pedit"
        UTPL
-       "w"
+       "_w"
        (* 2 UTRAD)
        ""
-       "change"
+       "._change"
        UTPL
        ""
-       "p"
-       "la"
+       "_p"
+       "_la"
        ULAYPL
        ""
      ) ;_ end of command

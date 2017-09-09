@@ -1,5 +1,6 @@
 ;;--------------------------ONE LINERS-------------------------
 (DEFUN C:HAWS-BF ()(COMMAND "._BREAK" PAUSE "F")(PRINC))
+(DEFUN C:HAWS-COPY (/ SS1)(SETQ SS1 (SSGET))(COMMAND "._COPY" SS1 "" "M")(PRINC))
 (DEFUN C:HAWS-CB () (COMMAND "._copybase" "0,0") (PRINC))
 (DEFUN C:HAWS-MP ()(COMMAND "._MOVE" "P")(PRINC))
 (defun c:HAWS-pj (/ SS1) (setq ss1 (ssget))(command "._pedit" "m" ss1 "" "_y" "_join" "0.005" ""))
