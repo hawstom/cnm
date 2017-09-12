@@ -1,8 +1,8 @@
-;;; VLisp project file [V2.0] cnm saved to:[W:/programming/hawsedc/develop/Devtgh] at:[6/22/17] 
-(vlisp-project-list
-  :name
-  cnm
-  :own-list
+;;; VLisp project file [V2.0] cnm saved to:[W:/programming/hawsedc/develop/Devtgh] at:[9/12/17] 
+(VLISP-PROJECT-LIST
+  :NAME
+  CNM
+  :OWN-LIST
   ("W:/programming/hawsedc/develop/Devtgh/2l"
     "W:/programming/hawsedc/develop/Devtgh/add"
     "W:/programming/hawsedc/develop/Devtgh/aee"
@@ -10,7 +10,6 @@
     "W:/programming/hawsedc/develop/Devtgh/att2txt"
     "W:/programming/hawsedc/develop/Devtgh/attfind"
     "W:/programming/hawsedc/develop/Devtgh/bdl"
-    "W:/programming/hawsedc/develop/Devtgh/bdp"
     "W:/programming/hawsedc/develop/Devtgh/bdl"
     "W:/programming/hawsedc/develop/Devtgh/berm"
     "W:/programming/hawsedc/develop/Devtgh/bl0"
@@ -22,7 +21,7 @@
     "W:/programming/hawsedc/develop/Devtgh/chm"
     "W:/programming/hawsedc/develop/Devtgh/chnum"
     "W:/programming/hawsedc/develop/Devtgh/chtext"
-    "W:/programming/hawsedc/develop/Devtgh/cl"
+    "W:/programming/hawsedc/develop/Devtgh/cl"
     "W:/programming/hawsedc/develop/Devtgh/cmpro"
     "W:/programming/hawsedc/develop/Devtgh/cmt"
     "W:/programming/hawsedc/develop/Devtgh/cnm"
@@ -74,7 +73,6 @@
     "W:/programming/hawsedc/develop/Devtgh/to"
     "W:/programming/hawsedc/develop/Devtgh/tu"
     "W:/programming/hawsedc/develop/Devtgh/tw"
-    "W:/programming/hawsedc/develop/Devtgh/txtavg"
     "W:/programming/hawsedc/develop/Devtgh/txtsum"
     "W:/programming/hawsedc/develop/Devtgh/unitset"
     "W:/programming/hawsedc/develop/Devtgh/ut"
@@ -86,21 +84,21 @@
     "W:/programming/hawsedc/develop/Devtgh/xu"
     "W:/programming/hawsedc/develop/Devtgh/xy"
    )
-  :fas-directory
+  :FAS-DIRECTORY
   "W:/programming/hawsedc/compile/acad"
-  :tmp-directory
+  :TMP-DIRECTORY
   "W:/programming/hawsedc/compile/temp"
-  :project-keys
-  (:build
-    (:optimize :localize :make-internal)
-    :merged
+  :PROJECT-KEYS
+  (:BUILD
+    (:OPTIMIZE :LOCALIZE :MAKE-INTERNAL)
+    :MERGED
     nil
-    :safe-mode
-    t
-    :msglevel
+    :SAFE-MODE
+    T
+    :MSGLEVEL
     2
   )
-  :context-id
-  :autolisp
+  :CONTEXT-ID
+  :AUTOLISP
 )
 ;;; EOF
