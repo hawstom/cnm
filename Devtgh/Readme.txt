@@ -9,7 +9,7 @@ b) Add the installation folder to your AutoCAD Support Files and Trusted paths.
 Then use MENULOAD to load CNM.CUIX (and optionally FUNKY.CUIX function key osnaps).
 
 TEST
-Open cnm-test.dwg from the CNM folder and run cnm-test.scr.
+Open cnm-test\cnm-test.dwg from the CNM folder and run cnm-test\cnm-test.scr.
 
 COMMAND REFERENCE
 Open CNM-Command-Reference.ods from the CNM folder. Sort by descending coolness (columns D and B) or descending category (columns A and B)
