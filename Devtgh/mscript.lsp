@@ -202,7 +202,7 @@
                  (STRCAT
                    "The operating system could not find\nany files found matching the wildcard:\n\n "
                    FLSPEC
-                   ".not\n\nPlease try again."
+                   "\n\nPlease try again."
                  )
                )
              )

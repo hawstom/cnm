@@ -64,8 +64,6 @@
 ;;; 2000     v3.21  Stopped the counting of table quantities by renaming table attributes.
 ;;; 2000            Added user size variables to CONSTNOT.TXT
 ;;; 1999     v3.20  Improved performance by rewriting code.
-(VL-LOAD-COM)
-
 (DEFUN
    HCNM-GETPHASELISTFROMTBLQTY (/ EL EN I DSCTAG NOTEQTYONDISK OLDTAGS
                                 PHASEALIAS PHASELIST
@@ -1130,34 +1128,25 @@
   ;;Apply ini table display configs.  If no configs (legacy), show both.
   (MAPCAR
     '(LAMBDA (LAYERKEY / LAYERSHOW LAYERLIST)
-       (SETQ
-         LAYERLIST
-          (TBLSEARCH
-            "LAYER"
-            (CAR (HAWS-GETLAYR (CAR LAYERKEY)))
+       (SETQ LAYERSHOW (/= "0" (C:HCNM-CONFIG-GETVAR (CADR LAYERKEY))))
+       (COND
+         (LAYERSHOW (HAWS-MKLAYR (CAR LAYERKEY)))
+         (T
+          (SETQ
+            LAYERLIST
+             (TBLSEARCH
+               "LAYER"
+               (CAR (HAWS-GETLAYR (CAR LAYERKEY)))
+             )
           )
-         LAYERSHOW
-          (/= "0" (c:hcnm-config-getvar (CADR LAYERKEY)))
-       )
-       ;;If layer exists and is showing in drawing, freeze it if config says.
-       (IF (AND
-             (CDR (ASSOC 70 LAYERLIST))
-             (/= 1 (LOGAND 1 (CDR (ASSOC 70 LAYERLIST))))
-             (< 0 (CDR (ASSOC 62 LAYERLIST)))
-           )
-         (IF (NOT LAYERSHOW)
-           (COMMAND-S "._layer" "_f" (CDR (ASSOC 2 LAYERLIST)) "")
-         )
-         ;;Otherwise it's not there or not showing.  Thaw and on it if registry says.
-         (IF LAYERSHOW
-           (COMMAND-S
-             "._layer"
-             "_t"
-             (CDR (ASSOC 2 LAYERLIST))
-             "_on"
-             (CDR (ASSOC 2 LAYERLIST))
-             ""
-           )
+          ;; If thawed and on, freeze
+          (IF (AND
+                (CDR (ASSOC 70 LAYERLIST))
+                (/= 1 (LOGAND 1 (CDR (ASSOC 70 LAYERLIST))))
+                (< 0 (CDR (ASSOC 62 LAYERLIST)))
+              )
+            (COMMAND-S "._layer" "_f" (CDR (ASSOC 2 LAYERLIST)) "")
+          )
          )
        )
      )
@@ -2164,8 +2153,6 @@
      (ATOF (c:hcnm-config-getvar "PhaseWidthAdd"))
   )
   (HCNM-READCF PROJNOTES)
-  (HAWS-MKLAYR "NOTESKEYGRID")
-  (HAWS-MKLAYR "NOTESKEYQTYS")
   (COND
     ((= OPT "Search")
      (HCNM-TABLE-FROM-SEARCH
@@ -3028,7 +3015,7 @@ ImportLayerSettings=No
     )
     ("Var"
      ("LXXListMode" "yes" 4)
-     ("HawsPgpLisp" "1" 4)
+     ("CNMAliasActivation" "3" 4)
      ("ProjectNotesEditor" "notepad.exe" 4)
      ("LayersEditor" "notepad.exe" 4)
      ("ProjectNotes" "constnot.txt" 2)
@@ -3413,7 +3400,6 @@ ImportLayerSettings=No
 )
 (DEFUN
    HCNM-RESTORE-DIMSTYLE ()
-  ;;Third, if the desired style exists, save current style for later, then restore the desired style.
   (COND
     (*HCNM-DIMSTYLEOLD*
      (COMMAND "._dimstyle" "_restore" *HCNM-DIMSTYLEOLD*)
@@ -4612,17 +4598,6 @@ ImportLayerSettings=No
 )
 
 (DEFUN
-   C:HCNM-ABOUT ()
-  (ALERT
-    (STRCAT
-      "Construction Notes Manager version "
-      (HAWS-UNIFIED-VERSION)
-      " Thomas Gail Haws\nhttp://www.constructionnotesmanager.com"
-    )
-  )
-)
-
-(DEFUN
    C:HAWS-CNMSETUP (/ ACADPATHPREFIX ACADPATHSUFFIX I OLDACADPATH
                     OLDPROGRAMFOLDER PROGRAMFOLDER MATCHLENGTH
                    )
@@ -4765,12 +4740,14 @@ ImportLayerSettings=No
           )
           "No"
         )
-        (SETVAR "ANNOALLVISIBLE" 2)
+        (SETVAR "ANNOALLVISIBLE" 1)
        )
      )
     )
   )
   (COMMAND "._undo" "_g")
+  (HCNM-PROJINIT)
+  (HCNM-SET-DIMSTYLE "NotesLeaderDimstyle")
   (SETQ
     ASSOCIATE-P
      (COND
@@ -4778,8 +4755,14 @@ ImportLayerSettings=No
        (NIL)
      )
   )
-  (HCNM-PROJINIT)
-  (HCNM-SET-DIMSTYLE "NotesLeaderDimstyle")
+  (COND
+    ((AND (NOT ASSOCIATE-P) (/= (GETVAR "DIMSCALE") (/ 1.0 (GETVAR "CANNOSCALEVALUE"))))
+     (ALERT (PRINC (STRCAT "\nDimension scale (" (RTOS (GETVAR "DIMSCALE") 2 2) ") and\nAnnotation scale (" (RTOS (/ 1.0 (GETVAR "CANNOSCALEVALUE")) 2 2) ")\nare not equal.\nCNM recommends setting dimension scale to match annotation scale.")))
+     (INITGET 1 "Yes No")
+     (SETQ INPUT1 (GETKWORD "\nSet dimension scale to match annotation scale? [Yes/No]: "))
+     (COND ((= INPUT1 "Yes")(SETVAR "DIMSCALE" (/ 1.0 (GETVAR "CANNOSCALEVALUE")))))
+    )
+  )
   (SETQ
     BUBBLEHOOKS (c:hcnm-config-getvar "BubbleHooks")
     BLOCKNAME

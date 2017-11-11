@@ -7,104 +7,84 @@
 ;;; This file licensed to the public under the terms of the GNU General Public License
 ;;; This file is Free Software. For more info read the license at fsf.org.
 (VL-LOAD-COM)
-;; Use the snippet below to explore the AutoCAD object model
-;; (SETQ ACADAPP (VLAX-GET-ACAD-OBJECT))
-;; (VLAX-DUMP-OBJECT (VLAX-GET-PROPERTY ACADAPP 'PREFERENCES) T)
-;; (setq aeccapp (vla-getinterfaceobject ACADAPP "AeccXUiLand.AeccApplication.6.0"))
-;; (VLAX-DUMP-OBJECT AECCAPP T)
 
 (DEFUN
    HAWS-UPDATE-SUPPORTPATHS (PATHS / PATH)
   ;;Remove paths
-  (FOREACH PATH PATHS 
-    (HAWS-REMOVE-SUPPORTPATH PATH)
-  )
-  (FOREACH PATH PATHS 
-    (HAWS-ADD-SUPPORTPATH PATH)
-  )
+  (FOREACH PATH PATHS (HAWS-REMOVE-SUPPORTPATH PATH))
+  (FOREACH PATH PATHS (HAWS-ADD-SUPPORTPATH PATH))
 )
 
 (DEFUN
    HAWS-UPDATE-TRUSTEDPATHS (PATHS / PATH)
   ;;Remove paths
-  (FOREACH PATH PATHS 
-    (HAWS-REMOVE-TRUSTEDPATH PATH)
+  (FOREACH PATH PATHS (HAWS-REMOVE-TRUSTEDPATH PATH))
+  (FOREACH PATH PATHS (HAWS-ADD-TRUSTEDPATH PATH))
+)
+
+(DEFUN
+   HAWS-RELOAD-MENUS (/ COUNTER ISALLMENUSREQUESTED ISMENUREMOVED MENUS-DONE MENUS-DONE-STRING MENUS-TO-DO MENUS-TO-DO-TEMP NMENUS
+                      USERINPUT
+                     )
+  (SETQ
+    MENUS-TO-DO
+     '("CNM" "FunKy")
   )
-  (FOREACH PATH PATHS 
-    (HAWS-ADD-TRUSTEDPATH PATH)
+  (COND
+    ((SETQ MENUS-DONE (HAWS-REMOVE-MENUS MENUS-TO-DO))
+     (SETQ MENUS-DONE-STRING (APPLY 'STRCAT (MAPCAR '(LAMBDA (X) (STRCAT "\n" X)) MENUS-DONE)))
+     (ALERT
+       (STRCAT "The following previously loaded CNM menus were found and unloaded.\n" MENUS-DONE-STRING)
+     )
+    )
+  )
+  (FOREACH
+     GROUP MENUS-TO-DO
+    ;; Load the menu.
+    (VLAX-INVOKE-METHOD
+      (VLAX-GET-PROPERTY (HAWS-ACAD-OBJECT) 'MENUGROUPS)
+      'LOAD
+      (FINDFILE (STRCAT GROUP ".cuix"))
+    )
   )
 )
 
 (DEFUN
-   HAWS-RELOAD-MENUS (/ ISALLMENUSREQUESTED ISMENUREMOVED USERINPUT
-                         NMENUS CNMMENUS COUNTER GROUP
-                        )
-  (SETQ
-    CNMMENUS
-     '("CNM" "FunKy")
-    ISALLMENUSREQUESTED NIL
-  )
+   HAWS-REMOVE-MENUS (MENUS-TO-DO / COUNTER ISMENUREMOVED MENUS-DONE NMENUS)
   (FOREACH
-     GROUP CNMMENUS
+     GROUP MENUS-TO-DO
     (SETQ
       COUNTER -1
       ISMENUREMOVED NIL
-      NMENUS
-       (VLAX-GET-PROPERTY (VLAX-GET-PROPERTY (HAWS-ACAD-OBJECT) 'MENUGROUPS) 'COUNT)
     )
-    (COND
-      ;;If user gives permission
-      ((OR ISALLMENUSREQUESTED
-           (PROGN
-             (INITGET "Yes No")
-             (/= "No"
-                 (SETQ
-                   USERINPUT
-                    (GETKWORD
-                      (STRCAT
-                        "\nLoad "
-                        GROUP
-                        " menu? [Yes/No] <Yes>: "
-                      )
-                    )
-                 )
-             )
-           )
-       )
-       (COND ((= USERINPUT "All") (SETQ ISALLMENUSREQUESTED T)))
-       ;;1.  Unload the menu if present
-       ;;Loop through load menus to find and unload this menu.
-       (WHILE (AND
-                (< (SETQ COUNTER (1+ COUNTER)) NMENUS)
-                (NOT ISMENUREMOVED)
+    ;;Loop through loaded menus to find and unload this menu.
+    (WHILE (AND (< (SETQ COUNTER (1+ COUNTER)) NMENUS) (NOT ISMENUREMOVED))
+      (COND
+        ((= (STRCASE
+              (VLAX-GET-PROPERTY
+                (VLAX-INVOKE-METHOD (VLAX-GET-PROPERTY (HAWS-ACAD-OBJECT) 'MENUGROUPS) 'ITEM COUNTER)
+                'NAME
               )
-         (COND
-           ((= (STRCASE
-                 (VLAX-GET-PROPERTY
-                   (VLAX-INVOKE-METHOD (VLAX-GET-PROPERTY (HAWS-ACAD-OBJECT) 'MENUGROUPS) 'ITEM COUNTER)
-				   'NAME
-                 )
-               )
-               (STRCASE GROUP)
             )
-            (VLAX-INVOKE-METHOD
-              (VLAX-INVOKE-METHOD (VLAX-GET-PROPERTY (HAWS-ACAD-OBJECT) 'MENUGROUPS) 'ITEM COUNTER)
-			  'UNLOAD
-            )
-            (SETQ ISMENUREMOVED T)
-           )
+            (STRCASE GROUP)
          )
-       )
-       ;;2.  Load the menu.
-       (VLAX-INVOKE-METHOD 
-         (VLAX-GET-PROPERTY (HAWS-ACAD-OBJECT) 'MENUGROUPS)
-          'LOAD
-         (FINDFILE (STRCAT GROUP ".cuix"))
-       )
+         (VLAX-INVOKE-METHOD
+           (VLAX-INVOKE-METHOD (VLAX-GET-PROPERTY (HAWS-ACAD-OBJECT) 'MENUGROUPS) 'ITEM COUNTER)
+           'UNLOAD
+         )
+         (SETQ
+           ISMENUREMOVED T
+           NMENUS (1- NMENUS)
+           MENUS-DONE
+            (CONS GROUP MENUS-DONE)
+         )
+        )
       )
     )
   )
+  MENUS-DONE
 )
+
 
 (DEFUN
    HAWS-ACAD-OBJECT ()
@@ -117,55 +97,68 @@
 (DEFUN
    HAWS-ADD-SUPPORTPATH (NEWSTRING / FILES)
   (SETQ FILES (VLAX-GET-PROPERTY (VLAX-GET-PROPERTY (HAWS-ACAD-OBJECT) 'PREFERENCES) 'FILES))
-  (VLAX-PUT-PROPERTY
-    FILES
-    'SUPPORTPATH
-    (STRCAT NEWSTRING ";" (VLAX-GET-PROPERTY FILES 'SUPPORTPATH))
-  )
+  (VLAX-PUT-PROPERTY FILES 'SUPPORTPATH (STRCAT NEWSTRING ";" (VLAX-GET-PROPERTY FILES 'SUPPORTPATH)))
 )
 
 (DEFUN
-   HAWS-REMOVE-SUPPORTPATH (STRING / FILES OLDSUPPORTPATH POSITION)
+   HAWS-REMOVE-SUPPORTPATH (STRING / FILES NEWSUPPORTPATH OLDSUPPORTPATH POSITION)
   (SETQ
-    FILES (VLAX-GET-PROPERTY (VLAX-GET-PROPERTY (HAWS-ACAD-OBJECT) 'PREFERENCES) 'FILES)
+    FILES
+     (VLAX-GET-PROPERTY (VLAX-GET-PROPERTY (HAWS-ACAD-OBJECT) 'PREFERENCES) 'FILES)
     OLDSUPPORTPATH
      (VLAX-GET-PROPERTY FILES 'SUPPORTPATH)
+    NEWSUPPORTPATH
+     (VL-STRING-SUBST "" (STRCASE STRING) (STRCASE OLDSUPPORTPATH))
   )
-  (VLAX-PUT-PROPERTY FILES 'SUPPORTPATH
-    (VL-STRING-SUBST "" STRING OLDSUPPORTPATH)
+  (COND
+    ((= NEWSUPPORTPATH (STRCASE OLDSUPPORTPATH))
+     NIL
+     )
+    (T (VLAX-PUT-PROPERTY
+         FILES
+         'SUPPORTPATH
+         (VL-STRING-SUBST "" STRING OLDSUPPORTPATH)
+       )
+    )
   )
 )
 
 (DEFUN
    HAWS-ADD-TRUSTEDPATH (NEWSTRING / FILES)
-  (SETVAR "TRUSTEDPATHS"
-    (STRCAT NEWSTRING ";" (GETVAR "TRUSTEDPATHS"))
-  )
+  (SETVAR "TRUSTEDPATHS" (STRCAT NEWSTRING ";" (GETVAR "TRUSTEDPATHS")))
 )
 
 (DEFUN
    HAWS-REMOVE-TRUSTEDPATH (STRING / FILES OLDSUPPORTPATH POSITION)
-  (SETQ
-    OLDTRUSTEDPATH
-     (GETVAR "TRUSTEDPATHS")
-  )
-  (SETVAR "TRUSTEDPATHS"
-    (VL-STRING-SUBST "" STRING OLDTRUSTEDPATH)
-  )
+  (SETQ OLDTRUSTEDPATH (GETVAR "TRUSTEDPATHS"))
+  (SETVAR "TRUSTEDPATHS" (VL-STRING-SUBST "" STRING OLDTRUSTEDPATH))
+)
+
+(DEFUN
+  HAWS-INSTALL-PENDING-READ ()
+  (VL-REGISTRY-READ "HKEY_CURRENT_USER\\Software\\HawsEDC" "InstallPending")
+)
+
+(DEFUN
+  HAWS-INSTALL-PENDING-DELETE ()
+  (VL-REGISTRY-DELETE "HKEY_CURRENT_USER\\Software\\HawsEDC" "InstallPending")
 )
 
 (DEFUN
    HAWS-CNMINSTALL (CNMPATH / PATHS)
-   ;; Add paths in reverse order (top path at bottom)
-  (SETQ PATHS
-    (LIST
-      CNMPATH
-    )
+  ;; Add paths in reverse order (top path at bottom)
+  (SETQ
+    PATHS (LIST CNMPATH)
   )
-  (HAWS-UPDATE-SUPPORTPATHS PATHS)
-  (HAWS-UPDATE-TRUSTEDPATHS PATHS)
-  (HAWS-RELOAD-MENUS)
-  (LOAD "cnmloader")
-  (ALERT "CNM may not work in other drawings until you restart AutoCAD.") 
+;;  (COND
+;;    ((HAWS-INSTALL-PENDING-READ)
+     (HAWS-UPDATE-SUPPORTPATHS PATHS)
+     (HAWS-UPDATE-TRUSTEDPATHS PATHS)
+     (HAWS-RELOAD-MENUS)
+     (LOAD "cnmloader")
+     (ALERT "CNM menus and toolbars installed. If you moved CNM from a previous location, you must restart AutoCAD.")
+;;     (HAWS-INSTALL-PENDING-DELETE)
+;;    )
+;;  )
   (PRINC)
 )

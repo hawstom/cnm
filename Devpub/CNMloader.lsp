@@ -76,7 +76,7 @@
                         "hcnm-layereditor" "hcnm-cnmlayer"
                         "hcnm-attnoplot" "hcnm-attplot"
                         "hcnm-noteseditor" "hcnm-notesedit"
-                        "haws-cnmmenu" "hcnm-about" "haws-cnmsetup"
+                        "haws-cnmmenu" "haws-cnmsetup"
                         "haws-phaseedit" "haws-setnotephases"
                         "haws-ntpurge" "hcnm-setnotesbubblestyle"
                         "hcnm-cnmoptions")
@@ -131,11 +131,11 @@
 (haws-autoload "txtsum"   '("haws-txtsum"))
 
 ;;---------------Layer Management Section---------------
-(haws-autoload "lam"      '("haws-l0" "haws-lka" "haws-ula"))
+(haws-autoload "lam"      '("haws-l0" "haws-lka" "haws-lki" "haws-ofi" "haws-ula"))
 (haws-autoload "chm"      '("haws-chm"));Changes properties, where laymch does not.
 (haws-autoload "cl"       '("haws-cl"));Changes properties, where laycur does not.
 (haws-autoload "lastat"   '("haws-ff" "haws-ffx" "haws-off" "haws-offx" "haws-uff" "haws-uoff" "haws-uffx" "haws-uoffx"))
-(haws-autoload "isolat"   '("haws-ffi" "haws-lki" "haws-ofi"))
+(haws-autoload "isolat"   '("haws-ffi"))
 (haws-autoload "layersav" '("haws-lar" "haws-las"))
 (haws-autoload "lcp"      '("haws-lcp" "haws-lcpx"))
 (haws-autoload "lwp"      '("haws-lwp" "haws-lwpx"))
@@ -168,7 +168,7 @@
 (haws-autoload "wl"       '("haws-wl"))
 
 ;;---------------Editing Section---------------
-(haws-autoload "edt"      '("haws-bf" "haws-cb" "haws-copy" "haws-mp" "haws-pj" "haws-r1" "haws-r2" "haws-r4" "haws-r9" "haws-s" "haws-ub" "haws-um" "haws-vb"))
+(haws-autoload "edt"      '("haws-bf" "haws-cb" "haws-copy" "haws-explode" "haws-mp" "haws-pj" "haws-r1" "haws-r2" "haws-r4" "haws-r9" "haws-s" "haws-ub" "haws-um" "haws-vb"))
 (haws-autoload "addleng"  '("haws-adl" ))
 (haws-autoload "brkmat"   '("haws-bm"))
 (haws-autoload "brk"      '("haws-brk"))
@@ -229,12 +229,12 @@
 ;;; Load CNM for its library functions
 (load "cnm")
 ;;;Load aliases
-;;;HAWSALIAS.LSP has short names for all the commands.
+;;;CNMALIAS.LSP has short names for all the commands.
 (COND
-  ((not *HAWS-HAWSALIASLOADED*)
-   (IF(= (LOAD "hawsalias.lsp" "failed") "failed")(ALERT "Couldn't find hawsalias.lsp command aliases."))
+  ((not *HCNM-CNMALIASLOADED*)
+   (IF(= (LOAD "cnmalias.lsp" "failed") "failed")(ALERT "Couldn't find cnmalias.lsp command aliases."))
   )
-  (T (PRINC "\nSkipping hawsalias.lsp command aliases.  Already loaded."))
+  (T (PRINC "\nSkipping cnmalias.lsp command aliases.  Already loaded."))
 )
 ;;;The following line loads user.lsp if found.
 (if (setq temp(findfile "user.lsp"))(load temp))

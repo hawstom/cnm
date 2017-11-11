@@ -1,34 +1,38 @@
-INSTALL
+==INSTALL==
 To finish installing CNM into any AutoCAD profile, you must do one of the following:
 
 a) Drag CNM-Install.lsp from the desktop into an open drawing.  CNM-Install.lsp is 
 open source in case you want to customize it.  A copy has also been placed in the 
 application directory.
 
+OR
+
 b) Add the installation folder to your AutoCAD Support Files and Trusted paths.
 Then use MENULOAD to load CNM.CUIX (and optionally FUNKY.CUIX function key osnaps).
 
-TEST
-Open cnm-test\cnm-test.dwg from the CNM folder and run cnm-test\cnm-test.scr.
+==DEMONSTRATION==
+Open Construction Notes Manager Examples\CNM-Demo.dwg from your Documents folder and 
+run Construction Notes Manager Examples\CNM-Demo.scr.
 
-COMMAND REFERENCE
-Open CNM-Command-Reference.ods from the CNM folder. Sort by descending coolness (columns D and B) or descending category (columns A and B)
+==COMMAND REFERENCE==
+Open CNM-Command-Reference.ods from the CNM folder. Sort by descending coolness 
+(columns D and B) or descending category (columns A and B)
 
-KEYBOARD ALIASES
+==KEYBOARD ALIASES==
 CNM includes a couple dozen optimized keyboard aliases for native AutoCAD commands.
 These aliases may override some of your custom PGP aliases. They will make your 
 drafting easier if you take the time to learn them. (See more below.) If you find 
 you cannot adapt to them or if you need to change any of them, or if you prefer 
-to manage them using ACAD.PGP, you can use the HAM (HawsAliasManage) command to 
+to manage them using ACAD.PGP, you can use the CNMALIAS command to 
 turn them off or change them.
 
-VERSION 4.2.30
+==VERSION 4.2.30==
 -New Cool Stuff
 --Ribbon interface
 --Bubble notes now are all-shapes-in-one.
 --Bubble notes now include handy draggable wipeouts. Set your WIPEOUTFRAME to 2.
 --Contour Elevate and/or Label (CEL) tool
---LX plus (LXX) isolates layers for selected objects in Layer palette
+--LX Plus (LXX) isolates layers for selected objects in Layer palette
 --Lengthen command optimized with Dynamic default. LE/LLL
 --CB/VB copy/paste at 0,0
 --Acres, SF, SY, and SM (sq. mi.) commands.

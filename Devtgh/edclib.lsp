@@ -3,7 +3,7 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "4.2.30.b.02\n\nCopyright 2017"
+  "4.2.30.b.09\n\nCopyright 2017"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 (SETQ *HAWS-DEBUGLEVEL* 0)
@@ -41,15 +41,41 @@
 ;;; 20050831 1.05   TGH Changed CNM to version 4.2.00.  Recompiled
 ;;; (legacy)
 ;;; lisputil.lsp
+(DEFUN C:HCNM-ABOUT () (C:HAWS-ABOUT))
 (DEFUN
-   C:HAWS-ABOUT ()
+   C:HAWS-ABOUT (/ LICENSEREPORT)
   (ALERT
-    (STRCAT
-      "HawsEDC Tools version "
-      (HAWS-UNIFIED-VERSION)
-      "\n\nCopyright 2017 Thomas Gail Haws\nhttp://www.hawsedc.com"
+    (PRINC
+      (STRCAT
+        "Construction Notes Manager version "
+        (HAWS-UNIFIED-VERSION)
+        "\n\nCopyright 2017 Thomas Gail Haws\nhttp://constructionnotesmanager.com\nhttp://hawsedc.com\n"
+        (APPLY
+          'STRCAT
+          (MAPCAR
+            '(LAMBDA (PACKAGE)
+               (IF (SETQ
+                     LICENSEREPORT
+                      (HAWS-PACKAGELICENSEREPORT
+                        (CAR PACKAGE)
+                      )
+                   )
+                 (STRCAT
+                   "\n"
+                   (CADR PACKAGE)
+                   " authorized on this computer. Key: "
+                   LICENSEREPORT
+                 )
+                 ""
+               )
+             )
+            *HAWS-EDCMODULES*
+          )
+        )
+      )
     )
   )
+  (PRINC)
 )
 ;;;=================================================================
 ;;;
@@ -73,11 +99,13 @@
 ;;  2 NOTES package with CNMEdit.exe
 ;;  3 Full HawsEDC with CNMEdit.exe (CNM Pro plus HawsEDC tools)
 ;;  4 Layer tools
-;; Don't forget to add new packages to checkstoredstrings function at
+;; Don't forget to add new packages to HAWS-CHECKSTOREDSTRINGS function at
 ;; bottom
 ;; of this
 ;; file.
 (SETQ
+  *HAWS-EDCMODULES*
+   '((0 "CNM Lite") (3 "CNM Pro"))
   *HAWS-EDCAPPGROUPS*
    ;; App group 0 is included in package 0 and 3
    '
@@ -99,8 +127,6 @@
      ((= *HAWS-ORIGINATOR* "DOW") 2)
    )
 )
-
-(VL-LOAD-COM)
 
 ;;;HawsEDC general function handler
 ;;;Includes banner, error handler, and validator.
@@ -241,26 +267,18 @@
       ((AND
          ;;Permanent authorization hasn't already been found in some package
          (NOT AUTHORIZEDPERMANENT)
-         ;;and there is an orderstring found for this package,
+         ;;There is an orderstring found for this package,
          (SETQ ORDERSTRING (HAWS-READORDERCODE PACKAGE))
          ;;and there is an authstring found for this package,
          (SETQ AUTHSTRING (HAWS-READAUTHCODE PACKAGE))
          ;;And the order and authorization strings match (return a date difference)
-         ;;(machine matching should have already been checked by checkstoredstrings on loadup)
+         ;;(machine matching should have already been checked by HAWS-CHECKSTOREDSTRINGS on loadup)
          (SETQ
            USERSTRINGDATEDIFF
             (HAWS-USERSTRINGDATEDIFF
               ORDERSTRING
               AUTHSTRING
             )
-         )
-       )
-       ;;Then
-       ;;Decide whether this package is authorized.
-       (HAWS-MILEPOST
-         (STRCAT
-           "Current trial stands at:"
-           (ITOA (FIX TRIALDAYSLEFT))
          )
        )
        (HAWS-MILEPOST
@@ -273,6 +291,14 @@
            AUTHSTRING
            ", Diff:"
            (ITOA USERSTRINGDATEDIFF)
+         )
+       )
+       ;;Then
+       ;;Decide whether this package is authorized.
+       (HAWS-MILEPOST
+         (STRCAT
+           "Current trial stands at:"
+           (ITOA (FIX TRIALDAYSLEFT))
          )
        )
        (COND
@@ -289,7 +315,7 @@
              (MAX
                TRIALDAYSLEFT
                (- (CAR (HAWS-AUTHTOLIST AUTHSTRING))
-                  (GETVAR "date")
+                  (FIX (GETVAR "date"))
                )
              )
           )
@@ -300,13 +326,13 @@
   )
   (COND
     ;;If authorized permanently, return T
-    (AUTHORIZEDPERMANENT)
+    (AUTHORIZEDPERMANENT T)
     ;;Else if there are positive days left in a trial, print a note and return T
     ((NOT (MINUSP TRIALDAYSLEFT))
      (PRINC
        (STRCAT
          "\nYou have "
-         (ITOA (FIX TRIALDAYSLEFT))
+         (ITOA TRIALDAYSLEFT)
          " days left in your trial period."
        )
      )
@@ -314,7 +340,6 @@
     )
   )
 )
-
 
 ;;; AUTHORIZEAPPGROUP gives user order code, prompts user for matching
 ;;; authorization
@@ -370,6 +395,60 @@
   )
 )
 
+(DEFUN
+   HAWS-PACKAGELICENSEREPORT (PACKAGE / DATEDIFF)
+  (SETQ
+    AUTHSTRING
+     (HAWS-READAUTHCODE PACKAGE)
+    DATEDIFF
+     (HAWS-PACKAGEUSERSTRINGDATEDIFF PACKAGE)
+  )
+  (COND
+    ((NOT (AND DATEDIFF AUTHSTRING)) NIL)
+    ((<= DATEDIFF -1000000) (STRCAT AUTHSTRING " (unlimited)"))
+    ((>= DATEDIFF 31)
+     (STRCAT AUTHSTRING " (" (ITOA DATEDIFF) " day trial)")
+    )
+    (T NIL)
+  )
+)
+
+(DEFUN
+   HAWS-PACKAGEUSERSTRINGDATEDIFF
+   (PACKAGE / AUTHSTRING ORDERSTRING USERSTRINGDATEDIFF)
+  (COND
+    ((AND
+       ;;There is an orderstring found for this package,
+       (SETQ ORDERSTRING (HAWS-READORDERCODE PACKAGE))
+       ;;and there is an authstring found for this package,
+       (SETQ AUTHSTRING (HAWS-READAUTHCODE PACKAGE))
+       ;;And the order and authorization strings match (return a date difference)
+       ;;(machine matching should have already been checked by HAWS-CHECKSTOREDSTRINGS on loadup)
+       (SETQ
+         USERSTRINGDATEDIFF
+          (HAWS-USERSTRINGDATEDIFF
+            ORDERSTRING
+            AUTHSTRING
+          )
+       )
+     )
+     (HAWS-MILEPOST
+       (STRCAT
+         "Auth match found. P:"
+         (ITOA PACKAGE)
+         " O:"
+         ORDERSTRING
+         ", A:"
+         AUTHSTRING
+         ", Diff:"
+         (ITOA USERSTRINGDATEDIFF)
+       )
+     )
+     (HAWS-USERSTRINGDATEDIFF ORDERSTRING AUTHSTRING)
+    )
+  )
+)
+
 ;;; USERSTRINGDATEDIFF compares an authorization string and a user
 ;;; string.
 ;;; Returns a date difference if the strings match.
@@ -396,7 +475,6 @@
   )
 )
 
-
 (DEFUN
    HAWS-READORDERCODE (PACKAGE)
   (HAWS-READPACKAGECODE PACKAGE "OrderString")
@@ -413,7 +491,7 @@
 
 ;;; Returns stored string or nil.
 ;;; (getcfg) returns nil if the section doesn't exist.  Returns "" if the param doesn't exist.
-;;; Since this is executed by (checkstoredstrings) on load, we can use this function to transfer stored info from the registry
+;;; Since this is executed by (HAWS-CHECKSTOREDSTRINGS) on load, we can use this function to transfer stored info from the registry
 ;;; to the new storage location, and we can depend on (getcfg) returning nil the first time.
 (DEFUN
    HAWS-READPACKAGECODE (PACKAGE STRINGNAME / STOREDSTRING)
@@ -620,8 +698,8 @@
     (PRINC
       (STRCAT
         "\n\nThe order code for the package you ordered will be shown below."
-        "\n\nIf you already ordered an authorization code, please enter it at the following prompt."
-        "\nTo order an authorization code, please close this message,"
+        "\n\nIf you already ordered an authorization key, please enter it at the following prompt."
+        "\nTo order an authorization key, please close this message,"
         "\nthen copy and paste the order code shown into the contact form at www.HawsEDC.com."
       )
     )
@@ -632,7 +710,7 @@
        (STRCAT
          "\nOrder code is: "
          ORDERSTRING
-         "\nEnter authorization code or <continue>: "
+         "\nEnter authorization key or <continue>: "
        )
      )
   )
@@ -657,13 +735,10 @@
      )
      (SETQ NAGMATCHSUCCESS T)
     )
-    ;; Else flag to write the authorization, and
-    ;; if a matching authorization was supplied,
-    ;; Flag success,
-    ((AND
-       (SETQ WRITESTRINGS T)
-       (HAWS-USERSTRINGDATEDIFF ORDERSTRING AUTHSTRING)
-     )
+    ;; Else if a matching authorization was supplied,
+    ;; flag to write the authorization and flag success,
+    ((HAWS-USERSTRINGDATEDIFF ORDERSTRING AUTHSTRING)
+     (SETQ WRITESTRINGS T)
      (SETQ AUTHMATCHSUCCESS T)
     )
   )
@@ -710,7 +785,7 @@
            (IF (NOT AUTHMATCHSUCCESS)
              (STRCAT
                "\nOrder code\n\"" ORDERSTRING
-               "\"\nand authorization code\n\"" AUTHSTRING
+               "\"\nand authorization key\n\"" AUTHSTRING
                "\"\ndon't match."
               )
              ""
@@ -2592,11 +2667,12 @@
      (CADDR LAOPT)
   )
   (HAWS-LOAD-LINETYPE LALTYP)
-  (WHILE 
-    (AND (/= LALTYP "") (NOT(TBLSEARCH "LTYPE" LALTYP)))
+  (WHILE (AND (/= LALTYP "") (NOT (TBLSEARCH "LTYPE" LALTYP)))
     (ALERT
       (STRCAT
-        "\nLinetype " LALTYP " is still not loaded.\nPlease follow prompts to try a different linetype or file."
+        "\nLinetype "
+        LALTYP
+        " is still not loaded.\nPlease follow prompts to try a different linetype or file."
       )
     )
     (SETQ
@@ -2607,7 +2683,12 @@
          LALTYP
        )
     )
-    (COND ((/= TEMP LALTYP)(SETQ LALTYP TEMP)  (HAWS-LOAD-LINETYPE LALTYP)))
+    (COND
+      ((/= TEMP LALTYP)
+       (SETQ LALTYP TEMP)
+       (HAWS-LOAD-LINETYPE LALTYP)
+      )
+    )
     (COND
       ((NOT (TBLSEARCH "LTYPE" LALTYP))
        (SETQ
@@ -2621,37 +2702,50 @@
        )
       )
     )
-    (COMMAND "._linetype" "_l" LALTYP LTFILE)
-    (COMMAND)
+    (COMMAND-S "._linetype" "_l" LALTYP LTFILE "")
   )
   (HAWS-MILEPOST "Finished assuring linetype.")
-  (COMMAND "._layer")
   (IF (NOT (TBLSEARCH "LAYER" LANAME))
-    (COMMAND "m" LANAME)
-    (COMMAND "t" LANAME "on" LANAME "u" LANAME "s" LANAME)
+    (COMMAND-S "._layer" "_m" LANAME "")
+    (COMMAND-S "._layer" "_t" LANAME "_on" LANAME "_u" LANAME "_s" LANAME "")
   )
   (IF (/= LACOLR "")
-    (COMMAND "c" LACOLR "")
+    (COMMAND-S "._layer" "_c" LACOLR "" "")
   )
   (IF (/= LALTYP "")
-    (COMMAND "lt" LALTYP "")
+    (COMMAND-S "._layer" "_lt" LALTYP "" "")
   )
-  (COMMAND "")
   (HAWS-MILEPOST "Finished making layer.")
   LAOPT
 )
 
-(DEFUN HAWS-LOAD-LINETYPE (LTYPE / I LTFILES)
+(DEFUN
+   HAWS-LOAD-LINETYPE (LTYPE / I LTFILES)
   (SETQ
-    LTFILES (LIST "acad" "hawsedc" "default")
+    LTFILES
+     (LIST "acad" "hawsedc" "default")
     I -1
   )
-  (WHILE
-    (AND (/= LALTYP "") (NOT(TBLSEARCH "LTYPE" LTYPE)) (SETQ LTFILE (NTH (SETQ I (1+ I)) LTFILES)))
-    (PRINC (STRCAT "\nLinetype " LTYPE " is not loaded. Attempting to load from " LTFILE ".lin..."))
-    (COMMAND "._linetype" "_l" LTYPE LTFILE "")
+  (WHILE (AND
+           (/= LALTYP "")
+           (NOT (TBLSEARCH "LTYPE" LTYPE))
+           (SETQ LTFILE (NTH (SETQ I (1+ I)) LTFILES))
+         )
+    (PRINC
+      (STRCAT
+        "\nLinetype " LTYPE " is not loaded. Attempting to load from "
+        LTFILE ".lin..."
+       )
+    )
+    (COMMAND-S "._linetype" "_l" LTYPE LTFILE "")
   )
-  (HAWS-MILEPOST (strcat "Finished trying to load linetype " LTYPE " from acad.lin, default.lin (Bricscad), and hawsedc.lin."))
+  (HAWS-MILEPOST
+    (STRCAT
+      "Finished trying to load linetype "
+      LTYPE
+      " from acad.lin, default.lin (Bricscad), and hawsedc.lin."
+    )
+  )
 )
 
 (VL-ACAD-DEFUN 'HAWS-MKTEXT)
@@ -3462,8 +3556,8 @@
 ;;; If (HAWS-READCFG "/HawsEDC/Modules/package/OrderString") "",
 ;;; we assume quite trustingly that the application has never yet been tried.
 (DEFUN
-   CHECKSTOREDSTRINGS (/ AUTHLIST AUTHSTRING DELETEALL TEMP)
-  (HAWS-MILEPOST "Entering checkstoredstrings")
+   HAWS-CHECKSTOREDSTRINGS (/ AUTHLIST AUTHSTRING DELETEALL TEMP)
+  (HAWS-MILEPOST "Entering HAWS-CHECKSTOREDSTRINGS")
   (FOREACH
      PACKAGE '(0 1 2 3)
     (SETQ AUTHSTRING (HAWS-READAUTHCODE PACKAGE))
@@ -3552,7 +3646,7 @@
          (HAWS-BINARYTOUSER
            (HAWS-ENCRYPTAUTHSTRING
              ;;Trial length
-             (HAWS-LISTTOBINARY (CONS (+ (CAR TEMP) 1 30) (CDR TEMP)))
+             (HAWS-LISTTOBINARY (CONS (+ (CAR TEMP) 30) (CDR TEMP)))
            )
          )
        )
@@ -3568,9 +3662,9 @@
      )
     )
   )
-  (HAWS-MILEPOST "Finished checkstoredstrings")
+  (HAWS-MILEPOST "Finished HAWS-CHECKSTOREDSTRINGS")
 )
-(CHECKSTOREDSTRINGS)
+(HAWS-CHECKSTOREDSTRINGS)
 
 (PROMPT "loaded.")
  ;|«Visual LISP© Format Options»

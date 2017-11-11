@@ -1,9 +1,9 @@
 ;Freeze, off, or lock all except picked layers
 ;Written by Thomas Gail Haws
 
-(defun c:haws-OFI () (HAWS-isolat "off" nil))
+;;(defun c:haws-OFI () (HAWS-isolat "off" nil))
 (defun c:haws-FFI () (HAWS-isolat "freeze" nil))
-(defun c:haws-LKI () (HAWS-isolat "lock" nil))
+;;(defun c:haws-LKI () (HAWS-isolat "lock" nil))
 (defun HAWS-isolat (lopera nested / ss1 i en)
   (haws-core-borrow 1)
   (HAWS-VSAVE '("EXPERT"))
