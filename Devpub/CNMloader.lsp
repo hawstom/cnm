@@ -131,10 +131,10 @@
 (haws-autoload "txtsum"   '("haws-txtsum"))
 
 ;;---------------Layer Management Section---------------
-(haws-autoload "lam"      '("haws-l0" "haws-lka" "haws-lki" "haws-ofi" "haws-ula"))
+(haws-autoload "lam"      '("haws-l0" "haws-lk0" "haws-lka" "haws-lki" "haws-ofi" "haws-ula"))
 (haws-autoload "chm"      '("haws-chm"));Changes properties, where laymch does not.
 (haws-autoload "cl"       '("haws-cl"));Changes properties, where laycur does not.
-(haws-autoload "lastat"   '("haws-ff" "haws-ffx" "haws-off" "haws-offx" "haws-uff" "haws-uoff" "haws-uffx" "haws-uoffx"))
+(haws-autoload "lastat"   '("haws-ff" "haws-ffx" "haws-lk" "haws-off" "haws-offx" "haws-uff" "haws-uoff" "haws-uffx" "haws-uoffx"))
 (haws-autoload "isolat"   '("haws-ffi"))
 (haws-autoload "layersav" '("haws-lar" "haws-las"))
 (haws-autoload "lcp"      '("haws-lcp" "haws-lcpx"))

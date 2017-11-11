@@ -3,6 +3,7 @@
 
 (HAWS-MILEPOST "Loading lastat.lsp version a")
 (DEFUN C:HAWS-FF () (HAWS-LASTAT "freeze" NIL)(princ))
+(DEFUN C:HAWS-LK () (HAWS-LASTAT "lock" NIL)(princ))
 (DEFUN C:HAWS-OFF () (HAWS-LASTAT "off" NIL)(princ))
 
 (DEFUN
@@ -47,7 +48,7 @@
     (LASSET
      (WHILE (SETQ EN (SSNAME LASSET I))
        (SETQ LA (CDR (ASSOC 8 (ENTGET EN))))
-       (COMMAND LOPERA LA)
+       (COMMAND (STRCAT "_" LOPERA) LA)
        (IF VP
 	 (COMMAND "")
        )
