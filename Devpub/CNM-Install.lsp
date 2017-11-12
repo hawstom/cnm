@@ -28,11 +28,15 @@
                      )
   (SETQ
     MENUS-TO-DO
-     '("CNM" "FunKy")
+     '(
+       ;;("File/group name" "Prompt")
+       ("CNM" "Core CNM menu") 
+       ("FunKy" "Function key osnaps")
+     )
   )
   (COND
     ((SETQ MENUS-DONE (HAWS-REMOVE-MENUS MENUS-TO-DO))
-     (SETQ MENUS-DONE-STRING (APPLY 'STRCAT (MAPCAR '(LAMBDA (X) (STRCAT "\n" X)) MENUS-DONE)))
+     (SETQ MENUS-DONE-STRING (APPLY 'STRCAT (MAPCAR '(LAMBDA (X) (STRCAT "\n" (CAR X))) MENUS-DONE)))
      (ALERT
        (STRCAT "The following previously loaded CNM menus were found and unloaded.\n" MENUS-DONE-STRING)
      )
@@ -40,11 +44,28 @@
   )
   (FOREACH
      GROUP MENUS-TO-DO
-    ;; Load the menu.
-    (VLAX-INVOKE-METHOD
-      (VLAX-GET-PROPERTY (HAWS-ACAD-OBJECT) 'MENUGROUPS)
-      'LOAD
-      (FINDFILE (STRCAT GROUP ".cuix"))
+     (INITGET "Yes No")
+     (COND
+       (
+         (/= "No"
+             (SETQ
+               USERINPUT
+                (GETKWORD
+                  (STRCAT
+                    "\nLoad "
+                    (CADR GROUP)
+                    " menu? [Yes/No] <Yes>: "
+                  )
+                )
+             )
+        )
+        ;; Load the menu.
+        (VLAX-INVOKE-METHOD
+          (VLAX-GET-PROPERTY (HAWS-ACAD-OBJECT) 'MENUGROUPS)
+          'LOAD
+          (FINDFILE (STRCAT (CAR GROUP) ".cuix"))
+        )
+      )
     )
   )
 )
@@ -56,6 +77,8 @@
     (SETQ
       COUNTER -1
       ISMENUREMOVED NIL
+      NMENUS
+       (VLAX-GET-PROPERTY (VLAX-GET-PROPERTY (HAWS-ACAD-OBJECT) 'MENUGROUPS) 'COUNT)
     )
     ;;Loop through loaded menus to find and unload this menu.
     (WHILE (AND (< (SETQ COUNTER (1+ COUNTER)) NMENUS) (NOT ISMENUREMOVED))
@@ -66,7 +89,7 @@
                 'NAME
               )
             )
-            (STRCASE GROUP)
+            (STRCASE (CAR GROUP))
          )
          (VLAX-INVOKE-METHOD
            (VLAX-INVOKE-METHOD (VLAX-GET-PROPERTY (HAWS-ACAD-OBJECT) 'MENUGROUPS) 'ITEM COUNTER)
@@ -129,7 +152,7 @@
 )
 
 (DEFUN
-   HAWS-REMOVE-TRUSTEDPATH (STRING / FILES OLDSUPPORTPATH POSITION)
+   HAWS-REMOVE-TRUSTEDPATH (STRING / OLDTRUSTEDPATH)
   (SETQ OLDTRUSTEDPATH (GETVAR "TRUSTEDPATHS"))
   (SETVAR "TRUSTEDPATHS" (VL-STRING-SUBST "" STRING OLDTRUSTEDPATH))
 )

@@ -1,79 +1,117 @@
-(defun
-   hcnm-alias-activation-groups ()
+(SETQ *HCNM-PGP-ALIASES* NIL)
+
+(DEFUN
+   HCNM-ALIAS-ACTIVATION-GROUPS ()
   ;;("Key" Flag "Message" "Prompt")
   '
    (("Tools" 1 "custom tool" "cnm Tools")
-    ("Custompgp" 2 "custom alias for AutoCAD command (change with CNMAlias)" "Custom command aliases")
-    ("Standardpgp" 4 "verbatim alias for AutoCAD command (change with CNMAlias)" "Standard command aliases")
+    ("Custompgp"
+     2
+     "custom alias for AutoCAD command (change with CNMAlias)"
+     "Custom command aliases"
+    )
+    ("Standardpgp"
+     4
+     "verbatim alias for AutoCAD command (change with CNMAlias)"
+     "Standard command aliases"
+    )
    )
 )
 
-(defun hcnm-alias-group (key) (assoc key (hcnm-alias-activation-groups)))
-(defun hcnm-alias-group-flag (group) (cadr group))
-(defun
-   hcnm-alias-group-message (group alias)
-  (strcat
+(DEFUN
+   HCNM-ALIAS-GROUP (KEY)
+  (ASSOC KEY (HCNM-ALIAS-ACTIVATION-GROUPS))
+)
+(DEFUN HCNM-ALIAS-GROUP-FLAG (GROUP) (CADR GROUP))
+(DEFUN
+   HCNM-ALIAS-GROUP-MESSAGE (GROUP ALIAS)
+  (STRCAT
     "CNM "
-    (caddr group)
+    (CADDR GROUP)
     ": "
-    (strcase (car alias))
-    (if (= (cadddr alias) "")
+    (STRCASE (CAR ALIAS))
+    (IF (= (CADDDR ALIAS) "")
       ""
-      (strcat "\n" (cadddr alias))
+      (STRCAT "\n" (CADDDR ALIAS))
     )
   )
 )
 
-(defun
-   hcnm-define-lisp-alias (alias)
-  (hcnm-define-alias (alias) "(c:" ")")
+(DEFUN
+   HCNM-DEFINE-LISP-ALIAS (ALIAS)
+  (HCNM-DEFINE-ALIAS ALIAS "(c:" ")")
 )
-(defun
-   hcnm-define-command-alias (alias)
-  (hcnm-define-alias (alias) "(command \"._" "\")")
-)
-
-(defun
-  hcnm-define-alias (alias invocation-prefix invocation-suffix /)
-  (hcnm-define-aliases ((list alias) invocation-prefix invocation-suffix)
+(DEFUN
+   HCNM-DEFINE-COMMAND-ALIAS (ALIAS)
+  (HCNM-DEFINE-ALIAS ALIAS "(command \"._" "\")")
+  (SETQ *HCNM-PGP-ALIASES* (CONS ALIAS *HCNM-PGP-ALIASES*))
 )
 
-(defun
-   hcnm-define-lisp-aliases ()
-  (hcnm-define-aliases (hcnm-aliases) "(c:" ")")
-)
-(defun
-   hcnm-define-command-aliases ()
-  (hcnm-define-aliases (hcnm-pgp-aliases) "(command \"._" "\")")
+(DEFUN
+   HCNM-DEFINE-ALIAS (ALIAS INVOCATION-PREFIX INVOCATION-SUFFIX /)
+  (HCNM-DEFINE-ALIASES
+    (LIST ALIAS)
+    INVOCATION-PREFIX
+    INVOCATION-SUFFIX
+  )
 )
 
-(defun
-   hcnm-define-aliases (alias-list invocation-prefix invocation-suffix / activation-preference alias alias-activation-flag alias-activation-group)
-  (if (not *hcnm-activation-preference*) (setq *hcnm-activation-preference*(atoi (c:hcnm-config-getvar "CNMAliasActivation"))))
-  (setq activation-preference *hcnm-activation-preference*)
-  (cond
-    ((> activation-preference 0)
-     (foreach
-        alias alias-list
-       (setq
-         alias-activation-group
-          (hcnm-alias-group (caddr alias))
-         alias-activation-flag
-          (hcnm-alias-group-flag alias-activation-group)
+(DEFUN
+   HCNM-DEFINE-LISP-ALIASES ()
+  (HCNM-DEFINE-ALIASES (HCNM-ALIASES) "(c:" ")")
+)
+(DEFUN
+   HCNM-DEFINE-COMMAND-ALIASES ()
+  (HCNM-DEFINE-ALIASES
+    (HCNM-PGP-ALIASES)
+    "(command \"._"
+    "\")"
+  )
+)
+
+(DEFUN
+   HCNM-DEFINE-ALIASES (ALIAS-LIST INVOCATION-PREFIX INVOCATION-SUFFIX /
+                        ACTIVATION-PREFERENCE ALIAS
+                        ALIAS-ACTIVATION-FLAG ALIAS-ACTIVATION-GROUP
+                       )
+  (IF (NOT *HCNM-ACTIVATION-PREFERENCE*)
+    (SETQ
+      *HCNM-ACTIVATION-PREFERENCE*
+       (ATOI
+         (C:HCNM-CONFIG-GETVAR
+           "CNMAliasActivation"
+         )
        )
-       (cond
-         ((= (logand activation-preference alias-activation-flag) alias-activation-flag)
-          (eval
-            (read
-              (strcat
+    )
+  )
+  (SETQ ACTIVATION-PREFERENCE *HCNM-ACTIVATION-PREFERENCE*)
+  (COND
+    ((> ACTIVATION-PREFERENCE 0)
+     (FOREACH
+        ALIAS ALIAS-LIST
+       (SETQ
+         ALIAS-ACTIVATION-GROUP
+          (HCNM-ALIAS-GROUP (CADDR ALIAS))
+         ALIAS-ACTIVATION-FLAG
+          (HCNM-ALIAS-GROUP-FLAG
+            ALIAS-ACTIVATION-GROUP
+          )
+       )
+       (COND
+         ((= (LOGAND ACTIVATION-PREFERENCE ALIAS-ACTIVATION-FLAG)
+             ALIAS-ACTIVATION-FLAG
+          )
+          (EVAL
+            (READ
+              (STRCAT
                 "(defun c:"
-                (cadr alias)
+                (CADR ALIAS)
                 " () (princ \""
-                (hcnm-alias-group-message alias-activation-group alias)
+                (HCNM-ALIAS-GROUP-MESSAGE ALIAS-ACTIVATION-GROUP ALIAS)
                 "\")"
-                invocation-prefix
-                (car alias)
-                invocation-suffix
+                INVOCATION-PREFIX
+                (CAR ALIAS)
+                INVOCATION-SUFFIX
                 "(princ))"
               )
             )
@@ -85,79 +123,124 @@
   )
 )
 
-(defun c:cnmalias () (c:haws-aliasmanage)) ; This is the one hard-coded alias. Not in the aliases list.
-(defun
-   c:haws-aliasmanage (/ activation-preference input1)
-  (textpage)
-  (princ "\n;Standard AutoCAD aliases (for reference only)")
-  (hcnm-print-pgp-style-aliases "Standardpgp")
-  (princ "\n;Custom CNM aliases (copy these)")
-  (hcnm-print-pgp-style-aliases "Custompgp")
-  (princ
-    (strcat
+(DEFUN C:CNMALIAS () (C:HAWS-ALIASMANAGE))
+                                        ; This is the one hard-coded alias. Not in the aliases list.
+(DEFUN
+   C:HAWS-ALIASMANAGE (/ ACTIVATION-PREFERENCE INPUT1)
+  (TEXTPAGE)
+  (PRINC "\n;Standard AutoCAD aliases (for reference only)")
+  (HCNM-PRINT-PGP-STYLE-ALIASES "Standardpgp")
+  (PRINC "\n;Custom CNM aliases (copy these)")
+  (HCNM-PRINT-PGP-STYLE-ALIASES "Custompgp")
+  (PRINC
+    (STRCAT
       "\n==================================================================================="
       "\nStep 1. Choose which CNM alias groups to activate. You can also"
       "\ncopy any of the aliases above to your ACAD.PGP."
     )
   )
-  (setq activation-preference (atoi (c:hcnm-config-getvar "CNMAliasActivation")))
-  (while (progn
-             (initget
-    (apply 'strcat (mapcar '(lambda (group) (strcat (car group) " ")) (hcnm-alias-activation-groups)))
+  (SETQ
+    ACTIVATION-PREFERENCE
+     (ATOI
+       (C:HCNM-CONFIG-GETVAR "CNMAliasActivation")
+     )
   )
-(setq
-           input1
-            (getkword
-              (strcat
-                "\nToggle CNM alias groups to activate as LISP shortcuts ["
-                (substr
-                  (apply
-                    'strcat
-                    (mapcar
-                      '(lambda (group / alias-activation-flag)
-                         (setq alias-activation-flag (cadr group))
-                         (strcat
-                           "/"
-                           (nth 3 group)
-                           (cond
-                             ((= (logand activation-preference alias-activation-flag) alias-activation-flag) " (yes)")
-                             (t " (no)")
+  (WHILE (PROGN
+           (INITGET
+             (APPLY
+               'STRCAT
+               (MAPCAR
+                 '(LAMBDA (GROUP) (STRCAT (CAR GROUP) " "))
+                 (HCNM-ALIAS-ACTIVATION-GROUPS)
+               )
+             )
+           )
+           (SETQ
+             INPUT1
+              (GETKWORD
+                (STRCAT
+                  "\nToggle CNM alias groups to activate as LISP shortcuts ["
+                  (SUBSTR
+                    (APPLY
+                      'STRCAT
+                      (MAPCAR
+                        '(LAMBDA (GROUP / ALIAS-ACTIVATION-FLAG)
+                           (SETQ ALIAS-ACTIVATION-FLAG (CADR GROUP))
+                           (STRCAT
+                             "/"
+                             (NTH 3 GROUP)
+                             (COND
+                               ((= (LOGAND
+                                     ACTIVATION-PREFERENCE
+                                     ALIAS-ACTIVATION-FLAG
+                                   )
+                                   ALIAS-ACTIVATION-FLAG
+                                )
+                                " (yes)"
+                               )
+                               (T " (no)")
+                             )
                            )
                          )
-                       )
-                      (hcnm-alias-activation-groups)
+                        (HCNM-ALIAS-ACTIVATION-GROUPS)
+                      )
                     )
+                    2
                   )
-                  2
+                  "] <continue>: "
                 )
-                "] <continue>: "
               )
-            )
-         ))
-    (setq toggle-flag (cadr (assoc input1 (hcnm-alias-activation-groups)))
-    activation-preference
-    (cond
-      ((= (logand activation-preference alias-activation-flag) alias-activation-flag)
-       (- activation-preference toggle-flag)
-      )
-      (t (+ activation-preference toggle-flag))
-    ))
+           )
+         )
+    (SETQ
+      TOGGLE-FLAG
+       (CADR (ASSOC INPUT1 (HCNM-ALIAS-ACTIVATION-GROUPS)))
+      ACTIVATION-PREFERENCE
+       (COND
+         ((= (LOGAND
+               ACTIVATION-PREFERENCE
+               ALIAS-ACTIVATION-FLAG
+             )
+             ALIAS-ACTIVATION-FLAG
+          )
+          (- ACTIVATION-PREFERENCE TOGGLE-FLAG)
+         )
+         (T (+ ACTIVATION-PREFERENCE TOGGLE-FLAG))
+       )
+    )
   )
-  (c:hcnm-config-setvar "CNMAliasActivation" (itoa activation-preference))
-  (getstring "\nStep 2. <continue to edit individual CNMAlias.lsp aliases>: ")
-  (startapp (strcat "\"notepad\" \"" (findfile "cnmalias.lsp") "\""))
-  (alert
-    (strcat
+  (C:HCNM-CONFIG-SETVAR
+    "CNMAliasActivation"
+    (ITOA ACTIVATION-PREFERENCE)
+  )
+  (GETSTRING
+    "\nStep 2. <continue to edit individual CNMAlias.lsp aliases>: "
+  )
+  (STARTAPP
+    (STRCAT "\"notepad\" \"" (FINDFILE "cnmalias.lsp") "\"")
+  )
+  (ALERT
+    (STRCAT
       "CNMAlias.lsp has been opened in Notepad for you to edit.\n\nClick OK to load CNM aliases after editing and saving."
     )
   )
-  (load "cnmalias")
-  (princ)
+  (LOAD "cnmalias")
+  (PRINC)
 )
-(defun hcnm-print-pgp-style-aliases (print-key / print-flag)
-  (setq print-flag (hcnm-alias-group-flag (hcnm-alias-group print-key)))
-  (foreach
-     alias (hcnm-pgp-aliases)
-    (cond ((= (hcnm-alias-group-flag (hcnm-alias-group (caddr alias))) print-flag) (princ (strcat "\n" (car alias) ",\t*" (cadr alias)))))
+(DEFUN
+   HCNM-PRINT-PGP-STYLE-ALIASES (PRINT-KEY / PRINT-FLAG)
+  (SETQ PRINT-FLAG (HCNM-ALIAS-GROUP-FLAG (HCNM-ALIAS-GROUP PRINT-KEY)))
+  (FOREACH
+     ALIAS *HCNM-PGP-ALIASES*
+    (COND
+      ((= (HCNM-ALIAS-GROUP-FLAG (HCNM-ALIAS-GROUP (CADDR ALIAS)))
+          PRINT-FLAG
+       )
+       (PRINC (STRCAT "\n" (CAR ALIAS) ",\t*" (CADR ALIAS)))
+      )
+    )
   )
 )
+;|«Visual LISP© Format Options»
+(72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)
+;*** DO NOT add text below the comment! ***|;
