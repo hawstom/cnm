@@ -2451,9 +2451,10 @@
 ;;Prompts user for a Project Root folder and links to it by creating
 ;;or modifying this drawing's folder's cnmproj.txt
 ;;returns project root
-(DEFUN C:HCNM-LINKPROJ () (HCNM-LINKPROJ) (PRINC))
-(DEFUN
-   HCNM-LINKPROJ (/ DWGDIR LOCALPROJ LOCALPROJBAK PROJ)
+(DEFUN C:HCNM-LINKPROJ () (HCNM-LINKPROJ NIL) (PRINC))
+
+;; Sets the CNM project to the given folder. Includes wizards, alerts, and error checks.
+(DEFUN HCNM-LINKPROJ (PROJ / DWGDIR LOCALPROJ LOCALPROJBAK OLDLINK)
   (SETQ
     DWGDIR
      (HAWS-FILENAME-DIRECTORY (GETVAR "dwgprefix"))
@@ -2462,33 +2463,8 @@
        (*HCNM-CNMPROJECTROOT*)
        (DWGDIR)
      )
-    PROJ
-     (COND
-       ((HAWS-VLISP-P)
-        (ALE_BROWSEFORFOLDER
-          (COND
-            ((< (STRLEN *HCNM-CNMPROJECTROOT*) 50)
-             *HCNM-CNMPROJECTROOT*
-            )
-            ((STRCAT
-               "Cancel to keep current Project Folder:\n"
-               (SUBSTR *HCNM-CNMPROJECTROOT* 1 3)
-               "..."
-               (HAWS-ENDSTR *HCNM-CNMPROJECTROOT* 47 47)
-             )
-            )
-          )
-          48
-          ""
-        )
-       )
-       (T
-        (HAWS-FILENAME-DIRECTORY
-          (GETFILED "Select any file in Project Folder" "" "" 0)
-        )
-       )
-     )
   )
+  (COND ((NOT PROJ)(SETQ PROJ (HCNM-BROWSEPROJ *HCNM-CNMPROJECTROOT*))))
   (COND
     (PROJ
      (SETQ *HCNM-CNMPROJECTROOT* PROJ)
@@ -2555,8 +2531,40 @@
      )
     )
   )
-  (PRINC)
 )
+
+(DEFUN
+   HCNM-BROWSEPROJ (OLDPROJ)
+  (COND
+    ((HAWS-VLISP-P)
+     (ALE_BROWSEFORFOLDER
+       (HCNM-SHORTEN-PATH OLDPROJ 50)
+       48
+       ""
+     )
+    )
+    (T
+     (HAWS-FILENAME-DIRECTORY
+       (GETFILED "Select any file in Project Folder" "" "" 0)
+     )
+    )
+  )
+)
+
+(DEFUN
+   HCNM-SHORTEN-PATH (PATH NSHORT)
+  (COND
+    ((< (STRLEN PATH) NSHORT) PATH)
+    ((STRCAT
+       "Cancel to keep current Project Folder:\n"
+       (SUBSTR PATH 1 3)
+       "..."
+       (HAWS-ENDSTR PATH (- NSHORT 3) (- NSHORT 3))
+     )
+    )
+  )
+)
+
 
 ;;Makes a project root reference file CNMPROJ.TXT in this drawing's folder
 ;;Returns nil.
@@ -3008,15 +3016,15 @@ ImportLayerSettings=No
    HCNM-CONFIG-DEFINITIONS (/)
   '(("Scope"
      ("Session" 0)
-     ("Drawing" 1)
+     ("Drawing" 1) ; Does not work yet?
      ("Project" 2)
-     ("App" 3)
+     ("App" 3) ; Does not work yet?
      ("User" 4)
     )
     ("Var"
      ("LXXListMode" "yes" 4)
      ("CNMAliasActivation" "3" 4)
-     ("ProjectNotesEditor" "notepad.exe" 4)
+     ("ProjectNotesEditor" "notepad.exe" 2)
      ("LayersEditor" "notepad.exe" 4)
      ("ProjectNotes" "constnot.txt" 2)
      ("ThisFile" "" 2)
@@ -3175,6 +3183,7 @@ ImportLayerSettings=No
      (SETQ *HCNM-CONFIG-TEMP* (CONS (LIST VAR VAL) *HCNM-CONFIG-TEMP*))
     )
   )
+  (alert (vl-prin1-to-string *HCNM-CONFIG-TEMP*))
 )
 
 ;;;Gets a variable in a temporary global lisp list
@@ -3527,7 +3536,7 @@ ImportLayerSettings=No
   )
   ;;Remove path if project notes is in project folder.
   (COND
-    ((= (HAWS-FILENAME-DIRECTORY PROJNOTES) (HCNM-PROJ))
+    ((AND PROJNOTES (= (HAWS-FILENAME-DIRECTORY PROJNOTES) (HCNM-PROJ)))
      (SETQ
        PROJNOTES
         (STRCAT
@@ -5145,58 +5154,55 @@ ImportLayerSettings=No
 ;;)
 
 (DEFUN
-   C:HCNM-CNMOPTIONS (/ CNMDCL RETN LIST1)
+   C:HCNM-CNMPROJECTSETTINGS (/ CNMDCL RETN LISTS-DATA)
+  (SETQ LISTS-DATA
+    '(
+      ("ProjectNotesEditor" (("text" "System Text Editor") ("csv" "System CSV (spreadsheet)") ("CNMEdit" "CNM Editor")))
+      ("LayersEditor" (("text" "System Text Editor") ("CNMLayer" "CNM Editor")))
+      ("InsertTablePhases" (("No" "No")("1" "1")("2" "2")("3" "3")("4" "4")("5" "5")("6" "6")("7" "7")("8" "8")("9" "9")("10" "10")))
+    )
+  )
   ;; Load Dialog
   (SETQ CNMDCL (LOAD_DIALOG "cnm.dcl"))
-  (NEW_DIALOG "CNMOptions" CNMDCL)
+  (NEW_DIALOG "CNMProjectSettings" CNMDCL)
   ;; Dialog Actions
   (SET_TILE
-    "ProjectNotes"
-    (c:hcnm-config-getvar "ProjectNotes")
+    "Title"
+    "CNM Options"
+  )
+  (SET_TILE
+    "ProjectFolder"
+    (HCNM-PROJ)
   )
   (ACTION_TILE
-    "ProjectNotes"
-    "(hcnm-CONFIG-TEMP-SETVAR \"ProjectNotes\" (get_tile \"ProjectNotes\"))"
+    "ProjectFolder"
+    "(HCNM-LINKPROJ $value)"
   )
+  (ACTION_TILE
+    "ProjectFolderBrowse"
+    "(HCNM-LINKPROJ $value)(set_tile \"ProjectFolder\" (HCNM-PROJ))(set_tile \"ProjectFolderPrompt\" (STRCAT \"Project folder \" (HCNM-SHORTEN-PATH(HCNM-PROJ) 50))"
+  )
+  (SET_TILE
+    "ProjectFolderPrompt"
+    (STRCAT "Project folder " (HCNM-SHORTEN-PATH (HCNM-PROJ) 50))
+  )
+  (HCNM-CONFIG-SET-ACTION-TILE "ProjectNotes")
+;;  (SET_TILE
+;;    "ProjectNotes"
+;;    (c:hcnm-config-getvar "ProjectNotes")
+;;  )
+;;  (ACTION_TILE
+;;    "ProjectNotes"
+;;    "(hcnm-CONFIG-TEMP-SETVAR \"ProjectNotes\" (get_tile \"ProjectNotes\"))"
+;;  )
   (ACTION_TILE
     "ProjectNotesBrowse"
-    "(hcnm-CONFIG-TEMP-SETVAR \"ProjectNotes\"(HCNM-changeprojnotes))(set_tile \"ProjectNotes\" (hcnm-config-TEMP-GETVAR \"ProjectNotes\"))"
+    "(hcnm-CONFIG-TEMP-SETVAR \"ProjectNotes\"(HCNM-getprojnotes))(set_tile \"ProjectNotes\" (hcnm-config-TEMP-GETVAR \"ProjectNotes\"))"
   )
-  (SET_TILE
-    "ProjectNotesEditor"
-    (c:hcnm-config-getvar "ProjectNotesEditor")
-  )
-  (ACTION_TILE
-    "ProjectNotesEditor"
-    "(hcnm-CONFIG-TEMP-SETVAR \"ProjectNotesEditor\" (HCNM-WRITENOTESEDITOR (get_tile \"ProjectNotesEditor\")))(set_tile \"ProjectNotesEditor\" (hcnm-config-TEMP-GETVAR \"ProjectNotesEditor\"))"
-  )
-  (ACTION_TILE
-    "ProjectNotesEditorBrowse"
-    "(hcnm-CONFIG-TEMP-SETVAR \"ProjectNotesEditor\"(HCNM-CHANGENOTESEDITOR))(set_tile \"ProjectNotesEditor\" (hcnm-config-TEMP-GETVAR \"ProjectNotesEditor\"))"
-  )
-  (SET_TILE
-    "LayersEditor"
-    (c:hcnm-config-getvar "LayersEditor")
-  )
-  (ACTION_TILE
-    "LayersEditor"
-    "(hcnm-CONFIG-TEMP-SETVAR \"LayersEditor\" (HCNM-WRITElayerseditor (get_tile \"LayersEditor\")))(set_tile \"LayersEditor\" (hcnm-config-TEMP-GETVAR \"LayersEditor\"))"
-  )
-  (ACTION_TILE
-    "LayersEditorBrowse"
-    "(hcnm-CONFIG-TEMP-SETVAR \"LayersEditor\"(HCNM-CHANGELAYERSEDITOR))(set_tile \"LayersEditor\" (hcnm-config-TEMP-GETVAR \"LayersEditor\"))"
-  )
+  (HCNM-CONFIG-DCL-LIST "ProjectNotesEditor")
+  (HCNM-CONFIG-DCL-LIST "LayersEditor")
   (HCNM-CONFIG-SET-ACTION-TILE "NoteTypes")
-  (SETQ LIST1 '("No" "1" "2" "3" "4" "5" "6" "7" "8" "9" "10"))
-  (HAWS-SET_TILE_LIST
-    "InsertTablePhases"
-    LIST1
-    (c:hcnm-config-getvar "InsertTablePhases")
-  )
-  (ACTION_TILE
-    "InsertTablePhases"
-    "(hcnm-CONFIG-TEMP-SETVAR \"InsertTablePhases\" (nth (read $value) list1))"
-  )
+  (HCNM-CONFIG-DCL-LIST "InsertTablePhases")
   (HCNM-CONFIG-SET-ACTION-TILE "PhaseAlias1")
   (HCNM-CONFIG-SET-ACTION-TILE "PhaseAlias2")
   (HCNM-CONFIG-SET-ACTION-TILE "PhaseAlias3")
@@ -5234,6 +5240,30 @@ ImportLayerSettings=No
     (STRCAT "(hcnm-CONFIG-TEMP-SETVAR \"" VAR "\" $value)")
   )
 )
+
+;; LISTS-DATA is global to this function, but local to the dialog caller
+(DEFUN
+   HCNM-CONFIG-DCL-LIST (KEY / )
+  (HAWS-SET_TILE_LIST
+    KEY
+    (MAPCAR '(LAMBDA (X) (CADR X)) (CADR (ASSOC KEY LISTS-DATA)))
+    (c:hcnm-config-getvar KEY)
+  )
+  (ACTION_TILE
+    KEY
+    (STRCAT "(HCNM-CONFIG-DCL-LIST-CALLBACK \"" KEY "\" LISTS-DATA $value")
+  )
+)
+
+;; LISTS-DATA is global to this function, but local to the dialog caller
+(DEFUN
+   HCNM-CONFIG-DCL-LIST-CALLBACK (KEY VALUE /)
+  (HCNM-CONFIG-TEMP-SETVAR
+    KEY
+    (CAR (NTH (READ VALUE) (CADR (ASSOC KEY LISTS-DATA))))
+  )
+)
+
 
 (DEFUN
    HCNM-SET-ATTRIBUTES (ENAME-BLOCK ATTRIBUTE-LIST)

@@ -2,7 +2,7 @@
 //
 //
 // CNMOptions dialog
-CNMOptions : dialog {
+CNMProjectSettings : dialog {
   key = "Title";
   label = "CNM Options";
   : boxed_column {
