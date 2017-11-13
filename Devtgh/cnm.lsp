@@ -2943,7 +2943,7 @@
   (SETQ PROJINI (STRCAT PROJ "\\" "cnm.ini"))
   (COND
     ((AND
-       (SETQ APP (FINDFILE "cnm.mnl"))
+       (SETQ APP (C:HCNM-CONFIG-GETVAR "Appfolder"))
        (SETQ
          APPINI
           (FINDFILE
@@ -2960,6 +2960,7 @@
      (PRINC
        "[CNM]
 ProjectNotes=constnot.txt
+ProjectNotesEditor=text
 NoteTypes=BOX,CIR,DIA,ELL,HEX,OCT,PEN,REC,SST,TRI
 DoCurrentTabOnly=0
 PhaseAlias1=1
@@ -2974,6 +2975,7 @@ PhaseAlias9=9
 InsertTablePhases=No
 TableWidth=65
 PhaseWidthAdd=9
+DescriptionWrap=45
 LineSpacing=1.5
 NoteSpacing=3
 NumberToDescriptionWidth=2.5
@@ -3022,10 +3024,12 @@ ImportLayerSettings=No
      ("User" 4)
     )
     ("Var"
+     ("ProjectFolder" "" 1)
+     ("AppFolder" "" 0)
      ("LXXListMode" "yes" 4)
      ("CNMAliasActivation" "3" 4)
-     ("ProjectNotesEditor" "notepad.exe" 2)
-     ("LayersEditor" "notepad.exe" 4)
+     ("ProjectNotesEditor" "text" 2) ; text, csv, or cnm
+     ("LayersEditor" "notepad" 4) ; notepad or cnm
      ("ProjectNotes" "constnot.txt" 2)
      ("ThisFile" "" 2)
      ("ImportLayerSettings" "No" 2)
@@ -3043,6 +3047,7 @@ ImportLayerSettings=No
      ("InsertTablePhases" "No" 2)
      ("TableWidth" "65" 2)
      ("PhaseWidthAdd" "9" 2)
+     ("DescriptionWrap" "45" 2)
      ("LineSpacing" "1.5" 2)
      ("NoteSpacing" "3" 2)
      ("NumberToDescriptionWidth" "2.5" 2)
@@ -3183,7 +3188,6 @@ ImportLayerSettings=No
      (SETQ *HCNM-CONFIG-TEMP* (CONS (LIST VAR VAL) *HCNM-CONFIG-TEMP*))
     )
   )
-  (alert (vl-prin1-to-string *HCNM-CONFIG-TEMP*))
 )
 
 ;;;Gets a variable in a temporary global lisp list
@@ -3228,7 +3232,7 @@ ImportLayerSettings=No
     ((HCNM-CONFIG-SCOPE-EQ VAR "User")
      (HCNM-CONFIG-WRITE-USER VAR VAL)
     )
-    (T
+    ((HCNM-CONFIG-SCOPE-EQ VAR "Project")
      (INI_WRITEENTRY (HCNM-INI-NAME (HCNM-PROJ)) "CNM" VAR VAL)
     )
   )
@@ -3254,7 +3258,7 @@ ImportLayerSettings=No
            )
         )
        )
-       (T
+       ((HCNM-CONFIG-SCOPE-EQ VAR "User")
         (SETQ
           *HCNM-CONFIG*
            (APPEND
@@ -3327,7 +3331,7 @@ ImportLayerSettings=No
   (SETQ PROJINI (HCNM-PROJECT-FOLDER-TO-INI PROJ))
   (COND
     ((AND
-       (SETQ APP (HAWS-FILENAME-DIRECTORY (FINDFILE "cnm.mnl")))
+       (SETQ APP (C:HCNM-CONFIG-GETVAR "Appfolder"))
        (SETQ APPINI (FINDFILE (HCNM-PROJECT-FOLDER-TO-INI APP)))
      )
      (ALERT
@@ -3465,23 +3469,19 @@ ImportLayerSettings=No
      (c:hcnm-config-setvar "ProjectNotes" PROJNOTES)
     )
     ;;Third choice, we couldn't find the Project Notes specified,
-    ;;so try to get Project Notes from the app folder (where CNM.MNL is)
+    ;;so try to get the appropriate style Project Notes from the app folder
     ;;and put it in the location tried above.
-    ;;To pamper new users, get constnot.csv if CNMEdit.exe is current.
     ;;The CFREAD functions will later evaluate the necessity of changing the file
     ;;format and name.
     ((AND
-       (SETQ APP (FINDFILE "cnm.mnl"))
+       (SETQ APP (C:HCNM-CONFIG-GETVAR "Appfolder"))
        (SETQ
          APPPN
           (FINDFILE
             (STRCAT
               (HAWS-FILENAME-DIRECTORY APP)
               "\\"
-              (IF (WCMATCH
-                    (STRCASE (HCNM-READNOTESEDITOR))
-                    "*CNMEDIT.EXE"
-                  )
+              (IF (/=(STRCASE (c:hcnm-config-getvar "ProjectNotesEditor")) "TEXT")
                 "constnot-default.csv"
                 "constnot-default.txt"
               )
@@ -3508,16 +3508,6 @@ ImportLayerSettings=No
      )
     )
   )
-)
-(DEFUN
-   C:HCNM-CHANGEPROJNOTES ()
-  (HCNM-CHANGEPROJNOTES)
-  (PRINC)
-)
-
-(DEFUN
-   HCNM-CHANGEPROJNOTES ()
-  (c:hcnm-config-setvar "ProjectNotes" (HCNM-GETPROJNOTES))
 )
 
 (DEFUN
@@ -3591,7 +3581,7 @@ ImportLayerSettings=No
     ((= PNFORMAT "txt2")
      (HCNM-READCFTXT2 PROJNOTES)
      (COND
-       ((WCMATCH (STRCASE (HCNM-READNOTESEDITOR)) "*CNMEDIT.EXE")
+       ((/= (STRCASE (c:hcnm-config-getvar "ProjectNotesEditor")) "TXT")
         (SETQ BAKPROJNOTES PROJNOTES)
         (HAWS-FILE-COPY
           PROJNOTES
@@ -3629,9 +3619,7 @@ ImportLayerSettings=No
     ((= PNFORMAT "csv")
      (HCNM-READCFCSV PROJNOTES)
      (COND
-       ((NOT
-          (WCMATCH (STRCASE (HCNM-READNOTESEDITOR)) "*CNMEDIT.EXE")
-        )
+       ((= (STRCASE (c:hcnm-config-getvar "ProjectNotesEditor")) "TXT")
         (SETQ BAKPROJNOTES PROJNOTES)
         (HAWS-FILE-COPY
           PROJNOTES
@@ -3976,10 +3964,10 @@ ImportLayerSettings=No
 
 
 (DEFUN
-   HCNM-READCFCSV (PROJNOTES / CFLIST I IPREV NOTDSCLST NOTDSCSTR NOTTYP
-                   RDLIN TYPWC
+   HCNM-READCFCSV (PROJNOTES / CFLIST NOTDSCSTR NOTTYP RDLIN TYPWC VAL VAR WRAP
                   )
   (SETQ
+    WRAP (ATOI (C:HCNM-CONFIG-GETVAR "DescriptionWrap"))
     TYPWC
      (c:hcnm-config-getvar "NoteTypes")   ; Get typwc (which may open f1) before opening f1
     F1 (OPEN PROJNOTES "r")
@@ -3997,12 +3985,13 @@ ImportLayerSettings=No
           (CONS
             (LIST
               1
-              (HAWS-RDFLD 2 RDLIN "," 1)
-              (HAWS-RDFLD 3 RDLIN "," 1)
+              (SETQ VAR (HAWS-RDFLD 2 RDLIN "," 1))
+              (SETQ VAL (HAWS-RDFLD 3 RDLIN "," 1))
             )
             CFLIST
           )
        )
+       (COND ((= (STRCAT VAR) "WRAP")(SETQ WRAP (ATOI VAL))))
       )
       ;;Note or title
       ((WCMATCH (SETQ NOTTYP (SUBSTR RDLIN 1 3)) TYPWC)
@@ -4020,31 +4009,7 @@ ImportLayerSettings=No
           (SETQ
             NOTDSCSTR
              (HAWS-RDFLD 3 RDLIN "," 1)
-            NOTDSCLST NIL
-            IPREV 1
-            I 0
-          )
-          (WHILE (/= "" (SUBSTR NOTDSCSTR (SETQ I (1+ I)) 1))
-            (IF (= "\\n" (SUBSTR NOTDSCSTR I 2))
-              (SETQ
-                NOTDSCLST
-                 (CONS (LIST IPREV (- I IPREV)) NOTDSCLST)
-                IPREV
-                 (+ I 2)
-              )
-            )
-          )
-          (SETQ
-            NOTDSCLST
-             (MAPCAR
-               '(LAMBDA (I)
-                  (SUBSTR NOTDSCSTR (CAR I) (CADR I))
-                )
-               NOTDSCLST
-             )
-          )
-          (SETQ
-            CFLIST
+            CFLIST 
              (CONS
                (LIST
                  3
@@ -4052,9 +4017,7 @@ ImportLayerSettings=No
                  (HAWS-RDFLD 2 RDLIN "," 1)
                  (HAWS-RDFLD 4 RDLIN "," 1)
                  (HAWS-RDFLD 5 RDLIN "," 1)
-                 (REVERSE
-                   (CONS (SUBSTR NOTDSCSTR IPREV I) NOTDSCLST)
-                 )
+                 (HCNM-WRAP-DESCRIPTION (HAWS-RDFLD 3 RDLIN "," 1) WRAP)
                )
                CFLIST
              )
@@ -4066,6 +4029,72 @@ ImportLayerSettings=No
   )
   (SETQ F1 (CLOSE F1))
   (SETQ *HCNM-CNMPROJECTNOTES* (REVERSE CFLIST))
+)
+
+(DEFUN
+   HCNM-WRAP-DESCRIPTION (NOTDSCSTR WRAP / I I-CR-PREV I-NEWWORD-PREV INWORD-P NEED-WRAP-P NOTDSCLST)
+  (SETQ
+    NOTDSCLST NIL
+    I-CR-PREV 1
+    I-NEWWORD-PREV 1
+    INWORD-P T
+    I 0
+  )
+  (WHILE (/= "" (SUBSTR NOTDSCSTR (SETQ I (1+ I)) 1))
+    (COND
+      ((WCMATCH (SUBSTR NOTDSCSTR I 1) " ,\t")
+       (SETQ INWORD-P NIL)
+       (COND ((>= (- I I-CR-PREV) (1- WRAP)) (SETQ NEED-WRAP-P T)))
+      )
+      (T
+       (COND
+         ((NOT INWORD-P)
+          (SETQ
+            I-NEWWORD-PREV I
+            INWORD-P T
+          )
+          (COND
+            (NEED-WRAP-P
+             (SETQ
+               NOTDSCLST
+                (CONS
+                  (LIST I-CR-PREV (- I-NEWWORD-PREV I-CR-PREV))
+                  NOTDSCLST
+                )
+               I-CR-PREV
+                I
+               NEED-WRAP-P
+                NIL
+             )
+            )
+          )
+         )
+       )
+      )
+    )
+    (COND
+      ((= "\\n" (SUBSTR NOTDSCSTR I 2))
+       (SETQ
+         NOTDSCLST
+          (CONS (LIST I-CR-PREV (- I I-CR-PREV)) NOTDSCLST)
+         I-CR-PREV
+          (+ I 2)
+         I-NEWWORD-PREV
+          (+ I 2)
+         INWORD-P T
+         NEED-WRAP-P NIL
+       )
+      )
+    )
+  )
+  (SETQ
+    NOTDSCLST
+     (MAPCAR
+       '(LAMBDA (I) (SUBSTR NOTDSCSTR (CAR I) (CADR I)))
+       NOTDSCLST
+     )
+  )
+ (REVERSE (CONS (SUBSTR NOTDSCSTR I-CR-PREV I) NOTDSCLST))
 )
 
 (DEFUN
@@ -4194,104 +4223,73 @@ ImportLayerSettings=No
 ;;; Begin Project Notes Editor functions section
 ;;;
 ;;;================================================================================================================
-(DEFUN C:HCNM-CHANGENOTESEDITOR () (HCNM-CHANGENOTESEDITOR))
-
 (DEFUN
-   HCNM-CHANGENOTESEDITOR (/ NEWEDITOR)
-  (SETQ NEWEDITOR (HCNM-GETNOTESEDITOR))
-  (HCNM-WRITENOTESEDITOR NEWEDITOR)
-)
-
-(DEFUN
-   HCNM-GETNOTESEDITOR (/ OLDEDITOR NEWEDITOR)
+   C:HCNM-NOTESEDIT (/)
   (SETQ
-    OLDEDITOR
-     (HCNM-READNOTESEDITOR)
-    NEWEDITOR
-     (GETFILED "Select editor" OLDEDITOR "" 0)
-  )
-)
-
-(DEFUN
-   HCNM-READNOTESEDITOR (/ NOTESEDITOR)
-  (SETQ
-    NOTESEDITOR
-     (COND
-       ((HAWS-VLISP-P)
-        (VL-REGISTRY-READ
-          "HKEY_CURRENT_USER\\Software\\HawsEDC\\CNM"
-          "NotesEditor"
-        )
-       )
-       (T (c:hcnm-config-getvar "ProjectNotesEditor"))
-     )
-  )
-  (COND
-    (NOTESEDITOR)
-    ("notepad.exe")
-  )
-)
-
-(DEFUN
-   HCNM-WRITENOTESEDITOR (NEWEDITOR)
-  (COND
-    ((OR (NOT NEWEDITOR) (NOT (FINDFILE NEWEDITOR)))
-     (ALERT "File not found.  Using notepad.exe.")
-     (SETQ NEWEDITOR "notepad.exe")
-    )
-  )
-  (COND
-    ((HAWS-VLISP-P)
-     (VL-REGISTRY-WRITE
-       "HKEY_CURRENT_USER\\Software\\HawsEDC\\CNM"
-       "NotesEditor"
-       NEWEDITOR
-     )
-    )
-  )
-  (c:hcnm-config-setvar "ProjectNotesEditor" NEWEDITOR)
-  (ALERT
-    (PRINC
-      (STRCAT "Editor for project notes is now \n" NEWEDITOR)
-    )
-  )
-  NEWEDITOR
-)
-
-
-
-
-(DEFUN
-   C:HCNM-NOTESEDIT
-   (/ CNMEDITP NOTESEDITOR PROJROOT I RDLIN TFNAME WSHSHELL)
-  (SETQ NOTESEDITOR (HCNM-READNOTESEDITOR))
-  (IF (= (STRCASE (SUBSTR NOTESEDITOR (- (STRLEN NOTESEDITOR) 10)))
-         "CNMEDIT.EXE"
-      )
-    (SETQ CNMEDITP T)
+    NOTESEDITOR (C:HCNM-CONFIG-GETVAR "ProjectNotesEditor")
+    CNMEDITP (= NOTESEDITOR "cnm")
   )
   (IF CNMEDITP
-    (haws-core-borrow 2)
-    (haws-core-borrow 1)
+    (HAWS-CORE-BORROW 2)
+    (HAWS-CORE-BORROW 1)
   )
-  ;;Since this is a user command, possibly after deletion of project root files,
-  ;;refresh project root at beginning.
-  (HCNM-PROJINIT)                       ;Initialize project after user pauses
-  (HCNM-READCF (HCNM-PROJNOTES))        ;Read to convert project notes if necessary before editing
+  ;; Since this is a user command, possibly after deletion of project root files,
+  ;; refresh project root at beginning.
+  (HCNM-PROJINIT)
+  ;; Read to convert project notes if necessary before editing
+  (SETQ PNNAME (HCNM-PROJNOTES))
+  (HCNM-READCF PNNAME)
+  (SETQ PNNAME (HCNM-PROJNOTES-MATCH-EXTENSION PNNAME NOTESEDITOR))
   (PRINC (STRCAT "\nEditing " (HCNM-PROJNOTES) "."))
-  (STARTAPP
-    (STRCAT "\"" NOTESEDITOR "\"")
-    (STRCAT
-      "\""
-      (HCNM-PROJNOTES)
-      "\""
-      (IF CNMEDITP
-        (STRCAT " \"" (HCNM-PROJ) "\\cnm.ini\"")
-        ""
-      )
+  (COND
+    ((= NOTESEDITOR "cnm")
+     (STARTAPP
+       (STRCAT
+         "\""
+         (C:HCNM-CONFIG-GETVAR "AppFolder")
+         "\\CNMEdit.exe"
+         "\" "
+         "\""
+         PNNAME
+         "\" "
+         "\""
+         (HCNM-PROJ)
+         "\\cnm.ini\""
+       )
+     )
     )
+    (T (COMMAND "._START" PNNAME))
   )
   (PRINC)
+)
+
+(DEFUN HCNM-PROJNOTES-MATCH-EXTENSION (PROJNOTES NOTESEDITOR)
+  (cond
+    ((= NOTESEDITOR "text")(HCNM-CHANGE-FILENAME-EXTENSION PROJNOTES "txt"))
+    ((= NOTESEDITOR "csv")(HCNM-CHANGE-FILENAME-EXTENSION PROJNOTES "csv"))
+  )
+)
+
+(DEFUN
+   HCNM-CHANGE-FILENAME-EXTENSION
+   (OLD-FILENAME NEW-EXTENSION / NEW-FILENAME)
+  (COND
+    ((/= (HAWS-FILENAME-EXTENSION OLD-FILENAME) NEW-EXTENSION)
+     (SETQ
+       NEW-FILENAME
+        (STRCAT
+          (HAWS-FILENAME-DIRECTORY OLD-FILENAME)
+          "\\"
+          (HAWS-FILENAME-BASE OLD-FILENAME)
+          "."
+          NEW-EXTENSION
+        )
+     )
+     (VL-FILE-RENAME OLD-FILENAME NEW-FILENAME)
+     (C:HCNM-CONFIG-SETVAR "ProjectNotes" NEW-FILENAME)
+    )
+  )
+  NEW-FILENAME
 )
 
 ;;;================================================================================================================
@@ -4299,91 +4297,34 @@ ImportLayerSettings=No
 ;;; Begin Layers Editor functions section
 ;;;
 ;;;================================================================================================================
-;; Change layer defaults editor
-(DEFUN
-   C:HCNM-CHANGELAYERSEDITOR ()
-  (HCNM-CHANGELAYERSEDITOR)
-)
-
-(DEFUN
-   HCNM-CHANGELAYERSEDITOR (/ OLDEDITOR NEWEDITOR)
-  (SETQ
-    OLDEDITOR
-     (HCNM-READLAYERSEDITOR)
-    NEWEDITOR
-     (GETFILED "Select editor" OLDEDITOR "" 0)
-  )
-  (HCNM-WRITELAYERSEDITOR NEWEDITOR)
-)
-
-(DEFUN
-   HCNM-READLAYERSEDITOR (/ LAYERSEDITOR)
-  (SETQ
-    LAYERSEDITOR
-     (COND
-       ((HAWS-VLISP-P)
-        (VL-REGISTRY-READ
-          "HKEY_CURRENT_USER\\Software\\HawsEDC\\CNM"
-          "LayersEditor"
-        )
-       )
-       (T (c:hcnm-config-getvar "LayersEditor"))
-     )
-  )
-  (COND
-    (LAYERSEDITOR)
-    ("notepad.exe")
-  )
-)
-
-(DEFUN
-   HCNM-WRITELAYERSEDITOR (NEWEDITOR)
-  (COND
-    ((OR (NOT NEWEDITOR) (NOT (FINDFILE NEWEDITOR)))
-     (ALERT "File not found.  Using notepad.exe.")
-     (SETQ NEWEDITOR "notepad.exe")
-    )
-  )
-  (COND
-    ((HAWS-VLISP-P)
-     (VL-REGISTRY-WRITE
-       "HKEY_CURRENT_USER\\Software\\HawsEDC\\CNM"
-       "LayersEditor"
-       NEWEDITOR
-     )
-    )
-  )
-  (c:hcnm-config-setvar "LayersEditor" NEWEDITOR)
-  (ALERT
-    (PRINC
-      (STRCAT
-        "Editor for layer defaults file is now \n"
-        NEWEDITOR
-      )
-    )
-  )
-  NEWEDITOR
-)
-
 ;; Edit layer defaults
 (DEFUN
    C:HCNM-CNMLAYER (/ LAYERSEDITOR LAYERSFILE WSHSHELL)
-  (SETQ *HAWS:LAYERS* NIL)
   (SETQ
+    *HAWS:LAYERS* NIL
     LAYERSEDITOR
-     (HCNM-READLAYERSEDITOR)
+     (COND
+       ((= (C:HCNM-CONFIG-GETVAR "LayersEditor") "cnm")
+        (STRCAT
+          (C:HCNM-CONFIG-GETVAR "AppFolder")
+          "\\CNMEdit.exe"
+        )
+       )
+       (T "notepad.exe")
+     )
     LAYERSFILE
      (FINDFILE "layers.dat")
   )
   (STARTAPP
-    (STRCAT "\"" LAYERSEDITOR "\" \"" LAYERSFILE "\"")
+    (STRCAT "\"" LAYERSEDITOR "\" " "\"" LAYERSFILE "\" ")
   )
   (ALERT
     (STRCAT
       "Click OK to import layer settings after editing and saving."
     )
   )
-  (HAWS-GETLAYR "NOTES-EXPORT")         ;Get a layer to renew *HAWS:LAYERS*
+  ;;Get a layer to renew *HAWS:LAYERS*  
+  (HAWS-GETLAYR "NOTES-EXPORT")
   (COMMAND "._layer")
   (FOREACH
      LAYER *HAWS:LAYERS*
@@ -4403,6 +4344,7 @@ ImportLayerSettings=No
   (COMMAND "")
   (PRINC)
 )
+
 
 ;;;================================================================================================================
 ;;;
@@ -5154,17 +5096,17 @@ ImportLayerSettings=No
 ;;)
 
 (DEFUN
-   C:HCNM-CNMPROJECTSETTINGS (/ CNMDCL RETN LISTS-DATA)
+   C:HCNM-CNMOPTIONS (/ CNMDCL RETN LISTS-DATA)
   (SETQ LISTS-DATA
     '(
-      ("ProjectNotesEditor" (("text" "System Text Editor") ("csv" "System CSV (spreadsheet)") ("CNMEdit" "CNM Editor")))
-      ("LayersEditor" (("text" "System Text Editor") ("CNMLayer" "CNM Editor")))
+      ("ProjectNotesEditor" (("text" "System Text Editor") ("csv" "System CSV (spreadsheet)") ("cnm" "CNM Editor")))
+      ("LayersEditor" (("notepad" "Notepad") ("cnm" "CNM Editor")))
       ("InsertTablePhases" (("No" "No")("1" "1")("2" "2")("3" "3")("4" "4")("5" "5")("6" "6")("7" "7")("8" "8")("9" "9")("10" "10")))
     )
   )
   ;; Load Dialog
   (SETQ CNMDCL (LOAD_DIALOG "cnm.dcl"))
-  (NEW_DIALOG "CNMProjectSettings" CNMDCL)
+  (NEW_DIALOG "CNMOptions" CNMDCL)
   ;; Dialog Actions
   (SET_TILE
     "Title"
@@ -5172,29 +5114,9 @@ ImportLayerSettings=No
   )
   (SET_TILE
     "ProjectFolder"
-    (HCNM-PROJ)
-  )
-  (ACTION_TILE
-    "ProjectFolder"
-    "(HCNM-LINKPROJ $value)"
-  )
-  (ACTION_TILE
-    "ProjectFolderBrowse"
-    "(HCNM-LINKPROJ $value)(set_tile \"ProjectFolder\" (HCNM-PROJ))(set_tile \"ProjectFolderPrompt\" (STRCAT \"Project folder \" (HCNM-SHORTEN-PATH(HCNM-PROJ) 50))"
-  )
-  (SET_TILE
-    "ProjectFolderPrompt"
-    (STRCAT "Project folder " (HCNM-SHORTEN-PATH (HCNM-PROJ) 50))
+    (STRCAT "Project folder " (HCNM-SHORTEN-PATH (HCNM-PROJ) 100))
   )
   (HCNM-CONFIG-SET-ACTION-TILE "ProjectNotes")
-;;  (SET_TILE
-;;    "ProjectNotes"
-;;    (c:hcnm-config-getvar "ProjectNotes")
-;;  )
-;;  (ACTION_TILE
-;;    "ProjectNotes"
-;;    "(hcnm-CONFIG-TEMP-SETVAR \"ProjectNotes\" (get_tile \"ProjectNotes\"))"
-;;  )
   (ACTION_TILE
     "ProjectNotesBrowse"
     "(hcnm-CONFIG-TEMP-SETVAR \"ProjectNotes\"(HCNM-getprojnotes))(set_tile \"ProjectNotes\" (hcnm-config-TEMP-GETVAR \"ProjectNotes\"))"
@@ -5214,6 +5136,7 @@ ImportLayerSettings=No
   (HCNM-CONFIG-SET-ACTION-TILE "PhaseAlias9")
   (HCNM-CONFIG-SET-ACTION-TILE "BubbleHooks")
   (HCNM-CONFIG-SET-ACTION-TILE "DoCurrentTabOnly")
+  (HCNM-CONFIG-SET-ACTION-TILE "DescriptionWrap")
   (HCNM-CONFIG-SET-ACTION-TILE "LineSpacing")
   (HCNM-CONFIG-SET-ACTION-TILE "NoteSpacing")
   (HCNM-CONFIG-SET-ACTION-TILE "ShowKeyTableQuantities")
@@ -5243,17 +5166,30 @@ ImportLayerSettings=No
 
 ;; LISTS-DATA is global to this function, but local to the dialog caller
 (DEFUN
-   HCNM-CONFIG-DCL-LIST (KEY / )
+   HCNM-CONFIG-DCL-LIST (KEY /)
   (HAWS-SET_TILE_LIST
     KEY
-    (MAPCAR '(LAMBDA (X) (CADR X)) (CADR (ASSOC KEY LISTS-DATA)))
-    (c:hcnm-config-getvar KEY)
+    (MAPCAR
+      '(LAMBDA (X) (CADR X))
+      (CADR (ASSOC KEY LISTS-DATA))
+    )
+    (CADR
+      (ASSOC
+        (C:HCNM-CONFIG-GETVAR KEY)
+        (CADR (ASSOC KEY LISTS-DATA))
+      )
+    )
   )
   (ACTION_TILE
     KEY
-    (STRCAT "(HCNM-CONFIG-DCL-LIST-CALLBACK \"" KEY "\" LISTS-DATA $value")
+    (STRCAT
+      "(HCNM-CONFIG-DCL-LIST-CALLBACK \""
+      KEY
+      "\" $value)"
+    )
   )
 )
+
 
 ;; LISTS-DATA is global to this function, but local to the dialog caller
 (DEFUN

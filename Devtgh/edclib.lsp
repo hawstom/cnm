@@ -2979,25 +2979,24 @@
 
 (VL-ACAD-DEFUN 'HAWS-SET_TILE_LIST)
 (DEFUN
-   HAWS-SET_TILE_LIST (KEYNAME$ LISTNAME@ SELECTED / ITEM)
-  (START_LIST KEYNAME$ 3)
-  (MAPCAR 'ADD_LIST LISTNAME@)
+   HAWS-SET_TILE_LIST (KEY OPTIONS SELECTED / ITEM)
+  (START_LIST KEY 3)
+  (MAPCAR 'ADD_LIST OPTIONS)
   (END_LIST)
   (FOREACH
      ITEM (IF (LISTP SELECTED)
             SELECTED
             (LIST SELECTED)
           )
-    (IF (MEMBER ITEM LISTNAME@)
+    (IF (MEMBER ITEM OPTIONS)
       (SET_TILE
-        KEYNAME$
-        (ITOA
-          (- (LENGTH LISTNAME@) (LENGTH (MEMBER ITEM LISTNAME@)))
-        )
+        KEY
+        (ITOA (- (LENGTH OPTIONS) (LENGTH (MEMBER ITEM OPTIONS))))
       )
-    )                                   ;if
-  )                                     ;foreach
-)                                       ;defun set_tile_list
+    )
+  )
+)
+
 
 ;;;HAWS-STRTOLST
 ;;;Parses a string into a list of fields.
