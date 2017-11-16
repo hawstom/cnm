@@ -2190,11 +2190,12 @@
 ;;
 (DEFUN
    HCNM-PROJINIT ()
-  (SETQ
-    *HCNM-CONFIG* NIL
-    *HCNM-CNMPROJECTROOT* NIL
-    *HCNM-CNMPROJECTNOTES* NIL
-  )
+;;  (SETQ
+;;    *HCNM-CONFIG* NIL
+;;    *HCNM-CNMPROJECTROOT* NIL
+;;    *HCNM-CNMPROJECTNOTES* NIL
+;;  )
+  nil ; Now that the interface covers all variables, let's not allow for surprise user edits.
 )
 
 
@@ -2943,7 +2944,7 @@
   (SETQ PROJINI (STRCAT PROJ "\\" "cnm.ini"))
   (COND
     ((AND
-       (SETQ APP (C:HCNM-CONFIG-GETVAR "Appfolder"))
+       (SETQ APP (C:HCNM-CONFIG-GETVAR "AppFolder"))
        (SETQ
          APPINI
           (FINDFILE
@@ -3331,7 +3332,7 @@ ImportLayerSettings=No
   (SETQ PROJINI (HCNM-PROJECT-FOLDER-TO-INI PROJ))
   (COND
     ((AND
-       (SETQ APP (C:HCNM-CONFIG-GETVAR "Appfolder"))
+       (SETQ APP (C:HCNM-CONFIG-GETVAR "AppFolder"))
        (SETQ APPINI (FINDFILE (HCNM-PROJECT-FOLDER-TO-INI APP)))
      )
      (ALERT
@@ -3474,12 +3475,12 @@ ImportLayerSettings=No
     ;;The CFREAD functions will later evaluate the necessity of changing the file
     ;;format and name.
     ((AND
-       (SETQ APP (C:HCNM-CONFIG-GETVAR "Appfolder"))
+       (SETQ APP (C:HCNM-CONFIG-GETVAR "AppFolder"))
        (SETQ
          APPPN
           (FINDFILE
             (STRCAT
-              (HAWS-FILENAME-DIRECTORY APP)
+              APP
               "\\"
               (IF (/=(STRCASE (c:hcnm-config-getvar "ProjectNotesEditor")) "TEXT")
                 "constnot-default.csv"
@@ -3581,7 +3582,7 @@ ImportLayerSettings=No
     ((= PNFORMAT "txt2")
      (HCNM-READCFTXT2 PROJNOTES)
      (COND
-       ((/= (STRCASE (c:hcnm-config-getvar "ProjectNotesEditor")) "TXT")
+       ((/= (STRCASE (c:hcnm-config-getvar "ProjectNotesEditor")) "TEXT")
         (SETQ BAKPROJNOTES PROJNOTES)
         (HAWS-FILE-COPY
           PROJNOTES
@@ -3619,7 +3620,7 @@ ImportLayerSettings=No
     ((= PNFORMAT "csv")
      (HCNM-READCFCSV PROJNOTES)
      (COND
-       ((= (STRCASE (c:hcnm-config-getvar "ProjectNotesEditor")) "TXT")
+       ((= (STRCASE (c:hcnm-config-getvar "ProjectNotesEditor")) "TEXT")
         (SETQ BAKPROJNOTES PROJNOTES)
         (HAWS-FILE-COPY
           PROJNOTES
@@ -5096,14 +5097,7 @@ ImportLayerSettings=No
 ;;)
 
 (DEFUN
-   C:HCNM-CNMOPTIONS (/ CNMDCL RETN LISTS-DATA)
-  (SETQ LISTS-DATA
-    '(
-      ("ProjectNotesEditor" (("text" "System Text Editor") ("csv" "System CSV (spreadsheet)") ("cnm" "CNM Editor")))
-      ("LayersEditor" (("notepad" "Notepad") ("cnm" "CNM Editor")))
-      ("InsertTablePhases" (("No" "No")("1" "1")("2" "2")("3" "3")("4" "4")("5" "5")("6" "6")("7" "7")("8" "8")("9" "9")("10" "10")))
-    )
-  )
+   C:HCNM-CNMOPTIONS (/ CNMDCL RETN)
   ;; Load Dialog
   (SETQ CNMDCL (LOAD_DIALOG "cnm.dcl"))
   (NEW_DIALOG "CNMOptions" CNMDCL)
@@ -5121,8 +5115,8 @@ ImportLayerSettings=No
     "ProjectNotesBrowse"
     "(hcnm-CONFIG-TEMP-SETVAR \"ProjectNotes\"(HCNM-getprojnotes))(set_tile \"ProjectNotes\" (hcnm-config-TEMP-GETVAR \"ProjectNotes\"))"
   )
-  (HCNM-CONFIG-DCL-LIST "ProjectNotesEditor")
   (HCNM-CONFIG-DCL-LIST "LayersEditor")
+  (HCNM-CONFIG-DCL-LIST "ProjectNotesEditor")
   (HCNM-CONFIG-SET-ACTION-TILE "NoteTypes")
   (HCNM-CONFIG-DCL-LIST "InsertTablePhases")
   (HCNM-CONFIG-SET-ACTION-TILE "PhaseAlias1")
@@ -5155,6 +5149,14 @@ ImportLayerSettings=No
   (PRINC)
 )
 
+(DEFUN HCNM-OPTIONS-LIST-DATA ()
+  '(
+    ("ProjectNotesEditor" (("text" "System Text Editor") ("csv" "System CSV (spreadsheet)") ("cnm" "CNM Pro Editor")))
+    ("LayersEditor" (("notepad" "Notepad") ("cnm" "CNM Pro Editor")))
+    ("InsertTablePhases" (("No" "No")("1" "1")("2" "2")("3" "3")("4" "4")("5" "5")("6" "6")("7" "7")("8" "8")("9" "9")("10" "10")))
+  )
+)
+
 (DEFUN
    HCNM-CONFIG-SET-ACTION-TILE (VAR)
   (SET_TILE VAR (c:hcnm-config-getvar VAR))
@@ -5167,39 +5169,51 @@ ImportLayerSettings=No
 ;; LISTS-DATA is global to this function, but local to the dialog caller
 (DEFUN
    HCNM-CONFIG-DCL-LIST (KEY /)
-  (HAWS-SET_TILE_LIST
+  (HCNM-SET_TILE_LIST
     KEY
     (MAPCAR
       '(LAMBDA (X) (CADR X))
-      (CADR (ASSOC KEY LISTS-DATA))
+      (CADR (ASSOC KEY (HCNM-OPTIONS-LIST-DATA)))
     )
     (CADR
       (ASSOC
         (C:HCNM-CONFIG-GETVAR KEY)
-        (CADR (ASSOC KEY LISTS-DATA))
+        (CADR (ASSOC KEY (HCNM-OPTIONS-LIST-DATA)))
       )
     )
   )
   (ACTION_TILE
     KEY
-    (STRCAT
-      "(HCNM-CONFIG-DCL-LIST-CALLBACK \""
-      KEY
-      "\" $value)"
+    "(HCNM-CONFIG-DCL-LIST-CALLBACK $key $value)"
+  )
+)
+
+(DEFUN
+   HCNM-SET_TILE_LIST (KEY OPTIONS SELECTED / ITEM)
+  (START_LIST KEY 3)
+  (MAPCAR 'ADD_LIST OPTIONS)
+  (END_LIST)
+  (FOREACH
+     ITEM (IF (LISTP SELECTED)
+            SELECTED
+            (LIST SELECTED)
+          )
+    (IF (MEMBER ITEM OPTIONS)
+      (SET_TILE
+        KEY
+        (ITOA (- (LENGTH OPTIONS) (LENGTH (MEMBER ITEM OPTIONS))))
+      )
     )
   )
 )
 
-
-;; LISTS-DATA is global to this function, but local to the dialog caller
 (DEFUN
    HCNM-CONFIG-DCL-LIST-CALLBACK (KEY VALUE /)
   (HCNM-CONFIG-TEMP-SETVAR
     KEY
-    (CAR (NTH (READ VALUE) (CADR (ASSOC KEY LISTS-DATA))))
+    (CAR (NTH (READ VALUE) (CADR (ASSOC KEY (HCNM-OPTIONS-LIST-DATA)))))
   )
 )
-
 
 (DEFUN
    HCNM-SET-ATTRIBUTES (ENAME-BLOCK ATTRIBUTE-LIST)

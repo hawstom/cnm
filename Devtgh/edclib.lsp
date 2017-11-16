@@ -3,7 +3,7 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "4.2.30.b.10\n\nCopyright 2017"
+  "5.0.0.b.11\n\nCopyright 2017"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 (SETQ *HAWS-DEBUGLEVEL* 0)
@@ -2472,21 +2472,12 @@
 ;;;
 (DEFUN
    C:HAWS-LOAD-FROM-APP-DIR (FILENAME / FILE-PATH)
-  ;;Make sure app folder is set.
-  (COND
-    ((NOT *HAWS-APPFOLDER*)
-     (SETQ
-       *HAWS-APPFOLDER*
-        (HAWS-FILENAME-DIRECTORY (FINDFILE "cnm.mnl"))
-     )
-    )
-  )
   (PRINC "\nLoading ")
   (COND
     ((VL-CATCH-ALL-ERROR-P
        (VL-CATCH-ALL-APPLY
          'LOAD
-         (LIST (PRINC (STRCAT *HAWS-APPFOLDER* "\\" FILENAME)))
+         (LIST (PRINC (STRCAT (C:HCNM-CONFIG-GETVAR "AppFolder") "\\" FILENAME)))
        )
      )
      (PRINC
@@ -2975,28 +2966,6 @@
     (T (* D 2))
   ) ;_ end of cond
 )
-
-
-(VL-ACAD-DEFUN 'HAWS-SET_TILE_LIST)
-(DEFUN
-   HAWS-SET_TILE_LIST (KEY OPTIONS SELECTED / ITEM)
-  (START_LIST KEY 3)
-  (MAPCAR 'ADD_LIST OPTIONS)
-  (END_LIST)
-  (FOREACH
-     ITEM (IF (LISTP SELECTED)
-            SELECTED
-            (LIST SELECTED)
-          )
-    (IF (MEMBER ITEM OPTIONS)
-      (SET_TILE
-        KEY
-        (ITOA (- (LENGTH OPTIONS) (LENGTH (MEMBER ITEM OPTIONS))))
-      )
-    )
-  )
-)
-
 
 ;;;HAWS-STRTOLST
 ;;;Parses a string into a list of fields.

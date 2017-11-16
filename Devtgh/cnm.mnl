@@ -1,2 +1,6 @@
-(if(not haws-mklayr) (load"CNMloader")(PRINC "\nSkipping CNMloader.lsp.  Already loaded."))
+(if
+  (not haws-mklayr)
+  (load "CNMloader")
+  (PRINC "\nSkipping CNMloader.lsp.  Already loaded.")
+)
 (princ)

@@ -228,7 +228,7 @@
 (load "edclib")
 ;;; Load CNM for its library functions
 (load "cnm")
-(C:HCNM-CONFIG-SETVAR "Appfolder" (HAWS-FILENAME-DIRECTORY (findfile "cnm.mnl")))
+(C:HCNM-CONFIG-SETVAR "AppFolder" (HAWS-FILENAME-DIRECTORY (findfile "cnm.mnl")))
 ;;;Load aliases
 ;;;CNMALIAS.LSP has short names for all the commands.
 (COND

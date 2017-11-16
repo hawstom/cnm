@@ -11,14 +11,13 @@
   (haws-core-borrow 1)
   (HAWS-VSAVE '("EXPERT"))
   (SETVAR "EXPERT" 5)
-  (INITGET "Yes No")
   (IF (AND
 	(= LOPERA "freeze")
 	(= (GETVAR "tilemode") 0)
 	(/= (GETVAR "cvport") 1)
-	(= (GETKWORD "\nFreeze in current viewport only? [Yes/No] <No>: ")
+	(PROGN (INITGET "Yes No")(= (GETKWORD "\nFreeze in current viewport only? [Yes/No] <No>: ")
 	   "Yes"
-	)
+	))
       )
     (PROGN
       (PROMPT "\nPick layers to freeze in current viewport:")
@@ -86,14 +85,12 @@
   (haws-core-borrow 1)
   (HAWS-VSAVE '("EXPERT"))
   (SETVAR "EXPERT" 5)
-  (INITGET "Yes No")
   (IF (AND
 	(= LOPERA "freeze")
 	(= (GETVAR "tilemode") 0)
 	(/= (GETVAR "cvport") 1)
-	(= (GETKWORD "\nFreeze in current viewport only? [Yes/No] <No>: ")
-	   "Yes"
-	)
+	(PROGN (= (INITGET "Yes No")(GETKWORD "\nFreeze in current viewport only? [Yes/No] <No>: ")   "Yes"
+	))
       )
     (PROGN
       (PROMPT "\nPick layers to freeze in current viewport:")
