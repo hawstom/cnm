@@ -31,7 +31,7 @@ turn them off or change them.
 --Ribbon interface
 --Bubble notes now are all-shapes-in-one.
 --Bubble notes now include handy draggable wipeouts. Set your WIPEOUTFRAME to 2.
---Spreadsheet edit project notes with line wrapping
+--Easy spreadsheet editing of project notes with line wrapping
 --Contour Elevate and/or Label (CEL) tool
 --LX Plus (LXX) isolates layers for selected objects in Layer palette
 --Lengthen command optimized with Dynamic default. LE/LLL

@@ -23,7 +23,7 @@
 )
 
 (DEFUN
-   HAWS-RELOAD-MENUS (/ COUNTER ISALLMENUSREQUESTED ISMENUREMOVED MENUS-DONE MENUS-DONE-STRING MENUS-TO-DO MENUS-TO-DO-TEMP NMENUS
+   HAWS-RELOAD-MENUS (MODE / COUNTER ISALLMENUSREQUESTED ISMENUREMOVED MENUS-DONE MENUS-DONE-STRING MENUS-TO-DO MENUS-TO-DO-TEMP NMENUS
                       USERINPUT
                      )
   (SETQ
@@ -44,27 +44,30 @@
   )
   (FOREACH
      GROUP MENUS-TO-DO
-     (INITGET "Yes No")
-     (COND
-       (
-         (/= "No"
-             (SETQ
-               USERINPUT
-                (GETKWORD
-                  (STRCAT
-                    "\nLoad "
-                    (CADR GROUP)
-                    " menu? [Yes/No] <Yes>: "
-                  )
-                )
+    (COND
+      ((OR (= MODE "auto")
+           (PROGN
+             (INITGET "Yes No")
+             (/= "No"
+                 (SETQ
+                   USERINPUT
+                    (GETKWORD
+                      (STRCAT
+                        "\nLoad "
+                        (CADR GROUP)
+                        " menu? [Yes/No] <Yes>: "
+                      )
+                    )
+                 )
              )
-        )
-        ;; Load the menu.
-        (VLAX-INVOKE-METHOD
-          (VLAX-GET-PROPERTY (HAWS-ACAD-OBJECT) 'MENUGROUPS)
-          'LOAD
-          (FINDFILE (STRCAT (CAR GROUP) ".cuix"))
-        )
+           )
+       )
+       ;; Load the menu.
+       (VLAX-INVOKE-METHOD
+         (VLAX-GET-PROPERTY (HAWS-ACAD-OBJECT) 'MENUGROUPS)
+         'LOAD
+         (FINDFILE (STRCAT (CAR GROUP) ".cuix"))
+       )
       )
     )
   )
@@ -172,16 +175,21 @@
   ;; Add paths in reverse order (top path at bottom)
   (SETQ
     PATHS (LIST CNMPATH)
+    ;; MODE can be "auto" or "manual"
+    MODE "manual"
   )
-;;  (COND
-;;    ((HAWS-INSTALL-PENDING-READ)
+  (COND
+    ((OR (= MODE "manual") (HAWS-INSTALL-PENDING-READ))
      (HAWS-UPDATE-SUPPORTPATHS PATHS)
      (HAWS-UPDATE-TRUSTEDPATHS PATHS)
-     (HAWS-RELOAD-MENUS)
+     (HAWS-RELOAD-MENUS MODE)
      (LOAD "cnmloader")
      (ALERT "CNM menus and toolbars installed. If you moved CNM from a previous location, you must restart AutoCAD.")
-;;     (HAWS-INSTALL-PENDING-DELETE)
-;;    )
-;;  )
+     (COND ((= MODE "auto") (HAWS-INSTALL-PENDING-DELETE)))
+    )
+  )
   (PRINC)
 )
+;|«Visual LISP© Format Options»
+(72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)
+;*** DO NOT add text below the comment! ***|;

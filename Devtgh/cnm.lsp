@@ -4033,57 +4033,70 @@ ImportLayerSettings=No
 )
 
 (DEFUN
-   HCNM-WRAP-DESCRIPTION (NOTDSCSTR WRAP / I I-CR-PREV I-NEWWORD-PREV INWORD-P NEED-WRAP-P NOTDSCLST)
+   HCNM-WRAP-DESCRIPTION (NOTDSCSTR WRAP / CHARACTER-I I I-ENDLINE I-NEWLINE-PREV
+                          I-NEWWORD-PREV INWORD-P NEED-WRAP-P NOTDSCLST
+                          NOTDSCSTR WORD-PROVIDED-P WRAP-EXCEEDED-P
+                         )
   (SETQ
     NOTDSCLST NIL
-    I-CR-PREV 1
+    I-NEWLINE-PREV 1
     I-NEWWORD-PREV 1
     INWORD-P T
     I 0
   )
-  (WHILE (/= "" (SUBSTR NOTDSCSTR (SETQ I (1+ I)) 1))
-    (COND
-      ((WCMATCH (SUBSTR NOTDSCSTR I 1) " ,\t")
-       (SETQ INWORD-P NIL)
-       (COND ((>= (- I I-CR-PREV) (1- WRAP)) (SETQ NEED-WRAP-P T)))
-      )
-      (T
-       (COND
-         ((NOT INWORD-P)
-          (SETQ
-            I-NEWWORD-PREV I
-            INWORD-P T
-          )
-          (COND
-            (NEED-WRAP-P
-             (SETQ
-               NOTDSCLST
-                (CONS
-                  (LIST I-CR-PREV (- I-NEWWORD-PREV I-CR-PREV))
-                  NOTDSCLST
-                )
-               I-CR-PREV
-                I
-               NEED-WRAP-P
-                NIL
-             )
-            )
-          )
-         )
-       )
-      )
+  (WHILE (<= (SETQ I (1+ I)) (1+ (STRLEN NOTDSCSTR)))
+    (SETQ
+      CHARACTER-I
+       (SUBSTR NOTDSCSTR I 1)
+      WRAP-EXCEEDED-P
+       (>= (- I I-NEWLINE-PREV) WRAP)
+      WORD-PROVIDED-P
+       (> I-NEWWORD-PREV I-NEWLINE-PREV)
     )
+    (COND ((OR (= CHARACTER-I "") (AND WRAP-EXCEEDED-P WORD-PROVIDED-P)) (SETQ NEED-WRAP-P T)))
     (COND
       ((= "\\n" (SUBSTR NOTDSCSTR I 2))
        (SETQ
          NOTDSCLST
-          (CONS (LIST I-CR-PREV (- I I-CR-PREV)) NOTDSCLST)
-         I-CR-PREV
+          (CONS
+            (LIST I-NEWLINE-PREV (- I I-NEWLINE-PREV))
+            NOTDSCLST
+          )
+         I-NEWLINE-PREV
           (+ I 2)
          I-NEWWORD-PREV
           (+ I 2)
          INWORD-P T
          NEED-WRAP-P NIL
+       )
+      )
+      ((WCMATCH CHARACTER-I " ,\t")
+       (SETQ INWORD-P NIL)
+      )
+      (T
+       (COND
+         ((AND (/= CHARACTER-I "")(NOT INWORD-P))
+          (SETQ
+            I-NEWWORD-PREV I
+            INWORD-P T
+          )
+         )
+       )
+       (COND
+         (NEED-WRAP-P
+          (SETQ
+            I-NEWLINE
+             (COND
+               ((= CHARACTER-I "") I)
+               (T I-NEWWORD-PREV)
+             )
+            NOTDSCLST
+             (CONS (LIST I-NEWLINE-PREV (- I-NEWLINE I-NEWLINE-PREV)) NOTDSCLST)
+            I-NEWLINE-PREV
+             I-NEWLINE
+            NEED-WRAP-P NIL
+          )
+         )
        )
       )
     )
@@ -4095,8 +4108,85 @@ ImportLayerSettings=No
        NOTDSCLST
      )
   )
- (REVERSE (CONS (SUBSTR NOTDSCSTR I-CR-PREV I) NOTDSCLST))
+  (REVERSE NOTDSCLST)
 )
+
+;|
+(DEFUN
+   HCNM-WRAP-DESCRIPTION-TEST ( / ERRORSTRING NOTDSCSTR WRAP)
+  (SETQ
+    NOTDSCSTR "A23456789 B23456789 C23456789"
+    WRAP 2
+    ERRORSTRING "List of assertions violated:"
+    ERRORSTRING
+     (STRCAT
+       ERRORSTRING
+       (COND
+         ((/= (CAR (HCNM-WRAP-DESCRIPTION NOTDSCSTR WRAP))
+              "A23456789 "
+          )
+          "\nMust leave at least one word on each line"
+         )
+         ("")
+       )
+     )
+    WRAP 11
+    ERRORSTRING
+     (STRCAT
+       ERRORSTRING
+       (COND
+         ((/= (CAR (HCNM-WRAP-DESCRIPTION NOTDSCSTR WRAP))
+              "A23456789 "
+          )
+          "\nMust wrap word 2 to line 3 if it exceeds by many."
+         )
+         ("")
+       )
+     )
+    WRAP 28
+    ERRORSTRING
+     (STRCAT
+       ERRORSTRING
+       (COND
+         ((/= (CAR (HCNM-WRAP-DESCRIPTION NOTDSCSTR WRAP))
+              "A23456789 B23456789 "
+          )
+          "\nMust wrap word 3 to line 3 if it exceeds by one."
+         )
+         ("")
+       )
+     )
+    WRAP 21
+    ERRORSTRING
+     (STRCAT
+       ERRORSTRING
+       (COND
+         ((/= (CAR (HCNM-WRAP-DESCRIPTION NOTDSCSTR WRAP))
+              "A23456789 B23456789 "
+          )
+          "\nMust wrap word 3 to line two if it exceeds by many."
+         )
+         ("")
+       )
+     )
+    WRAP 18
+    ERRORSTRING
+     (STRCAT
+       ERRORSTRING
+       (COND
+         ((/= (CAR (HCNM-WRAP-DESCRIPTION NOTDSCSTR WRAP))
+              "A23456789 "
+          )
+          "\nMust wrap word 2 to line two if it exceeds by one."
+         )
+         ("")
+       )
+     )
+  )
+  ;;(HCNM-WRAP-DESCRIPTION NOTDSCSTR WRAP)
+  ERRORSTRING
+)
+|;
 
 (DEFUN
    HCNM-WRITECFTXT2 (PROJNOTES / I ITEM NOTTYP NOTTXT NOTTXTNEW)
