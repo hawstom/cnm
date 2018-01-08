@@ -3,7 +3,7 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "5.0.0.b.12\n\nCopyright 2017"
+  "5.0.0.b.15\n\nCopyright 2017"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 (SETQ *HAWS-DEBUGLEVEL* 0)
@@ -161,6 +161,7 @@
     OLDERR *ERROR*
     *ERROR* HAWS-CORE-STPERR
   )
+  (*push-error-using-command*)
   VALIDATED
 )
 
@@ -180,7 +181,9 @@
      (PRINC (STRCAT "\nTrapped error: " S))
     )
   )
-  (COMMAND-S)
+  (WHILE (< 0 (GETVAR "cmdactive"))
+    (COMMAND)
+  )
   (IF (= (TYPE F1) (QUOTE FILE))
     (SETQ F1 (CLOSE F1))
   )
@@ -232,6 +235,7 @@
     *ERROR* OLDERR
     OLDERR NIL
   )
+  (*pop-error-mode*)
 )
 ;;END ERROR HANDLER
 

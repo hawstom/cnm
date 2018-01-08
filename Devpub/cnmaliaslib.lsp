@@ -199,9 +199,9 @@
        (COND
          ((= (LOGAND
                ACTIVATION-PREFERENCE
-               ALIAS-ACTIVATION-FLAG
+               TOGGLE-FLAG
              )
-             ALIAS-ACTIVATION-FLAG
+             TOGGLE-FLAG
           )
           (- ACTIVATION-PREFERENCE TOGGLE-FLAG)
          )

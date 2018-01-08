@@ -737,8 +737,8 @@
 ;; TGH to use this for TALLY, maybe I just need to read NOTELIST as an argument instead of from a file in this function.
 (DEFUN
    HCNM-MAKENOTETABLE (NFSOURCE QTYPT QTYSET DN TXTHT / CTABONLY ICOL
-                       IPHASE IROW FIRSTLINE JROW NFNAME NOTDSC NOTELIST
-                       NOTESMAXROWS NOTETITLES NOTNUM NOTQTY NOTTYP
+                       IPHASE ADVANCE-HEIGHT COLUMN-HEIGHT NOTE-FIRST-LINE-P COLUMN-FIRST-NOTE-P PENDING-HEIGHT NFNAME NOTDSC NOTELIST
+                       NOTESMAXHEIGHT NOTETITLES NOTNUM NOTQTY NOTTYP
                        NOTUNT NUMFND PHASELIST PROMPTEACHCOL QTY QTYPT1
                        RDLIN TXTHTTEMP TYPFND USRVAR
                       )
@@ -747,18 +747,19 @@
   (SETVAR "attreq" 1)
   (INITGET "Prompt")
   (SETQ
-    NOTESMAXROWS
-     (HAWS-GETINTX
-       "Maximum rows of notes"          ; or [Prompt for each column]"
-       NOTESMAXROWS
-       99
+    NOTESMAXHEIGHT
+     (HAWS-GETDISTX
+       QTYPT
+       "Maximum height of each notes column"          ; or [Prompt for each column]"
+       NOTESMAXHEIGHT
+       9999.0
      )
   )
   (COND
-    ((= NOTESMAXROWS "Prompt")
+    ((= NOTESMAXHEIGHT "Prompt")
      (SETQ
        PROMPTEACHCOL T
-       NOTESMAXROWS 99
+       NOTESMAXHEIGHT 9999.0
      )
      (ALERT
        "The option to prompt for each column is not yet operational."
@@ -806,7 +807,7 @@
      (ATOF (c:hcnm-config-getvar "TableWidth"))
     PHASEWID
      (ATOF (c:hcnm-config-getvar "PhaseWidthAdd"))
-    IROW 0
+    COLUMN-HEIGHT 0
     ICOL 1
     IPHASE 1
     QTYPT1 QTYPT
@@ -912,10 +913,14 @@
          )
        )
        (SETQ
+         COLUMN-FIRST-NOTE-P
+          (= COLUMN-HEIGHT 0)
          NOTUNT
           (CADDDR ENTRY)
-         JROW
-          (CADR NOTNUM)
+         ADVANCE-HEIGHT
+          (* TXTHT LINSPC)
+         PENDING-HEIGHT
+          (* (CADR NOTNUM) ADVANCE-HEIGHT)
          NOTQTY
           ;;Convert quantities to strings, preserving input precision for all quantities
           ;;Trim extra zeros from quantities
@@ -941,16 +946,36 @@
          NOTETITLES
           (CDR NOTETITLES)              ;If note was found, unflag and write titles.
        )
-       (IF NOTETITLES
-         (SETQ JROW (+ JROW (LENGTH NOTETITLES)))
+       (COND
+         (NOTETITLES
+          (SETQ TXTHTTEMP TXTHT)
+          (FOREACH
+             NOTETITLE (REVERSE NOTETITLES)
+            (SETQ
+              TXTHT
+               (CAR NOTETITLE)
+              ADVANCE-HEIGHT
+               (* TXTHT LINSPC)
+              PENDING-HEIGHT
+               (+ PENDING-HEIGHT ADVANCE-HEIGHT)
+            )
+          )
+          (SETQ
+            ADVANCE-HEIGHT
+             (* TXTHT NOTSPC)
+            PENDING-HEIGHT
+             (+ PENDING-HEIGHT ADVANCE-HEIGHT)
+            TXTHT TXTHTTEMP
+          )
+         )
        )
-       (IF (> (+ JROW IROW) NOTESMAXROWS)
-                                        ;If these titles and note won't fit in col.
-         (IF (/= IROW 0)                ;If column won't be left empty,
+       ;;If these titles and note won't fit in col.
+       (IF (> (+ PENDING-HEIGHT COLUMN-HEIGHT) NOTESMAXHEIGHT)
+         (IF (NOT COLUMN-FIRST-NOTE-P)
            (SETQ                        ;go to next column
              ICOL
               (1+ ICOL)
-             IROW 0
+             COLUMN-HEIGHT 0
              QTYPT
               (POLAR
                 QTYPT1
@@ -984,33 +1009,40 @@
             (FOREACH X NOTQTY (COMMAND ""))
             (COMMAND "")
             (SETQ
+              ADVANCE-HEIGHT
+               (* TXTHT LINSPC)
               QTYPT
-               (POLAR QTYPT (* PI -0.5) (* TXTHT LINSPC))
-              IROW
-               (1+ IROW)
-              JROW
-               (1- JROW)
+               (POLAR QTYPT (* PI -0.5) ADVANCE-HEIGHT)
+              COLUMN-HEIGHT
+               (+ COLUMN-HEIGHT ADVANCE-HEIGHT)
+              PENDING-HEIGHT
+               (- PENDING-HEIGHT ADVANCE-HEIGHT)
             )
           )
           (SETQ
+            ADVANCE-HEIGHT
+             (* TXTHT (- NOTSPC LINSPC))
             QTYPT
-             (POLAR QTYPT (* PI -0.5) (* TXTHT (- NOTSPC LINSPC)))
+             (POLAR QTYPT (* PI -0.5) ADVANCE-HEIGHT)
+            COLUMN-HEIGHT
+             (+ COLUMN-HEIGHT ADVANCE-HEIGHT)
+            PENDING-HEIGHT
+             (- PENDING-HEIGHT ADVANCE-HEIGHT)
             TXTHT TXTHTTEMP
           )
          )
        )
        ;;Split note from titles only if titles were needed to avoid empty column.
        (IF (AND
-             (> (+ JROW IROW) NOTESMAXROWS)
-                                        ;If this note won't fit in col
-             (= IROW (LENGTH NOTETITLES))
-                                        ;and these titles were placed alone in the col
+             ;; If this is the first note in the column, and it won't fit
+             COLUMN-FIRST-NOTE-P
+             (> (+ PENDING-HEIGHT COLUMN-HEIGHT) NOTESMAXHEIGHT)
            )
-         (IF (/= IROW 0)                ;If column won't be left empty,
+         (IF (/= COLUMN-HEIGHT 0)       ;If column won't be left empty,
            (SETQ                        ;go to next column
              ICOL
               (1+ ICOL)
-             IROW 0
+             COLUMN-HEIGHT 0
              QTYPT
               (POLAR
                 QTYPT1
@@ -1032,7 +1064,7 @@
          ""
          "0"
        )
-       (SETQ FIRSTLINE T)
+       (SETQ NOTE-FIRST-LINE-P T)
 ;;;    (setvar "attreq" 0)
        (FOREACH
           NOTDSC (NTH 5 ENTRY)
@@ -1084,11 +1116,11 @@
            TXTHT
            ""
            "0"
-           (IF FIRSTLINE
+           (IF NOTE-FIRST-LINE-P
              NOTTYP
              ""
            )
-           (IF FIRSTLINE
+           (IF NOTE-FIRST-LINE-P
              (CAR NOTNUM)
              ""
            )
@@ -1097,30 +1129,36 @@
          (FOREACH
             X NOTQTY
            (COMMAND
-             (IF FIRSTLINE
+             (IF NOTE-FIRST-LINE-P
                X
                ""
              )
            )
          )
          (COMMAND
-           (IF FIRSTLINE
+           (IF NOTE-FIRST-LINE-P
              NOTUNT
              ""
            )
          )
          (SETQ
+           ADVANCE-HEIGHT
+            (* TXTHT LINSPC)
            QTYPT
-            (POLAR QTYPT (* PI -0.5) (* TXTHT LINSPC))
-           IROW
-            (1+ IROW)
+            (POLAR QTYPT (* PI -0.5) ADVANCE-HEIGHT)
+           COLUMN-HEIGHT
+            (+ COLUMN-HEIGHT ADVANCE-HEIGHT)
            NOTETITLES NIL
-           FIRSTLINE NIL
+           NOTE-FIRST-LINE-P NIL
          )
        )
        (SETQ
+         ADVANCE-HEIGHT
+          (* TXTHT (- NOTSPC LINSPC))
          QTYPT
-          (POLAR QTYPT (* PI -0.5) (* TXTHT (- NOTSPC LINSPC)))
+          (POLAR QTYPT (* PI -0.5) ADVANCE-HEIGHT)
+         COLUMN-HEIGHT
+          (+ COLUMN-HEIGHT ADVANCE-HEIGHT)
        )
       )
     )
@@ -1285,7 +1323,7 @@
 ;;   '((shti (typj (notek qty1 qty2 qtyk))))
 (DEFUN
    HCNM-TALLY (DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID / ALLNOT COL1X
-              COLUMN DQWID DWGFIL EL FIRSTLINE FLSPEC I LSTFIL NDWID
+              COLUMN DQWID DWGFIL EL NOTE-FIRST-LINE-P FLSPEC I LSTFIL NDWID
               NFNAME NOTELIST NOTETITLES NOTFIL NOTNUM NOTQTY NOTSPC
               NOTTYP NOTUNT NUMFND NUMLIST PGPMOD PHASE PHASELIST
               PHASENUMI PT1Z Q QQWID QTYLIST QTYPT1 QTYSET QUWID ROW1Y
@@ -2064,7 +2102,7 @@
        )
        (SETQ
          X         (+ COL1X (* TXTHT NDWID))
-         FIRSTLINE T
+         NOTE-FIRST-LINE-P T
        )
        (FOREACH
           NOTDSC (NTH 5 ENTRY)
@@ -4349,7 +4387,7 @@ ImportLayerSettings=No
        )
      )
     )
-    (T (COMMAND "._START" PNNAME))
+    (T (COMMAND "._SH"  (STRCAT "\"" PNNAME "\"")))
   )
   (PRINC)
 )

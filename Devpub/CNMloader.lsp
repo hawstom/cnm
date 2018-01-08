@@ -172,7 +172,7 @@
 (haws-autoload "addleng"  '("haws-adl" ))
 (haws-autoload "brkmat"   '("haws-bm"))
 (haws-autoload "brk"      '("haws-brk"))
-(haws-autoload "copyrot"  '("haws-cr" "haws-copyrot"))
+(haws-autoload "copyrot"  '("haws-copyrot" "haws-copyrotdrag"))
 (haws-autoload "chcoord"  '("haws-chcoord"))
 (haws-autoload "cmpro"    '("haws-cmpro"))
 (haws-autoload "lengthen"  '("haws-lengthen"))
