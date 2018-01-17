@@ -3,7 +3,7 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "5.0.0.b.15\n\nCopyright 2017"
+  "5.0.0.b.18\n\nCopyright 2017"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 (SETQ *HAWS-DEBUGLEVEL* 0)
@@ -1855,13 +1855,14 @@
 ;;;Returns a distance
 (VL-ACAD-DEFUN 'HAWS-GETDISTX)
 (DEFUN
-   HAWS-GETDISTX (GX-POINT1 GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE)
+   HAWS-GETDISTX (GX-POINT1 GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE / GX-ARCMODE)
   (CAR
     (HAWS-GETDISTPOINT
       GX-POINT1
       GX-PROMPT
       GX-DEFAULTVALUE
       GX-INITIALVALUE
+      (SETQ GX-ARCMODE-P NIL)
     )
   )
 )
@@ -1871,7 +1872,7 @@
 (VL-ACAD-DEFUN 'HAWS-GETDISTPOINT)
 (DEFUN
    HAWS-GETDISTPOINT (GX-POINT1 GX-PROMPT GX-DEFAULTVALUE
-                      GX-INITIALVALUE / GX-POINT2 GX-POINT3 GX-BULGE
+                      GX-INITIALVALUE GX-ARCMODE-P / GX-POINT2 GX-POINT3 GX-BULGE
                       GX-DISTANCE
                      )
   (SETQ
@@ -1898,7 +1899,7 @@
           (STRCAT
             "\n"
             GX-PROMPT
-            " [Arc]"
+            (COND (ARCMODE-P " [Arc]") (T ""))
             (IF GX-DEFAULTVALUE
               (STRCAT " <" (RTOS GX-DEFAULTVALUE) ">")
               ""
@@ -1919,7 +1920,7 @@
         GX-DEFAULTVALUE
        )
        ;;Else if point2 isn't "Arc"
-       ((/= "Arc" GX-POINT2)
+       ((OR (NOT ARCMODE-P) (/= "Arc" GX-POINT2))
         ;;then return the distance between point1 and point2
         (DISTANCE GX-POINT1 GX-POINT2)
        )

@@ -10,7 +10,7 @@
 ;;; Define as AutoCAD command.
 ;;; https://www.theswamp.org/index.php?topic=51409.msg565523#msg565523
 (load "cnmaliaslib")
-;;;---------------Simple command aliases-------------
+;;;---------------Custom command aliases-------------
 ;;; All of these can be disabled as a group using the CNMAlias command.
 ;;; They can also be converted to custom ACAD.PGP aliases with help from the same command.
 ;;; (hcnm-define-command-alias '("Command" "Alias" "ActivationGroup" "Message"))
@@ -52,6 +52,18 @@
 (hcnm-define-command-alias '("-Wblock" "WW" "Custompgp" ""))
 (hcnm-define-command-alias '("Extend" "X" "Custompgp" "Explode is EX."))
 (hcnm-define-command-alias '("LayMCur" "Y" "Custompgp" ""))
+;;;---------------Special custom comand aliases-------------   
+;;; These want to be simple aliases, but when defined as simple LISP aliases,
+;;; they act different than their native commands or PGP aliases,
+;;; probably to preserve legacy behavior.
+;;; Behavior is corrected using more than a single line of code.   
+(hcnm-define-lisp-alias '("haws-copy" "c" "Custompgp" "Circle is CC. Use CNMAlias to change."))
+(hcnm-define-lisp-alias '("haws-explode" "ex" "Custompgp" "Extend is X. Use CNMAlias to change."))
+;;;---------------LISP versions of the Autodesk standard command aliases-------------
+;;; All of these can be disabled as a group using the CNMAlias command.
+;;; They can also be converted to custom ACAD.PGP aliases with help from the same command.
+;;; (hcnm-define-command-alias '("Command" "Alias" "ActivationGroup" "Message"))
+
 (hcnm-define-command-alias '("-Insert" "-I" "Standardpgp" ""))
 (hcnm-define-command-alias '("-Wblock" "-W" "Standardpgp" ""))
 (hcnm-define-command-alias '("-Xref" "-XR" "Standardpgp" ""))
@@ -423,13 +435,6 @@
 (hcnm-define-lisp-alias '("haws-pgpedit" "pgp" "Tools" ""))
 (hcnm-define-lisp-alias '("haws-loadandrun" "lr" "Tools" ""))
 (hcnm-define-lisp-alias '("haws-loadandrun" "run" "Tools" "RUN has been replaced with LR (lisprun)."))
-;;;---------------Special aliases-------------   
-;;; These want to be simple aliases, but when defined as simple LISP aliases,
-;;; they act different than their native commands or PGP aliases,
-;;; probably to preserve legacy behavior.
-;;; Behavior is corrected here.   
-(hcnm-define-lisp-alias '("haws-copy" "c" "Tools" "Circle is CC. Use CNMAlias to change."))
-(hcnm-define-lisp-alias '("haws-explode" "ex" "Tools" "Extend is X. Use CNMAlias to change."))
 
 ;; For certain legacy routines in the wild that depend on the error trapper in the legacy file lisputil.lsp
 (defun erdf$@ () (haws-errdef))

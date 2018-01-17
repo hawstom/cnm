@@ -2228,12 +2228,11 @@
 ;;
 (DEFUN
    HCNM-PROJINIT ()
-;;  (SETQ
-;;    *HCNM-CONFIG* NIL
-;;    *HCNM-CNMPROJECTROOT* NIL
-;;    *HCNM-CNMPROJECTNOTES* NIL
-;;  )
-  nil ; Now that the interface covers all variables, let's not allow for surprise user edits.
+  (SETQ
+    *HCNM-CONFIG* NIL
+    *HCNM-CNMPROJECTROOT* NIL
+    *HCNM-CNMPROJECTNOTES* NIL
+  )
 )
 
 
@@ -3014,7 +3013,7 @@ PhaseAlias9=9
 InsertTablePhases=No
 TableWidth=65
 PhaseWidthAdd=9
-DescriptionWrap=45
+DescriptionWrap=9999
 LineSpacing=1.5
 NoteSpacing=3
 NumberToDescriptionWidth=2.5
@@ -3086,7 +3085,7 @@ ImportLayerSettings=No
      ("InsertTablePhases" "No" 2)
      ("TableWidth" "65" 2)
      ("PhaseWidthAdd" "9" 2)
-     ("DescriptionWrap" "45" 2)
+     ("DescriptionWrap" "9999" 2)
      ("LineSpacing" "1.5" 2)
      ("NoteSpacing" "3" 2)
      ("NumberToDescriptionWidth" "2.5" 2)
@@ -4353,7 +4352,7 @@ ImportLayerSettings=No
 ;;;
 ;;;================================================================================================================
 (DEFUN
-   C:HCNM-NOTESEDIT (/)
+   C:HCNM-NOTESEDIT (/ PNNAME)
   (SETQ
     NOTESEDITOR (C:HCNM-CONFIG-GETVAR "ProjectNotesEditor")
     CNMEDITP (= NOTESEDITOR "cnm")
@@ -4395,7 +4394,7 @@ ImportLayerSettings=No
 (DEFUN HCNM-PROJNOTES-MATCH-EXTENSION (PROJNOTES NOTESEDITOR)
   (cond
     ((= NOTESEDITOR "text")(HCNM-CHANGE-FILENAME-EXTENSION PROJNOTES "txt"))
-    ((= NOTESEDITOR "csv")(HCNM-CHANGE-FILENAME-EXTENSION PROJNOTES "csv"))
+    (T(HCNM-CHANGE-FILENAME-EXTENSION PROJNOTES "csv"))
   )
 )
 
@@ -4436,7 +4435,7 @@ ImportLayerSettings=No
        ((= (C:HCNM-CONFIG-GETVAR "LayersEditor") "cnm")
         (STRCAT
           (C:HCNM-CONFIG-GETVAR "AppFolder")
-          "\\CNMEdit.exe"
+          "\\CNMLayer.exe"
         )
        )
        (T "notepad.exe")

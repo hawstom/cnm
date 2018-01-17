@@ -4,16 +4,16 @@
    HCNM-ALIAS-ACTIVATION-GROUPS ()
   ;;("Key" Flag "Message" "Prompt")
   '
-   (("Tools" 1 "custom tool" "cnm Tools")
+   (("Tools" 1 "custom tool" "Activate keyboard shortcuts for CNM tools (strongly recommended)")
     ("Custompgp"
      2
      "custom alias for AutoCAD command (change with CNMAlias)"
-     "Custom command aliases"
+     "Activate CNM's custom LISP changes to stock PGP definitions (recommended)"
     )
     ("Standardpgp"
      4
      "verbatim alias for AutoCAD command (change with CNMAlias)"
-     "Standard command aliases"
+     "Activate verbatim LISP duplications of stock PGP definitions (not recommended)"
     )
    )
 )
@@ -123,10 +123,11 @@
   )
 )
 
+;; This is the one hard-coded alias. Not in the aliases list.
 (DEFUN C:CNMALIAS () (C:HAWS-ALIASMANAGE))
-                                        ; This is the one hard-coded alias. Not in the aliases list.
+                                        
 (DEFUN
-   C:HAWS-ALIASMANAGE (/ ACTIVATION-PREFERENCE INPUT1)
+   C:HAWS-ALIASMANAGE (/ ALIAS-ACTIVATION-FLAG ACTIVATION-PREFERENCE INPUT1)
   (TEXTPAGE)
   (PRINC "\n;Standard AutoCAD aliases (for reference only)")
   (HCNM-PRINT-PGP-STYLE-ALIASES "Standardpgp")
@@ -145,73 +146,65 @@
        (C:HCNM-CONFIG-GETVAR "CNMAliasActivation")
      )
   )
-  (WHILE (PROGN
-           (INITGET
-             (APPLY
-               'STRCAT
-               (MAPCAR
-                 '(LAMBDA (GROUP) (STRCAT (CAR GROUP) " "))
-                 (HCNM-ALIAS-ACTIVATION-GROUPS)
-               )
-             )
-           )
-           (SETQ
-             INPUT1
-              (GETKWORD
-                (STRCAT
-                  "\nToggle CNM alias groups to activate as LISP shortcuts ["
-                  (SUBSTR
-                    (APPLY
-                      'STRCAT
-                      (MAPCAR
-                        '(LAMBDA (GROUP / ALIAS-ACTIVATION-FLAG)
-                           (SETQ ALIAS-ACTIVATION-FLAG (CADR GROUP))
-                           (STRCAT
-                             "/"
-                             (NTH 3 GROUP)
-                             (COND
-                               ((= (LOGAND
-                                     ACTIVATION-PREFERENCE
-                                     ALIAS-ACTIVATION-FLAG
-                                   )
-                                   ALIAS-ACTIVATION-FLAG
-                                )
-                                " (yes)"
-                               )
-                               (T " (no)")
-                             )
-                           )
-                         )
-                        (HCNM-ALIAS-ACTIVATION-GROUPS)
-                      )
-                    )
-                    2
-                  )
-                  "] <continue>: "
-                )
-              )
-           )
-         )
+  (FOREACH
+     GROUP (HCNM-ALIAS-ACTIVATION-GROUPS)
+    (INITGET "Yes No")
     (SETQ
-      TOGGLE-FLAG
-       (CADR (ASSOC INPUT1 (HCNM-ALIAS-ACTIVATION-GROUPS)))
-      ACTIVATION-PREFERENCE
-       (COND
-         ((= (LOGAND
-               ACTIVATION-PREFERENCE
-               TOGGLE-FLAG
+      ALIAS-ACTIVATION-FLAG
+       (CADR GROUP)
+      INPUT1
+       (GETKWORD
+         (STRCAT
+           "\n"
+           (NTH 3 GROUP)
+           "? [Yes/No] <"
+           (COND
+             ((= (LOGAND
+                   ACTIVATION-PREFERENCE
+                   ALIAS-ACTIVATION-FLAG
+                 )
+                 ALIAS-ACTIVATION-FLAG
+              )
+              "Yes"
              )
-             TOGGLE-FLAG
-          )
-          (- ACTIVATION-PREFERENCE TOGGLE-FLAG)
+             (T "No")
+           )
+           ">: "
          )
-         (T (+ ACTIVATION-PREFERENCE TOGGLE-FLAG))
        )
     )
-  )
-  (C:HCNM-CONFIG-SETVAR
-    "CNMAliasActivation"
-    (ITOA ACTIVATION-PREFERENCE)
+    (COND
+      (INPUT1
+       (COND
+         ((= (LOGAND ACTIVATION-PREFERENCE ALIAS-ACTIVATION-FLAG)
+             ALIAS-ACTIVATION-FLAG
+          )
+          (SETQ
+            ACTIVATION-PREFERENCE
+             (- ACTIVATION-PREFERENCE
+                ALIAS-ACTIVATION-FLAG
+             )
+          )
+         )
+       )
+       (COND
+         ((= INPUT1
+             "Yes")
+             (SETQ
+               ACTIVATION-PREFERENCE
+                (+ ACTIVATION-PREFERENCE
+                   ALIAS-ACTIVATION-FLAG
+                )
+             )
+          )
+         
+       )
+       (C:HCNM-CONFIG-SETVAR
+         "CNMAliasActivation"
+         (ITOA ACTIVATION-PREFERENCE)
+       )
+      )
+    )
   )
   (GETSTRING
     "\nStep 2. <continue to edit individual CNMAlias.lsp aliases>: "
