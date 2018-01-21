@@ -3064,7 +3064,7 @@ ImportLayerSettings=No
     )
     (LIST "Var"
      (LIST "ProjectFolder" "" 1)
-     (LIST "AppFolder" "" 0)
+     (LIST "AppFolder"  (HAWS-FILENAME-DIRECTORY (findfile "cnm.mnl")) 0)
      (LIST "LXXListMode" "yes" 4)
      (LIST "CNMAliasActivation" "3" 4)
      (LIST "ProjectNotesEditor" (HCNM-CONFIG-DEFAULT-PROJECTNOTESEDITOR) 2) ; text, csv, or cnm
@@ -3104,19 +3104,18 @@ ImportLayerSettings=No
 )
 
 (DEFUN
-   HCNM-CONFIG-DEFAULT-PROJECTNOTESEDITOR ()
+   HCNM-CONFIG-DEFAULT-PROJECTNOTESEDITOR (/ REG-VAL)
   (COND
     ((AND
        (HAWS-VLISP-P)
-       (WCMATCH
-         (STRCASE
-           (VL-REGISTRY-READ
-             "HKEY_CURRENT_USER\\Software\\HawsEDC\\CNM"
-             "ProjectNoteseditor"
-           )
-         )
-         "*CNMEDIT*"
+       (SETQ
+         REG-VAL
+          (VL-REGISTRY-READ
+            "HKEY_CURRENT_USER\\Software\\HawsEDC\\CNM"
+            "ProjectNoteseditor"
+          )
        )
+       (WCMATCH (STRCASE REG-VAL) "*CNMEDIT*")
      )
      "cnm"
     )
