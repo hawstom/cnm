@@ -2997,8 +2997,8 @@
      (SETQ F2 (OPEN PROJINI "w"))
      (PRINC
        "[CNM]
-ProjectNotes=constnot.txt
-ProjectNotesEditor=text
+ProjectNotes=constnot.csv
+ProjectNotesEditor=csv
 NoteTypes=BOX,CIR,DIA,ELL,HEX,OCT,PEN,REC,SST,TRI
 DoCurrentTabOnly=0
 PhaseAlias1=1
@@ -3054,52 +3054,74 @@ ImportLayerSettings=No
 ;;;
 (DEFUN
    HCNM-CONFIG-DEFINITIONS (/)
-  '(("Scope"
-     ("Session" 0)
-     ("Drawing" 1) ; Does not work yet?
-     ("Project" 2)
-     ("App" 3) ; Does not work yet?
-     ("User" 4)
+  (LIST
+    (LIST "Scope"
+     (LIST "Session" 0)
+     (LIST "Drawing" 1) ; Does not work yet?
+     (LIST "Project" 2)
+     (LIST "App" 3) ; Does not work yet?
+     (LIST "User" 4)
     )
-    ("Var"
-     ("ProjectFolder" "" 1)
-     ("AppFolder" "" 0)
-     ("LXXListMode" "yes" 4)
-     ("CNMAliasActivation" "3" 4)
-     ("ProjectNotesEditor" "text" 2) ; text, csv, or cnm
-     ("LayersEditor" "notepad" 4) ; notepad or cnm
-     ("ProjectNotes" "constnot.txt" 2)
-     ("ThisFile" "" 2)
-     ("ImportLayerSettings" "No" 2)
-     ("NoteTypes" "BOX,CIR,DIA,ELL,HEX,OCT,PEN,REC,SST,TRI" 2)
-     ("DoCurrentTabOnly" "0" 2)
-     ("PhaseAlias1" "1" 2)
-     ("PhaseAlias2" "2" 2)
-     ("PhaseAlias3" "3" 2)
-     ("PhaseAlias4" "4" 2)
-     ("PhaseAlias5" "5" 2)
-     ("PhaseAlias6" "6" 2)
-     ("PhaseAlias7" "7" 2)
-     ("PhaseAlias8" "8" 2)
-     ("PhaseAlias9" "9" 2)
-     ("InsertTablePhases" "No" 2)
-     ("TableWidth" "65" 2)
-     ("PhaseWidthAdd" "9" 2)
-     ("DescriptionWrap" "9999" 2)
-     ("LineSpacing" "1.5" 2)
-     ("NoteSpacing" "3" 2)
-     ("NumberToDescriptionWidth" "2.5" 2)
-     ("DescriptionToQuantityWidth" "56" 2)
-     ("QuantityToQuantityWidth" "9" 2)
-     ("QuantityToUnitsWidth" "1" 2)
-     ("ShowKeyTableGrid" "0" 2)
-     ("ShowKeyTableQuantities" "1" 2)
-     ("BubbleHooks" "0" 2)
-     ("NotesLeaderDimstyle" "" 2)
-     ("NotesKeyTableDimstyle" "" 2)
-     ("TCGLeaderDimstyle" "TCG Leader" 2)
+    (LIST "Var"
+     (LIST "ProjectFolder" "" 1)
+     (LIST "AppFolder" "" 0)
+     (LIST "LXXListMode" "yes" 4)
+     (LIST "CNMAliasActivation" "3" 4)
+     (LIST "ProjectNotesEditor" (HCNM-CONFIG-DEFAULT-PROJECTNOTESEDITOR) 2) ; text, csv, or cnm
+     (LIST "LayersEditor" "notepad" 4) ; notepad or cnm
+     (LIST "ProjectNotes" "constnot.csv" 2)
+     (LIST "ThisFile" "" 2)
+     (LIST "ImportLayerSettings" "No" 2)
+     (LIST "NoteTypes" "BOX,CIR,DIA,ELL,HEX,OCT,PEN,REC,SST,TRI" 2)
+     (LIST "DoCurrentTabOnly" "0" 2)
+     (LIST "PhaseAlias1" "1" 2)
+     (LIST "PhaseAlias2" "2" 2)
+     (LIST "PhaseAlias3" "3" 2)
+     (LIST "PhaseAlias4" "4" 2)
+     (LIST "PhaseAlias5" "5" 2)
+     (LIST "PhaseAlias6" "6" 2)
+     (LIST "PhaseAlias7" "7" 2)
+     (LIST "PhaseAlias8" "8" 2)
+     (LIST "PhaseAlias9" "9" 2)
+     (LIST "InsertTablePhases" "No" 2)
+     (LIST "TableWidth" "65" 2)
+     (LIST "PhaseWidthAdd" "9" 2)
+     (LIST "DescriptionWrap" "9999" 2)
+     (LIST "LineSpacing" "1.5" 2)
+     (LIST "NoteSpacing" "3" 2)
+     (LIST "NumberToDescriptionWidth" "2.5" 2)
+     (LIST "DescriptionToQuantityWidth" "56" 2)
+     (LIST "QuantityToQuantityWidth" "9" 2)
+     (LIST "QuantityToUnitsWidth" "1" 2)
+     (LIST "ShowKeyTableGrid" "0" 2)
+     (LIST "ShowKeyTableQuantities" "1" 2)
+     (LIST "BubbleHooks" "0" 2)
+     (LIST "NotesLeaderDimstyle" "" 2)
+     (LIST "NotesKeyTableDimstyle" "" 2)
+     (LIST "TCGLeaderDimstyle" "TCG Leader" 2)
     )
    )
+)
+
+(DEFUN
+   HCNM-CONFIG-DEFAULT-PROJECTNOTESEDITOR ()
+  (COND
+    ((AND
+       (HAWS-VLISP-P)
+       (WCMATCH
+         (STRCASE
+           (VL-REGISTRY-READ
+             "HKEY_CURRENT_USER\\Software\\HawsEDC\\CNM"
+             "ProjectNoteseditor"
+           )
+         )
+         "*CNMEDIT*"
+       )
+     )
+     "cnm"
+    )
+    (T "csv")
+  )
 )
 
 ;; Strips scope stuff and returns just defaults list
@@ -3292,6 +3314,7 @@ ImportLayerSettings=No
           *HCNM-CONFIG*
            (APPEND
              *HCNM-CONFIG*
+             ;; If one project var is missing, all project vars are missing
              (HCNM-CONFIG-READ-ALL-PROJECT)
            )
         )
@@ -3301,6 +3324,7 @@ ImportLayerSettings=No
           *HCNM-CONFIG*
            (APPEND
              *HCNM-CONFIG*
+             ;; If one user var is missing, all user vars are missing
              (HCNM-CONFIG-READ-ALL-USER)
            )
         )
@@ -3309,7 +3333,7 @@ ImportLayerSettings=No
     )
   )
   (COND
-    ;;Try getting from list or read
+    ;;Try getting from list
     ((SETQ VAL (CADR (ASSOC VAR *HCNM-CONFIG*)))
      (SETQ SETVAR-P NIL)
     )
@@ -3344,7 +3368,6 @@ ImportLayerSettings=No
     (T NIL)
   )
 )
-
 
 (DEFUN
    HCNM-CONFIG-WRITE-USER (VAR VAL)
@@ -4352,12 +4375,13 @@ ImportLayerSettings=No
 ;;;
 ;;;================================================================================================================
 (DEFUN
-   C:HCNM-NOTESEDIT (/ PNNAME)
+   C:HCNM-NOTESEDIT (/ CNMEDIT-P PNNAME)
   (SETQ
     NOTESEDITOR (C:HCNM-CONFIG-GETVAR "ProjectNotesEditor")
-    CNMEDITP (= NOTESEDITOR "cnm")
+    ;; wcmatch is legacy hack to be removed when 4.2.29 is deprecated and replaced with translation/conversion on getvar.
+    CNMEDIT-P (wcmatch (strcase NOTESEDITOR) "*CNM*")
   )
-  (IF CNMEDITP
+  (IF CNMEDIT-P
     (HAWS-CORE-BORROW 2)
     (HAWS-CORE-BORROW 1)
   )
@@ -4370,7 +4394,7 @@ ImportLayerSettings=No
   (SETQ PNNAME (HCNM-PROJNOTES-MATCH-EXTENSION PNNAME NOTESEDITOR))
   (PRINC (STRCAT "\nEditing " (HCNM-PROJNOTES) "."))
   (COND
-    ((= NOTESEDITOR "cnm")
+    (CNMEDIT-P
      (STARTAPP
        (STRCAT
          "\""
@@ -4431,12 +4455,13 @@ ImportLayerSettings=No
   (SETQ
     *HAWS:LAYERS* NIL
     LAYERSEDITOR
+     ;; wcmatch is legacy hack to be removed when 4.2.29 is deprecated and replaced with translation/conversion on getvar.
      (COND
-       ((= (C:HCNM-CONFIG-GETVAR "LayersEditor") "cnm")
-        (STRCAT
-          (C:HCNM-CONFIG-GETVAR "AppFolder")
-          "\\CNMLayer.exe"
+       ((WCMATCH
+          (STRCASE (C:HCNM-CONFIG-GETVAR "LayersEditor"))
+          "*CNM*"
         )
+        (STRCAT (C:HCNM-CONFIG-GETVAR "AppFolder") "\\CNMLayer.exe")
        )
        (T "notepad.exe")
      )

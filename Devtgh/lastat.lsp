@@ -89,7 +89,7 @@
 	(= LOPERA "freeze")
 	(= (GETVAR "tilemode") 0)
 	(/= (GETVAR "cvport") 1)
-	(PROGN (= (INITGET "Yes No")(GETKWORD "\nFreeze in current viewport only? [Yes/No] <No>: ")   "Yes"
+	(PROGN (INITGET "Yes No")(= (GETKWORD "\nFreeze in current viewport only? [Yes/No] <No>: ")   "Yes"
 	))
       )
     (PROGN
