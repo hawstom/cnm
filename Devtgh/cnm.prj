@@ -1,4 +1,4 @@
-;;; VLisp project file [V2.0] cnm saved to:[W:/programming/hawsedc/develop/Devtgh] at:[9/12/17] 
+;;; VLisp project file [V2.0] cnm saved to:[W:/programming/hawsedc/develop/Devtgh] at:[1/23/18] 
 (VLISP-PROJECT-LIST
   :NAME
   CNM
@@ -64,7 +64,6 @@
     "W:/programming/hawsedc/develop/Devtgh/romans"
     "W:/programming/hawsedc/develop/Devtgh/round"
     "W:/programming/hawsedc/develop/Devtgh/rotatebase"
-    "W:/programming/hawsedc/develop/Devtgh/sheet"
     "W:/programming/hawsedc/develop/Devtgh/ssxpro"
     "W:/programming/hawsedc/develop/Devtgh/stacl"
     "W:/programming/hawsedc/develop/Devtgh/stdim"

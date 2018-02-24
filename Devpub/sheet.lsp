@@ -1,5 +1,5 @@
 ;SHEET.LSP
-;(C) Copyright 1997 by Thomas Gail Haws
+;Public domain 2018 by Thomas Gail Haws
 ;This routine sets up a plan and profile sheet by attaching the
 ;required xrefs in model space and paper space and creating a
 ;paper space viewport.

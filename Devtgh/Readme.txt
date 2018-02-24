@@ -52,7 +52,7 @@ turn them off or change them.
 --Lots of behind-the-scenes cleanup.
 --Where appropriate, old custom functions (THA -> LAYTHW, ONA -> LAYON) are now aliases for standard AutoCAD commands.
 --The old HawsEDC acad.pgp aliases have been converted to LSP commands.  You can change
-  or customize this using the HAM command.
+  or customize this using the CNMALIAS (CAM) command.
 --A few command aliases have been shortened or changed.  Please give them a chance.
 ---ONA -> ON
 ---THA -> TH

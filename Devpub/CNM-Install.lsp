@@ -30,7 +30,7 @@
     MENUS-TO-DO
      '(
        ;;("File/group name" "Prompt")
-       ("CNM" "Core CNM menu") 
+       ("CNM" "Core CNM") 
        ("FunKy" "Function key osnaps")
      )
   )
@@ -184,7 +184,8 @@
      (HAWS-UPDATE-TRUSTEDPATHS PATHS)
      (HAWS-RELOAD-MENUS MODE)
      (LOAD "cnmloader")
-     (ALERT "CNM menus and toolbars installed. If you moved CNM from a previous location, you must restart AutoCAD.")
+     (C:HAWS-ALIASMANAGE)
+     (ALERT (PRINC "\nCNM menus and toolbars installed. If you moved CNM from a previous location, you must restart AutoCAD."))
      (COND ((= MODE "auto") (HAWS-INSTALL-PENDING-DELETE)))
     )
   )

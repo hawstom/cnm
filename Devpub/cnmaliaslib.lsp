@@ -1,19 +1,24 @@
-(SETQ *HCNM-PGP-ALIASES* NIL)
-
 (DEFUN
    HCNM-ALIAS-ACTIVATION-GROUPS ()
-  ;;("Key" Flag "Message" "Prompt")
+  ;;("Key" Flag "Message" "Prompt" "Heading")
   '
-   (("Tools" 1 "custom tool" "Activate keyboard shortcuts for CNM tools (strongly recommended)")
+   (("Tools"
+     1
+     "custom tool"
+     "Activate keyboard shortcuts for CNM tools (strongly recommended)"
+     ""
+    )
     ("Custompgp"
      2
      "custom alias for AutoCAD command (change with CNMAlias)"
-     "Activate CNM's custom LISP changes to stock PGP definitions (recommended)"
+     "Activate CNM's custom LISP changes to PGP definitions (recommended; shown above in PGP format)"
+     "Custom Command Aliases"
     )
     ("Standardpgp"
      4
      "verbatim alias for AutoCAD command (change with CNMAlias)"
-     "Activate verbatim LISP duplications of stock PGP definitions (not recommended)"
+     "Activate verbatim LISP duplications of stock PGP definitions (not recommended; shown above in PGP format)"
+     "Stock AutoCAD Command Aliases"
     )
    )
 )
@@ -22,6 +27,7 @@
    HCNM-ALIAS-GROUP (KEY)
   (ASSOC KEY (HCNM-ALIAS-ACTIVATION-GROUPS))
 )
+
 (DEFUN HCNM-ALIAS-GROUP-FLAG (GROUP) (CADR GROUP))
 (DEFUN
    HCNM-ALIAS-GROUP-MESSAGE (GROUP ALIAS)
@@ -123,21 +129,14 @@
   )
 )
 
-;; This is the one hard-coded alias. Not in the aliases list.
-(DEFUN C:CNMALIAS () (C:HAWS-ALIASMANAGE))
-                                        
 (DEFUN
    C:HAWS-ALIASMANAGE (/ ALIAS-ACTIVATION-FLAG ACTIVATION-PREFERENCE INPUT1)
   (TEXTPAGE)
-  (PRINC "\n;Standard AutoCAD aliases (for reference only)")
-  (HCNM-PRINT-PGP-STYLE-ALIASES "Standardpgp")
-  (PRINC "\n;Custom CNM aliases (copy these)")
-  (HCNM-PRINT-PGP-STYLE-ALIASES "Custompgp")
   (PRINC
     (STRCAT
       "\n==================================================================================="
-      "\nStep 1. Choose which CNM alias groups to activate. You can also"
-      "\ncopy any of the aliases above to your ACAD.PGP."
+      "\nCNMAlias: Manage CNM Command Aliases"
+      "\nStep 1. Choose which CNM alias groups to activate."
     )
   )
   (SETQ
@@ -148,6 +147,7 @@
   )
   (FOREACH
      GROUP (HCNM-ALIAS-ACTIVATION-GROUPS)
+    (HCNM-PRINT-PGP-STYLE-ALIASES GROUP)
     (INITGET "Yes No")
     (SETQ
       ALIAS-ACTIVATION-FLAG
@@ -206,31 +206,54 @@
       )
     )
   )
-  (GETSTRING
-    "\nStep 2. <continue to edit individual CNMAlias.lsp aliases>: "
-  )
-  (STARTAPP
-    (STRCAT "\"notepad\" \"" (FINDFILE "cnmalias.lsp") "\"")
-  )
-  (ALERT
-    (STRCAT
-      "CNMAlias.lsp has been opened in Notepad for you to edit.\n\nClick OK to load CNM aliases after editing and saving."
+  (COND
+    ((PROGN
+       (INITGET 1 "Yes No")
+       (=
+         (GETKWORD
+           "\nStep 2. Continue to edit individual CNMAlias.lsp aliases? [Yes/No]: "
+         )
+         "Yes"
+       )
+     )
+     (STARTAPP
+       (STRCAT "\"notepad\" \"" (FINDFILE "cnmalias.lsp") "\"")
+     )
+     (ALERT
+       (STRCAT
+         "CNMAlias.lsp has been opened in Notepad for you to edit.\n\nClick OK to load CNM aliases after editing and saving.\n\nAny previous aliases will remain active--overriding PGP aliases--until a new session is started."
+       )
+     )
+     (LOAD "cnmalias")
     )
   )
-  (LOAD "cnmalias")
   (PRINC)
 )
 (DEFUN
-   HCNM-PRINT-PGP-STYLE-ALIASES (PRINT-KEY / PRINT-FLAG)
-  (SETQ PRINT-FLAG (HCNM-ALIAS-GROUP-FLAG (HCNM-ALIAS-GROUP PRINT-KEY)))
-  (FOREACH
-     ALIAS *HCNM-PGP-ALIASES*
-    (COND
-      ((= (HCNM-ALIAS-GROUP-FLAG (HCNM-ALIAS-GROUP (CADDR ALIAS)))
-          PRINT-FLAG
+   HCNM-PRINT-PGP-STYLE-ALIASES (GROUP / PRINT-FLAG)
+  (COND
+    ((WCMATCH (CAR GROUP) "*pgp")
+     (SETQ
+       PRINT-FLAG
+        (HCNM-ALIAS-GROUP-FLAG GROUP)
+     )
+     (PRINC
+       (STRCAT
+     "\n==================================================================================="
+     "\n; "
+     (NTH 4 GROUP)
+         )
        )
-       (PRINC (STRCAT "\n" (CAR ALIAS) ",\t*" (CADR ALIAS)))
-      )
+     (FOREACH
+        ALIAS *HCNM-PGP-ALIASES*
+       (COND
+         ((= (HCNM-ALIAS-GROUP-FLAG (HCNM-ALIAS-GROUP (CADDR ALIAS)))
+             PRINT-FLAG
+          )
+          (PRINC (STRCAT "\n" (CAR ALIAS) ",\t*" (CADR ALIAS)))
+         )
+       )
+     )
     )
   )
 )

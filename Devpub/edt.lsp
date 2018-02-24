@@ -2,7 +2,7 @@
 (DEFUN C:HAWS-BF ()(COMMAND "._BREAK" PAUSE "F")(PRINC))
 (DEFUN C:HAWS-COPY ()(COMMAND "._COPY" (SSGET) "" "M")(PRINC))
 (DEFUN C:HAWS-CB () (COMMAND "._copybase" "0,0") (PRINC))
-(DEFUN C:HAWS-EXPLODE () (COMMAND "._explode" (SSGET) "")(PRINC))
+(DEFUN C:HAWS-EXPLODE (/ I SS1) (SETQ SS1 (SSGET) I -1)(COMMAND "._undo" "_group")(WHILE (<= (SETQ I (1+ I)) (SSLENGTH SS1))(COMMAND "._explode" (SSNAME SS1 I)))(COMMAND "._undo" "_end")(PRINC))
 (DEFUN C:HAWS-MP () (COMMAND "._MOVE" "P")(PRINC))
 (DEFUN c:HAWS-pj () (COMMAND "._pedit" "m" (SSGET) "" "_y" "_join" "0.005" "")(PRINC))
 (DEFUN C:HAWS-R1 () (COMMAND "._ROTATE" (SSGET) "" PAUSE "180") (PRINC))
