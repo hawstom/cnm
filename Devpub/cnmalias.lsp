@@ -58,7 +58,6 @@
 ;;; probably to preserve legacy behavior.
 ;;; Behavior is corrected using more than a single line of code.   
 (hcnm-define-lisp-alias '("haws-copy" "c" "Custompgp" "Circle is CC. Use CNMAlias to change."))
-(hcnm-define-lisp-alias '("haws-explode" "ex" "Custompgp" "Extend is X. Use CNMAlias to change."))
 ;;;---------------LISP versions of the Autodesk standard command aliases-------------
 ;;; All of these can be disabled as a group using the CNMAlias command.
 ;;; They can also be converted to custom ACAD.PGP aliases with help from the same command.

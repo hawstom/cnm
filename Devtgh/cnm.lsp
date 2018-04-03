@@ -2429,11 +2429,10 @@
      (ALERT
        (PRINC
          (STRCAT
-           "Error:\nYou need to check the CNM project settings file (CNM.INI) for this project:\n"
-           PROJECT-FILE-NAME
-           "\n\nIt has been copied or moved, and it may be pointing to the WRONG PROJECT NOTES!!!.\n\nCheck the file, then fix the value of ThisFile in the CNM section:\nCurrent ThisFile value: "
-           THISFILE-VALUE "\nIt does not match the actual file name."
-           "\n\nCNM cannot continue.  You need to check the CNM.ini file then change that value.  Or delete the file."
+           "Error:\nThe CNM.ini for this folder says \n\"ThisFile=\"" 
+	 THISFILE-VALUE
+	 "\n\nYou must delete the CNM.ini from this folder or delete/edit that value before proceeding."
+	 "\n(If you edit CNM.ini, double-check that the ProjectNotes= line has the correct path.\nIt appears it may have been copied from another project.)"
           )
        )
      )
@@ -4074,10 +4073,10 @@ ImportLayerSettings=No
                (LIST
                  3
                  NOTTYP
-                 (HAWS-RDFLD 2 RDLIN "," 1)
-                 (HAWS-RDFLD 4 RDLIN "," 1)
-                 (HAWS-RDFLD 5 RDLIN "," 1)
-                 (HCNM-WRAP-DESCRIPTION (HAWS-RDFLD 3 RDLIN "," 1) WRAP)
+                 (COND ((HAWS-RDFLD 2 RDLIN "," 1)) (""))
+                 (COND ((HAWS-RDFLD 4 RDLIN "," 1)) (""))
+                 (COND ((HAWS-RDFLD 5 RDLIN "," 1)) (""))
+                 (HCNM-WRAP-DESCRIPTION (COND ((HAWS-RDFLD 3 RDLIN "," 1)) ("")) WRAP)
                )
                CFLIST
              )

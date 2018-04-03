@@ -1,242 +1,277 @@
 ;;;(C) Copyright 1997 by Thomas Gail Haws
 ;;;NEWANG CHANGES ENTITY ORIENTATION TO MATCH A SELECTED ENTITY.
-(defun c:haws-na () (haws-newang))
-(defun
-   haws-newang (/ basept flip i sset metype men nested mel mes meang
-                nested etype organg rotang shells sslen ent entlst
-               )
-  (haws-core-borrow 0) ;_ end of if
-  (haws-vsave '("aunits"))
-  (command "._undo" "g")
-  (setq
-    sset (ssget)
-    flip nil
+(DEFUN C:HAWS-NA () (HAWS-NEWANG))
+(DEFUN
+   HAWS-NEWANG (/ SSET)
+  (HAWS-CORE-BORROW 0)
+  (HAWS-VSAVE '("aunits"))
+  (COMMAND "._undo" "g")
+  (SETQ SSET (SSGET))
+  (COND
+    ((NOT SSET) (PROMPT "\nNone found."))
+    (T (HAWS-NEWANG-MATCH SSET))
   )
-  (cond
-    ((not sset) (prompt "\nNone found."))
-    (t
-     (initget "Flip Nested")
-     (while (or (= (setq
-                     mes
-                      (if nested
-                        (nentsel
-                          (strcat
-                            "\nSelect object to match or [Flip/Angle] <Angle>: "
-                          )
-                        )
-                        (entsel
-                          (strcat
-                            "\nSelect object to match or [Nested object/Flip results/Angle] <Angle>: "
-                          )
-                        )
-                      ) ;_ end of if
-                   ) ;_ end of setq
-                   "Nested"
-                ) ;_ end of =
-                (= mes "Flip")
-            )
-       (if (= mes "Nested")
-         (setq nested t)
-       )
-       (if (= mes "Flip")
-         (setq flip t)
-       )
-     ) ;_ end of while
-     (if (or (not mes)
-             (not
-               (or (= (setq
-                        metype
-                         (cdr
-                           (assoc
-                             0
-                             (setq mel (entget (setq men (car mes))))
-                           )
-                         )
-                      )
-                      "LINE"
-                   )
-                   (= metype "ARC")
-                   (= metype "VERTEX")
-                   (= metype "TEXT")
-                   (= metype "MTEXT")
-                   (= metype "ATTDEF")
-                   (= metype "ATTRIB")
-                   (= metype "SHAPE")
-                   (= metype "INSERT")
-               ) ;_ end of or
-             ) ;_ end of not
-         ) ;_ end of or
-       (cond
-         ((setq
-            meang
-             (getangle
-               "\nNo allowable entity selected.  New angle or <Rotation>: "
-             )
-          )
+  (HAWS-VRSTOR)
+  (HAWS-CORE-RETURN)
+  (PRINC)
+)
+
+(DEFUN
+   HAWS-NEWANG-MATCH (SSET / ANGLE-P BASEPT CONTINUE-P ENT ENTLST ETYPE
+                      FLIP-P I MEANG MEL MEN MES METYPE NESTED-P ORGANG
+                      ROTANG SHELLI SHELLS SSLEN
+                     )
+  (INITGET "Flip Nested Angle")
+  (SETQ CONTINUE-P NIL)
+  (WHILE (NOT CONTINUE-P)
+    (SETQ
+      MES
+       (ENTSEL
+         (STRCAT
+           "\nSelect object to match or [Nested object/Flip results/Angle] <Angle>: "
          )
-         ((setq rotang (getangle "\nRotation angle: ")))
-       ) ;_ end of cond
-     ) ;_ end of if
-     (setq
-       meang
-        (cond
-          (meang)
-          (rotang)
-          ((= metype "LINE")
-           (angle
-             (trans (cdr (assoc 10 mel)) 0 1)
-             (trans (cdr (assoc 11 mel)) 0 1)
+       )
+    )
+    (COND
+      ((OR (NOT MES) (= MES "Angle"))
+       (SETQ
+         ANGLE-P T
+         CONTINUE-P T
+       )
+      )
+      ((/= (TYPE MES) 'STR) (SETQ CONTINUE-P T))
+      ((= MES "Nested")
+       (SETQ
+         NESTED-P T
+         CONTINUE-P T
+       )
+      )
+      ((= MES "Flip")
+       (SETQ
+         FLIP-P T
+         CONTINUE-P NIL
+       )
+      )
+    )
+  )
+  (COND
+    (NESTED-P (SETQ CONTINUE-P NIL))
+    (T (SETQ CONTINUE-P T))
+  )
+  (WHILE (NOT CONTINUE-P)
+    (SETQ
+      MES
+       (NENTSEL
+         (STRCAT
+           "\nSelect object to match or [Flip/Angle] <Angle>: "
+         )
+       )
+    )
+    (COND
+      ((OR (NOT MES) (= MES "Angle"))
+       (SETQ
+         ANGLE-P T
+         CONTINUE-P T
+       )
+      )
+      ((= MES "Flip")
+       (SETQ
+         FLIP-P T
+         CONTINUE-P NIL
+       )
+      )
+      ((/= (TYPE MES) 'STR) (SETQ CONTINUE-P T))
+    )
+  )
+  (COND
+    ((OR (NOT MES)
+         ANGLE-P
+         (NOT
+           (OR (= (SETQ
+                    METYPE
+                     (CDR
+                       (ASSOC
+                         0
+                         (SETQ MEL (ENTGET (SETQ MEN (CAR MES))))
+                       )
+                     )
+                  )
+                  "LINE"
+               )
+               (= METYPE "ARC")
+               (= METYPE "VERTEX")
+               (= METYPE "TEXT")
+               (= METYPE "MTEXT")
+               (= METYPE "ATTDEF")
+               (= METYPE "ATTRIB")
+               (= METYPE "SHAPE")
+               (= METYPE "INSERT")
            )
-          )
-          ((= metype "ARC")
-           (- (angle
-                (polar
-                  (cdr (assoc 10 mel))
-                  (cdr (assoc 50 mel))
-                  (cdr (assoc 40 mel))
-                )
-                (polar
-                  (cdr (assoc 10 mel))
-                  (cdr (assoc 51 mel))
-                  (cdr (assoc 40 mel))
-                )
-              ) ;_ end of angle
-              (angle '(0.0 0.0 0.0) (getvar "UCSXDIR"))
+         )
+     )
+     (COND
+       ((SETQ
+          MEANG
+           (GETANGLE
+             "\nNo allowable entity selected.  New angle or <Rotation>: "
+           )
+        )
+       )
+       ((SETQ ROTANG (GETANGLE "\nRotation angle: ")))
+     )
+    )
+  )
+  (SETQ
+    MEANG
+     (COND
+       (MEANG)
+       (ROTANG)
+       ((= METYPE "LINE")
+        (ANGLE
+          (TRANS (CDR (ASSOC 10 MEL)) 0 1)
+          (TRANS (CDR (ASSOC 11 MEL)) 0 1)
+        )
+       )
+       ((= METYPE "ARC")
+        (- (ANGLE
+             (POLAR
+               (CDR (ASSOC 10 MEL))
+               (CDR (ASSOC 50 MEL))
+               (CDR (ASSOC 40 MEL))
+             )
+             (POLAR
+               (CDR (ASSOC 10 MEL))
+               (CDR (ASSOC 51 MEL))
+               (CDR (ASSOC 40 MEL))
+             )
            ) ;_ end of angle
-          )
-          ((= metype "VERTEX")
-           (angle
-             (trans (cdr (assoc 10 mel)) men 1)
-             (trans (cdr (assoc 10 (entget (entnext men)))) men 1)
-           )
-          )
-          ((or (= metype "TEXT")
-               (= metype "SHAPE")
-               (= metype "ATTDEF")
-               (= metype "ATTRIB")
-               (= metype "INSERT")
-           ) ;_ end of OR
-           (- (cdr (assoc 50 mel))
-              (angle '(0.0 0.0 0.0) (getvar "UCSXDIR"))
-           )
-          )
-        ) ;_ end of cond
-     ) ;_ end of setq
-     (cond
-       (nested
-        (setq
-          shells
-           (cadddr mes)
-          i -1
-        ) ;_ end of setq
-        (if shells
-          (progn
-            (while (setq shelli (nth (setq i (1+ i)) shells))
-              (setq meang (+ meang (cdr (assoc 50 (entget shelli)))))
-            ) ;_ end of while
-          ) ;_ end of progn
-        ) ;_ end of if
+           (ANGLE '(0.0 0.0 0.0) (GETVAR "UCSXDIR"))
+        ) ;_ end of angle
+       )
+       ((= METYPE "VERTEX")
+        (ANGLE
+          (TRANS (CDR (ASSOC 10 MEL)) MEN 1)
+          (TRANS (CDR (ASSOC 10 (ENTGET (ENTNEXT MEN)))) MEN 1)
+        )
+       )
+       ((OR (= METYPE "TEXT")
+            (= METYPE "SHAPE")
+            (= METYPE "ATTDEF")
+            (= METYPE "ATTRIB")
+            (= METYPE "INSERT")
+        ) ;_ end of OR
+        (- (CDR (ASSOC 50 MEL))
+           (ANGLE '(0.0 0.0 0.0) (GETVAR "UCSXDIR"))
+        )
        )
      ) ;_ end of cond
-     ;; Change all of the entities in the selection set.
-     (prompt "\nChanging entities to match selection.  ")
-     (setq sslen (sslength sset))
-     (setvar "aunits" 3)
-     (while (> sslen 0)
-       (setq
-         entlst
-          (entget
-            (setq ent (ssname sset (setq sslen (1- sslen))))
-          )
-         basept
-          (cond
-            ((and
-               (or (= (setq etype (cdr (assoc 0 entlst))) "TEXT")
-                   (= etype "ATTDEF")
-                   (= etype "ATTRIB")
-               )
-               (not
-                 (equal (cdr (assoc 11 entlst)) '(0.0 0.0 0.0))
-               )
-             ) ;_ end of and
-             (cdr (assoc 11 entlst))
-            )
-            (t (cdr (assoc 10 entlst)))
-          ) ;_ end of cond
-       ) ;_ end of setq
-       (if rotang
-         (setq organg 0)
-         (setq
-           organg
-            (cond
-              ((= etype "LINE")
-               (angle
-                 (cdr (assoc 10 entlst))
-                 (cdr (assoc 11 entlst))
-               )
-              )
-              ((or (= etype "INSERT")
-                   (= etype "TEXT")
-                   (= etype "ATTDEF")
-                   (= etype "ATTRIB")
-                   (= etype "SHAPE")
-               )
-               (- (cdr (assoc 50 entlst))
-                  (angle '(0.0 0.0 0.0) (getvar "UCSXDIR"))
-               )
-              )
-              ((= etype "MTEXT")
-               (angle '(0.0 0.0 0.0) (cdr (assoc 11 entlst)))
-              )
-              ((= etype "POLYLINE")
-               (angle
-                 (cdr (assoc 10 entlst))
-                 (cdr (assoc 10 (entget (entnext ent))))
-               )
-              )
-              ((= etype "ARC")
-               (angle
-                 (polar
-                   (cdr (assoc 10 entlst))
-                   (cdr (assoc 50 entlst))
-                   (cdr (assoc 40 entlst))
-                 )
-                 (polar
-                   (cdr (assoc 10 entlst))
-                   (cdr (assoc 51 entlst))
-                   (cdr (assoc 40 entlst))
-                 )
-               ) ;_ end of angle
-              )
-              (t nil)
-            ) ;_ end of cond
-         ) ;_ end of setq
-       ) ;_ end of if
-       (if flip
-         (setq organg (+ organg pi))
-       )
-       (if organg
-         (command
-           "._rotate"
-           ent
-           ""
-           (trans basept ent 1)
-           "R"
-           organg
-           meang
-         )
-         (prompt "\nDon't know how to rotate this entity.  ")
-       ) ;_ end of if
-     ) ;_ end of while
-     (command "select" sset "")
-     (command "._undo" "e")
-     (prompt "\nDone.")
+  ) ;_ end of setq
+  (COND
+    (NESTED-P
+     (SETQ
+       SHELLS
+        (CADDDR MES)
+       I -1
+     ) ;_ end of setq
+     (IF SHELLS
+       (PROGN
+         (WHILE (SETQ SHELLI (NTH (SETQ I (1+ I)) SHELLS))
+           (SETQ MEANG (+ MEANG (CDR (ASSOC 50 (ENTGET SHELLI)))))
+         ) ;_ end of while
+       ) ;_ end of progn
+     ) ;_ end of if
     )
   ) ;_ end of cond
-  (haws-vrstor)
-  (haws-core-return) ;_ end of if
-  (princ)
-) ;_ end of defun
-;|«Visual LISP© Format Options»
-(72 2 40 2 nil "end of " 60 2 1 1 1 nil nil nil T)
+  ;; Change all of the entities in the selection set.
+  (PROMPT "\nChanging entities to match selection.  ")
+  (SETQ SSLEN (SSLENGTH SSET))
+  (SETVAR "aunits" 3)
+  (WHILE (> SSLEN 0)
+    (SETQ
+      ENTLST
+       (ENTGET (SETQ ENT (SSNAME SSET (SETQ SSLEN (1- SSLEN)))))
+      BASEPT
+       (COND
+         ((AND
+            (OR (= (SETQ ETYPE (CDR (ASSOC 0 ENTLST))) "TEXT")
+                (= ETYPE "ATTDEF")
+                (= ETYPE "ATTRIB")
+            )
+            (NOT (EQUAL (CDR (ASSOC 11 ENTLST)) '(0.0 0.0 0.0)))
+          ) ;_ end of and
+          (CDR (ASSOC 11 ENTLST))
+         )
+         (T (CDR (ASSOC 10 ENTLST)))
+       ) ;_ end of cond
+    ) ;_ end of setq
+    (IF ROTANG
+      (SETQ ORGANG 0)
+      (SETQ
+        ORGANG
+         (COND
+           ((= ETYPE "LINE")
+            (ANGLE
+              (TRANS (CDR (ASSOC 10 ENTLST)) 0 1)
+              (TRANS (CDR (ASSOC 11 ENTLST)) 0 1)
+            )
+           )
+           ((OR (= ETYPE "INSERT")
+                (= ETYPE "TEXT")
+                (= ETYPE "ATTDEF")
+                (= ETYPE "ATTRIB")
+                (= ETYPE "SHAPE")
+            )
+            (- (CDR (ASSOC 50 ENTLST))
+               (ANGLE '(0.0 0.0 0.0) (GETVAR "UCSXDIR"))
+            )
+           )
+           ((= ETYPE "MTEXT")
+            (CDR (ASSOC 50 ENTLST))
+           )
+           ((= ETYPE "POLYLINE")
+            (ANGLE
+              (CDR (ASSOC 10 ENTLST))
+              (CDR (ASSOC 10 (ENTGET (ENTNEXT ENT))))
+            )
+           )
+           ((= ETYPE "ARC")
+            (ANGLE
+              (POLAR
+                (CDR (ASSOC 10 ENTLST))
+                (CDR (ASSOC 50 ENTLST))
+                (CDR (ASSOC 40 ENTLST))
+              )
+              (POLAR
+                (CDR (ASSOC 10 ENTLST))
+                (CDR (ASSOC 51 ENTLST))
+                (CDR (ASSOC 40 ENTLST))
+              )
+            ) ;_ end of angle
+           )
+           (T NIL)
+         ) ;_ end of cond
+      ) ;_ end of setq
+    ) ;_ end of if
+    (IF FLIP-P
+      (SETQ ORGANG (+ ORGANG PI))
+    )
+    (IF ORGANG
+      (COMMAND
+        "._rotate"
+        ENT
+        ""
+        (TRANS BASEPT ENT 1)
+        "R"
+        ORGANG
+        MEANG
+      )
+      (PROMPT "\nDon't know how to rotate this entity.  ")
+    ) ;_ end of if
+  ) ;_ end of while
+  (COMMAND "select" SSET "")
+  (COMMAND "._undo" "e")
+  (PROMPT "\nDone.")
+)
+ ;|«Visual LISP© Format Options»
+(72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)
 ;*** DO NOT add text below the comment! ***|;

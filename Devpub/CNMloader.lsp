@@ -168,7 +168,7 @@
 (haws-autoload "wl"       '("haws-wl"))
 
 ;;---------------Editing Section---------------
-(haws-autoload "edt"      '("haws-bf" "haws-cb" "haws-copy" "haws-explode" "haws-mp" "haws-pj" "haws-r1" "haws-r2" "haws-r4" "haws-r9" "haws-s" "haws-ub" "haws-um" "haws-vb"))
+(haws-autoload "edt"      '("haws-bf" "haws-cb" "haws-copy" "haws-mp" "haws-pj" "haws-r1" "haws-r2" "haws-r4" "haws-r9" "haws-s" "haws-ub" "haws-um" "haws-vb"))
 (haws-autoload "addleng"  '("haws-adl" ))
 (haws-autoload "brkmat"   '("haws-bm"))
 (haws-autoload "brk"      '("haws-brk"))
