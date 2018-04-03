@@ -3,7 +3,7 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "5.0.0.0\n\nCopyright 2017"
+  "5.0.0.01\n\nCopyright 2018"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 (SETQ *HAWS-DEBUGLEVEL* 0)
@@ -606,38 +606,13 @@
    HAWS-WRITECFG (LOCATIONLIST INPUTSTRING / STOREDSTRING)
   (SETQ
     STOREDSTRING
-     (COND
-       ;;Always use (setcfg)
-       ;;Previous logic: If we are running ICAD (which could be under Linux),
-       (T
-        ;; *HAWS-ICADMODE*
-        ;;Then use the setcfg function
-        (SETCFG
-          ;;CFG section
-          (HAWS-LOCATIONTOCFGSECTION LOCATIONLIST)
-          ;;Value
-          INPUTSTRING
-        )
-       )
-       ;;Else if we are running under Windows Vista
-       (T
-        ;;Write to the HKCU section of the registry
-        ;;(AutoCAD can't write to HKEY_LOCAL_MACHINE under Vista)
-        (HAWS-REGISTRY-WRITE
-          ;;Registry path
-          (HAWS-LOCATIONTOREGISTRYPATH
-            LOCATIONLIST
-            "HKEY_CURRENT_USER"
-          )
-          ;;Registry key
-          (CAR (REVERSE LOCATIONLIST))
-          ;;Registry value
-          INPUTSTRING
-        )
-       )
-     )
+    (SETCFG
+      ;;CFG section
+      (HAWS-LOCATIONTOCFGSECTION LOCATIONLIST)
+      ;;Value
+      INPUTSTRING
+   )
   )
-  STOREDSTRING
 )
 
 (DEFUN
