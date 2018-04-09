@@ -3,7 +3,7 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "5.0.0.01\n\nCopyright 2018"
+  "5.0.02\n\nCopyright 2018"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 (SETQ *HAWS-DEBUGLEVEL* 0)

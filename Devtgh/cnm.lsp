@@ -997,6 +997,14 @@
             (SETQ TXTHT (CAR NOTETITLE))
             (COMMAND
               "._insert"
+              (STRCAT "cnm" NOTTYP)
+              QTYPT
+              TXTHT
+              ""
+              "0"
+            )
+            (COMMAND
+              "._insert"
               "NOTEQTY"
               QTYPT
               TXTHT
