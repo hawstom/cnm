@@ -2807,6 +2807,17 @@
   )
 )
 
+(defun
+   haws-make-masked-mtext (i j h w s / ename-mtext)
+  (command "._mtext" i "_j" j "_h" h "_w" w s "")
+  (setq ename-mtext (entlast))
+  (entmod
+    (append
+      (entget ename-mtext)
+      '((90 . 3) (63 . 256) (45 . 1.1) (441 . 0))
+    )
+  )
+)
 ;;
 ;;HAWS-PRIN1-TO-STRING
 ;;
