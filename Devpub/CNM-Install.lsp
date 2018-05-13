@@ -31,7 +31,6 @@
      '(
        ;;("File/group name" "Prompt")
        ("CNM" "Core CNM") 
-       ("FunKy" "Function key osnaps")
      )
   )
   (COND
@@ -182,10 +181,10 @@
     ((OR (= MODE "manual") (HAWS-INSTALL-PENDING-READ))
      (HAWS-UPDATE-SUPPORTPATHS PATHS)
      (HAWS-UPDATE-TRUSTEDPATHS PATHS)
-     (HAWS-RELOAD-MENUS MODE)
+     (HAWS-RELOAD-MENUS "auto")
      (LOAD "cnmloader")
      (C:HAWS-ALIASMANAGE)
-     (ALERT (PRINC "\nCNM menus and toolbars installed. If you moved CNM from a previous location, you must restart AutoCAD."))
+     (ALERT (PRINC "\nPlease read:\n\n1. Use the CAM command to activate CNM keyboard aliases.\n2. If you moved CNM from a previous location, you must restart AutoCAD."))
      (COND ((= MODE "auto") (HAWS-INSTALL-PENDING-DELETE)))
     )
   )

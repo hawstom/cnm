@@ -3073,7 +3073,7 @@ ImportLayerSettings=No
      (LIST "ProjectFolder" "" 1)
      (LIST "AppFolder"  (HAWS-FILENAME-DIRECTORY (findfile "cnm.mnl")) 0)
      (LIST "LXXListMode" "yes" 4)
-     (LIST "CNMAliasActivation" "3" 4)
+     (LIST "CNMAliasActivation" "0" 4)
      (LIST "ProjectNotesEditor" (HCNM-CONFIG-DEFAULT-PROJECTNOTESEDITOR) 2) ; text, csv, or cnm
      (LIST "LayersEditor" "notepad" 4) ; notepad or cnm
      (LIST "ProjectNotes" "constnot.csv" 2)

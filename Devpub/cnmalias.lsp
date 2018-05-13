@@ -3,7 +3,7 @@
 ;;; Just change the Alias.
 ;;; It's strongly recommended to copy only the commands you change
 ;;; to a USER.LSP file in the AutoCAD support files search path above
-;;; the CNM application folder.
+;;; the CNM application folder. CNM will automatically load it if found.
 ;;;
 ;;; Order of commands: 1. Section 2. Random
 ;;;

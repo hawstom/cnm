@@ -5,13 +5,13 @@
    (("Tools"
      1
      "custom tool"
-     "Activate keyboard shortcuts for CNM tools (strongly recommended)"
+     "Activate keyboard shortcuts for CNM tools including LX etc. (strongly recommended)"
      ""
     )
     ("Custompgp"
      2
      "custom alias for AutoCAD command (change with CNMAlias)"
-     "Activate CNM's custom LISP changes to PGP definitions (recommended; shown above in PGP format)"
+     "Activate CNM's custom LISP changes to PGP definitions including C Copy and CC circle (recommended; shown above in PGP format)"
      "Custom Command Aliases"
     )
     ("Standardpgp"
@@ -221,7 +221,7 @@
      )
      (ALERT
        (STRCAT
-         "CNMAlias.lsp has been opened in Notepad for you to edit.\n\nClick OK to load CNM aliases after editing and saving.\n\nAny previous aliases will remain active--overriding PGP aliases--until a new session is started."
+         "CNMAlias.lsp has been opened in Notepad for you to edit. Follow the instructions inside.\n\nClick OK to load CNM aliases after editing and saving.\n\nAny previous aliases will remain active--overriding PGP aliases--until a new session is started."
        )
      )
      (LOAD "cnmalias")
