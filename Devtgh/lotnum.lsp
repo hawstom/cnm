@@ -24,7 +24,7 @@
         (/ (+ (caddr pt1)(caddr pt2))2)
     ) )
     (setvar "osmode" 0)
-    (command "text" "j" "m" txpt (* (getvar "dimtxt")(HAWS-DWGSCALE)) 0 i)
+    (haws-mktext "m" txpt nil 0 (itoa i))
     (setvar "osmode" osmold)
     (setq i (1+ i) pt1 pt2)
   )

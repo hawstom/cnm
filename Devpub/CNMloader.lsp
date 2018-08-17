@@ -9,7 +9,6 @@
 ;;; Instead, it simply loads command autoloaders for the CNM Plus tools submenu,
 ;;; which contains all the old HawsEDC commands.
 
-(prompt "\nConstruction Notes Manager menu utilities loading.")
 (DEFUN
    HAWS-autoload (FILENAME COMMANDS / QFN)
   (SETQ
@@ -265,5 +264,5 @@
 )
 
 (if (not(c:haws-icad-p))(hcnm-PlaceCNMMenu)) ;Do it if not in icad
-
+(princ "\nConstruction Notes Manager menu utilities loaded.")
 (princ)

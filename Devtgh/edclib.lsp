@@ -19,7 +19,7 @@
 ;;; scheme.
 ;;;
 ;;; About version control
-;;; 20170907 4.2.30 TGH Revamped bubble notes. Removed PGP. Reworked installer to replace AcadInst.exe. Improved CNM project mgt. Command spreadsheet audit/enhance.
+;;; 20170907 4.2.30 TGH See Git. Revamped bubble notes. Removed PGP. Reworked installer to replace AcadInst.exe. Improved CNM project mgt. Command spreadsheet audit/enhance.
 ;;; 20151001 4.2.29 TGH Added BIOS date registry location for Windows 10.
 ;;; 20150921 4.2.28 TGH Added LWP and LWPX.
 ;;; 20150916 4.2.27 TGH Fixed (command) incompatibility with v2015+ in lambdas.  Using (command-s).
