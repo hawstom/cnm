@@ -2,7 +2,7 @@
 ;;; (C) Copyright 2017 by Thomas Gail Haws
 (DEFUN
    C:HAWS-UT (/ PT1)
-  (HAWS-CORE-BORROW 0)
+  (haws-core-init 326)
   (HAWS-VSAVE
     '("ucsfollow" "clayer" "filedia" "cmdecho" "expert")
   )
@@ -138,7 +138,7 @@
   )
   (REDRAW)
   (HAWS-VRSTOR)
-  (HAWS-CORE-RETURN)
+  (haws-core-restore)
   (PRINC)
 )
 

@@ -4,6 +4,7 @@
 ;                 David R. Williams
 ;TEXTSIZE.LSP
 (defun c:haws-TH (/ ss1 new slen count ent entinfo)
+(haws-core-init 139)
   (setq ss1 (ssget '((0 . "TEXT"))))
   (while ss1
     (progn

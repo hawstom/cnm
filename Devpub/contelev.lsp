@@ -37,7 +37,8 @@
 
 ;; Customizable out-of-the-box defaults you can edit are at very end of file
 
-(defun c:haws-contelev () (haws-cel:main))
+(defun c:haws-contelev ()
+(haws-core-init 10) (haws-cel:main))
 
 (defun
    haws-cel:main (/ input-main)

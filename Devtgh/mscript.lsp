@@ -2,7 +2,8 @@
 ;;Rev. 2011-10-21 to limit call to VBA to the VBA versions.
 ;;Rev. 7/22/99
 ;;Runs a script file on multiple drawings.
-(DEFUN C:HAWS-MSCR () (C:HAWS-MSCRIPT))
+(DEFUN C:HAWS-MSCR ()
+(haws-core-init 263) (C:HAWS-MSCRIPT))
 (DEFUN
    C:HAWS-MSCRIPT (/ TEMP MSNAMELIST MSNAMESHORT PLTCMD FLSPEC RDSCR
                    RPTSCR RSNAME USERS1OLD USERS2OLD USERS3OLD USERS4OLD
@@ -38,7 +39,7 @@
      )
     DN (HAWS-GETDNPATH)
   )
-  (haws-core-borrow 0)                       ;requires library function
+  (haws-core-init 264)                       ;requires library function
   (TEXTPAGE)
   (PROMPT TEMP)
   (PROMPT
@@ -372,7 +373,7 @@
       )
     )
   ) ;_ end of if
-  (haws-core-return)                         ;requires library function
+  (haws-core-restore)                         ;requires library function
   (PRINC)
 ) ;_ end of DEFUN
 

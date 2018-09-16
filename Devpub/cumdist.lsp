@@ -19,7 +19,8 @@
     (princ)
   )
 )
-(defun c:haws-MD () ;main routine
+(defun c:haws-MD ()
+(haws-core-init 13) ;main routine
   (MD)
   (princ)
 )

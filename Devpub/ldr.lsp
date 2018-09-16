@@ -38,6 +38,7 @@
 )
 
 (Defun c:haws-LDR ()
+(haws-core-init 80)
   (haws-errdef)
   (Setq X "S" DS (HAWS-DWGSCALE)
     THGT (* DS (Getvar "Dimtxt"))

@@ -77,5 +77,7 @@
 	) ;_ end of if
 	(se_mktxt side el1 y1 pt1)
 ) ;_ end of defun
-(defun c:haws-sel () (sideel "Right"))
-(defun c:haws-ser () (sideel "Left"))
+(defun c:haws-sel ()
+(haws-core-init 135) (sideel "Right"))
+(defun c:haws-ser ()
+(haws-core-init 136) (sideel "Left"))

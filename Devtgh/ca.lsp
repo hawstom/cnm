@@ -3,7 +3,7 @@
 (defun
    c:haws-CA
        (/ at av el en et sset mlist mv en sslen)
-    (haws-core-borrow 1)
+    (haws-core-init 168)
   (prompt "\nBlocks to change: ")
   (setq sset (ssget '((0 . "INSERT"))))
   (if (not sset)
@@ -85,6 +85,6 @@
       (prompt "done.")
     ) ;_ end of progn
   ) ;_ end of if
-  (haws-core-return) ;_ end of if
+  (haws-core-restore) ;_ end of if
   (princ)
 ) ;_ end of defun

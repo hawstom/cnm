@@ -1,6 +1,7 @@
 ;(C) Copyright 1998 by Thomas Gail Haws
 ;   ssxpro.lsp
 (defun c:haws-ssxpro ( / dxfi fltr ss1 vtype)
+(haws-core-init 308)
   (textpage)
   (prompt
     (strcat   "\n\n\nThe properties of every Autocad entity are found in group codes."

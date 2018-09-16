@@ -2,6 +2,7 @@
 (defun
   c:haws-ROUND
   ( / ss1 i enamei r ELISTI NUM)
+(haws-core-init 307)
   (setq
     ss1
     (ssget                       ;Get a selection set, ss1

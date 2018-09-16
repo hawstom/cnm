@@ -1,5 +1,6 @@
 ;BRKMAT-BREAKS A LINE BETWEEN 2 POINTS AND DRAWS A LINE IN THE GAP TO MATCH PICK
 (defun c:haws-BM (/ SS DL EC b1 b2 sl)
+(haws-core-init 8)
   (prompt "Pick entity to break: ")
   (setq SS (entsel))
   (if (/= ss nil)

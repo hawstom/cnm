@@ -3,6 +3,7 @@
 ;; blocks, attdefs, text, and dimensions.
 
 (defun c:haws-ee (/ e etype set1 obj1 )
+(haws-core-init 27)
   (PROMPT "\n \nText Editor  :")
   (SETQ SET1 (SSGET))
   (WHILE (AND SET1

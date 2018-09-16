@@ -1,6 +1,7 @@
 (DEFUN
    C:HAWS-LTP
              (/ SS CC I EC LC)
+(haws-core-init 251)
   (COND
     ((/= (SETQ CC (GETSTRING "\nNew layer linetype (return to pick):"))
          ""
@@ -54,6 +55,7 @@
 (DEFUN
    C:HAWS-LTPX
               (/ CC EC LOPERA NESTED)
+(haws-core-init 252)
   (COND
     ((/= (SETQ CC (GETSTRING "\nNew layer linetype (return to pick):"))
          ""

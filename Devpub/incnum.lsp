@@ -1,4 +1,5 @@
 (defun c:haws-INCNUM ( / ss off e d s s1 i j fltr dec)
+(haws-core-init 44)
   (setvar "dimzin" 0)
   (setq fltr (list(cons 0 "TEXT") (cons 1"*#*")))
   (cond

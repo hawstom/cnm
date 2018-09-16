@@ -1,9 +1,14 @@
 ;Written by Thomas Gail Haws
-(defun c:haws-10 ()(setup 20.0 0.10))
-(defun c:haws-12 ()(setup 20.0 0.12))
-(defun c:haws-setdim10 ()(alert "Please note that the SETDIM10 command has been changed to \"10\"")(c:haws-10))
-(defun c:haws-setdim12 ()(alert "Please note that the SETDIM12 command has been changed to \"12\"")(c:haws-12))
+(defun c:haws-10 ()
+(haws-core-init 129)(setup 20.0 0.10))
+(defun c:haws-12 ()
+(haws-core-init 130)(setup 20.0 0.12))
+(defun c:haws-setdim10 ()
+(haws-core-init 131)(alert "Please note that the SETDIM10 command has been changed to \"10\"")(c:haws-10))
+(defun c:haws-setdim12 ()
+(haws-core-init 132)(alert "Please note that the SETDIM12 command has been changed to \"12\"")(c:haws-12))
 (defun c:haws-setup ( / ds ts dtype)
+(haws-core-init 133)
   (prompt "\nSETUP sets ltscale and the dimension variables dimasz, dimcen, dimdli, dimexe, dimexo, dimgap, dimscale, and dimtxt.")
   (setq
     ds (getreal "\nDrawing scale: 1\" = ")

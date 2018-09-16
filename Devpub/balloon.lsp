@@ -1,5 +1,6 @@
 ;BALLOON.LSP
 (defun c:haws-BB (/ CR S TS SP EP ANG DIST CPL)
+(haws-core-init 4)
   (haws-errdef)
   (haws-vsave '("CMDECHO" "BLIPMODE" "ATTDIA" "CLAYER"))
   (haws-vset '(("orthomode"0)("cmdecho"0)("blipmode"0)("dragmode"2)("attdia"1)))

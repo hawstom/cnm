@@ -6,6 +6,7 @@
 ;9-11-96 gm I renamed this to "aar" to ease typing
 
 (defun c:haws-aar (/ sp ang arrang leng ep)
+(haws-core-init 1)
   (HAWS-VSET '(("plinegen" 0)("orthomode" 0)("osmode" 0)))
   (setq sp (getpoint  "\n Arrow start point:")
     angp (getpoint sp "\n Arrow angle:")

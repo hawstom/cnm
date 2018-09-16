@@ -1,8 +1,10 @@
 ;March 16, 1989
 ;Routine that works identical to the Autocad "OFFSET" command
 ;only all new entities are created in the current layer. Rev 7/01/96
-(defun c:haws-oo ()(c:haws-offsetx))
+(defun c:haws-oo ()
+(haws-core-init 92)(c:haws-offsetx))
 (defun c:haws-Offsetx (/ enm0 temp pp clay)
+(haws-core-init 93)
   (haws-errdef)
   (princ "\nOffset distance or Through <")
   (princ (if (= (type qdofst) 'REAL) (rtos qdofst) "Through"))

@@ -3,6 +3,7 @@
 (DEFUN
    C:HAWS-LWP
              (/ SS CC I EC LC)
+(haws-core-init 253)
   (COND
     ((/= (SETQ CC (GETSTRING "\nNew layer lineweight (return to pick):"))
          ""
@@ -42,6 +43,7 @@
 (DEFUN
    C:HAWS-LWPX
               (/ CC EC LOPERA NESTED)
+(haws-core-init 254)
   (COND
     ((/= (SETQ CC (GETSTRING "\nNew layer lineweight (return to pick):"))
          ""

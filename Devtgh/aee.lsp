@@ -1,4 +1,5 @@
 (DEFUN c:haws-AEE ()
+(haws-core-init 155)
   (PROMPT "\nSelect object: ")
   (COMMAND "AREA" "E" pause)
   (PRINC "Area=")

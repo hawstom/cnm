@@ -1,6 +1,7 @@
 ;CHDIM
 ;(C) Copyright 1997 by Thomas Gail Haws
 (defun c:haws-CHDIM (/ p l n e os as ns st s nsl osl sl si chf chm )
+(haws-core-init 171)
    (setq chm     0  p (ssget '((0 . "DIMENSION"))))
    (if p (progn                      ; If any objects selected
       (setq osl (strlen (setq os (getstring t "\nOld string: "))))

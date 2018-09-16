@@ -1,9 +1,10 @@
 ;(C) Copyright 1997 by Thomas Gail Haws
 ;MULTIREN.LSP--Multiple Autocad rename
 ;Thomas Gail Haws, Feb. 1996
-(defun c:haws-mren ()(c:haws-mrename))
+(defun c:haws-mren ()
+(haws-core-init 261)(c:haws-mrename))
 (defun c:haws-mrename ( / opt entry)
-  (haws-core-borrow 0)
+  (haws-core-init 262)
   (setq opt (HAWS-mren_opt) entry nil)
   (while (setq entry (tblnext (car opt) (not entry)))
     (setq entry (cdr (assoc 2 entry)))

@@ -3,7 +3,7 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "5.0.05\n\nCopyright 2018"
+  "5.0.06"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 (SETQ *HAWS-DEBUGLEVEL* 0)
@@ -41,9 +41,11 @@
 ;;; 20050831 1.05   TGH Changed CNM to version 4.2.00.  Recompiled
 ;;; (legacy)
 ;;; lisputil.lsp
-(DEFUN C:HCNM-ABOUT () (C:HAWS-ABOUT))
+(DEFUN C:HCNM-ABOUT ()
+(haws-core-init 216) (C:HAWS-ABOUT))
 (DEFUN
    C:HAWS-ABOUT (/ LICENSEREPORT)
+(haws-core-init 217)
   (ALERT
     (PRINC
       (STRCAT
@@ -104,12 +106,16 @@
 ;; of this
 ;; file.
 (SETQ
+  ;; This list should be populated automatically from the web on load.
+  ;; Stored locally somewhere. Maybe a LSP file.
+  ;; id appgroup name
   *HAWS-EDCMODULES*
    '((0 "CNM Lite") (3 "CNM Pro"))
   *HAWS-EDCAPPGROUPS*
-   ;; App group 0 is included in package 0 and 3
-   '
-    ((0 0 3)
+   '(;; App group -1 if free of protection
+     (-1)
+     ;; App group 0 is included in package 0 and 3
+     (0 0 3)
      ;; App group 1 is included in packages 0, 1, and 2
      (1 0 1 2 3)
      ;; App group 2 is included in packages 2 and 3
@@ -130,7 +136,7 @@
 
 ;;;HawsEDC general function handler
 ;;;Includes banner, error handler, and validator.
-;;; Internal error handler function.  Call haws-core-borrow at the
+;;; Internal error handler function.  Call haws-core-init at the
 ;;; beginning
 ;;; of a
 ;;; routine.
@@ -139,7 +145,8 @@
 ;;; To restore another previous UCS, set a global symbol 'ucspp to
 ;;; non-nil.
 (DEFUN
-   HAWS-CORE-BORROW (APPGROUP / VALIDATED)
+   haws-core-init (COMMAND-ID / APPGROUP VALIDATED)
+  (setq APPGROUP (cadr (assoc command-id *haws-edccommands*)))
   ;; If computer already has authorization,
   (COND
     ((OR (HAWS-VALIDATEAPPGROUP APPGROUP)
@@ -157,6 +164,7 @@
      (EXIT)
     )
   )
+  (HAWS-USE-LOG-LOCAL COMMAND-ID)
   (SETQ
     OLDERR *ERROR*
     *ERROR* HAWS-CORE-STPERR
@@ -225,7 +233,7 @@
   (PRINC)
 )
 (DEFUN
-   HAWS-CORE-RETURN ()
+   haws-core-restore ()
   (SETQ
     UCSP NIL
     UCSPP NIL
@@ -330,7 +338,7 @@
   )
   (COND
     ;;If authorized permanently, return T
-    (AUTHORIZEDPERMANENT T)
+    ((OR AUTHORIZEDPERMANENT (= APPGROUP -1)) T)
     ;;Else if there are positive days left in a trial, print a note and return T
     ((NOT (MINUSP TRIALDAYSLEFT))
      (PRINC
@@ -781,6 +789,7 @@
 ;;; HAWS-ORDERLICENSES gets an order code from the command line
 (DEFUN
    C:HAWS-ORDERLICENSES ()
+(haws-core-init 218)
   (HAWS-ORDERPACKAGE 128 NIL)
   (PRINC)
 )
@@ -893,18 +902,24 @@
 ;;; If not, returns "".
 (DEFUN
    HAWS-GETCOMPUTERNAME ()
-  (COND
-    ((HAWS-REGISTRY-READ
-       (STRCAT
-         "HKEY_LOCAL_MACHINE\\System\\CurrentControlSet"
-         "\\Control\\ComputerName\\ComputerName"
+  (SETQ
+    *HAWS-COMPUTERNAME*
+     (COND
+       (*HAWS-COMPUTERNAME*)
+       ((HAWS-REGISTRY-READ
+          (STRCAT
+            "HKEY_LOCAL_MACHINE\\System\\CurrentControlSet"
+            "\\Control\\ComputerName\\ComputerName"
+          )
+          "ComputerName"
+        )
        )
-       "ComputerName"
+       ("O NO NAME FOUND O")
      )
-    )
-    ("O NO NAME FOUND O")
   )
 )
+
+
 
 
 ;;; GETSHORTCOMPUTERNAME gets the first and last characters of the computer name
@@ -1394,6 +1409,404 @@
   (HAWS-BINARYTOUSER
     (HAWS-ENCRYPTAUTHSTRING (HAWS-LISTTOBINARY AUTHLIST))
   )
+)
+
+;;; ======================================================================
+;;;
+;;;                 Usage logging functions
+;;;
+;;; ======================================================================
+(setq
+  *HAWS-EDCCOMMANDS*
+   '((0 -1 "haws-adl")
+     (1 -1 "haws-aar")
+     (2 -1 "haws-attredef")
+     (3 -1 "haws-at")
+     (4 -1 "haws-bb")
+     (5 -1 "haws-xda")
+     (6 -1 "haws-xra")
+     (7 -1 "haws-brk")
+     (8 -1 "haws-bm")
+     (9 -1 "haws-clean")
+     (10 -1 "haws-contelev")
+     (11 -1 "haws-copyrot")
+     (12 -1 "haws-copyrotdrag")
+     (13 -1 "haws-md")
+     (14 -1 "haws-dimsty")
+     (15 -1 "haws-d1")
+     (16 -1 "haws-d2")
+     (17 -1 "haws-dp")
+     (18 -1 "haws-du")
+     (19 -1 "haws-dv")
+     (20 -1 "haws-ht")
+     (21 -1 "haws-te")
+     (22 -1 "haws-xx")
+     (23 -1 "haws-c2")
+     (24 -1 "haws-ct")
+     (25 -1 "haws-dd")
+     (26 -1 "haws-p0")
+     (27 -1 "haws-ee")
+     (28 -1 "haws-bf")
+     (29 -1 "haws-copy")
+     (30 -1 "haws-cb")
+     (31 -1 "haws-mp")
+     (32 -1 "haws-pj")
+     (33 -1 "haws-r1")
+     (34 -1 "haws-r2")
+     (35 -1 "haws-r4")
+     (36 -1 "haws-r9")
+     (37 -1 "haws-s")
+     (38 -1 "haws-ub")
+     (39 -1 "haws-um")
+     (40 -1 "haws-vb")
+     (41 -1 "haws-facnum")
+     (42 -1 "haws-funky")
+     (43 -1 "haws-imp_exp")
+     (44 -1 "haws-incnum")
+     (45 -1 "haws-xin")
+     (46 -1 "haws-xout")
+     (47 -1 "haws-eg")
+     (48 -1 "haws-egn")
+     (54 -1 "haws-gb")
+     (55 -1 "haws-gc")
+     (56 -1 "haws-invl")
+     (57 -1 "haws-invr")
+     (58 -1 "haws-lotel")
+     (59 -1 "haws-pad")
+     (60 -1 "haws-rev")
+     (61 -1 "haws-secb")
+     (62 -1 "haws-secl")
+     (63 -1 "haws-secr")
+     (64 -1 "haws-sect")
+     (65 -1 "haws-sll")
+     (66 -1 "haws-slope")
+     (67 -1 "haws-slr")
+     (68 -1 "haws-spotel")
+     (69 -1 "haws-tc")
+     (70 -1 "haws-tcelev")
+     (71 -1 "haws-tcelevl")
+     (72 -1 "haws-tcelevr")
+     (73 -1 "haws-l0")
+     (74 -1 "haws-lk0")
+     (75 -1 "haws-lka")
+     (76 -1 "haws-lki")
+     (77 -1 "haws-ofi")
+     (78 -1 "haws-ula")
+     (79 -1 "haws-laprn")
+     (80 -1 "haws-ldr")
+     (81 -1 "haws-led")
+     (82 -1 "haws-lengthen")
+     (83 -1 "haws-lm")
+     (84 -1 "haws-loadandrun")
+     (85 -1 "haws-m40")
+     (86 -1 "haws-m42")
+     (87 -1 "haws-mc2033")
+     (88 -1 "haws-ffa")
+     (89 -1 "haws-hawsalias")
+     (90 -1 "haws-pgpedit")
+     (91 -1 "haws-user")
+     (92 -1 "haws-oo")
+     (93 -1 "haws-offsetx")
+     (94 -1 "haws-qs14")
+     (95 -1 "haws-qs2000")
+     (96 -1 "haws-qs2004")
+     (97 -1 "haws-pjl")
+     (98 -1 "haws-polarset")
+     (99 -1 "haws-polaroff")
+     (102 -1 "haws-aa")
+     (103 -1 "haws-adt")
+     (104 -1 "haws-cet")
+     (105 -1 "haws-cmd")
+     (106 -1 "haws-dia")
+     (107 -1 "haws-fdt")
+     (108 -1 "haws-mbt")
+     (109 -1 "haws-qt")
+     (110 -1 "haws-il")
+     (111 -1 "haws-io")
+     (112 -1 "haws-ir")
+     (113 -1 "haws-it")
+     (114 -1 "haws-llt")
+     (115 -1 "haws-mvl")
+     (116 -1 "haws-mvu")
+     (117 -1 "haws-ose")
+     (118 -1 "haws-osi")
+     (119 -1 "haws-osm")
+     (120 -1 "haws-osn")
+     (121 -1 "haws-pslt")
+     (122 -1 "haws-proto")
+     (123 -1 "haws-protox")
+     (124 -1 "haws-rga")
+     (125 -1 "haws-uf")
+     (126 -1 "haws-uf0")
+     (127 -1 "haws-uf1")
+     (128 -1 "haws-vsr")
+     (129 -1 "haws-10")
+     (130 -1 "haws-12")
+     (131 -1 "haws-setdim10")
+     (132 -1 "haws-setdim12")
+     (133 -1 "haws-setup")
+     (134 0 "haws-sheet")
+     (135 -1 "haws-sel")
+     (136 -1 "haws-ser")
+     (137 -1 "haws-ssx")
+     (138 -1 "haws-swap")
+     (139 -1 "haws-th")
+     (140 -1 "haws-2x")
+     (141 -1 "haws-5x")
+     (142 -1 "haws-9x")
+     (143 -1 "haws-twz")
+     (144 -1 "haws-x2")
+     (145 -1 "haws-zw")
+     (146 -1 "haws-z0")
+     (147 -1 "haws-za")
+     (148 -1 "haws-ze")
+     (149 -1 "haws-zi")
+     (150 -1 "haws-zo")
+     (151 -1 "haws-zv")
+     (152 -1 "haws-zz")
+     (153 0 "haws-2l")
+     (154 1 "haws-add")
+     (155 -1 "haws-aee")
+     (156 -1 "haws-acres")
+     (157 -1 "haws-sf")
+     (158 -1 "haws-aet")
+     (159 -1 "haws-sm")
+     (160 -1 "haws-sy")
+     (161 -1 "haws-a2t")
+     (162 -1 "haws-att2txt")
+     (163 0 "haws-bdl")
+     (164 0 "haws-bdp")
+     (165 0 "haws-berm")
+     (166 0 "haws-bl0")
+     (167 0 "haws-bw")
+     (168 1 "haws-ca")
+     (169 0 "haws-chattrib")
+     (170 0 "haws-chcoord")
+     (171 -1 "haws-chdim")
+     (172 -1 "haws-chm")
+     (173 -1 "haws-chnum")
+     (174 -1 "haws-chgtext")
+     (175 -1 "haws-cht")
+     (176 -1 "haws-cl")
+     (177 0 "haws-cmpro")
+     (178 0 "haws-cmt")
+     (179 -1 "hcnm-cnm")
+     (180 -1 "hcnm-cnmkt")
+     (181 -1 "hcnm-cnmkti")
+     (182 1 "hcnm-cnmqt")
+     (183 -1 "hcnm-linkproj")
+     (184 -1 "testset")
+     (185 -1 "testget")
+     (186 -1 "hcnm-config-setvar")
+     (187 -1 "hcnm-config-getvar")
+     (188 2 "hcnm-notesedit")
+     (189 -1 "hcnm-cnmlayer")
+     (190 -1 "hcnm-setnotesbubblestyle")
+     (191 -1 "haws-phaseedit")
+     (192 -1 "hcnm-attnoplot")
+     (193 1 "hcnm-attplot")
+     (194 -1 "haws-setnotephases")
+     (195 -1 "haws-cnmmenu")
+     (196 -1 "haws-cnmsetup")
+     (197 -1 "haws-ntpurge")
+     (198 -1 "haws-boxl")
+     (199 -1 "haws-cirl")
+     (200 -1 "haws-dial")
+     (201 -1 "haws-elll")
+     (202 -1 "haws-hexl")
+     (203 -1 "haws-octl")
+     (204 -1 "haws-penl")
+     (205 -1 "haws-recl")
+     (206 -1 "haws-sstl")
+     (207 1 "haws-tril")
+     (208 -1 "haws-tcg")
+     (209 1 "haws-txtl")
+     (210 -1 "hcnm-cnmoptions")
+     (211 0 "haws-contvol")
+     (212 0 "haws-contxt")
+     (213 1 "haws-cs")
+     (214 -1 "haws-curve")
+     (215 0 "haws-dw")
+     (216 -1 "hcnm-about")
+     (217 -1 "haws-about")
+     (218 -1 "haws-orderlicenses")
+     (221 -1 "haws-eop")
+     (222 -1 "haws-geodata")
+     (223 0 "haws-goto")
+     (224 -1 "haws-incatt")
+     (226 -1 "haws-ffi")
+     (228 0 "haws-istan")
+     (229 -1 "haws-ff")
+     (230 -1 "haws-lk")
+     (231 1 "haws-off")
+     (232 -1 "haws-ffx")
+     (233 1 "haws-offx")
+     (234 -1 "haws-uff")
+     (235 -1 "haws-uffx")
+     (236 -1 "haws-uoff")
+     (237 -1 "haws-uoffx")
+     (238 0 "haws-las")
+     (239 0 "haws-lar")
+     (240 -1 "haws-lcp")
+     (241 -1 "haws-lcpx")
+     (242 -1 "haws-loop")
+     (243 -1 "haws-tilde")
+     (244 -1 "haws-dot")
+     (245 0 "haws-none")
+     (246 -1 "haws-letter")
+     (247 -1 "haws-lotnum")
+     (248 -1 "haws-ltc")
+     (249 -1 "haws-ltb")
+     (250 -1 "haws-lth")
+     (251 -1 "haws-ltp")
+     (252 -1 "haws-ltpx")
+     (253 -1 "haws-lwp")
+     (254 -1 "haws-lwpx")
+     (255 -1 "haws-lx")
+     (256 -1 "haws-lxx")
+     (257 -1 "haws-mf")
+     (258 0 "haws-mfillet")
+     (259 -1 "haws-mof")
+     (260 0 "haws-moffset")
+     (261 -1 "haws-mren")
+     (262 0 "haws-mrename")
+     (263 -1 "haws-mscr")
+     (264 0 "haws-mscript")
+     (265 -1 "haws-mv")
+     (266 0 "haws-ne")
+     (267 0 "haws-na")
+     (268 0 "haws-newscale")
+     (269 -1 "haws-num")
+     (270 0 "haws-pipe")
+     (271 -1 "haws-plt")
+     (272 -1 "haws-presuf")
+     (273 0 "haws-propipe")
+     (274 0 "haws-prosup")
+     (275 -1 "haws-pc")
+     (276 0 "haws-procb")
+     (277 -1 "haws-pm")
+     (278 0 "haws-promh")
+     (279 -1 "haws-pred")
+     (280 0 "haws-proe")
+     (281 0 "haws-pldr")
+     (282 -1 "haws-newpro")
+     (283 0 "haws-profc")
+     (284 -1 "haws-pro")
+     (285 0 "haws-tgh2_pro")
+     (286 -1 "haws-lst")
+     (287 0 "haws-ellabel")
+     (288 0 "haws-stalabel")
+     (289 -1 "haws-elv")
+     (290 -1 "haws-grd")
+     (291 -1 "haws-grc")
+     (292 -1 "haws-grb")
+     (293 -1 "haws-pall")
+     (294 -1 "haws-l80")
+     (295 -1 "haws-l100")
+     (296 -1 "haws-l120")
+     (297 -1 "haws-l140")
+     (298 -1 "haws-l175")
+     (299 -1 "haws-l200")
+     (300 -1 "haws-l240")
+     (301 -1 "haws-l290")
+     (302 -1 "haws-l350")
+     (303 -1 "haws-l500")
+     (304 0 "haws-rescale")
+     (305 0 "haws-romans")
+     (306 -1 "haws-rotatebase")
+     (307 -1 "haws-round")
+     (308 -1 "haws-ssxpro")
+     (309 0 "haws-stacl")
+     (310 0 "haws-dm")
+     (311 0 "haws-dm12")
+     (312 0 "haws-tap")
+     (313 0 "haws-tapinv")
+     (314 -1 "haws-0")
+     (315 -1 "haws-1")
+     (316 1 "haws-to")
+     (317 1 "haws-tu")
+     (318 0 "haws-tw")
+     (319 -1 "haws-txtsum")
+     (320 -1 "haws-u0")
+     (321 -1 "haws-u1")
+     (322 -1 "haws-u2")
+     (323 -1 "haws-u3")
+     (324 -1 "haws-u8")
+     (325 -1 "haws-us")
+     (326 0 "haws-ut")
+     (327 0 "haws-wall")
+     (328 0 "haws-ws")
+     (329 -1 "haws-wl")
+     (330 -1 "haws-xd")
+     (331 -1 "haws-xro")
+     (332 0 "haws-xroffset")
+     (333 -1 "haws-xu")
+     (334 0 "haws-xy")
+    )
+)
+
+(DEFUN HAWS-USE-LOCAL-LOCATION ()
+  (list "HawsEDC" "UseLog" "UseString")
+)
+
+(DEFUN HAWS-USE-LOG-LOCAL (COMMAND-ID / LOG-STRING)
+  (SETQ
+    LOG-STRING (HAWS-READCFG (HAWS-USE-LOCAL-LOCATION))
+  )
+  (HAWS-WRITECFG
+    (HAWS-USE-LOCAL-LOCATION)
+    (HAWS-USE-COMMAND-ID-TO-LOG-STRING COMMAND-ID LOG-STRING)
+  )
+)
+
+(DEFUN HAWS-USE-INITIALIZE-LOG-STRING ( / I MAX-ID)
+  (SETQ I -1 LOG-STRING "" MAX-ID (CAAR (REVERSE *HAWS-EDCCOMMANDS*))) (WHILE (< (SETQ I (1+ I)) MAX-ID) (SETQ LOG-STRING (STRCAT LOG-STRING (CHR 1))))
+  LOG-STRING
+)
+
+(DEFUN HAWS-USE-COMMAND-ID-TO-LOG-STRING (COMMAND-ID LOG-STRING / MAX-ID)
+  (COND
+    ((OR (NOT LOG-STRING) (= LOG-STRING ""))
+     (HAWS-USE-INITIALIZE-LOG-STRING)
+    )
+  )
+  (SETQ LOG-STRING (STRCAT (SUBSTR LOG-STRING 1 COMMAND-ID) (CHR (1+ (ASCII (SUBSTR LOG-STRING (1+ COMMAND-ID) 1)))) (SUBSTR LOG-STRING (+ COMMAND-ID 2))))
+)
+
+(DEFUN
+   HAWS-USE-LOG-REMOTE (/ URL HTTP BIOS-DATE LOG-DATA)
+  (SETQ
+    URL  "http://www.constructionnotesmanager.com/cnm_log.php"
+    HTTP (VLAX-CREATE-OBJECT "MSXML2.XMLHTTP")
+    BIOS-DATE (HAWS-GETBIOSDATE)
+    LOG-DATA
+     (STRCAT
+       "computer_name="
+       (HAWS-GETSHORTCOMPUTERNAME)
+       "&bios_month="
+       (ITOA (car BIOS-DATE))
+       "&bios_day="
+       (ITOA (cadr BIOS-DATE))
+       "&bios_year="
+       (ITOA (caddr BIOS-DATE))
+       "&cnm_version="
+       (HAWS-UNIFIED-VERSION)
+       "&command_log="
+       (HAWS-READCFG (HAWS-USE-LOCAL-LOCATION))
+     )
+  )
+  (VLAX-INVOKE-METHOD HTTP 'OPEN "post" URL :VLAX-TRUE)
+  (VLAX-INVOKE-METHOD HTTP 'setRequestHeader "Content-type" "application/x-www-form-urlencoded")
+  (COND
+    ((VL-CATCH-ALL-ERROR-P
+       (VL-CATCH-ALL-APPLY 'VLAX-INVOKE (LIST HTTP 'SEND LOG-DATA))
+     )
+     (PRINC (STRCAT "\nInvalid request: " URL))
+    )
+    (T (HAWS-WRITECFG (HAWS-USE-LOCAL-LOCATION) (HAWS-USE-INITIALIZE-LOG-STRING)))
+  )
+  (VLAX-RELEASE-OBJECT HTTP)
+  (princ)
 )
 
 ;;; ======================================================================
@@ -3624,7 +4037,7 @@
   (HAWS-MILEPOST "Finished HAWS-CHECKSTOREDSTRINGS")
 )
 (HAWS-CHECKSTOREDSTRINGS)
-
+(HAWS-USE-LOG-REMOTE)
 (PROMPT "loaded.")
  ;|«Visual LISP© Format Options»
 (72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)

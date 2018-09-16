@@ -222,7 +222,8 @@
 ;;;
 ;;; c:haws- function definition.
 ;;;
-(defun c:haws-ssx () (ssx)(princ))
+(defun c:haws-ssx ()
+(haws-core-init 137) (ssx)(princ))
 ;(princ "\n\tType \"ssx\" at a Command: prompt or ")
 ;(princ "\n\t(ssx) at any object selection prompt. ")
 (princ)

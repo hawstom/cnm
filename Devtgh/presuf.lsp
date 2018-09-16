@@ -1,6 +1,7 @@
 ;(C) Copyright 1997 by Thomas Gail Haws
 ;Thomas Gail Haws, Feb. 1996
 (defun c:haws-PRESUF (/ a n i e presuf frag string)
+(haws-core-init 272)
   (setq a (ssget) n (sslength a) i 0)
   (initget 1 "Prefix Suffix")
   (setq presuf (getkword "Specify what to add [Prefix/Suffix]:"))

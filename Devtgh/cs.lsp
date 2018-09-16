@@ -1,7 +1,7 @@
 ;CS (COPY STRING) CHANGES TEXT STRING TO MATCH A SELECTED TEXT ENTITY.
 ;Written by Thomas Gail Haws
 (defun c:haws-CS (/ sset mt mtclr mtlyr mtstr en1 ent entlst sslen)
-  (haws-core-borrow 1)
+  (haws-core-init 213)
   (prompt "\nText to change/<RETURN to change an attribute>:")
   (setq sset (ssget '((0 . "*TEXT"))))
   (cond
@@ -28,6 +28,6 @@
       (command "._undo" "e")
       (prompt "done.")
   ) )
-  (haws-core-return)
+  (haws-core-restore)
   (princ)
 )

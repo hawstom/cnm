@@ -5,7 +5,7 @@
                    cv-area-1 cv-area-temp cv-elev-0 CV-ELEV-1 cv-report cv-vol-0 cv-vol-1 cv-vol-inc
                    pt1
                   )
-  (haws-core-borrow 0)
+  (haws-core-init 211)
   (command "._undo" "g")
   (setq
     cv-vol-0 0
@@ -103,7 +103,7 @@
     cv-report
   )
   (command "._undo" "e")
-  (haws-core-return)
+  (haws-core-restore)
   (princ)
 )
 (defun

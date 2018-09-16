@@ -1,4 +1,5 @@
 (defun c:haws-CHM (/ SS DC DL DLT EC)
+(haws-core-init 172)
   (prompt "Pick entities to change: ")
   (setq SS (ssget)
     EC (entsel "Entity to match: ")       DC (cdr (assoc 62 (entget(car EC))))

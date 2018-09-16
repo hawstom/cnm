@@ -1,6 +1,7 @@
 ;Written by Craig Hendricks
 ;Modified by Thomas Gail Haws
 (DEFUN c:haws-PLT (/ doscmd)
+(haws-core-init 271)
   (setvar "cmddia" 0)
   (setvar "filedia" 0)
   (setq doscmd (strcat "del " (HAWS-GETDNPATH) ".plt"))

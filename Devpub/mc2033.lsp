@@ -17,6 +17,7 @@
 (defun c:haws-mc2033 ( / ang1 ang2 ang3 ang4 ang5 bccen cl1 cl2 cl3
   dwmid dwdep incang left osmold pt1 pt2 pt3 pt4 pt5 pt6 pt7 pt8
   pt9 pt10 pt11 pt12 pt13 pt14 pt15 pt16 ts rad wngang)
+(haws-core-init 87)
   (defun HAWS-drawmc2033 ()
     (setvar "osmode" 0)
     (command "._line" pt1  pt6  "")

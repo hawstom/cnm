@@ -354,7 +354,8 @@
 ;;;
 (defun c:haws-ATTREDEF (/ k n olderr bn sseto ssetn pt ssl new_al
                      old_al same preset b1 oa_ctr va_ctr na_ctr
-                  ) 
+                  )
+(haws-core-init 2) 
   (setq k 0
       n 0
       test T
@@ -510,7 +511,8 @@
 ;; Adesk addition above
 
 
-(defun c:haws-at () (c:haws-attredef))
+(defun c:haws-at ()
+(haws-core-init 3) (c:haws-attredef))
 (princ 
 "\nc:haws-ATtredef loaded (modified SJJ 20 February 2000).\nStart command with AT or ATTREDEF.")
 (princ)

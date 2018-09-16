@@ -1,6 +1,7 @@
 (if (not haws-attfind) (load "attfind"))
 (defun
 	 c:haws-incatt	(/ blki blklst ss1)
+(haws-core-init 224)
 	(command ".undo" "g")
 	(setq
 		ss1

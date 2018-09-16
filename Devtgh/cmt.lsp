@@ -1,6 +1,6 @@
 ;CMT CHANGES TEXT TO MATCH A SELECTED TEXT ENTITY.
 (defun c:haws-CMT (/ sset mt mtclr mtlyr ent entlst sslen)
-  (haws-core-borrow 0)
+  (haws-core-init 178)
   (prompt "\nText to change:")(setq sset (ssget '((0 . "*TEXT"))))
   (if (not sset)
     (progn (prompt "\nNone found.")(exit))
@@ -28,6 +28,6 @@
       (prompt "done.")
     )
   )
-  (haws-core-return)
+  (haws-core-restore)
   (princ)
 )

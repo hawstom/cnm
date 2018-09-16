@@ -1,6 +1,7 @@
 ;What Layer?
 ;(C) Copyright 1997 by Thomas Gail Haws
 (defun c:haws-WL (/ e la lalst lt ltla clr clrla status)
+(haws-core-init 329)
   (setq e(entget(car(entsel"\nPick entity on the Layer you want Listed: ")))
     lalst (tblsearch "LAYER" (setq la (HAWS-DXF 8 e)))
     lt (if(HAWS-DXF 6 e)(HAWS-DXF 6 e)"BYLAYER")

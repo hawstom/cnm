@@ -1,6 +1,7 @@
 ; TIP964.LSP: LP.LSP   Layer List to File   (c)1994, Michael L. Jenkins
 
 (defun c:haws-LAPRN (/ status lyr file lyr_list)
+(haws-core-init 79)
 
   (defun _today ()
     (strcat

@@ -4,7 +4,7 @@
 ;; Modified by Thomas Gail Haws
 
 (DEFUN c:haws-TW (/ TWIST)
-  (haws-core-borrow 0)
+  (haws-core-init 318)
   (HAWS-VSAVE '("AUNITS"))
   (SETQ UCSP T)
   (COMMAND "._UCS" "_WORLD")
@@ -13,6 +13,6 @@
   (COMMAND "._DVIEW" "" "_TWIST" (* -1 TWIST) "")
   (COMMAND "._UCS" "_PREVIOUS")
   (HAWS-VRSTOR)
-  (haws-core-return)
+  (haws-core-restore)
   (PRINC)
 )

@@ -1,8 +1,9 @@
 ;;;XROFFSET
-(defun c:haws-xro () (c:haws-xroffset))
+(defun c:haws-xro ()
+(haws-core-init 331) (c:haws-xroffset))
 (defun
 	 c:haws-xroffset	(/ ofdist temp xrodistr PT1 PT2 XRODISTS)
-	(haws-core-borrow 0)
+	(haws-core-init 332)
 	(setq ofdist (getvar "offsetdist"))
 	(if	(not *HAWS-xrosetupdone*)
 		(progn
@@ -61,7 +62,7 @@
 			(princ ") " f1)
 			(princ (strcat (rtos (car pt2)) "," (rtos (cadr pt2)) "  ._erase !xroen  (setq *HAWS-xrosetupdone* T) haws-xroffset ") f1)
 			(setq f1 (close f1))
-			(haws-core-return)
+			(haws-core-restore)
 			(command "._script" (strcat (getvar "tempprefix") "xrotemp"))
 		) ;_ end of progn
 	) ;_ end of if

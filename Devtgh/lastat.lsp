@@ -2,13 +2,15 @@
 ;;;(C) Copyright 1997 by Thomas Gail Haws
 
 (HAWS-MILEPOST "Loading lastat.lsp version a")
-(DEFUN C:HAWS-FF () (HAWS-LASTAT "freeze" NIL)(princ))
-(DEFUN C:HAWS-LK () (HAWS-LASTAT "lock" NIL)(princ))
+(DEFUN C:HAWS-FF ()
+(haws-core-init 229) (HAWS-LASTAT "freeze" NIL)(princ))
+(DEFUN C:HAWS-LK ()
+(haws-core-init 230) (HAWS-LASTAT "lock" NIL)(princ))
 (DEFUN C:HAWS-OFF () (HAWS-LASTAT "off" NIL)(princ))
 
 (DEFUN
    HAWS-LASTAT (LOPERA NESTED)
-  (haws-core-borrow 1)
+  (haws-core-init 231)
   (HAWS-VSAVE '("EXPERT"))
   (SETVAR "EXPERT" 5)
   (IF (AND
@@ -33,7 +35,7 @@
     )
   )
   (HAWS-VRSTOR)
-  (haws-core-return)
+  (haws-core-restore)
 )
 
 (DEFUN
@@ -77,12 +79,13 @@
 ;;;(C) Copyright 1997 by Thomas Gail Haws
 ;;;Freeze or off by picking nested entities
 
-(DEFUN C:HAWS-FFX () (HAWS-NLSTAT "freeze")(princ))
+(DEFUN C:HAWS-FFX ()
+(haws-core-init 232) (HAWS-NLSTAT "freeze")(princ))
 (DEFUN C:HAWS-OFFX () (HAWS-NLSTAT "off")(princ))
 
 (DEFUN
    HAWS-NLSTAT (LOPERA / NESTED)
-  (haws-core-borrow 1)
+  (haws-core-init 233)
   (HAWS-VSAVE '("EXPERT"))
   (SETVAR "EXPERT" 5)
   (IF (AND
@@ -106,7 +109,7 @@
     )
   )
   (HAWS-VRSTOR)
-  (haws-core-return)
+  (haws-core-restore)
 )
 (DEFUN
    HAWS-LSPICK (LOPERA VP / ES EN LA PARNTL LALIST LOPERAkey)
@@ -157,10 +160,14 @@
 ;;;*HAWS-LASTATLIST* is a list of layer lists in assoc groups
 ;;; "freeze" "nfreeze" "off" "noff"
 ;;; also, a freeze list may have a 1 as its second element which indicates vplayer freezing
-(DEFUN C:HAWS-UFF () (HAWS-ULSTAT "freeze" "thaw")(princ))
-(DEFUN C:HAWS-UFFX () (HAWS-ULSTAT "nfreeze" "thaw")(princ))
-(DEFUN C:HAWS-UOFF () (HAWS-ULSTAT "off" "on")(princ))
-(DEFUN C:HAWS-UOFFX () (HAWS-ULSTAT "noff" "on")(princ))
+(DEFUN C:HAWS-UFF ()
+(haws-core-init 234) (HAWS-ULSTAT "freeze" "thaw")(princ))
+(DEFUN C:HAWS-UFFX ()
+(haws-core-init 235) (HAWS-ULSTAT "nfreeze" "thaw")(princ))
+(DEFUN C:HAWS-UOFF ()
+(haws-core-init 236) (HAWS-ULSTAT "off" "on")(princ))
+(DEFUN C:HAWS-UOFFX ()
+(haws-core-init 237) (HAWS-ULSTAT "noff" "on")(princ))
 (DEFUN
    HAWS-ULSTAT (LKEY LOPERA / EN LT I)
   ;; Undo layers frozen/off by picking

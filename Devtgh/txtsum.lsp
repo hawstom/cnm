@@ -2,6 +2,7 @@
 (defun
   c:haws-txtsum
   ( / ss1 i sum enamei blname ELISTI TS TXPT)
+(haws-core-init 319)
   (setq
     ss1
     (ssget                       ;Get a selection set, ss1

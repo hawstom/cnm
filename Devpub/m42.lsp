@@ -18,6 +18,7 @@
   anga angb angc angd ange bccen cl1 cl2 cl3
   HAWS-drawdw dwmid dwwid incang left osmold pt1 pt2 pt3 pt4 pt5 pt6 pt7 pt8
   pt9 pt10 pt11 pt12 pt13 pt14 pt15 pt16 ts rad wngang)
+(haws-core-init 86)
   (defun HAWS-drawm42 ()
     (setvar "osmode" 0)
     (command "._line" pt1  pt6  "")

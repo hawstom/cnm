@@ -1,6 +1,7 @@
 ;CONSECUTIVE NUMBERING LISP
 ;MODIFIED 8/21/95 TO ADD JUSTIFICATION OPTION. Thomas Gail Haws
 (defun c:haws-num (/ i just rot PT1 TH)
+(haws-core-init 269)
   (setvar "cmdecho" 0)
   (setq
     i (getint "\nFirst number of series: ")

@@ -90,6 +90,7 @@
 )
 
 (defun c:haws-imp_exp ()
+(haws-core-init 43)
   (setvar "cmdecho" 0)
   (initget 1 "Import Export")
   (setq ans (getkword "\nASCII text file <Import/Export>: "))

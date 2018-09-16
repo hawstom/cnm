@@ -387,7 +387,8 @@
 ;;; The old CHGTEXT command - rudimentary text editor
 ;;;
 ;;;
-(defun c:haws-CHGTEXT () (chgtext nil))
+(defun c:haws-CHGTEXT ()
+(haws-core-init 174) (chgtext nil))
 
 (defun chgtext (objs / last_o tot_o ent o_str n_str st s_temp
                        n_slen o_slen si chf chm cont ans)
@@ -735,5 +736,6 @@
 ;;;
 ;;; The c:haws- function definition.
 ;;;
-(defun c:haws-cht    () (chtxt))
+(defun c:haws-cht    ()
+(haws-core-init 175) (chtxt))
 (princ)

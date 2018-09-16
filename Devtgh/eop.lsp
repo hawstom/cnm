@@ -1,5 +1,6 @@
 (defun
 	 c:haws-eop (/ p1 p2 p3 s1 s2 s3 c1 c2 wt w1 a1 a2 a3)
+(haws-core-init 221)
 	(setvar "cmdecho" 0)
 	(setq
 		p1 (getpoint "\nPick outside end of pipe (either side): ")

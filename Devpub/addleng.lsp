@@ -1,6 +1,7 @@
 ;Tip1442: ADDLENG.LSP    Length of Lines    (c)1998, Travis Knapp
 ;routine to get the sum of the lengths of all selected LINES and ARCS.
 (defun c:haws-adl (/ ss1 total count n1 n2 pnt10 pnt11 dist total)
+(haws-core-init 0)
   (graphscr)
   (prompt "\nSelect the Lines to be Added together:")
   (setq ss1 (ssget (list (cons 0 "line,arc"))))

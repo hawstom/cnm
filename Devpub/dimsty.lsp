@@ -1,4 +1,5 @@
 (defun c:haws-dimsty ()
+(haws-core-init 14)
   (defun dimVSET (varlst / dimsty dsexist val var)
     (foreach var varlst
       (setq val (cadr var) var (car var))

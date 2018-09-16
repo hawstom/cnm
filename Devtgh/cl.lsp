@@ -1,5 +1,6 @@
 ;CHANGE ENTITIES TO CURRENT LAYER  9/25/92  BRB
 (DEFUN c:haws-CL (/ E C )
+(haws-core-init 176)
   (SETQ C (GETVAR "CLAYER") E (SSGET))
   (COMMAND "CHANGE" E "" "P" "LT" "BYLAYER" "LA" C "C" "BYLAYER" "")
   (PRINC)

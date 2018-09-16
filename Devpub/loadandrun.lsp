@@ -1,5 +1,6 @@
 ;Modified for AutoCAD 2000 by Thomas Gail Haws.  6/5/2000
 (defun c:haws-LoadAndRun (/ funcname filename func)
+(haws-core-init 84)
   ;-----
   ;Get function name from user
   ;-----

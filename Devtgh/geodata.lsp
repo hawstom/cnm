@@ -247,6 +247,7 @@
    c:haws-GEODATA
             (/ CRVDATA EL EN ES ES1 PICKPT ETYPE
             )
+(haws-core-init 222)
   "\nGEODATA version 2.0, Copyright (C) 2002 Thomas Gail Haws
 GEODATA comes with ABSOLUTELY NO WARRANTY.
 This is free software, and you are welcome to modify and

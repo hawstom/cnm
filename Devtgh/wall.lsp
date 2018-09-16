@@ -2,7 +2,7 @@
 ;(C) Copyright 1997 by Thomas Gail Haws
 (defun c:haws-WALL
   ( / wexist rtemp  WALLPL wlt wltpl wlaclr wlayer wlaypl pt1 pt2 pt3 pt4 r e1)
-  (haws-core-borrow 0)
+  (haws-core-init 327)
   (HAWS-VSAVE '("ucsfollow" "clayer"))
   (setvar "ucsfollow" 0)
   (if(not (tblsearch "LTYPE" "utilpl"))
@@ -58,5 +58,5 @@
       (assoc 70 wallpl)
       wallpl
   ) )
-  (redraw)(HAWS-VRSTOR)(haws-core-return)(princ)
+  (redraw)(HAWS-VRSTOR)(haws-core-restore)(princ)
 )

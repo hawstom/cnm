@@ -1,6 +1,6 @@
 ;(C) Copyright 1997 by Thomas Gail Haws
 (defun c:haws-dm ( / addtxt dimstr pt1 pt2)
-  (haws-core-borrow 0)
+  (haws-core-init 310)
   (HAWS-VSAVE '("osmode" "clayer"))
   (HAWS-VSET'(("osmode" 512)))
   (while
@@ -33,5 +33,5 @@
     )
   )
   (command "._dim1" "al" pt1 pt2 pt1 dimstr)
-  (HAWS-VRSTOR)(haws-core-return)(princ)
+  (HAWS-VRSTOR)(haws-core-restore)(princ)
 )

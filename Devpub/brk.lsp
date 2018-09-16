@@ -2,6 +2,7 @@
 ;BY SELECTING AT INTERSECTION WHERE OBJECTS MEET.
 ;
 (DEFUN c:haws-BRK (/ OS CMD a brk be ls less no)
+(haws-core-init 7)
   (SETQ CMD (GETVAR "CMDECHO"))
   (SETVAR "CMDECHO" 0)
   (SETQ OS (GETVAR "OSmoDE"))

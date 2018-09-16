@@ -2,6 +2,7 @@
 ;10/04/95  Thomas Gail Haws
 ;(C) Copyright 1997 by Thomas Gail Haws
 (defun c:haws-letter (/ a b c d e f g)
+(haws-core-init 246)
   (setvar "cmdecho" 0)
   (setq
     a (HAWS-getlet "\nFirst letter of series (between a and zy):")

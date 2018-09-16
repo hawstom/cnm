@@ -2,8 +2,10 @@
 ;;; This AutoLISP program lists a nested entity inside a XREF, BLOCK, or PLINE
 (if (not c:hcnm-config-getvar)(c:haws-load-from-app-dir "cnm"))
 
-(DEFUN C:HAWS-LX () (HAWS-XLIST 0))
-(DEFUN C:HAWS-LXX () (HAWS-XLIST-MULTI))
+(DEFUN C:HAWS-LX ()
+(haws-core-init 255) (HAWS-XLIST 0))
+(DEFUN C:HAWS-LXX ()
+(haws-core-init 256) (HAWS-XLIST-MULTI))
 
 (DEFUN
    HAWS-XLIST (EDIT-MODE / NENTSEL-RESULTS)

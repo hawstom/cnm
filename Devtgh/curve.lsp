@@ -1,5 +1,6 @@
 ;Written by Thomas Gail Haws
 (defun c:haws-curve ( / ANG1 ANG2 stpt cenpt radius ang)
+(haws-core-init 214)
   (setq
     stpt (getpoint "\nStart point of curve:")
     cenpt (getpoint "\nCenter:")

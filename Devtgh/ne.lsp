@@ -1,7 +1,7 @@
 ;N,E Coordinates on Leader Lines
 ;Written by Thomas Gail Haws
 (defun c:haws-NE (/ dg txht pnt1 p1e p1n ang1 left ptxt)
-  (haws-core-borrow 0)
+  (haws-core-init 266)
   (setq
     txht (* (HAWS-DWGSCALE)(getvar "dimtxt"))
     pnt1 (getpoint "\nPick coordinate point:")
@@ -22,5 +22,5 @@
   (HAWS-MKTEXT (if left "mr" "ml") ptxt txht 0 p1n)
   (setq ptxt (polar ptxt(/ pi -2)(* 1.667 txht)))
   (HAWS-MKTEXT (if left "mr" "ml") ptxt txht 0 p1e)
-  (haws-core-return)(princ)
+  (haws-core-restore)(princ)
 ) ;end

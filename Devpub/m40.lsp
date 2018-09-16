@@ -17,6 +17,7 @@
 (defun c:haws-m40 ( / ang1 ang2 ang3 ang4 ang5 bccen cl1 cl2 cl3
   dwmid dwwid incang left osmold pt1 pt2 pt3 pt4 pt5 pt6 pt7 pt8
   pt9 pt10 pt11 pt12 pt13 pt14 pt15 pt16 ts rad wngang)
+(haws-core-init 85)
   (defun HAWS-drawm40 ()
     (setvar "osmode" 0)
     (command "._line" pt1  pt4  "")

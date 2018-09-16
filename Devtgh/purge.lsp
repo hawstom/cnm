@@ -1,6 +1,7 @@
 ;Contributed by Craig Hendricks
 ;Modified by Thomas Gail Haws
-(DEFUN c:haws-PALL ()(HAWS-purge"ALL")(PRINC))
+(DEFUN c:haws-PALL ()
+(haws-core-init 293)(HAWS-purge"ALL")(PRINC))
 
 (defun HAWS-purge (a)
   (command

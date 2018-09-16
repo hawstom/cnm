@@ -1,7 +1,7 @@
 ;X,Y Coordinates on Leader Lines
 ;Written by Thomas Gail Haws
 (defun c:haws-XY (/ dg txht pnt1 p1x p1y ang1 left ptxt)
-  (haws-core-borrow 0)
+  (haws-core-init 334)
   (setq
     txht (* (HAWS-DWGSCALE)(getvar "dimtxt"))
     pnt1 (getpoint "\nPick coordinate point:")
@@ -22,5 +22,5 @@
   (HAWS-MKTEXT (if left "mr" "ml") ptxt txht 0 p1x)
   (setq ptxt (polar ptxt(/ pi -2)(* 1.667 txht)))
   (HAWS-MKTEXT (if left "mr" "ml") ptxt txht 0 p1y)
-  (haws-core-return)(princ)
+  (haws-core-restore)(princ)
 ) ;end

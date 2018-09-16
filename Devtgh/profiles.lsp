@@ -32,7 +32,7 @@
 (DEFUN
    c:haws-PROPIPE
             (/ P1 P2 D1 PIPSLD D2 P3 P4)
-  (haws-core-borrow 0)
+  (haws-core-init 273)
   (HAWS-VSAVE '("filedia"))
   (HAWS-GETHVX)
   (SETQ
@@ -74,7 +74,7 @@
      (COMMAND "line" P3 P4 "")
     )
   ) ;_ end of COND
-  (haws-core-return)
+  (haws-core-restore)
 ) ;_ end of DEFUN
 
 (DEFUN
@@ -82,7 +82,7 @@
            (/  BOTPIP ELLIP1 HVEXAG LEFT LINE1 LINE2 LINE3
               PT1 PT2 PT3 PT4 PTCEN RIGHT UCSYDIR VRAD
            )
-  (haws-core-borrow 0)
+  (haws-core-init 274)
   (HAWS-VSAVE '("ucsfollow" "osmode" "clayer"))
   (HAWS-MKLAYR "PSUP")
   (SETVAR "ucsfollow" 0)
@@ -166,15 +166,16 @@
   (COMMAND "._erase" ELLIP1 LINE3 "")
   (REDRAW)
   (HAWS-VRSTOR)
-  (haws-core-return)
+  (haws-core-restore)
   (PRINC)
 ) ;_ end of DEFUN
 
-(DEFUN c:haws-PC () (c:haws-PROCB))
+(DEFUN c:haws-PC ()
+(haws-core-init 275) (c:haws-PROCB))
 (DEFUN
    c:haws-PROCB
           (/ TOPPT BOTPT CBVIEW WIDTH)
-  (haws-core-borrow 0)
+  (haws-core-init 276)
   (IF (NOT HVEXAG)
     (HAWS-GETHVX)
   ) ;_ end of IF
@@ -204,7 +205,7 @@
   ) ;_ end of IF
   (HAWS-DRAWCB BOTPT TOPPT CBVIEW WIDTH NIL)
   (HAWS-VRSTOR)
-  (haws-core-return)
+  (haws-core-restore)
   (PRINC)
 ) ;_ end of DEFUN
 
@@ -295,11 +296,12 @@
   ) ;_ end of COND
 ) ;_ end of DEFUN
 
-(DEFUN c:haws-PM () (c:haws-PROMH))
+(DEFUN c:haws-PM ()
+(haws-core-init 277) (c:haws-PROMH))
 (DEFUN
    c:haws-PROMH
           (/ TOPPT BOTPT)
-  (haws-core-borrow 0)
+  (haws-core-init 278)
   (HAWS-VSAVE '("clayer"))
   (INITGET "Exist Prop")
   (SETQ
@@ -316,7 +318,7 @@
   ) ;_ end of IF
   (HAWS-DRAWMH BOTPT TOPPT NIL)
   (HAWS-VRSTOR)
-  (haws-core-return)
+  (haws-core-restore)
   (PRINC)
 ) ;_ end of DEFUN
 
@@ -369,6 +371,7 @@
 (DEFUN
    c:haws-PRED
          ()
+(haws-core-init 279)
   (command "_ai_editcustfile" (STRCAT (HAWS-GETDNPATH) ".pro"))
 ) ;_ end of defun
 
@@ -376,7 +379,7 @@
    c:haws-PROE
          (/ LANAME INVERT DIAM PIPSLD WALTHK CENPT INRAD OUTRAD
          )
-  (haws-core-borrow 0)
+  (haws-core-init 280)
   (IF (NOT HVEXAG)
     (HAWS-GETHVX)
   ) ;_ end of IF
@@ -449,14 +452,14 @@
     ) ;_ end of entmake
   ) ;_ end of IF
   (HAWS-VRSTOR)
-  (haws-core-return)
+  (haws-core-restore)
   (PRINC)
 ) ;_ end of DEFUN
 
 (DEFUN
    c:haws-PLDR
          (/ P1 P2 DS TS AS DG ANG LEFT P3 P4 P5 STR TEMP)
-  (haws-core-borrow 0)
+  (haws-core-init 281)
   (SETQ
     P1 (GETPOINT "\nStart point for leader:")
     P2 (GETPOINT P1 "\nEnd point for leader:")
@@ -550,12 +553,13 @@
      ) ;_ end of mktext
     )
   ) ;_ end of COND
-  (haws-core-return)
+  (haws-core-restore)
 ) ;_ end of DEFUN
 
 (DEFUN
    c:haws-NEWPRO
            (/ EXPOLD PROINPUTFILE prolaywc SS1)
+(haws-core-init 282)
   (SETQ EXPOLD (GETVAR "expert"))
   (SETVAR "expert" 0)
   (COMMAND "._undo" "_m" "._layer" "_off" "*" "" "")
@@ -579,7 +583,7 @@
 (DEFUN
    c:haws-PROFC
           (/ COLWID FLIST FM FNAME I M N RDLIN TEMP TEMPFILE)
-  (haws-core-borrow 0)
+  (haws-core-init 283)
   (SETQ
     F1 (OPEN
          (GETFILED "List of files to convert" (HAWS-GETDNPATH) "lst" 0)
@@ -682,6 +686,7 @@
               LBLPT1 LBLPT2 LBLPT3 TXLEN TXPT1 TXPT2 TXPT3 TXPT4 TXPT5 TXPT6 TXPT7 TXPT8 TOPPT TXPT11 TXPT12 TXPT13
               TXPT14
              )
+(haws-core-init 284)
   (PROMPT
     "\nProfile drafter version 5.06.  Copyright 2000, Thomas Gail Haws."
   ) ;_ end of prompt
@@ -2313,7 +2318,7 @@
     (SETQ SLOPE NIL)
   ) ;_ end of DEFUN
   ;;End of subfunctions, begin main function.
-  (haws-core-borrow 0)
+  (haws-core-init 285)
   (TERPRI)
   (SETQ
     I 1
@@ -2457,7 +2462,7 @@
   ) ;_ end of SETQ
   ;;Close files
   (HAWS-VRSTOR)
-  (haws-core-return)
+  (haws-core-restore)
   (PRINC)
   ;;and end program.
 ) ;_ end of DEFUN
@@ -2466,6 +2471,7 @@
 (DEFUN
    c:haws-LST
         (/ PT X Y STA EL1)
+(haws-core-init 286)
   (SETQ
     PT  (GETPOINT "\nPick Point: ")
     X   (CAR PT)
@@ -2639,7 +2645,7 @@
 (DEFUN
    c:haws-ELLABEL
             (/ PT1)
-  (haws-core-borrow 0)
+  (haws-core-init 287)
   (HAWS-VSAVE '("osmode"))
   (SETVAR "dimzin" 0)
   (IF (NOT HVEXAG)
@@ -2659,7 +2665,7 @@
     ) ;_ end of COND
   ) ;_ end of WHILE
   (HAWS-VRSTOR)
-  (haws-core-return)
+  (haws-core-restore)
   (PRINC)
 ) ;_ end of DEFUN
 
@@ -2667,7 +2673,7 @@
 (DEFUN
    c:haws-STALABEL
              (/ PNT1 INC N STA1 ENDSTA STA)
-  (haws-core-borrow 0)
+  (haws-core-init 288)
   (HAWS-MKLAYR "PSTALBL")
   (HAWS-VSAVE '("luprec"))
   (SETVAR "luprec" 0)
@@ -2695,13 +2701,14 @@
     (SETQ STA (+ INC STA))
   ) ;_ end of WHILE
   (HAWS-VRSTOR)
-  (haws-core-return)
+  (haws-core-restore)
   (PRINC)
 ) ;_ end of DEFUN
 ;;---------------------------ELEVATION LABEL------------------------
 (DEFUN
    c:haws-ELV
         (/ PNT1 INC N ELV1 ENDELV ELV)
+(haws-core-init 289)
   (IF (NOT HVEXAG)
     (HAWS-GETHVX)
   ) ;_ end of IF
@@ -2738,6 +2745,7 @@
 (DEFUN
    c:haws-GRD
         (/ A)
+(haws-core-init 290)
   (DEFUN
      HAWS-GR1
              (/ STA1 EL1 STA2 ELEV2 STAD ELD X1 GR)
@@ -2790,8 +2798,10 @@
   (PRINC)
 ) ;_ end of DEFUN
 
-(DEFUN c:haws-GRC () (HAWS-LINBLK "*GRC" "PGC"))
-(DEFUN c:haws-GRB () (HAWS-LINBLK "*GRB" "PGB"))
+(DEFUN c:haws-GRC ()
+(haws-core-init 291) (HAWS-LINBLK "*GRC" "PGC"))
+(DEFUN c:haws-GRB ()
+(haws-core-init 292) (HAWS-LINBLK "*GRB" "PGB"))
 (DEFUN
    HAWS-LINBLK
               (BLNAME BLLAY / PT1 PT2)

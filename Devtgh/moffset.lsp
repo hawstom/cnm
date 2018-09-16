@@ -1,7 +1,8 @@
 ;(C) Copyright 1997 by Thomas Gail Haws
 ;MOFFSET.LSP--Multiple offsets to different layers.
 ;Thomas Gail Haws, Feb. 1996
-(defun c:haws-mof ()(c:haws-moffset))
+(defun c:haws-mof ()
+(haws-core-init 259)(c:haws-moffset))
 (defun c:haws-moffset ( / HAWS-moset)
   (defun HAWS-moset ( / i offi toti p1)
     (setq i 1 oflist nil
@@ -46,7 +47,7 @@
       (T nil)
     )
   )
-  (haws-core-borrow 0)
+  (haws-core-init 260)
   (while(HAWS-mo))
-  (haws-core-return)
+  (haws-core-restore)
 )

@@ -1,1 +1,2 @@
-(DEFUN c:haws-LED () (command "._mleader")(princ))
+(DEFUN c:haws-LED ()
+(haws-core-init 81) (command "._mleader")(princ))

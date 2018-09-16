@@ -6,7 +6,7 @@
 
 ;Set layer, error trapper, undo group, etc.
 
-  (haws-core-borrow 0)
+  (haws-core-init 309)
   (if HAWS-VSAVE (HAWS-VSAVE '("clayer" "osmode" "expert")))
   (command "._undo" "group")
   (command "._layer" "n" "sta" "t" "sta" "s" "sta" "c" 1 "" "")
@@ -103,6 +103,6 @@
         (setq count (1+ count))
   ) ) )
   (command "._erase" cl1 cl2  circ1 "" "undo" "end" "redraw")
-  (haws-core-return)(HAWS-VRSTOR)
+  (haws-core-restore)(HAWS-VRSTOR)
   (princ)
 )

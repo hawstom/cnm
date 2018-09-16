@@ -1,7 +1,7 @@
 ;Backwards leader, the arrow is the last point picked
 ;(C) Copyright 1997 by Thomas Gail Haws
 (defun c:haws-bw ( / ANG1 PT4 as pt1 pt2 pt3)
-  (haws-core-borrow 0)
+  (haws-core-init 167)
   (HAWS-VSAVE '("dimpost"))
   (HAWS-MKLAYR "BWLDR")
   (setvar "dimpost" "")
@@ -21,5 +21,5 @@
       (command "._pline" pt2 "w" 0 (/ as 3) pt4 "w" 0 0 pt3 pt1 "")(command)
     )
   )
-  (HAWS-VRSTOR)(haws-core-return)
+  (HAWS-VRSTOR)(haws-core-restore)
 )

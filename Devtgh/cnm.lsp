@@ -2143,15 +2143,18 @@
   )
 )
 ;;CNM main commands
-(DEFUN C:HCNM-CNM () (HCNM-CNM NIL))
-(DEFUN C:HCNM-CNMKT () (HCNM-CNM "Search"))
-(DEFUN C:HCNM-CNMKTI () (HCNM-CNM "Import"))
+(DEFUN C:HCNM-CNM ()
+(haws-core-init 179) (HCNM-CNM NIL))
+(DEFUN C:HCNM-CNMKT ()
+(haws-core-init 180) (HCNM-CNM "Search"))
+(DEFUN C:HCNM-CNMKTI ()
+(haws-core-init 181) (HCNM-CNM "Import"))
 (DEFUN C:HCNM-CNMQT () (HCNM-CNM "Tally"))
 ;;CNM main function
 (DEFUN
    HCNM-CNM (OPT / CFNAME DN LINSPC PHASEWID TBLWID TXTHT)
   ;;Main function
-  (haws-core-borrow 1)
+  (haws-core-init 182)
   (HAWS-VSAVE
     '("attdia" "attreq" "cmdecho" "clayer" "osmode")
   )
@@ -2215,7 +2218,7 @@
   ;;Restore old dimstyle
   (HCNM-RESTORE-DIMSTYLE)
   (HAWS-VRSTOR)
-  (haws-core-return)
+  (haws-core-restore)
   (PRINC)
 )
 ;;;
@@ -2496,7 +2499,8 @@
 ;;Prompts user for a Project Root folder and links to it by creating
 ;;or modifying this drawing's folder's cnmproj.txt
 ;;returns project root
-(DEFUN C:HCNM-LINKPROJ () (HCNM-LINKPROJ NIL) (PRINC))
+(DEFUN C:HCNM-LINKPROJ ()
+(haws-core-init 183) (HCNM-LINKPROJ NIL) (PRINC))
 
 ;; Sets the CNM project to the given folder. Includes wizards, alerts, and error checks.
 (DEFUN HCNM-LINKPROJ (PROJ / DWGDIR LOCALPROJ LOCALPROJBAK OLDLINK)
@@ -2707,6 +2711,7 @@
 ;;;Test functions
 (DEFUN
    C:TESTSET ()
+(haws-core-init 184)
   (hcnm-concept-TESTSETVAR
     (GETSTRING "\nVariable name: ")
     (GETSTRING "\nValue: ")
@@ -2714,6 +2719,7 @@
 )
 (DEFUN
    C:TESTGET ()
+(haws-core-init 185)
   (hcnm-concept-TESTGETVAR (GETSTRING "\nVariable name: "))
 )
 (DEFUN
@@ -3281,6 +3287,7 @@ ImportLayerSettings=No
 ;;;Sets a variable in the global lisp list and in CNM.INI
 (DEFUN
    c:hcnm-config-setvar (VAR VAL)
+(haws-core-init 186)
   (SETQ
     *HCNM-CONFIG*
      (COND
@@ -3310,6 +3317,7 @@ ImportLayerSettings=No
 (DEFUN
    C:HCNM-CONFIG-GETVAR
    (VAR / SETVAR-P DEFINE-CONFIGS DIR INI PROJROOT CONFIG VAL)
+(haws-core-init 187)
   (SETQ SETVAR-P T)
   (COND
     ;; Initialize configs as needed
@@ -4388,8 +4396,8 @@ ImportLayerSettings=No
     CNMEDIT-P (wcmatch (strcase NOTESEDITOR) "*CNM*")
   )
   (IF CNMEDIT-P
-    (HAWS-CORE-BORROW 2)
-    (HAWS-CORE-BORROW 1)
+    (haws-core-init 188)
+    (haws-core-init 188)
   )
   ;; Since this is a user command, possibly after deletion of project root files,
   ;; refresh project root at beginning.
@@ -4458,6 +4466,7 @@ ImportLayerSettings=No
 ;; Edit layer defaults
 (DEFUN
    C:HCNM-CNMLAYER (/ LAYERSEDITOR LAYERSFILE WSHSHELL)
+(haws-core-init 189)
   (SETQ
     *HAWS:LAYERS* NIL
     LAYERSEDITOR
@@ -4514,6 +4523,7 @@ ImportLayerSettings=No
 ;;; Saves the users preferred Notes Bubble Style to the registry
 (DEFUN
    C:HCNM-SETNOTESBUBBLESTYLE (/ BUBBLEHOOKS)
+(haws-core-init 190)
   (INITGET "Yes No")
   (SETQ
     BUBBLEHOOKS
@@ -4535,6 +4545,7 @@ ImportLayerSettings=No
 ;;; Global edit of bubble note phases
 (DEFUN
    C:HAWS-PHASEEDIT (/ NEWPHASE OLDPHASE)
+(haws-core-init 191)
   (SETQ
     OLDPHASE
      (GETSTRING "\nEnter phase to change: ")
@@ -4551,6 +4562,7 @@ ImportLayerSettings=No
 ;;; Put attributes on NOPLOT layer
 (DEFUN
    C:HCNM-ATTNOPLOT ()
+(haws-core-init 192)
   (HCNM-ATTLAYER "NOTESNOPLOT")
   (COMMAND
     "._layer"
@@ -4563,7 +4575,7 @@ ImportLayerSettings=No
 (DEFUN C:HCNM-ATTPLOT () (HCNM-ATTLAYER "0"))
 (DEFUN
    HCNM-ATTLAYER (LAYER / AT EL EN ET NPLAYER NPLIST SSET SSLEN)
-  (haws-core-borrow 1)
+  (haws-core-init 193)
   (HAWS-VSAVE '("CLAYER"))
   (COMMAND "._undo" "_g")
   (SETQ NPLAYER (CAR (HAWS-GETLAYR LAYER)))
@@ -4627,7 +4639,7 @@ ImportLayerSettings=No
   )
   (COMMAND "._undo" "_e")
   (HAWS-VRSTOR)
-  (haws-core-return)
+  (haws-core-restore)
   (PRINC)
 )
 
@@ -4642,6 +4654,7 @@ ImportLayerSettings=No
 ;;Sets the number of phases for this drawing or this folder.
 (DEFUN
    C:HAWS-SETNOTEPHASES (/ CFLIST OPT1 PHASES RDLIN)
+(haws-core-init 194)
   (INITGET 1 "Drawing Project")
   (SETQ
     OPT1
@@ -4704,6 +4717,7 @@ ImportLayerSettings=No
 
 (DEFUN
    C:HAWS-CNMMENU ()
+(haws-core-init 195)
   (COMMAND "._menuunload" "cnm" "._menuload" "cnm.mnu")
 )
 
@@ -4711,6 +4725,7 @@ ImportLayerSettings=No
    C:HAWS-CNMSETUP (/ ACADPATHPREFIX ACADPATHSUFFIX I OLDACADPATH
                     OLDPROGRAMFOLDER PROGRAMFOLDER MATCHLENGTH
                    )
+(haws-core-init 196)
   (SETQ
     PROGRAMFOLDER
      (GETVAR "dwgprefix")
@@ -4796,6 +4811,7 @@ ImportLayerSettings=No
 )
 (DEFUN
    C:HAWS-NTPURGE (/ OL PL PLSS)
+(haws-core-init 197)
   (SETQ
     OL (GETVAR "clayer")
     PL (CAR (HAWS-GETLAYR "NOTESEXP"))
@@ -4817,22 +4833,31 @@ ImportLayerSettings=No
   (PRINC)
 )
 
-(DEFUN C:HAWS-BOXL () (HCNM-LDRBLK-DYNAMIC "BOX"))
-(DEFUN C:HAWS-CIRL () (HCNM-LDRBLK-DYNAMIC "CIR"))
-(DEFUN C:HAWS-DIAL () (HCNM-LDRBLK-DYNAMIC "DIA"))
-(DEFUN C:HAWS-ELLL () (HCNM-LDRBLK-DYNAMIC "ELL"))
-(DEFUN C:HAWS-HEXL () (HCNM-LDRBLK-DYNAMIC "HEX"))
-(DEFUN C:HAWS-OCTL () (HCNM-LDRBLK-DYNAMIC "OCT"))
-(DEFUN C:HAWS-PENL () (HCNM-LDRBLK-DYNAMIC "PEN"))
-(DEFUN C:HAWS-RECL () (HCNM-LDRBLK-DYNAMIC "REC"))
-(DEFUN C:HAWS-SSTL () (HCNM-LDRBLK-DYNAMIC "SST"))
+(DEFUN C:HAWS-BOXL ()
+(haws-core-init 198) (HCNM-LDRBLK-DYNAMIC "BOX"))
+(DEFUN C:HAWS-CIRL ()
+(haws-core-init 199) (HCNM-LDRBLK-DYNAMIC "CIR"))
+(DEFUN C:HAWS-DIAL ()
+(haws-core-init 200) (HCNM-LDRBLK-DYNAMIC "DIA"))
+(DEFUN C:HAWS-ELLL ()
+(haws-core-init 201) (HCNM-LDRBLK-DYNAMIC "ELL"))
+(DEFUN C:HAWS-HEXL ()
+(haws-core-init 202) (HCNM-LDRBLK-DYNAMIC "HEX"))
+(DEFUN C:HAWS-OCTL ()
+(haws-core-init 203) (HCNM-LDRBLK-DYNAMIC "OCT"))
+(DEFUN C:HAWS-PENL ()
+(haws-core-init 204) (HCNM-LDRBLK-DYNAMIC "PEN"))
+(DEFUN C:HAWS-RECL ()
+(haws-core-init 205) (HCNM-LDRBLK-DYNAMIC "REC"))
+(DEFUN C:HAWS-SSTL ()
+(haws-core-init 206) (HCNM-LDRBLK-DYNAMIC "SST"))
 (DEFUN C:HAWS-TRIL () (HCNM-LDRBLK-DYNAMIC "TRI"))
 (DEFUN
    HCNM-LDRBLK-DYNAMIC (NOTETYPE / ANG1 ASSOCIATE-P ATTRIBUTE-LIST AUOLD
                         BLOCKNAME DT ENAME-BLOCK FLIPSTATE GR INPUT1 NUM P1
                         P2 SNAPANG1 SS1 TXT1 TXT2 VLAOBJ
                        )
-  (haws-core-borrow 1)
+  (haws-core-init 207)
   (HAWS-VSAVE '("attreq" "aunits" "clayer" "cmdecho"))
   (COND
     ((/= (getvar "wipeoutframe") 2)
@@ -4984,7 +5009,7 @@ ImportLayerSettings=No
   (HCNM-RESTORE-DIMSTYLE)
   (HAWS-VRSTOR)
   (COMMAND "._undo" "_e")
-  (haws-core-return)
+  (haws-core-restore)
   (PRINC)
 )
 
@@ -5014,6 +5039,7 @@ ImportLayerSettings=No
 ;;; -------------------------------------------------------------------------
 (DEFUN
    C:HAWS-TCG ()
+(haws-core-init 208)
   (HAWS-LDRBLK
     "ldrtcgl" "ldrtcgr" "ldrtcgd" "TCGLDR" "TCGLeader"
    )
@@ -5032,7 +5058,7 @@ ImportLayerSettings=No
                 PFOUND R1 DS TS LEFT NUM TXT1 TXT2 ANG1 ANG2 FIXORDER
                 OSMOLD
                )
-  (HAWS-CORE-BORROW 1)
+  (haws-core-init 209)
   (HAWS-VSAVE
     '("aperture" "attdia" "attreq" "aunits" "clayer" "cmdecho" "osmode"
       "plinegen" "regenmode"
@@ -5221,7 +5247,7 @@ ImportLayerSettings=No
   (HCNM-RESTORE-DIMSTYLE)
   (HAWS-VRSTOR)
   (COMMAND "._undo" "_e")
-  (HAWS-CORE-RETURN)
+  (haws-core-restore)
   (IF (OR FIXHOOK FIXPHASE FIXTXT3 FIXORDER)
     (PROMPT
       (STRCAT
@@ -5256,6 +5282,7 @@ ImportLayerSettings=No
 
 (DEFUN
    C:HCNM-CNMOPTIONS (/ CNMDCL RETN)
+(haws-core-init 210)
   ;; Load Dialog
   (SETQ CNMDCL (LOAD_DIALOG "cnm.dcl"))
   (NEW_DIALOG "CNMOptions" CNMDCL)

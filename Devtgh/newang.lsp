@@ -3,7 +3,7 @@
 (DEFUN C:HAWS-NA () (HAWS-NEWANG))
 (DEFUN
    HAWS-NEWANG (/ SSET)
-  (HAWS-CORE-BORROW 0)
+  (haws-core-init 267)
   (HAWS-VSAVE '("aunits"))
   (COMMAND "._undo" "g")
   (SETQ SSET (SSGET))
@@ -12,7 +12,7 @@
     (T (HAWS-NEWANG-MATCH SSET))
   )
   (HAWS-VRSTOR)
-  (HAWS-CORE-RETURN)
+  (haws-core-restore)
   (PRINC)
 )
 

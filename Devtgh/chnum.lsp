@@ -1,5 +1,6 @@
 ;Written by Thomas Gail Haws
 (defun c:haws-chnum ( / starti i inc txset en el)
+(haws-core-init 173)
   (setq
     starti (getreal "\nStarting number: ")
     i 0

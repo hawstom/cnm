@@ -1,6 +1,0 @@
-(defun c:haws-CLEAN ()
-   (setvar "expert" 0)
-   (command ".UCS" "W")
-   (command ".WBLOCK" (HAWS-GETDNPATH) "Y" "*")
-   (if (= (getvar "sdi") 1)(command ".OPEN" "Y" (HAWS-GETDNPATH)) ()
-)

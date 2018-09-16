@@ -3,6 +3,7 @@
 (DEFUN
    C:HAWS-LCP
              (/ SS CC I EC LC)
+(haws-core-init 240)
   (COND
     ((/= (SETQ CC (GETSTRING "\nNew layer color (return to pick):"))
          ""
@@ -42,6 +43,7 @@
 (DEFUN
    C:HAWS-LCPX
               (/ CC EC LOPERA NESTED)
+(haws-core-init 241)
   (COND
     ((/= (SETQ CC (GETSTRING "\nNew layer color (return to pick):"))
          ""
