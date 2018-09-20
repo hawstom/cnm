@@ -3,7 +3,7 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "5.0.06"
+  "5.0.07"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 (SETQ *HAWS-DEBUGLEVEL* 0)
@@ -106,9 +106,6 @@
 ;; of this
 ;; file.
 (SETQ
-  ;; This list should be populated automatically from the web on load.
-  ;; Stored locally somewhere. Maybe a LSP file.
-  ;; id appgroup name
   *HAWS-EDCMODULES*
    '((0 "CNM Lite") (3 "CNM Pro"))
   *HAWS-EDCAPPGROUPS*
@@ -1416,6 +1413,9 @@
 ;;;                 Usage logging functions
 ;;;
 ;;; ======================================================================
+;;; This list should be populated automatically from the web on load.
+;;; Stored locally somewhere. Maybe a LSP file.
+;;; id appgroup name
 (setq
   *HAWS-EDCCOMMANDS*
    '((0 -1 "haws-adl")
@@ -1597,8 +1597,6 @@
      (183 -1 "hcnm-linkproj")
      (184 -1 "testset")
      (185 -1 "testget")
-     (186 -1 "hcnm-config-setvar")
-     (187 -1 "hcnm-config-getvar")
      (188 2 "hcnm-notesedit")
      (189 -1 "hcnm-cnmlayer")
      (190 -1 "hcnm-setnotesbubblestyle")
@@ -1749,13 +1747,17 @@
   (list "HawsEDC" "UseLog" "UseString")
 )
 
-(DEFUN HAWS-USE-LOG-LOCAL (COMMAND-ID / LOG-STRING)
-  (SETQ
-    LOG-STRING (HAWS-READCFG (HAWS-USE-LOCAL-LOCATION))
+(DEFUN HAWS-GET-LOCAL-LOG-STRING ()
+  (COND
+    ((HAWS-READCFG (HAWS-USE-LOCAL-LOCATION)))
+    ("")
   )
+)
+
+(DEFUN HAWS-USE-LOG-LOCAL (COMMAND-ID / LOG-STRING)
   (HAWS-WRITECFG
     (HAWS-USE-LOCAL-LOCATION)
-    (HAWS-USE-COMMAND-ID-TO-LOG-STRING COMMAND-ID LOG-STRING)
+    (HAWS-USE-COMMAND-ID-TO-LOG-STRING COMMAND-ID (HAWS-GET-LOCAL-LOG-STRING))
   )
 )
 
@@ -1792,7 +1794,7 @@
        "&cnm_version="
        (HAWS-UNIFIED-VERSION)
        "&command_log="
-       (HAWS-READCFG (HAWS-USE-LOCAL-LOCATION))
+       (HAWS-GET-LOCAL-LOG-STRING)
      )
   )
   (VLAX-INVOKE-METHOD HTTP 'OPEN "post" URL :VLAX-TRUE)
@@ -3931,7 +3933,7 @@
    HAWS-CHECKSTOREDSTRINGS (/ AUTHLIST AUTHSTRING DELETEALL TEMP)
   (HAWS-MILEPOST "Entering HAWS-CHECKSTOREDSTRINGS")
   (FOREACH
-     PACKAGE '(0 1 2 3)
+     PACKAGE '(0 3)
     (SETQ AUTHSTRING (HAWS-READAUTHCODE PACKAGE))
     (COND
       (;;If
@@ -4028,7 +4030,7 @@
   (COND
     (DELETEALL
      (FOREACH
-        PACKAGE '(0 1 2 3)
+        PACKAGE '(0 3)
        (HAWS-WRITEPACKAGECODE PACKAGE "OrderString" "aaaaaaaaaaaa")
        (HAWS-WRITEPACKAGECODE PACKAGE "AuthString" "aaaaaaaaaaaa")
      )
@@ -4037,7 +4039,7 @@
   (HAWS-MILEPOST "Finished HAWS-CHECKSTOREDSTRINGS")
 )
 (HAWS-CHECKSTOREDSTRINGS)
-(HAWS-USE-LOG-REMOTE)
+(IF (/=(HAWS-GET-LOCAL-LOG-STRING)(HAWS-USE-INITIALIZE-LOG-STRING))(HAWS-USE-LOG-REMOTE))
 (PROMPT "loaded.")
  ;|«Visual LISP© Format Options»
 (72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)

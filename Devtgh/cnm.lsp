@@ -3287,7 +3287,6 @@ ImportLayerSettings=No
 ;;;Sets a variable in the global lisp list and in CNM.INI
 (DEFUN
    c:hcnm-config-setvar (VAR VAL)
-(haws-core-init 186)
   (SETQ
     *HCNM-CONFIG*
      (COND
@@ -3317,7 +3316,6 @@ ImportLayerSettings=No
 (DEFUN
    C:HCNM-CONFIG-GETVAR
    (VAR / SETVAR-P DEFINE-CONFIGS DIR INI PROJROOT CONFIG VAL)
-(haws-core-init 187)
   (SETQ SETVAR-P T)
   (COND
     ;; Initialize configs as needed
