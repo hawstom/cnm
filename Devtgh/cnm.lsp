@@ -3027,6 +3027,7 @@ NumberToDescriptionWidth=2.5
 DescriptionToQuantityWidth=56
 QuantityToQuantityWidth=9
 QuantityToUnitsWidth=1
+ShowKeyTableTitleShapes=1
 ShowKeyTableGrid=0
 ShowKeyTableQuantities=1
 BubbleHooks=1
@@ -3100,7 +3101,7 @@ ImportLayerSettings=No
      (LIST "DescriptionToQuantityWidth" "56" 2)
      (LIST "QuantityToQuantityWidth" "9" 2)
      (LIST "QuantityToUnitsWidth" "1" 2)
-     (LIST "ShowKeyTableGrid" "0" 2)
+     (LIST "ShowKeyTableTitleShapes" "1" 2)
      (LIST "ShowKeyTableQuantities" "1" 2)
      (LIST "BubbleHooks" "0" 2)
      (LIST "NotesLeaderDimstyle" "" 2)
@@ -5291,6 +5292,7 @@ ImportLayerSettings=No
   (HCNM-CONFIG-SET-ACTION-TILE "DescriptionWrap")
   (HCNM-CONFIG-SET-ACTION-TILE "LineSpacing")
   (HCNM-CONFIG-SET-ACTION-TILE "NoteSpacing")
+  (HCNM-CONFIG-SET-ACTION-TILE "ShowKeyTableTitleShapes")
   (HCNM-CONFIG-SET-ACTION-TILE "ShowKeyTableQuantities")
   (HCNM-CONFIG-SET-ACTION-TILE "ShowKeyTableGrid")
   (HCNM-CONFIG-SET-ACTION-TILE "TableWidth")
