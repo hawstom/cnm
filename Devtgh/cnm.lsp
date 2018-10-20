@@ -3102,6 +3102,7 @@ ImportLayerSettings=No
      (LIST "QuantityToQuantityWidth" "9" 2)
      (LIST "QuantityToUnitsWidth" "1" 2)
      (LIST "ShowKeyTableTitleShapes" "1" 2)
+     (LIST "ShowKeyTableGrid" "0" 2)
      (LIST "ShowKeyTableQuantities" "1" 2)
      (LIST "BubbleHooks" "0" 2)
      (LIST "NotesLeaderDimstyle" "" 2)
