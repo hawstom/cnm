@@ -3,11 +3,11 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "5.1.0"
-)
-(DEFUN
-   HAWS-COPYRIGHT ()
-  "Copyright 2018 Thomas Gail Haws"
+<<<<<<< HEAD
+  "5.0.08"
+=======
+  "5.0.07\n\nCopyright 2018"
+>>>>>>> master
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 (SETQ *HAWS-DEBUGLEVEL* 0)
@@ -55,7 +55,7 @@
       (STRCAT
         "Construction Notes Manager version "
         (HAWS-UNIFIED-VERSION)
-        "\n\n" (HAWS-COPYRIGHT) "\nhttp://constructionnotesmanager.com\nhttp://hawsedc.com\n"
+        "\n\nCopyright 2018 Thomas Gail Haws\nhttp://constructionnotesmanager.com\nhttp://hawsedc.com\n"
         (APPLY
           'STRCAT
           (MAPCAR
@@ -1762,9 +1762,13 @@
     LOG-DATA
      (STRCAT
        "computer_name="
-       (HAWS-GETCOMPUTERNAME)
-       "&bios_date="
-       *HAWS-BIOSDATEFULL*
+       (HAWS-GETSHORTCOMPUTERNAME)
+       "&bios_month="
+       (ITOA (car BIOS-DATE))
+       "&bios_day="
+       (ITOA (cadr BIOS-DATE))
+       "&bios_year="
+       (ITOA (caddr BIOS-DATE))
        "&cnm_version="
        (HAWS-UNIFIED-VERSION)
        "&command_log="

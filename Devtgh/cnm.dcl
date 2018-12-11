@@ -126,6 +126,10 @@ CNMOptions : dialog {
 					key = "ShowKeyTableGrid";
 					label = "Show grid lines in Key Notes Tables";
 				}
+				: toggle {
+					key = "ShowKeyTableTitleShapes";
+					label = "Show title shape blocks in Key Notes Tables";
+				}
 			}
 			: row {
 				: column {
