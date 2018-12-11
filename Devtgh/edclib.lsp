@@ -3,7 +3,7 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "5.0.05\n\nCopyright 2018"
+  "5.0.07\n\nCopyright 2018"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 (SETQ *HAWS-DEBUGLEVEL* 0)
@@ -142,9 +142,13 @@
    HAWS-CORE-BORROW (APPGROUP / VALIDATED)
   ;; If computer already has authorization,
   (COND
-    ((OR (HAWS-VALIDATEAPPGROUP APPGROUP)
+    ((OR
+         ;; this computer has authorization
+         (HAWS-VALIDATEAPPGROUP APPGROUP)
          ;; or we successfully get it from the user,
          (HAWS-AUTHORIZEAPPGROUP APPGROUP)
+         ;; or we are allowing run after nag,
+         (HAWS-NAGMODE-P)
      )
      (SETQ VALIDATED T)
     )
@@ -352,35 +356,31 @@
 ;;;
 ;;; This is the nag routine.
 (DEFUN
-   HAWS-AUTHORIZEAPPGROUP (APPGROUP / INAGMODE)
+   HAWS-AUTHORIZEAPPGROUP (APPGROUP)
   ;;Choose nag mode or expire mode prompt.
   (COND
     ;;If nag mode is active
     ((HAWS-NAGMODE-P)
      ;;Then
      (COND
-       ;;If it's about 1/10th of the time.
-       ;;(This expression holds true everytime (getvar "date") rolls around to a 1 in the 1/100,000,000 of a day place.)
-       ((WCMATCH
-          (SUBSTR (RTOS (REM (GETVAR "date") 1) 2 8) 10)
-          "1,2"
-        )
-        (SETQ
-          INAGMODE
-           (ATOI (SUBSTR (RTOS (REM (GETVAR "date") 1) 2 7) 9))
+       ;;If it's about 1/100th of the time.
+       ;;(This expression holds true everytime (getvar "date") rolls around to a 00 in the 1/100,000,000 of a day place.)
+       ((=
+          (SUBSTR (RTOS (REM (GETVAR "date") 1) 2 8) 9)
+          "00"
         )
         (ALERT
           (PRINC
             (STRCAT
-              "\nThis application has not been authorized,\nbut will continue in full-featured evaluation mode until authorized."
-              "\n\nAfter a brief evaluation, order trial or paid authorization"
-              "\nby providing the order code generated at the following command line prompts."
+              "\nThis application is running in unlicensed mode."
+              "\n\nLicense it or extend the expired trial mode"
+              "\nby emailing the order code generated at the following command line prompts."
             )
           )
         )
-        (HAWS-ORDERPACKAGE APPGROUP INAGMODE)
+        (HAWS-ORDERPACKAGE APPGROUP)
        )
-       (T (ALERT (PRINC "\nContinuing in evaluation mode.")) T)
+       (T (PRINC "\nContinuing in evaluation mode.") T)
      )
     )
     ;;Else expire mode is active
@@ -390,11 +390,11 @@
          (STRCAT
            "\nThis application has not been authorized."
            "\n\nYou must order trial or paid authorization"
-           "\nby providing the order code generated at the following command line prompts."
+           "\nby emailing the order code generated at the following command line prompts."
          )
        )
      )
-     (HAWS-ORDERPACKAGE APPGROUP INAGMODE)
+     (HAWS-ORDERPACKAGE APPGROUP)
     )
   )
 )
@@ -646,19 +646,11 @@
 ;;; Returns T if successful, nil if not successful.
 
 (DEFUN
-   HAWS-ORDERPACKAGE (APPGROUP INAGMODE / AUTHMATCHSUCCESS AUTHSTRING
+   HAWS-ORDERPACKAGE (APPGROUP / AUTHMATCHSUCCESS AUTHSTRING
                       AUTHWRITESUCCESS NAGMATCHSUCCESS NAGSTRINGS
                       ORDERLIST ORDERSTRING PACKAGE WRITESTRINGS
                      )
   (SETQ
-    NAGSTRINGS
-     (LIST
-       "ThAnk_You-4_Using-CnM" "cNm-iS-GreAt-isn't_it_?"
-       "CNM-saVes_me-tIME" "ThAnk_You-4_Using-CnM"
-       "cNm-iS-GreAt-isn't_it_?" "CNM-saVes_me-tIME"
-       "ThAnk_You-4_Using-CnM" "cNm-iS-GreAt-isn't_it_?"
-       "CNM-saVes_me-tIME" "ThAnk_You-4_Using-CnM"
-      )
     ORDERLIST
      (APPEND
        (LIST (FIX (GETVAR "date")) *HAWS-SALESID*)
@@ -695,26 +687,7 @@
   )
   ;;Act on input
   (COND
-    ;; If no authorization was supplied, and a demanding nag is active,
-    ;; then nag and flag if successful.
-    ((AND
-       (= AUTHSTRING "")
-       INAGMODE
-       (PROGN
-         (COMMAND "._VSLIDE" (STRCAT "NAG" (ITOA INAGMODE)))
-         (SETQ
-           AUTHSTRING
-            (GETSTRING
-              "\nEnter the displayed phrase to continue: "
-            )
-         )
-         (REDRAW)
-         (= AUTHSTRING (NTH INAGMODE NAGSTRINGS))
-       )
-     )
-     (SETQ NAGMATCHSUCCESS T)
-    )
-    ;; Else if a matching authorization was supplied,
+    ;; If a matching authorization was supplied,
     ;; flag to write the authorization and flag success,
     ((HAWS-USERSTRINGDATEDIFF ORDERSTRING AUTHSTRING)
      (SETQ WRITESTRINGS T)
@@ -808,12 +781,12 @@
   (SETQ PACKAGES (CDR (ASSOC APPGROUP *HAWS-EDCAPPGROUPS*)))
   (COND
     ((MEMBER 0 PACKAGES)
-     (PROMPT "\nCNM Lite (no custom Project Notes editor) ...1")
+     (PROMPT "\nCNM Lite (no custom Project Notes editor) .......1")
     )
   )
   (COND
     ((MEMBER 3 PACKAGES)
-     (PROMPT "\nCNM Pro .....................................2")
+     (PROMPT "\nCNM Pro (includes custom Project Notes editor) ..2")
     )
   )
   (INITGET "1 2")
@@ -821,7 +794,7 @@
     STRING
      (GETKWORD "\n\nSelect a package
    [1/2]
-   <2>:
+   <1>:
    ")
   )
   ;;  "1" Full HawsEDC package
@@ -833,7 +806,7 @@
      (COND
        ((= STRING "1") "1")
        ((= STRING "2") "4")
-       (T "4")
+       (T "1")
      )
   )
 ;;;End user choice section
