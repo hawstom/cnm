@@ -995,13 +995,17 @@
           (FOREACH
              NOTETITLE (REVERSE NOTETITLES)
             (SETQ TXTHT (CAR NOTETITLE))
-            (COMMAND
-              "._insert"
-              (STRCAT "cnm" NOTTYP)
-              QTYPT
-              TXTHT
-              ""
-              "0"
+            (COND
+              ((= (C:HCNM-CONFIG-GETVAR "ShowKeyTableTitleShapes") "1")
+               (COMMAND
+                 "._insert"
+                 (STRCAT "cnm" NOTTYP)
+                 QTYPT
+                 TXTHT
+                 ""
+                 "0"
+               )
+              )
             )
             (COMMAND
               "._insert"
