@@ -14,17 +14,17 @@ Then use MENULOAD to load CNM.CUIX (and optionally FUNKY.CUIX function key osnap
 Open Construction Notes Manager Examples\CNM-Demo.dwg from your Documents folder and 
 run Construction Notes Manager Examples\CNM-Demo.scr.
 
-==COMMAND REFERENCE==
-Open CNM-Command-Reference.ods from the CNM folder. Sort by descending coolness 
-(columns D and B) or descending category (columns A and B)
-
 ==KEYBOARD ALIASES==
-CNM includes a couple dozen optimized keyboard aliases for native AutoCAD commands.
-These aliases may override some of your custom PGP aliases. They will make your 
-drafting easier if you take the time to learn them. (See more below.) If you find 
-you cannot adapt to them or if you need to change any of them, or if you prefer 
-to manage them using ACAD.PGP, you can use the CNMALIAS command to 
-turn them off or change them.
+Use the CNMALIAS command to activate or edit CNM keyboard shortcuts for any of the following groups:
+	A. CNM tools
+	B. Native AutoCAD command PGP alias changes
+	C. Native AutoCAD command PGP alias duplications in LISP
+These aliases may override some of your custom PGP aliases. They are optimized to make your 
+drafting easier if you take the time to learn them. (See more below.)
+
+==COMMAND REFERENCE==
+Open CNM-Command-Reference.ods from the CNM folder for a guide to the CNM tools. 
+Sort by descending coolness (columns D and B) or descending category (columns A and B).
 
 ==VERSION 5.0.0==
 -New Cool Stuff

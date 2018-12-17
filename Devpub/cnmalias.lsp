@@ -427,9 +427,6 @@
 (hcnm-define-lisp-alias '("haws-us" "us" "Tools" ""))
 ;;;---------------Miscellaneous Section---------------   )
 (hcnm-define-lisp-alias '("haws-ffa" "ffa" "Tools" ""))
-(hcnm-define-lisp-alias '("haws-hawsalias" "hawsalias" "Tools" ""))
-;; This is the one hard-coded alias. Not in the aliases list.
-(hcnm-define-lisp-alias '("haws-aliasmanage" "cnmalias" "Tools" ""))
 (hcnm-define-lisp-alias '("haws-aliasmanage" "cam" "Tools" ""))
 (hcnm-define-lisp-alias '("haws-aliasmanage" "ham" "Tools" "Use CAM (CNMAlias)"))
 (hcnm-define-lisp-alias '("haws-user" "user" "Tools" ""))

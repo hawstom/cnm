@@ -13,7 +13,7 @@
   (while
     (progn
       (initget "First")
-      (setq pt2 (getpoint pt1 (strcat"\nSecond point for lot " (itoa i)" or [First point]: ")))
+      (setq pt2 (getpoint pt1 (strcat "\nSecond point for lot " (itoa i) " or [First point]: ")))
     )
     (if (= pt2 "First")
       (setq pt1(getpoint"\nFirst point: ")pt2(getpoint pt1"\nSecond point: "))
@@ -29,4 +29,5 @@
     (setvar "osmode" osmold)
     (setq i (1+ i) pt1 pt2)
   )
+  (princ)
 )

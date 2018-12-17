@@ -199,7 +199,7 @@
 
 ;;---------------Setup and Drawing Environment Section---------------
 (haws-autoload "sde"      '("haws-0" "haws-1" "haws-aa" "haws-adt" "haws-cet" "haws-cmd" "haws-dia" 
-                            "haws-fd" "haws-ib" "haws-il" "haws-io" "haws-ir" "haws-it"
+                            "haws-fdt" "haws-ib" "haws-il" "haws-io" "haws-ir" "haws-it"
                             "haws-llt" "haws-mbt" "haws-mvl" "haws-mvu" "haws-ose" "haws-osi" "haws-osm" 
                             "haws-osn" "haws-proto" "haws-protox" "haws-pslt" "haws-rga"
                             "haws-qt" "haws-uf" "haws-uf0" "haws-uf1")
@@ -217,16 +217,16 @@
 (defun ah () (alert (princ "\nAH has been retired.  Please use the built in m2p osnap.")))
 
 ;;---------------Miscellaneous Section---------------
-(haws-autoload "misc"     '("haws-ffa" "haws-hawsalias" "haws-pgpedit" "haws-user"))
+(haws-autoload "misc"     '("haws-ffa" "haws-pgpedit" "haws-user"))
 (haws-autoload "loadandrun"       '("haws-LoadAndRun"))
 ;-------------MODIFY THE ABOVE--------------------------------------
 ;;; Load legacy library
 ;; LISPUTIL.LSP has library functions for legacy routines some legacy users have.
 (if (not haws-errdef) (load "lisputil"))
-;;; Load Haws library
+;;; Load Haws and CNM libraries
+(setq c:hcnm-cnm nil)
 (load "edclib")
-;;; Load CNM for its library functions
-(load "cnm")
+(if (not c:hcnm-cnm) (load "cnm"))
 ;;;Load aliases
 ;;;CNMALIAS.LSP has short names for all the commands.
 (COND
@@ -241,7 +241,6 @@
 ;;;It is suggested that you keep a user.lsp in a reserved user support files folder
 ;;;added to AutoCAD's Support Files Search Path.
 ;;;Keep user.lsp out of the program folder or it may be deleted.
-
 
 ;;; Place the CNM pulldown to the left of the last pulldown already loaded
 ;;;     Created 2/21/97 by Dominic Panholzer

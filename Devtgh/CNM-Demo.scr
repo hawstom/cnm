@@ -1,7 +1,7 @@
 zoom
 0,0
 720,480
-newpro
+haws-newpro
 -LAYER
 m
 C-TOPO-CONT
@@ -27,7 +27,7 @@ OFFSET
 308,358
 312,362
 
-CV
+haws-contvol
 308,358
 304,354
 300,350
@@ -45,7 +45,7 @@ HAWS-BOXL
 HCNM-CNM
 S
 420,450
-99
+
 -layer
 make
 C-ANNO-HCNM-TEST
@@ -87,7 +87,7 @@ haws-mof
 662,-62
 685,-68
 
-layon
+layuniso
 -layer
 make
 C-PROP-IDEN
@@ -123,7 +123,7 @@ mtext
 60,290
 height
 1
-justify
+just
 tc
 530,220
 ALL TESTS COMPLETED SUCCESSFULLY. CLOSE DRAWING WITHOUT SAVING.

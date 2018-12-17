@@ -5,13 +5,13 @@
    (("Tools"
      1
      "custom tool"
-     "Activate keyboard shortcuts for CNM tools including LX etc. (strongly recommended)"
+     "Activate keyboard shortcuts for CNM tools including LX etc. (recommended)"
      ""
     )
     ("Custompgp"
      2
      "custom alias for AutoCAD command (change with CNMAlias)"
-     "Activate CNM's custom LISP changes to PGP definitions including C Copy and CC circle (recommended; shown above in PGP format)"
+     "Activate CNM's custom LISP changes to PGP definitions including C Copy and CC circle (suggested; shown above in PGP format)"
      "Custom Command Aliases"
     )
     ("Standardpgp"
@@ -129,6 +129,7 @@
   )
 )
 
+(DEFUN C:CNMALIAS () (C:HAWS-ALIASMANAGE))
 (DEFUN
    C:HAWS-ALIASMANAGE (/ ALIAS-ACTIVATION-FLAG ACTIVATION-PREFERENCE INPUT1)
   (TEXTPAGE)
