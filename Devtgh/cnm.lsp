@@ -4849,12 +4849,12 @@ ImportLayerSettings=No
 (DEFUN C:HAWS-TRIL () (haws-core-init 207) (HCNM-LDRBLK-DYNAMIC "TRI"))
 (DEFUN
    HCNM-LDRBLK-DYNAMIC (NOTETYPE / ANG1 ASSOCIATE-P ATTRIBUTE-LIST AUOLD
-                        BLOCKNAME DT ENAME-BLOCK FLIPSTATE GR INPUT1 NUM P1
+                        BLOCKNAME TH ENAME-BLOCK FLIPSTATE GR INPUT1 NUM P1
                         P2 SNAPANG1 SS1 TXT1 TXT2 VLAOBJ
                        )
   (HAWS-VSAVE '("attreq" "aunits" "clayer" "cmdecho"))
   (COND
-    ((/= (getvar "wipeoutframe") 2)
+    ((and (getvar "wipeoutframe")(/= (getvar "wipeoutframe") 2))
       (ALERT "Setting WIPEOUTFRAME to 2 to show but not plot")
       (SETVAR "wipeoutframe" 2)
     )
@@ -4885,7 +4885,7 @@ ImportLayerSettings=No
      )
   )
   (COND
-    ((AND (NOT ASSOCIATE-P) (/= (GETVAR "DIMSCALE") (/ 1.0 (GETVAR "CANNOSCALEVALUE"))))
+    ((AND (NOT ASSOCIATE-P) (GETVAR "CANNOSCALEVALUE") (/= (GETVAR "DIMSCALE") (/ 1.0 (GETVAR "CANNOSCALEVALUE"))))
      (ALERT (PRINC (STRCAT "\nDimension scale (" (RTOS (GETVAR "DIMSCALE") 2 2) ") and\nAnnotation scale (" (RTOS (/ 1.0 (GETVAR "CANNOSCALEVALUE")) 2 2) ")\nare not equal.\nCNM recommends setting dimension scale to match annotation scale.")))
      (INITGET 1 "Yes No")
      (SETQ INPUT1 (GETKWORD "\nSet dimension scale to match annotation scale? [Yes/No]: "))
@@ -4897,7 +4897,7 @@ ImportLayerSettings=No
     BLOCKNAME
      (STRCAT "cnm-bubble-" (COND ((= (STRCASE BUBBLEHOOKS) "YES") "1")((= (STRCASE BUBBLEHOOKS) "NO") "0")(T BUBBLEHOOKS)))
     P1 (GETPOINT "\nStart point for leader:")
-    DT (GETVAR "dimtxt")
+    TH (* (GETVAR "dimtxt") (IF (GETVAR "DIMANNO") 1 (GETVAR "DIMTXT")))
     SNAPANG1
      (GETVAR "snapang")
     SS1
@@ -4911,7 +4911,7 @@ ImportLayerSettings=No
       "._insert"
       (strcat BLOCKNAME "-" flipstate)
       "s"
-      DT
+      TH
       P1
       (ANGTOS (GETVAR "snapang"))
     )
@@ -4958,7 +4958,7 @@ ImportLayerSettings=No
   )
   (SETQ AUOLD (GETVAR "aunits"))
   (SETVAR "aunits" 3)
-  (COMMAND (strcat BLOCKNAME "-" flipstate) P2 DT DT (GETVAR "snapang"))
+  (COMMAND (strcat BLOCKNAME "-" flipstate) P2 TH TH (GETVAR "snapang"))
   (SETVAR "aunits" AUOLD)
   (SETQ
     ATTRIBUTE-LIST

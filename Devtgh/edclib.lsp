@@ -3,7 +3,7 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "5.1.04"
+  "5.1.07"
 )
 (DEFUN
    HAWS-COPYRIGHT ()
@@ -174,7 +174,8 @@
     OLDERR *ERROR*
     *ERROR* HAWS-CORE-STPERR
   )
-  (*push-error-using-command*)
+  ;;Versional housekeeping
+  (if (= 'subr (type *push-error-using-command*)) (*push-error-using-command*))
   VALIDATED
 )
 
@@ -207,6 +208,8 @@
   (IF (= (TYPE F3) (QUOTE FILE))
     (SETQ F3 (CLOSE F3))
   )
+  ;;Versional housekeeping
+  (if (/= 'subr (type command-s)) (setq command-s command))
   (IF (= 8 (LOGAND (GETVAR "undoctl") 8))
     (COMMAND-S "._undo" "end")
   )
@@ -248,7 +251,8 @@
     *ERROR* OLDERR
     OLDERR NIL
   )
-  (*pop-error-mode*)
+  ;;Versional housekeeping
+  (if (= 'subr (type *pop-error-mode*)) (*pop-error-mode*))
 )
 ;;END ERROR HANDLER
 
@@ -2018,7 +2022,15 @@
 (DEFUN
    HAWS-FILE-COPY (SOURCE DESTINATION / RDLIN RETURN)
   (COND
-    ((HAWS-VLISP-P) (VL-FILE-COPY SOURCE DESTINATION))
+    ((AND (= (SUBSTR (GETVAR "DWGNAME") 1 7) "Drawing") (WCMATCH DESTINATION (STRCAT (GETVAR "DWGPREFIX") "*")) (WCMATCH (getvar "ACADVER") "*BricsCAD"))
+      (ALERT "BricsCAD may crash if this drawing is not in a writable folder.")
+      (INITGET "Yes No")
+      (IF (/= (GETKWORD "\nBricsCAD may crash. Continue anyway? [Yes/No] <No>: ") "Yes")(exit))
+    )
+  )
+  (COND
+    ((HAWS-VLISP-P) 
+     (VL-FILE-COPY SOURCE DESTINATION))
     (T
      (IF (SETQ F1 (OPEN SOURCE "r"))
        (SETQ RETURN 1)
