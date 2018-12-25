@@ -98,7 +98,7 @@
   (haws-make-masked-mtext
     pt1
     "TL"
-    (getvar "dimtxt")
+    (* (HAWS-DWGSCALE) (getvar "dimtxt"))
     0
     cv-report
   )

@@ -319,7 +319,7 @@
           (t "Label")
         )
      )
-     (haws-cel:make-masked-mtext "0,0,0" "_mc" (getvar "dimtxt") "0" preset-string)
+     (haws-cel:make-masked-mtext "0,0,0" "_mc" (* (if (LM:isAnnotative (getvar "textstyle")) 1 (haws-dwgscale))(getvar "dimtxt")) "0" preset-string)
      (command
        "._block"
        (haws-cel:getvar "LabelBlockName")
@@ -588,7 +588,7 @@
     (list "LabelPrecision" luprec 'int)
     (list "LabelBlockName" "cei-contour-label" 'str)
     (list "ElevationPrompt" "Yes" 'str) ;"Yes" or "No"
-    (list "LabelWithFields" "Yes" 'str) ;"Yes" or "No"
+    (list "LabelWithFields" "No" 'str) ;"Yes" or "No"
   )
 )
 
