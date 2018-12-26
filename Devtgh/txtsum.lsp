@@ -32,7 +32,7 @@
     txpt (getpoint "\nMiddle point for text:")
     ts (* (HAWS-DWGSCALE)(getvar "dimtxt"))
   )
-  (if txpt(HAWS-MKTEXT "m" txpt ts 0 (strcat (rtos sum) " TOTAL")))
+  (if txpt(HAWS-MKTEXT "m" txpt nil 0 (strcat (rtos sum) " TOTAL")))
   (princ)
 )
 

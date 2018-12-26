@@ -2,7 +2,7 @@
 (defun c:haws-WS (/ stubpt mainpt ang1 LEFT TS)
   (haws-core-init 328)
   (HAWS-VSAVE '("clayer"))
-  (setq ts (* (HAWS-DWGSCALE)(getvar "dimtxt")))
+  (setq ts (haws-text-height-model))
   (while (setq stubpt (getpoint "\nEnd of service line (Return to quit):"))
     (HAWS-MKLAYR "WATSER")
     (setq mainpt (getpoint stubpt "\nWater main connection point (use osnap):  "))
@@ -15,7 +15,7 @@
     (HAWS-MKTEXT
       (if left "MR" "ML")
       (polar stubpt ang1 ts)
-      ts
+      nil
       (if left (+ ang1 pi) ang1)
       "WS"
     )

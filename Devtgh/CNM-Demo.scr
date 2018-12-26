@@ -107,10 +107,6 @@ w
 Arc
 1090,390
 
-layiso
-663,-55
-825,106
-
 haws-mof
 
 665,173
@@ -119,7 +115,6 @@ haws-mof
 662,238
 685,232
 
-layuniso
 -layer
 make
 C-PROP-IDEN

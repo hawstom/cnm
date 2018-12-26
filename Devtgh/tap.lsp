@@ -5,7 +5,7 @@
   (HAWS-VSAVE '("osmode" "clayer"))
   (setq
     osuser (getvar "osmode")
-    ts (* (HAWS-DWGSCALE)(getvar "dimtxt"))
+    ts (haws-text-height-model)
   )
   (if (= 0 (getvar "chamfera"))
     (progn(setvar "chamfera" 3.0)(setvar "chamferb" 3.0))
@@ -34,7 +34,7 @@
     (HAWS-MKTEXT
       (if left "MR" "ML")
       (polar stubpt ang1 ts)
-      ts
+      nil
       (if left (+ ang1 pi) ang1)
       "HC"
     )

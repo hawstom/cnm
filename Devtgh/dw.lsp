@@ -23,7 +23,7 @@
   )
   (SETVAR "osmode" 0)
   (HAWS-MKLAYR "DRIVEWAY")
-  (SETQ TS (* (HAWS-DWGSCALE) (GETVAR "dimtxt")))
+  (SETQ TS (haws-text-height-model))
   (WHILE
     (PROGN
       (INITGET "Length Sw")
@@ -174,7 +174,7 @@
       "ML"
     )
     CL3
-    TS
+    nil
     (IF LEFT
       (+ ANG1 PI)
       ANG1

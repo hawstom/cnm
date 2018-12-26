@@ -24,9 +24,9 @@
     pt5(polar pt3 (- rot (/ PI 2))(* txht 0.667))
   )
   (if (= (setq ltop (getstring 1 "Enter text or return for line data: ")) "")
-    (progn(HAWS-MKTEXT "c" pt4 txht rot lbear)(HAWS-MKTEXT "tc" pt5 txht rot ldist))
+    (progn(HAWS-MKTEXT "c" pt4 nil rot lbear)(HAWS-MKTEXT "tc" pt5 nil rot ldist))
     (progn
-      (HAWS-MKTEXT "c" pt4 txht rot ltop)
+      (HAWS-MKTEXT "c" pt4 nil rot ltop)
       (command "._dtext" "j" "tc" pt5 txht (angtos rot))
   ) )
   (command "._ucs" "p")

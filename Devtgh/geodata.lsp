@@ -114,7 +114,7 @@
              )
   (SETQ
     DG   (* (GETVAR "dimgap") (HAWS-DWGSCALE))
-    TXHT (* (HAWS-DWGSCALE) (GETVAR "dimtxt"))
+    TXHT (haws-text-height-model)
     PT1  (OSNAP PICKPT "nea")
     PTXT (GETPOINT PT1 "\nPick text location: ")
     ANG1 (ANGLE PT1 PTXT)
@@ -165,7 +165,7 @@
          "ml"
        ) ;_ end of if
        PTXT
-       TXHT
+       nil
        0
        (STRCAT "L=" (CADR CRVDATA))
      ) ;_ end of mktext
@@ -191,7 +191,7 @@
          "ml"
        ) ;_ end of if
        PTXT
-       TXHT
+       nil
        0
        (STRCAT "DELTA=" (CADDR CRVDATA))
      ) ;_ end of mktext

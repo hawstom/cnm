@@ -5,7 +5,6 @@
   (setvar "cmdecho" 0)
   (setq
     i (getint "\nFirst number of series: ")
-    th (* (HAWS-DWGSCALE)(getvar"dimtxt"))
     rot (getreal "\nText rotation <0>: ")
     just (progn
         (initget "C M R TL TC TR ML MC MR BL BC BR")
@@ -16,9 +15,9 @@
     (setq rot 0)
   )
   (setq pt1 (getpoint "\nFirst insertion point: "))
-  (HAWS-MKTEXT just pt1 th rot (itoa i))
+  (HAWS-MKTEXT just pt1 nil rot (itoa i))
   (while (setq pt1 (getpoint pt1 "\nNext insertion point: "))
     (setq i (+ i 1))
-    (HAWS-MKTEXT just pt1 th rot (itoa i))
+    (HAWS-MKTEXT just pt1 nil rot (itoa i))
   )
 )

@@ -1843,17 +1843,6 @@
   )
 )
 
-(VL-ACAD-DEFUN 'HAWS-DWGSCALE)
-(DEFUN
-   HAWS-DWGSCALE ()
-  (COND
-    ((OR (= (GETVAR "DIMANNO") 1) (= (GETVAR "DIMSCALE") 0))
-     (/ 1 (GETVAR "CANNOSCALEVALUE"))
-    )
-    ((GETVAR "DIMSCALE"))
-  )
-)
-
 (DEFUN HAWS-DXF (GCODE ENTLST) (CDR (ASSOC GCODE ENTLST)))
 
 ;; Endstr returns a substring of s starting with the ith to last
@@ -3120,6 +3109,34 @@
   )
 )
 
+;;; ======================================================================
+;;;
+;;;                 Text creation and scale functions
+;;;
+;;; ======================================================================
+
+
+(VL-ACAD-DEFUN 'HAWS-DWGSCALE)
+(DEFUN
+   HAWS-DWGSCALE ()
+  (COND
+    ((OR (= (GETVAR "DIMANNO") 1) (= (GETVAR "DIMSCALE") 0))
+     (/ 1 (GETVAR "CANNOSCALEVALUE"))
+    )
+    ((GETVAR "DIMSCALE"))
+  )
+)
+
+(DEFUN
+   HAWS-TEXT-HEIGHT-PAPER ()
+  (GETVAR "DIMTXT")
+)
+
+(DEFUN
+   HAWS-TEXT-HEIGHT-MODEL ()
+  (* (GETVAR "DIMTXT") (HAWS-DWGSCALE))
+)
+
 (VL-ACAD-DEFUN 'HAWS-MKTEXT)
 (DEFUN
    HAWS-MKTEXT (J I H R S / ENT JX JY)
@@ -3163,11 +3180,14 @@
       )
       (CONS 7 (GETVAR "textstyle"))
       (APPEND '(10) I)
+      ;; Simple entmake doesn't create annotative text.
       (CONS
         40
         (COND
           (H)
-          ((* (GETVAR "dimscale") (GETVAR "dimtxt")))
+          (T
+            (haws-text-height-model)
+          )
         )
       )
       (ASSOC 41 (TBLSEARCH "STYLE" (GETVAR "textstyle")))
@@ -3186,6 +3206,27 @@
   )
   (ENTMOD ENT)
 )
+
+(defun
+   haws-make-masked-mtext (i j h w s / ename-mtext)
+  ;; Command creates annotative text if style is annotative.
+  (setq h
+    (cond
+      (h)
+      ((LM:isAnnotative (getvar "textstyle"))(haws-text-height-paper))
+      (T (haws-text-height-model))
+    )
+  )
+  (command "._mtext" i "_j" j "_h" h "_w" w s "")
+  (setq ename-mtext (entlast))
+  (entmod
+    (append
+      (entget ename-mtext)
+      '((90 . 3) (63 . 256) (45 . 1.1) (441 . 0))
+    )
+  )
+)
+
 (VL-ACAD-DEFUN 'HAWS-MKLINE)
 (DEFUN
    HAWS-MKLINE (PT1 PT2)
@@ -3208,17 +3249,6 @@
   )
 )
 
-(defun
-   haws-make-masked-mtext (i j h w s / ename-mtext)
-  (command "._mtext" i "_j" j "_h" h "_w" w s "")
-  (setq ename-mtext (entlast))
-  (entmod
-    (append
-      (entget ename-mtext)
-      '((90 . 3) (63 . 256) (45 . 1.1) (441 . 0))
-    )
-  )
-)
 ;;
 ;;HAWS-PRIN1-TO-STRING
 ;;

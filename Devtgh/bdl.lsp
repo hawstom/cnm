@@ -62,8 +62,8 @@
   )
   (cond
     ((= ltop "")
-     (HAWS-MKTEXT "c" pt3 txht rot lbear)
-     (HAWS-MKTEXT "tc" pt4 txht rot ldist)
+     (HAWS-MKTEXT "c" pt3 nil rot lbear)
+     (HAWS-MKTEXT "tc" pt4 nil rot ldist)
     )
     ((= (strcase ltop) "L")
      (command "._ucs" "p")
@@ -109,7 +109,7 @@
      )
     )
     (T
-     (HAWS-MKTEXT "c" pt3 txht rot ltop)
+     (HAWS-MKTEXT "c" pt3 nil rot ltop)
      (command "._dtext" "j" "tc" pt4 txht (angtos rot))
     )
   )

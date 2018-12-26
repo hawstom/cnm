@@ -23,7 +23,7 @@
   )
   (PRINC TXPT)
   (IF TXPT
-    (HAWS-MKTEXT "m" TXPT TS 0 AREA)
+    (HAWS-MKTEXT "m" TXPT nil 0 AREA)
   )
   (PRINC (STRCAT "\n" AREA))
   (PRINC)
