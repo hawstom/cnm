@@ -331,15 +331,6 @@
   )
 )
 
-;; By Lee Mac.  Thanks!
-(defun LM:isAnnotative ( style / object annotx )
-  (and
-    (setq object (tblobjname "STYLE" style))
-    (setq annotx (cadr (assoc -3 (entget object '("AcadAnnotative")))))
-    (= 1 (cdr (assoc 1070 (reverse annotx))))
-  )
-)
-
 (defun
    haws-cel:make-masked-mtext (i j h w s / ename-mtext)
   (command "._mtext" i "_j" j "_h" h "_w" w s "")

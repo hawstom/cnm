@@ -299,14 +299,12 @@
     ""
   )
   (SETQ ENAME-OD (ENTLAST))
-  (COMMAND
-    "._change"
-    ENAME-OD
-    ""
-    "_p"
-    "_la"
-    (HAWS-UT-GETVAR "Layer.OD")
-    ""
+  (ENTMOD
+    (SUBST
+      (CONS 8 (HAWS-UT-GETVAR "Layer.OD"))
+      (ASSOC 8 (ENTGET ENAME-OD))
+      (ENTGET ENAME-OD)
+    )
   )
   (LIST ENAME-OD OFFSET-POINT)
 )

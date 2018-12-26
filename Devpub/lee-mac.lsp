@@ -58,3 +58,11 @@
     (VLAX-INVOKE BLOCK-OBJECT-1 'GETDYNAMICBLOCKPROPERTIES)
   )
 )
+
+(defun LM:isAnnotative ( style / object annotx )
+  (and
+    (setq object (tblobjname "STYLE" style))
+    (setq annotx (cadr (assoc -3 (entget object '("AcadAnnotative")))))
+    (= 1 (cdr (assoc 1070 (reverse annotx))))
+  )
+)

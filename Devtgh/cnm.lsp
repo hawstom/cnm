@@ -5418,7 +5418,6 @@ ImportLayerSettings=No
   )
 )
 
-(LOAD "lee-mac")
 (LOAD "ini-edit")
  ;|«Visual LISP© Format Options»
 (72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)
