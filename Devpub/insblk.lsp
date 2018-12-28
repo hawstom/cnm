@@ -61,7 +61,6 @@
 (defun insblk
   (blname bllay blrot blopt /
   blsclx blscly bllayc blexpl)
-  (haws-errdef)
   (haws-vsave '("clayer" "cmdecho"))
   (setvar "cmdecho" 0)
   (setq
@@ -97,7 +96,7 @@
     )
   )
   ;;; (if (= (cdr(assoc 0(entget(entlast)))) "TEXT")(command "._._textedit" (entlast)))
-  (haws-vrstor)(haws-errrst)(princ)
+  (haws-vrstor)(haws-core-restore)(princ)
 )
 ;;;ROTATION note: Enter insertion rotation or "P" to prompt for rotation.
 ;;;

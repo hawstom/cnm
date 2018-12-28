@@ -51,7 +51,7 @@
 )
 
 ;;; Legacy errdef.
-;;; The new standard HawsEDC error trapper in EDCLIB is called HAWS-ERRDEF.
+;;; The new standard HawsEDC error trapper in EDCLIB is called HAWS-CORE-INIT.
 ;;; Only legacy routines (not maintained with the HawsEDC set) will call these routines.
 ;;; Internal error handler function.  Call (errdef) at the beginning of a routine.
 ;;; Call errrst at the end to restore old *error* handler.
@@ -91,7 +91,7 @@
   (setq ucsp nil ucspp nil enm nil)
   (princ)
 )
-(defun haws-errrst ()
+(defun haws-core-restore ()
   (setq ucsp nil ucspp nil enm nil f1 nil f2 nil *error* olderr olderr nil)
 )
 ;;; END ERROR HANDLER

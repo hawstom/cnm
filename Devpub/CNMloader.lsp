@@ -227,6 +227,8 @@
 (setq c:hcnm-cnm nil)
 (load "edclib")
 (if (not c:hcnm-cnm) (load "cnm"))
+(if (not LM:ISANNOTATIVE) (load "lee-mac"))
+
 ;;;Load aliases
 ;;;CNMALIAS.LSP has short names for all the commands.
 (COND

@@ -41,7 +41,6 @@
     )
     (HAWS-MKLAYR "DRIVEWAY")
   )
-  (haws-errdef 0)
   (HAWS-VSAVE '("clayer"))
   (setq
     osmold (getvar "osmode")
@@ -146,5 +145,5 @@
         (command "._undo" "e")
       )
   ) )
-  (HAWS-VRSTOR)(HAWS-ERRRST)
+  (HAWS-VRSTOR)(haws-core-restore)
 )

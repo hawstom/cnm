@@ -4,8 +4,7 @@
 (defun c:haws-oo ()
 (haws-core-init 92)(c:haws-offsetx))
 (defun c:haws-Offsetx (/ enm0 temp pp clay)
-(haws-core-init 93)
-  (haws-errdef)
+  (haws-core-init 93)
   (princ "\nOffset distance or Through <")
   (princ (if (= (type qdofst) 'REAL) (rtos qdofst) "Through"))
   (princ ">: ")
@@ -27,5 +26,5 @@
     )
     (setq pp (cadr (entsel "\nSelect object to offset: ")))
   )
-  (haws-errrst)(princ)
+  (haws-core-restore)(princ)
 );end OO

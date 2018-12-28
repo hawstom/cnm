@@ -3209,7 +3209,7 @@
 
 (defun
    haws-make-masked-mtext (i j h w s / ename-mtext)
-  ;; Command creates annotative text if style is annotative.
+  ;; (command) creates annotative text if style is annotative.
   (setq h
     (cond
       (h)

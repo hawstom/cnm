@@ -209,7 +209,6 @@
 (hcnm-define-lisp-alias '("haws-loop" "loop" "Tools" ""))
 (hcnm-define-lisp-alias '("haws-none" "none" "Tools" ""))
 (hcnm-define-lisp-alias '("haws-tilde" "tilde" "Tools" ""))
-(hcnm-define-lisp-alias '("haws-ldr" "ldr" "Tools" ""))
 (hcnm-define-lisp-alias '("haws-led" "led" "Tools" ""))
 ;;;---------------Text Section---------------   )
 (hcnm-define-lisp-alias '("haws-add" "add" "Tools" ""))
