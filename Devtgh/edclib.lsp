@@ -3,11 +3,11 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "5.1.09"
+  "5.1.10"
 )
 (DEFUN
    HAWS-COPYRIGHT ()
-  "Copyright 2018 Thomas Gail Haws"
+  "Copyright 2019 Thomas Gail Haws"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 (SETQ *HAWS-DEBUGLEVEL* 0)
@@ -768,7 +768,7 @@
 (DEFUN
    C:HAWS-ORDERLICENSES ()
 (haws-core-init 218)
-  (HAWS-ORDERPACKAGE 128 NIL)
+  (HAWS-ORDERPACKAGE 128)
   (PRINC)
 )
 ;;GETPACKAGE displays a user form to get an order for the package
