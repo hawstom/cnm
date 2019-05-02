@@ -50,7 +50,7 @@
 (hcnm-define-command-alias '("Ddunits" "UU" "Custompgp" ""))
 (hcnm-define-command-alias '("Viewports" "VP" "Custompgp" ""))
 (hcnm-define-command-alias '("-Wblock" "WW" "Custompgp" ""))
-(hcnm-define-command-alias '("Extend" "X" "Custompgp" "Explode is EX."))
+(hcnm-define-command-alias '("Extend" "X" "Custompgp" ""))
 (hcnm-define-command-alias '("LayMCur" "Y" "Custompgp" ""))
 ;;;---------------Special custom comand aliases-------------   
 ;;; These want to be simple aliases, but when defined as simple LISP aliases,

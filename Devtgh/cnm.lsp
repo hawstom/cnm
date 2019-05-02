@@ -3509,7 +3509,7 @@ ImportLayerSettings=No
 ;; It should resolve all errors and user conditions.
 ;; and return a "drive:\\...\\projroot\\pnname" filename to other functions.
 (DEFUN
-   HCNM-PROJNOTES (/ APP APPPN OPT1 PNNAME PROJNOTES)
+   HCNM-PROJNOTES (/ APP APPPN format OPT1 PNNAME PROJNOTES)
   (SETQ PNNAME (c:hcnm-config-getvar "ProjectNotes"))
   (IF (= PNNAME "")
     (c:hcnm-config-setvar
@@ -3555,14 +3555,16 @@ ImportLayerSettings=No
     ((AND
        (SETQ APP (C:HCNM-CONFIG-GETVAR "AppFolder"))
        (SETQ
+         format (HCNM-CONFIG-PROJECT-NOTES-FORMAT)
          APPPN
           (FINDFILE
             (STRCAT
               APP
               "\\"
-              (IF (/=(STRCASE (c:hcnm-config-getvar "ProjectNotesEditor")) "TEXT")
-                "constnot-default.csv"
-                "constnot-default.txt"
+              (COND
+                ((= format "txt2") "constnot-default.txt")
+                ((= format "csv") "constnot-default.csv")
+                (T (alert(princ "\nUnexpected Project Notes format. CNM cannot continue. Contact developer."))(exit))
               )
             )
           )
@@ -3627,7 +3629,7 @@ ImportLayerSettings=No
 ;; Excel CSV
 ;; Doesn't do project management except to write txt2 configs to cnm.ini in the same folder as projnotes.
 (DEFUN
-   HCNM-READCF (PROJNOTES / BAKPROJNOTES PNFORMAT RDLIN)
+   HCNM-READCF (PROJNOTES / BAKPROJNOTES PNFORMAT RDLIN REQUESTED-FORMAT)
   ;;Do a file read to figure out what the file format is.
   ;;For now, assume that a file that has any of the shape keys followed by a comma ("BOX,", etc.) is CSV
   ;;any other file is TXT2
@@ -3655,12 +3657,14 @@ ImportLayerSettings=No
       )
     )
   )
-  (SETQ F1 (CLOSE F1))
+  (SETQ F1 (CLOSE F1)
+    REQUESTED-FORMAT (HCNM-CONFIG-PROJECT-NOTES-FORMAT)
+  )
   (COND
     ((= PNFORMAT "txt2")
      (HCNM-READCFTXT2 PROJNOTES)
      (COND
-       ((/= (STRCASE (c:hcnm-config-getvar "ProjectNotesEditor")) "TEXT")
+       ((= REQUESTED-FORMAT "csv")
         (SETQ BAKPROJNOTES PROJNOTES)
         (HAWS-FILE-COPY
           PROJNOTES
@@ -3698,7 +3702,7 @@ ImportLayerSettings=No
     ((= PNFORMAT "csv")
      (HCNM-READCFCSV PROJNOTES)
      (COND
-       ((= (STRCASE (c:hcnm-config-getvar "ProjectNotesEditor")) "TEXT")
+       ((= REQUESTED-FORMAT "txt2")
         (SETQ BAKPROJNOTES PROJNOTES)
         (HAWS-FILE-COPY
           PROJNOTES
@@ -4113,7 +4117,7 @@ ImportLayerSettings=No
 (DEFUN
    HCNM-WRAP-DESCRIPTION (NOTDSCSTR WRAP / CHARACTER-I I I-ENDLINE I-NEWLINE-PREV
                           I-NEWWORD-PREV INWORD-P NEED-WRAP-P NOTDSCLST
-                          NOTDSCSTR WORD-PROVIDED-P WRAP-EXCEEDED-P
+                          WORD-PROVIDED-P WRAP-EXCEEDED-P
                          )
   (SETQ
     NOTDSCLST NIL
@@ -4385,6 +4389,38 @@ ImportLayerSettings=No
   )
   (SETQ F2 (CLOSE F2))
   *HCNM-CNMPROJECTNOTES*
+)
+
+(DEFUN
+   HCNM-CONFIG-PROJECT-NOTES-FORMAT (/ EDITOR FORMAT VALID-EDITORS)
+  (SETQ
+    VALID-EDITORS
+     (LIST
+       (LIST "text" "txt2")
+       (LIST "csv" "csv")
+       (LIST "cnm" "csv")
+     )
+    EDITOR
+     (C:HCNM-CONFIG-GETVAR "ProjectNotesEditor")
+    FORMAT
+     (CADR (ASSOC EDITOR VALID-EDITORS))
+  )
+  (COND
+    ((NOT FORMAT)
+     (ALERT
+       (PRINC
+         (STRCAT
+           "\nInvalid ProjectNotesEditor. CNM cannot continue.\nUse HCNM-CNMOptions to select your desired editor.\n\nFound ProjectNotesEditor="
+           EDITOR
+           "\n\nExpected one of these: "
+           (apply 'strcat (mapcar '(lambda (x) (strcat "\n" (car x)))valid-editors))
+         )
+       )
+     )
+     (EXIT)
+    )
+  )
+  FORMAT
 )
 
 ;;;================================================================================================================
@@ -5346,7 +5382,6 @@ ImportLayerSettings=No
   )
 )
 
-;; LISTS-DATA is global to this function, but local to the dialog caller
 (DEFUN
    HCNM-CONFIG-DCL-LIST (KEY /)
   (HCNM-SET_TILE_LIST

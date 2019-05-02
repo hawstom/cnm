@@ -95,12 +95,13 @@
        "\nStart point for volume: "
      )
   )
-  (haws-make-masked-mtext
+  (haws-make-mtext
     pt1
     "TL"
     nil
     0
     cv-report
+    nil
   )
   (command "._undo" "e")
   (haws-core-restore)

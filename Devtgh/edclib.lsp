@@ -3,7 +3,7 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "5.1.10"
+  "5.1.11"
 )
 (DEFUN
    HAWS-COPYRIGHT ()
@@ -3208,8 +3208,8 @@
 )
 
 (defun
-   haws-make-masked-mtext (i j h w s / ename-mtext)
-  ;; (command) creates annotative text if style is annotative.
+   haws-make-mtext (i j h w s masked-p / ename-mtext)
+  ;; creates annotative text if style is annotative.
   (setq h
     (cond
       (h)
@@ -3218,11 +3218,15 @@
     )
   )
   (command "._mtext" i "_j" j "_h" h "_w" w s "")
-  (setq ename-mtext (entlast))
-  (entmod
-    (append
-      (entget ename-mtext)
-      '((90 . 3) (63 . 256) (45 . 1.1) (441 . 0))
+  (COND
+    (MASKED-P
+     (SETQ ENAME-MTEXT (ENTLAST))
+     (ENTMOD
+       (APPEND
+         (ENTGET ENAME-MTEXT)
+         '((90 . 3) (63 . 256) (45 . 1.1) (441 . 0))
+       )
+     )
     )
   )
 )
