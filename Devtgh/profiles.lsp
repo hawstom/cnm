@@ -706,7 +706,7 @@
                    "Ref"
                    ((= PROOPT "Type") (GETTYP))
                    ((= PROOPT "Vertical")
-                     (GETHVX)
+                     (HAWS-GETHVX)
                      (IF F2
                        (WRITE-LINE (STRCAT "HVEXAG    " HVEXAG) F2)
                      ) ;_ end of IF
@@ -744,7 +744,7 @@
         ((= OPT "Ref") (GETREF))
         ((= OPT "Type") (GETTYP))
         ((= OPT "Vertical")
-         (GETHVX)
+         (HAWS-GETHVX)
          (IF F2
            (WRITE-LINE (STRCAT "HVEXAG    " HVEXAG) F2)
          ) ;_ end of IF

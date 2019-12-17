@@ -3,7 +3,7 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "5.1.11"
+  "5.1.15"
 )
 (DEFUN
    HAWS-COPYRIGHT ()
@@ -1494,6 +1494,8 @@
      (97 -1 "haws-pjl")
      (98 -1 "haws-polarset")
      (99 -1 "haws-polaroff")
+     (100 -1 "haws-0")
+     (101 -1 "haws-1")
      (102 -1 "haws-aa")
      (103 -1 "haws-adt")
      (104 -1 "haws-cet")
@@ -1574,7 +1576,7 @@
      (179 1 "hcnm-cnm")
      (180 1 "hcnm-cnmkt")
      (181 1 "hcnm-cnmkti")
-     (182 1 "hcnm-cnmqt")
+     ;; 336 is "hcnm-cnmqt" due to a programming bug that made 182 the hcnm-cnm sub-function
      (183 1 "hcnm-linkproj")
      (184 1 "testset")
      (185 1 "testget")
@@ -1700,8 +1702,6 @@
      (311 0 "haws-dm12")
      (312 0 "haws-tap")
      (313 0 "haws-tapinv")
-     (314 -1 "haws-0")
-     (315 -1 "haws-1")
      (316 1 "haws-to")
      (317 1 "haws-tu")
      (318 0 "haws-tw")
@@ -1722,6 +1722,7 @@
      (333 -1 "haws-xu")
      (334 0 "haws-xy")
      (335 2 "hcnm-notesedit")
+     (336 1 "hcnm-cnmqt")
     )
 )
 
@@ -1729,7 +1730,7 @@
   (list "HawsEDC" "UseLog" "UseString")
 )
 
-(DEFUN HAWS-GET-LOCAL-LOG-STRING ()
+(DEFUN HAWS-USE-GET-LOCAL-LOG-STRING ()
   (COND
     ((HAWS-READCFG (HAWS-USE-LOCAL-LOCATION)))
     ("")
@@ -1739,7 +1740,7 @@
 (DEFUN HAWS-USE-LOG-LOCAL (COMMAND-ID / LOG-STRING)
   (HAWS-WRITECFG
     (HAWS-USE-LOCAL-LOCATION)
-    (HAWS-USE-COMMAND-ID-TO-LOG-STRING COMMAND-ID (HAWS-GET-LOCAL-LOG-STRING))
+    (HAWS-USE-COMMAND-ID-TO-LOG-STRING COMMAND-ID (HAWS-USE-GET-LOCAL-LOG-STRING))
   )
 )
 
@@ -1772,7 +1773,7 @@
        "&cnm_version="
        (HAWS-UNIFIED-VERSION)
        "&command_log="
-       (HAWS-GET-LOCAL-LOG-STRING)
+       (HAWS-USE-GET-LOCAL-LOG-STRING)
      )
   )
   (VLAX-INVOKE-METHOD HTTP 'OPEN "post" URL :VLAX-TRUE)
@@ -2895,6 +2896,7 @@
    HAWS-MILEPOST (MESSAGESTRING)
   (IF (> *HAWS-DEBUGLEVEL* 0)
     (PRINC (STRCAT "\nHawsEDC debug message: " MESSAGESTRING))
+    MESSAGESTRING
   )
 )
 
@@ -4059,7 +4061,7 @@
   (HAWS-MILEPOST "Finished HAWS-CHECKSTOREDSTRINGS")
 )
 (HAWS-CHECKSTOREDSTRINGS)
-(IF (/=(HAWS-GET-LOCAL-LOG-STRING)(HAWS-USE-INITIALIZE-LOG-STRING))(HAWS-USE-LOG-REMOTE))
+(IF (/=(HAWS-USE-GET-LOCAL-LOG-STRING)(HAWS-USE-INITIALIZE-LOG-STRING))(HAWS-USE-LOG-REMOTE))
 (PROMPT "loaded.")
  ;|«Visual LISP© Format Options»
 (72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)

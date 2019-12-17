@@ -1488,7 +1488,7 @@
           )
           (COMMAND
             "run"
-            (STRCAT "attrib \"" FLSPEC ".not\" > " LSTFIL)
+            (STRCAT "attrib \"" FLSPEC ".not\" > \"" LSTFIL "\"")
           )
           (SETQ
             F1 (OPEN LSTFIL "r")
@@ -2153,12 +2153,12 @@
 (haws-core-init 180) (HCNM-CNM "Search"))
 (DEFUN C:HCNM-CNMKTI ()
 (haws-core-init 181) (HCNM-CNM "Import"))
-(DEFUN C:HCNM-CNMQT () (HCNM-CNM "Tally"))
+(DEFUN C:HCNM-CNMQT ()
+(haws-core-init 336) (HCNM-CNM "Tally"))
 ;;CNM main function
 (DEFUN
    HCNM-CNM (OPT / CFNAME DN LINSPC PHASEWID TBLWID TXTHT)
   ;;Main function
-  (haws-core-init 182)
   (HAWS-VSAVE
     '("attdia" "attreq" "cmdecho" "clayer" "osmode")
   )
@@ -4436,7 +4436,7 @@ ImportLayerSettings=No
     CNMEDIT-P (wcmatch (strcase NOTESEDITOR) "*CNM*")
   )
   (IF CNMEDIT-P
-    (haws-core-init 188)
+    (haws-core-init 335)
     (haws-core-init 188)
   )
   ;; Since this is a user command, possibly after deletion of project root files,

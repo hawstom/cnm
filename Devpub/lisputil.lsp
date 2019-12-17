@@ -1,22 +1,18 @@
 ;;; 4.2.30 deprecation section
-(MAPCAR
-  '(LAMBDA (FUNCTION-NAME)
-     (EVAL
-       (READ
-         (STRCAT
-           "(defun " FUNCTION-NAME
-           "() (alert(princ \"\nCNM can no longer expose functions that have names without reserved safe prefixes like HAWS- and HCNM-. Something you invoked called the HAWSEDC legacy "
-           FUNCTION-NAME
-           " routine.  Please find the call and replace it with HAWS-"
-           FUNCTION-NAME
-           ".\")))"
-          )
-       )
-     )
-   )
-  (list "errdef"
-    "errrst" "mklayr" "mktext" "vrstor" "vsave" "vset"
-   )
+(defun haws-deprecation-01 (FUNCTION-NAME)
+  (alert
+    (princ
+      (strcat
+	"\nCNM can no longer expose functions that have names without reserved safe prefixes like HAWS- and HCNM-. Something you invoked called the HAWSEDC legacy \""
+	FUNCTION-NAME
+	"\" routine. If your command works at all, it will not likely work right.\n\nPlease find the  \""
+	FUNCTION-NAME
+	"\"call and replace it with \"HAWS-"
+	FUNCTION-NAME.
+	"\"."
+      )
+    )
+  )
 )
 
 ;;; Vintage HawsEDC Lisp library
@@ -57,6 +53,13 @@
 ;;; Call errrst at the end to restore old *error* handler.
 ;;; To restore previous UCS, set a global symbol 'ucsp to non-nil.
 ;;; To restore another previous UCS, set a global symbol 'ucspp to non-nil.
+(defun erdf$@ () (errdef))
+(DEFUN
+	  errdef
+		()
+  (haws-deprecation-01 "errdef")
+)
+
 (DEFUN
    haws-errdef ()
   (PRINC "\nThank you for using this HawsEDC tool.  See HawsEDC.com for support.")
@@ -90,6 +93,14 @@
   (if errosm (setvar "osmode" errosm))
   (setq ucsp nil ucspp nil enm nil)
   (princ)
+)
+(DEFUN
+	  errrst
+		()
+  (haws-deprecation-01 "errrst")
+)
+(defun haws-errrst ()
+  (setq ucsp nil ucspp nil enm nil f1 nil f2 nil *error* olderr olderr nil)
 )
 (defun haws-core-restore ()
   (setq ucsp nil ucspp nil enm nil f1 nil f2 nil *error* olderr olderr nil)
@@ -341,6 +352,11 @@
     )
   )
 )
+(DEFUN
+	  mklayr
+		(laopt)
+  (haws-deprecation-01 "mklayr")
+)
 (defun haws-mklayr (laopt / laname lacolr laltyp ltfile)
   (if
     (= 'STR (type laopt))
@@ -376,6 +392,11 @@
   (if (/= laltyp "")(command "lt" laltyp ""))
   (command "")
   laopt
+)
+(DEFUN
+	  mktext
+		(j i h r s)
+  (haws-deprecation-01 "mktext")
 )
 
 (defun haws-mktext (j i h r s / jx jy)
@@ -530,6 +551,12 @@
   (if isneg (setq before (strcat "-(" before) after (strcat after ")")))
   (strcat before "+" after)
 )
+(DEFUN
+	  vset
+		(vlst)
+  (haws-deprecation-01 "vset")
+)
+
 (defun haws-vset (vlst)
   (foreach v vlst (if (getvar (car v))(setvar (car v)(cadr v))))
 )
@@ -542,12 +569,23 @@
   (princ)
 )
 
+(DEFUN
+	  vsave
+		(vlst)
+  (haws-deprecation-01 "vsave")
+)
 (defun haws-vsave (vlst)
   (setq vstr '())
   (repeat (length vlst)
     (setq vstr (append vstr (list (list (car vlst) (getvar (car vlst)))))
     vlst (cdr vlst))
   )
+)
+
+(DEFUN
+	  vrstor
+		()
+  (haws-deprecation-01 "vrstor")
 )
 
 (defun haws-vrstor ()
