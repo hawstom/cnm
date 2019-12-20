@@ -3,7 +3,7 @@
 (defun c:haws-newscale ( / dxfpt dxfsc sset sslen svalue ent xfactr ins ed)
   (haws-core-init 268)
   (setvar "cmdecho" 0)
-  (command "._undo" "group")
+  (command "._undo" "_group")
   (textpage)
   (prompt
     (strcat   "\n\n\nEvery Autocad entity has key points and each point has a code."
@@ -45,7 +45,7 @@
     (command "._scale" ent "" ins sfactr)
   )
   (prompt "done.")
-  (command "._undo" "end")
+  (command "._undo" "_end")
   (haws-core-restore)
   (princ)
 )

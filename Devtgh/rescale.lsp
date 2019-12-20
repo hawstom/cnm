@@ -3,7 +3,7 @@
 (defun c:haws-rescale ( / dxfpt sset sslen ent xfactr ins ed SFACTR)
   (haws-core-init 304)
   (setvar "cmdecho" 0)
-  (command "._undo" "group")
+  (command "._undo" "_group")
   (setq sset (ssget))
   (textpage)
   (prompt
@@ -29,7 +29,7 @@
     (command "._scale" ent "" ins sfactr)
   )
   (prompt "done.")
-  (command "._undo" "end")
+  (command "._undo" "_end")
   (haws-core-restore)
   (princ)
 )

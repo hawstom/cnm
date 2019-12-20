@@ -7,7 +7,7 @@
   )
   (if (not DLT)(setq DLT "BYLAYER"))
   (if (not DC)(setq DC "BYLAYER"))
-  (command "CHANGE" SS "" "P" "LT" DLT "LA" DL "C" DC "" )
+  (command "._CHANGE" SS "" "_P" "_LT" DLT "_LA" DL "_C" DC "" )
   (prompt "Entities changed to:.....\n ")
   (LIST "Layer:..>>" DL "Color:..>>" DC "Ltype:..>>" DLT)
 )

@@ -10,10 +10,10 @@
       ang1 (angle mainpt stubpt)
       left (minusp (cos (- ang1 0.7854)))
     )
-    (command "line" stubpt mainpt "")
+    (command "._line" stubpt mainpt "")
     (HAWS-MKLAYR "WATSERTX")
     (HAWS-MKTEXT
-      (if left "MR" "ML")
+      (if left "_MR" "_ML")
       (polar stubpt ang1 ts)
       nil
       (if left (+ ang1 pi) ang1)

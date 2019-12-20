@@ -3,7 +3,7 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "5.1.15"
+  "5.2.16"
 )
 (DEFUN
    HAWS-COPYRIGHT ()
@@ -219,11 +219,11 @@
   )
   ;; Restore variables to previous values
   (IF UCSP
-    (COMMAND-S "._UCS" "P")
+    (COMMAND-S "._UCS" "_P")
   )
   ;; Restore previous UCS
   (IF UCSPP
-    (COMMAND-S "._UCS" "P")
+    (COMMAND-S "._UCS" "_P")
   )
   ;; Restore previous UCS
   (IF ENM
@@ -3219,7 +3219,7 @@
       (T (haws-text-height-model))
     )
   )
-  (command "._mtext" i "_j" j "_h" h "_w" w s "")
+  (command "._mtext" i "_j" (strcat "_" j) "_h" h "_w" w s "")
   (COND
     (MASKED-P
      (SETQ ENAME-MTEXT (ENTLAST))

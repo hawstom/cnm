@@ -4,7 +4,7 @@
   (haws-core-init 164)
   (HAWS-VSAVE '("lunits" "aunits" "auprec" "ucsfollow"))
   (HAWS-VSET '(("lunits" 2)("aunits" 4)("auprec" 4)("ucsfollow" 0)))
-  (command "._ucs" "w")
+  (command "._ucs" "_w")
   (setq
     pt1 (getpoint "\nFirst point: ")
     pt2 (getpoint pt1 "\nSecond point: ")
@@ -27,9 +27,9 @@
     (progn(HAWS-MKTEXT "c" pt4 nil rot lbear)(HAWS-MKTEXT "tc" pt5 nil rot ldist))
     (progn
       (HAWS-MKTEXT "c" pt4 nil rot ltop)
-      (command "._dtext" "j" "tc" pt5 txht (angtos rot))
+      (command "._dtext" "_j" "_tc" pt5 txht (angtos rot))
   ) )
-  (command "._ucs" "p")
+  (command "._ucs" "_p")
   (setq ucsp nil)
   (HAWS-VRSTOR)(haws-core-restore)(princ)
 )

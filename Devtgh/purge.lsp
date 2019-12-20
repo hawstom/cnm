@@ -12,7 +12,7 @@
       (t(car (setq a (list a))))
   ))
   (if (>= (atof (getvar"acadver")) 14)
-    (command "*" "n")
+    (command "*" "_n")
     (mapcar
       '(lambda (x / y)
         (while (setq y (tblnext x (not y)))

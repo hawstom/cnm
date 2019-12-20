@@ -96,11 +96,11 @@
           PT8
            (POLAR BCCEN ANG5 (+ RAD SWWID))
         )
-        (COMMAND "._undo" "g")
+        (COMMAND "._undo" "_g")
         (HAWS-DRAWDW
           PT1 PT2 PT3 PT4 PT5 PT6 PT7 PT8 LEFT ANG1 CL1 CL2 CL3 TS
          )
-        (COMMAND "._arc" PT4 "e" PT6 "r" (+ RAD DWWID) "._undo" "e")
+        (COMMAND "._arc" PT4 "_e" PT6 "_r" (+ RAD DWWID) "._undo" "_e")
        )
        (T
         (SETVAR "osmode" 128)
@@ -142,11 +142,11 @@
           DWLEN
            (* DWLEN 2)
         )
-        (COMMAND "._undo" "g")
+        (COMMAND "._undo" "_g")
         (HAWS-DRAWDW
           PT1 PT2 PT3 PT4 PT5 PT6 PT7 PT8 LEFT ANG1 CL1 CL2 CL3 TS
          )
-        (COMMAND "._line" PT4 PT6 "" "._undo" "e")
+        (COMMAND "._line" PT4 PT6 "" "._undo" "_e")
        )
      )
   )

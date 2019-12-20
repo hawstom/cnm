@@ -54,7 +54,7 @@
 	(haws-core-init 239) ;_ end of if
 	(HAWS-resfun)
 	(HAWS-VSAVE '("clayer" "regenmode" "tilemode"))
-	(command "._undo" "group")
+	(command "._undo" "_group")
 	(setvar "cmdecho" 0)
 	(setvar "regenmode" 0)
 	(setq
@@ -64,7 +64,7 @@
 			 ) ;_ end of if
 	) ;_ end of setq
 	(prompt "\nNow getting layer settings from file.  Please wait.  ")
-	(command "layer" "un" "0,defpoints" "t" "0,defpoints" "on" "0,defpoints" "s" "0")
+	(command "._layer" "_un" "0,defpoints" "_t" "0,defpoints" "_on" "0,defpoints" "_s" "0")
 	(while (and (setq laline (read-line f1)) (= "LAYER" (cdr (assoc 0 (setq laline (read laline))))))
 		(HAWS-restla laline)
 	) ;_ end of while
@@ -80,7 +80,7 @@
 		) ;_ end of prompt
 	) ;_ end of if
 	(prompt "\nDone.  Regen now if desired.")
-	(command "._undo" "end")
+	(command "._undo" "_end")
 	(haws-core-restore) ;_ end of if
 	(HAWS-VRSTOR)
 	(princ)
@@ -108,31 +108,31 @@
 			 ) ;_ end of setq
 			 (if (/= "0" name)
 				 (command
-					 "t"
+					 "_t"
 					 name
-					 "c"
+					 "_c"
 					 color
 					 name
 					 (if off
-						 "of"
-						 "on"
+						 "_of"
+						 "_on"
 					 ) ;_ end of if
 					 name
 					 (if frozen
-						 "f"
-						 "t"
+						 "_f"
+						 "_t"
 					 ) ;_ end of if
 					 name
 					 (if locked
-						 "lo"
-						 "un"
+						 "_lo"
+						 "_un"
 					 ) ;_ end of if
 					 name
 				 ) ;_ end of command
 			 ) ;_ end of if
 			 (if (not (wcmatch ltype "*|*"))
 				 (progn
-					 (command "lt" ltype)
+					 (command "_lt" ltype)
 					 (if (tblsearch "LTYPE" ltype)
 						 (command name)
 						 (setq ltfail t)
@@ -152,12 +152,12 @@
 						 (= (getkword "\nRestore viewport layers to drawing?[Yes/No]:") "Y")
 					 ) ;_ end of progn
 			 ) ;_ end of or
-			 (command "tilemode" "0" "pspace" "._vplayer")
+			 (command "._tilemode" "0" "._pspace" "._vplayer")
 			 (while	laline
 				 (cond
 					 ((assoc 10 laline)
 						(if	(and lalist mvpt)
-							(command "f" lalist "s" mvpt "")
+							(command "_f" lalist "_s" mvpt "")
 						) ;_ end of if
 						(setq
 							mvpt nil
@@ -191,7 +191,7 @@
 				 ) ;_ end of if
 			 ) ;_ end of while
 			 (if (and mvpt lalist)
-				 (command "f" lalist "s" mvpt "" "")
+				 (command "_f" lalist "_s" mvpt "" "")
 				 (command "")
 			 ) ;_ end of if
 			)

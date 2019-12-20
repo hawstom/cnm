@@ -55,6 +55,6 @@
       (if remove (setq entry (substr entry (1+ remove))))
       (if add (setq entry (strcat add entry)))
       (if (and(not(tblsearch rntype entry)) (not(=(strlen entry) 0)))
-        (command "rename" rntype entold entry)
+        (command "._rename" (strcat "_" rntype) entold entry)
 ) ) ) )
 

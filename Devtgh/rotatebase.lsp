@@ -6,6 +6,6 @@
     sset (ssget)
     pt1 (getpoint "\nBase point of rotation: ")
   )
-  (command "._rotate" sset "" pt1 "R" pt1)
+  (command "._rotate" sset "" pt1 "_R" pt1)
   (princ)
 )

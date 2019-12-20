@@ -12,7 +12,7 @@
 (DEFUN
    HAWS-AET (FACTOR LABEL / AREA TS TXPT)
   (PROMPT "\nSelect circle or polyline:")
-  (COMMAND "area" "e" PAUSE)
+  (COMMAND "._area" "_e" PAUSE)
   (SETQ
     AREA (STRCAT
            (RTOS (* (GETVAR "AREA") FACTOR) 2 (GETVAR "luprec"))

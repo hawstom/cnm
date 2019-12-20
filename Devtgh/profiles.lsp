@@ -53,25 +53,25 @@
        ) ;_ end of *
   ) ;_ end of setq
   (REDRAW)
-  (COMMAND "line" P1 P2 "")
+  (COMMAND "._line" P1 P2 "")
   (SETQ
     P3 (POLAR P1 (/ PI 2) D1)
     P4 (POLAR P2 (/ PI 2) D1)
   ) ;_ end of SETQ
-  (COMMAND "line" P3 P4 "")
+  (COMMAND "._line" P3 P4 "")
   (SETQ
     P3 (POLAR P1 (/ PI -2) D2)
     P4 (POLAR P2 (/ PI -2) D2)
   ) ;_ end of SETQ
   (COND
     ((/= 0 D2)
-     (COMMAND "line" P3 P4 "")
+     (COMMAND "._line" P3 P4 "")
      (SETQ D1 (+ D1 D2))
      (SETQ
        P3 (POLAR P1 (/ PI 2) D1)
        P4 (POLAR P2 (/ PI 2) D1)
      ) ;_ end of SETQ
-     (COMMAND "line" P3 P4 "")
+     (COMMAND "._line" P3 P4 "")
     )
   ) ;_ end of COND
   (haws-core-restore)
@@ -131,7 +131,7 @@
   ) ;_ end of entmake
   (COMMAND "._ellipse" PT1 PT2 VRAD)
   (SETQ ELLIP1 (ENTLAST))
-  (COMMAND "line" PT1 PT3 "")
+  (COMMAND "._line" PT1 PT3 "")
   (SETQ LINE1 (ENTLAST))
   (COMMAND "._line" PT2 PT4 "")
   (SETQ LINE2 (ENTLAST))
@@ -341,7 +341,7 @@
     TOPPT
      (POLAR TOPPT 1.5708 40)
   ) ;_ end of SETQ
-  (COMMAND "._pline" PT1 "w" 0 "" PT2 PT3 PT4 "close")
+  (COMMAND "._pline" PT1 "_w" 0 "" PT2 PT3 PT4 "_close")
   (SETQ MH (ENTLAST))
   (COND
     (BRKPT
@@ -540,7 +540,7 @@
      (COMMAND "._leader" P1 P2 "" STR "")
     )
     (T
-     (COMMAND "._pline" P1 "w" 0 (/ AS 3) P3 "w" 0 0 P2 P4 "")
+     (COMMAND "._pline" P1 "_w" 0 (/ AS 3) P3 "_w" 0 0 P2 P4 "")
      (HAWS-MKTEXT
        (IF LEFT
          "r"
@@ -605,7 +605,7 @@
   (IF (FINDFILE
         (SETQ TEMPFILE (STRCAT "pro" (SUBSTR (GETVAR "loginname") 1 5) ".tmp"))
       ) ;_ end of findfile
-    (COMMAND "del" TEMPFILE)
+    (COMMAND "_del" TEMPFILE)
   ) ;_ end of IF
   (WHILE (SETQ FNAME (NTH (SETQ I (1+ I)) FLIST))
     (SETQ F1 (OPEN FNAME "r"))
@@ -673,8 +673,8 @@
       F1 (CLOSE F1)
       F2 (CLOSE F2)
     ) ;_ end of SETQ
-    (COMMAND "sh" (STRCAT "copy " TEMPFILE " " FNAME))
-    (COMMAND "sh" (STRCAT "del " TEMPFILE))
+    (COMMAND "_sh" (STRCAT "copy " TEMPFILE " " FNAME))
+    (COMMAND "_sh" (STRCAT "del " TEMPFILE))
     (PRINC)
   ) ;_ end of WHILE
 ) ;_ end of DEFUN
@@ -1906,7 +1906,7 @@
             (>= PROHT 0)
             (WCMATCH (STRCASE LBLTXT) "*GC*,*G`.C`.*,*DE CHANGE*")
           ) ;_ end of and
-          (COMMAND "._pline" LBLPT3 DIAPT2 DIAPT1 DIAPT3 "c")
+          (COMMAND "._pline" LBLPT3 DIAPT2 DIAPT1 DIAPT3 "_c")
          )
          ((AND
             (>= PROHT 0)
@@ -2134,7 +2134,7 @@
       ((= PROHT -20000)
        (COMMAND
          "._dim1"
-         "al"
+         "_al"
          PLTPT1A
          PLTPT1
          PLTPT1
@@ -2379,7 +2379,7 @@
     ;;if it is a profile point
     (IF (AND STA (/= STA "Setup"))
       (PROGN
-        (COMMAND "._undo" "g")
+        (COMMAND "._undo" "_g")
         ;;save the last point
         (SETQ PLTPT1A (COND (PLTPT1)))  ;
                                         ;and top of curb
@@ -2402,7 +2402,7 @@
         ) ;_ end of IF
         ;;Add point label
         (HAWS-PLTSOFTPRO)
-        (COMMAND "._undo" "e")
+        (COMMAND "._undo" "_e")
         ;;If requested, write all
         ;;the point information
         ;;to a file (f2).

@@ -2,6 +2,6 @@
 (DEFUN c:haws-CL (/ E C )
 (haws-core-init 176)
   (SETQ C (GETVAR "CLAYER") E (SSGET))
-  (COMMAND "CHANGE" E "" "P" "LT" "BYLAYER" "LA" C "C" "BYLAYER" "")
+  (COMMAND "._CHANGE" E "" "_P" "_LT" "BYLAYER" "_LA" C "_C" "BYLAYER" "")
   (PRINC)
 );end CL

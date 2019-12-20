@@ -2,21 +2,21 @@
 ;Written by Thomas Gail Haws
 
 (defun c:haws-FFI ()
-(haws-core-init 226) (HAWS-isolat "freeze" nil))
+(haws-core-init 226) (HAWS-isolat "_freeze" nil))
 (defun HAWS-isolat (lopera nested / ss1 i en)
   (haws-core-init 76)
   (HAWS-VSAVE '("EXPERT"))
   (SETVAR "EXPERT" 5)
   (prompt "\nLayers to isolate")
   (setq issset (ssget))
-  (command "layer" lopera "*")
+  (command "._layer" lopera "*")
   (setq
     i 0
     lopera
     (cond
-      ((= lopera "off") "on")
-      ((= lopera "freeze") "thaw")
-      ((= lopera "lock") "unlock")
+      ((= lopera "_off") "_on")
+      ((= lopera "_freeze") "_thaw")
+      ((= lopera "_lock") "_unlock")
   ) )
   (while
     (setq en (ssname issset i))

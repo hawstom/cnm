@@ -27,12 +27,12 @@
                 )
   ;; Draw centerline using PLINE command
   (HAWS-MKLAYR (STRCAT "UT" (HAWS-UT-GETVAR "Key") "SNG"))
-  (COMMAND "pline" PT1 "w" 0 "")
+  (COMMAND "pline" PT1 "_w" 0 "")
   (SETVAR "cmdecho" 1)
   (WHILE (= 1 (LOGAND 1 (GETVAR "cmdactive")))
     (IF PT3
-      (COMMAND PAUSE)
-      (PROGN
+      (COMMAND PAUSE) ; If not the first point, just follow command
+      (PROGN ; If first point, save for offset.
         (INITGET
           "Line Undo Arc CEnter Angle Direction Line Radius Second DRag"
         )
@@ -57,7 +57,7 @@
        E1   (ENTLAST)
        UCSP T
      )
-     (COMMAND "._ucs" "e" E1 "._erase" E1 "")
+     (COMMAND "._ucs" "_e" E1 "._erase" E1 "")
      (SETQ ENTSEL-OD-UP (HAWS-UT-MAKE-OD UTPL 1))
      (SETQ ENTSEL-OD-DOWN (HAWS-UT-MAKE-OD UTPL -1))
      (COMMAND
@@ -79,7 +79,7 @@
   ;; Create labels
   (COND
     ((AND (HAWS-UT-GETVAR "IsExisting") (HAWS-UT-GETVAR "Label"))
-     (COMMAND "area" "e" (CAR ENTSEL-OD-UP))
+     (COMMAND "._area" "_e" (CAR ENTSEL-OD-UP))
      (SETQ UTLEN (GETVAR "perimeter"))
      (SETQ
        E1    (ENTLAST)
@@ -310,7 +310,7 @@
 )
 (DEFUN
    HAWS-UT-RESTORE-UCS ()
-  (COND (UCSP (SETQ UCSP NIL) (COMMAND "ucs" "p")))
+  (COND (UCSP (SETQ UCSP NIL) (COMMAND "._ucs" "_p")))
 )
  ;|«Visual LISP© Format Options»
 (72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)

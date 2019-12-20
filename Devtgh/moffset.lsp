@@ -37,8 +37,8 @@
         (setq offi oflist)
         (while (car offi)
           (setq disti (caar offi) layi (cadar offi))
-          (if (not(tblsearch"LAYER"layi))(command"layer""n"layi""))
-          (command "offset" disti p1 p2 "" "change" "last" "" "p" "la" layi "")
+          (if (not(tblsearch"LAYER"layi))(command"._layer""_n"layi""))
+          (command "._offset" disti p1 p2 "" "._change" "_last" "" "_p" "_la" layi "")
           (setq offi (cdr offi))
         )
         T

@@ -26,7 +26,7 @@
       )
     )
     (command "._text")
-    (if e (command "j" e))
+    (if e (command "_j" e))
     (command f c d g)
     (setq a (+ a 1))
   )

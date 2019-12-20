@@ -19,7 +19,7 @@
 	(entmake (reverse tent))
 	(redraw (entlast) 3)
 	(setq pt1 (getpoint "\nBase point or displacement for new text: "))
-	(command "._move" "l" "" pt1 pause)
+	(command "._move" "_l" "" pt1 pause)
 	(princ)
 ) ;_ end of defun
 

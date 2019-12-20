@@ -11,7 +11,7 @@
     (cond
       ( (= opt "Save")
         (setq vn(getstring "\nNew view name: "))
-        (command "._view" "s" vn)
+        (command "._view" "_s" vn)
       )
       ( (= opt "Circle")
         (if (not crad) (setq crad (getreal "\nCircle radius: ")))

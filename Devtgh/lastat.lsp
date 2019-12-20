@@ -130,7 +130,7 @@
        )
        (REDRAW EN 3)
        (SETQ LALIST (CONS LA LALIST))
-       (COMMAND LOPERA LA)
+       (COMMAND (STRCAT "_" LOPERA) LA)
        (IF VP
 	 (COMMAND "")
        )
@@ -181,7 +181,7 @@
 	(COMMAND "._vplayer")
 	(FOREACH
 	   LA (CDDR (ASSOC LKEY *HAWS-LASTATLIST*))
-	  (COMMAND LOPERA LA "")
+	  (COMMAND (STRCAT "_" LOPERA) LA "")
 	)
 	(PRINC
 	  "\nThe last layer set frozen was viewport specific.\nPlease be sure to have the appropriate viewport current."
@@ -191,7 +191,7 @@
 	(COMMAND "._layer")
 	(FOREACH
 	   LA (CDR (ASSOC LKEY *HAWS-LASTATLIST*))
-	  (COMMAND LOPERA LA)
+	  (COMMAND (STRCAT "_" LOPERA) LA)
 	)
        )
      )

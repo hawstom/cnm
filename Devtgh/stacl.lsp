@@ -8,8 +8,8 @@
 
   (haws-core-init 309)
   (if HAWS-VSAVE (HAWS-VSAVE '("clayer" "osmode" "expert")))
-  (command "._undo" "group")
-  (command "._layer" "n" "sta" "t" "sta" "s" "sta" "c" 1 "" "")
+  (command "._undo" "_group")
+  (command "._layer" "_n" "sta" "_t" "sta" "_s" "sta" "_c" 1 "" "")
   (setvar "osmode" 0)
   (gc)
 
@@ -39,10 +39,10 @@
   (command "._circle" (cadr cl) txht)
   (setq circ1 (entlast))
   (if style0
-    (command "._line" blpt1 blpt2 "" "text" "j" "bc" inspt txht "0" "10")
+    (command "._line" blpt1 blpt2 "" "._text" "_j" "_bc" inspt txht "0" "10")
     (command
-      "line" blpt1 blpt2 ""
-      "text" "j" "bc" inspt "0" "10"
+      "._line" blpt1 blpt2 ""
+      "._text" "_j" "_bc" inspt "0" "10"
     )
   )
   (setq sset (ssadd) enext circ1)
@@ -55,7 +55,7 @@
 
 ;Get length of centerline and make a working copy of centerline
 
-  (command "._area" "e" cl)(setq totlen (getvar "perimeter"))
+  (command "._area" "_e" cl)(setq totlen (getvar "perimeter"))
   (command "._copy" cl "" "0,0" "0,0")
   (setq workcl (entlast) wclend workcl)
   (cond
@@ -67,7 +67,7 @@
   )
 
 ;Place first station marker
-  (command "._measure" cl "b" "stacl" "y" meas1)
+  (command "._measure" cl "_b" "stacl" "_y" meas1)
   (setq enext (entnext wclend))
   (setq brkpt (trans(cdr(assoc 10 (entget enext)))enext 1))
   (while (setq enext (entnext enext))
@@ -88,7 +88,7 @@
 ;Place remaining station markers, explode, and edit to proper station labels
 
   (setq enext wclend count 0)
-  (command "._measure" (list cl2 brkpt) "b" "stacl" "y" "100")
+  (command "._measure" (list cl2 brkpt) "_b" "stacl" "_y" "100")
   (while (setq enext (entnext enext))
     (if (= (cdr (assoc 0 (entget enext))) "INSERT")(command "._explode" enext))
   )
@@ -102,7 +102,7 @@
         (command (rtos (/ sta 100.0) 2 0))
         (setq count (1+ count))
   ) ) )
-  (command "._erase" cl1 cl2  circ1 "" "undo" "end" "redraw")
+  (command "._erase" cl1 cl2  circ1 "" "._undo" "_end" "._redraw")
   (haws-core-restore)(HAWS-VRSTOR)
   (princ)
 )

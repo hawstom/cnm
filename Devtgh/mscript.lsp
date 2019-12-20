@@ -364,7 +364,7 @@
          )
          "Yes"
       )
-    (COMMAND "script" MSNAMESHORT)
+    (COMMAND "._script" MSNAMESHORT)
     (PROMPT
       (STRCAT
         "Done.  Run script file '"

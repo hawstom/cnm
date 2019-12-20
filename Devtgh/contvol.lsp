@@ -6,7 +6,7 @@
                    pt1
                   )
   (haws-core-init 211)
-  (command "._undo" "g")
+  (command "._undo" "_g")
   (setq
     cv-vol-0 0
     cv-vol-1 0
@@ -65,7 +65,7 @@
       ;;Else
       (t
        ;;1.  Get the area of the contour
-       (command "._area" "e" (car cv-cont))
+       (command "._area" "_e" (car cv-cont))
        ;;2.  Close out the elevation or flag it to be closed next time.
        (cond
          ((= cv-add-factor 0)
@@ -103,7 +103,7 @@
     cv-report
     nil
   )
-  (command "._undo" "e")
+  (command "._undo" "_e")
   (haws-core-restore)
   (princ)
 )

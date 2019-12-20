@@ -837,7 +837,7 @@
       (COMMAND)
     )
   )
-  (COMMAND "._undo" "group")
+  (COMMAND "._undo" "_group")
   (IF QTYSET
     (COMMAND "._erase" QTYSET "")
   )
@@ -1204,7 +1204,7 @@
       ("NOTESKEYQTYS" "ShowKeyTableQuantities")
      )
   )
-  (COMMAND "._undo" "end")
+  (COMMAND "._undo" "_end")
 )
 ;;HCNM-TABLE-FROM-SEARCH
 ;;In the NOTES strategy, this routine is first of three main routines.
@@ -4856,7 +4856,7 @@ ImportLayerSettings=No
     OL (GETVAR "clayer")
     PL (CAR (HAWS-GETLAYR "NOTESEXP"))
   )
-  (COMMAND "erase" (SSGET "X" (LIST (CONS 8 PL))) "")
+  (COMMAND "._erase" (SSGET "X" (LIST (CONS 8 PL))) "")
   (SETVAR "clayer" OL)
   (COMMAND "._purge" "_b" "noteqty*,cnm*" "_n")
   (IF (SETQ PLSS (SSGET "X" (LIST (CONS 8 PL))))

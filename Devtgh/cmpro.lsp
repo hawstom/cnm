@@ -3,7 +3,7 @@
 (defun c:haws-cmpro ( / group mg me sset sslen ent ed eg)
   (haws-core-init 177)
   (setvar "cmdecho" 0)
-  (command "._undo" "group")
+  (command "._undo" "_group")
   (textpage)
   (prompt
     (strcat   "\n\n\nThe properties of every Autocad entity are found in group codes."
@@ -27,7 +27,7 @@
     )
     (entmod (subst mg eg ed))
   )
-  (command "._undo" "end")
+  (command "._undo" "_end")
   (haws-core-restore)
   (princ)
 )

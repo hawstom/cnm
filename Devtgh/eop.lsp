@@ -17,7 +17,7 @@
 		s2 (polar c2 a2 w1)
 		s3 (polar c2 a3 w1)
 	) ;_ end of SETQ
-	(command "arc" p1 s1 p3 "arc" p3 s2 p2 "arc" p3 s3 p2)
+	(command "._arc" p1 s1 p3 "._arc" p3 s2 p2 "._arc" p3 s3 p2)
 	(cond
 		((/= wt 0)
 		 (setq
@@ -28,7 +28,7 @@
 			 s2	(polar c2 a2 (- w1 (/ wt 2)))
 			 s3	(polar c2 a3 (- w1 (/ wt 2)))
 		 ) ;_ end of SETQ
-		 (command "arc" p2 s2 p3 "arc" p2 s3 p3)
+		 (command "._arc" p2 s2 p3 "._arc" p2 s3 p3)
 		)
 	) ;_ end of COND
 ) ;_ end of DEFUN

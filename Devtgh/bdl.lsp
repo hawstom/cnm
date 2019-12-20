@@ -18,7 +18,7 @@
       ("ucsfollow" 0)
      )
   )
-  (command "._ucs" "w")
+  (command "._ucs" "_w")
   (setq
     lline
      (nentsel "\nSelect line to label: ")
@@ -66,7 +66,7 @@
      (HAWS-MKTEXT "tc" pt4 nil rot ldist)
     )
     ((= (strcase ltop) "L")
-     (command "._ucs" "p")
+     (command "._ucs" "_p")
      (setq
          ucsp nil
          ptxt (getpoint (trans pt1 0 1) "\nPick text location: ")
@@ -78,7 +78,7 @@
 	(command "._leader" (trans pt1 0 1) ptxt "" lbear ldist "")
        )
        (T
-	(command "dim" "leader" (trans pt1 0 1) ptxt "" lbear "exit")
+	(command "._dim" "_leader" (trans pt1 0 1) ptxt "" lbear "_exit")
 	(setq
 	  ptxt
 	   (polar
@@ -110,7 +110,7 @@
     )
     (T
      (HAWS-MKTEXT "c" pt3 nil rot ltop)
-     (command "._dtext" "j" "tc" pt4 txht (angtos rot))
+     (command "._dtext" "_j" "_tc" pt4 txht (angtos rot))
     )
   )
   (IF UCSP (command "._ucs" "p"))

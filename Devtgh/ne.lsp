@@ -12,10 +12,10 @@
   )
   (cond
     ( (>= (atof(getvar "acadver"))14)
-      (command "._leader" pnt1 ptxt "" "" "None")
+      (command "._leader" pnt1 ptxt "" "" "_None")
     )
     ( T
-      (command "dim" "leader" pnt1 ptxt)(command)
+      (command "._dim" "_leader" pnt1 ptxt)(command)
     )
   )
   (setq ptxt (polar ptxt (if left pi 0) (* txht 0.5)))
