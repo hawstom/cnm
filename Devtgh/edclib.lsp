@@ -3,7 +3,7 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "5.2.16"
+  "5.2.17"
 )
 (DEFUN
    HAWS-COPYRIGHT ()
@@ -3256,6 +3256,135 @@
 )
 
 ;;
+;; HAWS-PATH-CHOP-TRUNK
+;; Chops the common initial elements "trunk" off lists provided,
+;; leaving only the unique branches.
+;; Useful for relating paths.
+;;
+(VL-ACAD-DEFUN 'HAWS-PATH-CHOP-TRUNK)
+(DEFUN
+   HAWS-PATH-CHOP-TRUNK (TREES CASE-SENSITIVE-P / LENGTH-COMMON)
+  (SETQ
+    TREE-COMMON
+     (CAR TREES)
+    LENGTH-COMMON
+     (LENGTH TREE-COMMON)
+  )
+  ;; Find common trunk length
+  (MAPCAR
+    '(LAMBDA (TREE / I)
+       (SETQ I -1)
+       (WHILE (AND
+                (NTH (SETQ I (1+ I)) TREE)
+                (IF CASE-SENSITIVE-P (= (NTH I TREE) (NTH I TREE-COMMON)) (= (STRCASE (NTH I TREE)) (STRCASE (NTH I TREE-COMMON))))
+              )
+       )
+       (IF (< I LENGTH-COMMON)
+         (SETQ LENGTH-COMMON I)
+       )
+     )
+    TREES
+  )
+  ;; Chop off common trunk from each tree.
+  (MAPCAR
+    '(LAMBDA (TREE / I)
+       (SETQ I -1)
+       (WHILE (< (SETQ I (1+ I)) LENGTH-COMMON)
+         (SETQ TREE (CDR TREE))
+       )
+       TREE
+     )
+    TREES
+  )
+)
+
+;;
+;;HAWS-PATH-RELATE
+;;
+;; Converts an absolute path to a relative path if possible
+;; given path and comparison path, both including filename.
+;;
+(VL-ACAD-DEFUN 'HAWS-PATH-RELATE)
+(DEFUN
+   HAWS-PATH-RELATE (PATH-ABSOLUTE PATH-COMPARE CASE-SENSITIVE-P / BRANCH-ABSOLUTE BRANCH-COMPARE BRANCHES LIST-ABSOLUTE LIST-COMPARE RELATIVE-PATH)
+  (SETQ
+    ;; Parse to lists.
+    LIST-ABSOLUTE
+     (HAWS-STRTOLST PATH-ABSOLUTE "\\" "\"" T)
+    LIST-COMPARE
+     (HAWS-STRTOLST PATH-COMPARE "\\" "\"" T)
+    BRANCHES
+     (HAWS-PATH-CHOP-TRUNK
+       (LIST
+         ;; remove filenames.
+         (REVERSE (CDR (REVERSE LIST-ABSOLUTE)))
+         (REVERSE (CDR (REVERSE LIST-COMPARE)))
+       )
+       CASE-SENSITIVE-P
+     )
+    BRANCH-ABSOLUTE
+     (CAR BRANCHES)
+    BRANCH-COMPARE
+     (CADR BRANCHES)
+  )
+  (SETQ
+    RELATIVE-PATH
+     (STRCAT
+       (COND
+         ((= (LENGTH BRANCH-COMPARE) 0) ".\\")
+         ((/= (SUBSTR (CAR BRANCH-COMPARE) 2 1) ":")
+          (APPLY
+            'STRCAT
+            (MAPCAR '(LAMBDA (X) "..\\") BRANCH-COMPARE)
+          )
+         )
+         (T "")
+       )
+       (HAWS-LSTTOSTR (REVERSE (CONS (CAR (REVERSE LIST-ABSOLUTE)) (REVERSE BRANCH-ABSOLUTE))) "\\")
+     )
+  )
+)
+
+;;
+;;HAWS-PATH-UNRELATE
+;;
+;; Converts a relative path to an absolute path
+;; given path and comparison path, both including filename.
+;;
+(VL-ACAD-DEFUN 'HAWS-PATH-UNRELATE)
+(DEFUN
+   HAWS-PATH-UNRELATE
+   (PATH-RELATIVE PATH-COMPARE / LIST-COMPARE LIST-RELATIVE)
+  (SETQ
+    ;; Parse to lists.
+    LIST-RELATIVE
+     (HAWS-STRTOLST PATH-RELATIVE "\\" "\"" T)
+    ;; Reverse and remove filename
+    LIST-COMPARE
+     (CDR
+       (REVERSE (HAWS-STRTOLST PATH-COMPARE "\\" "\"" T))
+     )
+  )
+  (COND
+    ;; If really relative, process.
+    ((= (SUBSTR (CAR LIST-RELATIVE) 1 1) ".")
+      (FOREACH
+         NODE LIST-RELATIVE
+        (COND
+          ((= (SUBSTR NODE 1 1) ".")
+           (SETQ LIST-RELATIVE (CDR LIST-RELATIVE))
+          )
+        )
+        (COND ((= NODE "..\\") (SETQ LIST-COMPARE (CDR LIST-COMPARE))))
+      )
+      (HAWS-LSTTOSTR (APPEND (REVERSE LIST-COMPARE) LIST-RELATIVE) "\\")
+    )
+    ;; If not really relative, return provided path.
+    (T PATH-RELATIVE)
+  )
+)
+
+;;
 ;;HAWS-PRIN1-TO-STRING
 ;;
 ;; For Intellicad, a cheap (and dirty, leaves a file on disk)
@@ -3393,6 +3522,23 @@
     )
     (T (* D 2))
   ) ;_ end of cond
+)
+
+;;HAWS-LSTTOSTR
+(DEFUN
+   HAWS-LSTTOSTR (LST SEPARATOR)
+  (APPLY
+    'STRCAT
+    (REVERSE
+      (CONS
+        (CAR (REVERSE LST))
+        (MAPCAR
+          '(LAMBDA (NODE) (STRCAT NODE SEPARATOR))
+          (CDR (REVERSE LST))
+        )
+      )
+    )
+  )
 )
 
 ;;;HAWS-STRTOLST

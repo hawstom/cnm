@@ -4999,7 +4999,7 @@ ImportLayerSettings=No
   (SETQ
     ATTRIBUTE-LIST
      (LIST
-       (LIST "NOTENUM" NUM)
+       (LIST "NOTENUM" (COND ((= NUM "") "XX") (NUM)))
        (LIST
          "NOTEGAP"
          (IF (OR (/= TXT1 "") (/= TXT2 ""))
