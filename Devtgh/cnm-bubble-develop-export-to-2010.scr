@@ -30,36 +30,48 @@ filedia
 0
 cmddia
 0
+zoom
+e
 saveas
 2010
 (strcat (getvar "dwgprefix") "cnm-bubble-0-left")
+y
 open
 cnm-bubble-0-right
 filedia
 0
 cmddia
 0
+zoom
+e
 saveas
 2010
 (strcat (getvar "dwgprefix") "cnm-bubble-0-right")
+y
 open
 cnm-bubble-1-left
 filedia
 0
 cmddia
 0
+zoom
+e
 saveas
 2010
 (strcat (getvar "dwgprefix") "cnm-bubble-1-left")
+y
 open
 cnm-bubble-1-right
 filedia
 0
 cmddia
 0
+zoom
+e
 saveas
 2010
 (strcat (getvar "dwgprefix") "cnm-bubble-1-right")
+y
 expert
 0
 sdi
