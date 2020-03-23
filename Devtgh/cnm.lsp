@@ -5095,6 +5095,7 @@ ImportLayerSettings=No
      )
   )
   (COMMAND "._undo" "_g")
+  ;; Block isn't annotative. Can't associate with annotative leader.
   (SETQ
     ASSOCIATE-P
      (COND
@@ -5111,47 +5112,6 @@ ImportLayerSettings=No
     DS (HAWS-DWGSCALE)
     TS (* DS (GETVAR "dimtxt"))
     AS (* DS (GETVAR "dimasz"))
-  )
-  ;;Redefine bubble note blocks if necessary to work with current routine
-  (COND
-    ((WCMATCH (STRCASE BLLEFT) "NOTE*")
-     (FOREACH
-        BL (LIST BLLEFT BLRGHT)
-       (IF (NOT (TBLSEARCH "BLOCK" BL))
-         (PROGN (COMMAND "._insert" BL) (COMMAND))
-       )
-       (SETQ
-         EN (CDR (ASSOC -2 (TBLSEARCH "BLOCK" BL)))
-         FIXPHASE T
-         FIXORDER T
-       )
-       (WHILE EN
-         (SETQ EL (ENTGET EN))
-         (IF (AND
-               (= "ATTDEF" (CDR (ASSOC 0 EL)))
-               (= "NOTETXT6" (CDR (ASSOC 2 EL)))
-             )
-           (SETQ FIXORDER NIL)
-         )
-         (IF (AND
-               (= "ATTDEF" (CDR (ASSOC 0 EL)))
-               (= "NOTEPHASE" (CDR (ASSOC 2 EL)))
-             )
-           (SETQ FIXPHASE NIL)
-         )
-         (IF (AND
-               (= "INSERT" (CDR (ASSOC 0 EL)))
-               (= "NOTEHK" (SUBSTR (CDR (ASSOC 2 EL)) 1 6))
-             )
-           (SETQ FIXHOOK T)
-         )
-         (SETQ EN (ENTNEXT EN))
-       )
-       (IF (OR FIXHOOK FIXPHASE FIXTXT3 FIXORDER)
-         (PROGN (COMMAND "._insert" (STRCAT BL "=")) (COMMAND))
-       )
-     )
-    )
   )
   (COMMAND
     "._insert"
@@ -5192,21 +5152,6 @@ ImportLayerSettings=No
            )
     ENDRAG (ENTLAST)
   )
-  (COND
-    ((WCMATCH (STRCASE BLLEFT) "NOTE*")
-     (COMMAND
-       "._insert"
-       (IF LEFT
-         "notehkl"
-         "notehkr"
-       )
-       P2
-       TS
-       TS
-       0
-     )
-    )
-  )
   (SETVAR "attdia" 0)
   (SETVAR "attreq" 1)
   (COND
@@ -5214,7 +5159,7 @@ ImportLayerSettings=No
      (COMMAND "._leader" P1 P2 "" "")
      (COND
        (ASSOCIATE-P (COMMAND "_block"))
-       (T (COMMAND "._INSERT"))
+       (T (COMMAND "_none" "._INSERT"))
      )
     )
   )
@@ -5231,34 +5176,6 @@ ImportLayerSettings=No
     (GETVAR "snapang")
   )
   (SETVAR "aunits" AUOLD)
-  (COND
-    ((WCMATCH (STRCASE BLLEFT) "NOTE*")
-     (SETQ
-       NUM  (GETSTRING "\nNote number <XX>: ")
-       TXT1 (GETSTRING 1 "Line 1 text: ")
-       TXT2 (GETSTRING 1 "Line 2 text: ")
-     )
-     (COMMAND
-       NUM
-       (IF (OR (/= TXT1 "") (/= TXT2 ""))
-         "%%u "
-         ""
-       )
-       (IF (= TXT1 "")
-         ""
-         (STRCAT "%%u" TXT1)
-       )
-       (IF (= TXT2 "")
-         ""
-         (STRCAT "%%o" TXT2)
-       )
-     )
-    )
-  )
-  (SETVAR "cmdecho" 1)
-  (WHILE (= 1 (LOGAND (GETVAR "cmdactive") 1))
-    (COMMAND PAUSE)
-  )
   (SETVAR "cmdecho" 0)
   (COMMAND "._erase" ENDRAG "")
   (IF (NOT (ENTNEXT (ENTLAST)))
@@ -5278,26 +5195,6 @@ ImportLayerSettings=No
   (HAWS-VRSTOR)
   (COMMAND "._undo" "_e")
   (haws-core-restore)
-  (IF (OR FIXHOOK FIXPHASE FIXTXT3 FIXORDER)
-    (PROMPT
-      (STRCAT
-        "\nBecause "
-        (COND
-          (FIXHOOK
-           "leader hook was inside (it should be out for user manipulation)"
-          )
-          (FIXPHASE "it didn't have a phase attribute")
-          (FIXTXT3
-           "the NOTETXT3 attribute was preset (flags should be normal)"
-          )
-          (FIXORDER
-           "the attributes were assumed to be in the wrong order (old style)"
-          )
-        )
-        ",\nbubble note block was redefined."
-      )
-    )
-  )
   (PRINC)
 )
 ;;end of LDRBLK

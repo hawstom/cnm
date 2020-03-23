@@ -3,7 +3,7 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "5.2.17"
+  "5.2.18"
 )
 (DEFUN
    HAWS-COPYRIGHT ()
