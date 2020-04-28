@@ -3,7 +3,7 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "5.2.18"
+  "5.2.19"
 )
 (DEFUN
    HAWS-COPYRIGHT ()
@@ -2802,6 +2802,7 @@
 ;;;(HAWS-LSTTOSTR '("1" "2" "3") "," "\"")
 ;;;(HAWS-LSTTOSTR '("1" "2\""" "3") "," "\"")
 (VL-ACAD-DEFUN 'HAWS-LSTTOSTR)
+
 (DEFUN
    HAWS-LSTTOSTR (INPUTLIST FIELDSEPARATOR TEXTDELIMITER / CURRENTFIELD
                   OUTPUTSTRING
@@ -3340,7 +3341,7 @@
          )
          (T "")
        )
-       (HAWS-LSTTOSTR (REVERSE (CONS (CAR (REVERSE LIST-ABSOLUTE)) (REVERSE BRANCH-ABSOLUTE))) "\\")
+       (HAWS-LSTTOSTR (REVERSE (CONS (CAR (REVERSE LIST-ABSOLUTE)) (REVERSE BRANCH-ABSOLUTE))) "\\" "\"")
      )
   )
 )
@@ -3377,7 +3378,7 @@
         )
         (COND ((= NODE "..\\") (SETQ LIST-COMPARE (CDR LIST-COMPARE))))
       )
-      (HAWS-LSTTOSTR (APPEND (REVERSE LIST-COMPARE) LIST-RELATIVE) "\\")
+      (HAWS-LSTTOSTR (APPEND (REVERSE LIST-COMPARE) LIST-RELATIVE) "\\" "\"")
     )
     ;; If not really relative, return provided path.
     (T PATH-RELATIVE)
@@ -3522,23 +3523,6 @@
     )
     (T (* D 2))
   ) ;_ end of cond
-)
-
-;;HAWS-LSTTOSTR
-(DEFUN
-   HAWS-LSTTOSTR (LST SEPARATOR)
-  (APPLY
-    'STRCAT
-    (REVERSE
-      (CONS
-        (CAR (REVERSE LST))
-        (MAPCAR
-          '(LAMBDA (NODE) (STRCAT NODE SEPARATOR))
-          (CDR (REVERSE LST))
-        )
-      )
-    )
-  )
 )
 
 ;;;HAWS-STRTOLST
