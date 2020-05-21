@@ -2445,9 +2445,9 @@
        (PRINC
          (STRCAT
            "Error:\nThe CNM.ini for this folder says \n\"ThisFile=\"" 
-	 THISFILE-VALUE
-	 "\n\nYou must delete the CNM.ini from this folder or delete/edit that value before proceeding."
-	 "\n(If you edit CNM.ini, double-check that the ProjectNotes= line has the correct path.\nIt appears it may have been copied from another project.)"
+   THISFILE-VALUE
+   "\n\nYou must delete the CNM.ini from this folder or delete/edit that value before proceeding."
+   "\n(If you edit CNM.ini, double-check that the ProjectNotes= line has the correct path.\nIt appears it may have been copied from another project.)"
           )
        )
      )
@@ -3274,9 +3274,10 @@ ImportLayerSettings=No
    HCNM-CONFIG-TEMP-GETVAR (VAR)
   (COND
     ((CADR (ASSOC VAR *HCNM-CONFIG-TEMP*)))
-    (T (c:hcnm-config-getvar VAR))
+    (T (C:HCNM-CONFIG-GETVAR VAR))
   )
 )
+
 
 ;;;Saves the global list of temporary configs in the real global lisp list and in CNM.INI
 (DEFUN
@@ -3288,6 +3289,12 @@ ImportLayerSettings=No
       (HCNM-CONFIG-ENTRY-VAL ENTRY)
     )
   )
+)
+
+;;;Saves the global list of temporary configs in the real global lisp list and in CNM.INI
+(DEFUN
+   HCNM-CONFIG-TEMP-CLEAR ()
+  (SETQ *HCNM-CONFIG-TEMP* NIL)
 )
 
 ;;;Sets a variable in the global lisp list and in CNM.INI
@@ -5208,27 +5215,77 @@ ImportLayerSettings=No
 ;;)
 
 (DEFUN
-   C:HCNM-CNMOPTIONS (/ CNMDCL RETN)
-(haws-core-init 210)
+   C:HCNM-CNMOPTIONS (/ CNMDCL DONE_CODE RETN)
+  (haws-core-init 210)
   ;; Load Dialog
   (SETQ CNMDCL (LOAD_DIALOG "cnm.dcl"))
-  (NEW_DIALOG "CNMOptions" CNMDCL)
-  ;; Dialog Actions
-  (SET_TILE
-    "Title"
-    "CNM Options"
+  (setq DONE_CODE 2)
+  (while (> DONE_CODE -1)
+    (setq DONE_CODE
+      (cond
+        ((= DONE_CODE 0)(HCNM-DCL-OPTIONS-CANCEL))
+        ((= DONE_CODE 1)(HCNM-DCL-OPTIONS-SAVE))
+        ((= DONE_CODE 2)(HCNM-DCL-OPTIONS-SHOW))
+        ((= DONE_CODE 11)(HCNM-DCL-FILE-SHOW))
+        ((= DONE_CODE 12)(HCNM-DCL-SHAPE-SHOW))
+        ((= DONE_CODE 13)(HCNM-DCL-BUBBLE-SHOW))
+        ((= DONE_CODE 14)(HCNM-DCL-TABLE-SHOW))
+      )
+    )
   )
+ (PRINC)
+)
+
+(defun HCNM-DCL-OPTIONS-CANCEL()
+ (HCNM-CONFIG-TEMP-CLEAR)
+ -1
+)
+
+(defun HCNM-DCL-OPTIONS-SAVE()
+ (HCNM-CONFIG-TEMP-SAVE)
+ 0
+)
+
+(DEFUN
+   HCNM-DCL-OPTIONS-SHOW ()
+  (NEW_DIALOG "HCNMOptions" CNMDCL)
+  (SET_TILE "Title" "CNM Options")
+  (ACTION_TILE "File" "(DONE_DIALOG 11)")
+  (ACTION_TILE "Shape" "(DONE_DIALOG 12)")
+  (ACTION_TILE "Bubble" "(DONE_DIALOG 13)")
+  (ACTION_TILE "Table" "(DONE_DIALOG 14)")
+  (ACTION_TILE "accept" "(DONE_DIALOG 1)")
+  (ACTION_TILE "cancel" "(DONE_DIALOG 0)")
+  (START_DIALOG)
+)
+
+(DEFUN
+   HCNM-DCL-FILE-SHOW ()
+  (NEW_DIALOG "HCNMFile" CNMDCL)
+  ;; Dialog Actions
+  (SET_TILE "Title" "CNM Files and Editors Options")
   (SET_TILE
     "ProjectFolder"
-    (STRCAT "Project folder " (HCNM-SHORTEN-PATH (HCNM-PROJ) 100))
+    (STRCAT
+      "Project folder "
+      (HCNM-SHORTEN-PATH (HCNM-PROJ) 100)
+    )
   )
   (HCNM-CONFIG-SET-ACTION-TILE "ProjectNotes")
   (ACTION_TILE
     "ProjectNotesBrowse"
-    "(hcnm-CONFIG-TEMP-SETVAR \"ProjectNotes\"(HCNM-getprojnotes))(set_tile \"ProjectNotes\" (hcnm-config-TEMP-GETVAR \"ProjectNotes\"))"
+    "(HCNM-CONFIG-TEMP-SETVAR \"ProjectNotes\"(HCNM-GETPROJNOTES))(SET_TILE \"ProjectNotes\" (HCNM-CONFIG-TEMP-GETVAR \"ProjectNotes\"))"
   )
   (HCNM-CONFIG-DCL-LIST "LayersEditor")
   (HCNM-CONFIG-DCL-LIST "ProjectNotesEditor")
+  (ACTION_TILE "close" "(DONE_DIALOG 2)")
+  (START_DIALOG)
+)
+
+(defun HCNM-DCL-SHAPE-SHOW()
+  (NEW_DIALOG "HCNMShape" CNMDCL)
+  ;; Dialog Actions
+  (SET_TILE "Title" "CNM Shapes and Phases Options")
   (HCNM-CONFIG-SET-ACTION-TILE "NoteTypes")
   (HCNM-CONFIG-DCL-LIST "InsertTablePhases")
   (HCNM-CONFIG-SET-ACTION-TILE "PhaseAlias1")
@@ -5240,8 +5297,24 @@ ImportLayerSettings=No
   (HCNM-CONFIG-SET-ACTION-TILE "PhaseAlias7")
   (HCNM-CONFIG-SET-ACTION-TILE "PhaseAlias8")
   (HCNM-CONFIG-SET-ACTION-TILE "PhaseAlias9")
+  (ACTION_TILE "close" "(DONE_DIALOG 2)")
+  (START_DIALOG)
+)
+
+(defun HCNM-DCL-BUBBLE-SHOW()
+  (NEW_DIALOG "HCNMBubble" CNMDCL)
+  ;; Dialog Actions
+  (SET_TILE "Title" "CNM Bubble Notes and Search Options")
   (HCNM-CONFIG-SET-ACTION-TILE "BubbleHooks")
   (HCNM-CONFIG-SET-ACTION-TILE "DoCurrentTabOnly")
+  (ACTION_TILE "close" "(DONE_DIALOG 2)")
+  (START_DIALOG)
+)
+
+(defun HCNM-DCL-TABLE-SHOW()
+  (NEW_DIALOG "HCNMTable" CNMDCL)
+  ;; Dialog Actions
+  (SET_TILE "Title" "CNM Tables Options")
   (HCNM-CONFIG-SET-ACTION-TILE "DescriptionWrap")
   (HCNM-CONFIG-SET-ACTION-TILE "LineSpacing")
   (HCNM-CONFIG-SET-ACTION-TILE "NoteSpacing")
@@ -5254,12 +5327,8 @@ ImportLayerSettings=No
   (HCNM-CONFIG-SET-ACTION-TILE "DescriptionToQuantityWidth")
   (HCNM-CONFIG-SET-ACTION-TILE "QuantityToQuantityWidth")
   (HCNM-CONFIG-SET-ACTION-TILE "QuantityToUnitsWidth")
-  (ACTION_TILE "accept" "(done_dialog 1)")
-  (ACTION_TILE "cancel" "(done_dialog 0)")
-  (SETQ RETN (START_DIALOG))
-  (UNLOAD_DIALOG CNMDCL)
-  (COND ((= RETN 1) (HCNM-CONFIG-TEMP-SAVE)))
-  (PRINC)
+  (ACTION_TILE "close" "(DONE_DIALOG 2)")
+  (START_DIALOG)
 )
 
 (DEFUN HCNM-OPTIONS-LIST-DATA ()
@@ -5272,12 +5341,13 @@ ImportLayerSettings=No
 
 (DEFUN
    HCNM-CONFIG-SET-ACTION-TILE (VAR)
-  (SET_TILE VAR (c:hcnm-config-getvar VAR))
+  (SET_TILE VAR (HCNM-CONFIG-TEMP-GETVAR VAR))
   (ACTION_TILE
     VAR
-    (STRCAT "(hcnm-CONFIG-TEMP-SETVAR \"" VAR "\" $value)")
+    (STRCAT "(HCNM-CONFIG-TEMP-SETVAR \"" VAR "\" $value)")
   )
 )
+
 
 (DEFUN
    HCNM-CONFIG-DCL-LIST (KEY /)
