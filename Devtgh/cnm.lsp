@@ -249,7 +249,7 @@
 ;;;
 ;;;Set up list from CONSTNOT.TXT and NOTEQTY block.
 (DEFUN
-   HCNM-TABLE-FROM-SEARCHANDSAVE (DN PROJNOTES / ALIASLIST AT AV BLKI
+   HCNM-KEY-TABLE-SEARCHANDSAVE (DN PROJNOTES / ALIASLIST AT AV BLKI
                                    BLKSS COUNT CTABONLY EL EN ET I J
                                    MVPORT MVSSET N NFNAME NOTEFND NOTEI
                                    NOTELINES NOTELIST NOTENUM NOTEPHASE
@@ -736,12 +736,13 @@
 ;;Puts table at qtypt.
 ;; TGH to use this for TALLY, maybe I just need to read NOTELIST as an argument instead of from a file in this function.
 (DEFUN
-   HCNM-MAKENOTETABLE (NFSOURCE QTYPT QTYSET DN TXTHT / CTABONLY ICOL
-                       IPHASE ADVANCE-HEIGHT COLUMN-HEIGHT NOTE-FIRST-LINE-P COLUMN-FIRST-NOTE-P PENDING-HEIGHT NFNAME NOTDSC NOTELIST
-                       NOTESMAXHEIGHT NOTETITLES NOTNUM NOTQTY NOTTYP
-                       NOTUNT NUMFND PHASELIST PROMPTEACHCOL QTY QTYPT1
-                       RDLIN TXTHTTEMP TYPFND USRVAR
-                      )
+   HCNM-KEY-TABLE-MAKE (NFSOURCE QTYPT QTYSET DN TXTHT / CTABONLY ICOL
+                        IPHASE COLUMN-HEIGHT NOTE-FIRST-LINE-P
+                        COLUMN-HEIGHT-PENDING NFNAME NOTDSC NOTELIST
+                        NOTESMAXHEIGHT NOTETITLES NOTNUM NOTQTY NOTTYP
+                        NOTUNT NUMFND PHASELIST PROMPTEACHCOL QTY QTYPT1
+                        RDLIN TXTHTTEMP TYPFND USRVAR
+                       )
   (SETQ PHASELIST (HCNM-GETPHASELISTFROMTBLQTY))
   (SETVAR "osmode" 0)
   (SETVAR "attreq" 1)
@@ -750,7 +751,8 @@
     NOTESMAXHEIGHT
      (HAWS-GETDISTX
        QTYPT
-       "Maximum height of each notes column"          ; or [Prompt for each column]"
+       "Maximum height of each notes column"
+                                        ; or [Prompt for each column]"
        NOTESMAXHEIGHT
        9999.0
      )
@@ -766,7 +768,7 @@
      )
     )
   )
-  (SETQ CTABONLY (= (c:hcnm-config-getvar "DoCurrentTabOnly") "1"))
+  (SETQ CTABONLY (= (C:HCNM-CONFIG-GETVAR "DoCurrentTabOnly") "1"))
   (IF (= NFSOURCE "E")
     (SETQ
       NFNAME
@@ -800,15 +802,15 @@
   (HCNM-READCF (HCNM-PROJNOTES))
   (SETQ
     LINSPC
-     (ATOF (c:hcnm-config-getvar "LineSpacing"))
+     (ATOF (C:HCNM-CONFIG-GETVAR "LineSpacing"))
     NOTSPC
-     (ATOF (c:hcnm-config-getvar "NoteSpacing"))
+     (ATOF (C:HCNM-CONFIG-GETVAR "NoteSpacing"))
     TBLWID
-     (ATOF (c:hcnm-config-getvar "TableWidth"))
+     (ATOF (C:HCNM-CONFIG-GETVAR "TableWidth"))
     PHASEWID
-     (ATOF (c:hcnm-config-getvar "PhaseWidthAdd"))
-    COLUMN-HEIGHT 0
+     (ATOF (C:HCNM-CONFIG-GETVAR "PhaseWidthAdd"))
     ICOL 1
+    COLUMN-HEIGHT 0
     IPHASE 1
     QTYPT1 QTYPT
   )
@@ -886,6 +888,12 @@
       ;;flag any NOTETITLES as complete with a 0.
       ;;If it is found in NOTELIST, write it with quantities
       ;;and any pending titles to the table.
+      ;;
+      ;; STYLE GUIDE
+      ;; LINSPC is the spacing/height of a line from its own top to bottom.
+      ;; NOTSPC is the spacing above each note or group of titles.
+      ;; (- NOTSPC LINSPC) is the additional space above a note or group of titles.
+      ;; Insertion point is vertically (y coordinate) at the middle of each line.
       ((AND
          (= 3 (CAR ENTRY))
          (IF (AND NOTETITLES (/= 0 (CAR NOTETITLES)))
@@ -913,14 +921,9 @@
          )
        )
        (SETQ
-         COLUMN-FIRST-NOTE-P
-          (= COLUMN-HEIGHT 0)
+         COLUMN-HEIGHT-PENDING 0
          NOTUNT
           (CADDDR ENTRY)
-         ADVANCE-HEIGHT
-          (* TXTHT LINSPC)
-         PENDING-HEIGHT
-          (* (CADR NOTNUM) ADVANCE-HEIGHT)
          NOTQTY
           ;;Convert quantities to strings, preserving input precision for all quantities
           ;;Trim extra zeros from quantities
@@ -946,141 +949,247 @@
          NOTETITLES
           (CDR NOTETITLES)              ;If note was found, unflag and write titles.
        )
+       ;; Calculate height of titles plus a paragraph space
        (COND
          (NOTETITLES
-          (SETQ TXTHTTEMP TXTHT)
-          (FOREACH
-             NOTETITLE (REVERSE NOTETITLES)
-            (SETQ
-              TXTHT
-               (CAR NOTETITLE)
-              ADVANCE-HEIGHT
-               (* TXTHT LINSPC)
-              PENDING-HEIGHT
-               (+ PENDING-HEIGHT ADVANCE-HEIGHT)
-            )
-          )
           (SETQ
-            ADVANCE-HEIGHT
-             (* TXTHT NOTSPC)
-            PENDING-HEIGHT
-             (+ PENDING-HEIGHT ADVANCE-HEIGHT)
-            TXTHT TXTHTTEMP
+            TXTHTTEMP TXTHT
+            I-TITLE 0
           )
-         )
-       )
-       ;;If these titles and note won't fit in col.
-       (IF (> (+ PENDING-HEIGHT COLUMN-HEIGHT) NOTESMAXHEIGHT)
-         (IF (NOT COLUMN-FIRST-NOTE-P)
-           (SETQ                        ;go to next column
-             ICOL
-              (1+ ICOL)
-             COLUMN-HEIGHT 0
-             QTYPT
-              (POLAR
-                QTYPT1
-                0
-                (* (1- ICOL)
-                   (+ (* TXTHT TBLWID)
-                      (* TXTHT PHASEWID (1- (LENGTH PHASELIST)))
-                   )
-                )
-              )
-           )
-         )
-       )
-       (COND
-         (NOTETITLES
-          (SETQ TXTHTTEMP TXTHT)
           (FOREACH
              NOTETITLE (REVERSE NOTETITLES)
             (SETQ TXTHT (CAR NOTETITLE))
             (COND
-              ((= (C:HCNM-CONFIG-GETVAR "ShowKeyTableTitleShapes") "1")
-               (COMMAND
-                 "._insert"
-                 (STRCAT "cnm" NOTTYP)
-                 QTYPT
-                 TXTHT
-                 ""
-                 "0"
+              ((= I-TITLE 0)
+               (COND
+                 ;; At top, rewind before first title
+                 ((= COLUMN-HEIGHT 0)
+                  (SETQ
+                    COLUMN-HEIGHT-PENDING
+                     (+ COLUMN-HEIGHT-PENDING
+                        (* -0.5 TXTHT LINSPC)
+                     )
+                  )
+                 )
+                 ;; Else add a paragraph space before first title
+                 (T
+                  (SETQ
+                    COLUMN-HEIGHT-PENDING
+                     (+ COLUMN-HEIGHT-PENDING
+                        (* TXTHT (- NOTSPC LINSPC))
+                     )
+                  )
+                 )
                )
               )
             )
-            (COMMAND
-              "._insert"
-              "NOTEQTY"
-              QTYPT
-              TXTHT
-              ""
-              "0"
-              ""
-              ""
-              (CADR NOTETITLE)
-            )
-            (FOREACH X NOTQTY (COMMAND ""))
-            (COMMAND "")
+            ;; Space for each title
             (SETQ
-              ADVANCE-HEIGHT
-               (* TXTHT LINSPC)
-              QTYPT
-               (POLAR QTYPT (* PI -0.5) ADVANCE-HEIGHT)
-              COLUMN-HEIGHT
-               (+ COLUMN-HEIGHT ADVANCE-HEIGHT)
-              PENDING-HEIGHT
-               (- PENDING-HEIGHT ADVANCE-HEIGHT)
+              COLUMN-HEIGHT-PENDING
+               (+ COLUMN-HEIGHT-PENDING
+                  (* TXTHT LINSPC)
+               )
+              I-TITLE
+               (1+ I-TITLE)
             )
           )
+         )
+       )
+       ;; Calculate height of note
+       (SETQ TXTHT TXTHTTEMP)
+       (COND
+         ;; At top, rewind before note
+         ((AND (NOT NOTETITLES) (= COLUMN-HEIGHT 0))
           (SETQ
-            ADVANCE-HEIGHT
-             (* TXTHT (- NOTSPC LINSPC))
-            QTYPT
-             (POLAR QTYPT (* PI -0.5) ADVANCE-HEIGHT)
-            COLUMN-HEIGHT
-             (+ COLUMN-HEIGHT ADVANCE-HEIGHT)
-            PENDING-HEIGHT
-             (- PENDING-HEIGHT ADVANCE-HEIGHT)
-            TXTHT TXTHTTEMP
+            COLUMN-HEIGHT-PENDING
+             (+ COLUMN-HEIGHT-PENDING
+                (* -0.5 TXTHT LINSPC)
+             )
+          )
+         )
+         ;; Else add a paragraph space before note
+         (T
+          (SETQ
+            COLUMN-HEIGHT-PENDING
+             (+ COLUMN-HEIGHT-PENDING
+                (* TXTHT (- NOTSPC LINSPC))
+             )
           )
          )
        )
-       ;;Split note from titles only if titles were needed to avoid empty column.
-       (IF (AND
-             ;; If this is the first note in the column, and it won't fit
-             COLUMN-FIRST-NOTE-P
-             (> (+ PENDING-HEIGHT COLUMN-HEIGHT) NOTESMAXHEIGHT)
-           )
-         (IF (/= COLUMN-HEIGHT 0)       ;If column won't be left empty,
-           (SETQ                        ;go to next column
-             ICOL
-              (1+ ICOL)
-             COLUMN-HEIGHT 0
-             QTYPT
-              (POLAR
-                QTYPT1
-                0
-                (* (1- ICOL)
-                   (+ (* TXTHT TBLWID)
-                      (* TXTHT PHASEWID (LENGTH PHASELIST))
-                   )
-                )
-              )
-           )
+       (SETQ
+         COLUMN-HEIGHT-PENDING
+          ;; Add note height
+          (+ COLUMN-HEIGHT-PENDING
+             (* (CADR NOTNUM) (* TXTHT LINSPC))
+          )
+       )
+       ;; Add titles and note
+       ;; If titles _and note_ won't fit and column isn't empty, advance to new column
+       (COND
+         ((AND
+            (> (+ COLUMN-HEIGHT-PENDING COLUMN-HEIGHT) NOTESMAXHEIGHT)
+                                        ; Won't fit
+            (/= COLUMN-HEIGHT 0)        ; Not first note in column
+          )
+          (HCNM-KEY-TABLE-ADVANCE-COLUMN)
          )
        )
-       (COMMAND
-         "._insert"
-         (STRCAT "cnm" NOTTYP)
-         QTYPT
-         TXTHT
-         ""
-         "0"
+       ;; Add any titles
+       (COND
+         (NOTETITLES
+          (SETQ
+            TXTHTTEMP TXTHT
+            I-TITLE 0
+          )
+          (FOREACH
+             NOTETITLE (REVERSE NOTETITLES)
+            (SETQ TXTHT (CAR NOTETITLE))
+            ;; If not first note, space appropriately
+            (COND
+              ((/= COLUMN-HEIGHT 0)     ; Not first note in column
+               (COND
+                 ;; Add a paragraph space above first title based on its height
+                 ((= I-TITLE 0)
+                  (HCNM-KEY-TABLE-ADVANCE-DOWN (* 0.5 (- NOTSPC LINSPC)))
+                 )
+               )
+               (HCNM-KEY-TABLE-ADVANCE-DOWN (* 0.5 LINSPC))
+              )
+            )
+            (COND
+              ((= (C:HCNM-CONFIG-GETVAR "ShowKeyTableTitleShapes") "1")
+               (HCNM-KEY-TABLE-INSERT-SHAPE)
+              )
+            )
+            (SETQ NOTDSC (CADR NOTETITLE))
+            (HCNM-KEY-TABLE-INSERT-TEXT)
+            (HCNM-KEY-TABLE-ADVANCE-DOWN (* 0.5 LINSPC))
+          )
+          (HCNM-KEY-TABLE-ADVANCE-DOWN (* 0.5 (- NOTSPC LINSPC)))
+          (SETQ TXTHT TXTHTTEMP)
+         )
        )
+       ;; If note won't fit in new column with titles, advance column again.
+       (COND
+         (;; Titles were added
+          (/= COLUMN-HEIGHT 0)
+          (COND
+            (;; Note won't fit after titles.
+             (> (+ COLUMN-HEIGHT-PENDING COLUMN-HEIGHT) NOTESMAXHEIGHT)
+             (HCNM-KEY-TABLE-ADVANCE-COLUMN)
+            )
+            (;; Note will fit after titles.
+             T
+             ;; Paragraph spacing
+             (HCNM-KEY-TABLE-ADVANCE-DOWN (* 0.5 (- NOTSPC LINSPC)))
+             ;; Down to middle of first note
+             (HCNM-KEY-TABLE-ADVANCE-DOWN (* 0.5 LINSPC))
+            )
+          )
+         )
+       )
+       ;; Now add note
        (SETQ NOTE-FIRST-LINE-P T)
-;;;    (setvar "attreq" 0)
+       (HCNM-KEY-TABLE-INSERT-SHAPE)
+       (HCNM-KEY-TABLE-ADVANCE-DOWN (* -0.5 LINSPC))
        (FOREACH
           NOTDSC (NTH 5 ENTRY)
+         (HCNM-KEY-TABLE-ADVANCE-DOWN (* 0.5 LINSPC))
+         (HCNM-KEY-TABLE-INSERT-TEXT)
+         (HCNM-KEY-TABLE-ADVANCE-DOWN (* 0.5 LINSPC))
+         (SETQ
+           NOTETITLES NIL
+           NOTE-FIRST-LINE-P NIL
+         )
+       )
+       (HCNM-KEY-TABLE-ADVANCE-DOWN (* 0.5 (- NOTSPC LINSPC)))
+      )
+    )
+  )
+  ;;Apply table display configs from ini.  If no configs (legacy), show both.
+  (MAPCAR
+    '(LAMBDA (LAYERKEY / LAYERSHOW LAYERLIST)
+       (SETQ LAYERSHOW (/= "0" (C:HCNM-CONFIG-GETVAR (CADR LAYERKEY))))
+       (COND
+         (LAYERSHOW (HAWS-MKLAYR (CAR LAYERKEY)))
+         (T
+          (SETQ
+            LAYERLIST
+             (TBLSEARCH
+               "LAYER"
+               (CAR (HAWS-GETLAYR (CAR LAYERKEY)))
+             )
+          )
+          ;; If thawed and on, freeze
+          (IF (AND
+                (CDR (ASSOC 70 LAYERLIST))
+                (/= 1 (LOGAND 1 (CDR (ASSOC 70 LAYERLIST))))
+                (< 0 (CDR (ASSOC 62 LAYERLIST)))
+              )
+            (COMMAND-S "._layer" "_f" (CDR (ASSOC 2 LAYERLIST)) "")
+          )
+         )
+       )
+     )
+    '(("NOTESKEYGRID" "ShowKeyTableGrid")
+      ("NOTESKEYQTYS" "ShowKeyTableQuantities")
+     )
+  )
+  (COMMAND "._undo" "_end")
+)
+
+
+
+
+(DEFUN
+   HCNM-KEY-TABLE-ADVANCE-COLUMN ()
+  (SETQ
+    COLUMN-HEIGHT 0
+    ICOL
+     (1+ ICOL)
+    QTYPT
+     (POLAR
+       QTYPT1
+       0
+       (* (1- ICOL)
+          (+ (* TXTHT TBLWID)
+             (* TXTHT PHASEWID (1- (LENGTH PHASELIST)))
+          )
+       )
+     )
+  )
+)
+
+(DEFUN
+   HCNM-KEY-TABLE-ADVANCE-DOWN (SPACE / DOWN-HEIGHT)
+  (SETQ
+    DOWN-HEIGHT (* SPACE TXTHT)
+    QTYPT
+     (POLAR QTYPT (* PI -0.5) DOWN-HEIGHT)
+    COLUMN-HEIGHT
+     (+ COLUMN-HEIGHT DOWN-HEIGHT)
+    COLUMN-HEIGHT-PENDING
+     (- COLUMN-HEIGHT-PENDING DOWN-HEIGHT)
+  )
+)
+
+(DEFUN
+   HCNM-KEY-TABLE-INSERT-SHAPE ()
+  (COMMAND
+    "._insert"
+    (STRCAT "cnm" NOTTYP)
+    QTYPT
+    TXTHT
+    ""
+    "0"
+  )
+)
+
+(DEFUN
+   HCNM-KEY-TABLE-INSERT-TEXT ()
 ;;;All this stuff is to make the attribute order insensitive.
+;;;    (setvar "attreq" 0)
 ;;;       (COMMAND
 ;;;  "._insert" "NOTEQTY" "non"   
 ;;;  QTYPT
@@ -1121,98 +1230,47 @@
 ;;;    )
 ;;;  )
 ;;;    )
-         (COMMAND
-           "._insert"
-           "NOTEQTY"
-           QTYPT
-           TXTHT
-           ""
-           "0"
-           (IF NOTE-FIRST-LINE-P
-             NOTTYP
-             ""
-           )
-           (IF NOTE-FIRST-LINE-P
-             (CAR NOTNUM)
-             ""
-           )
-           NOTDSC
-         )
-         (FOREACH
-            X NOTQTY
-           (COMMAND
-             (IF NOTE-FIRST-LINE-P
-               X
-               ""
-             )
-           )
-         )
-         (COMMAND
-           (IF NOTE-FIRST-LINE-P
-             NOTUNT
-             ""
-           )
-         )
-         (SETQ
-           ADVANCE-HEIGHT
-            (* TXTHT LINSPC)
-           QTYPT
-            (POLAR QTYPT (* PI -0.5) ADVANCE-HEIGHT)
-           COLUMN-HEIGHT
-            (+ COLUMN-HEIGHT ADVANCE-HEIGHT)
-           NOTETITLES NIL
-           NOTE-FIRST-LINE-P NIL
-         )
-       )
-       (SETQ
-         ADVANCE-HEIGHT
-          (* TXTHT (- NOTSPC LINSPC))
-         QTYPT
-          (POLAR QTYPT (* PI -0.5) ADVANCE-HEIGHT)
-         COLUMN-HEIGHT
-          (+ COLUMN-HEIGHT ADVANCE-HEIGHT)
-       )
+  (COMMAND
+    "._insert"
+    "NOTEQTY"
+    QTYPT
+    TXTHT
+    ""
+    "0"
+    (IF NOTE-FIRST-LINE-P
+      NOTTYP
+      ""
+    )
+    (IF NOTE-FIRST-LINE-P
+      (CAR NOTNUM)
+      ""
+    )
+    NOTDSC
+  )
+  (FOREACH
+     X NOTQTY
+    (COMMAND
+      (IF NOTE-FIRST-LINE-P
+        X
+        ""
       )
     )
   )
-  ;;Apply ini table display configs.  If no configs (legacy), show both.
-  (MAPCAR
-    '(LAMBDA (LAYERKEY / LAYERSHOW LAYERLIST)
-       (SETQ LAYERSHOW (/= "0" (C:HCNM-CONFIG-GETVAR (CADR LAYERKEY))))
-       (COND
-         (LAYERSHOW (HAWS-MKLAYR (CAR LAYERKEY)))
-         (T
-          (SETQ
-            LAYERLIST
-             (TBLSEARCH
-               "LAYER"
-               (CAR (HAWS-GETLAYR (CAR LAYERKEY)))
-             )
-          )
-          ;; If thawed and on, freeze
-          (IF (AND
-                (CDR (ASSOC 70 LAYERLIST))
-                (/= 1 (LOGAND 1 (CDR (ASSOC 70 LAYERLIST))))
-                (< 0 (CDR (ASSOC 62 LAYERLIST)))
-              )
-            (COMMAND-S "._layer" "_f" (CDR (ASSOC 2 LAYERLIST)) "")
-          )
-         )
-       )
-     )
-    '(("NOTESKEYGRID" "ShowKeyTableGrid")
-      ("NOTESKEYQTYS" "ShowKeyTableQuantities")
-     )
+  (COMMAND
+    (IF NOTE-FIRST-LINE-P
+      NOTUNT
+      ""
+    )
   )
-  (COMMAND "._undo" "_end")
 )
-;;HCNM-TABLE-FROM-SEARCH
+
+;;HCNM-KEY-TABLE-FROM-SEARCH
 ;;In the NOTES strategy, this routine is first of three main routines.
 ;;Gets project info from CONSTNOT.TXT
 ;;Gets drawing info from bubbles or table.
 ;;Saves all in .NOT file for other two routines
 (DEFUN
-   HCNM-TABLE-FROM-SEARCH (DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID /
+   HCNM-KEY-TABLE-FROM-SEARCH (DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID /
                            EL EN I NOTELIST QTYPT QTYSET TABLESPACE
                           )
   (SETQ
@@ -1258,13 +1316,13 @@
   (IF (NOT QTYPT)
     (SETQ QTYPT (GETPOINT "\nStart point for key notes table: "))
   )
-  (HCNM-TABLE-FROM-SEARCHANDSAVE DN PROJNOTES)
+  (HCNM-KEY-TABLE-SEARCHANDSAVE DN PROJNOTES)
   ;;Make a new notes table
-  (HCNM-MAKENOTETABLE "E" QTYPT QTYSET DN TXTHT)
+  (HCNM-KEY-TABLE-MAKE "E" QTYPT QTYSET DN TXTHT)
 )
 ;;HCNM-IMPORT
 ;;In the NOTES strategy, this routine is second of three main routines.
-;;Reads from .NOT file, created by HCNM-TABLE-FROM-SEARCH, everything necessary and creates a table. 
+;;Reads from .NOT file, created by HCNM-KEY-TABLE-FROM-SEARCH, everything necessary and creates a table. 
 (DEFUN
    HCNM-IMPORT (DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID / EL EN I QTYPT
                QTYSET TABLESPACE
@@ -1316,7 +1374,7 @@
     )
   )
   ;;Make a new notes table after erasing qtyset
-  (HCNM-MAKENOTETABLE "I" QTYPT QTYSET DN TXTHT)
+  (HCNM-KEY-TABLE-MAKE "I" QTYPT QTYSET DN TXTHT)
 )
 ;;HCNM-TALLY
 ;;In the NOTES strategy, this routine is the third of three main routines.
@@ -2208,7 +2266,7 @@
   (HCNM-READCF PROJNOTES)
   (COND
     ((= OPT "Search")
-     (HCNM-TABLE-FROM-SEARCH
+     (HCNM-KEY-TABLE-FROM-SEARCH
        DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID
       )
     )

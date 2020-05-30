@@ -159,11 +159,11 @@ HCNMTable : dialog {
 			}
 			: edit_box {
 				key = "LineSpacing";
-				label = "Distance (text heights) between lines";
+				label = "Line spacing/height (text heights)";
 			}
 			: edit_box {
 				key = "NoteSpacing";
-				label = "Distance (text heights) between notes";
+				label = "Spacing (text heights) around each note or group of titles";
 			}
 	}
 	: boxed_column {
