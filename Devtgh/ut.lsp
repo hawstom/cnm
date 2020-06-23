@@ -4,7 +4,7 @@
    C:HAWS-UT (/ PT1)
   (haws-core-init 326)
   (HAWS-VSAVE
-    '("ucsfollow" "clayer" "filedia" "cmdecho" "expert")
+    '("ucsfollow" "clayer" "filedia" "cmdecho" "expert"  "osmode")
   )
   (HAWS-VSET
     '(("ucsfollow" 0) ("plinegen" 1) ("cmdecho" 0) ("expert" 5))
@@ -57,6 +57,7 @@
        E1   (ENTLAST)
        UCSP T
      )
+     (SETVAR "osmode" 0)
      (COMMAND "._ucs" "_e" E1 "._erase" E1 "")
      (SETQ ENTSEL-OD-UP (HAWS-UT-MAKE-OD UTPL 1))
      (SETQ ENTSEL-OD-DOWN (HAWS-UT-MAKE-OD UTPL -1))
