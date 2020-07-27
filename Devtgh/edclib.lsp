@@ -3,11 +3,11 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "5.2.19"
+  "5.3.00"
 )
 (DEFUN
    HAWS-COPYRIGHT ()
-  "Copyright 2019 Thomas Gail Haws"
+  "Copyright 2020 Thomas Gail Haws"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 (SETQ *HAWS-DEBUGLEVEL* 0)
@@ -151,6 +151,8 @@
   ;; If computer already has authorization,
   (COND
     ((OR
+         ;; No more nag mode.
+         T
          ;; this computer has authorization
          (HAWS-VALIDATEAPPGROUP APPGROUP)
          ;; or we successfully get it from the user,
