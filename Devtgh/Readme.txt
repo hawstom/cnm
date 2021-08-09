@@ -1,7 +1,7 @@
 ==INSTALL==
 To finish installing CNM into any AutoCAD profile, you must do one of the following:
 
-a) Drag CNM-Install.lsp from the desktop into an open drawing.  CNM-Install.lsp is 
+a) Drag (or Copy/Paste) CNM-Install.lsp from the desktop into an open drawing.  CNM-Install.lsp is 
 open source in case you want to customize it.  A copy has also been placed in the 
 application directory.
 

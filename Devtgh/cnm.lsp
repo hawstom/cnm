@@ -286,7 +286,7 @@
           (NTH 4 ENTRY)
          I 0
          NOTELINES
-          (LENGTH (NTH 5 ENTRY))
+          (LENGTH (NTH 6 ENTRY))
        )
        (SETQ
          NOTELIST
@@ -993,10 +993,10 @@
                (1+ I-TITLE)
             )
           )
+          (SETQ TXTHT TXTHTTEMP)
          )
        )
        ;; Calculate height of note
-       (SETQ TXTHT TXTHTTEMP)
        (COND
          ;; At top, rewind before note
          ((AND (NOT NOTETITLES) (= COLUMN-HEIGHT 0))
@@ -1094,7 +1094,7 @@
        (HCNM-KEY-TABLE-INSERT-SHAPE)
        (HCNM-KEY-TABLE-ADVANCE-DOWN (* -0.5 LINSPC))
        (FOREACH
-          NOTDSC (NTH 5 ENTRY)
+          NOTDSC (NTH 6 ENTRY)
          (HCNM-KEY-TABLE-ADVANCE-DOWN (* 0.5 LINSPC))
          (HCNM-KEY-TABLE-INSERT-TEXT)
          (HCNM-KEY-TABLE-ADVANCE-DOWN (* 0.5 LINSPC))
@@ -1393,11 +1393,11 @@
 ;;   '((shti (typj (notek qty1 qty2 qtyk))))
 (DEFUN
    HCNM-TALLY (DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID / ALLNOT COL1X
-              COLUMN DQWID DWGFIL EL NOTE-FIRST-LINE-P FLSPEC I LSTFIL NDWID
+              COLUMN COST COSTI DQWID SHEET_FILENAME EL NOTE-FIRST-LINE-P FLSPEC I SHEET_LIST_FILENAME NDWID
               NFNAME NOTELIST NOTETITLES NOTFIL NOTNUM NOTQTY NOTSPC
               NOTTYP NOTUNT NUMFND NUMLIST PGPMOD PHASE PHASELIST
-              PHASENUMI PT1Z Q QQWID QTYLIST QTYPT1 QTYSET QUWID ROW1Y
-              SHTLST TABLESPACE TEMP TOTAL TXTHTTEMP USERS1OLD USERS2OLD
+              PHASENUMI PT1Z Q QQWID ALL_SHEETS_QUANTITIES QTYPT1 QTYSET QUWID ROW1Y
+              SHTLST TABLESPACE INPUT TOTAL TXTHTTEMP USERS1OLD USERS2OLD
               USERS3OLD USERS4OLD USRVAR WRITELIST X Y Z
              )
 ;;;
@@ -1405,60 +1405,10 @@
 ;;;  Determine list of drawings to tally.
 ;;;
   (COND
-    ;; The VBA years.
     ((AND
-       (< (ATOF (GETVAR "acadver")) 18)
-       (>= (ATOF (GETVAR "acadver")) 15)
-     )
-     (AND (HAWS-VLISP-P) (NOT (c:haws-icad-p)))
-     (SETQ
-       USERS1OLD
-        (GETVAR "users1")
-       USERS2OLD
-        (GETVAR "users2")
-       USERS3OLD
-        (GETVAR "users3")
-       USERS4OLD
-        (GETVAR "users4")
-     )
-     (SETVAR
-       "users1"
-       (COND
-         (*HCNM-QTLISTFILE*)
-         ((STRCAT DN ".lst"))
-       )
-     )
-     (SETVAR "users2" "CNM Sheet Quantities Files (*.not)|*.not")
-     (SETVAR
-       "users3"
-       "File(s) listed below will be included in the quantity take-off shown in this drawing:"
-     )
-     (SETVAR
-       "users4"
-       "When you make a key notes table from bubble notes, Construction Notes Manager saves the quantities in a CNM Sheet Quantities file.  You list here the files for which you want to show the quantity take-off in this drawing."
-     )
-     (COMMAND "-vbarun" "fselect.dvb!modFileSelect.FileSelect")
-     (SETQ
-       LSTFIL
-        (GETVAR "users1")
-       *HCNM-QTLISTFILE* LSTFIL
-     )
-     (IF (/= (GETVAR "users2") "OK")
-       (SETQ TEMP T)
-     )
-     (SETVAR "users1" USERS1OLD)
-     (SETVAR "users2" USERS2OLD)
-     (SETVAR "users3" USERS3OLD)
-     (SETVAR "users4" USERS4OLD)
-     (IF TEMP
-       (EXIT)
-     )
-    )
-    ;;Non-VBA selection methods
-    ((AND
-       (OR (SETQ LSTFIL (FINDFILE (STRCAT DN ".lst")))
+       (OR (SETQ SHEET_LIST_FILENAME (FINDFILE (STRCAT DN ".lst")))
            (SETQ
-             LSTFIL
+             SHEET_LIST_FILENAME
               (FINDFILE (STRCAT (GETVAR "DWGPREFIX") "tally.lst"))
            )
        )
@@ -1468,7 +1418,7 @@
             (GETKWORD
               (STRCAT
                 "\nKeep and use existing list file, \""
-                LSTFIL
+                SHEET_LIST_FILENAME
                 "\"? <Yes/No>: "
               )
             )
@@ -1488,50 +1438,50 @@
      )
      (INITGET 1 "List Wildcards Select")
      (SETQ
-       TEMP
+       INPUT
         (GETKWORD "\n[List file/Wildcards/Select one at a time]: ")
      )
      (COND
-       ((= TEMP "List")
-        (SETQ LSTFIL (GETFILED "Select a List File" "" "LST" 0))
+       ((= INPUT "List")
+        (SETQ SHEET_LIST_FILENAME (GETFILED "Select a List File" "" "LST" 0))
        )
-       ((= TEMP "Wildcards")
+       ((= INPUT "Wildcards")
         ;;Add function to user's ACAD.PGP to shell and wait for attrib command to finish.
         (SETQ
-          LSTFIL
+          SHEET_LIST_FILENAME
            (STRCAT DN ".lst")
-          TEMP
+          INPUT
            (FINDFILE "acad.pgp")
           F1 (OPEN TEMP "r")
         )
-        (WHILE (SETQ DWGFIL (READ-LINE F1))
-          (IF (= "RUN," (SUBSTR DWGFIL 1 4))
-            (SETQ PGPMOD T)
+        (WHILE (SETQ PGP_FILE_LINE (READ-LINE F1))
+          (IF (= "RUN," (SUBSTR PGP_FILE_LINE 1 4))
+            (SETQ PGP_DEFINES_RUN T)
           )
-          (IF (= "SH," (SUBSTR DWGFIL 1 3))
+          (IF (= "SH," (SUBSTR PGP_FILE_LINE 1 3))
             (SETQ
-              SHTLST
+              PGP_FILE_CONTENTS
                (CONS
                  ";The following line was added by HawsEDC Construction Notes Manager for file processing by Wildcard."
-                 SHTLST
+                 PGP_FILE_CONTENTS
                )
-              SHTLST
+              PGP_FILE_CONTENTS
                (CONS
                  "RUN,       cmd /c,         0,*Batch file to run: ,"
-                 SHTLST
+                 PGP_FILE_CONTENTS
                )
             )
           )
-          (SETQ SHTLST (CONS DWGFIL SHTLST))
+          (SETQ SHEET_FILENAMES (CONS SHEET_FILENAME SHEET_FILENAMES))
         )
         (SETQ F1 (CLOSE F1))
-        (IF (NOT PGPMOD)
+        (IF (NOT PGP_DEFINES_RUN)
           (PROGN
             (SETQ
               F1     (OPEN TEMP "w")
-              SHTLST (REVERSE SHTLST)
+              SHEET_FILENAMES (REVERSE SHEET_FILENAMES)
             )
-            (FOREACH DWGFIL SHTLST (WRITE-LINE DWGFIL F1))
+            (FOREACH SHEET_FILENAME SHEET_FILENAMES (WRITE-LINE SHEET_FILENAME F1))
             (SETQ F1 (CLOSE F1))
             (SETVAR "re-init" 16)
           )
@@ -1546,17 +1496,17 @@
           )
           (COMMAND
             "run"
-            (STRCAT "attrib \"" FLSPEC ".not\" > \"" LSTFIL "\"")
+            (STRCAT "attrib \"" FLSPEC ".not\" > \"" SHEET_LIST_FILENAME "\"")
           )
           (SETQ
-            F1 (OPEN LSTFIL "r")
-            DWGFIL
+            F1 (OPEN SHEET_LIST_FILENAME "r")
+            SHEET_FILENAME
              (READ-LINE F1)
             COLUMN
-             (STRLEN DWGFIL)
+             (STRLEN SHEET_FILENAME)
           )
           (COND
-            ((WCMATCH DWGFIL "* not found *")
+            ((WCMATCH SHEET_FILENAME "* not found *")
              (SETQ
                COLUMN NIL
                F1 (CLOSE F1)
@@ -1575,12 +1525,12 @@
              (WHILE (NOT
                       (AND
                         (WCMATCH
-                          (STRCASE (SUBSTR DWGFIL COLUMN))
+                          (STRCASE (SUBSTR SHEET_FILENAME COLUMN))
                           (STRCASE (STRCAT FLSPEC "`.NOT"))
                         )
-                        (OR (= "\\" (SUBSTR DWGFIL (1- COLUMN) 1))
-                            (= "\\" (SUBSTR DWGFIL COLUMN 1))
-                            (= ":" (SUBSTR DWGFIL (1+ COLUMN) 1))
+                        (OR (= "\\" (SUBSTR SHEET_FILENAME (1- COLUMN) 1))
+                            (= "\\" (SUBSTR SHEET_FILENAME COLUMN 1))
+                            (= ":" (SUBSTR SHEET_FILENAME (1+ COLUMN) 1))
                         )
                       )
                     )
@@ -1588,39 +1538,39 @@
              )
              (SETQ
                F1     (CLOSE F1)
-               F1     (OPEN LSTFIL "r")
-               SHTLST NIL
+               F1     (OPEN SHEET_LIST_FILENAME "r")
+               SHEET_FILENAMES NIL
              )
-             (WHILE (SETQ DWGFIL (READ-LINE F1))
+             (WHILE (SETQ SHEET_FILENAME (READ-LINE F1))
                (SETQ
-                 DWGFIL
-                  (SUBSTR DWGFIL COLUMN)
-                 SHTLST
+                 SHEET_FILENAME
+                  (SUBSTR SHEET_FILENAME COLUMN)
+                 SHEET_FILENAMES
                   (CONS
-                    (SUBSTR DWGFIL 1 (- (STRLEN DWGFIL) 4))
-                    SHTLST
+                    (SUBSTR SHEET_FILENAME 1 (- (STRLEN SHEET_FILENAME) 4))
+                    SHEET_FILENAMES
                   )
                )
              )
              (SETQ
                F1 (CLOSE F1)
-               F1 (OPEN LSTFIL "w")
+               F1 (OPEN SHEET_LIST_FILENAME "w")
              )
-             (SETQ SHTLST (REVERSE SHTLST))
-             (FOREACH DWGFIL SHTLST (WRITE-LINE DWGFIL F1))
+             (SETQ SHEET_FILENAMES (REVERSE SHEET_FILENAMES))
+             (FOREACH SHEET_FILENAME SHEET_FILENAMES (WRITE-LINE SHEET_FILENAME F1))
              (SETQ F1 (CLOSE F1))
             )
           )
         )
        )
-       ((= TEMP "Select")
+       ((= INPUT "Select")
         (SETQ
-          LSTFIL
+          SHEET_LIST_FILENAME
            (STRCAT DN ".lst")
-          F1 (OPEN LSTFIL "w")
+          F1 (OPEN SHEET_LIST_FILENAME "w")
         )
         (WHILE (SETQ
-                 DWGFIL
+                 SHEET_FILENAME
                   (GETFILED
                     "File to tally (Cancel when Finished)"
                     ""
@@ -1628,7 +1578,7 @@
                     6
                   )
                )
-          (WRITE-LINE (SUBSTR DWGFIL 1 (- (STRLEN DWGFIL) 4)) F1)
+          (WRITE-LINE (SUBSTR SHEET_FILENAME 1 (- (STRLEN SHEET_FILENAME) 4)) F1)
         )
         (SETQ F1 (CLOSE F1))
        )
@@ -1640,7 +1590,7 @@
   ;;new phases as they come is to avoid sorting the list when we're done.
   ;;In other words, this list is nothing but a definition of the presentation order for phases.
   (SETQ
-    PHASELIST
+    PHASES_DEFINITION
      '(("" 0 NIL)
        ("1" 1 NIL)
        ("2" 2 NIL)
@@ -1681,42 +1631,42 @@
   )
 ;;;
 ;;;  Section 2.
-;;;  Read all .NOT's into a master QTYLIST
+;;;  Read all .NOT's into a master ALL_SHEETS_QUANTITIES
 ;;;  Add phases from all .NOTs to the list if not already there.  And if aliases in conflict, alert user.
 ;;;  
-  (SETQ F1 (OPEN LSTFIL "r"))
+  (SETQ F1 (OPEN SHEET_LIST_FILENAME "r"))
   (PRINC "\n")
-  (WHILE (AND (SETQ NOTFIL (READ-LINE F1)) (/= "" NOTFIL))
+  (WHILE (AND (SETQ SHEET_LIST_LINE (READ-LINE F1)) (/= "" SHEET_LIST_LINE))
     ;;Read in this sheet's notelist '( ((alias number phase)) ((type1 (notenum txtlines countmethod qty1...))))
     ;;Alert user of possible incompatibility with old-style list.
     (SETQ
-      NFNAME
+      SHEET_FILE_NAME
        (COND
-         ((FINDFILE NOTFIL))
-         ((FINDFILE (STRCAT NOTFIL ".not")))
+         ((FINDFILE SHEET_LIST_LINE))
+         ((FINDFILE (STRCAT SHEET_LIST_LINE ".not")))
          (T
           (ALERT
             (PRINC
               (STRCAT
-                "The file \"" NOTFIL "\" listed in \"" LSTFIL
+                "The file \"" SHEET_LIST_LINE "\" listed in \"" SHEET_LIST_FILENAME
                 "\" cannot be found.\nConstruction Notes Manager cannot continue."
                )
             )
           )
          )
        )
-      F2 (OPEN NFNAME "r")
-      NOTELIST
+      F2 (OPEN SHEET_FILE_NAME "r")
+      SHEET_QUANTITIES
        (READ (READ-LINE F2))
-      QTYLIST
-       (CONS (CONS NOTFIL NOTELIST) QTYLIST)
+      ALL_SHEETS_QUANTITIES
+       (CONS (CONS SHEET_FILE_NAME SHEET_QUANTITIES) ALL_SHEETS_QUANTITIES)
     )
     (IF (READ-LINE F2)
       (ALERT
         (PRINC
           (STRCAT
             "Error:  Sheet quantities file for "
-            NOTFIL
+            SHEET_FILE_NAME
             " is out of date.\nPlease search and save quantities again."
           )
         )
@@ -1726,44 +1676,44 @@
     ;;Set all phases discovered.
     ;;In .NOT files, phases are ("alias" order "number"), but here they are ("number" order "alias")
     (FOREACH
-       PHASE (CAR NOTELIST)
+       PHASE (CAR SHEET_QUANTITIES)
       (COND
-        ;;If its alias is not yet in PHASELIST, add the phase.
+        ;;If its alias is not yet in PHASES_DEFINITION, add the phase.
         ;;The reason we substitute instead of just adding the
         ;;new phases as they come is to avoid sorting the list when we're done.
-        ((NOT (CADDR (ASSOC (CADDR PHASE) PHASELIST)))
+        ((NOT (CADDR (ASSOC (CADDR PHASE) PHASES_DEFINITION)))
          (SETQ
-           PHASELIST
+           PHASES_DEFINITION
             (SUBST
-              ;;Set the alias.
+              ;;Substitute the alias for the nil.
               (SUBST
                 (CAR PHASE)
                 NIL
-                (ASSOC (CADDR PHASE) PHASELIST)
+                (ASSOC (CADDR PHASE) PHASES_DEFINITION)
               )
-              (ASSOC (CADDR PHASE) PHASELIST)
-              PHASELIST
+              (ASSOC (CADDR PHASE) PHASES_DEFINITION)
+              PHASES_DEFINITION
             )
          )
         )
-        ;;If alias in phaselist isn't same as alias in this sheet, alert user.
-        ((/= (CADDR (ASSOC (CAR PHASE) PHASELIST)) (CADDR PHASE))
+        ;;If alias in PHASES_DEFINITION isn't same as alias in this sheet, alert user.
+        ((/= (CADDR (ASSOC (CAR PHASE) PHASES_DEFINITION)) (CADDR PHASE))
          (ALERT
            (PRINC
              (STRCAT
-               NOTFIL
+               SHEET_QUANTITIES
                " is trying to assign alias \""
                (CADDR PHASE)
                "\" to phase \""
                (CAR PHASE)
                "\", which already has alias \""
-               (CADDR (ASSOC (CAR PHASE) PHASELIST))
+               (CADDR (ASSOC (CAR PHASE) PHASES_DEFINITION))
                "\".\n\nGrouping alias \""
                (CADDR PHASE)
                "\" on this sheet with phase \""
                (CAR PHASE)
                "\", alias \""
-               (CADDR (ASSOC (CAR PHASE) PHASELIST))
+               (CADDR (ASSOC (CAR PHASE) PHASES_DEFINITION))
                "."
              )
            )
@@ -1773,16 +1723,16 @@
     )
   )
   (SETQ F1 (CLOSE F1))
-  ;;Condense list to standard phaselist format: '((phasej j aliasj)...)
-  ;;and renumber
+  ;;Condense list to standard PHASES_DEFINITION format: '((phasej j aliasj)...)
+  ;;and renumber for only sheets being tallied.
   (SETQ I 0)
   (FOREACH
-     PHASE PHASELIST
+     PHASE PHASES_DEFINITION
     (IF (CADDR PHASE)
       (SETQ X (CONS (LIST (CAR PHASE) (SETQ I (1+ I)) (CADDR PHASE)) X))
     )
   )
-  (SETQ PHASELIST (REVERSE X))
+  (SETQ PHASES_DEFINITION (REVERSE X))
 ;;;
 ;;;  Section 3.
 ;;;  Write requested totals to drawing and sheet-by-sheet quantities to dwg.csv.
@@ -1887,20 +1837,19 @@
       )
     )
   )
-  (SETQ TEMP "")
-  (PRINC "TYPE,NO,ITEM,UNIT," F2)
+  (PRINC "TYPE,NO,ITEM,UNIT,PRICE," F2) ;; Price and cost
   (SETQ TEMP "")
   (FOREACH
-     SHTLST QTYLIST
+     SHEET_QUANTITIES ALL_SHEETS_QUANTITIES
     (FOREACH
-       PHASE PHASELIST
+       PHASE PHASES_DEFINITION
       (SETQ
         TEMP
          (STRCAT
            TEMP
            (HAWS-MKFLD
              (STRCAT
-               (STRCASE (CAR SHTLST))
+               (STRCASE (CAR SHEET_QUANTITIES))
                (IF (= (CAR PHASE) "")
                  " (SINGLE PHASE)"
                  " PHASE "
@@ -1915,7 +1864,7 @@
   )
   (PRINC TEMP F2)
   (FOREACH
-     PHASE PHASELIST
+     PHASE PHASES_DEFINITION
     (PRINC
       (STRCAT
         "TOTAL"
@@ -1924,8 +1873,14 @@
           " PHASE "
         )
         (CADDR PHASE)
+        ",COST"
+         (IF (= (CAR PHASE) "")
+          " (SINGLE PHASE)"
+          " PHASE "
+        )
+        (CADDR PHASE)
         ","
-      )
+     )
       F2
     )
   )
@@ -1988,18 +1943,21 @@
             (CADR ENTRY)
            NOTNUM
             (CADDR ENTRY)
+           ;; Price and cost
+           NOTPRICE
+            (NTH 5 ENTRY)
          )
          (OR ALLNOT
              (SETQ
                NUMFND NIL
                NUMFND
                 (FOREACH
-                   SHTLST QTYLIST
+                   SHEET_QUANTITIES ALL_SHEETS_QUANTITIES
                   (FOREACH
                      PHASEI (CDDDR
                               (ASSOC
                                 NOTNUM
-                                (CDR (ASSOC NOTTYP (CADDR SHTLST)))
+                                (CDR (ASSOC NOTTYP (CADDR SHEET_QUANTITIES)))
                               )
                             )
                     (IF PHASEI
@@ -2056,13 +2014,13 @@
        (SETQ
          X (+ X (* TXTHT (- (+ NDWID DQWID) QQWID)))
          WRITELIST
-          (LIST NOTTYP NOTNUM (NTH 5 ENTRY) NOTUNT)
+          (LIST NOTTYP NOTNUM (NTH 6 ENTRY) NOTUNT NOTPRICE)
          ;;Initialize running totals for each phase
          NOTQTY
-          (MAPCAR '(LAMBDA (X) 0) PHASELIST)
+          (MAPCAR '(LAMBDA (X) 0) PHASES_DEFINITION)
        )
        (FOREACH
-          SHTLST QTYLIST
+          SHEET_QUANTITIES ALL_SHEETS_QUANTITIES
          (SETQ
            NOTQTY
             (MAPCAR
@@ -2080,7 +2038,7 @@
                             (CADR
                               (ASSOC
                                 (CAR X)
-                                (CADR SHTLST)
+                                (CADR SHEET_QUANTITIES)
                               )
                             )
                          )
@@ -2092,7 +2050,7 @@
                               (CDR
                                 (ASSOC
                                   NOTTYP
-                                  (CADDR SHTLST)
+                                  (CADDR SHEET_QUANTITIES)
                                 )
                               )
                             )
@@ -2117,53 +2075,62 @@
                       )
                     )
                  )
-                 TOTAL
+                 (LIST TOTAL (* TOTAL (ATOF NOTPRICE))) ;Price and cost 2020-12
                )
-              PHASELIST
+              PHASES_DEFINITION
             )
          )
        )
-       ;;convert quantities to strings, preserving input precision.
+       ;;convert quantities and costs to strings, preserving quantities input precision.
        (SETQ
-         NOTQTY
+         NOTQTY ; List of qty and price for each phase.
           (MAPCAR
             '(LAMBDA (PHASE / TEMP)
                (SETQ
                  TEMP
-                  (RTOS (NTH (1- (CADR PHASE)) NOTQTY) 2 8)
+                  (RTOS (CAR (NTH (1- (CADR PHASE)) NOTQTY)) 2 8) ;Price and cost 2020-12
                )
                (WHILE (WCMATCH TEMP "*.*0,*.")
                  (SETQ TEMP (SUBSTR TEMP 1 (1- (STRLEN TEMP))))
                )
-               TEMP
+               (LIST TEMP (RTOS (CADR (NTH (1- (CADR PHASE)) NOTQTY)) 2 2)) ;Price and cost 2020-12
              )
-            PHASELIST
+            PHASES_DEFINITION
           )
        )
        ;;Print totals to drawing and file.
        (MAPCAR
          '(LAMBDA (PHASE)
             (SETQ X (+ X (* TXTHT QQWID)))
+            ;; Quantity total for phase
             (HAWS-MKTEXT
               "MR"
               (LIST X Y Z)
               TXTHT
               0
-              (NTH (1- (CADR PHASE)) NOTQTY)
+              (CAR (NTH (1- (CADR PHASE)) NOTQTY))
             )
             (SETQ
               WRITELIST
                (REVERSE
                  (CONS
-                   (HAWS-PRIN1-TO-STRING
-                     (NTH (1- (CADR PHASE)) NOTQTY)
-                   )
+                   (CAR (NTH (1- (CADR PHASE)) NOTQTY))
+                   (REVERSE WRITELIST)
+                 )
+               )
+            )
+            ;; Cost total for phase
+            (SETQ
+              WRITELIST
+               (REVERSE
+                 (CONS
+                   (CADR (NTH (1- (CADR PHASE)) NOTQTY))
                    (REVERSE WRITELIST)
                  )
                )
             )
           )
-         PHASELIST
+         PHASES_DEFINITION
        )
        ;;Write unit to drawing
        (SETQ X (+ X (* TXTHT QUWID)))
@@ -2175,7 +2142,7 @@
          NOTE-FIRST-LINE-P T
        )
        (FOREACH
-          NOTDSC (NTH 5 ENTRY)
+          NOTDSC (NTH 6 ENTRY)
          (IF (/= NOTDSC "")
            (HAWS-MKTEXT "ML" (LIST X Y Z) TXTHT 0 NOTDSC)
          )
@@ -2185,13 +2152,13 @@
        ;;Write note to file.
        (FOREACH
           X WRITELIST
-         (IF (= (TYPE X) 'STR)
-           (PRINC (STRCAT X ",") F2)
+         (IF (= (TYPE X) 'LIST)
            (PROGN
              (SETQ TEMP "")
              (FOREACH Y X (SETQ TEMP (STRCAT TEMP "\n" Y)))
              (PRINC (HAWS-MKFLD (SUBSTR TEMP 2) ",") F2)
            )
+           (PRINC (STRCAT X ",") F2)
          )
        )
        (SETQ WRITELIST NIL)
@@ -2728,7 +2695,7 @@
 ;;; 2.  app name for ini file name or other storage division
 ;;; 3.  scope code indicating the scope of the settings, which determines the method of storage and retrieval: 
 ;;;      "a" APPLICATION settings are currently stored in the program folder in a given section of a given ini file
-;;;      "u" USER settings are currently stored in ACAD.CGF with (setcfg)/(getcfg) or the Windows registry
+;;;      "u" USER settings are currently stored in ACAD.CFG with (setcfg)/(getcfg) or the Windows registry
 ;;;      "p" PROJECT settings are kept in the current project folder in a given section of a given ini file, with editable defaults in the the program folder
 ;;;      "d" DRAWING settings are kept in the current drawing
 ;;; 4.  location indicator file name in case we have to find an ini
@@ -3933,6 +3900,7 @@ ImportLayerSettings=No
                  NOTNUM
                  (HAWS-RDFLD 1 (SUBSTR RDLIN 68 3) 3 1)
                  (HAWS-RDFLD 15 RDLIN 5 1)
+                 (HAWS-RDFLD 1 (SUBSTR RDLIN 77) 12 2) ;Price
                  (LIST (HAWS-RDFLD 1 (SUBSTR RDLIN 6 62) 62 1))
                )
                CFLIST
@@ -4165,6 +4133,7 @@ ImportLayerSettings=No
                  (COND ((HAWS-RDFLD 2 RDLIN "," 1)) (""))
                  (COND ((HAWS-RDFLD 4 RDLIN "," 1)) (""))
                  (COND ((HAWS-RDFLD 5 RDLIN "," 1)) (""))
+                 (COND ((HAWS-RDFLD 6 RDLIN "," 1)) ("")); Price
                  (HCNM-WRAP-DESCRIPTION (COND ((HAWS-RDFLD 3 RDLIN "," 1)) ("")) WRAP)
                )
                CFLIST

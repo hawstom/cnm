@@ -10,13 +10,13 @@
 ;;;FOR ADDITIONAL OPTIONS
 ;;;
 SET CNMVERSION 4.2
-NUM  |<------------------------- DESCRIPTION ----------------------UN|QTY>
+NUM__DESCRIPTION___________________________________________________UN_QTY___PRICE
 BOX NOTES
 ;    The next line gives a title that is added to the notes list if there
 ;    are any box notes in the drawing.
 TITLE
 TITLE WATER NOTES
-1    8" WATER PVC WATER LINE                                       LF LINE1
+1    8" WATER PVC WATER LINE                                       LF LINE1 50
 2    8" VALVE, BOX & COVER                                         EA COUNT
 3    WATER FITTING OR BEND                                         EA COUNT
 ;
