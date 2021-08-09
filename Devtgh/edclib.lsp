@@ -3,7 +3,7 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "5.3.00"
+  "5.3.02"
 )
 (DEFUN
    HAWS-COPYRIGHT ()
@@ -3552,7 +3552,7 @@
    HAWS-STRTOLST (INPUTSTRING FIELDSEPARATORWC TEXTDELIMITER
                   EMPTYFIELDSDOCOUNT / CHARACTERCOUNTER CONVERSIONISDONE
                   CURRENTCHARACTER CURRENTFIELD CURRENTFIELDISDONE
-                  PREVIOUSCHARACTER RETURNLIST TEXTMODEISON
+                  PREVIOUSCHARACTER RETURNLIST TEXTMODEISON TextPairIsOpen
                  )
   ;;Initialize the variables for clarity's sake
   (SETQ
@@ -3603,14 +3603,20 @@
       ;;If CurrentCharacter is a TextDelimiter, then
       ((= CURRENTCHARACTER TEXTDELIMITER)
        ;;1.  Toggle the TextModeIsOn flag
-       (IF (NOT TEXTMODEISON)
+       (IF TEXTMODEISON
+         (SETQ TEXTMODEISON nil)
          (SETQ TEXTMODEISON T)
-         (SETQ TEXTMODEISON NIL)
        )
-       ;;2.  If this is the second consecutive TextDelimiter character, then
-       (IF (= PREVIOUSCHARACTER TEXTDELIMITER)
-         ;;Output it to CurrentField.
-         (SETQ CURRENTFIELD (STRCAT CURRENTFIELD CURRENTCHARACTER))
+       ;;2.  Use and toggle the TextPairIsOpen flag.
+       (COND
+         (TextPairIsOpen
+           ;;Output it to CurrentField.
+           (SETQ CURRENTFIELD (STRCAT CURRENTFIELD CURRENTCHARACTER))
+           (SETQ TextPairIsOpen nil)
+         )
+         (T
+           (SETQ TextPairIsOpen T)
+         )
        )
       )
       ;;Else if CurrentCharacter is a FieldDelimiter wildcard match, then
@@ -3661,6 +3667,7 @@
       (T
        ;;Output CurrentCharacter to CurrentField.
        (SETQ CURRENTFIELD (STRCAT CURRENTFIELD CURRENTCHARACTER))
+       (SETQ TextPairIsOpen nil)
       )
     )
     ;;If CurrentFieldIsDone, then
