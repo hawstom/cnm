@@ -2015,9 +2015,9 @@
          X (+ X (* TXTHT (- (+ NDWID DQWID) QQWID)))
          WRITELIST
           (LIST NOTTYP NOTNUM (NTH 6 ENTRY) NOTUNT NOTPRICE)
-         ;;Initialize running totals for each phase
+         ;;Initialize running totals for each phase '(qty price)
          NOTQTY
-          (MAPCAR '(LAMBDA (X) 0) PHASES_DEFINITION)
+          (MAPCAR '(LAMBDA (X) (LIST 0 0)) PHASES_DEFINITION)
        )
        (FOREACH
           SHEET_QUANTITIES ALL_SHEETS_QUANTITIES
@@ -2027,7 +2027,7 @@
               '(LAMBDA (X)
                  (SETQ
                    TOTAL
-                    (NTH (1- (CADR X)) NOTQTY)
+                    (CAR (NTH (1- (CADR X)) NOTQTY))
                    ;;Get the current total from notqty
                    Q
                     (COND
