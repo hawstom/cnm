@@ -1,7 +1,6 @@
-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
-
-git push https://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@github.com/hawstom/cnm.git
+Go to GitHub and get the access token.
+git push https://[token]@github.com/hawstom/cnm.git
 
 git remote -v 
 git remote remove origin
-git remote add origin https://hawstom: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@github.com/hawstom/cnm.git
+git remote add origin https://hawstom:[token]@github.com/hawstom/cnm.git
