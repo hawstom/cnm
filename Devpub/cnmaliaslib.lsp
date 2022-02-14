@@ -1,3 +1,12 @@
+(SETQ
+  *HCNM-ACTIVATION-PREFERENCE*
+   (ATOI
+     (C:HCNM-CONFIG-GETVAR
+       "CNMAliasActivation"
+     )
+   )
+)
+ 
 (DEFUN
    HCNM-ALIAS-ACTIVATION-GROUPS ()
   ;;("Key" Flag "Message" "Prompt" "Heading")
@@ -80,16 +89,6 @@
                         ACTIVATION-PREFERENCE ALIAS
                         ALIAS-ACTIVATION-FLAG ALIAS-ACTIVATION-GROUP
                        )
-  (IF (NOT *HCNM-ACTIVATION-PREFERENCE*)
-    (SETQ
-      *HCNM-ACTIVATION-PREFERENCE*
-       (ATOI
-         (C:HCNM-CONFIG-GETVAR
-           "CNMAliasActivation"
-         )
-       )
-    )
-  )
   (SETQ ACTIVATION-PREFERENCE *HCNM-ACTIVATION-PREFERENCE*)
   (COND
     ((> ACTIVATION-PREFERENCE 0)
@@ -225,9 +224,9 @@
          "CNMAlias.lsp has been opened in Notepad for you to edit. Follow the instructions inside.\n\nClick OK to load CNM aliases after editing and saving.\n\nAny previous aliases will remain active--overriding PGP aliases--until a new session is started."
        )
      )
-     (LOAD "cnmalias")
     )
   )
+  (LOAD "cnmalias")
   (PRINC)
 )
 (DEFUN
