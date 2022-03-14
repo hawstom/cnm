@@ -2374,6 +2374,20 @@
 )
 
 (DEFUN
+   HCNM-ERROR-NOT-WRITEABLE
+   ()
+  (ALERT
+    (PRINC
+      (STRCAT
+        "Fatal error:\n\nThis drawing must be saved before CNM can be used."
+        "\nCNM cannot continue."
+       )
+    )
+  )
+  (EXIT)
+)
+
+(DEFUN
    HCNM-ERROR-AMBIGUOUS-PROJECT-MARKERS
    (LOCAL-PROJECT-FOLDER LINKED-PROJECT-FOLDER)
   (ALERT
@@ -3445,6 +3459,7 @@ ImportLayerSettings=No
        (SETQ APP (C:HCNM-CONFIG-GETVAR "AppFolder"))
        (SETQ APPINI (FINDFILE (HCNM-PROJECT-FOLDER-TO-INI APP)))
      )
+     (IF (NOT (HAWS-FILE-COPY APPINI PROJINI)) (HCNM-ERROR-NOT-WRITEABLE)) 
      (ALERT
        (PRINC
          (STRCAT
@@ -3453,7 +3468,6 @@ ImportLayerSettings=No
           )
        )
      )
-     (HAWS-FILE-COPY APPINI PROJINI)
      (WHILE (NOT (FINDFILE PROJINI)))
      (SETQ MARK-FILE-P T)
      PROJINI

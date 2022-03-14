@@ -3,7 +3,7 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "5.4.02"
+  "5.4.03"
 )
 (DEFUN
    HAWS-COPYRIGHT ()
@@ -2013,6 +2013,7 @@
 (VL-ACAD-DEFUN 'HAWS-FILE-COPY)
 (DEFUN
    HAWS-FILE-COPY (SOURCE DESTINATION / RDLIN RETURN)
+  (SETQ RETURN T)
   (COND
     ((AND (= (SUBSTR (GETVAR "DWGNAME") 1 7) "Drawing") (WCMATCH DESTINATION (STRCAT (GETVAR "DWGPREFIX") "*")) (WCMATCH (getvar "ACADVER") "*BricsCAD"))
       (ALERT "BricsCAD may crash if this drawing is not in a writable folder.")
@@ -2024,11 +2025,11 @@
     ((HAWS-VLISP-P) 
      (VL-FILE-COPY SOURCE DESTINATION))
     (T
-     (IF (SETQ F1 (OPEN SOURCE "r"))
-       (SETQ RETURN 1)
+     (IF (NOT(SETQ F1 (OPEN SOURCE "r")))
+       (SETQ RETURN nil)
      )
-     (IF (AND RETURN (SETQ F2 (OPEN DESTINATION "w")))
-       (SETQ RETURN 2)
+     (IF (NOT (AND RETURN (SETQ F2 (OPEN DESTINATION "w"))))
+       (SETQ RETURN nil)
      )
      (WHILE (SETQ RDLIN (READ-LINE F1)) (WRITE-LINE RDLIN F2))
      (SETQ F1 (CLOSE F1))
