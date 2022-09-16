@@ -96,7 +96,7 @@
 
 ;;---------------Dimensioning Section---------------
 (haws-autoload "dms"     '("haws-d1" "haws-d2" "haws-dp" "haws-du" "haws-ht"
-                       "haws-te" "haws-xx")
+                       "haws-te" "haws-dimtixtoggle")
 )
 (haws-autoload "arcarrow" '("haws-aar"))
 (haws-autoload "chdim"    '("haws-chdim"))
@@ -140,7 +140,6 @@
 (haws-autoload "lwp"      '("haws-lwp" "haws-lwpx"))
 (haws-autoload "layrprn"  '("haws-laprn"))
 (haws-autoload "ltchang"  '("haws-ltb" "haws-ltc" "haws-lth"))
-(haws-autoload "lm"       '("haws-lm"))
 (haws-autoload "ltp"      '("haws-ltp" "haws-ltpx"))
 (haws-autoload "lx"       '("haws-lx" "haws-lxx"))
 (haws-autoload "offsetx"  '("haws-oo" "haws-offsetx"))

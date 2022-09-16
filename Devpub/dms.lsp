@@ -13,6 +13,6 @@
 (haws-core-init 20)(COMMAND "DIM1" "HOMETEXT")(PRINC))
 (DEFUN c:haws-TE ()
 (haws-core-init 21)(COMMAND "DIM1" "TEDIT")(PRINC))
-(DEFUN c:haws-XX ()
+(DEFUN c:haws-dimtixtoggle ()
 (haws-core-init 22)(HAWS-VTOG '("DIMTIX")))
 ;;--------------------------END ONE LINERS-------------------------

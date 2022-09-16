@@ -570,7 +570,7 @@
     ;; We're assuming they may expect label precision to follow AutoCAD units.
     (list "LUPREC" luprec 'int)
     ;; At runtime retrieval, each setting is converted 
-    ;; from it's storage as a string to the given data type.
+    ;; from its storage as a string to the given data type.
     ;;    Name             Value Data_type
     (list "CurrentElevation" "" 'real)
     (list "ContourInterval" "1.0" 'real)

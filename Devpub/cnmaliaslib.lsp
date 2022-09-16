@@ -20,7 +20,7 @@
     ("Custompgp"
      2
      "custom alias for AutoCAD command (change with CNMAlias)"
-     "Activate CNM's custom LISP changes to PGP definitions including C Copy and CC circle (suggested; shown above in PGP format)"
+     "Activate CNM's custom LISP changes to PGP definitions including C Copy and CC circle (not recommended; shown above in PGP format)"
      "Custom Command Aliases"
     )
     ("Standardpgp"

@@ -1,7 +1,0 @@
-(defun c:haws-LM (/ col name lt )
-(haws-core-init 83)
-  (setq name (getstring "\New Layer name: ") col (getstring "\Color: ")
-  lt (getstring "\Linetype: "))
-  (command "Layer" "m" name "c" col name "L" lt name "")
-  (princ)
-)
