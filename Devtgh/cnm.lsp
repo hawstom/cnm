@@ -2466,7 +2466,8 @@
 )
 
 (DEFUN
-   HCNM-CHECK-MOVED-PROJECT (PROJECT-FILE-NAME / THISFILE-VALUE)
+   HCNM-CHECK-MOVED-PROJECT
+   (PROJECT-FILE-NAME / INPUT1 PNNAME THISFILE-VALUE)
   (COND
     ((AND
        (SETQ
@@ -2476,6 +2477,8 @@
             "CNM"
             "ThisFile"
           )
+         PNNAME
+          (INI_READENTRY PROJECT-FILE-NAME "CNM" "ProjectNotes")
        )
        (/= THISFILE-VALUE "")
        (/= THISFILE-VALUE PROJECT-FILE-NAME)
@@ -2483,17 +2486,25 @@
      (ALERT
        (PRINC
          (STRCAT
-           "Error:\nThe CNM.ini for this folder says \n\"ThisFile=\"" 
-   THISFILE-VALUE
-   "\n\nYou must delete the CNM.ini from this folder or delete/edit that value before proceeding."
-   "\n(If you edit CNM.ini, double-check that the ProjectNotes= line has the correct path.\nIt appears it may have been copied from another project.)"
-          )
+           "Warning!\nYou are using these project notes:\n\n"
+           PNNAME
+           "\n\nand the CNM.ini for this folder says \n\"ThisFile=\""
+           THISFILE-VALUE
+           "\n\nIt appears it may have been copied from another project."
+           "\nYou may be about to edit the wrong Project Notes file."
+         )
        )
      )
-     (EXIT)
+     (INITGET "Yes No")
+     (SETQ INPUT1 (GETKWORD "\nContinue with this file? [Yes/No]: "))
+     (COND
+       ((= INPUT1 "Yes")(INI_WRITEENTRY PROJECT-FILE-NAME "CNM" "ThisFile" ""))
+       (T (EXIT))
+     )
     )
   )
 )
+
 
 (DEFUN HCNM-PROJECT-INI-NAME () "cnm.ini")
 (DEFUN HCNM-PROJECT-LINK-NAME () "cnmproj.txt")
