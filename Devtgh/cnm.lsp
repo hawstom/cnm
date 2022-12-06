@@ -5270,6 +5270,7 @@ ImportLayerSettings=No
    C:HCNM-CNMOPTIONS (/ CNMDCL DONE_CODE RETN)
   (haws-core-init 210)
   (HCNM-PROJINIT)
+  (HCNM-PROJ)
  ;; Load Dialog
   (SETQ CNMDCL (LOAD_DIALOG "cnm.dcl"))
   (setq DONE_CODE 2)
