@@ -285,7 +285,6 @@
 ;;;---------------Block Management Section---------------   )
 (hcnm-define-lisp-alias '("haws-a2t" "a2t" "Tools" ""))
 (hcnm-define-lisp-alias '("haws-att2txt" "att2txt" "Tools" ""))
-(hcnm-define-lisp-alias '("haws-attredef" "attredef" "Tools" ""))
 (hcnm-define-lisp-alias '("haws-at" "at" "Tools" ""))
 (hcnm-define-lisp-alias '("haws-bl0" "bl0" "Tools" ""))
 (hcnm-define-lisp-alias '("haws-xda" "xda" "Tools" ""))
