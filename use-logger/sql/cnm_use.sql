@@ -1,16 +1,22 @@
 -- phpMyAdmin SQL Dump
--- version 4.8.3
+-- version 4.9.7
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Dec 11, 2018 at 12:42 AM
--- Server version: 10.0.37-MariaDB
--- PHP Version: 7.2.7
+-- Generation Time: Feb 18, 2023 at 12:36 PM
+-- Server version: 10.3.38-MariaDB
+-- PHP Version: 7.4.33
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET AUTOCOMMIT = 0;
 START TRANSACTION;
 SET time_zone = "+00:00";
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
 
 --
 -- Database: `jconstru_cnm_use`
@@ -22,15 +28,11 @@ SET time_zone = "+00:00";
 -- Table structure for table `command`
 --
 
-DROP TABLE IF EXISTS `command`;
-CREATE TABLE IF NOT EXISTS `command` (
-  `command_id` smallint(5) UNSIGNED NOT NULL DEFAULT '0',
+CREATE TABLE `command` (
+  `command_id` smallint(5) UNSIGNED NOT NULL DEFAULT 0,
   `command_name` varchar(64) DEFAULT NULL,
-  `command_appgroup` tinyint(3) UNSIGNED DEFAULT NULL,
-  PRIMARY KEY (`command_id`),
-  UNIQUE KEY `command_name` (`command_name`),
-  KEY `command_appgroup` (`command_appgroup`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+  `command_appgroup` tinyint(3) UNSIGNED DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
 -- Dumping data for table `command`
@@ -217,7 +219,7 @@ INSERT INTO `command` (`command_id`, `command_name`, `command_appgroup`) VALUES
 (179, 'hcnm-cnm', 0),
 (180, 'hcnm-cnmkt', 0),
 (181, 'hcnm-cnmkti', 0),
-(182, 'hcnm-cnmqt', 1),
+(182, '(hcnm-cnm) sub-function', 1),
 (183, 'hcnm-linkproj', 0),
 (184, 'testset', 0),
 (185, 'testget', 0),
@@ -367,7 +369,9 @@ INSERT INTO `command` (`command_id`, `command_name`, `command_appgroup`) VALUES
 (331, 'haws-xro', 0),
 (332, 'haws-xroffset', 0),
 (333, 'haws-xu', 0),
-(334, 'haws-xy', 0);
+(334, 'haws-xy', 0),
+(335, 'hcnm-notesedit pro', 2),
+(336, 'hcnm-cnmqt', 1);
 
 -- --------------------------------------------------------
 

@@ -24,8 +24,9 @@ CIR NOTES
 TITLE PAVING NOTES
 1    SAWCUT LINE                                                   LF LINE1
 2    SURVEY MONUMENT                                               EA COUNT
-3    2" A/C ON 7" ABC                                              SY LINE0
-4    ADJUST MANHOLE COVER                                          EA COUNT
+TITLE WATER NOTES
+21   8" WATER PVC WATER LINE                                       LF LINE1 50
+22   8" VALVE, BOX & COVER                                         EA COUNT
 ;
 DIAMOND NOTES
 TITLE
