@@ -55,7 +55,7 @@
       (STRCAT
         "Construction Notes Manager version "
         (HAWS-UNIFIED-VERSION)
-        "\n\n" (HAWS-COPYRIGHT) "\nhttp://constructionnotesmanager.com\nhttp://hawsedc.com\n"
+        "\n\n" (HAWS-COPYRIGHT) "\nhttp://constructionnotesmanager.com\nhttp://hawsedc.com\n\nCNM started around 1997 with code written by Tom Haws for hire to Standage and Truitt Engineering. In July 2020 after a long search of and negotiation with all stakeholders, CNM was released as Free Software with its source code available at http://github.com/hawstom/cnm"
         (APPLY
           'STRCAT
           (MAPCAR
@@ -1725,6 +1725,7 @@
      (334 0 "haws-xy")
      (335 2 "hcnm-notesedit")
      (336 1 "hcnm-cnmqt")
+     (337 1 "hcnm-replace-bubble")
     )
 )
 
