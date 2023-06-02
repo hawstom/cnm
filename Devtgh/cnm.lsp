@@ -65,7 +65,7 @@
 ;;; 2000            Added user size variables to CONSTNOT.TXT
 ;;; 1999     v3.20  Improved performance by rewriting code.
 (DEFUN
-   HCNM-GETPHASELISTFROMTBLQTY (/ EL EN I DSCTAG NOTEQTYONDISK OLDTAGS
+   HCNM_GETPHASELISTFROMTBLQTY (/ EL EN I DSCTAG NOTEQTYONDISK OLDTAGS
                                 PHASEALIAS PHASELIST
                                )
   ;;Check for phasing in qty table block.  Phasing is controlled by presence of TBLQTY? attributes.
@@ -249,7 +249,7 @@
 ;;;
 ;;;Set up list from CONSTNOT.TXT and NOTEQTY block.
 (DEFUN
-   HCNM-KEY-TABLE-SEARCHANDSAVE (DN PROJNOTES / ALIASLIST AT AV BLKI
+   HCNM_KEY_TABLE_SEARCHANDSAVE (DN PROJNOTES / ALIASLIST AT AV BLKI
                                    BLKSS COUNT CTABONLY EL EN ET I J
                                    MVPORT MVSSET N NFNAME NOTEFND NOTEI
                                    NOTELINES NOTELIST NOTENUM NOTEPHASE
@@ -262,13 +262,13 @@
 ;;;
   (SETQ
     PHASELIST
-     (HCNM-GETPHASELISTFROMTBLQTY)
+     (HCNM_GETPHASELISTFROMTBLQTY)
     CTABONLY
      (= "1" (c:hcnm-config-getvar "DoCurrentTabOnly"))
     NOTTYP ""
   )
   (FOREACH
-     ENTRY *HCNM-CNMPROJECTNOTES*
+     ENTRY *HCNM_CNMPROJECTNOTES*
     (COND
       ;;If it's a note
       ((= 3 (CAR ENTRY))
@@ -736,14 +736,14 @@
 ;;Puts table at qtypt.
 ;; TGH to use this for TALLY, maybe I just need to read NOTELIST as an argument instead of from a file in this function.
 (DEFUN
-   HCNM-KEY-TABLE-MAKE (NFSOURCE QTYPT QTYSET DN TXTHT / CTABONLY ICOL
-                        IPHASE COLUMN-HEIGHT NOTE-FIRST-LINE-P
-                        COLUMN-HEIGHT-PENDING NFNAME NOTDSC NOTELIST
+   HCNM_KEY_TABLE_MAKE (NFSOURCE QTYPT QTYSET DN TXTHT / CTABONLY ICOL
+                        IPHASE COLUMN_HEIGHT NOTE_FIRST_LINE_P
+                        COLUMN_HEIGHT_PENDING NFNAME NOTDSC NOTELIST
                         NOTESMAXHEIGHT NOTETITLES NOTNUM NOTQTY NOTTYP
                         NOTUNT NUMFND PHASELIST PROMPTEACHCOL QTY QTYPT1
                         RDLIN TXTHTTEMP TYPFND USRVAR
                        )
-  (SETQ PHASELIST (HCNM-GETPHASELISTFROMTBLQTY))
+  (SETQ PHASELIST (HCNM_GETPHASELISTFROMTBLQTY))
   (SETVAR "osmode" 0)
   (SETVAR "attreq" 1)
   (INITGET "Prompt")
@@ -798,8 +798,8 @@
     )
   )
   ;;All prompts done.  Let's make table!
-  (HCNM-PROJINIT)                       ;Initialize project after user pauses
-  (HCNM-READCF (HCNM-PROJNOTES))
+  (HCNM_PROJINIT)                       ;Initialize project after user pauses
+  (HCNM_READCF (HCNM_PROJNOTES))
   (SETQ
     LINSPC
      (ATOF (C:HCNM-CONFIG-GETVAR "LineSpacing"))
@@ -810,7 +810,7 @@
     PHASEWID
      (ATOF (C:HCNM-CONFIG-GETVAR "PhaseWidthAdd"))
     ICOL 1
-    COLUMN-HEIGHT 0
+    COLUMN_HEIGHT 0
     IPHASE 1
     QTYPT1 QTYPT
   )
@@ -844,7 +844,7 @@
     (COMMAND "._erase" QTYSET "")
   )
   (FOREACH
-     ENTRY *HCNM-CNMPROJECTNOTES*
+     ENTRY *HCNM_CNMPROJECTNOTES*
     (COND
       ;;If it's a variable config, set it.
       ((= 1 (CAR ENTRY))
@@ -921,7 +921,7 @@
          )
        )
        (SETQ
-         COLUMN-HEIGHT-PENDING 0
+         COLUMN_HEIGHT_PENDING 0
          NOTUNT
           (CADDDR ENTRY)
          NOTQTY
@@ -954,19 +954,19 @@
          (NOTETITLES
           (SETQ
             TXTHTTEMP TXTHT
-            I-TITLE 0
+            I_TITLE 0
           )
           (FOREACH
              NOTETITLE (REVERSE NOTETITLES)
             (SETQ TXTHT (CAR NOTETITLE))
             (COND
-              ((= I-TITLE 0)
+              ((= I_TITLE 0)
                (COND
                  ;; At top, rewind before first title
-                 ((= COLUMN-HEIGHT 0)
+                 ((= COLUMN_HEIGHT 0)
                   (SETQ
-                    COLUMN-HEIGHT-PENDING
-                     (+ COLUMN-HEIGHT-PENDING
+                    COLUMN_HEIGHT_PENDING
+                     (+ COLUMN_HEIGHT_PENDING
                         (* -0.5 TXTHT LINSPC)
                      )
                   )
@@ -974,8 +974,8 @@
                  ;; Else add a paragraph space before first title
                  (T
                   (SETQ
-                    COLUMN-HEIGHT-PENDING
-                     (+ COLUMN-HEIGHT-PENDING
+                    COLUMN_HEIGHT_PENDING
+                     (+ COLUMN_HEIGHT_PENDING
                         (* TXTHT (- NOTSPC LINSPC))
                      )
                   )
@@ -985,12 +985,12 @@
             )
             ;; Space for each title
             (SETQ
-              COLUMN-HEIGHT-PENDING
-               (+ COLUMN-HEIGHT-PENDING
+              COLUMN_HEIGHT_PENDING
+               (+ COLUMN_HEIGHT_PENDING
                   (* TXTHT LINSPC)
                )
-              I-TITLE
-               (1+ I-TITLE)
+              I_TITLE
+               (1+ I_TITLE)
             )
           )
           (SETQ TXTHT TXTHTTEMP)
@@ -999,10 +999,10 @@
        ;; Calculate height of note
        (COND
          ;; At top, rewind before note
-         ((AND (NOT NOTETITLES) (= COLUMN-HEIGHT 0))
+         ((AND (NOT NOTETITLES) (= COLUMN_HEIGHT 0))
           (SETQ
-            COLUMN-HEIGHT-PENDING
-             (+ COLUMN-HEIGHT-PENDING
+            COLUMN_HEIGHT_PENDING
+             (+ COLUMN_HEIGHT_PENDING
                 (* -0.5 TXTHT LINSPC)
              )
           )
@@ -1010,17 +1010,17 @@
          ;; Else add a paragraph space before note
          (T
           (SETQ
-            COLUMN-HEIGHT-PENDING
-             (+ COLUMN-HEIGHT-PENDING
+            COLUMN_HEIGHT_PENDING
+             (+ COLUMN_HEIGHT_PENDING
                 (* TXTHT (- NOTSPC LINSPC))
              )
           )
          )
        )
        (SETQ
-         COLUMN-HEIGHT-PENDING
+         COLUMN_HEIGHT_PENDING
           ;; Add note height
-          (+ COLUMN-HEIGHT-PENDING
+          (+ COLUMN_HEIGHT_PENDING
              (* (CADR NOTNUM) (* TXTHT LINSPC))
           )
        )
@@ -1028,11 +1028,11 @@
        ;; If titles _and note_ won't fit and column isn't empty, advance to new column
        (COND
          ((AND
-            (> (+ COLUMN-HEIGHT-PENDING COLUMN-HEIGHT) NOTESMAXHEIGHT)
+            (> (+ COLUMN_HEIGHT_PENDING COLUMN_HEIGHT) NOTESMAXHEIGHT)
                                         ; Won't fit
-            (/= COLUMN-HEIGHT 0)        ; Not first note in column
+            (/= COLUMN_HEIGHT 0)        ; Not first note in column
           )
-          (HCNM-KEY-TABLE-ADVANCE-COLUMN)
+          (HCNM_KEY_TABLE_ADVANCE_COLUMN)
          )
        )
        ;; Add any titles
@@ -1040,70 +1040,70 @@
          (NOTETITLES
           (SETQ
             TXTHTTEMP TXTHT
-            I-TITLE 0
+            I_TITLE 0
           )
           (FOREACH
              NOTETITLE (REVERSE NOTETITLES)
             (SETQ TXTHT (CAR NOTETITLE))
             ;; If not first note, space appropriately
             (COND
-              ((/= COLUMN-HEIGHT 0)     ; Not first note in column
+              ((/= COLUMN_HEIGHT 0)     ; Not first note in column
                (COND
                  ;; Add a paragraph space above first title based on its height
-                 ((= I-TITLE 0)
-                  (HCNM-KEY-TABLE-ADVANCE-DOWN (* 0.5 (- NOTSPC LINSPC)))
+                 ((= I_TITLE 0)
+                  (HCNM_KEY_TABLE_ADVANCE_DOWN (* 0.5 (- NOTSPC LINSPC)))
                  )
                )
-               (HCNM-KEY-TABLE-ADVANCE-DOWN (* 0.5 LINSPC))
+               (HCNM_KEY_TABLE_ADVANCE_DOWN (* 0.5 LINSPC))
               )
             )
             (COND
               ((= (C:HCNM-CONFIG-GETVAR "ShowKeyTableTitleShapes") "1")
-               (HCNM-KEY-TABLE-INSERT-SHAPE)
+               (HCNM_KEY_TABLE_INSERT_SHAPE)
               )
             )
             (SETQ NOTDSC (CADR NOTETITLE))
-            (HCNM-KEY-TABLE-INSERT-TEXT)
-            (HCNM-KEY-TABLE-ADVANCE-DOWN (* 0.5 LINSPC))
+            (HCNM_KEY_TABLE_INSERT_TEXT)
+            (HCNM_KEY_TABLE_ADVANCE_DOWN (* 0.5 LINSPC))
           )
-          (HCNM-KEY-TABLE-ADVANCE-DOWN (* 0.5 (- NOTSPC LINSPC)))
+          (HCNM_KEY_TABLE_ADVANCE_DOWN (* 0.5 (- NOTSPC LINSPC)))
           (SETQ TXTHT TXTHTTEMP)
          )
        )
        ;; If note won't fit in new column with titles, advance column again.
        (COND
          (;; Titles were added
-          (/= COLUMN-HEIGHT 0)
+          (/= COLUMN_HEIGHT 0)
           (COND
             (;; Note won't fit after titles.
-             (> (+ COLUMN-HEIGHT-PENDING COLUMN-HEIGHT) NOTESMAXHEIGHT)
-             (HCNM-KEY-TABLE-ADVANCE-COLUMN)
+             (> (+ COLUMN_HEIGHT_PENDING COLUMN_HEIGHT) NOTESMAXHEIGHT)
+             (HCNM_KEY_TABLE_ADVANCE_COLUMN)
             )
             (;; Note will fit after titles.
              T
              ;; Paragraph spacing
-             (HCNM-KEY-TABLE-ADVANCE-DOWN (* 0.5 (- NOTSPC LINSPC)))
+             (HCNM_KEY_TABLE_ADVANCE_DOWN (* 0.5 (- NOTSPC LINSPC)))
              ;; Down to middle of first note
-             (HCNM-KEY-TABLE-ADVANCE-DOWN (* 0.5 LINSPC))
+             (HCNM_KEY_TABLE_ADVANCE_DOWN (* 0.5 LINSPC))
             )
           )
          )
        )
        ;; Now add note
-       (SETQ NOTE-FIRST-LINE-P T)
-       (HCNM-KEY-TABLE-INSERT-SHAPE)
-       (HCNM-KEY-TABLE-ADVANCE-DOWN (* -0.5 LINSPC))
+       (SETQ NOTE_FIRST_LINE_P T)
+       (HCNM_KEY_TABLE_INSERT_SHAPE)
+       (HCNM_KEY_TABLE_ADVANCE_DOWN (* -0.5 LINSPC))
        (FOREACH
           NOTDSC (NTH 6 ENTRY)
-         (HCNM-KEY-TABLE-ADVANCE-DOWN (* 0.5 LINSPC))
-         (HCNM-KEY-TABLE-INSERT-TEXT)
-         (HCNM-KEY-TABLE-ADVANCE-DOWN (* 0.5 LINSPC))
+         (HCNM_KEY_TABLE_ADVANCE_DOWN (* 0.5 LINSPC))
+         (HCNM_KEY_TABLE_INSERT_TEXT)
+         (HCNM_KEY_TABLE_ADVANCE_DOWN (* 0.5 LINSPC))
          (SETQ
            NOTETITLES NIL
-           NOTE-FIRST-LINE-P NIL
+           NOTE_FIRST_LINE_P NIL
          )
        )
-       (HCNM-KEY-TABLE-ADVANCE-DOWN (* 0.5 (- NOTSPC LINSPC)))
+       (HCNM_KEY_TABLE_ADVANCE_DOWN (* 0.5 (- NOTSPC LINSPC)))
       )
     )
   )
@@ -1143,9 +1143,9 @@
 
 
 (DEFUN
-   HCNM-KEY-TABLE-ADVANCE-COLUMN ()
+   HCNM_KEY_TABLE_ADVANCE_COLUMN ()
   (SETQ
-    COLUMN-HEIGHT 0
+    COLUMN_HEIGHT 0
     ICOL
      (1+ ICOL)
     QTYPT
@@ -1162,20 +1162,20 @@
 )
 
 (DEFUN
-   HCNM-KEY-TABLE-ADVANCE-DOWN (SPACE / DOWN-HEIGHT)
+   HCNM_KEY_TABLE_ADVANCE_DOWN (SPACE / DOWN_HEIGHT)
   (SETQ
-    DOWN-HEIGHT (* SPACE TXTHT)
+    DOWN_HEIGHT (* SPACE TXTHT)
     QTYPT
-     (POLAR QTYPT (* PI -0.5) DOWN-HEIGHT)
-    COLUMN-HEIGHT
-     (+ COLUMN-HEIGHT DOWN-HEIGHT)
-    COLUMN-HEIGHT-PENDING
-     (- COLUMN-HEIGHT-PENDING DOWN-HEIGHT)
+     (POLAR QTYPT (* PI -0.5) DOWN_HEIGHT)
+    COLUMN_HEIGHT
+     (+ COLUMN_HEIGHT DOWN_HEIGHT)
+    COLUMN_HEIGHT_PENDING
+     (- COLUMN_HEIGHT_PENDING DOWN_HEIGHT)
   )
 )
 
 (DEFUN
-   HCNM-KEY-TABLE-INSERT-SHAPE ()
+   HCNM_KEY_TABLE_INSERT_SHAPE ()
   (COMMAND
     "._insert"
     (STRCAT "cnm" NOTTYP)
@@ -1187,7 +1187,7 @@
 )
 
 (DEFUN
-   HCNM-KEY-TABLE-INSERT-TEXT ()
+   HCNM_KEY_TABLE_INSERT_TEXT ()
 ;;;All this stuff is to make the attribute order insensitive.
 ;;;    (setvar "attreq" 0)
 ;;;       (COMMAND
@@ -1237,11 +1237,11 @@
     TXTHT
     ""
     "0"
-    (IF NOTE-FIRST-LINE-P
+    (IF NOTE_FIRST_LINE_P
       NOTTYP
       ""
     )
-    (IF NOTE-FIRST-LINE-P
+    (IF NOTE_FIRST_LINE_P
       (CAR NOTNUM)
       ""
     )
@@ -1250,27 +1250,27 @@
   (FOREACH
      X NOTQTY
     (COMMAND
-      (IF NOTE-FIRST-LINE-P
+      (IF NOTE_FIRST_LINE_P
         X
         ""
       )
     )
   )
   (COMMAND
-    (IF NOTE-FIRST-LINE-P
+    (IF NOTE_FIRST_LINE_P
       NOTUNT
       ""
     )
   )
 )
 
-;;HCNM-KEY-TABLE-FROM-SEARCH
+;;HCNM_KEY_TABLE_FROM_SEARCH
 ;;In the NOTES strategy, this routine is first of three main routines.
 ;;Gets project info from CONSTNOT.TXT
 ;;Gets drawing info from bubbles or table.
 ;;Saves all in .NOT file for other two routines
 (DEFUN
-   HCNM-KEY-TABLE-FROM-SEARCH (DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID /
+   HCNM_KEY_TABLE_FROM_SEARCH (DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID /
                            EL EN I NOTELIST QTYPT QTYSET TABLESPACE
                           )
   (SETQ
@@ -1316,15 +1316,15 @@
   (IF (NOT QTYPT)
     (SETQ QTYPT (GETPOINT "\nStart point for key notes table: "))
   )
-  (HCNM-KEY-TABLE-SEARCHANDSAVE DN PROJNOTES)
+  (HCNM_KEY_TABLE_SEARCHANDSAVE DN PROJNOTES)
   ;;Make a new notes table
-  (HCNM-KEY-TABLE-MAKE "E" QTYPT QTYSET DN TXTHT)
+  (HCNM_KEY_TABLE_MAKE "E" QTYPT QTYSET DN TXTHT)
 )
-;;HCNM-IMPORT
+;;HCNM_IMPORT
 ;;In the NOTES strategy, this routine is second of three main routines.
-;;Reads from .NOT file, created by HCNM-KEY-TABLE-FROM-SEARCH, everything necessary and creates a table. 
+;;Reads from .NOT file, created by HCNM_KEY_TABLE_FROM_SEARCH, everything necessary and creates a table. 
 (DEFUN
-   HCNM-IMPORT (DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID / EL EN I QTYPT
+   HCNM_IMPORT (DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID / EL EN I QTYPT
                QTYSET TABLESPACE
               )
   (SETQ
@@ -1374,9 +1374,9 @@
     )
   )
   ;;Make a new notes table after erasing qtyset
-  (HCNM-KEY-TABLE-MAKE "I" QTYPT QTYSET DN TXTHT)
+  (HCNM_KEY_TABLE_MAKE "I" QTYPT QTYSET DN TXTHT)
 )
-;;HCNM-TALLY
+;;HCNM_TALLY
 ;;In the NOTES strategy, this routine is the third of three main routines.
 ;;Reads from a group of .NOT files everything necessary to create a list of total quantities for job.
 ;;Reads CONSTNOT.TXT to put the .NOT files in order.
@@ -1392,8 +1392,8 @@
 ;;   put the qtys.  Use "" for any unused phases on a sheet.
 ;;   '((shti (typj (notek qty1 qty2 qtyk))))
 (DEFUN
-   HCNM-TALLY (DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID / ALLNOT COL1X
-              COLUMN COST COSTI DQWID SHEET_FILENAME EL NOTE-FIRST-LINE-P FLSPEC I SHEET_LIST_FILENAME NDWID
+   HCNM_TALLY (DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID / ALLNOT COL1X
+              COLUMN COST COSTI DQWID SHEET_FILENAME EL NOTE_FIRST_LINE_P FLSPEC I SHEET_LIST_FILENAME NDWID
               NFNAME NOTELIST NOTETITLES NOTFIL NOTNUM NOTQTY NOTSPC
               NOTTYP NOTUNT NUMFND NUMLIST PGPMOD PHASE PHASELIST
               PHASENUMI PT1Z Q QQWID ALL_SHEETS_QUANTITIES QTYPT1 QTYSET QUWID ROW1Y
@@ -1791,8 +1791,8 @@
        )
      )
   )
-  (HCNM-PROJINIT)                       ;Initialize project after user pauses
-  (HCNM-READCF (HCNM-PROJNOTES))
+  (HCNM_PROJINIT)                       ;Initialize project after user pauses
+  (HCNM_READCF (HCNM_PROJNOTES))
   (SETQ
     LINSPC
      (ATOF (c:hcnm-config-getvar "LineSpacing"))
@@ -1890,7 +1890,7 @@
   )
   ;;For each line in project file
   (FOREACH
-     ENTRY *HCNM-CNMPROJECTNOTES*
+     ENTRY *HCNM_CNMPROJECTNOTES*
     (COND
       ;;If it's a config setting, set it.
       ((= 1 (CAR ENTRY))
@@ -2139,7 +2139,7 @@
        )
        (SETQ
          X         (+ COL1X (* TXTHT NDWID))
-         NOTE-FIRST-LINE-P T
+         NOTE_FIRST_LINE_P T
        )
        (FOREACH
           NOTDSC (NTH 6 ENTRY)
@@ -2173,16 +2173,16 @@
 )
 ;;CNM main commands
 (DEFUN C:HCNM-CNM ()
-(haws-core-init 179) (HCNM-CNM NIL))
+(haws-core-init 179) (HCNM_CNM NIL))
 (DEFUN C:HCNM-CNMKT ()
-(haws-core-init 180) (HCNM-CNM "Search"))
+(haws-core-init 180) (HCNM_CNM "Search"))
 (DEFUN C:HCNM-CNMKTI ()
-(haws-core-init 181) (HCNM-CNM "Import"))
+(haws-core-init 181) (HCNM_CNM "Import"))
 (DEFUN C:HCNM-CNMQT ()
-(haws-core-init 336) (HCNM-CNM "Tally"))
+(haws-core-init 336) (HCNM_CNM "Tally"))
 ;;CNM main function
 (DEFUN
-   HCNM-CNM (OPT / CFNAME DN LINSPC PHASEWID TBLWID TXTHT)
+   HCNM_CNM (OPT / CFNAME DN LINSPC PHASEWID TBLWID TXTHT)
   ;;Main function
   (HAWS-VSAVE
     '("attdia" "attreq" "cmdecho" "clayer" "osmode")
@@ -2210,13 +2210,13 @@
      )
     )
   )
-  (HCNM-PROJINIT)                       ;Initialize after pauses
+  (HCNM_PROJINIT)                       ;Initialize after pauses
   ;;Set user's desired dimstyle.
-  (HCNM-SET-DIMSTYLE "NotesKeyTableDimstyle")
+  (HCNM_SET_DIMSTYLE "NotesKeyTableDimstyle")
   (SETQ
     DN (HAWS-GETDNPATH)
     PROJNOTES
-     (HCNM-PROJNOTES)
+     (HCNM_PROJNOTES)
     TXTHT
      (* (GETVAR "dimtxt") (HAWS-DWGSCALE))
     ;;Column and line spacing widths (half width for middle justified columns)
@@ -2230,22 +2230,22 @@
     PHASEWID
      (ATOF (c:hcnm-config-getvar "PhaseWidthAdd"))
   )
-  (HCNM-READCF PROJNOTES)
+  (HCNM_READCF PROJNOTES)
   (COND
     ((= OPT "Search")
-     (HCNM-KEY-TABLE-FROM-SEARCH
+     (HCNM_KEY_TABLE_FROM_SEARCH
        DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID
       )
     )
     ((= OPT "Import")
-     (HCNM-IMPORT DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID)
+     (HCNM_IMPORT DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID)
     )
     ((= OPT "Tally")
-     (HCNM-TALLY DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID)
+     (HCNM_TALLY DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID)
     )
   )
   ;;Restore old dimstyle
-  (HCNM-RESTORE-DIMSTYLE)
+  (HCNM_RESTORE_DIMSTYLE)
   (HAWS-VRSTOR)
   (haws-core-restore)
   (PRINC)
@@ -2261,90 +2261,90 @@
 ;;;================================================================================================================
 
 ;;
-;;HCNM-PROJINIT initializes the CNM project variables
+;;HCNM_PROJINIT initializes the CNM project variables
 ;;because there is good reason to believe they need to
 ;;be checked again (a pause for user input or a new user command)
 ;;All the functions assume if they are present they are valid.
 ;;
 (DEFUN
-   HCNM-PROJINIT ()
+   HCNM_PROJINIT ()
   (SETQ
-    *HCNM-CONFIG* NIL
-    *HCNM-CNMPROJECTROOT* NIL
-    *HCNM-CNMPROJECTNOTES* NIL
+    *HCNM_CONFIG* NIL
+    *HCNM_CNMPROJECTROOT* NIL
+    *HCNM_CNMPROJECTNOTES* NIL
   )
 )
 
 
 ;;Does nothing but strcat, since the existence of the file
-;;is validated by (HCNM-PROJ)
+;;is validated by (HCNM_PROJ)
 (DEFUN
-   HCNM-INI-NAME (PROJ)
-  (HCNM-PROJECT-FOLDER-TO-INI PROJ)
+   HCNM_INI_NAME (PROJ)
+  (HCNM_PROJECT_FOLDER_TO_INI PROJ)
 )
 
-;; HCNM-PROJ gets a valid project root folder for this drawing's folder.
+;; HCNM_PROJ gets a valid project root folder for this drawing's folder.
 ;; While it returns the folder only, that folder is qualified to have CNM.INI in it.
 ;; It should resolve all errors and user conditions
 ;; and return a "drive:\\...\\projroot" path to other functions.
 (DEFUN
-   HCNM-PROJ (/ DWGDIR LINKED-PROJECT-FOLDER LINKED-PROJECT-MARKER
-              LOCAL-PROJECT-FOLDER LOCAL-PROJECT-MARKER
+   HCNM_PROJ (/ DWGDIR LINKED_PROJECT_FOLDER LINKED_PROJECT_MARKER
+              LOCAL_PROJECT_FOLDER LOCAL_PROJECT_MARKER
              )
   (SETQ
     DWGDIR
      (HAWS-FILENAME-DIRECTORY (GETVAR "dwgprefix"))
-    LOCAL-PROJECT-MARKER
-     (HCNM-LOCAL-PROJECT-MARKER DWGDIR)
-    LINKED-PROJECT-MARKER
-     (HCNM-LINKED-PROJECT-MARKER DWGDIR)
+    LOCAL_PROJECT_MARKER
+     (HCNM_LOCAL_PROJECT_MARKER DWGDIR)
+    LINKED_PROJECT_MARKER
+     (HCNM_LINKED_PROJECT_MARKER DWGDIR)
   )
   (COND
-    (LOCAL-PROJECT-MARKER
+    (LOCAL_PROJECT_MARKER
      (SETQ
-       LOCAL-PROJECT-FOLDER
-        (HCNM-ASSURE-LOCAL-PROJECT
-          LOCAL-PROJECT-MARKER
+       LOCAL_PROJECT_FOLDER
+        (HCNM_ASSURE_LOCAL_PROJECT
+          LOCAL_PROJECT_MARKER
         )
      )
     )
   )
   (COND
-    (LINKED-PROJECT-MARKER
+    (LINKED_PROJECT_MARKER
      (SETQ
-       LINKED-PROJECT-FOLDER
-        (HCNM-ASSURE-LINKED-PROJECT
-          LINKED-PROJECT-MARKER
+       LINKED_PROJECT_FOLDER
+        (HCNM_ASSURE_LINKED_PROJECT
+          LINKED_PROJECT_MARKER
         )
      )
     )
   )
   (SETQ
-    *HCNM-CNMPROJECTROOT*
+    *HCNM_CNMPROJECTROOT*
      (COND
        ;;If project is already defined this session, use it.
        ;;(Assume it's valid.  Calling function should init project if there's been a chance of change or loss by user.)
-       (*HCNM-CNMPROJECTROOT*)
+       (*HCNM_CNMPROJECTROOT*)
        ((AND
-          LOCAL-PROJECT-MARKER
-          LINKED-PROJECT-MARKER
+          LOCAL_PROJECT_MARKER
+          LINKED_PROJECT_MARKER
         )
-        (HCNM-ERROR-AMBIGUOUS-PROJECT-MARKERS
-          LOCAL-PROJECT-FOLDER
-          LINKED-PROJECT-FOLDER
+        (HCNM_ERROR_AMBIGUOUS_PROJECT_MARKERS
+          LOCAL_PROJECT_FOLDER
+          LINKED_PROJECT_FOLDER
         )
        )
-       ;;Else Well-formed simple (single-folder) projects. CNM.INI is here.
-       (LOCAL-PROJECT-MARKER
-        (HCNM-ASSURE-LOCAL-PROJECT
-          LOCAL-PROJECT-MARKER
+       ;;Else well-formed simple (single-folder) projects. CNM.INI is here.
+       (LOCAL_PROJECT_MARKER
+        (HCNM_ASSURE_LOCAL_PROJECT
+          LOCAL_PROJECT_MARKER
         )
        )
        ;;Well-formed complex (multi-folder) projects.  CNMPROJ.TXT is here and
        ;;we'll make sure it really points to a CNM.INI.
-       (LINKED-PROJECT-MARKER
-        (HCNM-ASSURE-LINKED-PROJECT
-          LINKED-PROJECT-MARKER
+       (LINKED_PROJECT_MARKER
+        (HCNM_ASSURE_LINKED_PROJECT
+          LINKED_PROJECT_MARKER
         )
        )
        ;;Make a project in this drawing's folder.
@@ -2356,7 +2356,7 @@
             )
           )
         )
-        (HCNM-INITIALIZE-PROJECT DWGDIR)
+        (HCNM_INITIALIZE_PROJECT DWGDIR)
         DWGDIR
        )
      )
@@ -2364,17 +2364,17 @@
 )
 
 (DEFUN
-   HCNM-LOCAL-PROJECT-MARKER (DWGDIR)
-  (FINDFILE (HCNM-PROJECT-FOLDER-TO-INI DWGDIR))
+   HCNM_LOCAL_PROJECT_MARKER (DWGDIR)
+  (FINDFILE (HCNM_PROJECT_FOLDER_TO_INI DWGDIR))
 )
 
 (DEFUN
-   HCNM-LINKED-PROJECT-MARKER (DWGDIR)
-  (FINDFILE (HCNM-PROJECT-FOLDER-TO-LINK DWGDIR))
+   HCNM_LINKED_PROJECT_MARKER (DWGDIR)
+  (FINDFILE (HCNM_PROJECT_FOLDER_TO_LINK DWGDIR))
 )
 
 (DEFUN
-   HCNM-ERROR-NOT-WRITEABLE
+   HCNM_ERROR_NOT_WRITEABLE
    ()
   (ALERT
     (PRINC
@@ -2388,14 +2388,14 @@
 )
 
 (DEFUN
-   HCNM-ERROR-AMBIGUOUS-PROJECT-MARKERS
-   (LOCAL-PROJECT-FOLDER LINKED-PROJECT-FOLDER)
+   HCNM_ERROR_AMBIGUOUS_PROJECT_MARKERS
+   (LOCAL_PROJECT_FOLDER LINKED_PROJECT_FOLDER)
   (ALERT
     (PRINC
       (STRCAT
-        "Error:\nThis drawing's folder\n" LOCAL-PROJECT-FOLDER
+        "Error:\nThis drawing's folder\n" LOCAL_PROJECT_FOLDER
         "\nhas both its own project settings (CNM.ini) and a link (in CNMPROJ.TXT) to a project in another folder:\n"
-        LINKED-PROJECT-FOLDER
+        LINKED_PROJECT_FOLDER
         "\n\nCNM cannot continue. File names will be printed to the command history for your use resolving the ambiguity."
        )
     )
@@ -2403,13 +2403,13 @@
   (PRINC
     (STRCAT
       "\nLocal project: "
-      (HCNM-PROJECT-FOLDER-TO-INI LOCAL-PROJECT-FOLDER)
+      (HCNM_PROJECT_FOLDER_TO_INI LOCAL_PROJECT_FOLDER)
     )
   )
   (PRINC
     (STRCAT
       "\nLink to another project: "
-      (HCNM-PROJECT-FOLDER-TO-LINK LOCAL-PROJECT-FOLDER)
+      (HCNM_PROJECT_FOLDER_TO_LINK LOCAL_PROJECT_FOLDER)
     )
   )
   (EXIT)
@@ -2417,16 +2417,16 @@
 
 
 (DEFUN
-   HCNM-ASSURE-LOCAL-PROJECT (LOCAL-MARKER-FILE)
-  (HCNM-CHECK-MOVED-PROJECT LOCAL-MARKER-FILE)
-  (HAWS-FILENAME-DIRECTORY LOCAL-MARKER-FILE)
+   HCNM_ASSURE_LOCAL_PROJECT (LOCAL_MARKER_FILE)
+  (HCNM_CHECK_MOVED_PROJECT LOCAL_MARKER_FILE)
+  (HAWS-FILENAME-DIRECTORY LOCAL_MARKER_FILE)
 )
 
 (DEFUN
-   HCNM-ASSURE-LINKED-PROJECT (LINK-MARKER / PROJROOT RDLIN)
+   HCNM_ASSURE_LINKED_PROJECT (LINK_MARKER / PROJROOT RDLIN)
   (COND
     ((AND
-       (SETQ F1 (OPEN LINK-MARKER "r"))
+       (SETQ F1 (OPEN LINK_MARKER "r"))
        (PROGN
          (WHILE (AND (SETQ RDLIN (READ-LINE F1)) (NOT PROJROOT))
            (COND
@@ -2449,11 +2449,11 @@
      )
     )
   )
-  (IF (NOT (FINDFILE (HCNM-INI-NAME PROJROOT)))
-    (HCNM-INITIALIZE-PROJECT PROJROOT)
+  (IF (NOT (FINDFILE (HCNM_INI_NAME PROJROOT)))
+    (HCNM_INITIALIZE_PROJECT PROJROOT)
   )
-  (HCNM-CHECK-MOVED-PROJECT
-    (HCNM-PROJECT-FOLDER-TO-INI PROJROOT)
+  (HCNM_CHECK_MOVED_PROJECT
+    (HCNM_PROJECT_FOLDER_TO_INI PROJROOT)
   )
   (PRINC
     (STRCAT
@@ -2466,22 +2466,22 @@
 )
 
 (DEFUN
-   HCNM-CHECK-MOVED-PROJECT
-   (PROJECT-FILE-NAME / INPUT1 PNNAME THISFILE-VALUE)
+   HCNM_CHECK_MOVED_PROJECT
+   (PROJECT_FILE_NAME / INPUT1 PNNAME THISFILE_VALUE)
   (COND
     ((AND
        (SETQ
-         THISFILE-VALUE
+         THISFILE_VALUE
           (INI_READENTRY
-            PROJECT-FILE-NAME
+            PROJECT_FILE_NAME
             "CNM"
             "ThisFile"
           )
          PNNAME
-          (INI_READENTRY PROJECT-FILE-NAME "CNM" "ProjectNotes")
+          (INI_READENTRY PROJECT_FILE_NAME "CNM" "ProjectNotes")
        )
-       (/= THISFILE-VALUE "")
-       (/= THISFILE-VALUE PROJECT-FILE-NAME)
+       (/= THISFILE_VALUE "")
+       (/= THISFILE_VALUE PROJECT_FILE_NAME)
      )
      (ALERT
        (PRINC
@@ -2489,7 +2489,7 @@
            "Warning!\nYou are using these project notes:\n\n"
            PNNAME
            "\n\nand the CNM.ini for this folder says \n\"ThisFile=\""
-           THISFILE-VALUE
+           THISFILE_VALUE
            "\n\nIt appears it may have been copied from another project."
            "\nYou may be about to edit the wrong Project Notes file."
          )
@@ -2498,7 +2498,7 @@
      (INITGET "Yes No")
      (SETQ INPUT1 (GETKWORD "\nContinue with this file? [Yes/No]: "))
      (COND
-       ((= INPUT1 "Yes")(INI_WRITEENTRY PROJECT-FILE-NAME "CNM" "ThisFile" ""))
+       ((= INPUT1 "Yes")(INI_WRITEENTRY PROJECT_FILE_NAME "CNM" "ThisFile" ""))
        (T (EXIT))
      )
     )
@@ -2506,16 +2506,16 @@
 )
 
 
-(DEFUN HCNM-PROJECT-INI-NAME () "cnm.ini")
-(DEFUN HCNM-PROJECT-LINK-NAME () "cnmproj.txt")
+(DEFUN HCNM_PROJECT_INI_NAME () "cnm.ini")
+(DEFUN HCNM_PROJECT_LINK_NAME () "cnmproj.txt")
 
 (DEFUN
-   HCNM-PROJECT-FOLDER-TO-INI (PROJECT-FOLDER)
-  (STRCAT PROJECT-FOLDER "\\" (HCNM-PROJECT-INI-NAME))
+   HCNM_PROJECT_FOLDER_TO_INI (PROJECT_FOLDER)
+  (STRCAT PROJECT_FOLDER "\\" (HCNM_PROJECT_INI_NAME))
 )
 (DEFUN
-   HCNM-PROJECT-FOLDER-TO-LINK (PROJECT-FOLDER)
-  (STRCAT PROJECT-FOLDER "\\" (HCNM-PROJECT-LINK-NAME))
+   HCNM_PROJECT_FOLDER_TO_LINK (PROJECT_FOLDER)
+  (STRCAT PROJECT_FOLDER "\\" (HCNM_PROJECT_LINK_NAME))
 )
 
 
@@ -2554,27 +2554,27 @@
 ;;or modifying this drawing's folder's cnmproj.txt
 ;;returns project root
 (DEFUN C:HCNM-LINKPROJ ()
-(haws-core-init 183) (HCNM-LINKPROJ NIL) (PRINC))
+(haws-core-init 183) (HCNM_LINKPROJ NIL) (PRINC))
 
 ;; Sets the CNM project to the given folder. Includes wizards, alerts, and error checks.
-(DEFUN HCNM-LINKPROJ (PROJ / DWGDIR LOCALPROJ LOCALPROJBAK OLDLINK)
+(DEFUN HCNM_LINKPROJ (PROJ / DWGDIR LOCALPROJ LOCALPROJBAK OLDLINK)
   (SETQ
     DWGDIR
      (HAWS-FILENAME-DIRECTORY (GETVAR "dwgprefix"))
-    *HCNM-CNMPROJECTROOT*
+    *HCNM_CNMPROJECTROOT*
      (COND
-       (*HCNM-CNMPROJECTROOT*)
+       (*HCNM_CNMPROJECTROOT*)
        (DWGDIR)
      )
   )
-  (COND ((NOT PROJ)(SETQ PROJ (HCNM-BROWSEPROJ *HCNM-CNMPROJECTROOT*))))
+  (COND ((NOT PROJ)(SETQ PROJ (HCNM_BROWSEPROJ *HCNM_CNMPROJECTROOT*))))
   (COND
     (PROJ
-     (SETQ *HCNM-CNMPROJECTROOT* PROJ)
+     (SETQ *HCNM_CNMPROJECTROOT* PROJ)
      (COND
        ((= PROJ DWGDIR)
         (COND
-          ((SETQ OLDLINK (FINDFILE (HCNM-PROJECT-FOLDER-TO-LINK PROJ)))
+          ((SETQ OLDLINK (FINDFILE (HCNM_PROJECT_FOLDER_TO_LINK PROJ)))
            (ALERT
              (PRINC
                "Setting project to this drawing's folder by deleting an existing link to another folder."
@@ -2586,7 +2586,7 @@
            (ALERT
              (STRCAT
                "Project Folder\n"
-               *HCNM-CNMPROJECTROOT*
+               *HCNM_CNMPROJECTROOT*
                "\nnot changed."
              )
            )
@@ -2594,7 +2594,7 @@
         )
        )
        (PROJ
-        (HCNM-MAKEPROJTXT PROJ DWGDIR)
+        (HCNM_MAKEPROJTXT PROJ DWGDIR)
         (ALERT
           (PRINC
             (STRCAT
@@ -2606,7 +2606,7 @@
         (COND
           ((SETQ
              LOCALPROJ
-              (FINDFILE (HCNM-PROJECT-FOLDER-TO-INI DWGDIR))
+              (FINDFILE (HCNM_PROJECT_FOLDER_TO_INI DWGDIR))
            )
            (SETQ LOCALPROJBAK (STRCAT LOCALPROJ ".bak"))
            (ALERT
@@ -2624,11 +2624,11 @@
        )
      )
     )
-    (*HCNM-CNMPROJECTROOT*
+    (*HCNM_CNMPROJECTROOT*
      (ALERT
        (STRCAT
          "Project Folder\n"
-         *HCNM-CNMPROJECTROOT*
+         *HCNM_CNMPROJECTROOT*
          "\nnot changed."
        )
      )
@@ -2637,11 +2637,11 @@
 )
 
 (DEFUN
-   HCNM-BROWSEPROJ (OLDPROJ)
+   HCNM_BROWSEPROJ (OLDPROJ)
   (COND
     ((HAWS-VLISP-P)
      (ALE_BROWSEFORFOLDER
-       (HCNM-SHORTEN-PATH OLDPROJ 50)
+       (HCNM_SHORTEN_PATH OLDPROJ 50)
        48
        ""
      )
@@ -2655,7 +2655,7 @@
 )
 
 (DEFUN
-   HCNM-SHORTEN-PATH (PATH NSHORT)
+   HCNM_SHORTEN_PATH (PATH NSHORT)
   (COND
     ((< (STRLEN PATH) NSHORT) PATH)
     ((STRCAT
@@ -2672,8 +2672,8 @@
 ;;Makes a project root reference file CNMPROJ.TXT in this drawing's folder
 ;;Returns nil.
 (DEFUN
-   HCNM-MAKEPROJTXT (PROJDIR DWGDIR)
-  (SETQ F2 (OPEN (HCNM-PROJECT-FOLDER-TO-LINK DWGDIR) "w"))
+   HCNM_MAKEPROJTXT (PROJDIR DWGDIR)
+  (SETQ F2 (OPEN (HCNM_PROJECT_FOLDER_TO_LINK DWGDIR) "w"))
   (PRINC
     (STRCAT
       ";For simple projects, all project drawings are in one folder, 
@@ -2766,7 +2766,7 @@
 (DEFUN
    C:TESTSET ()
 (haws-core-init 184)
-  (hcnm-concept-TESTSETVAR
+  (hcnm_concept_TESTSETVAR
     (GETSTRING "\nVariable name: ")
     (GETSTRING "\nValue: ")
   )
@@ -2774,16 +2774,16 @@
 (DEFUN
    C:TESTGET ()
 (haws-core-init 185)
-  (hcnm-concept-TESTGETVAR (GETSTRING "\nVariable name: "))
+  (hcnm_concept_TESTGETVAR (GETSTRING "\nVariable name: "))
 )
 (DEFUN
-   hcnm-concept-TESTSETVAR (VAR VAL)
-  (hcnm-concept-SETVAR
+   hcnm_concept_TESTSETVAR (VAR VAL)
+  (hcnm_concept_SETVAR
     ;; variable
     VAR
     ;;value
     VAL
-    ;; application name for its section in *hcnm-concept-SETTINGS*
+    ;; application name for its section in *hcnm_concept_SETTINGS*
     "test"
     ;; indicator file name for default location of ini or vanilla ini
     ;; (indicator file can be optionally a fully qualified path)
@@ -2795,13 +2795,13 @@
    )
 )
 ;;This is a sample wrapper function that an application would use
-;;to call hcnm-concept-GETVAR.
+;;to call hcnm_concept_GETVAR.
 (DEFUN
-   hcnm-concept-TESTGETVAR (VAR)
-  (hcnm-concept-GETVAR
+   hcnm_concept_TESTGETVAR (VAR)
+  (hcnm_concept_GETVAR
     ;;variable
     VAR
-    ;; application name for its section in *hcnm-concept-SETTINGS*
+    ;; application name for its section in *hcnm_concept_SETTINGS*
     "test"
     ;; indicator file name for default location of ini or vanilla ini
     ;; (indicator file can be optionally a fully qualified path)
@@ -2817,7 +2817,7 @@
    )
 )
 
-;; hcnm-concept-INI
+;; hcnm_concept_INI
 ;; Finds INI file
 ;; Returns a fully qualified path, that folder is qualified to have
 ;; HAWSEDC.INI in it.
@@ -2825,11 +2825,11 @@
 ;; and return a "drive:\\...\\INIFOLDER" path to other functions.
 
 
-;;; hcnm-concept-INIFOLDER gets a valid INI folder.
-;;; This function is wrong because there isn't a single *hcnm-concept-INIFOLDER* that this function
+;;; hcnm_concept_INIFOLDER gets a valid INI folder.
+;;; This function is wrong because there isn't a single *hcnm_concept_INIFOLDER* that this function
 ;;; can throw around globally.
 (DEFUN
-   hcnm-concept-INIFILE (APP SCOPE TESTFILE / INIFILE ASSUMEDINIFOLDER
+   hcnm_concept_INIFILE (APP SCOPE TESTFILE / INIFILE ASSUMEDINIFOLDER
                  ASSUMEDINIFILE
                 )
   (COND ((NOT TESTFILE) (SETQ TESTFILE (STRCAT APP ".cui"))))
@@ -2840,7 +2840,7 @@
     ((CDR
        (ASSOC
          0
-         (CDR (ASSOC APP (CDR (ASSOC SCOPE *hcnm-concept-SETTINGS*))))
+         (CDR (ASSOC APP (CDR (ASSOC SCOPE *hcnm_concept_SETTINGS*))))
        )
      )
     )
@@ -2855,7 +2855,7 @@
        (SETQ ASSUMEDINIFOLDER (FINDFILE TESTFILE))
        (SETQ
          ASSUMEDINIFOLDER
-          (hcnm-concept-FILENAME-DIRECTORY ASSUMEDINIFOLDER)
+          (hcnm_concept_FILENAME_DIRECTORY ASSUMEDINIFOLDER)
        )
        (SETQ
          ASSUMEDINIFILE
@@ -2865,52 +2865,52 @@
      ASSUMEDINIFILE
     )
     ;;Or make an ini file in folder with testfile in it or in proj folder
-    ((hcnm-concept-GETINIDEFAULTS ASSUMEDINIFOLDER) ASSUMEDINIFOLDER)
+    ((hcnm_concept_GETINIDEFAULTS ASSUMEDINIFOLDER) ASSUMEDINIFOLDER)
   )
 )
 
 
 ;;Gets all settings from an inifile if it can.
 (DEFUN
-   hcnm-concept-GETSETTINGS (INIFILE TESTFILE APPORPROJ)
+   hcnm_concept_GETSETTINGS (INIFILE TESTFILE APPORPROJ)
   (SETQ
-    *hcnm-concept-SETTINGS*
+    *hcnm_concept_SETTINGS*
      (INI_READINI
-       (hcnm-concept-INI (hcnm-concept-INIFOLDER INIFILE TESTFILE))
+       (hcnm_concept_INI (hcnm_concept_INIFOLDER INIFILE TESTFILE))
      )
   )
 )
 
 ;;Sets a variable in the global lisp list and in HAWSEDC.INI
 (DEFUN
-   hcnm-concept-SETVAR (INIFILE INISECTION VAR VAL / SETTING)
-  ;; Call GETVAR before setting var.  Why?  To populate *hcnm-concept-SETTINGS*?
-  (hcnm-concept-GETVAR
+   hcnm_concept_SETVAR (INIFILE INISECTION VAR VAL / SETTING)
+  ;; Call GETVAR before setting var.  Why?  To populate *hcnm_concept_SETTINGS*?
+  (hcnm_concept_GETVAR
     VAR INISECTION INIFILE TESTFILE APPORPROJ DEFAULTS
    )
-  (hcnm-concept-ADDVARTOLIST VAR VAL INISECTION INIFILE)
+  (hcnm_concept_ADDVARTOLIST VAR VAL INISECTION INIFILE)
   (INI_WRITEENTRY
-    (hcnm-concept-INI (hcnm-concept-INIFOLDER))
+    (hcnm_concept_INI (hcnm_concept_INIFOLDER))
     INISECTION
     SETTING
     VAL
   )
 )
 
-;; hcnm-concept-GETVAR
-;; hcnm-concept-GETVAR is called by wrapper functions like HCNM-GETVAR or hcnm-concept-EDCGETVAR
+;; hcnm_concept_GETVAR
+;; hcnm_concept_GETVAR is called by wrapper functions like HCNM_GETVAR or hcnm_concept_EDCGETVAR
 ;; It gets a variable without opening a file if it can.
-;; (Higher calling functions may use functions like HCNM-PROJINIT or
-;; hcnm-concept-REMOVESETTINGS to remove settings and force a file
+;; (Higher calling functions may use functions like HCNM_PROJINIT or
+;; hcnm_concept_REMOVESETTINGS to remove settings and force a file
 ;; read.)
-;; hcnm-concept-GETVAR gets a program setting from
-;; 1. The global *hcnm-concept-SETTINGS* list if found
+;; hcnm_concept_GETVAR gets a program setting from
+;; 1. The global *hcnm_concept_SETTINGS* list if found
 ;; 2. An ini file or other location
 ;; 3. reverts to a default value without fail
 ;;
 ;; INIFILE is an ini filename. Ini file might not be used for a given scope in the current strategy.  
-;; If there is no such ini file found and is needed, hcnm-concept-getvar creates it.
-;; If hcnm-concept-getvar can't create the file, it sends an alert.
+;; If there is no such ini file found and is needed, hcnm_concept_getvar creates it.
+;; If hcnm_concept_getvar can't create the file, it sends an alert.
 ;;
 ;; SECTION is the ini section/path/tree path/location the var is in or goes in
 ;;
@@ -2925,11 +2925,11 @@
 ;; app folder or the project folder ("app" "prj")
 ;; application defaults for all variables
 (DEFUN
-   hcnm-concept-GETVAR (VAR SECT APP SCOPE TESTFILE DEFAULTS / ADDTOLIST
+   hcnm_concept_GETVAR (VAR SECT APP SCOPE TESTFILE DEFAULTS / ADDTOLIST
                 ADDTOINI DIR INI SETTING VAL
                )
   (SETQ
-    ;; Does the variable need to be added to the *hcnm-concept-SETTINGS* list? Assume yes initially.
+    ;; Does the variable need to be added to the *hcnm_concept_SETTINGS* list? Assume yes initially.
     ADDTOLIST
      T
     ;; Does the variable need to be added to the appropriate ini file? Assume yes initially
@@ -2937,16 +2937,16 @@
      T
   )
   ;;Get var list if no var list
-  (IF (NOT *hcnm-concept-SETTINGS*)
-    (hcnm-concept-GETSETTINGS)
+  (IF (NOT *hcnm_concept_SETTINGS*)
+    (hcnm_concept_GETSETTINGS)
   )
   (COND
     ;;Try getting from list
     ((SETQ
        VAL
-        (hcnm-concept-VARTOVAL
+        (hcnm_concept_VARTOVAL
           VAR
-          (CADR (ASSOC SECT (CADDR (ASSOC APP *hcnm-concept-SETTINGS*))))
+          (CADR (ASSOC SECT (CADDR (ASSOC APP *hcnm_concept_SETTINGS*))))
         )
      )
      (SETQ
@@ -2966,13 +2966,13 @@
        (SETQ DIR (FINDFILE TESTFILE))
        (SETQ
          INI
-          (FINDFILE (STRCAT (hcnm-concept-FILENAME-DIRECTORY DIR) "\\" APP))
+          (FINDFILE (STRCAT (hcnm_concept_FILENAME_DIRECTORY DIR) "\\" APP))
        )
        (SETQ VAL (INI_READENTRY INI SECT SETTING))
      )
     )
     ;;Use default if there is one
-    ((SETQ VAL (hcnm-concept-VARTOVAL VAR DEFAULTS)))
+    ((SETQ VAL (hcnm_concept_VARTOVAL VAR DEFAULTS)))
     ;;Otherwise fail.
     (T
      (ALERT
@@ -2990,20 +2990,20 @@
     )
   )
   (IF ADDTOLIST
-    (hcnm-concept-ADDVARTOLIST VAR VAL SECT APP)
+    (hcnm_concept_ADDVARTOLIST VAR VAL SECT APP)
   )
   (IF ADDTOINI
-    (INI_WRITEENTRY (hcnm-concept-INI (hcnm-concept-INIFOLDER)) APP SETTING VAL)
+    (INI_WRITEENTRY (hcnm_concept_INI (hcnm_concept_INIFOLDER)) APP SETTING VAL)
   )
   VAL
 )
 
 (DEFUN
-   hcnm-concept-ADDVARTOLIST (VAR VAL INISECTION INIFILE)
+   hcnm_concept_ADDVARTOLIST (VAR VAL INISECTION INIFILE)
   (SETQ
     SETTING
-     (hcnm-concept-VARTOSETTING VAR)
-    *hcnm-concept-SETTINGS*
+     (hcnm_concept_VARTOSETTING VAR)
+    *hcnm_concept_SETTINGS*
      (SUBST
        (SUBST
          (SUBST
@@ -3012,19 +3012,19 @@
              INISETTING
              (ASSOC
                INISECTION
-               (ASSOC INIFILE *hcnm-concept-SETTINGS*)
+               (ASSOC INIFILE *hcnm_concept_SETTINGS*)
              )
            )
            (ASSOC
              INISECTION
-             (ASSOC INIFILE *hcnm-concept-SETTINGS*)
+             (ASSOC INIFILE *hcnm_concept_SETTINGS*)
            )
          )
-         (ASSOC INISECTION (ASSOC FILE *hcnm-concept-SETTINGS*))
-         (ASSOC INIFILE *hcnm-concept-SETTINGS*)
+         (ASSOC INISECTION (ASSOC FILE *hcnm_concept_SETTINGS*))
+         (ASSOC INIFILE *hcnm_concept_SETTINGS*)
        )
-       (ASSOC INIFILE *hcnm-concept-SETTINGS*)
-       *hcnm-concept-SETTINGS*
+       (ASSOC INIFILE *hcnm_concept_SETTINGS*)
+       *hcnm_concept_SETTINGS*
      )
   )
 )
@@ -3035,7 +3035,7 @@
 ;;Doesn't add to existing ini.
 ;;Returns ini file name.
 (DEFUN
-   hcnm-concept-GETINIDEFAULTS (PROJ / APP APPINI PROJINI)
+   hcnm_concept_GETINIDEFAULTS (PROJ / APP APPINI PROJINI)
   (ALERT
     (PRINC
       (STRCAT
@@ -3052,10 +3052,10 @@
        (SETQ
          APPINI
           (FINDFILE
-            (STRCAT (hcnm-concept-FILENAME-DIRECTORY APP) "\\" "cnm.ini")
+            (STRCAT (hcnm_concept_FILENAME_DIRECTORY APP) "\\" "cnm.ini")
           )
        )
-       (hcnm-concept-FILE-COPY APPINI PROJINI)
+       (hcnm_concept_FILE_COPY APPINI PROJINI)
      )
      (WHILE (NOT (FINDFILE PROJINI)))
      PROJINI
@@ -3100,13 +3100,13 @@ ImportLayerSettings=No
   )
 )
 
-;;Saves *hcnm-concept-SETTINGS* to the requested inifile
+;;Saves *hcnm_concept_SETTINGS* to the requested inifile
 (DEFUN
-   hcnm-concept-SAVESETTINGSTOINI (INIFILE TESTFILE APPORPROJ)
+   hcnm_concept_SAVESETTINGSTOINI (INIFILE TESTFILE APPORPROJ)
   (INI_WRITESECTION
-    (hcnm-concept-INI (hcnm-concept-INIFOLDER INIFILE TESTFILE))
+    (hcnm_concept_INI (hcnm_concept_INIFOLDER INIFILE TESTFILE))
     INIFILE
-    *hcnm-concept-SETTINGS*
+    *hcnm_concept_SETTINGS*
   )
 )
 ;;;================================================================================================================
@@ -3114,14 +3114,14 @@ ImportLayerSettings=No
 ;;;================================================================================================================
 ;;; CONFIG: Name of the app
 ;;; DEFINITIONS: Name of an entry in the def
-;;; SCOPE-KEY: eg. "User"
-;;; SCOPE-CODE: eg. 4
+;;; SCOPE_KEY: eg. "User"
+;;; SCOPE_CODE: eg. 4
 ;;; ENTRY: An entry in the var list
 ;;; VAR: The string name of a var
 ;;; VAL: The string value of a var
 ;;;
 (DEFUN
-   HCNM-CONFIG-DEFINITIONS (/)
+   HCNM_CONFIG_DEFINITIONS (/)
   (LIST
     (LIST "Scope"
      (LIST "Session" 0)
@@ -3135,7 +3135,7 @@ ImportLayerSettings=No
      (LIST "AppFolder"  (HAWS-FILENAME-DIRECTORY (findfile "cnm.mnl")) 0)
      (LIST "LXXListMode" "yes" 4)
      (LIST "CNMAliasActivation" "0" 4)
-     (LIST "ProjectNotesEditor" (HCNM-CONFIG-DEFAULT-PROJECTNOTESEDITOR) 2) ; text, csv, or cnm
+     (LIST "ProjectNotesEditor" (HCNM_CONFIG_DEFAULT_PROJECTNOTESEDITOR) 2) ; text, csv, or cnm
      (LIST "LayersEditor" "notepad" 4) ; notepad or cnm
      (LIST "ProjectNotes" "constnot.csv" 2)
      (LIST "ThisFile" "" 2)
@@ -3173,18 +3173,18 @@ ImportLayerSettings=No
 )
 
 (DEFUN
-   HCNM-CONFIG-DEFAULT-PROJECTNOTESEDITOR (/ REG-VAL)
+   HCNM_CONFIG_DEFAULT_PROJECTNOTESEDITOR (/ REG_VAL)
   (COND
     ((AND
        (HAWS-VLISP-P)
        (SETQ
-         REG-VAL
+         REG_VAL
           (VL-REGISTRY-READ
             "HKEY_CURRENT_USER\\Software\\HawsEDC\\CNM"
             "ProjectNoteseditor"
           )
        )
-       (WCMATCH (STRCASE REG-VAL) "*CNMEDIT*")
+       (WCMATCH (STRCASE REG_VAL) "*CNMEDIT*")
      )
      "cnm"
     )
@@ -3194,126 +3194,126 @@ ImportLayerSettings=No
 
 ;; Strips scope stuff and returns just defaults list
 (DEFUN
-   HCNM-CONFIG-DEFAULTS ()
+   HCNM_CONFIG_DEFAULTS ()
   (COND
-    (*HCNM-CONFIG-DEFAULTS*)
+    (*HCNM_CONFIG_DEFAULTS*)
     ((MAPCAR
-       '(LAMBDA (VAR) (HCNM-CONFIG-ENTRY-STRIP-SCOPE VAR))
-       (CDR (ASSOC "Var" (HCNM-CONFIG-DEFINITIONS)))
+       '(LAMBDA (VAR) (HCNM_CONFIG_ENTRY_STRIP_SCOPE VAR))
+       (CDR (ASSOC "Var" (HCNM_CONFIG_DEFINITIONS)))
      )
     )
   )
 )
 
 (DEFUN
-   HCNM-CONFIG-ENTRY-STRIP-SCOPE (ENTRY)
+   HCNM_CONFIG_ENTRY_STRIP_SCOPE (ENTRY)
   (REVERSE (CDR (REVERSE ENTRY)))
 )
 
 (DEFUN
-   HCNM-CONFIG-DEFAULTS-SINGLE-SCOPE
-   (SCOPE-KEY / SCOPE-CODE SCOPE-LIST)
-  (SETQ SCOPE-CODE (HCNM-CONFIG-SCOPE-CODE SCOPE-KEY))
+   HCNM_CONFIG_DEFAULTS_SINGLE_SCOPE
+   (SCOPE_KEY / SCOPE_CODE SCOPE_LIST)
+  (SETQ SCOPE_CODE (HCNM_CONFIG_SCOPE_CODE SCOPE_KEY))
   (FOREACH
-     ENTRY (CDR (ASSOC "Var" (HCNM-CONFIG-DEFINITIONS)))
+     ENTRY (CDR (ASSOC "Var" (HCNM_CONFIG_DEFINITIONS)))
     (COND
-      ((= (HCNM-CONFIG-ENTRY-SCOPE-CODE ENTRY) SCOPE-CODE)
+      ((= (HCNM_CONFIG_ENTRY_SCOPE_CODE ENTRY) SCOPE_CODE)
        (SETQ
-         SCOPE-LIST
+         SCOPE_LIST
           (CONS
-            (HCNM-CONFIG-ENTRY-STRIP-SCOPE ENTRY)
-            SCOPE-LIST
+            (HCNM_CONFIG_ENTRY_STRIP_SCOPE ENTRY)
+            SCOPE_LIST
           )
        )
       )
     )
   )
-  (REVERSE SCOPE-LIST)
+  (REVERSE SCOPE_LIST)
 )
 
 (DEFUN
-   HCNM-CONFIG-SCOPE-CODE (SCOPE-KEY)
+   HCNM_CONFIG_SCOPE_CODE (SCOPE_KEY)
   (CADR
     (ASSOC
-      SCOPE-KEY
-      (CDR (ASSOC "Scope" (HCNM-CONFIG-DEFINITIONS)))
+      SCOPE_KEY
+      (CDR (ASSOC "Scope" (HCNM_CONFIG_DEFINITIONS)))
     )
   )
 )
 
 (DEFUN
-   HCNM-CONFIG-SCOPE-EQ (VAR SCOPE-KEY)
-  (= (HCNM-CONFIG-ENTRY-SCOPE-CODE
-       (ASSOC VAR (CDR (ASSOC "Var" (HCNM-CONFIG-DEFINITIONS))))
+   HCNM_CONFIG_SCOPE_EQ (VAR SCOPE_KEY)
+  (= (HCNM_CONFIG_ENTRY_SCOPE_CODE
+       (ASSOC VAR (CDR (ASSOC "Var" (HCNM_CONFIG_DEFINITIONS))))
      )
-     (HCNM-CONFIG-SCOPE-CODE SCOPE-KEY)
+     (HCNM_CONFIG_SCOPE_CODE SCOPE_KEY)
   )
 )
 
-(DEFUN HCNM-CONFIG-ENTRY-VAR (ENTRY) (CAR ENTRY))
+(DEFUN HCNM_CONFIG_ENTRY_VAR (ENTRY) (CAR ENTRY))
 
-(DEFUN HCNM-CONFIG-ENTRY-VAL (ENTRY) (CADR ENTRY))
+(DEFUN HCNM_CONFIG_ENTRY_VAL (ENTRY) (CADR ENTRY))
 
-(DEFUN HCNM-CONFIG-ENTRY-SCOPE-CODE (ENTRY) (CADDR ENTRY))
+(DEFUN HCNM_CONFIG_ENTRY_SCOPE_CODE (ENTRY) (CADDR ENTRY))
 
 (DEFUN
-   HCNM-CONFIG-GET-DEFAULT (VAR)
-  (HCNM-CONFIG-ENTRY-VAL (ASSOC VAR (HCNM-CONFIG-DEFAULTS)))
+   HCNM_CONFIG_GET_DEFAULT (VAR)
+  (HCNM_CONFIG_ENTRY_VAL (ASSOC VAR (HCNM_CONFIG_DEFAULTS)))
 )
 
 (DEFUN
-   HCNM-CONFIG-READ-ALL (/ INI-CONFIGS)
+   HCNM_CONFIG_READ_ALL (/ INI_CONFIGS)
   (APPEND
-    (HCNM-CONFIG-READ-ALL-USER)
-    (HCNM-CONFIG-READ-ALL-PROJECT)
+    (HCNM_CONFIG_READ_ALL_USER)
+    (HCNM_CONFIG_READ_ALL_PROJECT)
   )
 )
 
 (DEFUN
-   HCNM-CONFIG-READ-ALL-USER (/ INI-CONFIGS)
+   HCNM_CONFIG_READ_ALL_USER (/ INI_CONFIGS)
   (MAPCAR
     '(LAMBDA (ENTRY / VAR VAL)
        (SETQ
-         VAR (HCNM-CONFIG-ENTRY-VAR ENTRY)
-         VAL (HCNM-CONFIG-READ-USER VAR)
+         VAR (HCNM_CONFIG_ENTRY_VAR ENTRY)
+         VAL (HCNM_CONFIG_READ_USER VAR)
        )
        (LIST VAR VAL)
      )
-    (HCNM-CONFIG-DEFAULTS-SINGLE-SCOPE "User")
+    (HCNM_CONFIG_DEFAULTS_SINGLE_SCOPE "User")
   )
 )
 
 (DEFUN
-   HCNM-CONFIG-READ-ALL-PROJECT (/ INI-CONFIGS)
-  (SETQ INI-CONFIGS (INI_READSECTION (HCNM-INI-NAME (HCNM-PROJ)) "CNM"))
+   HCNM_CONFIG_READ_ALL_PROJECT (/ INI_CONFIGS)
+  (SETQ INI_CONFIGS (INI_READSECTION (HCNM_INI_NAME (HCNM_PROJ)) "CNM"))
   (MAPCAR
     '(LAMBDA (ENTRY / VAR VAL)
        (SETQ
-         VAR (HCNM-CONFIG-ENTRY-VAR ENTRY)
-         VAL (HCNM-CONFIG-ENTRY-VAL (ASSOC VAR INI-CONFIGS))
+         VAR (HCNM_CONFIG_ENTRY_VAR ENTRY)
+         VAL (HCNM_CONFIG_ENTRY_VAL (ASSOC VAR INI_CONFIGS))
        )
        (LIST VAR VAL)
      )
-    (HCNM-CONFIG-DEFAULTS-SINGLE-SCOPE "Project")
+    (HCNM_CONFIG_DEFAULTS_SINGLE_SCOPE "Project")
   )
 )
 
 ;;;Sets a variable in a temporary global lisp list
 (DEFUN
-   HCNM-CONFIG-TEMP-SETVAR (VAR VAL)
+   HCNM_CONFIG_TEMP_SETVAR (VAR VAL)
   (COND
-    ((ASSOC VAR *HCNM-CONFIG-TEMP*)
+    ((ASSOC VAR *HCNM_CONFIG_TEMP*)
      (SETQ
-       *HCNM-CONFIG-TEMP*
+       *HCNM_CONFIG_TEMP*
         (SUBST
           (LIST VAR VAL)
-          (ASSOC VAR *HCNM-CONFIG-TEMP*)
-          *HCNM-CONFIG-TEMP*
+          (ASSOC VAR *HCNM_CONFIG_TEMP*)
+          *HCNM_CONFIG_TEMP*
         )
      )
     )
     (T
-     (SETQ *HCNM-CONFIG-TEMP* (CONS (LIST VAR VAL) *HCNM-CONFIG-TEMP*))
+     (SETQ *HCNM_CONFIG_TEMP* (CONS (LIST VAR VAL) *HCNM_CONFIG_TEMP*))
     )
   )
 )
@@ -3321,9 +3321,9 @@ ImportLayerSettings=No
 ;;;Gets a variable in a temporary global lisp list
 ;;;If it's not present there, gets real value.
 (DEFUN
-   HCNM-CONFIG-TEMP-GETVAR (VAR)
+   HCNM_CONFIG_TEMP_GETVAR (VAR)
   (COND
-    ((CADR (ASSOC VAR *HCNM-CONFIG-TEMP*)))
+    ((CADR (ASSOC VAR *HCNM_CONFIG_TEMP*)))
     (T (C:HCNM-CONFIG-GETVAR VAR))
   )
 )
@@ -3331,44 +3331,44 @@ ImportLayerSettings=No
 
 ;;;Saves the global list of temporary configs in the real global lisp list and in CNM.INI
 (DEFUN
-   HCNM-CONFIG-TEMP-SAVE ()
+   HCNM_CONFIG_TEMP_SAVE ()
   (FOREACH
-     ENTRY *HCNM-CONFIG-TEMP*
+     ENTRY *HCNM_CONFIG_TEMP*
     (c:hcnm-config-setvar
-      (HCNM-CONFIG-ENTRY-VAR ENTRY)
-      (HCNM-CONFIG-ENTRY-VAL ENTRY)
+      (HCNM_CONFIG_ENTRY_VAR ENTRY)
+      (HCNM_CONFIG_ENTRY_VAL ENTRY)
     )
   )
 )
 
 ;;;Saves the global list of temporary configs in the real global lisp list and in CNM.INI
 (DEFUN
-   HCNM-CONFIG-TEMP-CLEAR ()
-  (SETQ *HCNM-CONFIG-TEMP* NIL)
+   HCNM_CONFIG_TEMP_CLEAR ()
+  (SETQ *HCNM_CONFIG_TEMP* NIL)
 )
 
 ;;;Sets a variable in the global lisp list and in CNM.INI
 (DEFUN
    c:hcnm-config-setvar (VAR VAL)
   (SETQ
-    *HCNM-CONFIG*
+    *HCNM_CONFIG*
      (COND
-       ((ASSOC VAR *HCNM-CONFIG*)
+       ((ASSOC VAR *HCNM_CONFIG*)
         (SUBST
           (LIST VAR VAL)
-          (ASSOC VAR *HCNM-CONFIG*)
-          *HCNM-CONFIG*
+          (ASSOC VAR *HCNM_CONFIG*)
+          *HCNM_CONFIG*
         )
        )
-       (T (CONS (LIST VAR VAL) *HCNM-CONFIG*))
+       (T (CONS (LIST VAR VAL) *HCNM_CONFIG*))
      )
   )
   (COND
-    ((HCNM-CONFIG-SCOPE-EQ VAR "User")
-     (HCNM-CONFIG-WRITE-USER VAR VAL)
+    ((HCNM_CONFIG_SCOPE_EQ VAR "User")
+     (HCNM_CONFIG_WRITE_USER VAR VAL)
     )
-    ((HCNM-CONFIG-SCOPE-EQ VAR "Project")
-     (INI_WRITEENTRY (HCNM-INI-NAME (HCNM-PROJ)) "CNM" VAR VAL)
+    ((HCNM_CONFIG_SCOPE_EQ VAR "Project")
+     (INI_WRITEENTRY (HCNM_INI_NAME (HCNM_PROJ)) "CNM" VAR VAL)
     )
   )
   VAL
@@ -3378,29 +3378,29 @@ ImportLayerSettings=No
 ;;; Var is case sensitive
 (DEFUN
    C:HCNM-CONFIG-GETVAR
-   (VAR / SETVAR-P DEFINE-CONFIGS DIR INI PROJROOT CONFIG VAL)
-  (SETQ SETVAR-P T)
+   (VAR / SETVAR_P DEFINE_CONFIGS DIR INI PROJROOT CONFIG VAL)
+  (SETQ SETVAR_P T)
   (COND
     ;; Initialize configs as needed
-    ((NOT (ASSOC VAR *HCNM-CONFIG*))
+    ((NOT (ASSOC VAR *HCNM_CONFIG*))
      (COND
-       ((HCNM-CONFIG-SCOPE-EQ VAR "Project")
+       ((HCNM_CONFIG_SCOPE_EQ VAR "Project")
         (SETQ
-          *HCNM-CONFIG*
+          *HCNM_CONFIG*
            (APPEND
-             *HCNM-CONFIG*
+             *HCNM_CONFIG*
              ;; If one project var is missing, all project vars are missing
-             (HCNM-CONFIG-READ-ALL-PROJECT)
+             (HCNM_CONFIG_READ_ALL_PROJECT)
            )
         )
        )
-       ((HCNM-CONFIG-SCOPE-EQ VAR "User")
+       ((HCNM_CONFIG_SCOPE_EQ VAR "User")
         (SETQ
-          *HCNM-CONFIG*
+          *HCNM_CONFIG*
            (APPEND
-             *HCNM-CONFIG*
+             *HCNM_CONFIG*
              ;; If one user var is missing, all user vars are missing
-             (HCNM-CONFIG-READ-ALL-USER)
+             (HCNM_CONFIG_READ_ALL_USER)
            )
         )
        )
@@ -3409,11 +3409,11 @@ ImportLayerSettings=No
   )
   (COND
     ;;Try getting from list
-    ((SETQ VAL (CADR (ASSOC VAR *HCNM-CONFIG*)))
-     (SETQ SETVAR-P NIL)
+    ((SETQ VAL (CADR (ASSOC VAR *HCNM_CONFIG*)))
+     (SETQ SETVAR_P NIL)
     )
     ;;Use default if there is one
-    ((SETQ VAL (HCNM-CONFIG-GET-DEFAULT VAR)))
+    ((SETQ VAL (HCNM_CONFIG_GET_DEFAULT VAR)))
     ;;Otherwise fail.
     (T
      (ALERT
@@ -3422,17 +3422,17 @@ ImportLayerSettings=No
          (HAWS-PRIN1-TO-STRING VAR)
        )
      )
-     (SETQ SETVAR-P NIL)
+     (SETQ SETVAR_P NIL)
     )
   )
-  (IF SETVAR-P
+  (IF SETVAR_P
     (C:HCNM-CONFIG-SETVAR VAR VAL)
   )
   VAL
 )
 
 (DEFUN
-   HCNM-CONFIG-READ-USER (VAR / NOTESEDITOR)
+   HCNM_CONFIG_READ_USER (VAR / NOTESEDITOR)
   (COND
     ((HAWS-VLISP-P)
      (VL-REGISTRY-READ
@@ -3445,7 +3445,7 @@ ImportLayerSettings=No
 )
 
 (DEFUN
-   HCNM-CONFIG-WRITE-USER (VAR VAL)
+   HCNM_CONFIG_WRITE_USER (VAR VAL)
   (COND
     ((HAWS-VLISP-P)
      (VL-REGISTRY-WRITE
@@ -3463,14 +3463,14 @@ ImportLayerSettings=No
 ;;Doesn't add to existing ini.
 ;;Returns ini file name.
 (DEFUN
-   HCNM-INITIALIZE-PROJECT (PROJ / APP APPINI PROJINI MARK-FILE-P)
-  (SETQ PROJINI (HCNM-PROJECT-FOLDER-TO-INI PROJ))
+   HCNM_INITIALIZE_PROJECT (PROJ / APP APPINI PROJINI MARK_FILE_P)
+  (SETQ PROJINI (HCNM_PROJECT_FOLDER_TO_INI PROJ))
   (COND
     ((AND
        (SETQ APP (C:HCNM-CONFIG-GETVAR "AppFolder"))
-       (SETQ APPINI (FINDFILE (HCNM-PROJECT-FOLDER-TO-INI APP)))
+       (SETQ APPINI (FINDFILE (HCNM_PROJECT_FOLDER_TO_INI APP)))
      )
-     (IF (NOT (HAWS-FILE-COPY APPINI PROJINI)) (HCNM-ERROR-NOT-WRITEABLE)) 
+     (IF (NOT (HAWS-FILE-COPY APPINI PROJINI)) (HCNM_ERROR_NOT_WRITEABLE)) 
      (ALERT
        (PRINC
          (STRCAT
@@ -3480,7 +3480,7 @@ ImportLayerSettings=No
        )
      )
      (WHILE (NOT (FINDFILE PROJINI)))
-     (SETQ MARK-FILE-P T)
+     (SETQ MARK_FILE_P T)
      PROJINI
     )
     (T
@@ -3496,37 +3496,37 @@ ImportLayerSettings=No
      ;|(SETQ F2 (OPEN PROJINI "w"))
      (PRINC "[CNM]" F2) ; TODO TEST AND REMOVE
      (SETQ F2 (CLOSE F2))|;
-     (SETQ *HCNM-CONFIG* (HCNM-CONFIG-DEFAULTS-SINGLE-SCOPE "Project"))
-     (HCNM-CONFIG-WRITE-PROJECT PROJ)
-     (SETQ *HCNM-CONFIG* (HCNM-CONFIG-DEFAULTS))
-     (SETQ MARK-FILE-P T)
+     (SETQ *HCNM_CONFIG* (HCNM_CONFIG_DEFAULTS_SINGLE_SCOPE "Project"))
+     (HCNM_CONFIG_WRITE_PROJECT PROJ)
+     (SETQ *HCNM_CONFIG* (HCNM_CONFIG_DEFAULTS))
+     (SETQ MARK_FILE_P T)
      PROJINI
     )
   )
   (COND
-    (MARK-FILE-P
+    (MARK_FILE_P
      (INI_WRITEENTRY PROJINI "CNM" "ThisFile" PROJINI)
     )
   )
 )
 
-;;Saves *HCNM-CONFIG* to this project's ini
+;;Saves *HCNM_CONFIG* to this project's ini
 (DEFUN
-   HCNM-CONFIG-WRITE-PROJECT (PROJ)
+   HCNM_CONFIG_WRITE_PROJECT (PROJ)
   (INI_WRITESECTION
-    (HCNM-INI-NAME
+    (HCNM_INI_NAME
       (COND
         (PROJ)
-        ((HCNM-PROJ))
+        ((HCNM_PROJ))
       )
     )
     "CNM"
-    *HCNM-CONFIG*
+    *HCNM_CONFIG*
   )
 )
 
 (DEFUN
-   HCNM-SET-DIMSTYLE (KEY / DSTY)
+   HCNM_SET_DIMSTYLE (KEY / DSTY)
   ;;Set dimstyle as requested by calling function and set by user
   ;;First, get dimstyle name
   (SETQ DSTY (c:hcnm-config-getvar KEY))
@@ -3542,16 +3542,16 @@ ImportLayerSettings=No
   ;;Third, if the desired style exists, save current style for later, then restore the desired style.
   (COND
     ((AND (/= KEY "") (TBLSEARCH "DIMSTYLE" DSTY))
-     (SETQ *HCNM-DIMSTYLEOLD* (GETVAR "dimstyle"))
+     (SETQ *HCNM_DIMSTYLEOLD* (GETVAR "dimstyle"))
      (COMMAND "._dimstyle" "_restore" DSTY)
     )
   )
 )
 (DEFUN
-   HCNM-RESTORE-DIMSTYLE ()
+   HCNM_RESTORE_DIMSTYLE ()
   (COND
-    (*HCNM-DIMSTYLEOLD*
-     (COMMAND "._dimstyle" "_restore" *HCNM-DIMSTYLEOLD*)
+    (*HCNM_DIMSTYLEOLD*
+     (COMMAND "._dimstyle" "_restore" *HCNM_DIMSTYLEOLD*)
     )
   )
 )
@@ -3562,11 +3562,11 @@ ImportLayerSettings=No
 ;;;
 ;;;============================================================================
 
-;; HCNM-PROJNOTES gets a valid project notes file
+;; HCNM_PROJNOTES gets a valid project notes file
 ;; It should resolve all errors and user conditions.
 ;; and return a "drive:\\...\\projroot\\pnname" filename to other functions.
 (DEFUN
-   HCNM-PROJNOTES (/ APP APPPN format OPT1 PNNAME PROJNOTES)
+   HCNM_PROJNOTES (/ APP APPPN format OPT1 PNNAME PROJNOTES)
   (SETQ PNNAME (c:hcnm-config-getvar "ProjectNotes"))
   (IF (= PNNAME "")
     (c:hcnm-config-setvar
@@ -3576,7 +3576,7 @@ ImportLayerSettings=No
   )
   (HAWS-MILEPOST
     (STRCAT
-      "HCNM-PROJNOTES is beginning with ProjectNotes="
+      "HCNM_PROJNOTES is beginning with ProjectNotes="
       PNNAME
     )
   )
@@ -3594,7 +3594,7 @@ ImportLayerSettings=No
        (SETQ
          PROJNOTES
           (STRCAT
-            (HCNM-PROJ)
+            (HCNM_PROJ)
             "\\"
             (HAWS-FILENAME-BASE PNNAME)
             (HAWS-FILENAME-EXTENSION PNNAME)
@@ -3612,7 +3612,7 @@ ImportLayerSettings=No
     ((AND
        (SETQ APP (C:HCNM-CONFIG-GETVAR "AppFolder"))
        (SETQ
-         format (HCNM-CONFIG-PROJECT-NOTES-FORMAT)
+         format (HCNM_CONFIG_PROJECT_NOTES_FORMAT)
          APPPN
           (FINDFILE
             (STRCAT
@@ -3649,9 +3649,9 @@ ImportLayerSettings=No
 )
 
 (DEFUN
-   HCNM-GETPROJNOTES (/ DPNAME OLDPROJNOTES PROJNOTES)
-  (HCNM-PROJINIT)                       ;Initialize variables in case any files changed.
-  (SETQ OLDPROJNOTES (HCNM-PROJNOTES))
+   HCNM_GETPROJNOTES (/ DPNAME OLDPROJNOTES PROJNOTES)
+  (HCNM_PROJINIT)                       ;Initialize variables in case any files changed.
+  (SETQ OLDPROJNOTES (HCNM_PROJNOTES))
   (SETQ DPNAME (STRCAT (GETVAR "dwgprefix") "constnot.txt"))
   (SETQ
     PROJNOTES
@@ -3664,7 +3664,7 @@ ImportLayerSettings=No
   )
   ;;Remove path if project notes is in project folder.
   (COND
-    ((AND PROJNOTES (= (HAWS-FILENAME-DIRECTORY PROJNOTES) (HCNM-PROJ)))
+    ((AND PROJNOTES (= (HAWS-FILENAME-DIRECTORY PROJNOTES) (HCNM_PROJ)))
      (SETQ
        PROJNOTES
         (STRCAT
@@ -3677,8 +3677,8 @@ ImportLayerSettings=No
   PROJNOTES
 )
 
-;; HCNM-READCF
-;; Reads any acceptable Project Notes file format to a *HCNM-CNMPROJECTNOTES* list of the following format
+;; HCNM_READCF
+;; Reads any acceptable Project Notes file format to a *HCNM_CNMPROJECTNOTES* list of the following format
 ;; '((0 . "comment")(1 "var" "val1" "val2")(2 . "title")(3 "type" "num" "unit" "count" "text"))
 ;; The acceptable file formats are:
 ;; TXT1 Fixed field ;Comment\nSET VAR VAL\nNUM (comment)\nBOX (type)\nTITLE \n1    Text thru column 67...UNTCOUNT\n     Cont. text.
@@ -3686,13 +3686,13 @@ ImportLayerSettings=No
 ;; Excel CSV
 ;; Doesn't do project management except to write txt2 configs to cnm.ini in the same folder as projnotes.
 (DEFUN
-   HCNM-READCF (PROJNOTES / BAKPROJNOTES PNFORMAT RDLIN REQUESTED-FORMAT)
+   HCNM_READCF (PROJNOTES / BAKPROJNOTES PNFORMAT RDLIN REQUESTED_FORMAT)
   ;;Do a file read to figure out what the file format is.
   ;;For now, assume that a file that has any of the shape keys followed by a comma ("BOX,", etc.) is CSV
   ;;any other file is TXT2
   (HAWS-MILEPOST
     (STRCAT
-      "HCNM-READCF is deciphering the format of "
+      "HCNM_READCF is deciphering the format of "
       PROJNOTES
       "\nand evaluating the need for format conversion."
     )
@@ -3715,13 +3715,13 @@ ImportLayerSettings=No
     )
   )
   (SETQ F1 (CLOSE F1)
-    REQUESTED-FORMAT (HCNM-CONFIG-PROJECT-NOTES-FORMAT)
+    REQUESTED_FORMAT (HCNM_CONFIG_PROJECT_NOTES_FORMAT)
   )
   (COND
     ((= PNFORMAT "txt2")
-     (HCNM-READCFTXT2 PROJNOTES)
+     (HCNM_READCFTXT2 PROJNOTES)
      (COND
-       ((= REQUESTED-FORMAT "csv")
+       ((= REQUESTED_FORMAT "csv")
         (SETQ BAKPROJNOTES PROJNOTES)
         (HAWS-FILE-COPY
           PROJNOTES
@@ -3752,14 +3752,14 @@ ImportLayerSettings=No
             )
           )
         )
-        (HCNM-WRITECFCSV PROJNOTES)
+        (HCNM_WRITECFCSV PROJNOTES)
        )
      )
     )
     ((= PNFORMAT "csv")
-     (HCNM-READCFCSV PROJNOTES)
+     (HCNM_READCFCSV PROJNOTES)
      (COND
-       ((= REQUESTED-FORMAT "txt2")
+       ((= REQUESTED_FORMAT "txt2")
         (SETQ BAKPROJNOTES PROJNOTES)
         (HAWS-FILE-COPY
           PROJNOTES
@@ -3790,7 +3790,7 @@ ImportLayerSettings=No
             )
           )
         )
-        (HCNM-WRITECFTXT2 PROJNOTES)
+        (HCNM_WRITECFTXT2 PROJNOTES)
        )
      )
     )
@@ -3810,7 +3810,7 @@ ImportLayerSettings=No
 )
 
 (DEFUN
-   HCNM-READCFTXT2 (PROJNOTES / ALERTNOTE ALERTTITLE CFITEM CFLIST
+   HCNM_READCFTXT2 (PROJNOTES / ALERTNOTE ALERTTITLE CFITEM CFLIST
                     CFLIST2 COMMENTBEGIN FILEV42 ILINE ININAME NOTTYP
                     RDLIN VAL1 VAL2 VAR VARLIST N NOTNUM TEMP TYPWC
                    )
@@ -4019,17 +4019,17 @@ ImportLayerSettings=No
      (FOREACH
         ENTRY VARLIST
        (c:hcnm-config-setvar
-         (HCNM-CONFIG-ENTRY-VAR ENTRY)
-         (HCNM-CONFIG-ENTRY-VAL ENTRY)
+         (HCNM_CONFIG_ENTRY_VAR ENTRY)
+         (HCNM_CONFIG_ENTRY_VAL ENTRY)
        )
      )
     )
   )
-  (SETQ *HCNM-CNMPROJECTNOTES* (REVERSE CFLIST))
+  (SETQ *HCNM_CNMPROJECTNOTES* (REVERSE CFLIST))
   (HAWS-MILEPOST
     (STRCAT
-      "HCNM-READCFTXT2 read "
-      (ITOA (LENGTH *HCNM-CNMPROJECTNOTES*))
+      "HCNM_READCFTXT2 read "
+      (ITOA (LENGTH *HCNM_CNMPROJECTNOTES*))
       " lines from "
       PROJNOTES
       "."
@@ -4039,7 +4039,7 @@ ImportLayerSettings=No
   (COND
     ((NOT FILEV42)
      (SETQ
-       *HCNM-CNMPROJECTNOTES*
+       *HCNM_CNMPROJECTNOTES*
         (CONS
           (LIST 1 "CNMVERSION" "4.2")
           (REVERSE CFLIST)
@@ -4105,7 +4105,7 @@ ImportLayerSettings=No
 
 
 (DEFUN
-   HCNM-READCFCSV (PROJNOTES / CFLIST NOTDSCSTR NOTTYP RDLIN TYPWC VAL VAR WRAP
+   HCNM_READCFCSV (PROJNOTES / CFLIST NOTDSCSTR NOTTYP RDLIN TYPWC VAL VAR WRAP
                   )
   (SETQ
     WRAP (ATOI (C:HCNM-CONFIG-GETVAR "DescriptionWrap"))
@@ -4159,7 +4159,7 @@ ImportLayerSettings=No
                  (COND ((HAWS-RDFLD 4 RDLIN "," 1)) (""))
                  (COND ((HAWS-RDFLD 5 RDLIN "," 1)) (""))
                  (COND ((HAWS-RDFLD 6 RDLIN "," 1)) ("")); Price
-                 (HCNM-WRAP-DESCRIPTION (COND ((HAWS-RDFLD 3 RDLIN "," 1)) ("")) WRAP)
+                 (HCNM_WRAP_DESCRIPTION (COND ((HAWS-RDFLD 3 RDLIN "," 1)) ("")) WRAP)
                )
                CFLIST
              )
@@ -4170,72 +4170,72 @@ ImportLayerSettings=No
     )
   )
   (SETQ F1 (CLOSE F1))
-  (SETQ *HCNM-CNMPROJECTNOTES* (REVERSE CFLIST))
+  (SETQ *HCNM_CNMPROJECTNOTES* (REVERSE CFLIST))
 )
 
 (DEFUN
-   HCNM-WRAP-DESCRIPTION (NOTDSCSTR WRAP / CHARACTER-I I I-ENDLINE I-NEWLINE-PREV
-                          I-NEWWORD-PREV INWORD-P NEED-WRAP-P NOTDSCLST
-                          WORD-PROVIDED-P WRAP-EXCEEDED-P
+   HCNM_WRAP_DESCRIPTION (NOTDSCSTR WRAP / CHARACTER_I I I_ENDLINE I_NEWLINE_PREV
+                          I_NEWWORD_PREV INWORD_P NEED_WRAP_P NOTDSCLST
+                          WORD_PROVIDED_P WRAP_EXCEEDED_P
                          )
   (SETQ
     NOTDSCLST NIL
-    I-NEWLINE-PREV 1
-    I-NEWWORD-PREV 1
-    INWORD-P T
+    I_NEWLINE_PREV 1
+    I_NEWWORD_PREV 1
+    INWORD_P T
     I 0
   )
   (WHILE (<= (SETQ I (1+ I)) (1+ (STRLEN NOTDSCSTR)))
     (SETQ
-      CHARACTER-I
+      CHARACTER_I
        (SUBSTR NOTDSCSTR I 1)
-      WRAP-EXCEEDED-P
-       (>= (- I I-NEWLINE-PREV) WRAP)
-      WORD-PROVIDED-P
-       (> I-NEWWORD-PREV I-NEWLINE-PREV)
+      WRAP_EXCEEDED_P
+       (>= (- I I_NEWLINE_PREV) WRAP)
+      WORD_PROVIDED_P
+       (> I_NEWWORD_PREV I_NEWLINE_PREV)
     )
-    (COND ((OR (= CHARACTER-I "") (AND WRAP-EXCEEDED-P WORD-PROVIDED-P)) (SETQ NEED-WRAP-P T)))
+    (COND ((OR (= CHARACTER_I "") (AND WRAP_EXCEEDED_P WORD_PROVIDED_P)) (SETQ NEED_WRAP_P T)))
     (COND
       ((= "\\n" (SUBSTR NOTDSCSTR I 2))
        (SETQ
          NOTDSCLST
           (CONS
-            (LIST I-NEWLINE-PREV (- I I-NEWLINE-PREV))
+            (LIST I_NEWLINE_PREV (- I I_NEWLINE_PREV))
             NOTDSCLST
           )
-         I-NEWLINE-PREV
+         I_NEWLINE_PREV
           (+ I 2)
-         I-NEWWORD-PREV
+         I_NEWWORD_PREV
           (+ I 2)
-         INWORD-P T
-         NEED-WRAP-P NIL
+         INWORD_P T
+         NEED_WRAP_P NIL
        )
       )
-      ((WCMATCH CHARACTER-I " ,\t")
-       (SETQ INWORD-P NIL)
+      ((WCMATCH CHARACTER_I " ,\t")
+       (SETQ INWORD_P NIL)
       )
       (T
        (COND
-         ((AND (/= CHARACTER-I "")(NOT INWORD-P))
+         ((AND (/= CHARACTER_I "")(NOT INWORD_P))
           (SETQ
-            I-NEWWORD-PREV I
-            INWORD-P T
+            I_NEWWORD_PREV I
+            INWORD_P T
           )
          )
        )
        (COND
-         (NEED-WRAP-P
+         (NEED_WRAP_P
           (SETQ
-            I-NEWLINE
+            I_NEWLINE
              (COND
-               ((= CHARACTER-I "") I)
-               (T I-NEWWORD-PREV)
+               ((= CHARACTER_I "") I)
+               (T I_NEWWORD_PREV)
              )
             NOTDSCLST
-             (CONS (LIST I-NEWLINE-PREV (- I-NEWLINE I-NEWLINE-PREV)) NOTDSCLST)
-            I-NEWLINE-PREV
-             I-NEWLINE
-            NEED-WRAP-P NIL
+             (CONS (LIST I_NEWLINE_PREV (- I_NEWLINE I_NEWLINE_PREV)) NOTDSCLST)
+            I_NEWLINE_PREV
+             I_NEWLINE
+            NEED_WRAP_P NIL
           )
          )
        )
@@ -4254,7 +4254,7 @@ ImportLayerSettings=No
 
 ;|
 (DEFUN
-   HCNM-WRAP-DESCRIPTION-TEST ( / ERRORSTRING NOTDSCSTR WRAP)
+   HCNM_WRAP_DESCRIPTION_TEST ( / ERRORSTRING NOTDSCSTR WRAP)
   (SETQ
     NOTDSCSTR "A23456789 B23456789 C23456789"
     WRAP 2
@@ -4263,7 +4263,7 @@ ImportLayerSettings=No
      (STRCAT
        ERRORSTRING
        (COND
-         ((/= (CAR (HCNM-WRAP-DESCRIPTION NOTDSCSTR WRAP))
+         ((/= (CAR (HCNM_WRAP_DESCRIPTION NOTDSCSTR WRAP))
               "A23456789 "
           )
           "\nMust leave at least one word on each line"
@@ -4276,7 +4276,7 @@ ImportLayerSettings=No
      (STRCAT
        ERRORSTRING
        (COND
-         ((/= (CAR (HCNM-WRAP-DESCRIPTION NOTDSCSTR WRAP))
+         ((/= (CAR (HCNM_WRAP_DESCRIPTION NOTDSCSTR WRAP))
               "A23456789 "
           )
           "\nMust wrap word 2 to line 3 if it exceeds by many."
@@ -4289,7 +4289,7 @@ ImportLayerSettings=No
      (STRCAT
        ERRORSTRING
        (COND
-         ((/= (CAR (HCNM-WRAP-DESCRIPTION NOTDSCSTR WRAP))
+         ((/= (CAR (HCNM_WRAP_DESCRIPTION NOTDSCSTR WRAP))
               "A23456789 B23456789 "
           )
           "\nMust wrap word 3 to line 3 if it exceeds by one."
@@ -4302,7 +4302,7 @@ ImportLayerSettings=No
      (STRCAT
        ERRORSTRING
        (COND
-         ((/= (CAR (HCNM-WRAP-DESCRIPTION NOTDSCSTR WRAP))
+         ((/= (CAR (HCNM_WRAP_DESCRIPTION NOTDSCSTR WRAP))
               "A23456789 B23456789 "
           )
           "\nMust wrap word 3 to line two if it exceeds by many."
@@ -4315,7 +4315,7 @@ ImportLayerSettings=No
      (STRCAT
        ERRORSTRING
        (COND
-         ((/= (CAR (HCNM-WRAP-DESCRIPTION NOTDSCSTR WRAP))
+         ((/= (CAR (HCNM_WRAP_DESCRIPTION NOTDSCSTR WRAP))
               "A23456789 "
           )
           "\nMust wrap word 2 to line two if it exceeds by one."
@@ -4324,13 +4324,13 @@ ImportLayerSettings=No
        )
      )
   )
-  ;;(HCNM-WRAP-DESCRIPTION NOTDSCSTR WRAP)
+  ;;(HCNM_WRAP_DESCRIPTION NOTDSCSTR WRAP)
   ERRORSTRING
 )
 |;
 
 (DEFUN
-   HCNM-WRITECFTXT2 (PROJNOTES / I ITEM NOTTYP NOTTXT NOTTXTNEW)
+   HCNM_WRITECFTXT2 (PROJNOTES / I ITEM NOTTYP NOTTXT NOTTXTNEW)
   (ALERT
     (PRINC
       (STRCAT
@@ -4342,7 +4342,7 @@ ImportLayerSettings=No
   )
   (SETQ F2 (OPEN PROJNOTES "w"))
   (FOREACH
-     ITEM *HCNM-CNMPROJECTNOTES*
+     ITEM *HCNM_CNMPROJECTNOTES*
     (COND
       ;;Comment
       ((= 0 (CAR ITEM)) (WRITE-LINE (STRCAT ";" (CDR ITEM)) F2))
@@ -4380,11 +4380,11 @@ ImportLayerSettings=No
     )
   )
   (SETQ F2 (CLOSE F2))
-  *HCNM-CNMPROJECTNOTES*
+  *HCNM_CNMPROJECTNOTES*
 )
 
 (DEFUN
-   HCNM-WRITECFCSV (PROJNOTES / DESC DESCLINE ITEM NOTTYP)
+   HCNM_WRITECFCSV (PROJNOTES / DESC DESCLINE ITEM NOTTYP)
   (ALERT
     (PRINC
       (STRCAT
@@ -4396,7 +4396,7 @@ ImportLayerSettings=No
   )
   (SETQ F2 (OPEN PROJNOTES "w"))
   (FOREACH
-     ITEM *HCNM-CNMPROJECTNOTES*
+     ITEM *HCNM_CNMPROJECTNOTES*
     (COND
       ((= 0 (CAR ITEM))
        (WRITE-LINE
@@ -4447,13 +4447,13 @@ ImportLayerSettings=No
     )
   )
   (SETQ F2 (CLOSE F2))
-  *HCNM-CNMPROJECTNOTES*
+  *HCNM_CNMPROJECTNOTES*
 )
 
 (DEFUN
-   HCNM-CONFIG-PROJECT-NOTES-FORMAT (/ EDITOR FORMAT VALID-EDITORS)
+   HCNM_CONFIG_PROJECT_NOTES_FORMAT (/ EDITOR FORMAT VALID_EDITORS)
   (SETQ
-    VALID-EDITORS
+    VALID_EDITORS
      (LIST
        (LIST "text" "txt2")
        (LIST "csv" "csv")
@@ -4462,7 +4462,7 @@ ImportLayerSettings=No
     EDITOR
      (C:HCNM-CONFIG-GETVAR "ProjectNotesEditor")
     FORMAT
-     (CADR (ASSOC EDITOR VALID-EDITORS))
+     (CADR (ASSOC EDITOR VALID_EDITORS))
   )
   (COND
     ((NOT FORMAT)
@@ -4472,7 +4472,7 @@ ImportLayerSettings=No
            "\nInvalid ProjectNotesEditor. CNM cannot continue.\nUse HCNM-CNMOptions to select your desired editor.\n\nFound ProjectNotesEditor="
            EDITOR
            "\n\nExpected one of these: "
-           (apply 'strcat (mapcar '(lambda (x) (strcat "\n" (car x)))valid-editors))
+           (apply 'strcat (mapcar '(lambda (x) (strcat "\n" (car x)))valid_editors))
          )
        )
      )
@@ -4488,26 +4488,26 @@ ImportLayerSettings=No
 ;;;
 ;;;================================================================================================================
 (DEFUN
-   C:HCNM-NOTESEDIT (/ CNMEDIT-P PNNAME)
+   C:HCNM-NOTESEDIT (/ CNMEDIT_P PNNAME)
   (SETQ
     NOTESEDITOR (C:HCNM-CONFIG-GETVAR "ProjectNotesEditor")
     ;; wcmatch is legacy hack to be removed when 4.2.29 is deprecated and replaced with translation/conversion on getvar.
-    CNMEDIT-P (wcmatch (strcase NOTESEDITOR) "*CNM*")
+    CNMEDIT_P (wcmatch (strcase NOTESEDITOR) "*CNM*")
   )
-  (IF CNMEDIT-P
+  (IF CNMEDIT_P
     (haws-core-init 335)
     (haws-core-init 188)
   )
   ;; Since this is a user command, possibly after deletion of project root files,
   ;; refresh project root at beginning.
-  (HCNM-PROJINIT)
+  (HCNM_PROJINIT)
   ;; Read to convert project notes if necessary before editing
-  (SETQ PNNAME (HCNM-PROJNOTES))
-  (HCNM-READCF PNNAME)
-  (SETQ PNNAME (HCNM-PROJNOTES-MATCH-EXTENSION PNNAME NOTESEDITOR))
-  (PRINC (STRCAT "\nEditing " (HCNM-PROJNOTES) "."))
+  (SETQ PNNAME (HCNM_PROJNOTES))
+  (HCNM_READCF PNNAME)
+  (SETQ PNNAME (HCNM_PROJNOTES_MATCH_EXTENSION PNNAME NOTESEDITOR))
+  (PRINC (STRCAT "\nEditing " (HCNM_PROJNOTES) "."))
   (COND
-    (CNMEDIT-P
+    (CNMEDIT_P
      (STARTAPP
        (STRCAT
          "\""
@@ -4518,7 +4518,7 @@ ImportLayerSettings=No
          PNNAME
          "\" "
          "\""
-         (HCNM-PROJ)
+         (HCNM_PROJ)
          "\\cnm.ini\""
        )
      )
@@ -4528,33 +4528,33 @@ ImportLayerSettings=No
   (PRINC)
 )
 
-(DEFUN HCNM-PROJNOTES-MATCH-EXTENSION (PROJNOTES NOTESEDITOR)
+(DEFUN HCNM_PROJNOTES_MATCH_EXTENSION (PROJNOTES NOTESEDITOR)
   (cond
-    ((= NOTESEDITOR "text")(HCNM-CHANGE-FILENAME-EXTENSION PROJNOTES "txt"))
-    (T(HCNM-CHANGE-FILENAME-EXTENSION PROJNOTES "csv"))
+    ((= NOTESEDITOR "text")(HCNM_CHANGE_FILENAME_EXTENSION PROJNOTES "txt"))
+    (T(HCNM_CHANGE_FILENAME_EXTENSION PROJNOTES "csv"))
   )
 )
 
 (DEFUN
-   HCNM-CHANGE-FILENAME-EXTENSION
-   (OLD-FILENAME NEW-EXTENSION / NEW-FILENAME)
+   HCNM_CHANGE_FILENAME_EXTENSION
+   (OLD_FILENAME NEW_EXTENSION / NEW_FILENAME)
   (COND
-    ((/= (HAWS-FILENAME-EXTENSION OLD-FILENAME) NEW-EXTENSION)
+    ((/= (HAWS-FILENAME-EXTENSION OLD_FILENAME) NEW_EXTENSION)
      (SETQ
-       NEW-FILENAME
+       NEW_FILENAME
         (STRCAT
-          (HAWS-FILENAME-DIRECTORY OLD-FILENAME)
+          (HAWS-FILENAME-DIRECTORY OLD_FILENAME)
           "\\"
-          (HAWS-FILENAME-BASE OLD-FILENAME)
+          (HAWS-FILENAME-BASE OLD_FILENAME)
           "."
-          NEW-EXTENSION
+          NEW_EXTENSION
         )
      )
-     (VL-FILE-RENAME OLD-FILENAME NEW-FILENAME)
-     (C:HCNM-CONFIG-SETVAR "ProjectNotes" NEW-FILENAME)
+     (VL-FILE-RENAME OLD_FILENAME NEW_FILENAME)
+     (C:HCNM-CONFIG-SETVAR "ProjectNotes" NEW_FILENAME)
     )
   )
-  NEW-FILENAME
+  NEW_FILENAME
 )
 
 ;;;================================================================================================================
@@ -4662,7 +4662,7 @@ ImportLayerSettings=No
 (DEFUN
    C:HCNM-ATTNOPLOT ()
 (haws-core-init 192)
-  (HCNM-ATTLAYER "NOTESNOPLOT")
+  (HCNM_ATTLAYER "NOTESNOPLOT")
   (COMMAND
     "._layer"
     "_Plot"
@@ -4671,9 +4671,9 @@ ImportLayerSettings=No
     ""
   )
 )
-(DEFUN C:HCNM-ATTPLOT () (HCNM-ATTLAYER "0"))
+(DEFUN C:HCNM-ATTPLOT () (HCNM_ATTLAYER "0"))
 (DEFUN
-   HCNM-ATTLAYER (LAYER / AT EL EN ET NPLAYER NPLIST SSET SSLEN)
+   HCNM_ATTLAYER (LAYER / AT EL EN ET NPLAYER NPLIST SSET SSLEN)
   (haws-core-init 193)
   (HAWS-VSAVE '("CLAYER"))
   (COMMAND "._undo" "_g")
@@ -4785,7 +4785,7 @@ ImportLayerSettings=No
     )
     ((= OPT1 "Project")
      (SETQ
-       F1     (OPEN (HCNM-PROJNOTES) "r")
+       F1     (OPEN (HCNM_PROJNOTES) "r")
        CFLIST NIL
      )
      (WHILE (SETQ RDLIN (READ-LINE F1))
@@ -4805,7 +4805,7 @@ ImportLayerSettings=No
        CFLIST
         ;;Put the SET PHASES line at the beginning of the file.
         (CONS (STRCAT "SET PHASES " PHASES) (REVERSE CFLIST))
-       F1 (OPEN (HCNM-PROJNOTES) "W")
+       F1 (OPEN (HCNM_PROJNOTES) "W")
      )
      (FOREACH RDLIN CFLIST (WRITE-LINE RDLIN F1))
      (SETQ F1 (CLOSE F1))
@@ -4932,22 +4932,22 @@ ImportLayerSettings=No
   (PRINC)
 )
 
-(DEFUN C:HAWS-BOXL () (haws-core-init 198) (HCNM-LDRBLK-DYNAMIC "BOX"))
-(DEFUN C:HAWS-CIRL () (haws-core-init 199) (HCNM-LDRBLK-DYNAMIC "CIR"))
-(DEFUN C:HAWS-DIAL () (haws-core-init 200) (HCNM-LDRBLK-DYNAMIC "DIA"))
-(DEFUN C:HAWS-ELLL () (haws-core-init 201) (HCNM-LDRBLK-DYNAMIC "ELL"))
-(DEFUN C:HAWS-HEXL () (haws-core-init 202) (HCNM-LDRBLK-DYNAMIC "HEX"))
-(DEFUN C:HAWS-OCTL () (haws-core-init 203) (HCNM-LDRBLK-DYNAMIC "OCT"))
-(DEFUN C:HAWS-PENL () (haws-core-init 204) (HCNM-LDRBLK-DYNAMIC "PEN"))
-(DEFUN C:HAWS-RECL () (haws-core-init 205) (HCNM-LDRBLK-DYNAMIC "REC"))
-(DEFUN C:HAWS-SSTL () (haws-core-init 206) (HCNM-LDRBLK-DYNAMIC "SST"))
-(DEFUN C:HAWS-TRIL () (haws-core-init 207) (HCNM-LDRBLK-DYNAMIC "TRI"))
-(DEFUN C:HCNM-REPLACE-BUBBLE () (haws-core-init 337) (HCNM-LDRBLK-DYNAMIC NIL))
+(DEFUN C:HAWS-BOXL () (haws-core-init 198) (HCNM_LDRBLK_DYNAMIC "BOX"))
+(DEFUN C:HAWS-CIRL () (haws-core-init 199) (HCNM_LDRBLK_DYNAMIC "CIR"))
+(DEFUN C:HAWS-DIAL () (haws-core-init 200) (HCNM_LDRBLK_DYNAMIC "DIA"))
+(DEFUN C:HAWS-ELLL () (haws-core-init 201) (HCNM_LDRBLK_DYNAMIC "ELL"))
+(DEFUN C:HAWS-HEXL () (haws-core-init 202) (HCNM_LDRBLK_DYNAMIC "HEX"))
+(DEFUN C:HAWS-OCTL () (haws-core-init 203) (HCNM_LDRBLK_DYNAMIC "OCT"))
+(DEFUN C:HAWS-PENL () (haws-core-init 204) (HCNM_LDRBLK_DYNAMIC "PEN"))
+(DEFUN C:HAWS-RECL () (haws-core-init 205) (HCNM_LDRBLK_DYNAMIC "REC"))
+(DEFUN C:HAWS-SSTL () (haws-core-init 206) (HCNM_LDRBLK_DYNAMIC "SST"))
+(DEFUN C:HAWS-TRIL () (haws-core-init 207) (HCNM_LDRBLK_DYNAMIC "TRI"))
+(DEFUN C:HCNM-REPLACE-BUBBLE () (haws-core-init 337) (HCNM_LDRBLK_DYNAMIC NIL))
 
 (DEFUN
-   HCNM-LDRBLK-DYNAMIC (NOTETYPE / ATTRIBUTE_LIST BLOCKNAME BUBBLEHOOKS
-                        ENAME-BLOCK-OLD ENAME-LEADER-OLD LEADER-P P1 P2
-                        REPLACE-P RET TH
+   HCNM_LDRBLK_DYNAMIC (NOTETYPE / ATTRIBUTE_LIST BLOCKNAME BUBBLEHOOKS
+                        ENAME_BLOCK_OLD ENAME_LEADER_OLD LEADER_P P1 P2
+                        REPLACE_P RET TH
                        )
   (HAWS-VSAVE '("attreq" "aunits" "clayer" "cmdecho"))
   (COND
@@ -4972,10 +4972,10 @@ ImportLayerSettings=No
     )
   )
   (COMMAND "._undo" "_g")
-  (HCNM-PROJINIT)
-  (HCNM-SET-DIMSTYLE "NotesLeaderDimstyle")
+  (HCNM_PROJINIT)
+  (HCNM_SET_DIMSTYLE "NotesLeaderDimstyle")
   (SETQ
-    REPLACE-P
+    REPLACE_P
      (NOT NOTETYPE)
     BUBBLEHOOKS
      (C:HCNM-CONFIG-GETVAR "BubbleHooks")
@@ -4999,32 +4999,32 @@ ImportLayerSettings=No
   (SETVAR "attreq" 0)
   (SETQ
     RET
-     (HCNM-LDRBLK-GET-POINT-1 REPLACE-P)
+     (HCNM_LDRBLK_GET_POINT_1 REPLACE_P)
     P1 (CAR RET)
     NOTETYPE
      (CADR RET)
-    ENAME-BLOCK-OLD
+    ENAME_BLOCK_OLD
      (CADDR RET)
-    ENAME-LEADER-OLD
+    ENAME_LEADER_OLD
      (CADDDR RET)
-    P2 (HCNM-LDRBLK-GET-POINT-2 P1 TH BLOCKNAME NOTETYPE)
+    P2 (HCNM_LDRBLK_GET_POINT_2 P1 TH BLOCKNAME NOTETYPE)
     ATTRIBUTE_LIST
      (COND
-       (REPLACE-P (HCNM-GET-ATTRIBUTES ENAME-BLOCK-OLD))
-       (T (HCNM-LDRBLK-GET-ATTRIBUTES))
+       (REPLACE_P (HCNM_GET_ATTRIBUTES ENAME_BLOCK_OLD))
+       (T (HCNM_LDRBLK_GET_ATTRIBUTES))
      )
-    LEADER-P
+    LEADER_P
      (COND
-       ((NOT REPLACE-P))
-       ((NOT (NOT ENAME-LEADER-OLD)))
+       ((NOT REPLACE_P))
+       ((NOT (NOT ENAME_LEADER_OLD)))
      )
   )
-  (HCNM-LDRBLK-DRAW
-    P1 P2 TH NOTETYPE BLOCKNAME ATTRIBUTE_LIST LEADER-P
+  (HCNM_LDRBLK_DRAW
+    P1 P2 TH NOTETYPE BLOCKNAME ATTRIBUTE_LIST LEADER_P
    )
-  (COND (ENAME-BLOCK-OLD (ENTDEL ENAME-BLOCK-OLD)))
-  (COND (ENAME-LEADER-OLD (ENTDEL ENAME-LEADER-OLD)))
-  (HCNM-RESTORE-DIMSTYLE)
+  (COND (ENAME_BLOCK_OLD (ENTDEL ENAME_BLOCK_OLD)))
+  (COND (ENAME_LEADER_OLD (ENTDEL ENAME_LEADER_OLD)))
+  (HCNM_RESTORE_DIMSTYLE)
   (HAWS-VRSTOR)
   (COMMAND "._undo" "_e")
   (HAWS-CORE-RESTORE)
@@ -5033,19 +5033,19 @@ ImportLayerSettings=No
 
 
 (DEFUN
-   HCNM-LDRBLK-GET-POINT-1
-   (REPLACE-P / ELIST-BLOCK-OLD ENAME-330 ENAME-BLOCK-OLD ENAME-LEADER-OLD NOTETYPE P1 VLAOBJ)
+   HCNM_LDRBLK_GET_POINT_1
+   (REPLACE_P / ELIST_BLOCK_OLD ENAME_330 ENAME_BLOCK_OLD ENAME_LEADER_OLD NOTETYPE P1 VLAOBJ)
   (COND
-    (REPLACE-P ;; Prompt and check for old block.
-       (WHILE (OR (NOT (SETQ ENAME-BLOCK-OLD (CAR (ENTSEL))))
-                  (NOT (SETQ ELIST-BLOCK-OLD (ENTGET ENAME-BLOCK-OLD)))
+    (REPLACE_P ;; Prompt and check for old block.
+       (WHILE (OR (NOT (SETQ ENAME_BLOCK_OLD (CAR (ENTSEL))))
+                  (NOT (SETQ ELIST_BLOCK_OLD (ENTGET ENAME_BLOCK_OLD)))
                   (NOT
                     (AND
-                      (= (CDR (ASSOC 0 ELIST-BLOCK-OLD)) "INSERT")
+                      (= (CDR (ASSOC 0 ELIST_BLOCK_OLD)) "INSERT")
                       (WCMATCH
                         (STRCASE
                           (VLA-GET-EFFECTIVENAME
-                            (VLAX-ENAME->VLA-OBJECT ENAME-BLOCK-OLD)
+                            (VLAX-ENAME->VLA-OBJECT ENAME_BLOCK_OLD)
                           )
                         )
                         "CNM-BUBBLE-*"
@@ -5057,7 +5057,7 @@ ImportLayerSettings=No
        )
        (SETQ
          VLAOBJ
-          (VLAX-ENAME->VLA-OBJECT ENAME-BLOCK-OLD)
+          (VLAX-ENAME->VLA-OBJECT ENAME_BLOCK_OLD)
          NOTETYPE
           (LM:GETDYNPROPVALUE VLAOBJ "Shape")
        )
@@ -5065,34 +5065,34 @@ ImportLayerSettings=No
        ;; Find associated leader.
        (WHILE
          (AND
-           (NOT ENAME-LEADER-OLD)
-           (SETQ ENAME-330 (CDR (ASSOC 330 ELIST-BLOCK-OLD)))
+           (NOT ENAME_LEADER_OLD)
+           (SETQ ENAME_330 (CDR (ASSOC 330 ELIST_BLOCK_OLD)))
          )
          (COND
-           ((EQ (CDR (ASSOC 340 (ENTGET ENAME-330))) ENAME-BLOCK-OLD)(SETQ ENAME-LEADER-OLD ENAME-330))
-           (T (SETQ ELIST-BLOCK-OLD (CDR (MEMBER (ASSOC 330 ELIST-BLOCK-OLD) ELIST-BLOCK-OLD)) ENAME-LEADER-OLD NIL))
+           ((EQ (CDR (ASSOC 340 (ENTGET ENAME_330))) ENAME_BLOCK_OLD)(SETQ ENAME_LEADER_OLD ENAME_330))
+           (T (SETQ ELIST_BLOCK_OLD (CDR (MEMBER (ASSOC 330 ELIST_BLOCK_OLD) ELIST_BLOCK_OLD)) ENAME_LEADER_OLD NIL))
          )
        )
        (SETQ
          P1 (COND
-              (ENAME-LEADER-OLD
+              (ENAME_LEADER_OLD
                (CDR
-                 (ASSOC 10 (ENTGET ENAME-LEADER-OLD))
+                 (ASSOC 10 (ENTGET ENAME_LEADER_OLD))
                )
               )
-              (T (CDR (ASSOC 10 ELIST-BLOCK-OLD)))
+              (T (CDR (ASSOC 10 ELIST_BLOCK_OLD)))
             )
        )
     )
     (T (SETQ P1 (GETPOINT "\nStart point for leader:")))
   )
-  (LIST P1 NOTETYPE ENAME-BLOCK-OLD ENAME-LEADER-OLD)
+  (LIST P1 NOTETYPE ENAME_BLOCK_OLD ENAME_LEADER_OLD)
 )
 
 
 (DEFUN
-   HCNM-LDRBLK-GET-POINT-2
-   (P1 TH BLOCKNAME NOTETYPE / ENAME-BLOCK P2 SS1 VLAOBJ)
+   HCNM_LDRBLK_GET_POINT_2
+   (P1 TH BLOCKNAME NOTETYPE / ENAME_BLOCK P2 SS1 VLAOBJ)
   (SETQ SS1 (SSADD))
   (FOREACH
      FLIPSTATE '("right" "left")
@@ -5105,24 +5105,24 @@ ImportLayerSettings=No
       (ANGTOS (GETVAR "snapang"))
     )
     (SETQ
-      ENAME-BLOCK
+      ENAME_BLOCK
        (ENTLAST)
       VLAOBJ
-       (VLAX-ENAME->VLA-OBJECT ENAME-BLOCK)
+       (VLAX-ENAME->VLA-OBJECT ENAME_BLOCK)
     )
     (LM:SETDYNPROPVALUE VLAOBJ "Shape" NOTETYPE)
-    (SSADD ENAME-BLOCK SS1)
+    (SSADD ENAME_BLOCK SS1)
   )
   (PROMPT "\nLocation for bubble: ")
   (COMMAND "._MOVE" SS1 "" P1 PAUSE)
-  (SETQ P2 (TRANS (CDR (ASSOC 10 (ENTGET ENAME-BLOCK))) ENAME-BLOCK 1))
+  (SETQ P2 (TRANS (CDR (ASSOC 10 (ENTGET ENAME_BLOCK))) ENAME_BLOCK 1))
   (COMMAND "._erase" SS1 "")
   P2
 )
 
 (DEFUN
-   HCNM-LDRBLK-DRAW (P1 P2 TH NOTETYPE BLOCKNAME ATTRIBUTE_LIST LEADER-P
-                     / ANG1 ASSOCIATE-P AUOLD ENAME-BLOCK FLIPSTATE INPUT1
+   HCNM_LDRBLK_DRAW (P1 P2 TH NOTETYPE BLOCKNAME ATTRIBUTE_LIST LEADER_P
+                     / ANG1 ASSOCIATE_P AUOLD ENAME_BLOCK FLIPSTATE INPUT1
                      VLAOBJ
                     )
   (SETQ
@@ -5133,7 +5133,7 @@ ImportLayerSettings=No
               )
   )
   (COND
-    ((NOT LEADER-P)
+    ((NOT LEADER_P)
      (SETQ AUOLD (GETVAR "aunits"))
      (SETVAR "aunits" 3)
      (COMMAND
@@ -5148,7 +5148,7 @@ ImportLayerSettings=No
     )
     (T
      (SETQ
-       ASSOCIATE-P
+       ASSOCIATE_P
         (COND
           ((= (GETVAR "DIMANNO") 1) T)
           (NIL)
@@ -5156,7 +5156,7 @@ ImportLayerSettings=No
      )
      (COND
        ((AND
-          (NOT ASSOCIATE-P)
+          (NOT ASSOCIATE_P)
           (GETVAR "CANNOSCALEVALUE")
           (/= (GETVAR "DIMSCALE") (/ 1.0 (GETVAR "CANNOSCALEVALUE")))
         )
@@ -5196,7 +5196,7 @@ ImportLayerSettings=No
        ((>= (ATOF (GETVAR "acadver")) 14)
         (COMMAND "._leader" P1 P2 "_Annotation" "")
         (COND
-          (ASSOCIATE-P (COMMAND "_block"))
+          (ASSOCIATE_P (COMMAND "_block"))
           (T (COMMAND "_none" "._INSERT"))
         )
        )
@@ -5221,23 +5221,23 @@ ImportLayerSettings=No
     )
   )
   (SETQ
-    ENAME-BLOCK
+    ENAME_BLOCK
      (ENTLAST)
     VLAOBJ
-     (VLAX-ENAME->VLA-OBJECT ENAME-BLOCK)
+     (VLAX-ENAME->VLA-OBJECT ENAME_BLOCK)
   )
-  (HCNM-SET-ATTRIBUTES ENAME-BLOCK ATTRIBUTE_LIST)
+  (HCNM_SET_ATTRIBUTES ENAME_BLOCK ATTRIBUTE_LIST)
   (LM:SETDYNPROPVALUE VLAOBJ "Shape" NOTETYPE)
 )
 
 (DEFUN
-   HCNM-LDRBLK-GET-ATTRIBUTES
+   HCNM_LDRBLK_GET_ATTRIBUTES
    (/ ATTRIBUTE_LIST NUM TXT1 TXT2)
   (INITGET 128 "Copy")
   (SETQ NUM (GETKWORD "\nNote number or [Copy note] <Copy note>: "))
   (COND
     ((OR (= NUM "Copy") (NOT NUM))
-     (SETQ ATTRIBUTE_LIST (HCNM-GET-ATTRIBUTES (CAR (ENTSEL))))
+     (SETQ ATTRIBUTE_LIST (HCNM_GET_ATTRIBUTES (CAR (ENTSEL))))
     )
     (T
      (SETQ
@@ -5328,14 +5328,14 @@ ImportLayerSettings=No
   (COMMAND "._undo" "_g")
   ;; Block isn't annotative. Can't associate with annotative leader.
   (SETQ
-    ASSOCIATE-P
+    ASSOCIATE_P
      (COND
        ((= (GETVAR "DIMANNO") 1) NIL)
        (T)
      )
   )
-  (HCNM-PROJINIT)
-  (HCNM-SET-DIMSTYLE (STRCAT BLDSTY "Dimstyle"))
+  (HCNM_PROJINIT)
+  (HCNM_SET_DIMSTYLE (STRCAT BLDSTY "Dimstyle"))
   (SETVAR "osmode" 0)
   (HAWS-MKLAYR BLLAY)
   (SETQ
@@ -5389,7 +5389,7 @@ ImportLayerSettings=No
     ((>= (ATOF (GETVAR "acadver")) 14)
      (COMMAND "._leader" P1 P2 "" "")
      (COND
-       (ASSOCIATE-P (COMMAND "_block"))
+       (ASSOCIATE_P (COMMAND "_block"))
        (T (COMMAND "_none" "._INSERT"))
      )
     )
@@ -5422,7 +5422,7 @@ ImportLayerSettings=No
       ""
     )
   )
-  (HCNM-RESTORE-DIMSTYLE)
+  (HCNM_RESTORE_DIMSTYLE)
   (HAWS-VRSTOR)
   (COMMAND "._undo" "_e")
   (haws-core-restore)
@@ -5441,38 +5441,38 @@ ImportLayerSettings=No
 (DEFUN
    C:HCNM-CNMOPTIONS (/ CNMDCL DONE_CODE RETN)
   (haws-core-init 210)
-  (HCNM-PROJINIT)
-  (HCNM-PROJ)
+  (HCNM_PROJINIT)
+  (HCNM_PROJ)
  ;; Load Dialog
   (SETQ CNMDCL (LOAD_DIALOG "cnm.dcl"))
   (setq DONE_CODE 2)
   (while (> DONE_CODE -1)
     (setq DONE_CODE
       (cond
-        ((= DONE_CODE 0)(HCNM-DCL-OPTIONS-CANCEL))
-        ((= DONE_CODE 1)(HCNM-DCL-OPTIONS-SAVE))
-        ((= DONE_CODE 2)(HCNM-DCL-OPTIONS-SHOW))
-        ((= DONE_CODE 11)(HCNM-DCL-GENERAL-SHOW))
-        ((= DONE_CODE 12)(HCNM-DCL-KEY-SHOW))
-        ((= DONE_CODE 13)(HCNM-DCL-QT-SHOW))
+        ((= DONE_CODE 0)(HCNM_DCL_OPTIONS_CANCEL))
+        ((= DONE_CODE 1)(HCNM_DCL_OPTIONS_SAVE))
+        ((= DONE_CODE 2)(HCNM_DCL_OPTIONS_SHOW))
+        ((= DONE_CODE 11)(HCNM_DCL_GENERAL_SHOW))
+        ((= DONE_CODE 12)(HCNM_DCL_KEY_SHOW))
+        ((= DONE_CODE 13)(HCNM_DCL_QT_SHOW))
       )
     )
   )
  (PRINC)
 )
 
-(defun HCNM-DCL-OPTIONS-CANCEL()
- (HCNM-CONFIG-TEMP-CLEAR)
+(defun HCNM_DCL_OPTIONS_CANCEL()
+ (HCNM_CONFIG_TEMP_CLEAR)
  -1
 )
 
-(defun HCNM-DCL-OPTIONS-SAVE()
- (HCNM-CONFIG-TEMP-SAVE)
+(defun HCNM_DCL_OPTIONS_SAVE()
+ (HCNM_CONFIG_TEMP_SAVE)
  0
 )
 
 (DEFUN
-   HCNM-DCL-OPTIONS-SHOW ()
+   HCNM_DCL_OPTIONS_SHOW ()
   (NEW_DIALOG "HCNMOptions" CNMDCL)
   (SET_TILE "Title" "CNM Options")
   (ACTION_TILE "General" "(DONE_DIALOG 11)")
@@ -5484,72 +5484,72 @@ ImportLayerSettings=No
 )
 
 (DEFUN
-   HCNM-DCL-GENERAL-SHOW ()
+   HCNM_DCL_GENERAL_SHOW ()
   (NEW_DIALOG "HCNMGeneral" CNMDCL)
   ;; Dialog Actions
   (SET_TILE "Title" "CNM General Options")
-  (HCNM-CONFIG-SET-ACTION-TILE "DoCurrentTabOnly")
-  (HCNM-CONFIG-SET-ACTION-TILE "BubbleHooks")
-  (HCNM-CONFIG-SET-ACTION-TILE "NoteTypes")
-  (HCNM-CONFIG-DCL-LIST "InsertTablePhases")
-  (HCNM-CONFIG-SET-ACTION-TILE "PhaseAlias1")
-  (HCNM-CONFIG-SET-ACTION-TILE "PhaseAlias2")
-  (HCNM-CONFIG-SET-ACTION-TILE "PhaseAlias3")
-  (HCNM-CONFIG-SET-ACTION-TILE "PhaseAlias4")
-  (HCNM-CONFIG-SET-ACTION-TILE "PhaseAlias5")
-  (HCNM-CONFIG-SET-ACTION-TILE "PhaseAlias6")
-  (HCNM-CONFIG-SET-ACTION-TILE "PhaseAlias7")
-  (HCNM-CONFIG-SET-ACTION-TILE "PhaseAlias8")
-  (HCNM-CONFIG-SET-ACTION-TILE "PhaseAlias9")
-  (HCNM-CONFIG-SET-ACTION-TILE "NotesKeyTableDimstyle")
-  (HCNM-CONFIG-SET-ACTION-TILE "NotesLeaderDimstyle")
+  (HCNM_CONFIG_SET_ACTION_TILE "DoCurrentTabOnly")
+  (HCNM_CONFIG_SET_ACTION_TILE "BubbleHooks")
+  (HCNM_CONFIG_SET_ACTION_TILE "NoteTypes")
+  (HCNM_CONFIG_DCL_LIST "InsertTablePhases")
+  (HCNM_CONFIG_SET_ACTION_TILE "PhaseAlias1")
+  (HCNM_CONFIG_SET_ACTION_TILE "PhaseAlias2")
+  (HCNM_CONFIG_SET_ACTION_TILE "PhaseAlias3")
+  (HCNM_CONFIG_SET_ACTION_TILE "PhaseAlias4")
+  (HCNM_CONFIG_SET_ACTION_TILE "PhaseAlias5")
+  (HCNM_CONFIG_SET_ACTION_TILE "PhaseAlias6")
+  (HCNM_CONFIG_SET_ACTION_TILE "PhaseAlias7")
+  (HCNM_CONFIG_SET_ACTION_TILE "PhaseAlias8")
+  (HCNM_CONFIG_SET_ACTION_TILE "PhaseAlias9")
+  (HCNM_CONFIG_SET_ACTION_TILE "NotesKeyTableDimstyle")
+  (HCNM_CONFIG_SET_ACTION_TILE "NotesLeaderDimstyle")
   (SET_TILE
     "ProjectFolder"
     (STRCAT
       "Project folder "
-      (HCNM-SHORTEN-PATH (HCNM-PROJ) 100)
+      (HCNM_SHORTEN_PATH (HCNM_PROJ) 100)
     )
   )
-  (HCNM-CONFIG-SET-ACTION-TILE "ProjectNotes")
+  (HCNM_CONFIG_SET_ACTION_TILE "ProjectNotes")
   (ACTION_TILE
     "ProjectNotesBrowse"
-    "(HCNM-CONFIG-TEMP-SETVAR \"ProjectNotes\"(HCNM-GETPROJNOTES))(SET_TILE \"ProjectNotes\" (HCNM-CONFIG-TEMP-GETVAR \"ProjectNotes\"))"
+    "(HCNM_CONFIG_TEMP_SETVAR \"ProjectNotes\"(HCNM_GETPROJNOTES))(SET_TILE \"ProjectNotes\" (HCNM_CONFIG_TEMP_GETVAR \"ProjectNotes\"))"
   )
-  (HCNM-CONFIG-DCL-LIST "LayersEditor")
-  (HCNM-CONFIG-DCL-LIST "ProjectNotesEditor")
+  (HCNM_CONFIG_DCL_LIST "LayersEditor")
+  (HCNM_CONFIG_DCL_LIST "ProjectNotesEditor")
   (ACTION_TILE "close" "(DONE_DIALOG 2)")
   (START_DIALOG)
 )
 
-(defun HCNM-DCL-KEY-SHOW()
+(defun HCNM_DCL_KEY_SHOW()
   (NEW_DIALOG "HCNMKey" CNMDCL)
   ;; Dialog Actions
   (SET_TILE "Title" "CNM Key Notes Table Options")
-  (HCNM-CONFIG-SET-ACTION-TILE "DescriptionWrap")
-  (HCNM-CONFIG-SET-ACTION-TILE "LineSpacing")
-  (HCNM-CONFIG-SET-ACTION-TILE "NoteSpacing")
-  (HCNM-CONFIG-SET-ACTION-TILE "ShowKeyTableTitleShapes")
-  (HCNM-CONFIG-SET-ACTION-TILE "ShowKeyTableQuantities")
-  (HCNM-CONFIG-SET-ACTION-TILE "ShowKeyTableGrid")
-  (HCNM-CONFIG-SET-ACTION-TILE "TableWidth")
-  (HCNM-CONFIG-SET-ACTION-TILE "PhaseWidthAdd")
+  (HCNM_CONFIG_SET_ACTION_TILE "DescriptionWrap")
+  (HCNM_CONFIG_SET_ACTION_TILE "LineSpacing")
+  (HCNM_CONFIG_SET_ACTION_TILE "NoteSpacing")
+  (HCNM_CONFIG_SET_ACTION_TILE "ShowKeyTableTitleShapes")
+  (HCNM_CONFIG_SET_ACTION_TILE "ShowKeyTableQuantities")
+  (HCNM_CONFIG_SET_ACTION_TILE "ShowKeyTableGrid")
+  (HCNM_CONFIG_SET_ACTION_TILE "TableWidth")
+  (HCNM_CONFIG_SET_ACTION_TILE "PhaseWidthAdd")
   (ACTION_TILE "close" "(DONE_DIALOG 2)")
   (START_DIALOG)
 )
 
-(defun HCNM-DCL-QT-SHOW()
+(defun HCNM_DCL_QT_SHOW()
   (NEW_DIALOG "HCNMQT" CNMDCL)
   ;; Dialog Actions
   (SET_TILE "Title" "CNM Quantity Take-off Table Options")
-  (HCNM-CONFIG-SET-ACTION-TILE "NumberToDescriptionWidth")
-  (HCNM-CONFIG-SET-ACTION-TILE "DescriptionToQuantityWidth")
-  (HCNM-CONFIG-SET-ACTION-TILE "QuantityToQuantityWidth")
-  (HCNM-CONFIG-SET-ACTION-TILE "QuantityToUnitsWidth")
+  (HCNM_CONFIG_SET_ACTION_TILE "NumberToDescriptionWidth")
+  (HCNM_CONFIG_SET_ACTION_TILE "DescriptionToQuantityWidth")
+  (HCNM_CONFIG_SET_ACTION_TILE "QuantityToQuantityWidth")
+  (HCNM_CONFIG_SET_ACTION_TILE "QuantityToUnitsWidth")
   (ACTION_TILE "close" "(DONE_DIALOG 2)")
   (START_DIALOG)
 )
 
-(DEFUN HCNM-OPTIONS-LIST-DATA ()
+(DEFUN HCNM_OPTIONS_LIST_DATA ()
   '(
     ("ProjectNotesEditor" (("text" "System Text Editor") ("csv" "System CSV (spreadsheet)") ("cnm" "CNM Pro Editor")))
     ("LayersEditor" (("notepad" "Notepad") ("cnm" "CNM Pro Editor")))
@@ -5558,38 +5558,38 @@ ImportLayerSettings=No
 )
 
 (DEFUN
-   HCNM-CONFIG-SET-ACTION-TILE (VAR)
-  (SET_TILE VAR (HCNM-CONFIG-TEMP-GETVAR VAR))
+   HCNM_CONFIG_SET_ACTION_TILE (VAR)
+  (SET_TILE VAR (HCNM_CONFIG_TEMP_GETVAR VAR))
   (ACTION_TILE
     VAR
-    (STRCAT "(HCNM-CONFIG-TEMP-SETVAR \"" VAR "\" $value)")
+    (STRCAT "(HCNM_CONFIG_TEMP_SETVAR \"" VAR "\" $value)")
   )
 )
 
 
 (DEFUN
-   HCNM-CONFIG-DCL-LIST (KEY /)
-  (HCNM-SET_TILE_LIST
+   HCNM_CONFIG_DCL_LIST (KEY /)
+  (HCNM_SET_TILE_LIST
     KEY
     (MAPCAR
       '(LAMBDA (X) (CADR X))
-      (CADR (ASSOC KEY (HCNM-OPTIONS-LIST-DATA)))
+      (CADR (ASSOC KEY (HCNM_OPTIONS_LIST_DATA)))
     )
     (CADR
       (ASSOC
         (C:HCNM-CONFIG-GETVAR KEY)
-        (CADR (ASSOC KEY (HCNM-OPTIONS-LIST-DATA)))
+        (CADR (ASSOC KEY (HCNM_OPTIONS_LIST_DATA)))
       )
     )
   )
   (ACTION_TILE
     KEY
-    "(HCNM-CONFIG-DCL-LIST-CALLBACK $key $value)"
+    "(HCNM_CONFIG_DCL_LIST_CALLBACK $key $value)"
   )
 )
 
 (DEFUN
-   HCNM-SET_TILE_LIST (KEY OPTIONS SELECTED / ITEM)
+   HCNM_SET_TILE_LIST (KEY OPTIONS SELECTED / ITEM)
   (START_LIST KEY 3)
   (MAPCAR 'ADD_LIST OPTIONS)
   (END_LIST)
@@ -5608,15 +5608,15 @@ ImportLayerSettings=No
 )
 
 (DEFUN
-   HCNM-CONFIG-DCL-LIST-CALLBACK (KEY VALUE /)
-  (HCNM-CONFIG-TEMP-SETVAR
+   HCNM_CONFIG_DCL_LIST_CALLBACK (KEY VALUE /)
+  (HCNM_CONFIG_TEMP_SETVAR
     KEY
-    (CAR (NTH (READ VALUE) (CADR (ASSOC KEY (HCNM-OPTIONS-LIST-DATA)))))
+    (CAR (NTH (READ VALUE) (CADR (ASSOC KEY (HCNM_OPTIONS_LIST_DATA)))))
   )
 )
 
 (DEFUN
-   HCNM-GET-ATTRIBUTES (ENAME_BLOCK / ATTRIBUTE_LIST ELIST)
+   HCNM_GET_ATTRIBUTES (ENAME_BLOCK / ATTRIBUTE_LIST ELIST)
   (WHILE (AND
            (SETQ ENAME_BLOCK (ENTNEXT ENAME_BLOCK))
            (/= "SEQEND"
@@ -5642,27 +5642,27 @@ ImportLayerSettings=No
 )
 
 (DEFUN
-   HCNM-SET-ATTRIBUTES (ENAME-BLOCK ATTRIBUTE-LIST)
+   HCNM_SET_ATTRIBUTES (ENAME_BLOCK ATTRIBUTE_LIST)
   (WHILE (AND
-           (SETQ ENAME-BLOCK (ENTNEXT ENAME-BLOCK))
+           (SETQ ENAME_BLOCK (ENTNEXT ENAME_BLOCK))
            (/= "SEQEND"
-               (SETQ ETYPE (CDR (ASSOC 0 (SETQ ELIST (ENTGET ENAME-BLOCK)))))
+               (SETQ ETYPE (CDR (ASSOC 0 (SETQ ELIST (ENTGET ENAME_BLOCK)))))
            )
          )
     (COND
       ((AND
          (= ETYPE "ATTRIB")
          (SETQ ATAG (CDR (ASSOC 2 ELIST)))
-         (ASSOC ATAG ATTRIBUTE-LIST)
+         (ASSOC ATAG ATTRIBUTE_LIST)
        ) ;_ end of and
        (ENTMOD
          (SUBST
-           (CONS 1 (CADR (ASSOC ATAG ATTRIBUTE-LIST)))
+           (CONS 1 (CADR (ASSOC ATAG ATTRIBUTE_LIST)))
            (ASSOC 1 ELIST)
            ELIST
          )
        )
-       (ENTUPD ENAME-BLOCK)
+       (ENTUPD ENAME_BLOCK)
       )
     )
   )
