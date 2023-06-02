@@ -4942,16 +4942,18 @@ ImportLayerSettings=No
 (DEFUN C:HAWS-RECL () (haws-core-init 205) (HCNM-LDRBLK-DYNAMIC "REC"))
 (DEFUN C:HAWS-SSTL () (haws-core-init 206) (HCNM-LDRBLK-DYNAMIC "SST"))
 (DEFUN C:HAWS-TRIL () (haws-core-init 207) (HCNM-LDRBLK-DYNAMIC "TRI"))
+(DEFUN C:HCNM-REPLACE-BUBBLE () (haws-core-init 337) (HCNM-LDRBLK-DYNAMIC NIL))
+
 (DEFUN
-   HCNM-LDRBLK-DYNAMIC (NOTETYPE / ANG1 ASSOCIATE-P ATTRIBUTE-LIST AUOLD
-                        BLOCKNAME TH ENAME-BLOCK FLIPSTATE GR INPUT1 NUM P1
-                        P2 SNAPANG1 SS1 TXT1 TXT2 VLAOBJ
+   HCNM-LDRBLK-DYNAMIC (NOTETYPE / ATTRIBUTE_LIST BLOCKNAME BUBBLEHOOKS
+                        ENAME-BLOCK-OLD ENAME-LEADER-OLD LEADER-P P1 P2
+                        REPLACE-P RET TH
                        )
   (HAWS-VSAVE '("attreq" "aunits" "clayer" "cmdecho"))
   (COND
-    ((and (getvar "wipeoutframe")(/= (getvar "wipeoutframe") 2))
-      (ALERT "Setting WIPEOUTFRAME to 2 to show but not plot")
-      (SETVAR "wipeoutframe" 2)
+    ((AND (GETVAR "wipeoutframe") (/= (GETVAR "wipeoutframe") 2))
+     (ALERT "Setting WIPEOUTFRAME to 2 to show but not plot")
+     (SETVAR "wipeoutframe" 2)
     )
   )
   (COND
@@ -4973,38 +4975,130 @@ ImportLayerSettings=No
   (HCNM-PROJINIT)
   (HCNM-SET-DIMSTYLE "NotesLeaderDimstyle")
   (SETQ
-    ASSOCIATE-P
-     (COND
-       ((= (GETVAR "DIMANNO") 1) T)
-       (NIL)
-     )
-  )
-  (COND
-    ((AND (NOT ASSOCIATE-P) (GETVAR "CANNOSCALEVALUE") (/= (GETVAR "DIMSCALE") (/ 1.0 (GETVAR "CANNOSCALEVALUE"))))
-     (ALERT (PRINC (STRCAT "\nDimension scale (" (RTOS (GETVAR "DIMSCALE") 2 2) ") and\nAnnotation scale (" (RTOS (/ 1.0 (GETVAR "CANNOSCALEVALUE")) 2 2) ")\nare not equal.\nCNM recommends setting dimension scale to match annotation scale.")))
-     (INITGET 1 "Yes No")
-     (SETQ INPUT1 (GETKWORD "\nSet dimension scale to match annotation scale? [Yes/No]: "))
-     (COND ((= INPUT1 "Yes")(SETVAR "DIMSCALE" (/ 1.0 (GETVAR "CANNOSCALEVALUE")))))
-    )
-  )
-  (SETQ
-    BUBBLEHOOKS (c:hcnm-config-getvar "BubbleHooks")
+    REPLACE-P
+     (NOT NOTETYPE)
+    BUBBLEHOOKS
+     (C:HCNM-CONFIG-GETVAR "BubbleHooks")
     BLOCKNAME
-     (STRCAT "cnm-bubble-" (COND ((= (STRCASE BUBBLEHOOKS) "YES") "1")((= (STRCASE BUBBLEHOOKS) "NO") "0")(T BUBBLEHOOKS)))
-    P1 (GETPOINT "\nStart point for leader:")
-    TH (* (GETVAR "dimtxt") (IF (GETVAR "DIMANNO") 1 (GETVAR "DIMTXT")))
-    SNAPANG1
-     (GETVAR "snapang")
-    SS1
-     (SSADD)
+     (STRCAT
+       "cnm-bubble-"
+       (COND
+         ((= (STRCASE BUBBLEHOOKS) "YES") "1")
+         ((= (STRCASE BUBBLEHOOKS) "NO") "0")
+         (T BUBBLEHOOKS)
+       )
+     )
+    TH (* (GETVAR "dimtxt")
+          (IF (GETVAR "DIMANNO")
+            1
+            (GETVAR "DIMTXT")
+          )
+       )
   )
   (HAWS-MKLAYR "NOTESLDR")
   (SETVAR "attreq" 0)
+  (SETQ
+    RET
+     (HCNM-LDRBLK-GET-POINT-1 REPLACE-P)
+    P1 (CAR RET)
+    NOTETYPE
+     (CADR RET)
+    ENAME-BLOCK-OLD
+     (CADDR RET)
+    ENAME-LEADER-OLD
+     (CADDDR RET)
+    P2 (HCNM-LDRBLK-GET-POINT-2 P1 TH BLOCKNAME NOTETYPE)
+    ATTRIBUTE_LIST
+     (COND
+       (REPLACE-P (HCNM-GET-ATTRIBUTES ENAME-BLOCK-OLD))
+       (T (HCNM-LDRBLK-GET-ATTRIBUTES))
+     )
+    LEADER-P
+     (COND
+       ((NOT REPLACE-P))
+       ((NOT (NOT ENAME-LEADER-OLD)))
+     )
+  )
+  (HCNM-LDRBLK-DRAW
+    P1 P2 TH NOTETYPE BLOCKNAME ATTRIBUTE_LIST LEADER-P
+   )
+  (COND (ENAME-BLOCK-OLD (ENTDEL ENAME-BLOCK-OLD)))
+  (COND (ENAME-LEADER-OLD (ENTDEL ENAME-LEADER-OLD)))
+  (HCNM-RESTORE-DIMSTYLE)
+  (HAWS-VRSTOR)
+  (COMMAND "._undo" "_e")
+  (HAWS-CORE-RESTORE)
+  (PRINC)
+)
+
+
+(DEFUN
+   HCNM-LDRBLK-GET-POINT-1
+   (REPLACE-P / ELIST-BLOCK-OLD ENAME-330 ENAME-BLOCK-OLD ENAME-LEADER-OLD NOTETYPE P1 VLAOBJ)
+  (COND
+    (REPLACE-P ;; Prompt and check for old block.
+       (WHILE (OR (NOT (SETQ ENAME-BLOCK-OLD (CAR (ENTSEL))))
+                  (NOT (SETQ ELIST-BLOCK-OLD (ENTGET ENAME-BLOCK-OLD)))
+                  (NOT
+                    (AND
+                      (= (CDR (ASSOC 0 ELIST-BLOCK-OLD)) "INSERT")
+                      (WCMATCH
+                        (STRCASE
+                          (VLA-GET-EFFECTIVENAME
+                            (VLAX-ENAME->VLA-OBJECT ENAME-BLOCK-OLD)
+                          )
+                        )
+                        "CNM-BUBBLE-*"
+                      )
+                    )
+                  )
+              )
+         (PRINC "\nSelected entity is not a CNM bubble block.")
+       )
+       (SETQ
+         VLAOBJ
+          (VLAX-ENAME->VLA-OBJECT ENAME-BLOCK-OLD)
+         NOTETYPE
+          (LM:GETDYNPROPVALUE VLAOBJ "Shape")
+       )
+       ;; Get start point
+       ;; Find associated leader.
+       (WHILE
+         (AND
+           (NOT ENAME-LEADER-OLD)
+           (SETQ ENAME-330 (CDR (ASSOC 330 ELIST-BLOCK-OLD)))
+         )
+         (COND
+           ((EQ (CDR (ASSOC 340 (ENTGET ENAME-330))) ENAME-BLOCK-OLD)(SETQ ENAME-LEADER-OLD ENAME-330))
+           (T (SETQ ELIST-BLOCK-OLD (CDR (MEMBER (ASSOC 330 ELIST-BLOCK-OLD) ELIST-BLOCK-OLD)) ENAME-LEADER-OLD NIL))
+         )
+       )
+       (SETQ
+         P1 (COND
+              (ENAME-LEADER-OLD
+               (CDR
+                 (ASSOC 10 (ENTGET ENAME-LEADER-OLD))
+               )
+              )
+              (T (CDR (ASSOC 10 ELIST-BLOCK-OLD)))
+            )
+       )
+    )
+    (T (SETQ P1 (GETPOINT "\nStart point for leader:")))
+  )
+  (LIST P1 NOTETYPE ENAME-BLOCK-OLD ENAME-LEADER-OLD)
+)
+
+
+(DEFUN
+   HCNM-LDRBLK-GET-POINT-2
+   (P1 TH BLOCKNAME NOTETYPE / ENAME-BLOCK P2 SS1 VLAOBJ)
+  (SETQ SS1 (SSADD))
   (FOREACH
      FLIPSTATE '("right" "left")
     (COMMAND
       "._insert"
-      (strcat BLOCKNAME "-" flipstate)
+      (STRCAT BLOCKNAME "-" FLIPSTATE)
       "s"
       TH
       P1
@@ -5021,71 +5115,110 @@ ImportLayerSettings=No
   )
   (PROMPT "\nLocation for bubble: ")
   (COMMAND "._MOVE" SS1 "" P1 PAUSE)
+  (SETQ P2 (TRANS (CDR (ASSOC 10 (ENTGET ENAME-BLOCK))) ENAME-BLOCK 1))
+  (COMMAND "._erase" SS1 "")
+  P2
+)
+
+(DEFUN
+   HCNM-LDRBLK-DRAW (P1 P2 TH NOTETYPE BLOCKNAME ATTRIBUTE_LIST LEADER-P
+                     / ANG1 ASSOCIATE-P AUOLD ENAME-BLOCK FLIPSTATE INPUT1
+                     VLAOBJ
+                    )
   (SETQ
-    P2        (TRANS (CDR (ASSOC 10 (ENTGET ENAME-BLOCK))) ENAME-BLOCK 1)
-    ANG1      (- (ANGLE P1 P2) SNAPANG1)
+    ANG1      (- (ANGLE P1 P2) (GETVAR "snapang"))
     FLIPSTATE (COND
                 ((MINUSP (COS ANG1)) "left")
                 (T "right")
               )
   )
-  (SETQ
-    NUM  (GETSTRING "\nNote number <XX>: ")
-    TXT1 (GETSTRING 1 "Line 1 text: ")
-    TXT2 (GETSTRING 1 "Line 2 text: ")
-  )
-  (COMMAND "._erase" SS1 "")
   (COND
-    ((>= (ATOF (GETVAR "acadver")) 14)
-     (COMMAND "._leader" P1 P2 "_Annotation" "")
-     (COND
-       (ASSOCIATE-P (COMMAND "_block"))
-       (T (COMMAND "_none" "._INSERT"))
+    ((NOT LEADER-P)
+     (SETQ AUOLD (GETVAR "aunits"))
+     (SETVAR "aunits" 3)
+     (COMMAND
+       "._insert"
+       (STRCAT BLOCKNAME "-" FLIPSTATE)
+       P2
+       TH
+       TH
+       (GETVAR "snapang")
      )
+     (SETVAR "aunits" AUOLD)
     )
     (T
-     (ALERT
-       (PRINC
-         "\nThe bubble notes inserter in CNM 4.2.3 and higher is not compatible with AutoCAD pre-R14."
+     (SETQ
+       ASSOCIATE-P
+        (COND
+          ((= (GETVAR "DIMANNO") 1) T)
+          (NIL)
+        )
+     )
+     (COND
+       ((AND
+          (NOT ASSOCIATE-P)
+          (GETVAR "CANNOSCALEVALUE")
+          (/= (GETVAR "DIMSCALE") (/ 1.0 (GETVAR "CANNOSCALEVALUE")))
+        )
+        (ALERT
+          (PRINC
+            (STRCAT
+              "\nDimension scale ("
+              (RTOS (GETVAR "DIMSCALE") 2 2)
+              ") and\nAnnotation scale ("
+              (RTOS (/ 1.0 (GETVAR "CANNOSCALEVALUE")) 2 2)
+              ")\nare not equal.\nCNM recommends setting dimension scale to match annotation scale."
+            )
+          )
+        )
+        (INITGET 1 "Yes No")
+        (SETQ
+          INPUT1
+           (GETKWORD
+             "\nSet dimension scale to match annotation scale? [Yes/No]: "
+           )
+        )
+        (COND
+          ((= INPUT1 "Yes")
+           (SETVAR "DIMSCALE" (/ 1.0 (GETVAR "CANNOSCALEVALUE")))
+          )
+        )
        )
      )
+     (SETQ
+       ANG1      (- (ANGLE P1 P2) (GETVAR "snapang"))
+       FLIPSTATE (COND
+                   ((MINUSP (COS ANG1)) "left")
+                   (T "right")
+                 )
+     )
+     (COND
+       ((>= (ATOF (GETVAR "acadver")) 14)
+        (COMMAND "._leader" P1 P2 "_Annotation" "")
+        (COND
+          (ASSOCIATE-P (COMMAND "_block"))
+          (T (COMMAND "_none" "._INSERT"))
+        )
+       )
+       (T
+        (ALERT
+          (PRINC
+            "\nThe bubble notes inserter in CNM 4.2.3 and higher is not compatible with AutoCAD pre-R14."
+          )
+        )
+       )
+     )
+     (SETQ AUOLD (GETVAR "aunits"))
+     (SETVAR "aunits" 3)
+     (COMMAND
+       (STRCAT BLOCKNAME "-" FLIPSTATE)
+       P2
+       TH
+       TH
+       (GETVAR "snapang")
+     )
+     (SETVAR "aunits" AUOLD)
     )
-  )
-  (SETQ AUOLD (GETVAR "aunits"))
-  (SETVAR "aunits" 3)
-  (COMMAND (strcat BLOCKNAME "-" flipstate) P2 TH TH (GETVAR "snapang"))
-  (SETVAR "aunits" AUOLD)
-  (SETQ
-    ATTRIBUTE-LIST
-     (LIST
-       (LIST "NOTENUM" (COND ((= NUM "") "XX") (NUM)))
-       (LIST
-         "NOTEGAP"
-         (IF (OR (/= TXT1 "") (/= TXT2 ""))
-           "%%u "
-           ""
-         )
-       )
-       (LIST "NOTETXT0" "")
-       (LIST
-         "NOTETXT1"
-         (IF (= TXT1 "")
-           ""
-           (STRCAT "%%u" TXT1)
-         )
-       )
-       (LIST
-         "NOTETXT2"
-         (IF (= TXT2 "")
-           ""
-           (STRCAT "%%o" TXT2)
-         )
-       )
-       (LIST "NOTETXT3" "")
-       (LIST "NOTETXT4" "")
-       (LIST "NOTETXT5" "")
-       (LIST "NOTETXT6" "")
-     )
   )
   (SETQ
     ENAME-BLOCK
@@ -5093,17 +5226,56 @@ ImportLayerSettings=No
     VLAOBJ
      (VLAX-ENAME->VLA-OBJECT ENAME-BLOCK)
   )
-  (HCNM-SET-ATTRIBUTES ENAME-BLOCK ATTRIBUTE-LIST)
+  (HCNM-SET-ATTRIBUTES ENAME-BLOCK ATTRIBUTE_LIST)
   (LM:SETDYNPROPVALUE VLAOBJ "Shape" NOTETYPE)
-  (HCNM-RESTORE-DIMSTYLE)
-  (HAWS-VRSTOR)
-  (COMMAND "._undo" "_e")
-  (haws-core-restore)
-  (PRINC)
 )
 
-
-
+(DEFUN
+   HCNM-LDRBLK-GET-ATTRIBUTES
+   (/ ATTRIBUTE_LIST NUM TXT1 TXT2)
+  (INITGET 128 "Copy")
+  (SETQ NUM (GETKWORD "\nNote number or [Copy note] <Copy note>: "))
+  (COND
+    ((OR (= NUM "Copy") (NOT NUM))
+     (SETQ ATTRIBUTE_LIST (HCNM-GET-ATTRIBUTES (CAR (ENTSEL))))
+    )
+    (T
+     (SETQ
+       TXT1           (GETSTRING 1 "Line 1 text: ")
+       TXT2           (GETSTRING 1 "Line 2 text: ")
+       ATTRIBUTE_LIST (LIST
+                        (LIST "NOTENUM" NUM)
+                        (LIST
+                          "NOTEGAP"
+                          (IF (OR (/= TXT1 "") (/= TXT2 ""))
+                            "%%u "
+                            ""
+                          )
+                        )
+                        (LIST "NOTETXT0" "")
+                        (LIST
+                          "NOTETXT1"
+                          (IF (= TXT1 "")
+                            ""
+                            (STRCAT "%%u" TXT1)
+                          )
+                        )
+                        (LIST
+                          "NOTETXT2"
+                          (IF (= TXT2 "")
+                            ""
+                            (STRCAT "%%o" TXT2)
+                          )
+                        )
+                        (LIST "NOTETXT3" "")
+                        (LIST "NOTETXT4" "")
+                        (LIST "NOTETXT5" "")
+                        (LIST "NOTETXT6" "")
+                      )
+     )
+    )
+  )
+)
 
 ;;; ------------------------------------------------------------------------------
 ;;; LDRBLK.LSP
@@ -5444,6 +5616,32 @@ ImportLayerSettings=No
 )
 
 (DEFUN
+   HCNM-GET-ATTRIBUTES (ENAME_BLOCK / ATTRIBUTE_LIST ELIST)
+  (WHILE (AND
+           (SETQ ENAME_BLOCK (ENTNEXT ENAME_BLOCK))
+           (/= "SEQEND"
+               (SETQ ETYPE (CDR (ASSOC 0 (SETQ ELIST (ENTGET ENAME_BLOCK)))))
+           )
+         )
+    (COND
+      ((= ETYPE "ATTRIB")
+       (SETQ
+         ATTRIBUTE_LIST
+          (CONS
+            (LIST
+              (CDR (ASSOC 2 ELIST))
+              (CDR (ASSOC 1 ELIST))
+            )
+            ATTRIBUTE_LIST
+          )
+       )
+      ) ;_ end of and
+    )
+  )
+  ATTRIBUTE_LIST
+)
+
+(DEFUN
    HCNM-SET-ATTRIBUTES (ENAME-BLOCK ATTRIBUTE-LIST)
   (WHILE (AND
            (SETQ ENAME-BLOCK (ENTNEXT ENAME-BLOCK))
@@ -5458,7 +5656,11 @@ ImportLayerSettings=No
          (ASSOC ATAG ATTRIBUTE-LIST)
        ) ;_ end of and
        (ENTMOD
-         (SUBST (CONS 1 (CADR (ASSOC ATAG ATTRIBUTE-LIST))) (ASSOC 1 ELIST) ELIST)
+         (SUBST
+           (CONS 1 (CADR (ASSOC ATAG ATTRIBUTE-LIST)))
+           (ASSOC 1 ELIST)
+           ELIST
+         )
        )
        (ENTUPD ENAME-BLOCK)
       )
