@@ -3961,7 +3961,7 @@ ImportLayerSettings=No
           )
           (IF (/= N (LENGTH CFLIST))
             (SETQ
-              TEMP   (NTH 5 (NTH N CFLIST))
+              TEMP   (NTH 6 (NTH N CFLIST))
               CFLIST (CONS
                        (SUBST
                          (REVERSE

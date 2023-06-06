@@ -16,7 +16,9 @@ BOX NOTES
 ;    are any box notes in the drawing.
 TITLE
 TITLE WATER NOTES
-1    8" WATER PVC WATER LINE                                       LF LINE1 50
+1    12" PVC WATER LINE WITH GRANULAR BEDDING TO 6"                LF LINE1 50
+     OVER TOP OF PIPE AND SELECT NATIVE BACKFILL 
+     PER SPEC 555.5"
 2    8" VALVE, BOX & COVER                                         EA COUNT
 3    WATER FITTING OR BEND                                         EA COUNT
 ;
