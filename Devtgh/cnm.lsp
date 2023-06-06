@@ -5002,7 +5002,7 @@ ImportLayerSettings=No
      (HCNM_LDRBLK_GET_POINT_1 REPLACE_P)
     P1 (CAR RET)
     NOTETYPE
-     (CADR RET)
+     (COND(NOTETYPE)((CADR RET)))
     ENAME_BLOCK_OLD
      (CADDR RET)
     ENAME_LEADER_OLD
@@ -5030,7 +5030,6 @@ ImportLayerSettings=No
   (HAWS-CORE-RESTORE)
   (PRINC)
 )
-
 
 (DEFUN
    HCNM_LDRBLK_GET_POINT_1
@@ -5064,10 +5063,12 @@ ImportLayerSettings=No
        ;; Get start point
        ;; Find associated leader.
        (WHILE
+         ;; Check all 330 groups
          (AND
            (NOT ENAME_LEADER_OLD)
            (SETQ ENAME_330 (CDR (ASSOC 330 ELIST_BLOCK_OLD)))
          )
+         ;; Use the one that refers back to this block.
          (COND
            ((EQ (CDR (ASSOC 340 (ENTGET ENAME_330))) ENAME_BLOCK_OLD)(SETQ ENAME_LEADER_OLD ENAME_330))
            (T (SETQ ELIST_BLOCK_OLD (CDR (MEMBER (ASSOC 330 ELIST_BLOCK_OLD) ELIST_BLOCK_OLD)) ENAME_LEADER_OLD NIL))
@@ -5088,7 +5089,6 @@ ImportLayerSettings=No
   )
   (LIST P1 NOTETYPE ENAME_BLOCK_OLD ENAME_LEADER_OLD)
 )
-
 
 (DEFUN
    HCNM_LDRBLK_GET_POINT_2
