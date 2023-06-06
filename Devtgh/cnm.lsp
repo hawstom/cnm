@@ -5068,7 +5068,7 @@ ImportLayerSettings=No
            (NOT ENAME_LEADER_OLD)
            (SETQ ENAME_330 (CDR (ASSOC 330 ELIST_BLOCK_OLD)))
          )
-         ;; Use the one that refers back to this block.
+         ;; Use the one that refers back to this block. Or move to the next one.
          (COND
            ((EQ (CDR (ASSOC 340 (ENTGET ENAME_330))) ENAME_BLOCK_OLD)(SETQ ENAME_LEADER_OLD ENAME_330))
            (T (SETQ ELIST_BLOCK_OLD (CDR (MEMBER (ASSOC 330 ELIST_BLOCK_OLD) ELIST_BLOCK_OLD)) ENAME_LEADER_OLD NIL))
