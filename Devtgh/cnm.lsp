@@ -2,7 +2,7 @@
 ;;;
 ;;; PHASING
 ;;; NOTES allows up to 9 phases named 1 through 9.
-;;; To use phases, first build the table block NOTEQTY using TBLQTY1 through TBLQTY9 TGH
+;;; To use phases, first build the table block NOTEQTY using TBLQTY1 through TBLQTY9
 ;;; attributes for NOTES to fill out in columns as it makes the table.
 ;;; then when drafting, put the phase for each bubble note in the NOTEPHASE attribute
 ;;; of the bubble note block.  NOTES will read the phase for each bubble note and
@@ -258,7 +258,7 @@
                                    SKIPPEDPHASES USRVAR VPLAYERS X
                                   )
 ;;;
-;;; Section 1.  Make an empty NOTELIST from tblqty and constnot.txt.  TGH I can use this section for Tally, except there is a conflict in the way they do PHASELIST.
+;;; Section 1.  Make an empty NOTELIST from tblqty and constnot.txt.  TGHI can use this section for Tally, except there is a conflict in the way they do PHASELIST.
 ;;;
   (SETQ
     PHASELIST
@@ -4945,9 +4945,7 @@ ImportLayerSettings=No
 (DEFUN C:HCNM-REPLACE-BUBBLE () (haws-core-init 337) (HCNM_LDRBLK_DYNAMIC NIL))
 
 (DEFUN
-   HCNM_LDRBLK_DYNAMIC (NOTETYPE / ATTRIBUTE_LIST BLOCKNAME BUBBLEHOOKS
-                        ENAME_BLOCK_OLD ENAME_LEADER_OLD LEADER_P P1 P2
-                        REPLACE_P RET TH
+   HCNM_LDRBLK_DYNAMIC (NOTETYPE / BLOCKNAME BUBBLEHOOKS DATA_1 P1 P2 REPLACE_BLOCK_P TH
                        )
   (HAWS-VSAVE '("attreq" "aunits" "clayer" "cmdecho"))
   (COND
@@ -4975,8 +4973,6 @@ ImportLayerSettings=No
   (HCNM_PROJINIT)
   (HCNM_SET_DIMSTYLE "NotesLeaderDimstyle")
   (SETQ
-    REPLACE_P
-     (NOT NOTETYPE)
     BUBBLEHOOKS
      (C:HCNM-CONFIG-GETVAR "BubbleHooks")
     BLOCKNAME
@@ -4998,32 +4994,24 @@ ImportLayerSettings=No
   (HAWS-MKLAYR "NOTESLDR")
   (SETVAR "attreq" 0)
   (SETQ
-    RET
-     (HCNM_LDRBLK_GET_POINT_1 REPLACE_P)
-    P1 (CAR RET)
+    REPLACE_BLOCK_P (NOT NOTETYPE)
+    DATA_1
+     (HCNM_LDRBLK_GET_DATA_1 REPLACE_BLOCK_P)
+    P1 (CAR DATA_1)
     NOTETYPE
-     (COND(NOTETYPE)((CADR RET)))
-    ENAME_BLOCK_OLD
-     (CADDR RET)
-    ENAME_LEADER_OLD
-     (CADDDR RET)
+     (COND
+       (NOTETYPE)
+       ((LM:GETDYNPROPVALUE
+          (VLAX-ENAME->VLA-OBJECT (CADR DATA_1))
+          "Shape"
+        )
+       )
+     )
     P2 (HCNM_LDRBLK_GET_POINT_2 P1 TH BLOCKNAME NOTETYPE)
-    ATTRIBUTE_LIST
-     (COND
-       (REPLACE_P (HCNM_GET_ATTRIBUTES ENAME_BLOCK_OLD))
-       (T (HCNM_LDRBLK_GET_ATTRIBUTES))
-     )
-    LEADER_P
-     (COND
-       ((NOT REPLACE_P))
-       ((NOT (NOT ENAME_LEADER_OLD)))
-     )
   )
   (HCNM_LDRBLK_DRAW
-    P1 P2 TH NOTETYPE BLOCKNAME ATTRIBUTE_LIST LEADER_P
+    P1 P2 TH NOTETYPE BLOCKNAME DATA_1
    )
-  (COND (ENAME_BLOCK_OLD (ENTDEL ENAME_BLOCK_OLD)))
-  (COND (ENAME_LEADER_OLD (ENTDEL ENAME_LEADER_OLD)))
   (HCNM_RESTORE_DIMSTYLE)
   (HAWS-VRSTOR)
   (COMMAND "._undo" "_e")
@@ -5032,62 +5020,67 @@ ImportLayerSettings=No
 )
 
 (DEFUN
-   HCNM_LDRBLK_GET_POINT_1
-   (REPLACE_P / ELIST_BLOCK_OLD ENAME_330 ENAME_BLOCK_OLD ENAME_LEADER_OLD NOTETYPE P1 VLAOBJ)
+   HCNM_LDRBLK_GET_DATA_1 (REPLACE_BLOCK_P / ELIST_BLOCK_OLD ENAME_330 ENAME_BLOCK_OLD ENAME_LEADER_OLD P1
+                           )
   (COND
-    (REPLACE_P ;; Prompt and check for old block.
-       (WHILE (OR (NOT (SETQ ENAME_BLOCK_OLD (CAR (ENTSEL))))
-                  (NOT (SETQ ELIST_BLOCK_OLD (ENTGET ENAME_BLOCK_OLD)))
-                  (NOT
-                    (AND
-                      (= (CDR (ASSOC 0 ELIST_BLOCK_OLD)) "INSERT")
-                      (WCMATCH
-                        (STRCASE
-                          (VLA-GET-EFFECTIVENAME
-                            (VLAX-ENAME->VLA-OBJECT ENAME_BLOCK_OLD)
-                          )
+    (REPLACE_BLOCK_P
+     ;; Prompt and check for old block.
+     (WHILE (OR (NOT (SETQ ENAME_BLOCK_OLD (CAR (ENTSEL))))
+                (NOT (SETQ ELIST_BLOCK_OLD (ENTGET ENAME_BLOCK_OLD)))
+                (NOT
+                  (AND
+                    (= (CDR (ASSOC 0 ELIST_BLOCK_OLD)) "INSERT")
+                    (WCMATCH
+                      (STRCASE
+                        (VLA-GET-EFFECTIVENAME
+                          (VLAX-ENAME->VLA-OBJECT ENAME_BLOCK_OLD)
                         )
-                        "CNM-BUBBLE-*"
                       )
+                      "CNM-BUBBLE-*"
                     )
                   )
-              )
-         (PRINC "\nSelected entity is not a CNM bubble block.")
-       )
-       (SETQ
-         VLAOBJ
-          (VLAX-ENAME->VLA-OBJECT ENAME_BLOCK_OLD)
-         NOTETYPE
-          (LM:GETDYNPROPVALUE VLAOBJ "Shape")
-       )
-       ;; Get start point
-       ;; Find associated leader.
-       (WHILE
-         ;; Check all 330 groups
-         (AND
-           (NOT ENAME_LEADER_OLD)
-           (SETQ ENAME_330 (CDR (ASSOC 330 ELIST_BLOCK_OLD)))
-         )
-         ;; Use the one that refers back to this block. Or move to the next one.
-         (COND
-           ((EQ (CDR (ASSOC 340 (ENTGET ENAME_330))) ENAME_BLOCK_OLD)(SETQ ENAME_LEADER_OLD ENAME_330))
-           (T (SETQ ELIST_BLOCK_OLD (CDR (MEMBER (ASSOC 330 ELIST_BLOCK_OLD) ELIST_BLOCK_OLD)) ENAME_LEADER_OLD NIL))
-         )
-       )
-       (SETQ
-         P1 (COND
-              (ENAME_LEADER_OLD
-               (CDR
-                 (ASSOC 10 (ENTGET ENAME_LEADER_OLD))
-               )
-              )
-              (T (CDR (ASSOC 10 ELIST_BLOCK_OLD)))
+                )
             )
+       (PRINC "\nSelected entity is not a CNM bubble block.")
+     )
+     ;; Get start point
+     ;; Find associated leader.
+     (WHILE ;; Check all 330 groups
+            (AND
+              (NOT ENAME_LEADER_OLD)
+              (SETQ ENAME_330 (CDR (ASSOC 330 ELIST_BLOCK_OLD)))
+            )
+       ;; Use the one that refers back to this block. Or move to the next one.
+       (COND
+         ((EQ (CDR (ASSOC 340 (ENTGET ENAME_330))) ENAME_BLOCK_OLD)
+          (SETQ ENAME_LEADER_OLD ENAME_330)
+         )
+         (T
+          (SETQ
+            ELIST_BLOCK_OLD
+             (CDR
+               (MEMBER
+                 (ASSOC 330 ELIST_BLOCK_OLD)
+                 ELIST_BLOCK_OLD
+               )
+             )
+            ENAME_LEADER_OLD NIL
+          )
+         )
        )
+     )
+     (SETQ
+       P1 (COND
+            (ENAME_LEADER_OLD
+             (CDR (ASSOC 10 (ENTGET ENAME_LEADER_OLD)))
+            )
+            (T (CDR (ASSOC 10 ELIST_BLOCK_OLD)))
+          )
+     )
     )
     (T (SETQ P1 (GETPOINT "\nStart point for leader:")))
   )
-  (LIST P1 NOTETYPE ENAME_BLOCK_OLD ENAME_LEADER_OLD)
+  (LIST P1 ENAME_BLOCK_OLD ENAME_LEADER_OLD)
 )
 
 (DEFUN
@@ -5121,19 +5114,27 @@ ImportLayerSettings=No
 )
 
 (DEFUN
-   HCNM_LDRBLK_DRAW (P1 P2 TH NOTETYPE BLOCKNAME ATTRIBUTE_LIST LEADER_P
-                     / ANG1 ASSOCIATE_P AUOLD ENAME_BLOCK FLIPSTATE INPUT1
-                     VLAOBJ
+   HCNM_LDRBLK_DRAW (P1 P2 TH NOTETYPE BLOCKNAME DATA_1 / ANG1
+                     ASSOCIATE_P AUOLD DYN_PROPS_OLD ELIST_LEADER_OLD
+                     ENAME_BLOCK ENAME_BLOCK_OLD ENAME_LEADER_OLD
+                     FLIPSTATE INPUT1 VLAOBJ_BLOCK_NEW VLAOBJ_BLOCK_OLD
                     )
   (SETQ
-    ANG1      (- (ANGLE P1 P2) (GETVAR "snapang"))
-    FLIPSTATE (COND
-                ((MINUSP (COS ANG1)) "left")
-                (T "right")
-              )
+    ENAME_BLOCK_OLD
+     (CADR DATA_1)
+    ENAME_LEADER_OLD
+     (CADDR DATA_1)
+    ANG1
+     (- (ANGLE P1 P2) (GETVAR "snapang"))
+    FLIPSTATE
+     (COND
+       ((MINUSP (COS ANG1)) "left")
+       (T "right")
+     )
   )
   (COND
-    ((NOT LEADER_P)
+    ;; If it's not a new insertion, don't draw a leader.
+    (ENAME_BLOCK_OLD
      (SETQ AUOLD (GETVAR "aunits"))
      (SETVAR "aunits" 3)
      (COMMAND
@@ -5145,6 +5146,38 @@ ImportLayerSettings=No
        (GETVAR "snapang")
      )
      (SETVAR "aunits" AUOLD)
+     ;; If there is an old leader, stretch it and associate it.
+     (COND
+       (ENAME_LEADER_OLD
+        (SETQ ELIST_LEADER_OLD (ENTGET ENAME_LEADER_OLD))
+        ;; Stretch it.
+        (ENTMOD
+          (SUBST
+            (CONS 10 P2)
+            (ASSOC
+              10
+              (CDR
+                (MEMBER (ASSOC 10 ELIST_LEADER_OLD) ELIST_LEADER_OLD)
+              )
+            )
+            ELIST_LEADER_OLD
+          )
+        )
+        ;; Associate it.
+        (COMMAND
+          "._qldetachset"
+          ENAME_LEADER_OLD
+          ""
+          "._qlattach"
+          ENAME_LEADER_OLD
+          (ENTLAST)
+          "._draworder"
+          (ENTLAST)
+          ""
+          "_front"
+        )
+       )
+     )
     )
     (T
      (SETQ
@@ -5223,12 +5256,57 @@ ImportLayerSettings=No
   (SETQ
     ENAME_BLOCK
      (ENTLAST)
-    VLAOBJ
+    VLAOBJ_BLOCK_NEW
      (VLAX-ENAME->VLA-OBJECT ENAME_BLOCK)
   )
-  (HCNM_SET_ATTRIBUTES ENAME_BLOCK ATTRIBUTE_LIST)
-  (LM:SETDYNPROPVALUE VLAOBJ "Shape" NOTETYPE)
+  (COND
+    (ENAME_BLOCK_OLD
+     (SETQ
+       VLAOBJ_BLOCK_OLD
+        (VLAX-ENAME->VLA-OBJECT ENAME_BLOCK_OLD)
+       DYN_PROPS_OLD
+        (MAPCAR
+          '(LAMBDA (X)
+             (LIST
+               (VLAX-GET-PROPERTY X 'PROPERTYNAME)
+               (VLAX-GET-PROPERTY X 'VALUE)
+               X
+             )
+           )
+          (VLAX-INVOKE
+            VLAOBJ_BLOCK_OLD
+            'GETDYNAMICBLOCKPROPERTIES
+          )
+        )
+     )
+     (FOREACH
+        POBJ (VLAX-INVOKE VLAOBJ_BLOCK_NEW 'GETDYNAMICBLOCKPROPERTIES)
+       (IF (/= (VLAX-GET-PROPERTY POBJ 'READONLY) :VLAX-TRUE)
+         (VLAX-PUT-PROPERTY
+           POBJ
+           'VALUE
+           (CADR
+             (ASSOC
+               (VLAX-GET-PROPERTY POBJ 'PROPERTYNAME)
+               DYN_PROPS_OLD
+             )
+           )
+         )
+       )
+     )
+    )
+    (T (LM:SETDYNPROPVALUE VLAOBJ_BLOCK_NEW "Shape" NOTETYPE))
+  )
+  (HCNM_SET_ATTRIBUTES
+    ENAME_BLOCK
+    (COND
+      (ENAME_BLOCK_OLD (HCNM_GET_ATTRIBUTES ENAME_BLOCK_OLD))
+      (T (HCNM_LDRBLK_GET_ATTRIBUTES))
+    )
+  )
+  (IF ENAME_BLOCK_OLD (ENTDEL ENAME_BLOCK_OLD))
 )
+
 
 (DEFUN
    HCNM_LDRBLK_GET_ATTRIBUTES
