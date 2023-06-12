@@ -2477,6 +2477,8 @@
             "CNM"
             "ThisFile"
           )
+       )
+       (SETQ
          PNNAME
           (INI_READENTRY PROJECT_FILE_NAME "CNM" "ProjectNotes")
        )
