@@ -69,6 +69,7 @@
 (haws-autoload "cnm"   '("haws-boxl" "haws-cirl" "haws-dial" "haws-elll"
                         "haws-hexl" "haws-octl" "haws-penl" "haws-recl"
                         "haws-sstl" "haws-tcg" "haws-tril" "haws-txtl"
+	         "hcnm-replace-bubble"
                         "hcnm-cnmoptions"
                          "hcnm-cnm" "hcnm-cnmkt" "hcnm-cnmkti" "hcnm-cnmqt"
                         "hcnm-linkproj" "hcnm-changeprojnotes" "hcnm-noteseditor"

@@ -5020,8 +5020,7 @@ ImportLayerSettings=No
 )
 
 (DEFUN
-   HCNM_LDRBLK_GET_DATA_1 (REPLACE_BLOCK_P / ELIST_BLOCK_OLD ENAME_330 ENAME_BLOCK_OLD ENAME_LEADER_OLD P1
-                           )
+   HCNM_LDRBLK_GET_DATA_1 (REPLACE_BLOCK_P / ELIST_BLOCK_OLD ENAME_330 ENAME_BLOCK_OLD ENAME_LEADER_OLD P1)
   (COND
     (REPLACE_BLOCK_P
      ;; Prompt and check for old block.
@@ -5080,7 +5079,7 @@ ImportLayerSettings=No
     )
     (T (SETQ P1 (GETPOINT "\nStart point for leader:")))
   )
-  (LIST P1 ENAME_BLOCK_OLD ENAME_LEADER_OLD)
+  (LIST P1 ENAME_BLOCK_OLD ENAME_LEADER_OLD REPLACE_BLOCK_P)
 )
 
 (DEFUN
@@ -5115,8 +5114,9 @@ ImportLayerSettings=No
 
 (DEFUN
    HCNM_LDRBLK_DRAW (P1 P2 TH NOTETYPE BLOCKNAME DATA_1 / ANG1
-                     ASSOCIATE_P AUOLD DYN_PROPS_OLD ELIST_LEADER_OLD
-                     ENAME_BLOCK ENAME_BLOCK_OLD ENAME_LEADER_OLD
+                     ASSOCIATE_P ATTRIBUTES_OLD AUOLD DATA_2
+                     DYN_PROPS_OLD DYN_PROPS_OLD_I ELIST_LEADER_OLD
+                     ENAME_BLOCK_NEW ENAME_BLOCK_OLD ENAME_LEADER_OLD
                      FLIPSTATE INPUT1 VLAOBJ_BLOCK_NEW VLAOBJ_BLOCK_OLD
                     )
   (SETQ
@@ -5124,6 +5124,8 @@ ImportLayerSettings=No
      (CADR DATA_1)
     ENAME_LEADER_OLD
      (CADDR DATA_1)
+    REPLACE_BLOCK_P
+     (CADDDR DATA_1)
     ANG1
      (- (ANGLE P1 P2) (GETVAR "snapang"))
     FLIPSTATE
@@ -5254,11 +5256,20 @@ ImportLayerSettings=No
     )
   )
   (SETQ
-    ENAME_BLOCK
+    ENAME_BLOCK_OLD
+     (CADR DATA_1)
+    ENAME_BLOCK_NEW
      (ENTLAST)
     VLAOBJ_BLOCK_NEW
-     (VLAX-ENAME->VLA-OBJECT ENAME_BLOCK)
+     (VLAX-ENAME->VLA-OBJECT ENAME_BLOCK_NEW)
+    DATA_2
+     (HCNM_LDRBLK_GET_ATTRIBUTES ENAME_BLOCK_OLD)
+    ENAME_BLOCK_OLD
+     (CAR DATA_2)
+    ATTRIBUTES_OLD
+     (CADR DATA_2)
   )
+  (HCNM_SET_ATTRIBUTES ENAME_BLOCK_NEW ATTRIBUTES_OLD)
   (COND
     (ENAME_BLOCK_OLD
      (SETQ
@@ -5280,80 +5291,97 @@ ImportLayerSettings=No
         )
      )
      (FOREACH
-        POBJ (VLAX-INVOKE VLAOBJ_BLOCK_NEW 'GETDYNAMICBLOCKPROPERTIES)
-       (IF (/= (VLAX-GET-PROPERTY POBJ 'READONLY) :VLAX-TRUE)
-         (VLAX-PUT-PROPERTY
-           POBJ
-           'VALUE
-           (CADR
-             (ASSOC
-               (VLAX-GET-PROPERTY POBJ 'PROPERTYNAME)
-               DYN_PROPS_OLD
+        VLAOBJ_PROPERTY_NEW
+        (VLAX-INVOKE VLAOBJ_BLOCK_NEW 'GETDYNAMICBLOCKPROPERTIES)
+       (IF (AND
+             (SETQ
+               DYN_PROPS_OLD_I
+                (ASSOC
+                  (VLAX-GET-PROPERTY
+                    VLAOBJ_PROPERTY_NEW
+                    'PROPERTYNAME
+                  )
+                  DYN_PROPS_OLD
+                )
+             )
+             (/= (VLAX-GET-PROPERTY VLAOBJ_PROPERTY_NEW 'READONLY)
+                 :VLAX-TRUE
              )
            )
+         (VLAX-PUT-PROPERTY
+           VLAOBJ_PROPERTY_NEW
+           'VALUE
+           (CADR DYN_PROPS_OLD_I)
          )
        )
      )
+     (IF REPLACE_BLOCK_P (ENTDEL ENAME_BLOCK_OLD))
     )
     (T (LM:SETDYNPROPVALUE VLAOBJ_BLOCK_NEW "Shape" NOTETYPE))
   )
-  (HCNM_SET_ATTRIBUTES
-    ENAME_BLOCK
-    (COND
-      (ENAME_BLOCK_OLD (HCNM_GET_ATTRIBUTES ENAME_BLOCK_OLD))
-      (T (HCNM_LDRBLK_GET_ATTRIBUTES))
-    )
-  )
-  (IF ENAME_BLOCK_OLD (ENTDEL ENAME_BLOCK_OLD))
 )
 
-
 (DEFUN
-   HCNM_LDRBLK_GET_ATTRIBUTES
-   (/ ATTRIBUTE_LIST NUM TXT1 TXT2)
-  (INITGET 128 "Copy")
-  (SETQ NUM (GETKWORD "\nNote number or [Copy note] <Copy note>: "))
+   HCNM_LDRBLK_GET_ATTRIBUTES (ENAME_BLOCK_OLD / ATTRIBUTE_LIST
+                               ENAME_BLOCK_OLD NUM TXT1 TXT2
+                              )
   (COND
-    ((OR (= NUM "Copy") (NOT NUM))
-     (SETQ ATTRIBUTE_LIST (HCNM_GET_ATTRIBUTES (CAR (ENTSEL))))
+    (ENAME_BLOCK_OLD
+     (SETQ ATTRIBUTE_LIST (HCNM_GET_ATTRIBUTES ENAME_BLOCK_OLD))
     )
     (T
-     (SETQ
-       TXT1           (GETSTRING 1 "Line 1 text: ")
-       TXT2           (GETSTRING 1 "Line 2 text: ")
-       ATTRIBUTE_LIST (LIST
-                        (LIST "NOTENUM" NUM)
-                        (LIST
-                          "NOTEGAP"
-                          (IF (OR (/= TXT1 "") (/= TXT2 ""))
-                            "%%u "
-                            ""
-                          )
-                        )
-                        (LIST "NOTETXT0" "")
-                        (LIST
-                          "NOTETXT1"
-                          (IF (= TXT1 "")
-                            ""
-                            (STRCAT "%%u" TXT1)
-                          )
-                        )
-                        (LIST
-                          "NOTETXT2"
-                          (IF (= TXT2 "")
-                            ""
-                            (STRCAT "%%o" TXT2)
-                          )
-                        )
-                        (LIST "NOTETXT3" "")
-                        (LIST "NOTETXT4" "")
-                        (LIST "NOTETXT5" "")
-                        (LIST "NOTETXT6" "")
-                      )
+     (INITGET 128 "Copy")
+     (SETQ NUM (GETKWORD "\nNote number or [Copy note] <Copy note>: "))
+     (COND
+       ((OR (= NUM "Copy") (NOT NUM))
+        (SETQ
+          ATTRIBUTE_LIST
+           (HCNM_GET_ATTRIBUTES
+             (SETQ ENAME_BLOCK_OLD (CAR (ENTSEL)))
+           )
+        )
+       )
+       (T
+        (SETQ
+          TXT1           (GETSTRING 1 "Line 1 text: ")
+          TXT2           (GETSTRING 1 "Line 2 text: ")
+          ATTRIBUTE_LIST (LIST
+                           (LIST "NOTENUM" NUM)
+                           (LIST
+                             "NOTEGAP"
+                             (IF (OR (/= TXT1 "") (/= TXT2 ""))
+                               "%%u "
+                               ""
+                             )
+                           )
+                           (LIST "NOTETXT0" "")
+                           (LIST
+                             "NOTETXT1"
+                             (IF (= TXT1 "")
+                               ""
+                               (STRCAT "%%u" TXT1)
+                             )
+                           )
+                           (LIST
+                             "NOTETXT2"
+                             (IF (= TXT2 "")
+                               ""
+                               (STRCAT "%%o" TXT2)
+                             )
+                           )
+                           (LIST "NOTETXT3" "")
+                           (LIST "NOTETXT4" "")
+                           (LIST "NOTETXT5" "")
+                           (LIST "NOTETXT6" "")
+                         )
+        )
+       )
      )
     )
   )
+  (LIST ENAME_BLOCK_OLD ATTRIBUTE_LIST)
 )
+
 
 ;;; ------------------------------------------------------------------------------
 ;;; LDRBLK.LSP
