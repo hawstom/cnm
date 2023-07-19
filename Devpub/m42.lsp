@@ -47,6 +47,7 @@
     osmold (getvar "osmode")
     hcwid (if hcwid hcwid 4.0)
     dwlen(if dwlen dwlen 20.0)
+    dwwid (if swwid swwid 12.0)
     swwid (if swwid swwid 4.0)
     ts (* (HAWS-DWGSCALE)(getvar"dimtxt"))
   )
@@ -54,24 +55,26 @@
   (HAWS-MKLAYR "DRIVEWAY")
   (while
     (progn
-      (initget "Dw Sw")
+      (initget "Length Dw Sw")
       (prompt "\nCity of Mesa M-42 driveway entrance.")
+      (prompt "  Current DW width = ")(princ dwwid)
       (prompt "  Current SW width = ")(princ swwid)
       (prompt "  DW length = ")(princ dwlen)
       (setvar "osmode" osmold)
       (setq
-;        dwwid (/ (* swwid (max (abs swwid) 5.0)) (abs swwid))
-        dwwid 12.0
         hcwid 3.0
-        dwmid(getpoint "\nDw length/Sw width(neg. for inside of curve)/<Select drive midpoint at back of curb>: ")
+        dwmid(getpoint "\nLength/Dw width/Sw width(neg. for inside of curve) <Select drive midpoint at back of curb>: ")
       )
     )
     (cond
+      ( (= "Length" dwmid)
+        (setq dwlen (getdist "\nDriveway length: "))
+      )
       ( (= "Sw" dwmid)
-        (setq swwid (getreal "\nSidewalk width (negative for inside of curve): "))
+        (setq swwid (getdist "\nSidewalk width (negative for inside of curve): "))
       )
       ( (= "Dw" dwmid)
-        (setq dwlen (getreal "\nDriveway length: "))
+        (setq dwwid (getdist "\nDriveway width "))
       )
       ( (setq bccen (osnap dwmid "cen"))
         (setq
