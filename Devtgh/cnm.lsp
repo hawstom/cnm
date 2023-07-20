@@ -1392,14 +1392,17 @@
 ;;   put the qtys.  Use "" for any unused phases on a sheet.
 ;;   '((shti (typj (notek qty1 qty2 qtyk))))
 (DEFUN
-   HCNM_TALLY (DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID / ALLNOT COL1X
-              COLUMN COST COSTI DQWID SHEET_FILENAME EL NOTE_FIRST_LINE_P FLSPEC I SHEET_LIST_FILENAME NDWID
-              NFNAME NOTELIST NOTETITLES NOTFIL NOTNUM NOTQTY NOTSPC
-              NOTTYP NOTUNT NUMFND NUMLIST PGPMOD PHASE PHASELIST
-              PHASENUMI PT1Z Q QQWID ALL_SHEETS_QUANTITIES QTYPT1 QTYSET QUWID ROW1Y
-              SHTLST TABLESPACE INPUT TOTAL TXTHTTEMP USERS1OLD USERS2OLD
-              USERS3OLD USERS4OLD USRVAR WRITELIST X Y Z
-             )
+   HCNM_TALLY (DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID / ALLNOT
+                  ALL_SHEETS_QUANTITIES COL1X COLUMN DQWID EL
+                  FLSPEC I INPUT NDWID NOTDESC NOTETITLES NOTE_FIRST_LINE_P
+                  NOTNUM NOTPRICE NOTQTY NOTSPC NOTTYP NOTUNT NUMFND
+                  NUMLIST PGP_DEFINES_RUN PGP_FILENAME PGP_FILE_CONTENTS
+                  PGP_FILE_LINE PHASE PHASENUMI PHASES_DEFINITION PT1Z Q
+                  QQWID QTYPT1 QTYSET QUWID ROW1Y SHEET_FILENAME
+                  SHEET_FILENAMES SHEET_FILE_NAME SHEET_HEADINGS SHEET_LIST_FILENAME
+                  SHEET_LIST_LINE SHEET_QUANTITIES TABLESPACE TOTAL
+                  TXTHT TXTHTTEMP USRVAR WRITELIST X Y Z
+                 )
 ;;;
 ;;;  Section 1.
 ;;;  Determine list of drawings to tally.
@@ -1450,9 +1453,9 @@
         (SETQ
           SHEET_LIST_FILENAME
            (STRCAT DN ".lst")
-          INPUT
+          PGP_FILENAME
            (FINDFILE "acad.pgp")
-          F1 (OPEN TEMP "r")
+          F1 (OPEN PGP_FILENAME "r")
         )
         (WHILE (SETQ PGP_FILE_LINE (READ-LINE F1))
           (IF (= "RUN," (SUBSTR PGP_FILE_LINE 1 4))
@@ -1472,16 +1475,16 @@
                )
             )
           )
-          (SETQ SHEET_FILENAMES (CONS SHEET_FILENAME SHEET_FILENAMES))
+          (SETQ PGP_FILE_CONTENTS (CONS PGP_FILE_LINE PGP_FILE_CONTENTS))
         )
         (SETQ F1 (CLOSE F1))
         (IF (NOT PGP_DEFINES_RUN)
           (PROGN
             (SETQ
-              F1     (OPEN TEMP "w")
-              SHEET_FILENAMES (REVERSE SHEET_FILENAMES)
+              F1     (OPEN PGP_FILENAME "w")
+              PGP_FILE_CONTENTS (REVERSE PGP_FILE_CONTENTS)
             )
-            (FOREACH SHEET_FILENAME SHEET_FILENAMES (WRITE-LINE SHEET_FILENAME F1))
+            (FOREACH PGP_FILE_LINE PGP_FILE_CONTENTS (WRITE-LINE PGP_FILE_LINE F1))
             (SETQ F1 (CLOSE F1))
             (SETVAR "re-init" 16)
           )
@@ -1838,15 +1841,15 @@
     )
   )
   (PRINC "TYPE,NO,ITEM,UNIT,PRICE," F2) ;; Price and cost
-  (SETQ TEMP "")
+  (SETQ SHEET_HEADINGS "")
   (FOREACH
      SHEET_QUANTITIES ALL_SHEETS_QUANTITIES
     (FOREACH
        PHASE PHASES_DEFINITION
       (SETQ
-        TEMP
+        SHEET_HEADINGS
          (STRCAT
-           TEMP
+           SHEET_HEADINGS
            (HAWS-MKFLD
              (STRCAT
                (STRCASE (CAR SHEET_QUANTITIES))
@@ -1862,7 +1865,7 @@
       )
     )
   )
-  (PRINC TEMP F2)
+  (PRINC SHEET_HEADINGS F2)
   (FOREACH
      PHASE PHASES_DEFINITION
     (PRINC
@@ -1939,13 +1942,13 @@
            T
          )
          (SETQ
+           ;; Price and cost
+           NOTPRICE
+            (NTH 5 ENTRY)
            NOTTYP
             (CADR ENTRY)
            NOTNUM
             (CADDR ENTRY)
-           ;; Price and cost
-           NOTPRICE
-            (NTH 5 ENTRY)
          )
          (OR ALLNOT
              (SETQ
@@ -2085,15 +2088,15 @@
        (SETQ
          NOTQTY ; List of qty and price for each phase.
           (MAPCAR
-            '(LAMBDA (PHASE / TEMP)
+            '(LAMBDA (PHASE / QTY_STRING)
                (SETQ
-                 TEMP
+                 QTY_STRING
                   (RTOS (CAR (NTH (1- (CADR PHASE)) NOTQTY)) 2 8) ;Price and cost 2020-12
                )
-               (WHILE (WCMATCH TEMP "*.*0,*.")
-                 (SETQ TEMP (SUBSTR TEMP 1 (1- (STRLEN TEMP))))
+               (WHILE (WCMATCH QTY_STRING "*.*0,*.")
+                 (SETQ QTY_STRING (SUBSTR QTY_STRING 1 (1- (STRLEN QTY_STRING))))
                )
-               (LIST TEMP (RTOS (CADR (NTH (1- (CADR PHASE)) NOTQTY)) 2 2)) ;Price and cost 2020-12
+               (LIST QTY_STRING (RTOS (CADR (NTH (1- (CADR PHASE)) NOTQTY)) 2 2)) ;Price and cost 2020-12
              )
             PHASES_DEFINITION
           )
@@ -2154,9 +2157,9 @@
           X WRITELIST
          (IF (= (TYPE X) 'LIST)
            (PROGN
-             (SETQ TEMP "")
-             (FOREACH Y X (SETQ TEMP (STRCAT TEMP "\n" Y)))
-             (PRINC (HAWS-MKFLD (SUBSTR TEMP 2) ",") F2)
+             (SETQ NOTDESC "")
+             (FOREACH Y X (SETQ NOTDESC (STRCAT NOTDESC "\n" Y)))
+             (PRINC (HAWS-MKFLD (SUBSTR NOTDESC 2) ",") F2)
            )
            (PRINC (STRCAT X ",") F2)
          )
@@ -3814,7 +3817,7 @@ ImportLayerSettings=No
 (DEFUN
    HCNM_READCFTXT2 (PROJNOTES / ALERTNOTE ALERTTITLE CFITEM CFLIST
                     CFLIST2 COMMENTBEGIN FILEV42 ILINE ININAME NOTTYP
-                    RDLIN VAL1 VAL2 VAR VARLIST N NOTNUM TEMP TYPWC
+                    RDLIN VAL1 VAL2 VAR VARLIST N NOTDESC NOTNUM TYPWC
                    )
   (SETQ
     TYPWC
@@ -3927,7 +3930,7 @@ ImportLayerSettings=No
                  NOTNUM
                  (HAWS-RDFLD 1 (SUBSTR RDLIN 68 3) 3 1)
                  (HAWS-RDFLD 15 RDLIN 5 1)
-                 (HAWS-RDFLD 1 (SUBSTR RDLIN 77) 12 2) ;Price
+                 (HAWS-RDFLD 1 (SUBSTR RDLIN 77) 12 3) ;Price
                  (LIST (HAWS-RDFLD 1 (SUBSTR RDLIN 6 62) 62 1))
                )
                CFLIST
@@ -3955,7 +3958,7 @@ ImportLayerSettings=No
           (EXIT)
          )
          (T
-          ;;Find first note in list (there may be comments before it).
+          ;;Find first note in list (there may be comments before it, or in other words, after it in the file).
           (WHILE (AND
                    (/= 3 (CAR (NTH (SETQ N (1+ N)) CFLIST)))
                    (< N (LENGTH CFLIST))
@@ -3963,19 +3966,19 @@ ImportLayerSettings=No
           )
           (IF (/= N (LENGTH CFLIST))
             (SETQ
-              TEMP   (NTH 6 (NTH N CFLIST))
+              NOTDESC   (NTH 6 (NTH N CFLIST))
               CFLIST (CONS
                        (SUBST
                          (REVERSE
                            (CONS
-                             (HAWS-RDFLD 2 RDLIN 5 3)
+                             (HAWS-RDFLD 1 (SUBSTR RDLIN 6 62) 62 1)
                              (COND
-                               ((= TEMP '("")) NIL)
-                               ((REVERSE TEMP))
+                               ((= NOTDESC '("")) NIL)
+                               ((REVERSE NOTDESC))
                              )
                            )
                          )
-                         TEMP
+                         NOTDESC
                          (NTH N CFLIST)
                        )
                        (CDR CFLIST)
