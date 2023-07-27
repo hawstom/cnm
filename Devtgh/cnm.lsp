@@ -1465,11 +1465,6 @@
             (SETQ
               PGP_FILE_CONTENTS
                (CONS
-                 ";The following line was added by HawsEDC Construction Notes Manager for file processing by Wildcard."
-                 PGP_FILE_CONTENTS
-               )
-              PGP_FILE_CONTENTS
-               (CONS
                  "RUN,       cmd /c,         0,*Batch file to run: ,"
                  PGP_FILE_CONTENTS
                )
