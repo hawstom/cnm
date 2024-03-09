@@ -3045,7 +3045,7 @@
     (SETQ
       TEMP
        (HAWS-GETSTRINGX
-         "\nEnter substitute linetype name or enter to try another file"
+         "\nEnter substitute linetype name or <try another file>"
          LALTYP
          LALTYP
        )

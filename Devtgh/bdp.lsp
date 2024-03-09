@@ -23,7 +23,7 @@
     pt4(polar pt3 (+ rot (/ PI 2))(* txht 0.667))
     pt5(polar pt3 (- rot (/ PI 2))(* txht 0.667))
   )
-  (if (= (setq ltop (getstring 1 "Enter text or return for line data: ")) "")
+  (if (= (setq ltop (getstring 1 "Enter text or <Use line data>: ")) "")
     (progn(HAWS-MKTEXT "c" pt4 nil rot lbear)(HAWS-MKTEXT "tc" pt5 nil rot ldist))
     (progn
       (HAWS-MKTEXT "c" pt4 nil rot ltop)

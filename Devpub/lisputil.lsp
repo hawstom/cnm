@@ -374,7 +374,7 @@
         " linetype in the specified file.\nPlease follow prompts to try a different linetype or file."
       )
     )
-    (setq laltyp (getstringx "\nEnter substitute linetype name or enter to try another file" laltyp laltyp))
+    (setq laltyp (getstringx "\nEnter substitute linetype name or <try another another file>" laltyp laltyp))
     (command "._linetype" "l" laltyp ltfile)(command)
     (cond
       ( (not (tblsearch "LTYPE" laltyp))
