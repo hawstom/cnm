@@ -95,9 +95,26 @@
     SS-P
      NIL
     ENAMELIST
-    (CADR (HAWS-XLIST-SSGET INPUT1))
+    (CADR (HAWS-XLIST-SS-TO-LIST INPUT1))
   )
   (LIST ENAMELIST SS-P CONTINUE-P)
+)
+
+(DEFUN
+   HAWS-XLIST-SS-TO-LIST (INPUT1 / EN I SS1 SSLIST)
+  (COND
+    ((AND INPUT1 (= (TYPE INPUT1) 'PICKSET))
+     (SETQ
+       SS1 INPUT1
+       I   -1
+     )
+     (WHILE (SETQ EN (SSNAME SS1 (SETQ I (1+ I))))
+       (SETQ SSLIST (CONS EN SSLIST))
+     )
+     ;; Used only for editing, not reporting, so return empty string
+     (LIST "" SSLIST)
+    )
+  )
 )
 
 (DEFUN
@@ -178,23 +195,6 @@
      (LIST ALRTSTR (CONS (CAR ES) SHELLS))
     )
     (T (LIST "" NIL))
-  )
-)
-
-(DEFUN
-   HAWS-XLIST-SSGET (INPUT1 / EN I SS1 SSLIST)
-  (COND
-    ((AND INPUT1 (= (TYPE INPUT1) 'PICKSET))
-     (SETQ
-       SS1 INPUT1
-       I   -1
-     )
-     (WHILE (SETQ EN (SSNAME SS1 (SETQ I (1+ I))))
-       (SETQ SSLIST (CONS EN SSLIST))
-     )
-     ;; Used only for editing, not reporting, so return empty string
-     (LIST "" SSLIST)
-    )
   )
 )
 

@@ -160,7 +160,7 @@
 ;;---------------Inquiry Section---------------
 (haws-autoload "inq"      '("haws-eg" "haws-egn"))
 (haws-autoload "aee"      '("haws-aee"))
-(haws-autoload "qt"       '("haws-acres" "haws-aet" "haws-sf" "haws-sm" "haws-sy" "haws-adl" ))
+(haws-autoload "haws-qt"       '("haws-acres" "haws-aet" "haws-sf" "haws-sm" "haws-sy" "haws-adl" ))
 (haws-autoload "goto"     '("haws-goto"))
 (haws-autoload "istan"    '("haws-istan"))
 (haws-autoload "cumdist"  '("haws-md"))

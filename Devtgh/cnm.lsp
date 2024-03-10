@@ -5343,8 +5343,8 @@ ImportLayerSettings=No
        )
        (T
         (SETQ
-          TXT1           (GETSTRING 1 "Line 1 text: ")
-          TXT2           (GETSTRING 1 "Line 2 text: ")
+          TXT1           (HCNM_LDRBLK_GETSTRING 1)
+          TXT2           (HCNM_LDRBLK_GETSTRING 2)
           ATTRIBUTE_LIST (LIST
                            (LIST "NOTENUM" NUM)
                            (LIST
@@ -5382,7 +5382,145 @@ ImportLayerSettings=No
   (LIST ENAME_BLOCK_OLD ATTRIBUTE_LIST)
 )
 
-
+(DEFUN
+   HCNM_LDRBLK_GETSTRING (LINE_NUMBER / INPUT QT_STRING)
+  (WHILE (NOT QT_STRING)
+    (SETQ
+      INPUT
+       (GETSTRING
+         1
+         (STRCAT
+           "\nLine "
+           (ITOA LINE_NUMBER)
+           " text or . to select: "
+         )
+       )
+      QT_STRING
+       (COND
+         ((= INPUT ".")
+          (HCNM_LDRBLK_SELECT_GET_TYPE LINE_NUMBER)
+         )
+         (T INPUT)
+       )
+    )
+  )
+  QT_STRING
+)
+(DEFUN
+   HCNM_LDRBLK_SELECT_GET_TYPE
+   (LINE_NUMBER / CVPORT_OLD INPUT SPACE STRING)
+  (INITGET
+    "Text Lf SF SY STation Offset stAoff Elevation OPtions"
+  )
+  (SETQ
+    INPUT
+     (GETKWORD
+       "\nEnter an option [Text/Lf/SF/SY/STation/Offset/stAoff/Elevation/OPtions]: "
+     )
+  )
+  (IF (NOT HAWS-QT-NEW)
+    (LOAD "HAWS-QT")
+  )
+  (HAWS-QT-NEW "ldrblk")
+  (COND
+    ((NOT (SETQ SPACE (HAWS-QT-GET-PROPERTY "ldrblk" "space")))
+     NIL
+    )
+    ((SETQ CVPORT_OLD (GETVAR "CVPORT"))
+     (COMMAND (STRCAT "._" SPACE))
+    )
+  )
+  (SETQ
+    STRING
+     (COND
+       ((NOT INPUT) NIL)
+       ((= INPUT "Text") (HCNM_LDRBLK_SELECT_ES "text"))
+       ((= INPUT "Lf")
+        (HCNM_LDRBLK_SELECT_MULTI
+          LINE_NUMBER "lf" "length" 1 " LF"
+         )
+       )
+       ((= INPUT "SF")
+        (HCNM_LDRBLK_SELECT_MULTI LINE_NUMBER "sf" "area" 1 " SF")
+       )
+       ((= INPUT "SY")
+        (HCNM_LDRBLK_SELECT_MULTI
+          LINE_NUMBER
+          "sy"
+          "area"
+          (/ 1.0 9)
+          " SY"
+        )
+       )
+       ((= INPUT "STation") (HCNM_LDRBLK_SELECT_AL "station"))
+       ((= INPUT "Offset") (HCNM_LDRBLK_SELECT_AL "offset"))
+       ((= INPUT "stAoff") (HCNM_LDRBLK_SELECT_AL "staoff"))
+       ((= INPUT "Elevation")
+        (HCNM_LDRBLK_SELECT_SU "elevation")
+       )
+       ((= INPUT "OPtions") (HCNM_LDRBLK_SELECT_OPTIONS))
+     )
+  )
+  (COND
+    ((= CVPORT_OLD 1) (COMMAND "._PSPACE"))
+    (T (COMMAND "._MSPACE"))
+  )
+  STRING
+)
+(DEFUN
+   HCNM_LDRBLK_SELECT_ES (AUTO_TYPE)
+  (SETQ ENAME (CAR (NENTSEL)))
+  (COND
+    (ENAME (CDR (ASSOC 1 (ENTGET ENAME))))
+    (T NIL)
+  )
+)
+(DEFUN
+   HCNM_LDRBLK_SELECT_MULTI (LINE_NUMBER UNIT AUTO_TYPE FACTOR POSTFIX)
+  (HAWS-QT-SET-PROPERTY "ldrblk" "type" AUTO_TYPE)
+  (HAWS-QT-SET-PROPERTY "ldrblk" "factor" FACTOR)
+  (HAWS-QT-SET-PROPERTY "ldrblk" "postfix" POSTFIX)
+  (HAWS-QT-STRING "ldrblk")
+)
+(DEFUN HCNM_LDRBLK_SELECT_AL (AUTO_TYPE)
+  (HCNM_LDRBLK_AUTO_APOLOGY AUTO_TYPE)
+)
+(DEFUN HCNM_LDRBLK_SELECT_SU (AUTO_TYPE)
+  (HCNM_LDRBLK_AUTO_APOLOGY AUTO_TYPE)
+)
+(DEFUN
+   HCNM_LDRBLK_SELECT_OPTIONS ()
+  (INITGET "preCision prEfix pOstfix Mspace Pspace")
+  (SETQ
+    INPUT
+     (GETKWORD
+       "\nEnter an option [preCision/prEfix/pOstfix/Mspace/Pspace]: "
+     )
+  )
+  (COND
+    ((NOT INPUT) NIL)
+    ((= INPUT "preCision")(HAWS-QT-SET-PROPERTY "ldrblk" "precision" (getint "\nEnter precision: ")))
+    ((= INPUT "prEfix") (HAWS-QT-SET-PROPERTY "ldrblk" "prefix" (getstring "\nEnter prefix: ")))
+    ((= INPUT "pOstfix") (HAWS-QT-SET-PROPERTY "ldrblk" "postfix" (getstring "\nEnter postfix: ")))
+    ((= INPUT "Mspace") (HCNM_LDRBLK_SELECT_SPACE "mspace"))
+    ((= INPUT "Pspace") (HCNM_LDRBLK_SELECT_SPACE "pspace"))
+  )
+  nil
+)
+(DEFUN
+   HCNM_LDRBLK_SELECT_SPACE (AUTO_TYPE)
+  (PRINC
+    (STRCAT "\nSelection mode set to " AUTO_TYPE ".")
+  )
+  (SETQ HAWS-QT-INSTANCE (HAWS-QT-NEW "ldrblk"))
+  (HAWS-QT-SET-PROPERTY HAWS-QT-INSTANCE "space" AUTO_TYPE)
+  (COMMAND (STRCAT "._" AUTO_TYPE))
+  NIL
+)
+(DEFUN HCNM_LDRBLK_AUTO_APOLOGY (AUTO_TYPE)
+  (ALERT (PRINC (STRCAT "Sorry. Selection of " AUTO_TYPE " is not fully programmed yet.\n\nPlease let Tom Haws <tom.haws@gmail.com> know if you are eager for this.")))
+  NIL
+)
 ;;; ------------------------------------------------------------------------------
 ;;; LDRBLK.LSP
 ;;; (C) Copyright 1997 by Thomas Gail Haws
