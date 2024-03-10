@@ -160,7 +160,7 @@
 ;;---------------Inquiry Section---------------
 (haws-autoload "inq"      '("haws-eg" "haws-egn"))
 (haws-autoload "aee"      '("haws-aee"))
-(haws-autoload "aet"      '("haws-acres" "haws-aet" "haws-sf" "haws-sm" "haws-sy"))
+(haws-autoload "qt"       '("haws-acres" "haws-aet" "haws-sf" "haws-sm" "haws-sy" "haws-adl" ))
 (haws-autoload "goto"     '("haws-goto"))
 (haws-autoload "istan"    '("haws-istan"))
 (haws-autoload "cumdist"  '("haws-md"))
@@ -168,7 +168,6 @@
 
 ;;---------------Editing Section---------------
 (haws-autoload "edt"      '("haws-bf" "haws-cb" "haws-copy" "haws-mp" "haws-pj" "haws-r1" "haws-r2" "haws-r4" "haws-r9" "haws-s" "haws-ub" "haws-um" "haws-vb"))
-(haws-autoload "addleng"  '("haws-adl" ))
 (haws-autoload "brkmat"   '("haws-bm"))
 (haws-autoload "brk"      '("haws-brk"))
 (haws-autoload "copyrot"  '("haws-copyrot" "haws-copyrotdrag"))

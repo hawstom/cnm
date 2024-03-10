@@ -11,20 +11,16 @@
 (haws-core-init 160) (HAWS-AET (/ 1.0 9) " SY"))
 (DEFUN
    HAWS-AET (FACTOR LABEL / AREA TS TXPT)
-  (PROMPT "\nSelect circle or polyline:")
-  (COMMAND "._area" "_e" PAUSE)
-  (SETQ
-    AREA (STRCAT
-           (RTOS (* (GETVAR "AREA") FACTOR) 2 (GETVAR "luprec"))
-           LABEL
-         )
-    TXPT (GETPOINT "\nMiddle point for text:")
-    TS   (* (GETVAR "dimscale") (GETVAR "dimtxt"))
+  (SETQ HAWS-QT-INSTANCE (HAWS-QT-NEW "haws-aet"))
+  (HAWS-QT-SET-PROPERTY HAWS-QT-INSTANCE "type" "area")
+  (HAWS-QT-SET-PROPERTY HAWS-QT-INSTANCE "factor" factor)
+  (HAWS-QT-SET-PROPERTY HAWS-QT-INSTANCE "postfix" label)
+  (HAWS-QT-SET-PROPERTY
+    HAWS-QT-INSTANCE
+    "precision"
+    (GETVAR "luprec")
   )
-  (PRINC TXPT)
-  (IF TXPT
-    (HAWS-MKTEXT "m" TXPT nil 0 AREA)
-  )
-  (PRINC (STRCAT "\n" AREA))
+  (HAWS-QT-STRING HAWS-QT-INSTANCE)
+  (HAWS-QT-ADD-DRAWING-TEXT HAWS-QT-INSTANCE)
   (PRINC)
 )
