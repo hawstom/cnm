@@ -1725,7 +1725,8 @@
      (334 0 "haws-xy")
      (335 2 "hcnm-notesedit")
      (336 1 "hcnm-cnmqt")
-    )
+     (1000 1 "untracked")
+   )
 )
 
 (DEFUN HAWS-USE-LOCAL-LOCATION ()
