@@ -5012,6 +5012,7 @@ ImportLayerSettings=No
   (HCNM_LDRBLK_DRAW
     P1 P2 TH NOTETYPE BLOCKNAME DATA_1
    )
+  (princ "\nUse the ATTIPEDTIT command to edit bubble note.")
   (HCNM_RESTORE_DIMSTYLE)
   (HAWS-VRSTOR)
   (COMMAND "._undo" "_e")
@@ -5710,6 +5711,7 @@ ImportLayerSettings=No
  -1
 )
 
+;; Saves, then passes control to temp var clear function.
 (defun HCNM_DCL_OPTIONS_SAVE()
  (HCNM_CONFIG_TEMP_SAVE)
  0
@@ -5800,6 +5802,47 @@ ImportLayerSettings=No
     ("InsertTablePhases" (("No" "No")("1" "1")("2" "2")("3" "3")("4" "4")("5" "5")("6" "6")("7" "7")("8" "8")("9" "9")("10" "10")))
   )
 )
+
+(DEFUN
+   C:DDD (/ CNMDCL DONE_CODE RETN)
+ ;; Load Dialog
+  (SETQ CNMDCL (LOAD_DIALOG (strcat (getvar "dwgprefix") "cnm.dcl")))
+  (setq DONE_CODE 2)
+  (while (> DONE_CODE -1)
+    (setq DONE_CODE
+      (cond
+        ((= DONE_CODE 0)(HCNM_DCL_LDRBLK_OPTIONS_CANCEL))
+        ((= DONE_CODE 1)(HCNM_DCL_LDRBLK_OPTIONS_SAVE))
+        ((= DONE_CODE 2)(HCNM_DCL_LDRBLK_OPTIONS_SHOW))
+        ((= DONE_CODE 11)(HCNM_DCL_LDRBLK_GENERAL_SHOW))
+        ((= DONE_CODE 12)(HCNM_DCL_LDRBLK_KEY_SHOW))
+        ((= DONE_CODE 13)(HCNM_DCL_LDRBLK_QT_SHOW))
+      )
+    )
+  )
+ (PRINC)
+)
+
+(defun HCNM_DCL_LDRBLK_OPTIONS_CANCEL()
+  (princ "\nHere we are supposed to clear the temp vars.")
+ -1
+)
+
+;; Saves, then passes control to temp var clear function.
+(defun HCNM_DCL_LDRBLK_OPTIONS_SAVE()
+  (princ "\nHere we are supposed to save the options.")
+ 0
+)
+
+(DEFUN
+   HCNM_DCL_LDRBLK_OPTIONS_SHOW ()
+  (NEW_DIALOG "HCNMLdrblkOptions" CNMDCL)
+  (SET_TILE "Title" "CNM Bubble Options")
+  (ACTION_TILE "accept" "(DONE_DIALOG 1)")
+  (ACTION_TILE "cancel" "(DONE_DIALOG 0)")
+  (START_DIALOG)
+)
+
 
 (DEFUN
    HCNM_CONFIG_SET_ACTION_TILE (VAR)

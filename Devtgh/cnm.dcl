@@ -224,3 +224,53 @@ HCNMTable : dialog {
 	label = "";
 	close_button;
 }
+
+HCNMLdrblkOptions : dialog {
+	key = "Title";
+	label = "";
+	: boxed_column {
+		label = "Show";
+		: toggle {
+			key = "ShowKeyTableQuantities";
+			label = "Show quantities in Key Notes Tables";
+		}
+		: toggle {
+			key = "ShowKeyTableGrid";
+			label = "Show grid lines in Key Notes Tables";
+		}
+		: toggle {
+			key = "ShowKeyTableTitleShapes";
+			label = "Show title shape blocks in Key Notes Tables";
+		}
+	}
+	: boxed_column {
+		label = "Lines";
+		: edit_box {
+			key = "DescriptionWrap";
+			label = "Description wrap line length (characters)";
+		}
+		: edit_box {
+			key = "LineSpacing";
+			label = "Line spacing/height (text heights)";
+		}
+		: edit_box {
+			key = "NoteSpacing";
+			label = "Spacing (text heights) around each note or group of titles";
+		}
+	}
+	: boxed_column {
+		label = "Columns";
+		: edit_box {
+			key = "TableWidth";
+			label = "Horizontal spacing (text heights) of a split key notes table. (Adjust to match one-phase NOTEQTY block width.)";
+				fixed_width = true;
+				edit_width = 3;
+		}
+		: edit_box {
+			key = "PhaseWidthAdd";
+			label = "Additional spacing (text heights) for each additional phase. (Adjust to reflect NOTEQTY? blocks.)";
+		}
+	}
+	ok_cancel;
+}
+
