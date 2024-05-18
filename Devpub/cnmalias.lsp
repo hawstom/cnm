@@ -156,6 +156,8 @@
 (hcnm-define-lisp-alias '("haws-sstl" "sstl" "Tools" ""))
 (hcnm-define-lisp-alias '("haws-tril" "tril" "Tools" ""))
 (hcnm-define-lisp-alias '("hcnm-replace-bubble" "cfb" "Tools" ""))
+(hcnm-define-lisp-alias '("hcnm-replace-bubble" "cmb" "Tools" ""))
+(hcnm-define-lisp-alias '("hcnm-edit-bubble" "ceb" "Tools" ""))
 (hcnm-define-lisp-alias '("haws-tcg" "tcg" "Tools" ""))
 (hcnm-define-lisp-alias '("haws-txtl" "txtl" "Tools" ""))
 (hcnm-define-lisp-alias '("haws-bw" "bw" "Tools" ""))

@@ -1,4 +1,4 @@
-;;; VLisp project file [V2.0] cnm saved to:[C:/TGHFiles/programming/hawsedc/develop/Devtgh] at:[6/2/23] 
+;;; VLisp project file [V2.0] cnm saved to:[C:/TGHFiles/programming/hawsedc/develop/Devtgh] at:[5/18/24] 
 (VLISP-PROJECT-LIST
   :NAME
   CNM
@@ -25,15 +25,7 @@
   :TMP-DIRECTORY
   "C:/TGHFiles/programming/hawsedc/compile/temp"
   :PROJECT-KEYS
-  (:BUILD
-    (:OPTIMIZE :LOCALIZE :MAKE-INTERNAL)
-    :MERGED
-    nil
-    :SAFE-MODE
-    T
-    :MSGLEVEL
-    2
-  )
+  (:BUILD (:STANDARD) :MERGED nil :SAFE-MODE T :MSGLEVEL 2)
   :CONTEXT-ID
   :AUTOLISP
 )
