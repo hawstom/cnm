@@ -8,6 +8,7 @@ HCNM_BUBBLE_PEN     RCDATA "C:\\TGHFiles\\programming\\hawsedc\\develop\\Devmenu
 HCNM_BUBBLE_REC     RCDATA "C:\\TGHFiles\\programming\\hawsedc\\develop\\Devmenu\\cnm-bubble-rec.png"
 HCNM_BUBBLE_TRI     RCDATA "C:\\TGHFiles\\programming\\hawsedc\\develop\\Devmenu\\cnm-bubble-tri.png"
 HCNM_BUBBLE_MIRROR  RCDATA "C:\\TGHFiles\\programming\\hawsedc\\develop\\Devmenu\\cnm-bubble-mirror.png"
+HCNM_EDIT_BUBBLE    RCDATA "C:\\TGHFiles\\programming\\hawsedc\\develop\\Devmenu\\cnm-edit-bubble.png"
 HCNM_EDIT_CNM       RCDATA "C:\\TGHFiles\\programming\\hawsedc\\develop\\Devmenu\\cnm-edit-cnm.png"
 HCNM_EDIT_PGP       RCDATA "C:\\TGHFiles\\programming\\hawsedc\\develop\\Devmenu\\cnm-edit-pgp.png"
 HCNM_EDIT_PN        RCDATA "C:\\TGHFiles\\programming\\hawsedc\\develop\\Devmenu\\cnm-edit-pn.png"

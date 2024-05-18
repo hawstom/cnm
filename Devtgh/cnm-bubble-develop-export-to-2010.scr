@@ -1,4 +1,4 @@
-;This script should be run in plain AutoCAD with cnm-bubble-develop open alone to strip as much Civil 3D stuff as possible.
+;This script should be run in plain AutoCAD with cnm-bubble-m-develop open alone to strip as much Civil 3D stuff as possible.
 expert
 5
 sdi
@@ -8,16 +8,16 @@ filedia
 cmddia
 0
 -wblock
-(strcat (getvar "dwgprefix") "cnm-bubble-0-left")
+(strcat (getvar "dwgprefix") "cnm-bubble-m-0-left")
 =
 -wblock
-(strcat (getvar "dwgprefix") "cnm-bubble-0-right")
+(strcat (getvar "dwgprefix") "cnm-bubble-m-0-right")
 =
 -wblock
-(strcat (getvar "dwgprefix") "cnm-bubble-1-left")
+(strcat (getvar "dwgprefix") "cnm-bubble-m-1-left")
 =
 -wblock
-(strcat (getvar "dwgprefix") "cnm-bubble-1-right")
+(strcat (getvar "dwgprefix") "cnm-bubble-m-1-right")
 =
 cmddia
 1
@@ -25,7 +25,7 @@ filedia
 1
 qsave
 open
-cnm-bubble-0-left
+cnm-bubble-m-0-left
 filedia
 0
 cmddia
@@ -34,10 +34,10 @@ zoom
 e
 saveas
 2010
-(strcat (getvar "dwgprefix") "cnm-bubble-0-left")
+(strcat (getvar "dwgprefix") "cnm-bubble-m-0-left")
 y
 open
-cnm-bubble-0-right
+cnm-bubble-m-0-right
 filedia
 0
 cmddia
@@ -46,10 +46,10 @@ zoom
 e
 saveas
 2010
-(strcat (getvar "dwgprefix") "cnm-bubble-0-right")
+(strcat (getvar "dwgprefix") "cnm-bubble-m-0-right")
 y
 open
-cnm-bubble-1-left
+cnm-bubble-m-1-left
 filedia
 0
 cmddia
@@ -58,10 +58,10 @@ zoom
 e
 saveas
 2010
-(strcat (getvar "dwgprefix") "cnm-bubble-1-left")
+(strcat (getvar "dwgprefix") "cnm-bubble-m-1-left")
 y
 open
-cnm-bubble-1-right
+cnm-bubble-m-1-right
 filedia
 0
 cmddia
@@ -70,7 +70,7 @@ zoom
 e
 saveas
 2010
-(strcat (getvar "dwgprefix") "cnm-bubble-1-right")
+(strcat (getvar "dwgprefix") "cnm-bubble-m-1-right")
 y
 expert
 0

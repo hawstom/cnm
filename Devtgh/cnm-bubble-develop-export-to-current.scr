@@ -1,0 +1,30 @@
+;This script should be run in plain AutoCAD with cnm-bubble-m-develop open alone to strip as much Civil 3D stuff as possible.
+expert
+5
+sdi
+1
+filedia
+0
+cmddia
+0
+-wblock
+(strcat (getvar "dwgprefix") "cnm-bubble-m-0-left")
+=
+-wblock
+(strcat (getvar "dwgprefix") "cnm-bubble-m-0-right")
+=
+-wblock
+(strcat (getvar "dwgprefix") "cnm-bubble-m-1-left")
+=
+-wblock
+(strcat (getvar "dwgprefix") "cnm-bubble-m-1-right")
+=
+cmddia
+1
+filedia
+1
+qsave
+expert
+0
+sdi
+0
