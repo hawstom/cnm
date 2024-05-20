@@ -1396,7 +1396,7 @@
 ;;;                 Usage logging functions
 ;;;
 ;;; ======================================================================
-;;; This list should be populated automatically from the web on load.
+;;; This list would be better to populate automatically from the web on load.
 ;;; Stored locally somewhere. Maybe a LSP file.
 ;;; id appgroup name
 (setq
@@ -1725,6 +1725,8 @@
      (334 0 "haws-xy")
      (335 2 "hcnm-notesedit")
      (336 1 "hcnm-cnmqt")
+     (337 1 "hcnm-replace-bubble")
+     (338 1 "hcnm-edit-bubble")
      (1000 1 "untracked")
    )
 )

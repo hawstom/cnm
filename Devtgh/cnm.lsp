@@ -2171,13 +2171,13 @@
 )
 ;;CNM main commands
 (DEFUN C:HCNM-CNM ()
-(haws-core-init 179) (HCNM_CNM NIL))
+(haws-core-init 179) (HCNM_CNM NIL)(haws-core-restore))
 (DEFUN C:HCNM-CNMKT ()
-(haws-core-init 180) (HCNM_CNM "Search"))
+(haws-core-init 180) (HCNM_CNM "Search")(haws-core-restore))
 (DEFUN C:HCNM-CNMKTI ()
-(haws-core-init 181) (HCNM_CNM "Import"))
+(haws-core-init 181) (HCNM_CNM "Import")(haws-core-restore))
 (DEFUN C:HCNM-CNMQT ()
-(haws-core-init 336) (HCNM_CNM "Tally"))
+(haws-core-init 336) (HCNM_CNM "Tally")(haws-core-restore))
 ;;CNM main function
 (DEFUN
    HCNM_CNM (OPT / CFNAME DN LINSPC PHASEWID TBLWID TXTHT)
@@ -2554,7 +2554,7 @@
 ;;or modifying this drawing's folder's cnmproj.txt
 ;;returns project root
 (DEFUN C:HCNM-LINKPROJ ()
-(haws-core-init 183) (HCNM_LINKPROJ NIL) (PRINC))
+(haws-core-init 183) (HCNM_LINKPROJ NIL) (haws-core-restore)(PRINC))
 
 ;; Sets the CNM project to the given folder. Includes wizards, alerts, and error checks.
 (DEFUN HCNM_LINKPROJ (PROJ / DWGDIR LOCALPROJ LOCALPROJBAK OLDLINK)
@@ -2770,11 +2770,13 @@
     (GETSTRING "\nVariable name: ")
     (GETSTRING "\nValue: ")
   )
+ (haws-core-restore)
 )
 (DEFUN
    C:TESTGET ()
 (haws-core-init 185)
   (hcnm_concept_TESTGETVAR (GETSTRING "\nVariable name: "))
+  (haws-core-restore)
 )
 (DEFUN
    hcnm_concept_TESTSETVAR (VAR VAL)
@@ -4615,6 +4617,7 @@ ImportLayerSettings=No
     )
     (T (VL-CMDF "._SH"  (STRCAT "\"" PNNAME "\"")))
   )
+  (haws-core-restore)
   (PRINC)
 )
 
@@ -4699,6 +4702,7 @@ ImportLayerSettings=No
     )
   )
   (VL-CMDF "")
+  (haws-core-restore)
   (PRINC)
 )
 
@@ -4729,6 +4733,7 @@ ImportLayerSettings=No
       )
     )
   )
+  (haws-core-restore)
   (PRINC)
 )
 ;;; Global edit of bubble note phases
@@ -4746,6 +4751,7 @@ ImportLayerSettings=No
     NEWPHASE
    )
   (GRAPHSCR)
+  (haws-core-restore)
   (PRINC)
 )
 ;;; Put attributes on NOPLOT layer
@@ -4760,6 +4766,7 @@ ImportLayerSettings=No
     (HAWS-GETLAYR "NOTESNOPLOT")
     ""
   )
+  (haws-core-restore)
 )
 (DEFUN C:HCNM-ATTPLOT () (HCNM_ATTLAYER "0"))
 (DEFUN
@@ -4901,6 +4908,7 @@ ImportLayerSettings=No
      (SETQ F1 (CLOSE F1))
     )
   )
+  (haws-core-restore)
   (PRINC)
 )
 
@@ -4908,6 +4916,7 @@ ImportLayerSettings=No
    C:HAWS-CNMMENU ()
 (haws-core-init 195)
   (VL-CMDF "._menuunload" "cnm" "._menuload" "cnm.mnu")
+  (haws-core-restore)
 )
 
 (DEFUN
@@ -4997,6 +5006,7 @@ ImportLayerSettings=No
   (ALERT
     "Construction Notes Manager setup is done.\n\nYou may now explore the CNM menus and toolbar\nafter restarting AutoCAD."
   )
+  (haws-core-restore)
 )
 (DEFUN
    C:HAWS-NTPURGE (/ OL PL PLSS)
@@ -5019,20 +5029,21 @@ ImportLayerSettings=No
       )
     )
   )
+  (haws-core-restore)
   (PRINC)
 )
 
-(DEFUN C:HAWS-BOXL () (haws-core-init 198) (HCNM_LDRBLK_DYNAMIC "BOX"))
-(DEFUN C:HAWS-CIRL () (haws-core-init 199) (HCNM_LDRBLK_DYNAMIC "CIR"))
-(DEFUN C:HAWS-DIAL () (haws-core-init 200) (HCNM_LDRBLK_DYNAMIC "DIA"))
-(DEFUN C:HAWS-ELLL () (haws-core-init 201) (HCNM_LDRBLK_DYNAMIC "ELL"))
-(DEFUN C:HAWS-HEXL () (haws-core-init 202) (HCNM_LDRBLK_DYNAMIC "HEX"))
-(DEFUN C:HAWS-OCTL () (haws-core-init 203) (HCNM_LDRBLK_DYNAMIC "OCT"))
-(DEFUN C:HAWS-PENL () (haws-core-init 204) (HCNM_LDRBLK_DYNAMIC "PEN"))
-(DEFUN C:HAWS-RECL () (haws-core-init 205) (HCNM_LDRBLK_DYNAMIC "REC"))
-(DEFUN C:HAWS-SSTL () (haws-core-init 206) (HCNM_LDRBLK_DYNAMIC "SST"))
-(DEFUN C:HAWS-TRIL () (haws-core-init 207) (HCNM_LDRBLK_DYNAMIC "TRI"))
-(DEFUN C:HCNM-REPLACE-BUBBLE () (haws-core-init 337) (HCNM_LDRBLK_DYNAMIC NIL))
+(DEFUN C:HAWS-BOXL () (haws-core-init 198) (HCNM_LDRBLK_DYNAMIC "BOX")(haws-core-restore))
+(DEFUN C:HAWS-CIRL () (haws-core-init 199) (HCNM_LDRBLK_DYNAMIC "CIR")(haws-core-restore))
+(DEFUN C:HAWS-DIAL () (haws-core-init 200) (HCNM_LDRBLK_DYNAMIC "DIA")(haws-core-restore))
+(DEFUN C:HAWS-ELLL () (haws-core-init 201) (HCNM_LDRBLK_DYNAMIC "ELL")(haws-core-restore))
+(DEFUN C:HAWS-HEXL () (haws-core-init 202) (HCNM_LDRBLK_DYNAMIC "HEX")(haws-core-restore))
+(DEFUN C:HAWS-OCTL () (haws-core-init 203) (HCNM_LDRBLK_DYNAMIC "OCT")(haws-core-restore))
+(DEFUN C:HAWS-PENL () (haws-core-init 204) (HCNM_LDRBLK_DYNAMIC "PEN")(haws-core-restore))
+(DEFUN C:HAWS-RECL () (haws-core-init 205) (HCNM_LDRBLK_DYNAMIC "REC")(haws-core-restore))
+(DEFUN C:HAWS-SSTL () (haws-core-init 206) (HCNM_LDRBLK_DYNAMIC "SST")(haws-core-restore))
+(DEFUN C:HAWS-TRIL () (haws-core-init 207) (HCNM_LDRBLK_DYNAMIC "TRI")(haws-core-restore))
+(DEFUN C:HCNM-REPLACE-BUBBLE () (haws-core-init 337) (HCNM_LDRBLK_DYNAMIC NIL)(haws-core-restore))
 
 (DEFUN
    HCNM_LDRBLK_DYNAMIC (NOTETYPE / BLOCKNAME BUBBLEHOOKS P1_DATA P2_DATA REPLACE_BLOCK_P TH
@@ -5928,6 +5939,7 @@ ImportLayerSettings=No
                         ENAME_LEADER_OLD HCNM_EB:ATTRIBUTE_LIST NOTETEXTRADIOCOLUMN
                        REPLACE_BLOCK_P RETURN_LIST
                       )
+  (haws-core-init 338)
   (SETQ
     REPLACE_BLOCK_P T
     DATA_1
@@ -5978,6 +5990,7 @@ ImportLayerSettings=No
   )
   ;; Change its arrowhead if needed.
   (HCNM_LDRBLK_CHANGE_ARROWHEAD ENAME_LEADER_OLD)
+  (haws-core-restore)
   (PRINC)
 )
 (DEFUN
@@ -6135,6 +6148,7 @@ ImportLayerSettings=No
   (HAWS-LDRBLK
     "ldrtcgl" "ldrtcgr" "ldrtcgd" "TCGLDR" "TCGLeader"
    )
+  (haws-core-restore)
 )
 (DEFUN
    C:HAWS-TXTL ()
@@ -6292,6 +6306,7 @@ ImportLayerSettings=No
       )
     )
   )
+ (haws-core-restore)  
  (PRINC)
 )
 
