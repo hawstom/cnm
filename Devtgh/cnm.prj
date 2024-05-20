@@ -25,7 +25,15 @@
   :TMP-DIRECTORY
   "C:/TGHFiles/programming/hawsedc/compile/temp"
   :PROJECT-KEYS
-  (:BUILD (:STANDARD) :MERGED nil :SAFE-MODE T :MSGLEVEL 2)
+  (:BUILD
+    (:OPTIMIZE :MAKE-INTERNAL)
+    :MERGED
+    nil
+    :SAFE-MODE
+    T
+    :MSGLEVEL
+    2
+  )
   :CONTEXT-ID
   :AUTOLISP
 )

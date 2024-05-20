@@ -5176,7 +5176,7 @@ ImportLayerSettings=No
 
 (DEFUN
    HCNM_LDRBLK_GET_P2_DATA
-   (P1_DATA TH BLOCKNAME NOTETYPE / BLOCK_DATA ENAME_BLOCK P2 P2_DATA SS1 VLAOBJ)
+   (P1_DATA TH BLOCKNAME NOTETYPE / BLOCK_DATA ENAME_BLOCK P1_ENTRY P2 P2_DATA SS1 VLAOBJ)
   (SETQ
     P1_ENTRY (CAR P1_DATA)
     SS1 (SSADD)
@@ -5211,10 +5211,10 @@ ImportLayerSettings=No
 
 (DEFUN
    HCNM_LDRBLK_DRAW (P1_DATA P2_DATA TH NOTETYPE BLOCKNAME / ANG1
-                     ASSOCIATE_P ATTRIBUTES_OLD AUOLD
-                     DYN_PROPS_OLD DYN_PROPS_OLD_I ELIST_LEADER_OLD
-                     ENAME_BLOCK_NEW ENAME_BLOCK_OLD ENAME_LEADER ENAME_LEADER_OLD
-                     FLIPSTATE INPUT1 REPLACE_BLOCK_P VLAOBJ_BLOCK_NEW VLAOBJ_BLOCK_OLD
+                     ASSOCIATE_P AUOLD BLOCK_DATA ELIST_LEADER_OLD
+                     ENAME_BLOCK_NEW ENAME_BLOCK_OLD ENAME_LEADER
+                     ENAME_LEADER_OLD ETYPE FLIPSTATE INPUT1 P1_ENTRY P2
+                     REPLACE_BLOCK_P
                     )
   (SETQ
     P1_ENTRY
@@ -5362,7 +5362,8 @@ ImportLayerSettings=No
   (SETQ
     ENAME_BLOCK_NEW
      (ENTLAST)
-    BLOCK_DATA (HCNM_LDRBLK_GET_BLOCK_DATA P1_ENTRY ENAME_BLOCK_OLD)
+    BLOCK_DATA
+     (HCNM_LDRBLK_GET_BLOCK_DATA P1_ENTRY ENAME_BLOCK_OLD)
   )
   (HCNM_LDRBLK_EDIT BLOCK_DATA ENAME_BLOCK_NEW)
   ;; Change leader arrowhead if needed.
@@ -5396,7 +5397,7 @@ ImportLayerSettings=No
     )
   )
 )
-(DEFUN HCNM_LDRBLK_EDIT (BLOCK_DATA ENAME_BLOCK_NEW)
+(DEFUN HCNM_LDRBLK_EDIT (BLOCK_DATA ENAME_BLOCK_NEW /  ATTRIBUTES_OLD DYN_PROPS_OLD DYN_PROPS_OLD_I ENAME_BLOCK_OLD NOTETYPE REPLACE_BLOCK_P VLAOBJ_BLOCK_NEW VLAOBJ_BLOCK_OLD)
   (SETQ
     VLAOBJ_BLOCK_NEW
      (VLAX-ENAME->VLA-OBJECT ENAME_BLOCK_NEW)
@@ -5647,7 +5648,7 @@ ImportLayerSettings=No
 )
 
 (DEFUN
-   HCNM_LDRBLK_AUTO_DISPATCH (KEY P1_ENTRY / KEY STRING)
+   HCNM_LDRBLK_AUTO_DISPATCH (KEY P1_ENTRY / STRING)
   (SETQ
     STRING
      (COND
@@ -5923,8 +5924,8 @@ ImportLayerSettings=No
   "N/A"
 )
 (DEFUN
-   C:HCNM-EDIT-BUBBLE (/ ATTRIBUTE_LIST DATA_1 DCLFILE P1_ENTRY
-                       ENAME_BLOCK ENAME_LEADER_OLD NOTETEXTRADIOCOLUMN
+   C:HCNM-EDIT-BUBBLE (/ DATA_1 DCLFILE P1_ENTRY ENAME_BLOCK
+                        ENAME_LEADER_OLD HCNM_EB:ATTRIBUTE_LIST NOTETEXTRADIOCOLUMN
                        REPLACE_BLOCK_P RETURN_LIST
                       )
   (SETQ
@@ -5937,7 +5938,8 @@ ImportLayerSettings=No
      (CADR DATA_1)
     ENAME_LEADER_OLD
      (CADDR DATA_1)
-    ATTRIBUTE_LIST
+    ;; Semi-global variable. Global to the HCNM-EB: functions called from here.
+    HCNM_EB:ATTRIBUTE_LIST
      (HCNM_GET_ATTRIBUTES ENAME_BLOCK)
     NOTETEXTRADIOCOLUMN "RadioNOTETXT1"
     DCLFILE
@@ -5950,15 +5952,14 @@ ImportLayerSettings=No
       ((= DONE_CODE 1)
        (SETQ
          DONE_CODE
-          (HCNM_EDIT_BUBBLE_SAVE ENAME_BLOCK ATTRIBUTE_LIST)
+          (HCNM_EB:SAVE ENAME_BLOCK)
        )
       )
       ((= DONE_CODE 2)
        (SETQ
          RETURN_LIST
-          (HCNM_EDIT_BUBBLE_SHOW
+          (HCNM_EB:SHOW
             DCLFILE
-            ATTRIBUTE_LIST
             NOTETEXTRADIOCOLUMN
             DATA_1
           )
@@ -5968,21 +5969,10 @@ ImportLayerSettings=No
           (CADR RETURN_LIST)
          TAG
           (SUBSTR NOTETEXTRADIOCOLUMN 6)
-         ATTRIBUTE_LIST
-          (CADDR RETURN_LIST)
        )
       )
-      (T
-       (SETQ
-         ATTRIBUTE_LIST
-          (HCNM_EDIT_BUBBLE_GET_TEXT
-            DONE_CODE
-            TAG
-            P1_ENTRY
-            ATTRIBUTE_LIST
-          )
-         DONE_CODE 2
-       )
+      (T (HCNM_EB:GET_TEXT DONE_CODE TAG P1_ENTRY)
+         (SETQ DONE_CODE 2)
       )
     )
   )
@@ -5991,7 +5981,7 @@ ImportLayerSettings=No
   (PRINC)
 )
 (DEFUN
-   HCNM_EDIT_BUBBLE_GET_TEXT (DONE_CODE TAG P1_ENTRY ATTRIBUTE_LIST /
+   HCNM_EB:GET_TEXT (DONE_CODE TAG P1_ENTRY /
                               AUTO_STRING AUTO_TYPE
                              )
   (SETQ
@@ -5999,12 +5989,12 @@ ImportLayerSettings=No
      (CADR (ASSOC DONE_CODE (HCNM_EDIT_BUBBLE_DONE_CODES)))
     AUTO_STRING
      (HCNM_LDRBLK_AUTO_DISPATCH AUTO_TYPE P1_ENTRY)
-    ATTRIBUTE_LIST
+    HCNM_EB:ATTRIBUTE_LIST
      (HCNM_LDRBLK_ADJUST_FORMATS
        (HCNM_EDIT_BUBBLE_SAVE_ATTRIBUTE_TO_LIST
          TAG
          AUTO_STRING
-         ATTRIBUTE_LIST
+         HCNM_EB:ATTRIBUTE_LIST
        )
      )
   )
@@ -6020,8 +6010,8 @@ ImportLayerSettings=No
 (defun HCNM_EDIT_BUBBLE_CANCEL()
  -1
 )
-(defun HCNM_EDIT_BUBBLE_SAVE(ENAME_BLOCK ATTRIBUTE_LIST)
-  (HCNM_SET_ATTRIBUTES ENAME_BLOCK ATTRIBUTE_LIST)
+(defun HCNM_EB:SAVE(ENAME_BLOCK)
+  (HCNM_SET_ATTRIBUTES ENAME_BLOCK HCNM_EB:ATTRIBUTE_LIST)
  -1
 ) 
 (DEFUN
@@ -6042,21 +6032,21 @@ ImportLayerSettings=No
 )
 
 (DEFUN
-   HCNM_EDIT_BUBBLE_SHOW
-   (DCLFILE ATTRIBUTE_LIST NOTETEXTRADIOCOLUMN DATA_1 / )
+   HCNM_EB:SHOW
+   (DCLFILE NOTETEXTRADIOCOLUMN DATA_1 / )
   (SETQ P1_ENTRY (CAR DATA_1))
   (NEW_DIALOG "HCNMEditBubble" DCLFILE)
   (SET_TILE "Title" "Edit CNM Bubble Note")
   ;; Note attribute edit boxes
   (FOREACH
-     ATTRIBUTE ATTRIBUTE_LIST
+     ATTRIBUTE HCNM_EB:ATTRIBUTE_LIST
     (SET_TILE (STRCAT "Edit" (CAR ATTRIBUTE)) (CADR ATTRIBUTE))
     (ACTION_TILE
       (STRCAT "Edit" (CAR ATTRIBUTE))
       (STRCAT
-        "(SETQ ATTRIBUTE_LIST (HCNM_LDRBLK_ADJUST_FORMATS (HCNM_EDIT_BUBBLE_SAVE_ATTRIBUTE_TO_LIST \""
+        "(HCNM_EB:SAVE_EDIT_BOX \""
         (CAR ATTRIBUTE)
-        "\" $value ATTRIBUTE_LIST)))"
+        "\" $value)"
       )
     )
   )
@@ -6080,9 +6070,9 @@ ImportLayerSettings=No
            )
            (T
             (STRCAT
-              "(SETQ ATTRIBUTE_LIST (HCNM_EDIT_BUBBLE_SET_SELECTED_EDIT_BOX_TILE "
+              "(HCNM_EB:SET_SELECTED_EDIT_BOX_TILE "
               (ITOA (CAR CODE))
-              " P1_ENTRY ATTRIBUTE_LIST))"
+              " P1_ENTRY)"
             )
            )
          )
@@ -6092,31 +6082,32 @@ ImportLayerSettings=No
   )
   (ACTION_TILE "accept" "(DONE_DIALOG 1)")
   (ACTION_TILE "cancel" "(DONE_DIALOG 0)")
-  (LIST (START_DIALOG) NOTETEXTRADIOCOLUMN ATTRIBUTE_LIST)
+  (LIST (START_DIALOG) NOTETEXTRADIOCOLUMN)
 )
 (DEFUN
-   HCNM_EDIT_BUBBLE_SET_SELECTED_EDIT_BOX_TILE
-   (DONE_CODE P1_ENTRY ATTRIBUTE_LIST / TAG STRING TILE)
+   HCNM_EB:SAVE_EDIT_BOX (TAG INPUT)
   (SETQ
-    TAG
-     (SUBSTR (GET_TILE "NoteTextRadioColumn") 6)
-    TILE
-     (STRCAT "Edit" TAG)
-    ATTRIBUTE_LIST
-     (HCNM_EDIT_BUBBLE_GET_TEXT
-       DONE_CODE
-       TAG
-       P1_ENTRY
-       ATTRIBUTE_LIST
+    HCNM_EB:ATTRIBUTE_LIST
+     (HCNM_LDRBLK_ADJUST_FORMATS
+       (HCNM_EDIT_BUBBLE_SAVE_ATTRIBUTE_TO_LIST
+         TAG
+         INPUT
+         HCNM_EB:ATTRIBUTE_LIST
+       )
      )
-    STRING
-     (CADR (ASSOC TAG ATTRIBUTE_LIST))
   )
-  (SET_TILE TILE STRING)
-  ATTRIBUTE_LIST
 )
-
-
+(DEFUN
+   HCNM_EB:SET_SELECTED_EDIT_BOX_TILE
+   (DONE_CODE P1_ENTRY / TAG STRING TILE)
+  (SETQ
+    TAG  (SUBSTR (GET_TILE "NoteTextRadioColumn") 6)
+    TILE (STRCAT "Edit" TAG)
+  )
+  (HCNM_EB:GET_TEXT DONE_CODE TAG P1_ENTRY)
+  (SETQ STRING (CADR (ASSOC TAG HCNM_EB:ATTRIBUTE_LIST)))
+  (SET_TILE TILE STRING)
+)
 ;;; ------------------------------------------------------------------------------
 ;;; LDRBLK.LSP
 ;;; (C) Copyright 1997 by Thomas Gail Haws
@@ -6446,23 +6437,6 @@ ImportLayerSettings=No
     ("InsertTablePhases" (("No" "No")("1" "1")("2" "2")("3" "3")("4" "4")("5" "5")("6" "6")("7" "7")("8" "8")("9" "9")("10" "10")))
   )
 )
-
-(defun
-   haws-sdt:define-settings (/)
-  (list
-    ;; At runtime retrieval, each setting is converted 
-    ;; from its storage as a string to the given data type.
-    ;;    Name             Value Data_type
-    (list "HighCurbMinDiff" "1" 'real)
-    (list "LowCurbMaxDiff" "2" 'real)
-    (list "HighDriveDist" "7" 'real)
-    (list "LowDriveDist" "7" 'real)
-    (list "Bias" "0.0" 'real)
-    (list "BackDiffMin" "-0.1" 'real)
-    (list "BackDiffMax" "0.1" 'real)
-  )
-)
-
 (DEFUN
    HCNM_CONFIG_SET_ACTION_TILE (VAR)
   (SET_TILE VAR (HCNM_CONFIG_TEMP_GETVAR VAR))
@@ -6471,8 +6445,6 @@ ImportLayerSettings=No
     (STRCAT "(HCNM_CONFIG_TEMP_SETVAR \"" VAR "\" $value)")
   )
 )
-
-
 (DEFUN
    HCNM_CONFIG_DCL_LIST (KEY /)
   (HCNM_SET_TILE_LIST
@@ -6493,7 +6465,6 @@ ImportLayerSettings=No
     "(HCNM_CONFIG_DCL_LIST_CALLBACK $key $value)"
   )
 )
-
 (DEFUN
    HCNM_SET_TILE_LIST (KEY OPTIONS SELECTED / ITEM)
   (START_LIST KEY 3)
@@ -6512,7 +6483,6 @@ ImportLayerSettings=No
     )
   )
 )
-
 (DEFUN
    HCNM_CONFIG_DCL_LIST_CALLBACK (KEY VALUE /)
   (HCNM_CONFIG_TEMP_SETVAR
@@ -6520,7 +6490,6 @@ ImportLayerSettings=No
     (CAR (NTH (READ VALUE) (CADR (ASSOC KEY (HCNM_OPTIONS_LIST_DATA)))))
   )
 )
-
 (DEFUN
    HCNM_GET_ATTRIBUTES (ENAME_BLOCK / ATTRIBUTE_LIST ELIST ENAME_NEXT ETYPE OBJ_NEXT)
   (SETQ ENAME_NEXT ENAME_BLOCK)
@@ -6545,7 +6514,6 @@ ImportLayerSettings=No
   )
   ATTRIBUTE_LIST
 )
-
 (defun LM:FieldCode ( en / fd id )
     (cond
         (   (and
