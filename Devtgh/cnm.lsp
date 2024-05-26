@@ -249,7 +249,7 @@
 ;;;
 ;;;Set up list from CONSTNOT.TXT and NOTEQTY block.
 (DEFUN
-   HCNM_KEY_TABLE_SEARCHANDSAVE (DN PROJNOTES / ALIASLIST AT AV BLKI
+   HCNM_KEY_TABLE_SEARCHANDSAVE (DN PROJNOTES / ALIASLIST AT ATTRIBUTES AV BLKI
                                    BLKSS COUNT CTABONLY EL EN ET I J
                                    MVPORT MVSSET N NFNAME NOTEFND NOTEI
                                    NOTELINES NOTELIST NOTENUM NOTEPHASE
@@ -430,33 +430,24 @@
       NOTETXT
        '(0 1 2 3 4 5 6 7 8 9)
       NOTEPHASE ""
+      ATTRIBUTES (HCNM_GET_ATTRIBUTES EN NIL)
     )
-  (HAWS-MILEPOST
-    (STRCAT
-      "After CNM examined Dynamic Shape with LM:GETDYNPROPVALUE, NOTETYPE="
-      (vl-prin1-to-string NOTETYPE)
-    )
-  )   
     ;;Substitute the value of each NOTETXT attribute for its respective member of the pre-filled NOTETXT list.
-    (WHILE
-      (AND
-        (SETQ EN (ENTNEXT EN))
-        (= "ATTRIB" (SETQ ET (CDR (ASSOC 0 (SETQ EL (ENTGET EN))))))
-      )
-       (SETQ
-         AT (CDR (ASSOC 2 EL))
-         AV (CDR (ASSOC 1 EL))
+    (SETQ
+      NOTENUM
+       (CADR (ASSOC "NOTENUM" ATTRIBUTES))
+      NOTETXT
+       (MAPCAR
+         '(LAMBDA (I)
+            (CADR (ASSOC (STRCAT "NOTETXT" (ITOA I)) ATTRIBUTES))
+          )
+         '(0 1 2 3 4 5 6 7 8 9)
        )
-       (COND
-         ((= AT "NOTETYPE") (SETQ NOTETYPE AV))
-         ((= AT "NOTENUM") (SETQ NOTENUM AV))
-         ((WCMATCH AT "NOTETXT#")
-          (SETQ NOTETXT (SUBST AV (ATOI (SUBSTR AT 8 1)) NOTETXT))
-         )
-         ((= AT "NOTEPHASE") (SETQ NOTEPHASE AV))
-       )
+      NOTEPHASE
+       (CADR (ASSOC "NOTEPHASE" ATTRIBUTES))
+      NOTEI
+       (ASSOC NOTENUM (CDR (ASSOC NOTETYPE (CADR NOTELIST))))
     )
-    (SETQ NOTEI (ASSOC NOTENUM (CDR (ASSOC NOTETYPE (CADR NOTELIST)))))
     (COND
       ;;If there is such a note and phase, or no phasing is being used.
       ((AND
@@ -1127,7 +1118,7 @@
                 (/= 1 (LOGAND 1 (CDR (ASSOC 70 LAYERLIST))))
                 (< 0 (CDR (ASSOC 62 LAYERLIST)))
               )
-            (VL-CMDF-S "._layer" "_f" (CDR (ASSOC 2 LAYERLIST)) "")
+	            (VL-CMDF "._layer" "_f" (CDR (ASSOC 2 LAYERLIST)) "")
           )
          )
        )
@@ -5400,7 +5391,7 @@ ImportLayerSettings=No
     )
   )
 )
-(DEFUN HCNM_LDRBLK_SET_DYNPROPS (ENAME_BLOCK_NEW ENAME_BLOCK_OLD NOTETYPE /  DYN_PROPS_OLD DYN_PROPS_OLD_I ENAME_BLOCK_OLD REPLACE_BLOCK_P VLAOBJ_BLOCK_NEW VLAOBJ_BLOCK_OLD)
+(DEFUN HCNM_LDRBLK_SET_DYNPROPS (ENAME_BLOCK_NEW ENAME_BLOCK_OLD NOTETYPE /  DYN_PROPS_OLD DYN_PROPS_OLD_I REPLACE_BLOCK_P VLAOBJ_BLOCK_NEW VLAOBJ_BLOCK_OLD)
   (SETQ
     VLAOBJ_BLOCK_NEW
      (VLAX-ENAME->VLA-OBJECT ENAME_BLOCK_NEW)
@@ -5462,7 +5453,7 @@ ImportLayerSettings=No
                               )
   (COND
     (ENAME_BLOCK_OLD
-     (SETQ ATTRIBUTE_LIST (HCNM_GET_ATTRIBUTES ENAME_BLOCK_OLD))
+     (SETQ ATTRIBUTE_LIST (HCNM_GET_ATTRIBUTES ENAME_BLOCK_OLD T))
     )
     (T
      (INITGET 129 "Copy")
@@ -5473,6 +5464,7 @@ ImportLayerSettings=No
           ATTRIBUTE_LIST
            (HCNM_GET_ATTRIBUTES
              (SETQ ENAME_BLOCK_OLD (CAR (ENTSEL)))
+             T
            )
         )
        )
@@ -5940,7 +5932,7 @@ ImportLayerSettings=No
      (CADDR DATA_1)
     ;; Semi-global variable. Global to the HCNM-EB: functions called from here.
     HCNM_EB:ATTRIBUTE_LIST
-     (HCNM_GET_ATTRIBUTES ENAME_BLOCK)
+     (HCNM_GET_ATTRIBUTES ENAME_BLOCK T)
     NOTETEXTRADIOCOLUMN "RadioNOTETXT1"
     DCLFILE
      (LOAD_DIALOG "cnm.dcl")
@@ -6490,7 +6482,7 @@ ImportLayerSettings=No
   )
 )
 (DEFUN
-   HCNM_GET_ATTRIBUTES (ENAME_BLOCK / ATTRIBUTE_LIST ELIST ENAME_NEXT ETYPE OBJ_NEXT)
+   HCNM_GET_ATTRIBUTES (ENAME_BLOCK FIELD_CODE_P / ATTRIBUTE_LIST ELIST ENAME_NEXT ETYPE OBJ_NEXT)
   (SETQ ENAME_NEXT ENAME_BLOCK)
   (WHILE (AND
            (SETQ ENAME_NEXT (ENTNEXT ENAME_NEXT))
@@ -6504,7 +6496,7 @@ ImportLayerSettings=No
          OBJ_NEXT (VLAX-ENAME->VLA-OBJECT ENAME_NEXT)
          ATTRIBUTE_LIST
           (CONS
-            (LIST (CDR (ASSOC 2 ELIST)) (COND ((LM:FieldCode ENAME_NEXT))(T (VLA-GET-TEXTSTRING OBJ_NEXT))))
+            (LIST (CDR (ASSOC 2 ELIST)) (COND ((AND FIELD_CODE_P (LM:FieldCode ENAME_NEXT)))(T (VLA-GET-TEXTSTRING OBJ_NEXT))))
             ATTRIBUTE_LIST
           )
        )
