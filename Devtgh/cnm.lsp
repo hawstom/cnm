@@ -2455,9 +2455,7 @@
   )
   (PRINC
     (STRCAT
-      "Using project settings from another folder located at "
-      PROJROOT
-      "\\CNM.INI as directed by CNMPROJ.TXT in this drawing's folder."
+      "\nUsing project settings from another folder as directed by CNMPROJ.TXT in this drawing's folder."
     )
   )
   PROJROOT
@@ -5211,7 +5209,7 @@ ImportLayerSettings=No
 
 (DEFUN
    HCNM_LDRBLK_DRAW (P1_DATA P2_DATA TH NOTETYPE BLOCKNAME / ANG1
-                     ASSOCIATE_P AUOLD BLOCK_DATA ELIST_LEADER_OLD
+                     ASSOCIATE_P ATTRIBUTES_OLD AUOLD BLOCK_DATA ELIST_LEADER_OLD
                      ENAME_BLOCK_NEW ENAME_BLOCK_OLD ENAME_LEADER
                      ENAME_LEADER_OLD ETYPE FLIPSTATE INPUT1 P1_ENTRY P2
                      REPLACE_BLOCK_P
@@ -5362,10 +5360,15 @@ ImportLayerSettings=No
   (SETQ
     ENAME_BLOCK_NEW
      (ENTLAST)
+  )
+  (HCNM_LDRBLK_SET_DYNPROPS ENAME_BLOCK_NEW ENAME_BLOCK_OLD NOTETYPE)
+  (SETQ
     BLOCK_DATA
      (HCNM_LDRBLK_GET_BLOCK_DATA P1_ENTRY ENAME_BLOCK_OLD)
+    ATTRIBUTES_OLD
+     (CADR BLOCK_DATA)
   )
-  (HCNM_LDRBLK_EDIT BLOCK_DATA ENAME_BLOCK_NEW)
+  (HCNM_SET_ATTRIBUTES ENAME_BLOCK_NEW ATTRIBUTES_OLD)
   ;; Change leader arrowhead if needed.
   (WHILE (AND
            (= (C:HCNM-CONFIG-GETVAR "BubbleArrowIntegralPending") "1")
@@ -5397,16 +5400,11 @@ ImportLayerSettings=No
     )
   )
 )
-(DEFUN HCNM_LDRBLK_EDIT (BLOCK_DATA ENAME_BLOCK_NEW /  ATTRIBUTES_OLD DYN_PROPS_OLD DYN_PROPS_OLD_I ENAME_BLOCK_OLD NOTETYPE REPLACE_BLOCK_P VLAOBJ_BLOCK_NEW VLAOBJ_BLOCK_OLD)
+(DEFUN HCNM_LDRBLK_SET_DYNPROPS (ENAME_BLOCK_NEW ENAME_BLOCK_OLD NOTETYPE /  DYN_PROPS_OLD DYN_PROPS_OLD_I ENAME_BLOCK_OLD REPLACE_BLOCK_P VLAOBJ_BLOCK_NEW VLAOBJ_BLOCK_OLD)
   (SETQ
     VLAOBJ_BLOCK_NEW
      (VLAX-ENAME->VLA-OBJECT ENAME_BLOCK_NEW)
-    ENAME_BLOCK_OLD
-     (CAR BLOCK_DATA)
-    ATTRIBUTES_OLD
-     (CADR BLOCK_DATA)
   )
-  (HCNM_SET_ATTRIBUTES ENAME_BLOCK_NEW ATTRIBUTES_OLD)
   (COND
     (ENAME_BLOCK_OLD
      (SETQ
@@ -5456,7 +5454,6 @@ ImportLayerSettings=No
     )
     (T (LM:SETDYNPROPVALUE VLAOBJ_BLOCK_NEW "Shape" NOTETYPE))
   )
-  ;;End insertion
 )
 
 (DEFUN
@@ -5653,10 +5650,10 @@ ImportLayerSettings=No
     STRING
      (COND
        ((= KEY "Text") (HCNM_LDRBLK_AUTO_ES KEY))
-       ((= KEY "LF") (HCNM_LDRBLK_AUTO_QTY KEY "Length" 1))
-       ((= KEY "SF") (HCNM_LDRBLK_AUTO_QTY KEY "Area" 1))
+       ((= KEY "LF") (HCNM_LDRBLK_AUTO_QTY KEY "Length" "1"))
+       ((= KEY "SF") (HCNM_LDRBLK_AUTO_QTY KEY "Area" "1"))
        ((= KEY "SY")
-        (HCNM_LDRBLK_AUTO_QTY KEY "Area" (/ 1.0 9))
+        (HCNM_LDRBLK_AUTO_QTY KEY "Area" "0.11111111")
        )
        ((= KEY "Sta") (HCNM_LDRBLK_AUTO_AL KEY P1_ENTRY))
        ((= KEY "Off") (HCNM_LDRBLK_AUTO_AL KEY P1_ENTRY))
@@ -5742,7 +5739,9 @@ ImportLayerSettings=No
           (C:HCNM-CONFIG-GETVAR
             (STRCAT "BubbleTextPrecision" KEY)
           )
-          "\">%"
+          "%ct8["
+          FACTOR
+          "]\">%"
           (C:HCNM-CONFIG-GETVAR
             (STRCAT "BubbleTextPostfix" KEY)
           )
@@ -5850,10 +5849,7 @@ ImportLayerSettings=No
        ((= (TYPE OBJALIGN_OLD) 'VLA-OBJECT)
         (VLAX-GET-PROPERTY OBJALIGN_OLD 'NAME)
        )
-       (T
-        (SETQ OBJALIGN_OLD nil)
-        ""
-        )
+       (T (SETQ OBJALIGN_OLD NIL) "")
      )
     EALIGN
      (NENTSEL
@@ -5865,13 +5861,17 @@ ImportLayerSettings=No
          )
        )
      )
-    OBJALIGN
-     (COND
-       (EALIGN (VLAX-ENAME->VLA-OBJECT (CAR EALIGN)))
-       (T OBJALIGN_OLD)
-     )
   )
-  (C:HCNM-CONFIG-SETVAR "BubbleCurrentAlignment" OBJALIGN)
+  (COND
+    ((AND
+       EALIGN
+       (= (CDR (ASSOC 0 (ENTGET (CAR EALIGN)))) "AECC_ALIGNMENT")
+     )
+     (SETQ OBJALIGN (VLAX-ENAME->VLA-OBJECT (CAR EALIGN)))
+     (C:HCNM-CONFIG-SETVAR "BubbleCurrentAlignment" OBJALIGN)
+    )
+    (T (alert (princ "\nSelected object is not an alignment. Keeping previous alignment."))(SETQ OBJALIGN OBJALIGN_OLD))
+  )
 )
 (DEFUN
    HCNM_LDRBLK_AUTO_NE (AUTO_TYPE P1_ENTRY / E N NE P1_WORLD)
@@ -6030,7 +6030,6 @@ ImportLayerSettings=No
     (21 "Text" EB_DONE)
    )
 )
-
 (DEFUN
    HCNM_EB:SHOW
    (DCLFILE NOTETEXTRADIOCOLUMN DATA_1 / )
