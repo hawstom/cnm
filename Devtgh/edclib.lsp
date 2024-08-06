@@ -3,7 +3,7 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "5.5.08"
+  "5.5.09"
 )
 (DEFUN
    HAWS-COPYRIGHT ()
@@ -1725,6 +1725,8 @@
      (334 0 "haws-xy")
      (335 2 "hcnm-notesedit")
      (336 1 "hcnm-cnmqt")
+     (337 1 "hcnm-edit-bubbles")
+     (336 1 "hcnm-cnmqt")     
      (1000 1 "untracked")
    )
 )

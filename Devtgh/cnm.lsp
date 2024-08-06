@@ -5074,8 +5074,9 @@ ImportLayerSettings=No
   (SETVAR "attreq" 0)
   (SETQ
     REPLACE_BLOCK_P (NOT NOTETYPE)
+    ENAME_BLOCK_OLD (HCNM_LDRBLK_GET_ENAME_BLOCK_OLD REPLACE_BLOCK_P)
     P1_DATA
-     (HCNM_LDRBLK_GET_P1_DATA REPLACE_BLOCK_P)
+     (HCNM_LDRBLK_GET_P1_DATA ENAME_BLOCK_OLD)
     NOTETYPE
      (COND
        (NOTETYPE)
@@ -5099,11 +5100,16 @@ ImportLayerSettings=No
 )
 
 (DEFUN
-   HCNM_LDRBLK_GET_P1_DATA (REPLACE_BLOCK_P / ELIST_BLOCK_OLD ENAME_330 ENAME_BLOCK_OLD ENAME_LEADER_OLD P1_DATA P1_ENTRY)
+   HCNM_LDRBLK_GET_ENAME_BLOCK_OLD (REPLACE_BLOCK_P / ELIST_BLOCK_OLD ENAME_BLOCK_OLD)
   (COND
     (REPLACE_BLOCK_P
      ;; Prompt and check for old block.
-     (WHILE (OR (NOT (SETQ ENAME_BLOCK_OLD (CAR (ENTSEL "\nSelect bubble note: "))))
+     (WHILE (OR (NOT
+                  (SETQ
+                    ENAME_BLOCK_OLD
+                     (CAR (ENTSEL "\nSelect bubble note: "))
+                  )
+                )
                 (NOT (SETQ ELIST_BLOCK_OLD (ENTGET ENAME_BLOCK_OLD)))
                 (NOT
                   (AND
@@ -5120,6 +5126,18 @@ ImportLayerSettings=No
                 )
             )
        (PRINC "\nSelected entity is not a CNM bubble note.")
+     )
+     ENAME_BLOCK_OLD
+    )
+    (T NIL)
+  )
+)
+(DEFUN
+   HCNM_LDRBLK_GET_P1_DATA (ENAME_BLOCK_OLD / ELIST_BLOCK_OLD ENAME_330 ENAME_BLOCK_OLD ENAME_LEADER_OLD P1_DATA P1_ENTRY REPLACE_BLOCK_P)
+  (COND
+    (ENAME_BLOCK_OLD
+     (SETQ ELIST_BLOCK_OLD (ENTGET ENAME_BLOCK_OLD)
+       REPLACE_BLOCK_P T
      )
      ;; Get start point
      ;; Find associated leader.
@@ -5162,7 +5180,6 @@ ImportLayerSettings=No
   )
   (SETQ P1_DATA (LIST P1_ENTRY ENAME_BLOCK_OLD ENAME_LEADER_OLD REPLACE_BLOCK_P))
 )
-
 (DEFUN
    HCNM_LDRBLK_GET_P2_DATA
    (P1_DATA TH BLOCKNAME NOTETYPE / BLOCK_DATA ENAME_BLOCK P1_ENTRY P2 P2_DATA SS1 VLAOBJ)
@@ -5456,10 +5473,10 @@ ImportLayerSettings=No
      (SETQ ATTRIBUTE_LIST (HCNM_GET_ATTRIBUTES ENAME_BLOCK_OLD T))
     )
     (T
-     (INITGET 129 "Copy")
-     (SETQ NUM (GETKWORD "\nNote number or [Copy note] <Copy note>: "))
+     (INITGET 128 "Copy")
+     (SETQ NUM (GETKWORD "\nNote number or [Copy note]: "))
      (COND
-       ((OR (= NUM "Copy") (NOT NUM))
+       ((= NUM "Copy")
         (SETQ
           ATTRIBUTE_LIST
            (HCNM_GET_ATTRIBUTES
@@ -5916,18 +5933,20 @@ ImportLayerSettings=No
   "N/A"
 )
 (DEFUN
-   C:HCNM-EDIT-BUBBLE (/ P1_DATA DCLFILE P1_ENTRY ENAME_BLOCK
+   C:HCNM-EDIT-BUBBLES ()
+  (haws-core-init 337)
+  (haws-editall T)
+  (haws-core-restore)
+)
+(DEFUN HCNM_EDIT_BUBBLE (ENAME_BLOCK / P1_DATA DCLFILE P1_ENTRY ENAME_BLOCK
                         ENAME_LEADER_OLD HCNM_EB:ATTRIBUTE_LIST NOTETEXTRADIOCOLUMN
                        REPLACE_BLOCK_P RETURN_LIST
-                      )
+                      ) 
   (SETQ
-    REPLACE_BLOCK_P T
     P1_DATA
-     (HCNM_LDRBLK_GET_P1_DATA REPLACE_BLOCK_P)
+     (HCNM_LDRBLK_GET_P1_DATA ENAME_BLOCK)
     P1_ENTRY
      (CAR P1_DATA)
-    ENAME_BLOCK
-     (CADR P1_DATA)
     ENAME_LEADER_OLD
      (CADDR P1_DATA)
     ;; Semi-global variable. Global to the HCNM-EB: functions called from here.
