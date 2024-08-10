@@ -177,7 +177,7 @@
          QI (COND
               ((= QTYPE "length")
                (COND
-                 ((= (CDR (ASSOC "0" (ENTGET E))) "AECC_PIPE")
+                 ((= (CDR (ASSOC 0 (ENTGET E))) "AECC_PIPE")
                   (PRINC "\nGetting 3D length of AECC_PIPE object.")
                   (VLAX-GET-PROPERTY (VLAX-ENAME->VLA-OBJECT E) 'Length3D)
                  )

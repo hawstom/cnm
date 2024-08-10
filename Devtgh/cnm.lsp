@@ -5691,7 +5691,6 @@ ImportLayerSettings=No
    HCNM_LDRBLK_AUTO_QTY (KEY AUTO_TYPE FACTOR / INPUT1 PSPACE_RESTORE_P
                          SS-P STRING
                         )
-  ;; I think that I will have to pass the leader object to this function. Or we could somehow set a flag that we added an area quantity.
   (COND
     ((AND
        (= AUTO_TYPE "Area")
@@ -5706,7 +5705,7 @@ ImportLayerSettings=No
     INPUT1
      (NENTSEL
        (STRCAT
-         "\nSelect object to link dynamically or [Selection set (not dynamic)] <Selection set>: "
+         "\nSelect object to link dynamically or [Selection set (not dynamic) including AECC_PIPEs] <Selection set>: "
        )
      )
     SS-P
@@ -5718,8 +5717,8 @@ ImportLayerSettings=No
           (LOAD "HAWS-QT")
         )
         (HAWS-QT-NEW "ldrblk")
-        (HAWS-QT-SET-PROPERTY "ldrblk" "type" KEY)
-        (HAWS-QT-SET-PROPERTY "ldrblk" "factor" FACTOR)
+        (HAWS-QT-SET-PROPERTY "ldrblk" "type" (STRCASE AUTO_TYPE T))
+        (HAWS-QT-SET-PROPERTY "ldrblk" "factor" (READ FACTOR))
         (HAWS-QT-SET-PROPERTY
           "ldrblk"
           "postfix"
@@ -5728,6 +5727,7 @@ ImportLayerSettings=No
           )
         )
         (HAWS-QT-STRING "ldrblk")
+        (HAWS-QT-GET-PROPERTY "ldrblk" "string")
        )
        (T
         (STRCAT
@@ -5935,6 +5935,7 @@ ImportLayerSettings=No
 (DEFUN
    C:HCNM-EDIT-BUBBLES ()
   (haws-core-init 337)
+  (if (not haws-editall)(load "editall"))
   (haws-editall T)
   (haws-core-restore)
 )
