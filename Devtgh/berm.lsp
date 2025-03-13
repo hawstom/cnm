@@ -1,7 +1,7 @@
 ;Written by Thomas Gail Haws
 (defun c:haws-berm ( / dbvar dbold)
   (haws-core-init 165)
-  (HAWS-VSAVE '("clayer""cmdecho"))
+  (HAWS-VSAVE '("clayer"))
   (HAWS-MKLAYR "BERM")
   (cond
     ((not (tblsearch "DIMSTYLE" "BERM"))
@@ -11,8 +11,7 @@
      (command "_save" "berm" "_exit")
 		)
   )
-  (setvar "cmdecho" 0)
-	(command "_dim1" "_restore" "berm")
+  (command "_dim1" "_restore" "berm")
   (prompt "\nTop of berm: ")
   (command "._Leader" pause)
   (prompt "\nBottom of berm: ")

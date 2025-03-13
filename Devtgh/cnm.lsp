@@ -83,7 +83,7 @@
   (COND
     ((NOT (TBLSEARCH "BLOCK" "NOTEQTY"))
      (setvar "attreq" 0)
-     (VL-CMDF "._insert" (STRCAT "NOTEQTY=NOTEQTY" J) "0,0" "_Scale" "1" "0")
+     (VL-CMDF "._insert" (STRCAT "NOTEQTY=NOTEQTY" J) "_Scale" "1" "_Rotate" "0" "0,0")
      (setvar "attreq" 1)
      (entdel (entlast))
     )
@@ -1170,10 +1170,11 @@
   (VL-CMDF
     "._insert"
     (STRCAT "cnm" NOTTYP)
-    QTYPT
     "_Scale"
     TXTHT
+    "_Rotate"
     "0"
+    QTYPT
   )
 )
 
@@ -1184,9 +1185,10 @@
 ;;;       (VL-CMDF
 ;;;  "._insert" "NOTEQTY" "non"   
 ;;;  QTYPT
-;;;  "_Scale"
-;;;  TXTHT
-;;;  "0"
+;;;    "_Scale"
+;;;    TXTHT
+;;;    "_Rotate"
+;;;    "0"
 ;;; )
 ;;;      ;;Change attribute values
 ;;;     (SETQ EN (ENTLAST))
@@ -1224,10 +1226,11 @@
   (VL-CMDF
     "._insert"
     "NOTEQTY"
-    QTYPT
     "_Scale"
     TXTHT
+    "_Rotate"
     "0"
+    QTYPT
     (IF NOTE_FIRST_LINE_P
       NOTTYP
       ""
@@ -1987,10 +1990,11 @@
        (VL-CMDF
          "._insert"
          (STRCAT "cnm" NOTTYP)
-         (LIST X Y Z)
          "_Scale"
          TXTHT
+         "_Rotate"
          "0"
+         (LIST X Y Z)
        )
        ;;Make number text
        (HAWS-MKTEXT "M" (LIST X Y Z) TXTHT 0 NOTNUM)
@@ -2174,10 +2178,9 @@
    HCNM_CNM (OPT / CFNAME DN LINSPC PHASEWID TBLWID TXTHT)
   ;;Main function
   (HAWS-VSAVE
-    '("attdia" "attreq" "cmdecho" "clayer" "osmode")
+    '("attdia" "attreq" "clayer" "osmode")
   )
   (SETVAR "attdia" 0)
-  (SETVAR "cmdecho" 0)
   (COND
     ((NOT OPT)
      (PROMPT
@@ -5194,8 +5197,9 @@ ImportLayerSettings=No
       (STRCAT BLOCKNAME "-" FLIPSTATE)
       "_Scale"
       TH
-      P1_ENTRY
+      "_Rotate"
       (ANGTOS (GETVAR "snapang"))
+      P1_ENTRY
     )
     (SETQ
       ENAME_BLOCK
@@ -5248,10 +5252,11 @@ ImportLayerSettings=No
      (VL-CMDF
        "._insert"
        (STRCAT BLOCKNAME "-" FLIPSTATE)
-       P2
        "_Scale"
        TH
+       "_Rotate"
        (GETVAR "snapang")
+       P2
      )
      (SETVAR "aunits" AUOLD)
      ;; If there is an old leader, stretch it and associate it.
@@ -6193,8 +6198,9 @@ ImportLayerSettings=No
     BLDRAG
     "_Scale"
     TS
-    P1
+    "_Rotate"
     (ANGTOS (GETVAR "snapang"))
+    P1
   )
   (SETQ EN (ENTLAST))
   (PROMPT "\nEnd point for leader: ")
@@ -6251,7 +6257,6 @@ ImportLayerSettings=No
     (GETVAR "snapang")
   )
   (SETVAR "aunits" AUOLD)
-  (SETVAR "cmdecho" 0)
   (VL-CMDF "._erase" ENDRAG "")
   (IF (NOT (ENTNEXT (ENTLAST)))
     (VL-CMDF

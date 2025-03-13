@@ -2,7 +2,6 @@
 ;CHANGE ANY GROUP CODE OF A SELECTION SET OF ENTITIES TO MATCH SELECTED ENTITY.
 (defun c:haws-cmpro ( / group mg me sset sslen ent ed eg)
   (haws-core-init 177)
-  (setvar "cmdecho" 0)
   (command "._undo" "_group")
   (textpage)
   (prompt

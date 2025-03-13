@@ -2,7 +2,6 @@
 ;SCALE A SELECTION SET OF ENTITIES ABOUT A USER SPECIFIED ENTITY POINT.
 (defun c:haws-rescale ( / dxfpt sset sslen ent xfactr ins ed SFACTR)
   (haws-core-init 304)
-  (setvar "cmdecho" 0)
   (command "._undo" "_group")
   (setq sset (ssget))
   (textpage)

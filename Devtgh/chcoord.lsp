@@ -2,7 +2,6 @@
 ;CHANGE A COORDINATE OF AN ENTITY TO A SPECIFIED VALUE.
 (defun c:haws-chcoord ( / dxfpt el en newpt newval n oldpt sset sslen xyz)
   (haws-core-init 170)
-  (setvar "cmdecho" 0)
   (command "._undo" "_group")
   (textpage)
   (prompt

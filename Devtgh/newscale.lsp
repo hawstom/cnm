@@ -2,7 +2,6 @@
 ;GIVE A SELECTION SET OF ENTITIES A NEW SCALE ABOUT A USER SPECIFIED ENTITY POINT.
 (defun c:haws-newscale ( / dxfpt dxfsc sset sslen svalue ent xfactr ins ed)
   (haws-core-init 268)
-  (setvar "cmdecho" 0)
   (command "._undo" "_group")
   (textpage)
   (prompt

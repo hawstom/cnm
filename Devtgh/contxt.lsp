@@ -1,8 +1,7 @@
 ;Written by Thomas Gail Haws
 (defun c:haws-contxt (/ txtht txtstr inspt rot)
   (haws-core-init 212)
-  (HAWS-VSAVE '("clayer"))
-  (setvar "cmdecho" 0)
+  (HAWS-VSAVE '("cmdecho"))
   (setq txtstr (getstring "\nContour text:"))
   (HAWS-MKLAYR "CONTLBL")
   (setq inspt (getpoint "\nMiddle point:") rot (getangle inspt " Rotation: "))

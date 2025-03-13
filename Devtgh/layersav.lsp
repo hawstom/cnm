@@ -53,7 +53,7 @@
 	 c:haws-lar (/ mvsset laline)
 	(haws-core-init 239) ;_ end of if
 	(HAWS-resfun)
-	(HAWS-VSAVE '("clayer" "regenmode" "tilemode"))
+	(HAWS-VSAVE '("clayer" "cmdecho" "regenmode" "tilemode"))
 	(command "._undo" "_group")
 	(setvar "cmdecho" 0)
 	(setvar "regenmode" 0)
@@ -81,8 +81,8 @@
 	) ;_ end of if
 	(prompt "\nDone.  Regen now if desired.")
 	(command "._undo" "_end")
-	(haws-core-restore) ;_ end of if
 	(HAWS-VRSTOR)
+	(haws-core-restore) ;_ end of if
 	(princ)
 )																				;end defun LAR
 

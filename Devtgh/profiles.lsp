@@ -2816,8 +2816,8 @@
   (COMMAND
     "._insert"
     BLNAME
-    PT1
     "_Scale"
     (* (HAWS-DWGSCALE) (GETVAR "dimtxt"))
+    PT1
   ) ;_ end of command
 ) ;_ end of DEFUN
