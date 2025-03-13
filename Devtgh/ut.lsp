@@ -27,11 +27,11 @@
                 )
   ;; Draw centerline using PLINE command
   (HAWS-MKLAYR (STRCAT "UT" (HAWS-UT-GETVAR "Key") "SNG"))
-  (COMMAND "pline" PT1 "_w" 0 "")
+  (vl-cmdf "pline" PT1 "_w" 0 "")
   (SETVAR "cmdecho" 1)
   (WHILE (= 1 (LOGAND 1 (GETVAR "cmdactive")))
     (IF PT3
-      (COMMAND PAUSE) ; If not the first point, just follow command
+      (vl-cmdf PAUSE) ; If not the first point, just follow command
       (PROGN ; If first point, save for offset.
         (INITGET
           "Line Undo Arc CEnter Angle Direction Line Radius Second DRag"
@@ -42,7 +42,7 @@
         )
         (IF (= PT2 "CEnter")
           (PROMPT "\nCEnter not allowed.")
-          (COMMAND PT2)
+          (vl-cmdf PT2)
         )
       )
     )
@@ -52,16 +52,16 @@
   (COND
     ((/= (HAWS-UT-GETVAR "HalfWidth") 0)
      (SETQ UTPL (ENTLAST))
-     (COMMAND "._line" PT1 PT3 "")
+     (vl-cmdf "._line" PT1 PT3 "")
      (SETQ
        E1   (ENTLAST)
        UCSP T
      )
      (SETVAR "osmode" 0)
-     (COMMAND "._ucs" "_e" E1 "._erase" E1 "")
+     (vl-cmdf "._ucs" "_e" E1 "._erase" E1 "")
      (SETQ ENTSEL-OD-UP (HAWS-UT-MAKE-OD UTPL 1))
      (SETQ ENTSEL-OD-DOWN (HAWS-UT-MAKE-OD UTPL -1))
-     (COMMAND
+     (vl-cmdf
        "._pedit"
        UTPL
        "_w"
@@ -80,7 +80,7 @@
   ;; Create labels
   (COND
     ((AND (HAWS-UT-GETVAR "IsExisting") (HAWS-UT-GETVAR "Label"))
-     (COMMAND "._area" "_e" (CAR ENTSEL-OD-UP))
+     (vl-cmdf "._area" "_e" (CAR ENTSEL-OD-UP))
      (SETQ UTLEN (GETVAR "perimeter"))
      (SETQ
        E1    (ENTLAST)
@@ -90,7 +90,7 @@
        (HAWS-UT-ASSURE-LABEL-BLOCK "uttxtjm" "m" PT1)
        (HAWS-UT-ASSURE-LABEL-BLOCK "uttxtjbc" "bc" PT1)
      )
-     (COMMAND
+     (vl-cmdf
        "._divide"
        ENTSEL-OD-UP
        "b"
@@ -104,7 +104,7 @@
      (HAWS-UT-RESTORE-UCS)
      (WHILE (SETQ ENEXT (ENTNEXT ENEXT))
        (IF (= (CDR (ASSOC 0 (ENTGET ENEXT))) "INSERT")
-         (COMMAND "._explode" ENEXT)
+         (vl-cmdf "._explode" ENEXT)
        )
      )
      (SETQ ENEXT E1)
@@ -177,7 +177,7 @@
      )
   )
   (SETVAR "filedia" 0)
-  (COMMAND "._vslide" "pipetabl")
+  (vl-cmdf "._vslide" "pipetabl")
   (SETVAR "filedia" 1)
   (IF (SETQ
         TEMP
@@ -281,14 +281,14 @@
        (NOT (TBLSEARCH "BLOCK" BLOCK-NAME))
      )
      (HAWS-MKTEXT JUSTIFICATION INSERTION 1.0 0 "X")
-     (COMMAND "._block" BLOCK-NAME INSERTION (ENTLAST) "")
+     (vl-cmdf "._block" BLOCK-NAME INSERTION (ENTLAST) "")
     )
   )
 )
 
 (DEFUN
    HAWS-UT-MAKE-OD (ENAME-PLINE DIRECTION / ENAME-OD OFFSET-POINT)
-  (COMMAND
+  (vl-cmdf
     "._offset"
     (HAWS-UT-GETVAR "HalfWidth")
     (LIST ENAME-PLINE '(0 0))
@@ -311,7 +311,7 @@
 )
 (DEFUN
    HAWS-UT-RESTORE-UCS ()
-  (COND (UCSP (SETQ UCSP NIL) (COMMAND "._ucs" "_p")))
+  (COND (UCSP (SETQ UCSP NIL) (vl-cmdf "._ucs" "_p")))
 )
  ;|«Visual LISP© Format Options»
 (72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)

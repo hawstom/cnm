@@ -6,7 +6,7 @@
   (SETQ CMD (GETVAR "CMDECHO"))
   (SETVAR "CMDECHO" 0)
   (SETQ OS (GETVAR "OSmoDE"))
-  (COMMAND "OSNAP" "INT")
+  (vl-cmdf "OSNAP" "INT")
   (PROMPT "SELECT INTERSECTION OF OBJECTS TO BREAK. . .")
   (SETQ A (GETPOINT))
   (SETQ BRK (LIST (CAR A) (CADR A)))
@@ -22,7 +22,7 @@
     );PROGN
     (PROGN
       (REPEAT LS
-        (COMMAND "BREAK" (SSNAME BE NO) BRK BRK)
+        (vl-cmdf "BREAK" (SSNAME BE NO) BRK BRK)
         (SETQ NO (1+ NO))
       );REPEAT
     );PROGN

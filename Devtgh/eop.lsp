@@ -25,7 +25,7 @@
     S2 (POLAR C2 A2 W1)
     S3 (POLAR C2 A3 W1)
   ) ;_ end of SETQ
-  (COMMAND "._arc" P1 S1 P3 "._arc" P3 S2 P2 "._arc" P3 S3 P2)
+  (vl-cmdf "._arc" P1 S1 P3 "._arc" P3 S2 P2 "._arc" P3 S3 P2)
   (COND
     ((/= WT 0)
      (SETQ
@@ -36,7 +36,7 @@
        S2 (POLAR C2 A2 (- W1 (/ WT 2)))
        S3 (POLAR C2 A3 (- W1 (/ WT 2)))
      ) ;_ end of SETQ
-     (COMMAND "._arc" P2 S2 P3 "._arc" P2 S3 P3)
+     (vl-cmdf "._arc" P2 S2 P3 "._arc" P2 S3 P3)
     )
   ) ;_ end of COND
   (HAWS-VRSTOR)

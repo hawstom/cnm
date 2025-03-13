@@ -4,7 +4,7 @@
 (haws-core-init 293)(HAWS-purge"ALL")(PRINC))
 
 (defun HAWS-purge (a)
-  (command
+  (vl-cmdf
     ".PURGE"
     (cond
       ( (eq (strcase a) "ALL")
@@ -12,7 +12,7 @@
       (t(car (setq a (list a))))
   ))
   (if (>= (atof (getvar"acadver")) 14)
-    (command "*" "_n")
+    (vl-cmdf "*" "_n")
     (mapcar
       '(lambda (x / y)
         (while (setq y (tblnext x (not y)))
@@ -22,7 +22,7 @@
               (/= 64 (logand 64 (cdr (assoc 70 y))))
               (/= 16 (logand 16 (cdr (assoc 70 y))))
             )
-            (command "Y")
+            (vl-cmdf "Y")
       ) ) )
       a
     )

@@ -5,7 +5,7 @@
    HAWS-NEWANG (/ SSET)
   (haws-core-init 267)
   (HAWS-VSAVE '("aunits"))
-  (COMMAND "._undo" "_g")
+  (vl-cmdf "._undo" "_g")
   (SETQ SSET (SSGET))
   (COND
     ((NOT SSET) (PROMPT "\nNone found."))
@@ -256,7 +256,7 @@
       (SETQ ORGANG (+ ORGANG PI))
     )
     (IF ORGANG
-      (COMMAND
+      (vl-cmdf
         "._rotate"
         ENT
         ""
@@ -268,8 +268,8 @@
       (PROMPT "\nDon't know how to rotate this entity.  ")
     ) ;_ end of if
   ) ;_ end of while
-  (COMMAND "._select" SSET "")
-  (COMMAND "._undo" "_e")
+  (vl-cmdf "._select" SSET "")
+  (vl-cmdf "._undo" "_e")
   (PROMPT "\nDone.")
 )
  ;|«Visual LISP© Format Options»

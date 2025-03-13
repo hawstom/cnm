@@ -2,8 +2,8 @@
 (DEFUN c:haws-ROMANS ( / st sn sf)
   (haws-core-init 305)
   (HAWS-VSAVE '("cmddia" "filedia" "regenmode"))
-  (command "._style" "romans" "romans" "0" ".95" "0" "" "" "")
-  (command "._dim1" "_style" "romans");For R13 compatibility
+  (vl-cmdf "._style" "romans" "romans" "0" ".95" "0" "" "" "")
+  (vl-cmdf "._dim1" "_style" "romans");For R13 compatibility
   (setvar "dimtxsty" "romans")
   (setvar "cmddia" 0)
   (setvar "filedia" 0)
@@ -29,7 +29,7 @@
               ) )
               "Yes"
         ) ) )
-        (command "._style" sn "ROMANS" "" "0.95" "" "" "" "")
+        (vl-cmdf "._style" sn "ROMANS" "" "0.95" "" "" "" "")
   ) ) )
   (setvar "textstyle" "ROMANS")
   (HAWS-VRSTOR)(haws-core-restore)(princ)

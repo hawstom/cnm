@@ -15,7 +15,7 @@
   (while pp
     (princ (if (= "T" qdofst) "\nThrough point: " "\nSide to offset: "))
     (setq enm0 (entlast))
-    (command ".OFFSET" qdofst pp PAUSE "")
+    (vl-cmdf ".OFFSET" qdofst pp PAUSE "")
     (setq enm (entlast))
     (if (not (eq enm0 enm))
       (progn

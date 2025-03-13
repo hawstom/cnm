@@ -12,10 +12,10 @@
   )
   (cond
     ( (>= (atof(getvar "acadver"))14)
-      (command "._leader" pnt1 ptxt "" "" "_None")
+      (vl-cmdf "._leader" pnt1 ptxt "" "" "_None")
     )
     ( T
-      (command "._dim" "_leader" pnt1 ptxt)(command)
+      (vl-cmdf "._dim" "_leader" pnt1 ptxt)(vl-cmdf)
     )
   )
   (setq ptxt (polar ptxt (if left pi 0) (* txht 0.5)))

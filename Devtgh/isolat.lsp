@@ -9,7 +9,7 @@
   (SETVAR "EXPERT" 5)
   (prompt "\nLayers to isolate")
   (setq issset (ssget))
-  (command "._layer" lopera "*")
+  (vl-cmdf "._layer" lopera "*")
   (setq
     i 0
     lopera
@@ -20,9 +20,9 @@
   ) )
   (while
     (setq en (ssname issset i))
-    (command lopera (cdr(assoc 8 (entget en))))
+    (vl-cmdf lopera (cdr(assoc 8 (entget en))))
     (setq i (1+ i))
   )
-  (command "")
+  (vl-cmdf "")
   (HAWS-VRSTOR)(haws-core-restore)
 );end freeze/off/lock isolate by picking

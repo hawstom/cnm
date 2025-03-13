@@ -58,7 +58,7 @@
 )
 (DEFUN
    HCNM-DEFINE-COMMAND-ALIAS (ALIAS)
-  (HCNM-DEFINE-ALIAS ALIAS "(command \"._" "\")")
+  (HCNM-DEFINE-ALIAS ALIAS "(vl-cmdf \"._" "\")")
   (SETQ *HCNM-PGP-ALIASES* (CONS ALIAS *HCNM-PGP-ALIASES*))
 )
 
@@ -79,7 +79,7 @@
    HCNM-DEFINE-COMMAND-ALIASES ()
   (HCNM-DEFINE-ALIASES
     (HCNM-PGP-ALIASES)
-    "(command \"._"
+    "(vl-cmdf \"._"
     "\")"
   )
 )

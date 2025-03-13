@@ -8,7 +8,7 @@
     ((zerop (atof off))(princ "\nValue must be non-zero."))
     (t 
       (setvar "cmdecho" 0)
-      (command "._undo" "_g")
+      (vl-cmdf "._undo" "_g")
       (setq off (atof off))
       (repeat (setq i (sslength ss))
         (setq 
@@ -41,7 +41,7 @@
           )
         )
       )
-      (command ".undo" "e")
+      (vl-cmdf ".undo" "e")
     )
   )
   (princ)

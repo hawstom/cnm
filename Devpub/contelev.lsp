@@ -44,11 +44,11 @@
    haws-cel:main (/ input-main)
   (haws-cel:initialize-settings)
   (haws-cel:initialize-elevation)
-  (command "._undo" "_group")
+  (vl-cmdf "._undo" "_group")
   (while (setq input-main (haws-cel:get-input-main))
     (haws-cel:do-input-main input-main)
   )
-  (command "._undo" "_end")
+  (vl-cmdf "._undo" "_end")
   (princ)
 )
 
@@ -285,7 +285,7 @@
    haws-cel:color-contour (entsel1 / color)
   (cond
     ((/= "." (setq color (haws-cel:getvar "TemporaryColor")))
-     (command "._chprop" entsel1 "" "_color" color "")
+     (vl-cmdf "._chprop" entsel1 "" "_color" color "")
     )
   )
 )
@@ -320,7 +320,7 @@
         )
      )
      (haws-cel:make-masked-mtext "0,0,0" "_mc" (* (if (LM:isAnnotative (getvar "textstyle")) 1 (haws-dwgscale))(getvar "dimtxt")) "0" preset-string)
-     (command
+     (vl-cmdf
        "._block"
        (haws-cel:getvar "LabelBlockName")
        "0,0,0"
@@ -333,7 +333,7 @@
 
 (defun
    haws-cel:make-masked-mtext (i j h w s / ename-mtext)
-  (command "._mtext" i "_j" j "_h" h "_w" w s "")
+  (vl-cmdf "._mtext" i "_j" j "_h" h "_w" w s "")
   (setq ename-mtext (entlast))
   (entmod
     (append
@@ -346,9 +346,9 @@
 (defun
    haws-cel:add-labels (entsel1 / eg1 en1 enext entsel1-length)
   (setq enext (entlast))
-  (command "._area" "_object" entsel1)
+  (vl-cmdf "._area" "_object" entsel1)
   (setq entsel1-length (getvar "perimeter"))
-  (command
+  (vl-cmdf
     "._divide"
     entsel1
     "b"
@@ -365,7 +365,7 @@
     (if (= (cdr (assoc 2 (entget enext)))
            (haws-cel:getvar "LabelBlockName")
         )
-      (command "._explode" enext)
+      (vl-cmdf "._explode" enext)
     )
     (setq eg1 (entget (setq en1 (entlast))))
     (cond

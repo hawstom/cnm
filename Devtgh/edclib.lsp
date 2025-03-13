@@ -26,7 +26,7 @@
 ;;; 20170907 4.2.30 TGH See Git. Revamped bubble notes. Removed PGP. Reworked installer to replace AcadInst.exe. Improved CNM project mgt. Command spreadsheet audit/enhance.
 ;;; 20151001 4.2.29 TGH Added BIOS date registry location for Windows 10.
 ;;; 20150921 4.2.28 TGH Added LWP and LWPX.
-;;; 20150916 4.2.27 TGH Fixed (command) incompatibility with v2015+ in lambdas.  Using (command-s).
+;;; 20150916 4.2.27 TGH Fixed (vl-cmdf) incompatibility with v2015+ in lambdas.  Using (vl-cmdf-s).
 ;;; 20111021 4.2.21 TGH Made MSCRIPT use VBA only for releases 15 through 17 (2000 through 2009).  CNM QT had already been fixed that way.
 ;;; 20090923 4.2.20 TGH Changed authorization scheme in many ways to fix bugs.  Works with setcfg and still gets old stuff from registry.
 ;;; 20090923 4.2.19 TGH Changed authorization scheme (for Jared Cox) to use only HKCU section.
@@ -146,7 +146,7 @@
 ;;; To restore another previous UCS, set a global symbol 'ucspp to
 ;;; non-nil.
 (DEFUN
-   haws-core-init (COMMAND-ID / APPGROUP VALIDATED)
+   haws-core-init (vl-cmdf-ID / APPGROUP VALIDATED)
   (setq APPGROUP (cadr (assoc command-id *haws-edccommands*)))
   ;; If computer already has authorization,
   (COND
@@ -198,7 +198,7 @@
     )
   )
   (WHILE (< 0 (GETVAR "cmdactive"))
-    (COMMAND)
+    (vl-cmdf)
   )
   (IF (= (TYPE F1) (QUOTE FILE))
     (SETQ F1 (CLOSE F1))
@@ -213,7 +213,7 @@
   ;;Versional housekeeping
   (if (/= 'subr (type command-s)) (setq command-s command))
   (IF (= 8 (LOGAND (GETVAR "undoctl") 8))
-    (COMMAND-S "._undo" "end")
+    (vl-cmdf-S "._undo" "end")
   )
   ;; End undo group
   (IF VSTR
@@ -221,11 +221,11 @@
   )
   ;; Restore variables to previous values
   (IF UCSP
-    (COMMAND-S "._UCS" "_P")
+    (vl-cmdf-S "._UCS" "_P")
   )
   ;; Restore previous UCS
   (IF UCSPP
-    (COMMAND-S "._UCS" "_P")
+    (vl-cmdf-S "._UCS" "_P")
   )
   ;; Restore previous UCS
   (IF ENM
@@ -1742,7 +1742,7 @@
   )
 )
 
-(DEFUN HAWS-USE-LOG-LOCAL (COMMAND-ID / LOG-STRING)
+(DEFUN HAWS-USE-LOG-LOCAL (vl-cmdf-ID / LOG-STRING)
   (HAWS-WRITECFG
     (HAWS-USE-LOCAL-LOCATION)
     (HAWS-USE-COMMAND-ID-TO-LOG-STRING COMMAND-ID (HAWS-USE-GET-LOCAL-LOG-STRING))
@@ -1754,7 +1754,7 @@
   LOG-STRING
 )
 
-(DEFUN HAWS-USE-COMMAND-ID-TO-LOG-STRING (COMMAND-ID LOG-STRING / MAX-ID)
+(DEFUN HAWS-USE-COMMAND-ID-TO-LOG-STRING (vl-cmdf-ID LOG-STRING / MAX-ID)
   (COND
     ((OR (NOT LOG-STRING) (= LOG-STRING ""))
      (HAWS-USE-INITIALIZE-LOG-STRING)
@@ -3072,18 +3072,18 @@
        )
       )
     )
-    (COMMAND-S "._linetype" "_l" LALTYP LTFILE "")
+    (vl-cmdf-S "._linetype" "_l" LALTYP LTFILE "")
   )
   (HAWS-MILEPOST "Finished assuring linetype.")
   (IF (NOT (TBLSEARCH "LAYER" LANAME))
-    (COMMAND-S "._layer" "_m" LANAME "")
-    (COMMAND-S "._layer" "_t" LANAME "_on" LANAME "_u" LANAME "_s" LANAME "")
+    (vl-cmdf-S "._layer" "_m" LANAME "")
+    (vl-cmdf-S "._layer" "_t" LANAME "_on" LANAME "_u" LANAME "_s" LANAME "")
   )
   (IF (/= LACOLR "")
-    (COMMAND-S "._layer" "_c" LACOLR "" "")
+    (vl-cmdf-S "._layer" "_c" LACOLR "" "")
   )
   (IF (/= LALTYP "")
-    (COMMAND-S "._layer" "_lt" LALTYP "" "")
+    (vl-cmdf-S "._layer" "_lt" LALTYP "" "")
   )
   (HAWS-MILEPOST "Finished making layer.")
   LAOPT
@@ -3107,7 +3107,7 @@
         LTFILE ".lin..."
        )
     )
-    (COMMAND-S "._linetype" "_l" LTYPE LTFILE "")
+    (vl-cmdf-S "._linetype" "_l" LTYPE LTFILE "")
   )
   (HAWS-MILEPOST
     (STRCAT
@@ -3226,7 +3226,7 @@
       (T (haws-text-height-model))
     )
   )
-  (command "._mtext" i "_j" (strcat "_" j) "_h" h "_w" w s "")
+  (vl-cmdf "._mtext" i "_j" (strcat "_" j) "_h" h "_w" w s "")
   (COND
     (MASKED-P
      (SETQ ENAME-MTEXT (ENTLAST))

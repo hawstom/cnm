@@ -9,13 +9,13 @@
     ET	(CDR (ASSOC 0 EG))
     SS1	(SSGET "X" (LIST (CONS 8 LA)))
   )
-  (COMMAND "._pedit" EN)
+  (vl-cmdf "._pedit" EN)
   (COND
     ((AND (WCMATCH ET "ARC,LINE") (= (GETVAR "peditaccept") 0))
-     (COMMAND "_y")
+     (vl-cmdf "_y")
     )
   )
-  (COMMAND "_join" SS1 "" "")
+  (vl-cmdf "_join" SS1 "" "")
   (PRINC)
 )
 ;|«Visual LISP© Format Options»

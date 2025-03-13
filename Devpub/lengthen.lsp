@@ -3,6 +3,6 @@
   (initget "Delta Percent Total") 
   (setq opt (getkword "\nEnter an option [Delta/Percent/Total] <Dynamic>: "))
   (cond ((not opt) (setq opt "Dynamic")))
-  (command "._lengthen" opt)
+  (vl-cmdf "._lengthen" opt)
   (princ)
 )

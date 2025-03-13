@@ -94,8 +94,8 @@
 
   (setq ct_ver "1.12")                ; Reset this local if you make a change.
   ;; Set undo groups and ends
-  (defun cht_UG () (command "_.undo" "_group"))
-  (defun cht_ue () (command "_.undo" "_en"))
+  (defun cht_UG () (vl-cmdf "_.undo" "_group"))
+  (defun cht_ue () (vl-cmdf "_.undo" "_en"))
   ;;
   ;; Internal error handler defined locally
   ;;
@@ -158,7 +158,7 @@
   (setq opt T unctr 0)
   (while (and opt (> (sslength sset) 0))
     (setq unctr (1+ unctr))
-    (command "_.UNDO" "_GROUP")
+    (vl-cmdf "_.UNDO" "_GROUP")
     (initget "Locat Just Style Height Rot Obl Width Text Undo")
     (setq opt (getkword
       "\nHeight/Just/Location/Rot/Obl/Style/Text/Undo/Width: "))
@@ -184,7 +184,7 @@
       )
       (setq opt nil)
     )
-    (command "_.UNDO" "_END")
+    (vl-cmdf "_.UNDO" "_END")
   )
 )
 ;;;
@@ -193,8 +193,8 @@
 (defun cht_ue ()
   (if (> unctr 1)
     (progn
-      (command "_.UNDO" "_END")
-      (command "_.UNDO" "2")
+      (vl-cmdf "_.UNDO" "_END")
+      (vl-cmdf "_.UNDO" "2")
       (setq unctr (- unctr 2))
     )
     (progn
@@ -213,7 +213,7 @@
         rot   ""
         txt   ""
   )
-  (command "_.CHANGE" sset "" "")
+  (vl-cmdf "_.CHANGE" sset "" "")
   (while (> sslen 0)
     (setq ent (entget(ssname sset (setq sslen (1- sslen))))
           opt (list (cadr (assoc 11 ent))
@@ -221,13 +221,13 @@
                     (cadddr (assoc 11 ent)))
     )
     (prompt "\nNew text location: ")
-    (command pause)
+    (vl-cmdf pause)
     (if (null loc)
       (setq loc opt)
     )
-    (command style hgt rot txt)
+    (vl-cmdf style hgt rot txt)
   )
-  (command)
+  (vl-cmdf)
 )
 ;;;
 ;;; Change the justification of an entry.
@@ -266,7 +266,7 @@
     (justpt) ; Process them...
     (justpn) ; List options...
   )
-  (command)
+  (vl-cmdf)
 )
 
 (defun justpt ()
@@ -360,7 +360,7 @@
         (ssadd (ssname sset sslen) ss)
         (if (= ans "No")
           (chgtext ss)
-          (command "_.DDEDIT" sn "")
+          (vl-cmdf "_.DDEDIT" sn "")
         )
         (redraw sn 1)
       )

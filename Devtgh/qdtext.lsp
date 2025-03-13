@@ -3,7 +3,7 @@
 (defun HAWS-qdtext (ts / pt1)
   (setq pt1 (getpoint "\nStart point: "))
   (prompt "\nText: ")
-  (command "._dtext" pt1 (* ts (HAWS-DWGSCALE)) "0")
+  (vl-cmdf "._dtext" pt1 (* ts (HAWS-DWGSCALE)) "0")
 )
 (defun c:haws-l80  ()
 (haws-core-init 294) (HAWS-qdtext 0.08 ))

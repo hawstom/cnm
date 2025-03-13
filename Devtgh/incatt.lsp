@@ -2,7 +2,7 @@
 (defun
 	 c:haws-incatt	(/ blki blklst ss1)
 (haws-core-init 224)
-	(command ".undo" "_g")
+	(vl-cmdf ".undo" "_g")
 	(setq
 		ss1
 		 (ssget)
@@ -51,7 +51,7 @@
 			) ;_ end of progn
 		) ;_ end of if
 	) ;_ end of foreach
-	(command "._undo" "_e")
+	(vl-cmdf "._undo" "_e")
 	(prompt "\nIf you need additional options, contact Tom Haws.")
 	(princ)
 ) ;_ end of defun

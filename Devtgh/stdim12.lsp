@@ -32,7 +32,7 @@
   )
   (setvar "osmode" 0)
   (prompt "\nAdditional text: ")
-  (command
+  (vl-cmdf
     "._dim" "al" pt1 pt2 pt1 "" "e"
     "._dtext" "j" "m" pt3 txht (angtos ang)
   )

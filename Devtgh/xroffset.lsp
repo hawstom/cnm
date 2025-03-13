@@ -63,7 +63,7 @@
 			(princ (strcat (rtos (car pt2)) "," (rtos (cadr pt2)) "  ._erase !xroen  (setq *HAWS-xrosetupdone* T) haws-xroffset ") f1)
 			(setq f1 (close f1))
 			(haws-core-restore)
-			(command "._script" (strcat (getvar "tempprefix") "xrotemp"))
+			(vl-cmdf "._script" (strcat (getvar "tempprefix") "xrotemp"))
 		) ;_ end of progn
 	) ;_ end of if
 ) ;_ end of defun
