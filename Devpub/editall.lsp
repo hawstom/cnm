@@ -2,40 +2,47 @@
 ;; combined dialogue editor for
 ;; blocks, attdefs, text, and dimensions.
 
-(defun c:haws-ee ()
+(defun
+   c:haws-ee ()
   (haws-core-init 27)
   (haws-editall nil)
   (haws-core-restore)
 )
-(defun haws-editall  (cnm-p / e etype set1 obj1 )
-  (VL-CMDF "._undo" "_group")
-  (PROMPT "\nText Editor:")
-  (SETQ SET1 (SSGET))
-  (WHILE (AND SET1
-    (SETQ OBJ1 (SSNAME SET1 0)))
-    (SETQ E (ENTGET OBJ1) ETYPE (cdr(assoc 0 e)))
-    (REDRAW OBJ1 3)
+(defun
+   haws-editall (cnm-p / e etype set1 obj1)
+  (vl-cmdf "._undo" "_group")
+  (prompt "\nText Editor:")
+  (setq set1 (ssget))
+  (while (and set1 (setq obj1 (ssname set1 0)))
+    (setq
+      e     (entget obj1)
+      etype (cdr (assoc 0 e))
+    )
+    (redraw obj1 3)
     (cond
-      ( cnm-p
-        (HCNM_EDIT_BUBBLE OBJ1)
+      ((= etype "ATTDEF") (vl-cmdf "._TEXTEDIT" obj1 ""))
+      ((= etype "TEXT") (vl-cmdf "._TEXTEDIT" obj1 ""))
+      ((= etype "MTEXT") (vl-cmdf "._TEXTEDIT" obj1 ""))
+      ((= etype "DIMENSION") (vl-cmdf "._TEXTEDIT" obj1 ""))
+      ((or cnm-p
+           (wcmatch
+             (vla-get-effectivename (vlax-ename->vla-object obj1))
+             "cnm-bubble-*"
+           )
+       )
+       (hcnm_edit_bubble obj1)
       )
-      ( (AND (= etype "INSERT") (CDR (ASSOC 66 E)))
-        (VL-CMDF "._TEXTEDIT" OBJ1)
+      ((and (= etype "INSERT") (cdr (assoc 66 e)))
+       (vl-cmdf "._DDATTE" obj1)
       )
-      ( (= etype "ATTDEF")
-        (VL-CMDF "._TEXTEDIT" OBJ1 "")
-      )
-      ( (= etype "TEXT")
-        (VL-CMDF "._TEXTEDIT" OBJ1 "")
-      )
-      ( (= etype "MTEXT")
-        (VL-CMDF "._TEXTEDIT" OBJ1 "")
-      )
-      ( (= etype "DIMENSION")
-        (VL-CMDF "._TEXTEDIT" OBJ1 "")
-    ) )
-    (REDRAW OBJ1 4)
-    (IF (/= OBJ1 NIL)(SSDEL OBJ1 SET1))
+    )
+    (redraw obj1 4)
+    (if (/= obj1 nil)
+      (ssdel obj1 set1)
+    )
   )
-  (VL-CMDF "._undo" "_end")
+  (vl-cmdf "._undo" "_end")
 )
+;|«Visual LISP© Format Options»
+(72 2 40 2 nil "end of " 60 2 1 1 1 nil nil nil T)
+;*** DO NOT add text below the comment! ***|;

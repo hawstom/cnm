@@ -83,7 +83,7 @@
   (COND
     ((NOT (TBLSEARCH "BLOCK" "NOTEQTY"))
      (setvar "attreq" 0)
-     (VL-CMDF "._insert" (STRCAT "NOTEQTY=NOTEQTY" J) "0,0" "1" "1" "0")
+     (VL-CMDF "._insert" (STRCAT "NOTEQTY=NOTEQTY" J) "0,0" "_Scale" "1" "0")
      (setvar "attreq" 1)
      (entdel (entlast))
     )
@@ -1171,8 +1171,8 @@
     "._insert"
     (STRCAT "cnm" NOTTYP)
     QTYPT
+    "_Scale"
     TXTHT
-    ""
     "0"
   )
 )
@@ -1184,8 +1184,8 @@
 ;;;       (VL-CMDF
 ;;;  "._insert" "NOTEQTY" "non"   
 ;;;  QTYPT
+;;;  "_Scale"
 ;;;  TXTHT
-;;;  ""
 ;;;  "0"
 ;;; )
 ;;;      ;;Change attribute values
@@ -1225,8 +1225,8 @@
     "._insert"
     "NOTEQTY"
     QTYPT
+    "_Scale"
     TXTHT
-    ""
     "0"
     (IF NOTE_FIRST_LINE_P
       NOTTYP
@@ -1988,8 +1988,8 @@
          "._insert"
          (STRCAT "cnm" NOTTYP)
          (LIST X Y Z)
+         "_Scale"
          TXTHT
-         ""
          "0"
        )
        ;;Make number text
@@ -5192,7 +5192,7 @@ ImportLayerSettings=No
     (VL-CMDF
       "._insert"
       (STRCAT BLOCKNAME "-" FLIPSTATE)
-      "s"
+      "_Scale"
       TH
       P1_ENTRY
       (ANGTOS (GETVAR "snapang"))
@@ -5249,7 +5249,7 @@ ImportLayerSettings=No
        "._insert"
        (STRCAT BLOCKNAME "-" FLIPSTATE)
        P2
-       TH
+       "_Scale"
        TH
        (GETVAR "snapang")
      )
@@ -6191,7 +6191,7 @@ ImportLayerSettings=No
   (VL-CMDF
     "._insert"
     BLDRAG
-    "s"
+    "_Scale"
     TS
     P1
     (ANGTOS (GETVAR "snapang"))

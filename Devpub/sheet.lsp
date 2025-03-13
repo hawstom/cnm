@@ -184,7 +184,7 @@
         )
         (setvar "attreq" 0)
         (setvar "regenmode" 0)
-        (command "._insert" (strcat blname "=") "0,0" insscl "" 0)
+        (command "._insert" (strcat blname "=") "0,0" "_Scale" insscl 0)
         (if
           (HAWS-attfind "blname" (list(list"CONTENT" "XX"))'("CONTENT") T)
           (command "._attedit" "n" "n" blname "content" "XX" "XX" cont)

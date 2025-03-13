@@ -8,14 +8,14 @@
         ( (wcmatch var "*BLK*")
           (cond
             ( (= val "")
-              (command "dim1" var ".")
+              (VL-CMDF  "dim1" var ".")
             )
             ( T
               (cond
                 ( (not (tblsearch "BLOCK" val))
                   (cond
                     ( (findfile (strcat val ".dwg"))
-                      (command "._insert" val)(command)
+                      (VL-CMDF  "._insert" val)(VL-CMDF )
                     )
                     (T (setq val ""))
                   )

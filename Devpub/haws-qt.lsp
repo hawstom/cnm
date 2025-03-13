@@ -1,21 +1,28 @@
 ;;; Written by Thomas Gail Haws
 ;;; AET section
-(DEFUN C:HAWS-ACRES ()
-(haws-core-init 156) (HAWS-AET (/ 1.0 43560) " AC"))
-(DEFUN C:HAWS-SF ()
-(haws-core-init 157) (HAWS-AET 1 " SF"))
-(DEFUN C:HAWS-AET ()
-(haws-core-init 158) (HAWS-AET 1 ""))
-(DEFUN C:HAWS-SM ()
-(haws-core-init 159) (HAWS-AET (/ 1.0 27878400) " SQ. MI."))
-(DEFUN C:HAWS-SY ()
-(haws-core-init 160) (HAWS-AET (/ 1.0 9) " SY"))
+(DEFUN
+   C:HAWS-ACRES ()
+  (HAWS-CORE-INIT 156)
+  (HAWS-AET (/ 1.0 43560) " AC")
+)
+(DEFUN C:HAWS-SF () (HAWS-CORE-INIT 157) (HAWS-AET 1 " SF"))
+(DEFUN C:HAWS-AET () (HAWS-CORE-INIT 158) (HAWS-AET 1 ""))
+(DEFUN
+   C:HAWS-SM ()
+  (HAWS-CORE-INIT 159)
+  (HAWS-AET (/ 1.0 27878400) " SQ. MI.")
+)
+(DEFUN
+   C:HAWS-SY ()
+  (HAWS-CORE-INIT 160)
+  (HAWS-AET (/ 1.0 9) " SY")
+)
 (DEFUN
    HAWS-AET (FACTOR LABEL / AREA TS TXPT)
   (SETQ HAWS-QT-INSTANCE (HAWS-QT-NEW "haws-aet"))
   (HAWS-QT-SET-PROPERTY HAWS-QT-INSTANCE "type" "area")
-  (HAWS-QT-SET-PROPERTY HAWS-QT-INSTANCE "factor" factor)
-  (HAWS-QT-SET-PROPERTY HAWS-QT-INSTANCE "postfix" label)
+  (HAWS-QT-SET-PROPERTY HAWS-QT-INSTANCE "factor" FACTOR)
+  (HAWS-QT-SET-PROPERTY HAWS-QT-INSTANCE "postfix" LABEL)
   (HAWS-QT-SET-PROPERTY
     HAWS-QT-INSTANCE
     "precision"
@@ -70,7 +77,7 @@
        (CONS "destination" "prompt")
        (CONS "position" "replace")
        (CONS "string" "")
-       (CONS "space" nil)
+       (CONS "space" NIL)
      )
   )
   (COND
@@ -136,9 +143,7 @@
 ;; Sets HAWS-QT instance string property
 (DEFUN
    HAWS-QT-STRING (INSTANCE / SS TOTAL)
-  (SETQ
-    TOTAL (HAWS-QT-SS-TOTAL INSTANCE)
-  )
+  (SETQ TOTAL (HAWS-QT-SS-TOTAL INSTANCE))
   (HAWS-QT-SET-PROPERTY
     INSTANCE
     "string"
@@ -170,15 +175,12 @@
     Q 0.0
     QTYPE
      (HAWS-QT-GET-PROPERTY INSTANCE "type")
-    ENAMELIST (HAWS-QT-SELECT)
+    ENAMELIST
+     (HAWS-QT-SELECT)
   )
   (COND
     (ENAMELIST
-     (FOREACH E ENAMELIST
-       (SETQ
-         Q (HAWS-QT-ADD-ENT E Q QTYPE)
-       )
-     )
+     (FOREACH E ENAMELIST (SETQ Q (HAWS-QT-ADD-ENT E Q QTYPE)))
     )
   )
   Q
@@ -213,10 +215,9 @@
      (SSGET)
     CONTINUE-P
      (NOT INPUT1)
-    SS-P
-     NIL
+    SS-P NIL
     ENAMELIST
-    (HAWS-QT-SELECT-SS-TO-LIST INPUT1)
+     (HAWS-QT-SELECT-SS-TO-LIST INPUT1)
   )
   (LIST ENAMELIST SS-P CONTINUE-P)
 )
@@ -243,7 +244,7 @@
     INPUT1
      (NENTSEL
        (STRCAT
-         "\nSelect object or [Selection set/Continue] <Continue>: "
+         "\nSelect nested object or [Selection set/Continue] <Continue>: "
        )
      )
     CONTINUE-P
@@ -253,6 +254,7 @@
     ENAMELIST
      (COND
        ((AND INPUT1 (= (TYPE INPUT1) 'LIST))
+        (PRINC (STRCAT "\n" (CDR(ASSOC 0 (ENTGET (CAR INPUT1)))) " was selected."))
         (LIST (CAR INPUT1))
        )
        (T NIL)
@@ -261,18 +263,49 @@
   (LIST ENAMELIST SS-P CONTINUE-P)
 )
 (DEFUN
-   HAWS-QT-ADD-ENT (E Q QTYPE / QI)
+   HAWS-QT-ADD-ENT (E Q QTYPE / OBJ QI)
+  (IF (AND
+        (= (CDR (ASSOC 0 (ENTGET E))) "VERTEX")
+        (ASSOC 330 (ENTGET E))
+      )
+    (SETQ E (CDR (ASSOC 330 (ENTGET E))))
+  )
   (SETQ
+    OBJ
+     (VLAX-ENAME->VLA-OBJECT E)
+    ERROBJ
+     (VL-CATCH-ALL-APPLY 'VLAX-CURVE-GETSTARTPOINT (list OBJ))
     QI (COND
-         ((= QTYPE "length")
-          (VLAX-CURVE-GETDISTATPARAM E (VLAX-CURVE-GETENDPARAM E))
+         ((VL-CATCH-ALL-ERROR-P ERROBJ)
+          (PRINC
+            (STRCAT
+              "\nCan't get quantity from a "
+              (CDR (ASSOC 0 (ENTGET E)))
+              "."
+            )
+          )
+          0
          )
-         ((= QTYPE "area") (VLAX-CURVE-GETAREA E))
+         ((= QTYPE "length")
+          (COND
+            ((= (CDR (ASSOC 0 (ENTGET E))) "AECC_PIPE")
+             (PRINC "\nGetting 3D length of AECC_PIPE object.")
+             (VLAX-GET-PROPERTY OBJ 'LENGTH3D)
+            )
+            (T
+             (VLAX-CURVE-GETDISTATPARAM
+               OBJ
+               (VLAX-CURVE-GETENDPARAM OBJ)
+             )
+            )
+          )
+         )
+         ((= QTYPE "area") (VLAX-CURVE-GETAREA OBJ))
        )
-    Q  (COND
-         (QI (+ Q QI))
-         (Q)
-       )
+    Q (COND
+        (QI (+ Q QI))
+        (Q)
+      )
   )
   Q
 )
@@ -293,6 +326,6 @@
     (HAWS-MKTEXT "m" TXPT NIL 0 QT-STRING)
   )
 )
-;|«Visual LISP© Format Options»
+ ;|«Visual LISP© Format Options»
 (72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)
 ;*** DO NOT add text below the comment! ***|;
