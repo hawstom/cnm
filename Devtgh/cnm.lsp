@@ -1440,7 +1440,7 @@
      )
      (COND
        ((= INPUT "List")
-        (SETQ SHEET_LIST_FILENAME (GETFILED "Select a List File" "" "LST" 0))
+        (SETQ SHEET_LIST_FILENAME (GETFILED "Select a List File" DN "LST" 0))
        )
        ((= INPUT "Wildcards")
         ;;Add function to user's ACAD.PGP to shell and wait for attrib command to finish.
@@ -1818,17 +1818,7 @@
   )
   (SETVAR "osmode" 0)
   ;;Write column headings to the file
-  (WHILE (NOT (SETQ F2 (OPEN (STRCAT DN ".csv") "w")))
-    (ALERT
-      (PRINC
-        (STRCAT
-          "Couldn't write to "
-          DN
-          ".csv.\nPlease close file, then click ok."
-        )
-      )
-    )
-  )
+  (SETQ F2 (HAWS-FILE-OPEN (STRCAT DN ".csv") "w"))
   (PRINC "TYPE,NO,ITEM,UNIT,PRICE," F2) ;; Price and cost
   (SETQ SHEET_HEADINGS "")
   (FOREACH
@@ -5362,9 +5352,9 @@ ImportLayerSettings=No
      (SETVAR "aunits" 3)
      (VL-CMDF
        (STRCAT BLOCKNAME "-" FLIPSTATE)
+       "_Scale"
+       TH
        P2
-       TH
-       TH
        (GETVAR "snapang")
      )
      (SETVAR "aunits" AUOLD)

@@ -451,7 +451,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`jconstru`@`localhost` SQL SECURITY DEFINER V
 --
 DROP TABLE IF EXISTS `view_commands_by_logger`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`jconstru`@`localhost` SQL SECURITY DEFINER VIEW `view_commands_by_logger`  AS  select `c`.`command_name` AS `Command name`,`c`.`command_id` AS `Id`,`le`.`le_ip_address` AS `IP`, `le`.`le_computer_name` AS `Computer name`, `le`.`le_bios_date` AS `BIOS_date`, sum(`uc`.`uc_count`) AS `Count` from (`command` `c`, `use_count` `uc`, `log_event` `le`) where (`c`.`command_id` = `uc`.`uc_command_id` AND `uc`.`uc_log_event_id` = `le`.`le_id`) group by `le`.`le_ip_address`, `le`.`le_computer_name`, `le`.`le_bios_date`, `c`.`command_name` order by sum(`uc`.`uc_count`) desc;
+CREATE ALGORITHM=UNDEFINED DEFINER=`jconstru`@`localhost` SQL SECURITY DEFINER VIEW `view_commands_by_logger`  AS  select `c`.`command_name` AS `Command name`,`c`.`command_id` AS `Id`, `le`.`le_computer_name` AS `Computer name`, `le`.`le_loginname` AS `Loginname`, sum(`uc`.`uc_count`) AS `Count` from (`command` `c`, `use_count` `uc`, `log_event` `le`) where (`c`.`command_id` = `uc`.`uc_command_id` AND `uc`.`uc_log_event_id` = `le`.`le_id`) group by `le`.`le_computer_name`, `le`.`le_loginname`, `c`.`command_name` order by sum(`uc`.`uc_count`) desc;
 
 -- --------------------------------------------------------
 
@@ -460,6 +460,6 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`jconstru`@`localhost` SQL SECURITY DEFINER V
 --
 DROP TABLE IF EXISTS `view_loggers`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`jconstru`@`localhost` SQL SECURITY DEFINER VIEW `view_loggers` AS  select `le`.`le_ip_address` AS `IP`, `le`.`le_computer_name` AS `Name`, `le`.`le_bios_date` AS `BIOS_date`, COUNT(`le`.`le_id`) AS `Count` from (`log_event` `le`) group by `le`.`le_ip_address`, `le`.`le_computer_name`, `le`.`le_bios_date` order by `le`.`le_ip_address`, `le`.`le_computer_name`, `le`.`le_bios_date` ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`jconstru`@`localhost` SQL SECURITY DEFINER VIEW `view_loggers` AS  select `le`.`le_computer_name` AS `Computer name`, `le`.`le_loginname` AS `Loginname`, COUNT(`le`.`le_id`) AS `Count` from (`log_event` `le`) group by `le`.`le_computer_name`, `le`.`le_loginname` order by `le`.`le_computer_name`, `le`.`le_loginname` ;
 COMMIT;
 -- DELETE uc, le FROM use_count AS uc INNER JOIN log_event AS le ON le.le_id=uc.uc_log_event_id WHERE le.le_computer_name = 'GERANIUM'

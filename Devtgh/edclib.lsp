@@ -3,7 +3,7 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "5.5.11"
+  "5.5.12"
 )
 (DEFUN
    HAWS-COPYRIGHT ()
@@ -146,7 +146,7 @@
 ;;; To restore another previous UCS, set a global symbol 'ucspp to
 ;;; non-nil.
 (DEFUN
-   haws-core-init (vl-cmdf-ID / APPGROUP VALIDATED)
+   haws-core-init (COMMAND-ID / APPGROUP VALIDATED)
   (setq APPGROUP (cadr (assoc command-id *haws-edccommands*)))
   ;; If computer already has authorization,
   (COND
@@ -213,7 +213,7 @@
   ;;Versional housekeeping
   (if (/= 'subr (type command-s)) (setq command-s command))
   (IF (= 8 (LOGAND (GETVAR "undoctl") 8))
-    (vl-cmdf-S "._undo" "end")
+    (vl-cmdf "._undo" "end")
   )
   ;; End undo group
   (IF VSTR
@@ -221,11 +221,11 @@
   )
   ;; Restore variables to previous values
   (IF UCSP
-    (vl-cmdf-S "._UCS" "_P")
+    (vl-cmdf "._UCS" "_P")
   )
   ;; Restore previous UCS
   (IF UCSPP
-    (vl-cmdf-S "._UCS" "_P")
+    (vl-cmdf "._UCS" "_P")
   )
   ;; Restore previous UCS
   (IF ENM
@@ -1742,7 +1742,7 @@
   )
 )
 
-(DEFUN HAWS-USE-LOG-LOCAL (vl-cmdf-ID / LOG-STRING)
+(DEFUN HAWS-USE-LOG-LOCAL (COMMAND-ID / LOG-STRING)
   (HAWS-WRITECFG
     (HAWS-USE-LOCAL-LOCATION)
     (HAWS-USE-COMMAND-ID-TO-LOG-STRING COMMAND-ID (HAWS-USE-GET-LOCAL-LOG-STRING))
@@ -1754,7 +1754,7 @@
   LOG-STRING
 )
 
-(DEFUN HAWS-USE-COMMAND-ID-TO-LOG-STRING (vl-cmdf-ID LOG-STRING / MAX-ID)
+(DEFUN HAWS-USE-COMMAND-ID-TO-LOG-STRING (COMMAND-ID LOG-STRING / MAX-ID)
   (COND
     ((OR (NOT LOG-STRING) (= LOG-STRING ""))
      (HAWS-USE-INITIALIZE-LOG-STRING)
@@ -1773,8 +1773,8 @@
      (STRCAT
        "computer_name="
        (HAWS-GETCOMPUTERNAME)
-       "&bios_date="
-       *HAWS-BIOSDATEFULL*
+       "&loginname="
+       (getvar "loginname")
        "&cnm_version="
        (HAWS-UNIFIED-VERSION)
        "&command_log="
@@ -2039,6 +2039,45 @@
      (SETQ F2 (CLOSE F2))
      RETURN
     )
+  )
+)
+
+;;
+;; HAWS-FILE-OPEN
+;;
+;; If a write directive file is locked, allows user to provide an alternate filename to open.
+;;
+;;
+(DEFUN
+   HAWS-FILE-OPEN (FILENAME MODE / ERROBJ FP INPUT)
+  (SETQ ERROBJ (VL-CATCH-ALL-APPLY 'OPEN (LIST FILENAME MODE)))
+  (COND
+    ((VL-CATCH-ALL-ERROR-P ERROBJ)
+     (ALERT
+       (PRINC
+         (STRCAT
+           "Couldn't write to "
+           FILENAME
+           "\nPlease close if possible and follow command prompts."
+         )
+       )
+     )
+     (INITGET "Continue Specify")
+     (SETQ
+       INPUT
+        (GETKWORD
+          "\n[Continue with file closed/Specify another filename] <Continue>: "
+        )
+     )
+     (COND
+       ((= INPUT "Continue"))
+       ((= INPUT "Specify")
+        (SETQ FILENAME (GETFILED "Specify filename" FILENAME "" 1))
+        (SETQ FP (HAWS-FILE-OPEN FILENAME MODE))
+       )
+     )
+    )
+    (T (SETQ FP ERROBJ))
   )
 )
 
@@ -3072,18 +3111,18 @@
        )
       )
     )
-    (vl-cmdf-S "._linetype" "_l" LALTYP LTFILE "")
+    (vl-cmdf "._linetype" "_l" LALTYP LTFILE "")
   )
   (HAWS-MILEPOST "Finished assuring linetype.")
   (IF (NOT (TBLSEARCH "LAYER" LANAME))
-    (vl-cmdf-S "._layer" "_m" LANAME "")
-    (vl-cmdf-S "._layer" "_t" LANAME "_on" LANAME "_u" LANAME "_s" LANAME "")
+    (vl-cmdf "._layer" "_m" LANAME "")
+    (vl-cmdf "._layer" "_t" LANAME "_on" LANAME "_u" LANAME "_s" LANAME "")
   )
   (IF (/= LACOLR "")
-    (vl-cmdf-S "._layer" "_c" LACOLR "" "")
+    (vl-cmdf "._layer" "_c" LACOLR "" "")
   )
   (IF (/= LALTYP "")
-    (vl-cmdf-S "._layer" "_lt" LALTYP "" "")
+    (vl-cmdf "._layer" "_lt" LALTYP "" "")
   )
   (HAWS-MILEPOST "Finished making layer.")
   LAOPT
@@ -3107,7 +3146,7 @@
         LTFILE ".lin..."
        )
     )
-    (vl-cmdf-S "._linetype" "_l" LTYPE LTFILE "")
+    (vl-cmdf "._linetype" "_l" LTYPE LTFILE "")
   )
   (HAWS-MILEPOST
     (STRCAT
