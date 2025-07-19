@@ -7,7 +7,7 @@
 )
 (DEFUN
    HAWS-COPYRIGHT ()
-  "Copyright 2023 Thomas Gail Haws"
+  "Copyright 2025 Thomas Gail Haws"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 (SETQ *HAWS-DEBUGLEVEL* 0)
