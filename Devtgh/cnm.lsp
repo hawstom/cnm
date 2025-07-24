@@ -2162,7 +2162,7 @@
 (DEFUN C:HCNM-CNMKTI ()
 (haws-core-init 181) (HCNM_CNM "Import"))
 (DEFUN C:HCNM-CNMQT ()
-(haws-core-init 336) (HCNM_CNM "Tally"))
+(haws-core-init 338) (HCNM_CNM "Tally"))
 ;;CNM main function
 (DEFUN
    HCNM_CNM (OPT / CFNAME DN LINSPC PHASEWID TBLWID TXTHT)

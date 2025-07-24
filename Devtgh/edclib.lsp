@@ -3,7 +3,7 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "5.5.12"
+  "5.5.13"
 )
 (DEFUN
    HAWS-COPYRIGHT ()
@@ -1396,7 +1396,7 @@
 ;;;                 Usage logging functions
 ;;;
 ;;; ======================================================================
-;;; This list should be populated automatically from the web on load.
+;;; This list would be better if populated automatically from the web on load.
 ;;; Stored locally somewhere. Maybe a LSP file.
 ;;; id appgroup name
 (setq
@@ -1723,10 +1723,9 @@
      (332 0 "haws-xroffset")
      (333 -1 "haws-xu")
      (334 0 "haws-xy")
-     (335 2 "hcnm-notesedit")
+     (335 2 "hcnm-notesedit-pro") ; Not really the command name. Disambiguating from regular use.
      (336 1 "hcnm-cnmqt")
      (337 1 "hcnm-edit-bubbles")
-     (336 1 "hcnm-cnmqt")     
      (1000 1 "untracked")
    )
 )
@@ -1749,6 +1748,7 @@
   )
 )
 
+;;; The ASCII code of each character of the log string (one for each command) represents the number of times the command has been used this session. This implies that we count only up to 255 uses per session.
 (DEFUN HAWS-USE-INITIALIZE-LOG-STRING ( / I MAX-ID)
   (SETQ I -1 LOG-STRING "" MAX-ID (CAAR (REVERSE *HAWS-EDCCOMMANDS*))) (WHILE (< (SETQ I (1+ I)) MAX-ID) (SETQ LOG-STRING (STRCAT LOG-STRING (CHR 1))))
   LOG-STRING
