@@ -5062,7 +5062,7 @@ ImportLayerSettings=No
     BUBBLEHOOKS
      (C:HCNM-CONFIG-GETVAR "BubbleHooks")
     BUBBLEMULTILINE
-     "m-" ; or "m-"
+     "" ; or "m-"
     BLOCKNAME
      (STRCAT
        "cnm-bubble-"
@@ -5520,17 +5520,30 @@ ImportLayerSettings=No
   (SETQ BLOCK_DATA (LIST ENAME_BLOCK_OLD ATTRIBUTE_LIST))
 )
 (DEFUN
-   HCNM_LDRBLK_ADJUST_FORMATS (ATTRIBUTE_LIST / TXT1 TXT2 GAP)
+   HCNM_LDRBLK_ADJUST_FORMATS (ATTRIBUTE_LIST / BUBBLEMULTILINE TXT1
+                               TXT2 GAP OVERLINE UNDERLINE
+                              )
   (SETQ
+    BUBBLEMULTILINE ""
+    UNDERLINE
+     (COND
+       ((= BUBBLEMULTILINE "") "%%u")
+       (T "\\L")
+     )
+    OVERLINE
+     (COND
+       ((= BUBBLEMULTILINE "") "%%o")
+       (T "\\O")
+     )
     TXT1
      (HCNM_LDRBLK_ADJUST_FORMAT
        (CADR (ASSOC "NOTETXT1" ATTRIBUTE_LIST))
-       "\\L"
+       UNDERLINE
      )
     TXT2
      (HCNM_LDRBLK_ADJUST_FORMAT
        (CADR (ASSOC "NOTETXT2" ATTRIBUTE_LIST))
-       "\\O"
+       OVERLINE
      )
     GAP
      (COND
