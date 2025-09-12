@@ -1,3 +1,3 @@
 (defun c:haws-funky ()
-(haws-core-init 42) (command "menuunload" "funky" "menuload" "funky.mnu"))
+(haws-core-init 42) (vl-cmdf "menuunload" "funky" "menuload" "funky.mnu"))
 

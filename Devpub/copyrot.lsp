@@ -14,7 +14,7 @@
   )
   (COND
     (ANG-REF
-     (COMMAND "._undo" "_g")
+     (vl-cmdf "._undo" "_g")
      (WHILE
        (COND
          (DRAG-MODE-P
@@ -28,11 +28,11 @@
          EN-I (ENTLAST)
          SS2  (SSADD)
        )
-       (COMMAND "._copy" SS1 "" "0,0" "0,0")
+       (vl-cmdf "._copy" SS1 "" "0,0" "0,0")
        (WHILE (SETQ EN-I (ENTNEXT EN-I))
          (SETQ SS2 (SSADD EN-I SS2))
        )
-       (COMMAND
+       (vl-cmdf
          "._rotate"
          SS2
          ""
@@ -45,7 +45,7 @@
      )
     )
   )
-  (COMMAND "._undo" "_e")
+  (vl-cmdf "._undo" "_e")
   (PRINC)
 )
  ;|«Visual LISP© Format Options»

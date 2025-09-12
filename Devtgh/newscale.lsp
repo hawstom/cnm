@@ -2,8 +2,7 @@
 ;GIVE A SELECTION SET OF ENTITIES A NEW SCALE ABOUT A USER SPECIFIED ENTITY POINT.
 (defun c:haws-newscale ( / dxfpt dxfsc sset sslen svalue ent xfactr ins ed)
   (haws-core-init 268)
-  (setvar "cmdecho" 0)
-  (command "._undo" "_group")
+  (vl-cmdf "._undo" "_group")
   (textpage)
   (prompt
     (strcat   "\n\n\nEvery Autocad entity has key points and each point has a code."
@@ -42,10 +41,10 @@
           ins (cdr (assoc dxfpt ed))
           sfactr (/ svalue (cdr (assoc dxfsc ed)))
     )
-    (command "._scale" ent "" ins sfactr)
+    (vl-cmdf "._scale" ent "" ins sfactr)
   )
   (prompt "done.")
-  (command "._undo" "_end")
+  (vl-cmdf "._undo" "_end")
   (haws-core-restore)
   (princ)
 )

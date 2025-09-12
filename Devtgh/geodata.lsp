@@ -122,7 +122,7 @@
   ) ;_ end of setq
   (COND
     ((>= (ATOF (GETVAR "acadver")) 14)
-     (COMMAND
+     (vl-cmdf
        "._leader"
        PT1
        PTXT
@@ -134,7 +134,7 @@
      ) ;_ end of command
     )
     (T
-     (COMMAND
+     (vl-cmdf
        "dim"
        "leader"
        PT1
@@ -266,7 +266,7 @@ The latest version of GEODATA is always available at www.hawsedc.com"
        ((= ETYPE "LINE") (CRVS-linedata EL)) ; For lines...
        ((= ETYPE "CIRCLE") (CRVS-CIRDATA EL)) ; For circles...
        ((= ETYPE "VERTEX") (CRVS-pldata ES)) ; For plines...
-       (T (COMMAND "._AREA" "_E" PICKPT))  ; Default, invoke AREA command.
+       (T (vl-cmdf "._AREA" "_E" PICKPT))  ; Default, invoke AREA command.
      ) ;_ end of cond
   ) ;_ end of SETQ
   (COND

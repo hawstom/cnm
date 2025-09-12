@@ -8,7 +8,7 @@
     (  (zerop (atof off))
        (princ "\nValue must be non-zero."))
     (t (setvar "cmdecho" 0)
-       (command ".undo" "g")
+       (vl-cmdf ".undo" "g")
        (setq off (atof off))
        (repeat (setq i (sslength ss))
           (setq e (ssname ss (setq i (1- i)))   ; 3
@@ -32,6 +32,6 @@
                       (car s)
                       (rtos (* off (atof (cadr s))) 2 dec) ; 4
                       (caddr s))))))))             ; 7
-       (command ".undo" "e")))                  ; 3
+       (vl-cmdf ".undo" "e")))                  ; 3
   (princ)
 )

@@ -23,7 +23,7 @@
         (entmod entlst)
         (if (not mtclr)(setq mtclr "BYLAYER"))
         (if (not mtlyr)(setq mtlyr "BYLAYER"))
-        (command "._change" ent "" "_p" "_la" mtlyr "_c" mtclr "")
+        (vl-cmdf "._change" ent "" "_p" "_la" mtlyr "_c" mtclr "")
       )
       (prompt "done.")
     )

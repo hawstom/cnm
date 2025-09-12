@@ -18,7 +18,7 @@
       ("ucsfollow" 0)
      )
   )
-  (command "._ucs" "_w")
+  (vl-cmdf "._ucs" "_w")
   (setq
     lline
      (nentsel "\nSelect line to label: ")
@@ -66,7 +66,7 @@
      (HAWS-MKTEXT "tc" pt4 nil rot ldist)
     )
     ((= (strcase ltop) "L")
-     (command "._ucs" "_p")
+     (vl-cmdf "._ucs" "_p")
      (setq
          ucsp nil
          ptxt (getpoint (trans pt1 0 1) "\nPick text location: ")
@@ -75,10 +75,10 @@
 )
      (cond
        ((>= (atof (getvar "acadver")) 14)
-	(command "._leader" (trans pt1 0 1) ptxt "" lbear ldist "")
+	(vl-cmdf "._leader" (trans pt1 0 1) ptxt "" lbear ldist "")
        )
        (T
-	(command "._dim" "_leader" (trans pt1 0 1) ptxt "" lbear "_exit")
+	(vl-cmdf "._dim" "_leader" (trans pt1 0 1) ptxt "" lbear "_exit")
 	(setq
 	  ptxt
 	   (polar
@@ -110,10 +110,10 @@
     )
     (T
      (HAWS-MKTEXT "c" pt3 nil rot ltop)
-     (command "._dtext" "_j" "_tc" pt4 txht (angtos rot))
+     (vl-cmdf "._dtext" "_j" "_tc" pt4 txht (angtos rot))
     )
   )
-  (IF UCSP (command "._ucs" "p"))
+  (IF UCSP (vl-cmdf "._ucs" "p"))
   (setq ucsp nil)
   (HAWS-VRSTOR)
   (haws-core-restore)

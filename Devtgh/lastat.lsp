@@ -23,15 +23,15 @@
       )
     (PROGN
       (PROMPT "\nPick layers to freeze in current viewport:")
-      (COMMAND "._mspace" "._vplayer")
+      (vl-cmdf "._mspace" "._vplayer")
       (HAWS-LALOOP T)
-      (COMMAND "" "")
+      (vl-cmdf "" "")
     )
     (PROGN
       (PROMPT (STRCAT "\nPick layers for " LOPERA ":"))
-      (COMMAND "._layer")
+      (vl-cmdf "._layer")
       (HAWS-LALOOP NIL)
-      (COMMAND "")
+      (vl-cmdf "")
     )
   )
   (HAWS-VRSTOR)
@@ -49,9 +49,9 @@
     (LASSET
      (WHILE (SETQ EN (SSNAME LASSET I))
        (SETQ LA (CDR (ASSOC 8 (ENTGET EN))))
-       (COMMAND (STRCAT "_" LOPERA) LA)
+       (vl-cmdf (STRCAT "_" LOPERA) LA)
        (IF VP
-	 (COMMAND "")
+	 (vl-cmdf "")
        )
        (SETQ I (1+ I))
        (IF (NOT (MEMBER LA LALIST))
@@ -97,15 +97,15 @@
       )
     (PROGN
       (PROMPT "\nPick layers to freeze in current viewport:")
-      (COMMAND "._mspace" "._vplayer")
+      (vl-cmdf "._mspace" "._vplayer")
       (HAWS-LSPICK LOPERA T)
-      (COMMAND "")
+      (vl-cmdf "")
     )
     (PROGN
       (PROMPT (STRCAT "\nPick layers for " LOPERA ":"))
-      (COMMAND "._layer")
+      (vl-cmdf "._layer")
       (HAWS-LSPICK LOPERA NIL)
-      (COMMAND "")
+      (vl-cmdf "")
     )
   )
   (HAWS-VRSTOR)
@@ -130,9 +130,9 @@
        )
        (REDRAW EN 3)
        (SETQ LALIST (CONS LA LALIST))
-       (COMMAND (STRCAT "_" LOPERA) LA)
+       (vl-cmdf (STRCAT "_" LOPERA) LA)
        (IF VP
-	 (COMMAND "")
+	 (vl-cmdf "")
        )
        (SETQ
 	 LOPERAKEY
@@ -178,24 +178,24 @@
     (T
      (COND
        ((= (CADR (ASSOC LKEY *HAWS-LASTATLIST*)) 1)
-	(COMMAND "._vplayer")
+	(vl-cmdf "._vplayer")
 	(FOREACH
 	   LA (CDDR (ASSOC LKEY *HAWS-LASTATLIST*))
-	  (COMMAND (STRCAT "_" LOPERA) LA "")
+	  (vl-cmdf (STRCAT "_" LOPERA) LA "")
 	)
 	(PRINC
 	  "\nThe last layer set frozen was viewport specific.\nPlease be sure to have the appropriate viewport current."
 	)
        )
        (T
-	(COMMAND "._layer")
+	(vl-cmdf "._layer")
 	(FOREACH
 	   LA (CDR (ASSOC LKEY *HAWS-LASTATLIST*))
-	  (COMMAND (STRCAT "_" LOPERA) LA)
+	  (vl-cmdf (STRCAT "_" LOPERA) LA)
 	)
        )
      )
-     (COMMAND "")
+     (vl-cmdf "")
     )
   )
   (PRINC)

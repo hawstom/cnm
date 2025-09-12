@@ -1,26 +1,33 @@
 <?php
 // Getting data.
-$ip_address = $_SERVER['REMOTE_ADDR'];
+
+if(
+    $_POST['computer_name'] === null 
+    || $_POST['cnm_version'] === null 
+    || $_POST['command_log'] === null
+  ) {
+    die('Expected parameters not provided.');
+}
 
 $sql = "INSERT INTO `log_event`
   (
   `le_ip_address`,
   `le_computer_name`,
-  `le_bios_date`,
+  `le_loginname`,
   `le_cnm_version`
   )
  VALUES
   (
   :ip_address,
   :computer_name,
-  :bios_date,
+  :loginname,
   :cnm_version
 )";
 
 $data= [
-  'ip_address' => $ip_address,
+  'ip_address' => $_SERVER['REMOTE_ADDR'],
   'computer_name' => $_POST['computer_name'],
-  'bios_date' => $_POST['bios_date'],
+  'loginname' => $_POST['loginname'],
   'cnm_version' => $_POST['cnm_version']
 ];
 

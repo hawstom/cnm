@@ -43,7 +43,7 @@
   (COND
     ((SETQ PIPSLD (FINDFILE "pipetabl.sld"))
      (SETVAR "filedia" 0)
-     (COMMAND "._vslide" PIPSLD)
+     (vl-cmdf "._vslide" PIPSLD)
     )
   ) ;_ end of cond
   (SETQ
@@ -53,25 +53,25 @@
        ) ;_ end of *
   ) ;_ end of setq
   (REDRAW)
-  (COMMAND "._line" P1 P2 "")
+  (vl-cmdf "._line" P1 P2 "")
   (SETQ
     P3 (POLAR P1 (/ PI 2) D1)
     P4 (POLAR P2 (/ PI 2) D1)
   ) ;_ end of SETQ
-  (COMMAND "._line" P3 P4 "")
+  (vl-cmdf "._line" P3 P4 "")
   (SETQ
     P3 (POLAR P1 (/ PI -2) D2)
     P4 (POLAR P2 (/ PI -2) D2)
   ) ;_ end of SETQ
   (COND
     ((/= 0 D2)
-     (COMMAND "._line" P3 P4 "")
+     (vl-cmdf "._line" P3 P4 "")
      (SETQ D1 (+ D1 D2))
      (SETQ
        P3 (POLAR P1 (/ PI 2) D1)
        P4 (POLAR P2 (/ PI 2) D1)
      ) ;_ end of SETQ
-     (COMMAND "._line" P3 P4 "")
+     (vl-cmdf "._line" P3 P4 "")
     )
   ) ;_ end of COND
   (haws-core-restore)
@@ -129,13 +129,13 @@
       (CONS 42 (* 2 PI))
     ) ;_ end of list
   ) ;_ end of entmake
-  (COMMAND "._ellipse" PT1 PT2 VRAD)
+  (vl-cmdf "._ellipse" PT1 PT2 VRAD)
   (SETQ ELLIP1 (ENTLAST))
-  (COMMAND "._line" PT1 PT3 "")
+  (vl-cmdf "._line" PT1 PT3 "")
   (SETQ LINE1 (ENTLAST))
-  (COMMAND "._line" PT2 PT4 "")
+  (vl-cmdf "._line" PT2 PT4 "")
   (SETQ LINE2 (ENTLAST))
-  (COMMAND
+  (vl-cmdf
     "._trim"
     LINE1
     LINE2
@@ -146,7 +146,7 @@
   (IF (/= "ELLIPSE" (CDR (ASSOC 0 (ENTGET ELLIP1))))
     (SETQ ELLIP1 (ENTLAST))
   ) ;_ end of IF
-  (COMMAND
+  (vl-cmdf
     "._extend"
     BOTPIP
     ""
@@ -156,14 +156,14 @@
   ) ;_ end of command
   (SETQ PT3 (TRANS (CDR (ASSOC 11 (ENTGET LINE1))) LINE1 1))
   (SETQ PT4 (TRANS (CDR (ASSOC 11 (ENTGET LINE2))) LINE2 1))
-  (COMMAND "._line" PT3 PT4 "")
+  (vl-cmdf "._line" PT3 PT4 "")
   (SETQ LINE3 (ENTLAST))
-  (COMMAND
+  (vl-cmdf
     "._hatch" "ansi31" "5" "0" ELLIP1 LINE1 LINE2 LINE3 ""
    ) ;_ end of COMMAND
  ;_ end of COMMAND
  ;_ end of command
-  (COMMAND "._erase" ELLIP1 LINE3 "")
+  (vl-cmdf "._erase" ELLIP1 LINE3 "")
   (REDRAW)
   (HAWS-VRSTOR)
   (haws-core-restore)
@@ -226,7 +226,7 @@
   ) ;_ end of SETQ
   (COND
     ((= CBVIEW "L")
-     (COMMAND
+     (vl-cmdf
        "._pline"
        PT4
        "w"
@@ -239,7 +239,7 @@
      ) ;_ end of command
     )
     ((= CBVIEW "C")
-     (COMMAND
+     (vl-cmdf
        "._pline"
        PT4
        "w"
@@ -253,7 +253,7 @@
      (SETQ WIDTH (* WIDTH 2))
     )
     ((= CBVIEW "R")
-     (COMMAND
+     (vl-cmdf
        "._pline"
        PT5
        "w"
@@ -283,7 +283,7 @@
      (SETQ LINE1 (ENTLAST))
      (HAWS-MKLINE PT2 PT4)
      (SETQ LINE2 (ENTLAST))
-     (COMMAND
+     (vl-cmdf
        "._trim"
        LINE1
        LINE2
@@ -341,7 +341,7 @@
     TOPPT
      (POLAR TOPPT 1.5708 40)
   ) ;_ end of SETQ
-  (COMMAND "._pline" PT1 "_w" 0 "" PT2 PT3 PT4 "_close")
+  (vl-cmdf "._pline" PT1 "_w" 0 "" PT2 PT3 PT4 "_close")
   (SETQ MH (ENTLAST))
   (COND
     (BRKPT
@@ -355,7 +355,7 @@
      (SETQ LINE1 (ENTLAST))
      (HAWS-MKLINE PT2 PT4)
      (SETQ LINE2 (ENTLAST))
-     (COMMAND
+     (vl-cmdf
        "._trim"
        LINE1
        LINE2
@@ -372,7 +372,7 @@
    c:haws-PRED
          ()
 (haws-core-init 279)
-  (command "_ai_editcustfile" (STRCAT (HAWS-GETDNPATH) ".pro"))
+  (vl-cmdf "_ai_editcustfile" (STRCAT (HAWS-GETDNPATH) ".pro"))
 ) ;_ end of defun
 
 (DEFUN
@@ -399,7 +399,7 @@
   (COND
     ((SETQ PIPSLD (FINDFILE "pipetabl.sld"))
      (SETVAR "filedia" 0)
-     (COMMAND "._vslide" PIPSLD)
+     (vl-cmdf "._vslide" PIPSLD)
     )
   ) ;_ end of cond
   (SETQ
@@ -537,10 +537,10 @@
   ) ;_ end of IF
   (COND
     ((>= (ATOF (GETVAR "acadver")) 14)
-     (COMMAND "._leader" P1 P2 "" STR "")
+     (vl-cmdf "._leader" P1 P2 "" STR "")
     )
     (T
-     (COMMAND "._pline" P1 "_w" 0 (/ AS 3) P3 "_w" 0 0 P2 P4 "")
+     (vl-cmdf "._pline" P1 "_w" 0 (/ AS 3) P3 "_w" 0 0 P2 P4 "")
      (HAWS-MKTEXT
        (IF LEFT
          "r"
@@ -562,17 +562,17 @@
 (haws-core-init 282)
   (SETQ EXPOLD (GETVAR "expert"))
   (SETVAR "expert" 0)
-  (COMMAND "._undo" "_m" "._layer" "_off" "*" "" "")
+  (vl-cmdf "._undo" "_m" "._layer" "_off" "*" "" "")
   (HAWS-MKLAYR "PROSTRT")
   (SETQ
     prolayWC (STRCAT (CAR(HAWS-GETLAYR "PROPRE")) "*")
     SS1          (SSGET "X" (LIST (CONS 8 prolayWC)))
     PROINPUTFILE (OPEN (STRCAT (HAWS-GETDNPATH) ".pro") "r")
   ) ;_ end of SETQ
-  (IF SS1 (COMMAND "._erase" SS1 ""))
-  (COMMAND "._layer" "_u" prolayWC "")
+  (IF SS1 (vl-cmdf "._erase" SS1 ""))
+  (vl-cmdf "._layer" "_u" prolayWC "")
   (c:HAWS-PRO)
-  (COMMAND "._layer" "_on" "*" "")
+  (vl-cmdf "._layer" "_on" "*" "")
   (SETVAR "expert" EXPOLD)
   (PROMPT "\nType Undo Back to undo entire profile.")
   (PRINC)
@@ -605,7 +605,7 @@
   (IF (FINDFILE
         (SETQ TEMPFILE (STRCAT "pro" (SUBSTR (GETVAR "loginname") 1 5) ".tmp"))
       ) ;_ end of findfile
-    (COMMAND "_del" TEMPFILE)
+    (vl-cmdf "_del" TEMPFILE)
   ) ;_ end of IF
   (WHILE (SETQ FNAME (NTH (SETQ I (1+ I)) FLIST))
     (SETQ F1 (OPEN FNAME "r"))
@@ -673,8 +673,8 @@
       F1 (CLOSE F1)
       F2 (CLOSE F2)
     ) ;_ end of SETQ
-    (COMMAND "_sh" (STRCAT "copy " TEMPFILE " " FNAME))
-    (COMMAND "_sh" (STRCAT "del " TEMPFILE))
+    (vl-cmdf "_sh" (STRCAT "copy " TEMPFILE " " FNAME))
+    (vl-cmdf "_sh" (STRCAT "del " TEMPFILE))
     (PRINC)
   ) ;_ end of WHILE
 ) ;_ end of DEFUN
@@ -923,7 +923,7 @@
           (COND
             ((SETQ PIPSLD (FINDFILE "pipetabl.sld"))
              (SETVAR "filedia" 0)
-             (COMMAND "._vslide" PIPSLD)
+             (vl-cmdf "._vslide" PIPSLD)
             )
           ) ;_ end of cond
           (SETQ
@@ -1906,13 +1906,13 @@
             (>= PROHT 0)
             (WCMATCH (STRCASE LBLTXT) "*GC*,*G`.C`.*,*DE CHANGE*")
           ) ;_ end of and
-          (COMMAND "._pline" LBLPT3 DIAPT2 DIAPT1 DIAPT3 "_c")
+          (vl-cmdf "._pline" LBLPT3 DIAPT2 DIAPT1 DIAPT3 "_c")
          )
          ((AND
             (>= PROHT 0)
             (WCMATCH (STRCASE LBLTXT) "*GB*,*G`.C`.*,*DE BREAK*")
           ) ;_ end of and
-          (COMMAND "._solid" DIAPT1 DIAPT2 DIAPT3 LBLPT3 "")
+          (vl-cmdf "._solid" DIAPT1 DIAPT2 DIAPT3 LBLPT3 "")
          )
        ) ;_ end of COND
        ;;Plot manhole
@@ -2132,7 +2132,7 @@
     (COND
       ((/= -20000 PROHT) (HAWS-MKLINE PLTPT1A PLTPT1))
       ((= PROHT -20000)
-       (COMMAND
+       (vl-cmdf
          "._dim1"
          "_al"
          PLTPT1A
@@ -2350,14 +2350,14 @@
   (IF (= 0
          (CDR (ASSOC 40 (TBLSEARCH "STYLE" (GETVAR "textstyle"))))
       ) ;_ end of =
-    (COMMAND
+    (vl-cmdf
       "._text"
       (LIST 0.0 0.0 0.0)
       TS
       (ANGTOS (/ PI 2))
       "TEST"
     ) ;_ end of command
-    (COMMAND
+    (vl-cmdf
       "._text"
       (LIST 0.0 0.0 0.0)
       (ANGTOS (/ PI 2))
@@ -2379,7 +2379,7 @@
     ;;if it is a profile point
     (IF (AND STA (/= STA "Setup"))
       (PROGN
-        (COMMAND "._undo" "_g")
+        (vl-cmdf "._undo" "_g")
         ;;save the last point
         (SETQ PLTPT1A (COND (PLTPT1)))  ;
                                         ;and top of curb
@@ -2402,7 +2402,7 @@
         ) ;_ end of IF
         ;;Add point label
         (HAWS-PLTSOFTPRO)
-        (COMMAND "._undo" "_e")
+        (vl-cmdf "._undo" "_e")
         ;;If requested, write all
         ;;the point information
         ;;to a file (f2).
@@ -2612,7 +2612,7 @@
      ) ;_ end of POLAR
   ) ;_ end of SETQ
   (SETVAR "osmode" 0)
-  (COMMAND "._line" PT1 PT3 "")
+  (vl-cmdf "._line" PT1 PT3 "")
   (HAWS-MKTEXT
     (IF LEFT
       "BR"
@@ -2807,17 +2807,17 @@
               (BLNAME BLLAY / PT1 PT2)
   (HAWS-MKLAYR BLLAY)
   (SETQ PT1 (GETPOINT "\nFirst point: "))
-  (COMMAND "._pline" PT1)
+  (vl-cmdf "._pline" PT1)
   (WHILE (SETQ PT2 (GETPOINT PT1 "Next point: "))
-    (COMMAND PT2)
+    (vl-cmdf PT2)
     (SETQ PT1 PT2)
   ) ;_ end of while
-  (COMMAND "")
-  (COMMAND
+  (vl-cmdf "")
+  (vl-cmdf
     "._insert"
     BLNAME
-    PT1
+    "_Scale"
     (* (HAWS-DWGSCALE) (GETVAR "dimtxt"))
-    ""
+    PT1
   ) ;_ end of command
 ) ;_ end of DEFUN

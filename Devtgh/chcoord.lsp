@@ -2,8 +2,7 @@
 ;CHANGE A COORDINATE OF AN ENTITY TO A SPECIFIED VALUE.
 (defun c:haws-chcoord ( / dxfpt el en newpt newval n oldpt sset sslen xyz)
   (haws-core-init 170)
-  (setvar "cmdecho" 0)
-  (command "._undo" "_group")
+  (vl-cmdf "._undo" "_group")
   (textpage)
   (prompt
     (strcat   "\n\n\nEvery Autocad entity has key points and each point has a code."
@@ -45,7 +44,7 @@
     )
     (entmod el)
   )
-  (command "._undo" "_end")
+  (vl-cmdf "._undo" "_end")
   (haws-core-restore)
   (princ)
 )

@@ -225,7 +225,7 @@
 
 (DEFUN
    HAWS-XLIST-SHOW-LAYERS (LAYERLISTSTRING)
-  (COMMAND
+  (vl-cmdf
     "._LAYER"
     "_FILTER"
     "_DELETE"

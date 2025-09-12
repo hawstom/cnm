@@ -6,7 +6,7 @@
   (HAWS-VSAVE '("ucsfollow" "clayer"))
   (setvar "ucsfollow" 0)
   (if(not (tblsearch "LTYPE" "utilpl"))
-    (command "._linetype" "_l" "*" "ut" "")
+    (vl-cmdf "._linetype" "_l" "*" "ut" "")
   )
   (initget 1 "Exist Prop")(setq wexist (=(getkword "\nExist/Prop:")"Exist"))
   (if (not r) (setq r 0.33333))
@@ -17,9 +17,9 @@
   (setq wlaypl (car(HAWS-MKLAYR (if wexist "WALLXPL" "WALLPL"))))
   (setq wlayer (car(HAWS-MKLAYR (if wexist "WALLXEDGE" "WALLEDGE"))))
   (setq pt1 (getpoint "\nStart point:") pt2 pt1 pt3 nil pt4 nil)
-  (command "._pline" pt1 "_w" 0)
+  (vl-cmdf "._pline" pt1 "_w" 0)
   (initget "Line Undo Arc CEnter Angle Direction Line Radius Second DRag")
-  (command "")
+  (vl-cmdf "")
   (while (setq pt3
       (getpoint pt2
     "\nSpecify endpoint or [Line/Undo/Arc/CEnter/Angle/Direction/Line/Radius/Second/DRag]:"))
@@ -27,27 +27,27 @@
     (if (= pt3 "DRag")
       (progn
         (prompt "\nSelect point: ")
-        (command pause)
+        (vl-cmdf pause)
       )
-      (command pt3)
+      (vl-cmdf pt3)
     )
     (initget "Line Undo Arc CEnter Angle Direction Line Radius Second DRag")
     (if (= (type pt3) 'LIST)(setq pt2 pt3))
   )
-  (command "")
+  (vl-cmdf "")
   (setq wallpl (entlast))
   (cond
-    ((= r 0)(command "._change" wallpl "" "_p" "_la" wlayer ""))
+    ((= r 0)(vl-cmdf "._change" wallpl "" "_p" "_la" wlayer ""))
     ( T
-      (command "._line" pt1 pt4 "")
+      (vl-cmdf "._line" pt1 pt4 "")
       (setq e1 (entlast))
-      (command "._ucs" "_e" e1 "._erase" e1 ""
+      (vl-cmdf "._ucs" "_e" e1 "._erase" e1 ""
       "offset" r (list wallpl '(0 0)) (list 0 (* 3 r) 0) "")
       (setq e1 (entlast))
-      (command "._change" e1 "" "_p" "_la" wlayer ""
+      (vl-cmdf "._change" e1 "" "_p" "_la" wlayer ""
       "offset" r (list wallpl '(0 0)) (list 0 (* -3 r) 0) "")
       (setq e1 (entlast))
-      (command "._change" e1 "" "_p" "_la" wlayer "" "._pedit" wallpl "_w" (* 2 r) ""
+      (vl-cmdf "._change" e1 "" "_p" "_la" wlayer "" "._pedit" wallpl "_w" (* 2 r) ""
       "._change" wallpl "" "_p" "_la" wlaypl ""  "._ucs" "_p")
   ) )
   ;The remaining lines change the pline ltype gen method.

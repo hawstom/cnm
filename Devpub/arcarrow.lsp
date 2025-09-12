@@ -14,5 +14,5 @@
     as (* (getvar "dimasz")(HAWS-DWGSCALE))
     ep (polar sp arrang as)
   )
-  (command "pline" sp "w" "0.0" (/ as 3.0) ep "w" "0.0" "0.0" "arc")
+  (vl-cmdf "pline" sp "w" "0.0" (/ as 3.0) ep "w" "0.0" "0.0" "arc")
 )

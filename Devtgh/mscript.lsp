@@ -76,7 +76,7 @@
        "users4"
        "Multiple Script Processor runs a script repeatedly on multiple drawings for automation, uniformity, and speed.  It is wise to check the script on a single drawing first and to back up all drawings before processing."
      )
-     (COMMAND "-vbarun" "fselect.dvb!modFileSelect.FileSelect")
+     (vl-cmdf "-vbarun" "fselect.dvb!modFileSelect.FileSelect")
      (SETQ
        F1 (SETQ MSNAMELIST (GETVAR "users1"))
        *HAWS-MSCRIPTLISTFILE* MSNAMELIST
@@ -181,7 +181,7 @@
                "\nFiles to process using OS wildcards (eg. * or grad\\*): "
              )
           )
-          (COMMAND
+          (vl-cmdf
             "run"
             (STRCAT "attrib \"" FLSPEC ".dwg\" > " LSTFIL)
           )
@@ -341,7 +341,7 @@
   (CLOSE F2)
   (CLOSE F1)
   (IF DEL
-    (COMMAND "sh" (STRCAT "del \"" MSNAMELIST "\""))
+    (vl-cmdf "sh" (STRCAT "del \"" MSNAMELIST "\""))
   ) ;_ end of if
   (IF (AND
         (<= 15.0 (ATOF (GETVAR "acadver")))
@@ -364,7 +364,7 @@
          )
          "Yes"
       )
-    (COMMAND "._script" MSNAMESHORT)
+    (vl-cmdf "._script" MSNAMESHORT)
     (PROMPT
       (STRCAT
         "Done.  Run script file '"

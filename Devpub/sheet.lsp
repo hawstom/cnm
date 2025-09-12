@@ -22,17 +22,17 @@
   (defun HAWS-shtucs ()
     (prompt "\nCreating UCS PLAN based on plan view block for this drawing")
     (setvar "tilemode" 1)
-    (command "._ucs" "w")
+    (vl-cmdf "._ucs" "w")
     (setq ucsp T)
     (cond
       ;Look for plan view block for this drawing.
       ( (setq plnblk (caar(HAWS-attfind "*" (list(list"SHTNO" shtnm))'("SHTNO") T)))
-        (command "ucs" "d" "plan" "ucs" "e" plnblk "ucs" "s" "plan" "ucs" "p")
+        (vl-cmdf "ucs" "d" "plan" "ucs" "e" plnblk "ucs" "s" "plan" "ucs" "p")
         (initget "Yes No")
         (cond
           ( (= "Yes" (getkword "\nErase other plan view insertions \"SHT*\"? [Yes/No]: "))
             (setq ssblk (ssget "X" '((2 . "SHT*"))))
-            (command "._erase" ssblk "r" plnblk "" "ucs" "w")
+            (vl-cmdf "._erase" ssblk "r" plnblk "" "ucs" "w")
           )
         )
       )
@@ -40,7 +40,7 @@
       ( T (prompt "\nNo plan view block for this drawing found."))
     )
     (setq ucsp nil)
-    (command "ucs" "p" "tilemode" 0 "pspace")
+    (vl-cmdf "ucs" "p" "tilemode" 0 "pspace")
   )
   ;Create mview
   (defun HAWS-shtmv ()
@@ -55,14 +55,14 @@
         0.0
       )
     )
-    (command "._mview" ptmvc1 ptmvc2)
+    (vl-cmdf "._mview" ptmvc1 ptmvc2)
     (prompt "\nMview created on defpoints layer.  Will not plot.  Leave thawed.")
-    (command "._mspace" "._ucs" "w")
+    (vl-cmdf "._mspace" "._ucs" "w")
     (setq ucsp T)
     (cond
       ;Look for plan view block for this drawing.
       ( (setq plnblk (caar(HAWS-attfind "*" (list(list"SHTNO" shtnm))'("SHTNO") T)))
-        (command
+        (vl-cmdf
           "ucs" "d" "plan" "ucs" "e" plnblk "ucs" "s" "plan" "plan" ""
           "zoom" "c" "0,0" (strcat"1/"(rtos (HAWS-DWGSCALE) 2 0)"xp")
           "view""s""plan"
@@ -73,11 +73,11 @@
       ( T
         (initget 1 "Yes No")
         (if (= (getkword "\nZoom extents in model space? [Yes/No]: ") "Yes")
-          (command "._zoom" "e")
+          (vl-cmdf "._zoom" "e")
         )
         (setq ptmcen (getpoint "\nCenter of sheet: "))
         (setq shtang (getangle "\nSheet rotation: "))
-        (command
+        (vl-cmdf
           "ucs" "d" "plan" "ucs" "o" ptmcen "ucs" "z" shtang "ucs" "s" "plan" "plan" ""
           "zoom" "c" "0,0" (strcat"1/"(rtos (HAWS-DWGSCALE) 2 0)"xp")
           "view""s""plan"
@@ -95,17 +95,17 @@
         ( (not(setq basei(findfile (strcat basei ".dwg"))))
           (prompt"  Xref not found.")
         )
-        ( T (command "._xref" "a" basei "0,0" 1 1 0))
+        ( T (vl-cmdf "._xref" "a" basei "0,0" 1 1 0))
       )
     )
     (setq
       ssblk (ssget "X" '((2 . "SHT*")))
       ptins (trans(cdr(assoc 10 (entget plnblk))) plnblk 0)
     )
-    (command "._erase" ssblk "r" plnblk "" "ucs" "w")
+    (vl-cmdf "._erase" ssblk "r" plnblk "" "ucs" "w")
     (setvar "insbase" ptins)
     (setq ucsp nil)
-    (command "ucs" "p" "pspace")
+    (vl-cmdf "ucs" "p" "pspace")
   )
   ;Attach plan view in model space
   (defun HAWS-shtpnm ()
@@ -113,17 +113,17 @@
       (= 1 (sslength(ssget "X" '((0 . "VIEWPORT")))))
       (prompt "\nUse the Mview and bases option to make a viewport first.")
       (progn
-        (command "._mspace")
+        (vl-cmdf "._mspace")
         (setq
           xrname (strcat(substr dn 1 (- 9 (strlen shtnm)))"n"(substr shtnm 3))
           insscl 1.0
         )
         (if
           (findfile (strcat xrname ".dwg"))
-          (command "._xref" "d" xrname "._xref" "a" (findfile (strcat xrname ".dwg")) "0,0" insscl "" 0)
+          (vl-cmdf "._xref" "d" xrname "._xref" "a" (findfile (strcat xrname ".dwg")) "0,0" insscl "" 0)
           (prompt (strcat"\nXref "xrname" not found."))
         )
-        (command "._pspace")
+        (vl-cmdf "._pspace")
       )
     )
   )
@@ -135,7 +135,7 @@
     )
     (if
       (and ptpcen shtang (findfile (strcat xrname ".dwg")))
-      (command "._xref" "d" xrname "._xref" "a" (findfile (strcat xrname ".dwg")) ptpcen insscl "" (* shtang -1))
+      (vl-cmdf "._xref" "d" xrname "._xref" "a" (findfile (strcat xrname ".dwg")) ptpcen insscl "" (* shtang -1))
       (prompt (strcat"\nXref "xrname" not found or need to make mview first."))
     )
   )
@@ -153,7 +153,7 @@
         (setq xrpath (strcat (getstring 1 "\nDirectory path for profile xref: ") xrname))
       )
     )
-    (command "._xref" "d" xrname "._xref" "a" (findfile (strcat xrpath ".dwg")) "0,0" insscl "" 0)
+    (vl-cmdf "._xref" "d" xrname "._xref" "a" (findfile (strcat xrpath ".dwg")) "0,0" insscl "" 0)
   )
   ;Attach quantities
   (defun HAWS-shtpq ()
@@ -163,7 +163,7 @@
     )
     (if
       (findfile (strcat xrname ".dwg"))
-      (command "._xref" "d" xrname "._xref" "a" (findfile (strcat xrname ".dwg")) "0,0" insscl "" 0)
+      (vl-cmdf "._xref" "d" xrname "._xref" "a" (findfile (strcat xrname ".dwg")) "0,0" insscl "" 0)
       (prompt (strcat"\nXref "xrname" not found."))
     )
   )
@@ -173,7 +173,7 @@
       blname (getstring "\nBorder text block name: ")
       insscl 1
     )
-    (if (setq ss1(ssget "X" (list (cons 2 blname))))(command "._erase" ss1 ""))
+    (if (setq ss1(ssget "X" (list (cons 2 blname))))(vl-cmdf "._erase" ss1 ""))
     (cond
       ( (findfile (strcat blname ".dwg"))
         (setq
@@ -184,12 +184,12 @@
         )
         (setvar "attreq" 0)
         (setvar "regenmode" 0)
-        (command "._insert" (strcat blname "=") "0,0" insscl "" 0)
+        (vl-cmdf "._insert" (strcat blname "=") "_Scale" insscl "_Rotate" 0 "0,0")
         (if
           (HAWS-attfind "blname" (list(list"CONTENT" "XX"))'("CONTENT") T)
-          (command "._attedit" "n" "n" blname "content" "XX" "XX" cont)
+          (vl-cmdf "._attedit" "n" "n" blname "content" "XX" "XX" cont)
         )
-        (command
+        (vl-cmdf
           "._attedit" "n" "n" blname "content1" "XX" "XX" cont1
           "._attedit" "n" "n" blname "content2" "XX" "XX" cont2
           "._attedit" "n" "n" blname "filename" "XX" "XX" dn
@@ -201,7 +201,7 @@
     )
   )
   (haws-core-init 134)
-  (command "._undo" "g")
+  (vl-cmdf "._undo" "g")
   (HAWS-VSAVE '("aunits""clayer""ucsfollow""attdia" "regenmode"))
   (setvar "ucsfollow" 0)
   (setvar "aunits" 3)
@@ -213,7 +213,7 @@
     shtno (strcase(HAWS-GETSTRINGX "\nThis sheet no." nil (substr dn (+ shtpre 1 (strlen shttp)) 7)))
     shtnm (strcat shttp shtno)
   )
-  (setvar "tilemode" 0)(command "pspace")
+  (setvar "tilemode" 0)(vl-cmdf "pspace")
   (while
     (progn
       (initget "Ucs Mview MSPlan PSPlan PRofile Quantity Border")
@@ -229,6 +229,6 @@
       ( (= opt "Border")(HAWS-shtbt))
     )
   )
-  (command "._undo" "e")
+  (vl-cmdf "._undo" "e")
   (HAWS-VRSTOR)(haws-core-restore)(princ)
 )

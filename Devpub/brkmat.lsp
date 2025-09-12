@@ -10,9 +10,9 @@
       (setq EC (entsel "Entity to match: "))
       (if (/= ec nil)
         (progn
-          (command "break" ss "f" b1 b2)
+          (vl-cmdf "break" ss "f" b1 b2)
           (setq DL (cdr (assoc 8 (entget (car EC)))))
           (setq sl (getvar "clayer"))
-          (command "layer" "s" DL "" "line" b1 b2 "" "layer" "s" sl "")
+          (vl-cmdf "layer" "s" DL "" "line" b1 b2 "" "layer" "s" sl "")
 )))))
 ;end BRKMAT

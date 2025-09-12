@@ -1,8 +1,6 @@
 ;This script should be run in plain AutoCAD with cnm-bubble-m-develop open alone to strip as much Civil 3D stuff as possible.
 expert
 5
-sdi
-1
 filedia
 0
 cmddia
@@ -25,6 +23,4 @@ filedia
 1
 qsave
 expert
-0
-sdi
 0

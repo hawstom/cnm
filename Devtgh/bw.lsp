@@ -15,10 +15,10 @@
   )
   (cond
     ( (>= (atof(getvar "acadver"))14)
-      (command "._leader" pt2 pt1 "" " " "")
+      (vl-cmdf "._leader" pt2 pt1 "" " " "")
     )
     ( T
-      (command "._pline" pt2 "_w" 0 (/ as 3) pt4 "_w" 0 0 pt3 pt1 "")(command)
+      (vl-cmdf "._pline" pt2 "_w" 0 (/ as 3) pt4 "_w" 0 0 pt3 pt1 "")(vl-cmdf)
     )
   )
   (HAWS-VRSTOR)(haws-core-restore)

@@ -40,13 +40,13 @@
     SS (SSGET)
     I  0
   )
-  (COMMAND "._layer")
+  (vl-cmdf "._layer")
   (WHILE (SETQ EC (SSNAME SS I))
     (SETQ LC (CDR (ASSOC 8 (ENTGET EC))))
-    (COMMAND "_lt" CC LC)
+    (vl-cmdf "_lt" CC LC)
     (SETQ I (1+ I))
   )
-  (COMMAND "")
+  (vl-cmdf "")
   (PRINC "Linetype ")
   CC
 )
@@ -87,9 +87,9 @@
     )
   )
   (PROMPT (STRCAT "\nNested layers to change by picking: "))
-  (COMMAND "._layer")
+  (vl-cmdf "._layer")
   (HAWS-LTPICK)
-  (COMMAND "")
+  (vl-cmdf "")
   (PRINC "Linetype ")
   CC
 )
@@ -107,7 +107,7 @@
       (SETQ PARNTL (CDR PARNTL))
     )
     (REDRAW EN 3)  
-    (COMMAND "_lt" CC LA)
+    (vl-cmdf "_lt" CC LA)
   )
 )
 

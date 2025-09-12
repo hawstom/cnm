@@ -35,7 +35,7 @@
         )
         (setvar "osmode" 1)
         (while (setq tapptf (getpoint "\nSelect sewer tap end:"))
-          (command "._line" tapptf "_perp" (cadr emain) "")
+          (vl-cmdf "._line" tapptf "_perp" (cadr emain) "")
           (setq
             tapptn (trans(cdr (assoc 11 (entget (entlast)))) (entlast) 1)
             dmain (distance mh tapptn)  dtap (distance tapptn tapptf)

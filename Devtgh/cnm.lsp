@@ -83,7 +83,7 @@
   (COND
     ((NOT (TBLSEARCH "BLOCK" "NOTEQTY"))
      (setvar "attreq" 0)
-     (VL-CMDF "._insert" (STRCAT "NOTEQTY=NOTEQTY" J) "0,0" "1" "1" "0")
+     (VL-CMDF "._insert" (STRCAT "NOTEQTY=NOTEQTY" J) "_Scale" "1" "_Rotate" "0" "0,0")
      (setvar "attreq" 1)
      (entdel (entlast))
     )
@@ -249,7 +249,7 @@
 ;;;
 ;;;Set up list from CONSTNOT.TXT and NOTEQTY block.
 (DEFUN
-   HCNM_KEY_TABLE_SEARCHANDSAVE (DN PROJNOTES / ALIASLIST AT AV BLKI
+   HCNM_KEY_TABLE_SEARCHANDSAVE (DN PROJNOTES / ALIASLIST AT ATTRIBUTES AV BLKI
                                    BLKSS COUNT CTABONLY EL EN ET I J
                                    MVPORT MVSSET N NFNAME NOTEFND NOTEI
                                    NOTELINES NOTELIST NOTENUM NOTEPHASE
@@ -430,33 +430,24 @@
       NOTETXT
        '(0 1 2 3 4 5 6 7 8 9)
       NOTEPHASE ""
+      ATTRIBUTES (HCNM_GET_ATTRIBUTES EN NIL)
     )
-  (HAWS-MILEPOST
-    (STRCAT
-      "After CNM examined Dynamic Shape with LM:GETDYNPROPVALUE, NOTETYPE="
-      (vl-prin1-to-string NOTETYPE)
-    )
-  )   
     ;;Substitute the value of each NOTETXT attribute for its respective member of the pre-filled NOTETXT list.
-    (WHILE
-      (AND
-        (SETQ EN (ENTNEXT EN))
-        (= "ATTRIB" (SETQ ET (CDR (ASSOC 0 (SETQ EL (ENTGET EN))))))
-      )
-       (SETQ
-         AT (CDR (ASSOC 2 EL))
-         AV (CDR (ASSOC 1 EL))
+    (SETQ
+      NOTENUM
+       (CADR (ASSOC "NOTENUM" ATTRIBUTES))
+      NOTETXT
+       (MAPCAR
+         '(LAMBDA (I)
+            (CADR (ASSOC (STRCAT "NOTETXT" (ITOA I)) ATTRIBUTES))
+          )
+         '(0 1 2 3 4 5 6 7 8 9)
        )
-       (COND
-         ((= AT "NOTETYPE") (SETQ NOTETYPE AV))
-         ((= AT "NOTENUM") (SETQ NOTENUM AV))
-         ((WCMATCH AT "NOTETXT#")
-          (SETQ NOTETXT (SUBST AV (ATOI (SUBSTR AT 8 1)) NOTETXT))
-         )
-         ((= AT "NOTEPHASE") (SETQ NOTEPHASE AV))
-       )
+      NOTEPHASE
+       (CADR (ASSOC "NOTEPHASE" ATTRIBUTES))
+      NOTEI
+       (ASSOC NOTENUM (CDR (ASSOC NOTETYPE (CADR NOTELIST))))
     )
-    (SETQ NOTEI (ASSOC NOTENUM (CDR (ASSOC NOTETYPE (CADR NOTELIST)))))
     (COND
       ;;If there is such a note and phase, or no phasing is being used.
       ((AND
@@ -1127,7 +1118,7 @@
                 (/= 1 (LOGAND 1 (CDR (ASSOC 70 LAYERLIST))))
                 (< 0 (CDR (ASSOC 62 LAYERLIST)))
               )
-            (VL-CMDF-S "._layer" "_f" (CDR (ASSOC 2 LAYERLIST)) "")
+	            (VL-CMDF "._layer" "_f" (CDR (ASSOC 2 LAYERLIST)) "")
           )
          )
        )
@@ -1179,10 +1170,11 @@
   (VL-CMDF
     "._insert"
     (STRCAT "cnm" NOTTYP)
-    QTYPT
+    "_Scale"
     TXTHT
-    ""
+    "_Rotate"
     "0"
+    QTYPT
   )
 )
 
@@ -1193,9 +1185,10 @@
 ;;;       (VL-CMDF
 ;;;  "._insert" "NOTEQTY" "non"   
 ;;;  QTYPT
-;;;  TXTHT
-;;;  ""
-;;;  "0"
+;;;    "_Scale"
+;;;    TXTHT
+;;;    "_Rotate"
+;;;    "0"
 ;;; )
 ;;;      ;;Change attribute values
 ;;;     (SETQ EN (ENTLAST))
@@ -1233,10 +1226,11 @@
   (VL-CMDF
     "._insert"
     "NOTEQTY"
-    QTYPT
+    "_Scale"
     TXTHT
-    ""
+    "_Rotate"
     "0"
+    QTYPT
     (IF NOTE_FIRST_LINE_P
       NOTTYP
       ""
@@ -1446,7 +1440,7 @@
      )
      (COND
        ((= INPUT "List")
-        (SETQ SHEET_LIST_FILENAME (GETFILED "Select a List File" "" "LST" 0))
+        (SETQ SHEET_LIST_FILENAME (GETFILED "Select a List File" DN "LST" 0))
        )
        ((= INPUT "Wildcards")
         ;;Add function to user's ACAD.PGP to shell and wait for attrib command to finish.
@@ -1824,17 +1818,7 @@
   )
   (SETVAR "osmode" 0)
   ;;Write column headings to the file
-  (WHILE (NOT (SETQ F2 (OPEN (STRCAT DN ".csv") "w")))
-    (ALERT
-      (PRINC
-        (STRCAT
-          "Couldn't write to "
-          DN
-          ".csv.\nPlease close file, then click ok."
-        )
-      )
-    )
-  )
+  (SETQ F2 (HAWS-FILE-OPEN (STRCAT DN ".csv") "w"))
   (PRINC "TYPE,NO,ITEM,UNIT,PRICE," F2) ;; Price and cost
   (SETQ SHEET_HEADINGS "")
   (FOREACH
@@ -1996,10 +1980,11 @@
        (VL-CMDF
          "._insert"
          (STRCAT "cnm" NOTTYP)
-         (LIST X Y Z)
+         "_Scale"
          TXTHT
-         ""
+         "_Rotate"
          "0"
+         (LIST X Y Z)
        )
        ;;Make number text
        (HAWS-MKTEXT "M" (LIST X Y Z) TXTHT 0 NOTNUM)
@@ -2177,16 +2162,15 @@
 (DEFUN C:HCNM-CNMKTI ()
 (haws-core-init 181) (HCNM_CNM "Import")(haws-core-restore))
 (DEFUN C:HCNM-CNMQT ()
-(haws-core-init 336) (HCNM_CNM "Tally")(haws-core-restore))
+(haws-core-init 338) (HCNM_CNM "Tally")(haws-core-restore))
 ;;CNM main function
 (DEFUN
    HCNM_CNM (OPT / CFNAME DN LINSPC PHASEWID TBLWID TXTHT)
   ;;Main function
   (HAWS-VSAVE
-    '("attdia" "attreq" "cmdecho" "clayer" "osmode")
+    '("attdia" "attreq" "clayer" "osmode")
   )
   (SETVAR "attdia" 0)
-  (SETVAR "cmdecho" 0)
   (COND
     ((NOT OPT)
      (PROMPT
@@ -2455,6 +2439,7 @@
   )
   (PRINC
     (STRCAT
+      "\nUsing project settings from another folder as directed by CNMPROJ.TXT in this drawing's folder."
       "Using project settings from another folder located at "
       PROJROOT
       "\\CNM.INI as directed by CNMPROJ.TXT in this drawing's folder."
@@ -5096,13 +5081,14 @@ ImportLayerSettings=No
   (SETVAR "attreq" 0)
   (SETQ
     REPLACE_BLOCK_P (NOT NOTETYPE)
+    ENAME_BLOCK_OLD (HCNM_LDRBLK_GET_ENAME_BLOCK_OLD REPLACE_BLOCK_P)
     P1_DATA
-     (HCNM_LDRBLK_GET_P1_DATA REPLACE_BLOCK_P)
+     (HCNM_LDRBLK_GET_P1_DATA ENAME_BLOCK_OLD)
     NOTETYPE
      (COND
        (NOTETYPE)
        ((LM:GETDYNPROPVALUE
-          (VLAX-ENAME->VLA-OBJECT (CADR DATA_1))
+          (VLAX-ENAME->VLA-OBJECT (CADR P1_DATA))
           "Shape"
         )
        )
@@ -5121,11 +5107,16 @@ ImportLayerSettings=No
 )
 
 (DEFUN
-   HCNM_LDRBLK_GET_P1_DATA (REPLACE_BLOCK_P / ELIST_BLOCK_OLD ENAME_330 ENAME_BLOCK_OLD ENAME_LEADER_OLD P1_DATA P1_ENTRY)
+   HCNM_LDRBLK_GET_ENAME_BLOCK_OLD (REPLACE_BLOCK_P / ELIST_BLOCK_OLD ENAME_BLOCK_OLD)
   (COND
     (REPLACE_BLOCK_P
      ;; Prompt and check for old block.
-     (WHILE (OR (NOT (SETQ ENAME_BLOCK_OLD (CAR (ENTSEL "\nSelect bubble note: "))))
+     (WHILE (OR (NOT
+                  (SETQ
+                    ENAME_BLOCK_OLD
+                     (CAR (ENTSEL "\nSelect bubble note: "))
+                  )
+                )
                 (NOT (SETQ ELIST_BLOCK_OLD (ENTGET ENAME_BLOCK_OLD)))
                 (NOT
                   (AND
@@ -5142,6 +5133,18 @@ ImportLayerSettings=No
                 )
             )
        (PRINC "\nSelected entity is not a CNM bubble note.")
+     )
+     ENAME_BLOCK_OLD
+    )
+    (T NIL)
+  )
+)
+(DEFUN
+   HCNM_LDRBLK_GET_P1_DATA (ENAME_BLOCK_OLD / ELIST_BLOCK_OLD ENAME_330 ENAME_BLOCK_OLD ENAME_LEADER_OLD P1_DATA P1_ENTRY REPLACE_BLOCK_P)
+  (COND
+    (ENAME_BLOCK_OLD
+     (SETQ ELIST_BLOCK_OLD (ENTGET ENAME_BLOCK_OLD)
+       REPLACE_BLOCK_P T
      )
      ;; Get start point
      ;; Find associated leader.
@@ -5184,7 +5187,6 @@ ImportLayerSettings=No
   )
   (SETQ P1_DATA (LIST P1_ENTRY ENAME_BLOCK_OLD ENAME_LEADER_OLD REPLACE_BLOCK_P))
 )
-
 (DEFUN
    HCNM_LDRBLK_GET_P2_DATA
    (P1_DATA TH BLOCKNAME NOTETYPE / BLOCK_DATA ENAME_BLOCK P1_ENTRY P2 P2_DATA SS1 VLAOBJ)
@@ -5197,10 +5199,11 @@ ImportLayerSettings=No
     (VL-CMDF
       "._insert"
       (STRCAT BLOCKNAME "-" FLIPSTATE)
-      "s"
+      "_Scale"
       TH
-      P1_ENTRY
+      "_Rotate"
       (ANGTOS (GETVAR "snapang"))
+      P1_ENTRY
     )
     (SETQ
       ENAME_BLOCK
@@ -5222,7 +5225,7 @@ ImportLayerSettings=No
 
 (DEFUN
    HCNM_LDRBLK_DRAW (P1_DATA P2_DATA TH NOTETYPE BLOCKNAME / ANG1
-                     ASSOCIATE_P AUOLD BLOCK_DATA ELIST_LEADER_OLD
+                     ASSOCIATE_P ATTRIBUTES_OLD AUOLD BLOCK_DATA ELIST_LEADER_OLD
                      ENAME_BLOCK_NEW ENAME_BLOCK_OLD ENAME_LEADER
                      ENAME_LEADER_OLD ETYPE FLIPSTATE INPUT1 P1_ENTRY P2
                      REPLACE_BLOCK_P
@@ -5253,10 +5256,11 @@ ImportLayerSettings=No
      (VL-CMDF
        "._insert"
        (STRCAT BLOCKNAME "-" FLIPSTATE)
-       P2
+       "_Scale"
        TH
-       TH
+       "_Rotate"
        (GETVAR "snapang")
+       P2
      )
      (SETVAR "aunits" AUOLD)
      ;; If there is an old leader, stretch it and associate it.
@@ -5362,9 +5366,9 @@ ImportLayerSettings=No
      (SETVAR "aunits" 3)
      (VL-CMDF
        (STRCAT BLOCKNAME "-" FLIPSTATE)
+       "_Scale"
+       TH
        P2
-       TH
-       TH
        (GETVAR "snapang")
      )
      (SETVAR "aunits" AUOLD)
@@ -5373,10 +5377,16 @@ ImportLayerSettings=No
   (SETQ
     ENAME_BLOCK_NEW
      (ENTLAST)
+  )
+  (HCNM_LDRBLK_SET_DYNPROPS ENAME_BLOCK_NEW ENAME_BLOCK_OLD NOTETYPE REPLACE_BLOCK_P)
+  (SETQ
     BLOCK_DATA
      (HCNM_LDRBLK_GET_BLOCK_DATA P1_ENTRY ENAME_BLOCK_OLD)
+    ATTRIBUTES_OLD
+     (CADR BLOCK_DATA)
   )
-  (HCNM_LDRBLK_EDIT BLOCK_DATA ENAME_BLOCK_NEW)
+  (IF REPLACE_BLOCK_P (ENTDEL ENAME_BLOCK_OLD))
+  (HCNM_SET_ATTRIBUTES ENAME_BLOCK_NEW ATTRIBUTES_OLD)
   ;; Change leader arrowhead if needed.
   (WHILE (AND
            (= (C:HCNM-CONFIG-GETVAR "BubbleArrowIntegralPending") "1")
@@ -5408,16 +5418,11 @@ ImportLayerSettings=No
     )
   )
 )
-(DEFUN HCNM_LDRBLK_EDIT (BLOCK_DATA ENAME_BLOCK_NEW /  ATTRIBUTES_OLD DYN_PROPS_OLD DYN_PROPS_OLD_I ENAME_BLOCK_OLD NOTETYPE REPLACE_BLOCK_P VLAOBJ_BLOCK_NEW VLAOBJ_BLOCK_OLD)
+(DEFUN HCNM_LDRBLK_SET_DYNPROPS (ENAME_BLOCK_NEW ENAME_BLOCK_OLD NOTETYPE REPLACE_BLOCK_P /  DYN_PROPS_OLD DYN_PROPS_OLD_I REPLACE_BLOCK_P VLAOBJ_BLOCK_NEW VLAOBJ_BLOCK_OLD)
   (SETQ
     VLAOBJ_BLOCK_NEW
      (VLAX-ENAME->VLA-OBJECT ENAME_BLOCK_NEW)
-    ENAME_BLOCK_OLD
-     (CAR BLOCK_DATA)
-    ATTRIBUTES_OLD
-     (CADR BLOCK_DATA)
   )
-  (HCNM_SET_ATTRIBUTES ENAME_BLOCK_NEW ATTRIBUTES_OLD)
   (COND
     (ENAME_BLOCK_OLD
      (SETQ
@@ -5463,11 +5468,9 @@ ImportLayerSettings=No
          )
        )
      )
-     (IF REPLACE_BLOCK_P (ENTDEL ENAME_BLOCK_OLD))
     )
     (T (LM:SETDYNPROPVALUE VLAOBJ_BLOCK_NEW "Shape" NOTETYPE))
   )
-  ;;End insertion
 )
 
 (DEFUN
@@ -5476,17 +5479,18 @@ ImportLayerSettings=No
                               )
   (COND
     (ENAME_BLOCK_OLD
-     (SETQ ATTRIBUTE_LIST (HCNM_GET_ATTRIBUTES ENAME_BLOCK_OLD))
+     (SETQ ATTRIBUTE_LIST (HCNM_GET_ATTRIBUTES ENAME_BLOCK_OLD T))
     )
     (T
-     (INITGET 129 "Copy")
-     (SETQ NUM (GETKWORD "\nNote number or [Copy note] <Copy note>: "))
+     (INITGET 128 "Copy")
+     (SETQ NUM (GETKWORD "\nNote number or [Copy note]: "))
      (COND
-       ((OR (= NUM "Copy") (NOT NUM))
+       ((= NUM "Copy")
         (SETQ
           ATTRIBUTE_LIST
            (HCNM_GET_ATTRIBUTES
              (SETQ ENAME_BLOCK_OLD (CAR (ENTSEL)))
+             T
            )
         )
        )
@@ -5664,10 +5668,10 @@ ImportLayerSettings=No
     STRING
      (COND
        ((= KEY "Text") (HCNM_LDRBLK_AUTO_ES KEY))
-       ((= KEY "LF") (HCNM_LDRBLK_AUTO_QTY KEY "Length" 1))
-       ((= KEY "SF") (HCNM_LDRBLK_AUTO_QTY KEY "Area" 1))
+       ((= KEY "LF") (HCNM_LDRBLK_AUTO_QTY KEY "Length" "1"))
+       ((= KEY "SF") (HCNM_LDRBLK_AUTO_QTY KEY "Area" "1"))
        ((= KEY "SY")
-        (HCNM_LDRBLK_AUTO_QTY KEY "Area" (/ 1.0 9))
+        (HCNM_LDRBLK_AUTO_QTY KEY "Area" "0.11111111")
        )
        ((= KEY "Sta") (HCNM_LDRBLK_AUTO_AL KEY P1_ENTRY))
        ((= KEY "Off") (HCNM_LDRBLK_AUTO_AL KEY P1_ENTRY))
@@ -5696,7 +5700,6 @@ ImportLayerSettings=No
    HCNM_LDRBLK_AUTO_QTY (KEY AUTO_TYPE FACTOR / INPUT1 PSPACE_RESTORE_P
                          SS-P STRING
                         )
-  ;; I think that I will have to pass the leader object to this function. Or we could somehow set a flag that we added an area quantity.
   (COND
     ((AND
        (= AUTO_TYPE "Area")
@@ -5711,7 +5714,7 @@ ImportLayerSettings=No
     INPUT1
      (NENTSEL
        (STRCAT
-         "\nSelect object to link dynamically or [Selection set (not dynamic)] <Selection set>: "
+         "\nSelect object to link dynamically or [Selection set (not dynamic) including AECC_PIPEs] <Selection set>: "
        )
      )
     SS-P
@@ -5723,8 +5726,8 @@ ImportLayerSettings=No
           (LOAD "HAWS-QT")
         )
         (HAWS-QT-NEW "ldrblk")
-        (HAWS-QT-SET-PROPERTY "ldrblk" "type" KEY)
-        (HAWS-QT-SET-PROPERTY "ldrblk" "factor" FACTOR)
+        (HAWS-QT-SET-PROPERTY "ldrblk" "type" (STRCASE AUTO_TYPE T))
+        (HAWS-QT-SET-PROPERTY "ldrblk" "factor" (READ FACTOR))
         (HAWS-QT-SET-PROPERTY
           "ldrblk"
           "postfix"
@@ -5733,6 +5736,7 @@ ImportLayerSettings=No
           )
         )
         (HAWS-QT-STRING "ldrblk")
+        (HAWS-QT-GET-PROPERTY "ldrblk" "string")
        )
        (T
         (STRCAT
@@ -5753,7 +5757,9 @@ ImportLayerSettings=No
           (C:HCNM-CONFIG-GETVAR
             (STRCAT "BubbleTextPrecision" KEY)
           )
-          "\">%"
+          "%ct8["
+          FACTOR
+          "]\">%"
           (C:HCNM-CONFIG-GETVAR
             (STRCAT "BubbleTextPostfix" KEY)
           )
@@ -5861,10 +5867,7 @@ ImportLayerSettings=No
        ((= (TYPE OBJALIGN_OLD) 'VLA-OBJECT)
         (VLAX-GET-PROPERTY OBJALIGN_OLD 'NAME)
        )
-       (T
-        (SETQ OBJALIGN_OLD nil)
-        ""
-        )
+       (T (SETQ OBJALIGN_OLD NIL) "")
      )
     EALIGN
      (NENTSEL
@@ -5876,13 +5879,17 @@ ImportLayerSettings=No
          )
        )
      )
-    OBJALIGN
-     (COND
-       (EALIGN (VLAX-ENAME->VLA-OBJECT (CAR EALIGN)))
-       (T OBJALIGN_OLD)
-     )
   )
-  (C:HCNM-CONFIG-SETVAR "BubbleCurrentAlignment" OBJALIGN)
+  (COND
+    ((AND
+       EALIGN
+       (= (CDR (ASSOC 0 (ENTGET (CAR EALIGN)))) "AECC_ALIGNMENT")
+     )
+     (SETQ OBJALIGN (VLAX-ENAME->VLA-OBJECT (CAR EALIGN)))
+     (C:HCNM-CONFIG-SETVAR "BubbleCurrentAlignment" OBJALIGN)
+    )
+    (T (alert (princ "\nSelected object is not an alignment. Keeping previous alignment."))(SETQ OBJALIGN OBJALIGN_OLD))
+  )
 )
 (DEFUN
    HCNM_LDRBLK_AUTO_NE (AUTO_TYPE P1_ENTRY / E N NE P1_WORLD)
@@ -5935,24 +5942,27 @@ ImportLayerSettings=No
   "N/A"
 )
 (DEFUN
-   C:HCNM-EDIT-BUBBLE (/ DATA_1 DCLFILE P1_ENTRY ENAME_BLOCK
+   C:HCNM-EDIT-BUBBLES ()
+  (haws-core-init 337)
+  (if (not haws-editall)(load "editall"))
+  (haws-editall T)
+  (haws-core-restore)
+)
+(DEFUN HCNM_EDIT_BUBBLE (ENAME_BLOCK / P1_DATA DCLFILE P1_ENTRY ENAME_BLOCK
                         ENAME_LEADER_OLD HCNM_EB:ATTRIBUTE_LIST NOTETEXTRADIOCOLUMN
                        REPLACE_BLOCK_P RETURN_LIST
-                      )
+                      ) 
   (haws-core-init 338)
   (SETQ
-    REPLACE_BLOCK_P T
-    DATA_1
-     (HCNM_LDRBLK_GET_P1_DATA REPLACE_BLOCK_P)
+    P1_DATA
+     (HCNM_LDRBLK_GET_P1_DATA ENAME_BLOCK)
     P1_ENTRY
-     (CAR DATA_1)
-    ENAME_BLOCK
-     (CADR DATA_1)
+     (CAR P1_DATA)
     ENAME_LEADER_OLD
-     (CADDR DATA_1)
+     (CADDR P1_DATA)
     ;; Semi-global variable. Global to the HCNM-EB: functions called from here.
     HCNM_EB:ATTRIBUTE_LIST
-     (HCNM_GET_ATTRIBUTES ENAME_BLOCK)
+     (HCNM_GET_ATTRIBUTES ENAME_BLOCK T)
     NOTETEXTRADIOCOLUMN "RadioNOTETXT1"
     DCLFILE
      (LOAD_DIALOG "cnm.dcl")
@@ -5973,7 +5983,7 @@ ImportLayerSettings=No
           (HCNM_EB:SHOW
             DCLFILE
             NOTETEXTRADIOCOLUMN
-            DATA_1
+            P1_DATA
           )
          DONE_CODE
           (CAR RETURN_LIST)
@@ -6043,11 +6053,10 @@ ImportLayerSettings=No
     (21 "Text" EB_DONE)
    )
 )
-
 (DEFUN
    HCNM_EB:SHOW
-   (DCLFILE NOTETEXTRADIOCOLUMN DATA_1 / )
-  (SETQ P1_ENTRY (CAR DATA_1))
+   (DCLFILE NOTETEXTRADIOCOLUMN P1_DATA / )
+  (SETQ P1_ENTRY (CAR P1_DATA))
   (NEW_DIALOG "HCNMEditBubble" DCLFILE)
   (SET_TILE "Title" "Edit CNM Bubble Note")
   ;; Note attribute edit boxes
@@ -6194,10 +6203,11 @@ ImportLayerSettings=No
   (VL-CMDF
     "._insert"
     BLDRAG
-    "s"
+    "_Scale"
     TS
-    P1
+    "_Rotate"
     (ANGTOS (GETVAR "snapang"))
+    P1
   )
   (SETQ EN (ENTLAST))
   (PROMPT "\nEnd point for leader: ")
@@ -6254,7 +6264,6 @@ ImportLayerSettings=No
     (GETVAR "snapang")
   )
   (SETVAR "aunits" AUOLD)
-  (SETVAR "cmdecho" 0)
   (VL-CMDF "._erase" ENDRAG "")
   (IF (NOT (ENTNEXT (ENTLAST)))
     (VL-CMDF
@@ -6506,7 +6515,7 @@ ImportLayerSettings=No
   )
 )
 (DEFUN
-   HCNM_GET_ATTRIBUTES (ENAME_BLOCK / ATTRIBUTE_LIST ELIST ENAME_NEXT ETYPE OBJ_NEXT)
+   HCNM_GET_ATTRIBUTES (ENAME_BLOCK FIELD_CODE_P / ATTRIBUTE_LIST ELIST ENAME_NEXT ETYPE FIELD_CODE OBJ_NEXT)
   (SETQ ENAME_NEXT ENAME_BLOCK)
   (WHILE (AND
            (SETQ ENAME_NEXT (ENTNEXT ENAME_NEXT))
@@ -6520,7 +6529,7 @@ ImportLayerSettings=No
          OBJ_NEXT (VLAX-ENAME->VLA-OBJECT ENAME_NEXT)
          ATTRIBUTE_LIST
           (CONS
-            (LIST (CDR (ASSOC 2 ELIST)) (COND ((LM:FieldCode ENAME_NEXT))(T (VLA-GET-TEXTSTRING OBJ_NEXT))))
+            (LIST (CDR (ASSOC 2 ELIST)) (COND ((AND FIELD_CODE_P (SETQ FIELD_CODE (LM:FieldCode ENAME_NEXT)))FIELD_CODE)(T (VLA-GET-TEXTSTRING OBJ_NEXT))))
             ATTRIBUTE_LIST
           )
        )

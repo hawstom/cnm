@@ -32,6 +32,6 @@
       ( T (setq dimstr (strcat dimstr "\\P" addtxt)))
     )
   )
-  (command "._dim1" "_al" pt1 pt2 pt1 dimstr)
+  (vl-cmdf "._dim1" "_al" pt1 pt2 pt1 dimstr)
   (HAWS-VRSTOR)(haws-core-restore)(princ)
 )

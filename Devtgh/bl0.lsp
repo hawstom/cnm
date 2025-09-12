@@ -3,7 +3,7 @@
 	(haws-core-init 166)
 	(HAWS-VSAVE '("clayer" "highlight"))
   (setvar "highlight" 0)
-  (command "._layer" "_s" "0" "")
+  (vl-cmdf "._layer" "_s" "0" "")
   (setq en nil ent nil)
   (while (= en nil)
     (setq en (car (entsel
@@ -12,7 +12,7 @@
   (setq ent (entget en))
   (if (= (HAWS-DXF 0 ent) "INSERT")
     (progn
-      (command "._copy" en "" "@" "@")
+      (vl-cmdf "._copy" en "" "@" "@")
       (setq en (entlast))
       (HAWS-block0 en)
     )
@@ -22,7 +22,7 @@
   (princ)
 )
 (defun HAWS-block0 (en / en2 ent inspt blkname ssblk)
-  (command "._ucs" "_w")
+  (vl-cmdf "._ucs" "_w")
   (setq
     ent (entget en)
     ucsp T
@@ -34,7 +34,7 @@
   (setq ent (subst (cons 43 1) (assoc 43 ent) ent)) ;z-scale
   (setq ent (subst (cons 50 0) (assoc 50 ent) ent)) ;angle
   (entmod ent)
-  (command "._explode" en)
+  (vl-cmdf "._explode" en)
   (setq en (entnext en))
   (setq ssblk (ssadd))
   (while (/= en nil)
@@ -46,14 +46,14 @@
     (setq ssblk (ssadd en ssblk))
     (if (= (HAWS-DXF 0 ent) "INSERT") ;if en is a block
       (progn
-        (command "._copy" en "" "@" "@")
+        (vl-cmdf "._copy" en "" "@" "@")
         (setq en (entlast))
         (HAWS-block0 en2)
       )
     )
     (setq en (entnext en))
   )
-  (command "._block" blkname "_y" inspt ssblk "" "._ucs" "_p")
+  (vl-cmdf "._block" blkname "_y" inspt ssblk "" "._ucs" "_p")
   (setq ucsp nil)
 )
 ; end

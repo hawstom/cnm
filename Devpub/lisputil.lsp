@@ -81,14 +81,14 @@
     ( (/= s "Function cancelled")
       (princ (strcat "\nTrapped error: " s))
   ) )
-  (command-s)
+  (vl-cmdf-s)
   (if (= (type f1) (quote FILE))(setq f1(close f1))); Close files
   (if (= (type f2) (quote FILE))(setq f2(close f2)))
   (if (= (type f3) (quote FILE))(setq f3(close f3)))
-  (if (= 8 (logand (getvar"undoctl") 8))(command-s "._undo" "end")); End undo group
+  (if (= 8 (logand (getvar"undoctl") 8))(vl-cmdf-s "._undo" "end")); End undo group
   (if (and vrstor vstr) (vrstor))     ; Restore variables to previous values
-  (if ucsp (command-s "._UCS""P"))       ; Restore previous UCS
-  (if ucspp (command-s "._UCS""P"))      ; Restore previous UCS
+  (if ucsp (vl-cmdf-s "._UCS""P"))       ; Restore previous UCS
+  (if ucspp (vl-cmdf-s "._UCS""P"))      ; Restore previous UCS
   (if enm (redraw enm))               ; Redraw work entity
   (if errosm (setvar "osmode" errosm))
   (setq ucsp nil ucspp nil enm nil)
@@ -364,7 +364,7 @@
   )
   (setq laname (car laopt) lacolr (cadr laopt) laltyp (caddr laopt) ltfile "acad")
   (if (not (or (= laltyp "")(tblsearch "LTYPE" laltyp)))
-    (progn (command "._linetype" "l" laltyp "acad")(command)(command "._linetype" "l" laltyp "hawsedc")(command))
+    (progn (vl-cmdf "._linetype" "l" laltyp "acad")(vl-cmdf)(vl-cmdf "._linetype" "l" laltyp "hawsedc")(vl-cmdf))
   )
   (while (not (or (= laltyp "")(tblsearch "LTYPE" laltyp)))
     (alert
@@ -375,22 +375,22 @@
       )
     )
     (setq laltyp (getstringx "\nEnter substitute linetype name or <try another another file>" laltyp laltyp))
-    (command "._linetype" "l" laltyp ltfile)(command)
+    (vl-cmdf "._linetype" "l" laltyp ltfile)(vl-cmdf)
     (cond
       ( (not (tblsearch "LTYPE" laltyp))
         (setq ltfile (getfiled (strcat"File for " laltyp " Linetype")"" "LIN" 6))
       )
     )
-    (command "._linetype" "l" laltyp ltfile)(command)
+    (vl-cmdf "._linetype" "l" laltyp ltfile)(vl-cmdf)
   )
-  (command "._layer")
+  (vl-cmdf "._layer")
   (if(not(tblsearch "LAYER" laname))
-    (command "m" laname)
-    (command "t" laname "on" laname "u" laname "s" laname)
+    (vl-cmdf "m" laname)
+    (vl-cmdf "t" laname "on" laname "u" laname "s" laname)
   )
-  (if (/= lacolr "")(command "c"  lacolr ""))
-  (if (/= laltyp "")(command "lt" laltyp ""))
-  (command "")
+  (if (/= lacolr "")(vl-cmdf "c"  lacolr ""))
+  (if (/= laltyp "")(vl-cmdf "lt" laltyp ""))
+  (vl-cmdf "")
   laopt
 )
 (DEFUN

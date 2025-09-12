@@ -96,11 +96,11 @@
           PT8
            (POLAR BCCEN ANG5 (+ RAD SWWID))
         )
-        (COMMAND "._undo" "_g")
+        (vl-cmdf "._undo" "_g")
         (HAWS-DRAWDW
           PT1 PT2 PT3 PT4 PT5 PT6 PT7 PT8 LEFT ANG1 CL1 CL2 CL3 TS
          )
-        (COMMAND "._arc" PT4 "_e" PT6 "_r" (+ RAD DWWID) "._undo" "_e")
+        (vl-cmdf "._arc" PT4 "_e" PT6 "_r" (+ RAD DWWID) "._undo" "_e")
        )
        (T
         (SETVAR "osmode" 128)
@@ -142,11 +142,11 @@
           DWLEN
            (* DWLEN 2)
         )
-        (COMMAND "._undo" "_g")
+        (vl-cmdf "._undo" "_g")
         (HAWS-DRAWDW
           PT1 PT2 PT3 PT4 PT5 PT6 PT7 PT8 LEFT ANG1 CL1 CL2 CL3 TS
          )
-        (COMMAND "._line" PT4 PT6 "" "._undo" "_e")
+        (vl-cmdf "._line" PT4 PT6 "" "._undo" "_e")
        )
      )
   )
@@ -158,16 +158,16 @@
               (PT1 PT2 PT3 PT4 PT5 PT6 PT7 PT8 LEFT ANG1 CL1 CL2 CL3 TS
               )
   (SETVAR "osmode" 0)
-  (COMMAND "._line" PT1 PT2 "")
-  (COMMAND "._line" PT3 PT4 "")
-  (COMMAND "._line" PT5 PT6 "")
-  (COMMAND "._line" PT7 PT8 "")
-  (COMMAND "._line" PT3 PT2 "")
-  (COMMAND "._line" PT5 PT8 "")
-  (COMMAND "._line" PT2 PT4 "")
-  (COMMAND "._line" PT6 PT8 "")
+  (vl-cmdf "._line" PT1 PT2 "")
+  (vl-cmdf "._line" PT3 PT4 "")
+  (vl-cmdf "._line" PT5 PT6 "")
+  (vl-cmdf "._line" PT7 PT8 "")
+  (vl-cmdf "._line" PT3 PT2 "")
+  (vl-cmdf "._line" PT5 PT8 "")
+  (vl-cmdf "._line" PT2 PT4 "")
+  (vl-cmdf "._line" PT6 PT8 "")
   (HAWS-MKLAYR "DRIVEWAYTX")
-  (COMMAND "._line" CL1 CL2 "")
+  (vl-cmdf "._line" CL1 CL2 "")
   (HAWS-MKTEXT
     (IF LEFT
       "MR"

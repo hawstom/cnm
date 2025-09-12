@@ -3,7 +3,6 @@
 ;(C) Copyright 1997 by Thomas Gail Haws
 (defun c:haws-letter (/ a b c d e f g)
 (haws-core-init 246)
-  (setvar "cmdecho" 0)
   (setq
     a (HAWS-getlet "\nFirst letter of series (between a and zy):")
     b (HAWS-getlet "\nLast letter of series (between b and zz):")
@@ -25,11 +24,12 @@
         (chr(if (= (rem a 26) 0) 90 (+(rem a 26)64)))
       )
     )
-    (command "._text")
-    (if e (command "_j" e))
-    (command f c d g)
+    (vl-cmdf "._text")
+    (if e (vl-cmdf "_j" e))
+    (vl-cmdf f c d g)
     (setq a (+ a 1))
   )
+  (HAWS-CORE-RESTORE)
 )
 ;Function getlet prompts for a letter code between a and zz.
 ;returns an integer code for the letter entered (1 for A, 26 for Z, 28 for AB)

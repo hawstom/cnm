@@ -8,8 +8,8 @@
 
   (haws-core-init 309)
   (if HAWS-VSAVE (HAWS-VSAVE '("clayer" "osmode" "expert")))
-  (command "._undo" "_group")
-  (command "._layer" "_n" "sta" "_t" "sta" "_s" "sta" "_c" 1 "" "")
+  (vl-cmdf "._undo" "_group")
+  (vl-cmdf "._layer" "_n" "sta" "_t" "sta" "_s" "sta" "_c" 1 "" "")
   (setvar "osmode" 0)
   (gc)
 
@@ -36,11 +36,11 @@
 
 ;Define "STACL" block for use with measure command
 
-  (command "._circle" (cadr cl) txht)
+  (vl-cmdf "._circle" (cadr cl) txht)
   (setq circ1 (entlast))
   (if style0
-    (command "._line" blpt1 blpt2 "" "._text" "_j" "_bc" inspt txht "0" "10")
-    (command
+    (vl-cmdf "._line" blpt1 blpt2 "" "._text" "_j" "_bc" inspt txht "0" "10")
+    (vl-cmdf
       "._line" blpt1 blpt2 ""
       "._text" "_j" "_bc" inspt "0" "10"
     )
@@ -50,13 +50,13 @@
     (ssadd enext sset)
   )
   (setvar "expert" 5)
-  (command "._block" "stacl" "0,0" sset "")
+  (vl-cmdf "._block" "stacl" "0,0" sset "")
   (setvar "expert" 0)
 
 ;Get length of centerline and make a working copy of centerline
 
-  (command "._area" "_e" cl)(setq totlen (getvar "perimeter"))
-  (command "._copy" cl "" "0,0" "0,0")
+  (vl-cmdf "._area" "_e" cl)(setq totlen (getvar "perimeter"))
+  (vl-cmdf "._copy" cl "" "0,0" "0,0")
   (setq workcl (entlast) wclend workcl)
   (cond
     ( (= (cdr (assoc 0 (entget workcl))) "POLYLINE")
@@ -67,19 +67,19 @@
   )
 
 ;Place first station marker
-  (command "._measure" cl "_b" "stacl" "_y" meas1)
+  (vl-cmdf "._measure" cl "_b" "stacl" "_y" meas1)
   (setq enext (entnext wclend))
   (setq brkpt (trans(cdr(assoc 10 (entget enext)))enext 1))
   (while (setq enext (entnext enext))
     (ssadd enext sset)
   )
-  (command "._erase" sset "")
+  (vl-cmdf "._erase" sset "")
 
 ;Break and erase working cl up to first station marker
   (setq elast (entlast))
-  (command "._break" workcl brkpt brkpt)
+  (vl-cmdf "._break" workcl brkpt brkpt)
   (setq cl1 (entnext elast) cl2 (entlast))
-  (command
+  (vl-cmdf
     "._erase"
     (if (= (cdr (assoc 0 (entget workcl))) "POLYLINE") cl1 workcl)
     ""
@@ -88,21 +88,21 @@
 ;Place remaining station markers, explode, and edit to proper station labels
 
   (setq enext wclend count 0)
-  (command "._measure" (list cl2 brkpt) "_b" "stacl" "_y" "100")
+  (vl-cmdf "._measure" (list cl2 brkpt) "_b" "stacl" "_y" "100")
   (while (setq enext (entnext enext))
-    (if (= (cdr (assoc 0 (entget enext))) "INSERT")(command "._explode" enext))
+    (if (= (cdr (assoc 0 (entget enext))) "INSERT")(vl-cmdf "._explode" enext))
   )
   (setq enext wclend)
   (while (setq enext (entnext enext))
     (if (= (cdr (assoc 0 (entget enext))) "TEXT")
       (progn
         (setq sta (+ ststa meas1 (* count 100.0)))
-        (command "._change" enext "" "" "" "" "")
-        (if style0 (command ""))
-        (command (rtos (/ sta 100.0) 2 0))
+        (vl-cmdf "._change" enext "" "" "" "" "")
+        (if style0 (vl-cmdf ""))
+        (vl-cmdf (rtos (/ sta 100.0) 2 0))
         (setq count (1+ count))
   ) ) )
-  (command "._erase" cl1 cl2  circ1 "" "._undo" "_end" "._redraw")
+  (vl-cmdf "._erase" cl1 cl2  circ1 "" "._undo" "_end" "._redraw")
   (haws-core-restore)(HAWS-VRSTOR)
   (princ)
 )
