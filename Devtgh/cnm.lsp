@@ -5028,7 +5028,7 @@ ImportLayerSettings=No
 (DEFUN C:HAWS-RECL () (haws-core-init 205) (HCNM_LDRBLK_DYNAMIC "REC")(haws-core-restore))
 (DEFUN C:HAWS-SSTL () (haws-core-init 206) (HCNM_LDRBLK_DYNAMIC "SST")(haws-core-restore))
 (DEFUN C:HAWS-TRIL () (haws-core-init 207) (HCNM_LDRBLK_DYNAMIC "TRI")(haws-core-restore))
-(DEFUN C:HCNM-REPLACE-BUBBLE () (haws-core-init 337) (HCNM_LDRBLK_DYNAMIC NIL)(haws-core-restore))
+(DEFUN C:HCNM-REPLACE-BUBBLE () (haws-core-init 338) (HCNM_LDRBLK_DYNAMIC NIL))
 
 (DEFUN
    HCNM_LDRBLK_DYNAMIC (NOTETYPE / BLOCKNAME BUBBLEHOOKS P1_DATA P2_DATA REPLACE_BLOCK_P TH
@@ -5952,7 +5952,6 @@ ImportLayerSettings=No
                         ENAME_LEADER_OLD HCNM_EB:ATTRIBUTE_LIST NOTETEXTRADIOCOLUMN
                        REPLACE_BLOCK_P RETURN_LIST
                       ) 
-  (haws-core-init 338)
   (SETQ
     P1_DATA
      (HCNM_LDRBLK_GET_P1_DATA ENAME_BLOCK)
