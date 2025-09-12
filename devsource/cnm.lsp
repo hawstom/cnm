@@ -5031,7 +5031,7 @@ ImportLayerSettings=No
 (DEFUN C:HCNM-REPLACE-BUBBLE () (haws-core-init 338) (HCNM_LDRBLK_DYNAMIC NIL))
 
 (DEFUN
-   HCNM_LDRBLK_DYNAMIC (NOTETYPE / BLOCKNAME BUBBLEHOOKS P1_DATA P2_DATA REPLACE_BLOCK_P TH
+   HCNM_LDRBLK_DYNAMIC (NOTETYPE / BLOCKNAME BUBBLEHOOKS BUBBLEMULTILINE P1_DATA P2_DATA REPLACE_BLOCK_P TH
                        )
   (HAWS-VSAVE '("attreq" "aunits" "clayer" "cmdecho"))
   (COND
@@ -5061,9 +5061,12 @@ ImportLayerSettings=No
   (SETQ
     BUBBLEHOOKS
      (C:HCNM-CONFIG-GETVAR "BubbleHooks")
+    BUBBLEMULTILINE
+     "m-" ; or "m-"
     BLOCKNAME
      (STRCAT
-       "cnm-bubble-m-"
+       "cnm-bubble-"
+       BUBBLEMULTILINE
        (COND
          ((= (STRCASE BUBBLEHOOKS) "YES") "1")
          ((= (STRCASE BUBBLEHOOKS) "NO") "0")
