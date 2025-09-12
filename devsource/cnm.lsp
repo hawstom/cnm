@@ -5571,7 +5571,8 @@ ImportLayerSettings=No
   )
 )
 (DEFUN HCNM_LDRBLK_ADJUST_FORMAT (STRING CODE)
-  (COND ((OR (= STRING "") (= (SUBSTR STRING 1 1) "\\")) STRING) (T (STRCAT CODE STRING)))
+  ;; If there is already an underline or overline, don't add one again.
+  (COND ((OR (= STRING "") (wcmatch (SUBSTR STRING 1 1) "\\,%")) STRING) (T (STRCAT CODE STRING)))
 )
 (DEFUN
    HCNM_LDRBLK_GET_TEXT_ENTRY (P1_ENTRY LINE_NUMBER /  ENTRY-P INPUT LOOP-P prompt-p STRING)
@@ -6601,7 +6602,7 @@ ImportLayerSettings=No
           OBJ_NEXT
           (CADR (ASSOC ATAG ATTRIBUTE_LIST))
         )
-        ;(VL-CMDF "._updatefield" ENAME_NEXT "")
+        (VL-CMDF "._updatefield" ENAME_NEXT "") ; Only needed for single-line attributes.
       )
     )
   )
