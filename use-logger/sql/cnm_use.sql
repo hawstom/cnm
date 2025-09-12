@@ -377,7 +377,7 @@ CREATE TABLE IF NOT EXISTS `log_event` (
   `le_date_logged` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `le_ip_address` char(15) DEFAULT NULL,
   `le_computer_name` varchar(255) DEFAULT NULL,
-  `le_bios_date` varchar(255) DEFAULT NULL,
+  `le_loginname` varchar(255) DEFAULT NULL,
   `le_cnm_version` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`le_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -434,7 +434,23 @@ CREATE TABLE IF NOT EXISTS `view_loggers` (
 --
 DROP TABLE IF EXISTS `view_commands_by_count`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`jconstru`@`localhost` SQL SECURITY DEFINER VIEW `view_commands_by_count`  AS  select `c`.`command_name` AS `Name`,`c`.`command_id` AS `Id`, sum(`uc`.`uc_count`) AS `Count` from (`command` `c` join `use_count` `uc`) where (`c`.`command_id` = `uc`.`uc_command_id`) group by `c`.`command_name` order by sum(`uc`.`uc_count`) desc ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`jconstru`@`localhost` SQL SECURITY DEFINER VIEW `view_commands_by_count`  AS  
+select 
+  `c`.`command_name` AS `Name`,
+	`c`.`command_id` AS `Id`, 
+	sum(`uc`.`uc_count`) AS `Count` 
+from (
+  `command` `c` 
+	join 
+	`use_count` `uc`
+) 
+where (
+  `c`.`command_id` = `uc`.`uc_command_id`
+) 
+group by 
+  `c`.`command_name` 
+order by 
+  sum(`uc`.`uc_count`) desc ;
 
 -- --------------------------------------------------------
 
@@ -443,7 +459,33 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`jconstru`@`localhost` SQL SECURITY DEFINER V
 --
 DROP TABLE IF EXISTS `view_commands_by_logger`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`jconstru`@`localhost` SQL SECURITY DEFINER VIEW `view_commands_by_logger`  AS  select `c`.`command_name` AS `Command name`,`c`.`command_id` AS `Id`, `le`.`le_computer_name` AS `Computer name`, `le`.`le_loginname` AS `Loginname`, sum(`uc`.`uc_count`) AS `Count` from (`command` `c`, `use_count` `uc`, `log_event` `le`) where (`c`.`command_id` = `uc`.`uc_command_id` AND `uc`.`uc_log_event_id` = `le`.`le_id`) group by `le`.`le_computer_name`, `le`.`le_loginname`, `c`.`command_name` order by sum(`uc`.`uc_count`) desc;
+CREATE ALGORITHM=UNDEFINED DEFINER=`jconstru`@`localhost` SQL SECURITY DEFINER VIEW `view_commands_by_logger`  AS  
+select 
+	`c`.`command_name` AS `Command name`, 
+	`c`.`command_id` AS `Id`, 
+	`le`.`le_ip_address` AS `IP Address`, 
+	`le`.`le_computer_name` AS `Computer name`, 
+	`le`.`le_loginname` AS `Loginname`, 
+	sum(`uc`.`uc_count`) AS `Count` 
+from (
+	`command` `c`, 
+	`use_count` `uc`, 
+	`log_event` `le`
+) 
+where (
+	`c`.`command_id` = `uc`.`uc_command_id` 
+	AND 
+	`uc`.`uc_log_event_id` = `le`.`le_id`
+) 
+group by 
+	`le`.`le_ip_address`,
+	`le`.`le_computer_name`, 
+	`le`.`le_loginname`, 
+	`c`.`command_name` 
+order by sum(
+	`uc`.`uc_count`
+) 
+desc;
 
 -- --------------------------------------------------------
 
@@ -452,6 +494,20 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`jconstru`@`localhost` SQL SECURITY DEFINER V
 --
 DROP TABLE IF EXISTS `view_loggers`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`jconstru`@`localhost` SQL SECURITY DEFINER VIEW `view_loggers` AS  select `le`.`le_computer_name` AS `Computer name`, `le`.`le_loginname` AS `Loginname`, COUNT(`le`.`le_id`) AS `Count` from (`log_event` `le`) group by `le`.`le_computer_name`, `le`.`le_loginname` order by `le`.`le_computer_name`, `le`.`le_loginname` ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`jconstru`@`localhost` SQL SECURITY DEFINER VIEW `view_loggers` AS  
+select 
+	`le`.`le_ip_address` AS `IP Address`, 
+	`le`.`le_computer_name` AS `Computer name`, 
+	`le`.`le_loginname` AS `Loginname`, 
+	COUNT(`le`.`le_id`) AS `Count` 
+from (`log_event` `le`) 
+group by 
+	`le`.`le_ip_address`,
+	`le`.`le_computer_name`, 
+	`le`.`le_loginname` 
+order by 
+	`le`.`le_ip_address`,
+	`le`.`le_computer_name`, 
+	`le`.`le_loginname` ;
 COMMIT;
 -- DELETE uc, le FROM use_count AS uc INNER JOIN log_event AS le ON le.le_id=uc.uc_log_event_id WHERE le.le_computer_name = 'GERANIUM'
