@@ -1,8 +1,8 @@
-devphil/
 retired/
 sandbox/
 Devmenu/VS-DLL/
 *.bak*
+*.dll
 *._??
 *#
 *.mnr
