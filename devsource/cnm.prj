@@ -1,0 +1,18 @@
+;;; VLisp project file [V2.0] cnm saved to:[C:/TGHFiles/programming/hawsedc/develop/Devtgh] at:[3/13/25] 
+(VLISP-PROJECT-LIST
+  :NAME
+  CNM
+  :OWN-LIST
+  ("2l.lsp"
+    "2l" "CNM-Install" "add" "aee" "arcarrow" "att2txt" "attfind" "bdl" "bdp" "berm" "bl0" "blm" "brk" "brkmat" "bw" "ca" "chattrib" "chcoord" "chdim" "chm" "chnum" "chtext" "cl" "clean" "cmpro" "cmt" "cnm" "cnmaliaslib" "contelev" "contvol" "contxt" "copyrot" "cs" "cumdist" "curve" "ddinout" "dimsty" "dms" "dw" "dwg" "edclib" "editall" "edt" "eop" "facnum" "funky" "geodata" "goto" "haws-qt" "imp_exp" "incatt" "incnum" "ini-edit" "inq" "insblk" "isolat" "istan" "lam" "lastat" "layersav" "layrprn" "lcp" "leader" "led" "lee-mac" "lengthen" "letter" "lisputil" "loadandrun" "lotnum" "ltchang" "ltp" "lwp" "lx" "m40" "m42" "mc2033" "mfillet" "misc" "moffset" "mrename" "mscript" "mv" "ne" "newang" "newscale" "num" "offsetx" "pas" "pipe" "pjl" "plt" "polarset" "presuf" "profiles" "purge" "qdtext" "rescale" "romans" "rotatebase" "round" "sde" "setup" "sheet" "sideel" "ssx" "ssxpro" "stacl" "stdim" "stdim12" "swap" "tap" "tapinv" "textsize" "to" "tu" "tw" "txtsum" "unitset" "usersamp" "ut" "vz" "wall" "wl" "xd" "xroffset" "xu" "xy"
+  )
+  :FAS-DIRECTORY
+  "C:/TGHFiles/programming/hawsedc/compile/acad"
+  :TMP-DIRECTORY
+  "C:/TGHFiles/programming/hawsedc/compile/temp"
+  :PROJECT-KEYS
+  (:BUILD (:STANDARD) :MERGED nil :SAFE-MODE T :MSGLEVEL 2)
+  :CONTEXT-ID
+  :AUTOLISP
+)
+;;; EOF
