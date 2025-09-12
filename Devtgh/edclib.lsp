@@ -3,7 +3,7 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "5.5.13"
+  "5.5.14"
 )
 (DEFUN
    HAWS-COPYRIGHT ()
@@ -1726,6 +1726,7 @@
      (335 2 "hcnm-notesedit-pro") ; Not really the command name. Disambiguating from regular use.
      (336 1 "hcnm-cnmqt")
      (337 1 "hcnm-edit-bubbles")
+     (338 1 "hcnm-replace-bubble")
      (1000 1 "untracked")
    )
 )
