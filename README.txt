@@ -7,4 +7,5 @@ HOW TO DEVELOP AND TEST CNM
 6. If developing menu, unload cnm.cuix and load from source folder.
 7. In AutoCAD command VLISP IDE, open hawsedc\develop\devsource\cnm.prj
 8. Develop and test in VLISP.
-9. Save, then compile FAS and see hawsedc\compile\README.TXT for compile and distribe instructions.
+9. Final test using CNM-Demo.scr with a copy (outside source for safety) of CNM-Demo.*
+10. Save, then compile FAS and see hawsedc\compile\README.TXT for compile and distribe instructions.
