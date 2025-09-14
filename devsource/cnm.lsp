@@ -3152,6 +3152,7 @@ ImportLayerSettings=No
      (LIST "ShowKeyTableGrid" "0" 2)
      (LIST "ShowKeyTableQuantities" "1" 2)
      (LIST "BubbleHooks" "0" 2)
+     (LIST "BubbleMtext" "0" 2)
      (LIST "BubbleAreaIntegral" "0" 2)
      (LIST "NotesLeaderDimstyle" "" 2)
      (LIST "NotesKeyTableDimstyle" "" 2)
@@ -5031,7 +5032,7 @@ ImportLayerSettings=No
 (DEFUN C:HCNM-REPLACE-BUBBLE () (haws-core-init 338) (HCNM_LDRBLK_DYNAMIC NIL))
 
 (DEFUN
-   HCNM_LDRBLK_DYNAMIC (NOTETYPE / BLOCKNAME BUBBLEHOOKS BUBBLEMULTILINE P1_DATA P2_DATA REPLACE_BLOCK_P TH
+   HCNM_LDRBLK_DYNAMIC (NOTETYPE / BLOCKNAME BUBBLEHOOKS P1_DATA P2_DATA REPLACE_BLOCK_P TH
                        )
   (HAWS-VSAVE '("attreq" "aunits" "clayer" "cmdecho"))
   (COND
@@ -5061,12 +5062,10 @@ ImportLayerSettings=No
   (SETQ
     BUBBLEHOOKS
      (C:HCNM-CONFIG-GETVAR "BubbleHooks")
-    BUBBLEMULTILINE
-     "m-" ; or "m-"
     BLOCKNAME
      (STRCAT
        "cnm-bubble-"
-       BUBBLEMULTILINE
+       (HCNM_LDRBLK_GET_MTEXT_STRING)
        (COND
          ((= (STRCASE BUBBLEHOOKS) "YES") "1")
          ((= (STRCASE BUBBLEHOOKS) "NO") "0")
@@ -5409,6 +5408,13 @@ ImportLayerSettings=No
   (HCNM_LDRBLK_CHANGE_ARROWHEAD ENAME_LEADER)
 )
 (DEFUN
+   HCNM_LDRBLK_GET_MTEXT_STRING ()
+  (COND
+    ((= (C:HCNM-CONFIG-GETVAR "BubbleMtext") "1") "m-")
+    (T "")
+  )
+)
+(DEFUN
    HCNM_LDRBLK_CHANGE_ARROWHEAD (ENAME_LEADER)
   (COND
     ((= (C:HCNM-CONFIG-GETVAR "BubbleArrowIntegralPending") "1")
@@ -5520,17 +5526,31 @@ ImportLayerSettings=No
   (SETQ BLOCK_DATA (LIST ENAME_BLOCK_OLD ATTRIBUTE_LIST))
 )
 (DEFUN
-   HCNM_LDRBLK_ADJUST_FORMATS (ATTRIBUTE_LIST / TXT1 TXT2 GAP)
+   HCNM_LDRBLK_ADJUST_FORMATS (ATTRIBUTE_LIST / BUBBLEMTEXT TXT1
+                               TXT2 GAP OVERLINE UNDERLINE
+                              )
   (SETQ
+    BUBBLEMTEXT
+     (HCNM_LDRBLK_GET_MTEXT_STRING)
+    UNDERLINE
+     (COND
+       ((= BUBBLEMTEXT "") "%%u")
+       (T "\\L")
+     )
+    OVERLINE
+     (COND
+       ((= BUBBLEMTEXT "") "%%o")
+       (T "\\O")
+     )
     TXT1
      (HCNM_LDRBLK_ADJUST_FORMAT
        (CADR (ASSOC "NOTETXT1" ATTRIBUTE_LIST))
-       "\\L"
+       UNDERLINE
      )
     TXT2
      (HCNM_LDRBLK_ADJUST_FORMAT
        (CADR (ASSOC "NOTETXT2" ATTRIBUTE_LIST))
-       "\\O"
+       OVERLINE
      )
     GAP
      (COND
@@ -5558,7 +5578,8 @@ ImportLayerSettings=No
   )
 )
 (DEFUN HCNM_LDRBLK_ADJUST_FORMAT (STRING CODE)
-  (COND ((OR (= STRING "") (= (SUBSTR STRING 1 1) "\\")) STRING) (T (STRCAT CODE STRING)))
+  ;; If there is already an underline or overline, don't add one again.
+  (COND ((OR (= STRING "") (wcmatch (SUBSTR STRING 1 1) "\\,%")) STRING) (T (STRCAT CODE STRING)))
 )
 (DEFUN
    HCNM_LDRBLK_GET_TEXT_ENTRY (P1_ENTRY LINE_NUMBER /  ENTRY-P INPUT LOOP-P prompt-p STRING)
@@ -6386,6 +6407,7 @@ ImportLayerSettings=No
   (NEW_DIALOG "HCNMBubble" CNMDCL)
   (SET_TILE "Title" "CNM Bubble Options")
   (HCNM_CONFIG_SET_ACTION_TILE "BubbleHooks")
+  (HCNM_CONFIG_SET_ACTION_TILE "BubbleMtext")
   (HCNM_CONFIG_SET_ACTION_TILE "BubbleAreaIntegral")
   (HCNM_CONFIG_SET_ACTION_TILE "NoteTypes")
   (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextLine1PromptP")
@@ -6588,7 +6610,7 @@ ImportLayerSettings=No
           OBJ_NEXT
           (CADR (ASSOC ATAG ATTRIBUTE_LIST))
         )
-        ;(VL-CMDF "._updatefield" ENAME_NEXT "")
+        (COND ((= (HCNM_LDRBLK_GET_MTEXT_STRING) "")(VL-CMDF "._updatefield" ENAME_NEXT "")))
       )
     )
   )

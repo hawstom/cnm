@@ -142,6 +142,10 @@ HCNMBubble : dialog {
 			label = "Use landing (hook) on bubble notes";
 		}
 		: toggle {
+			key = "BubbleMtext";
+			label = "Use multiline text in bubble notes. (Enables mtext background masking, but may cause other problems.)";
+		}
+		: toggle {
 			key = "BubbleAreaIntegral";
 			label = "Change to Integral arrowhead when adding area quantities.";
 		}
