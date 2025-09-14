@@ -3,7 +3,7 @@
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN
    HAWS-UNIFIED-VERSION ()
-  "5.5.14"
+  "5.5.15"
 )
 (DEFUN
    HAWS-COPYRIGHT ()
@@ -253,8 +253,6 @@
     *ERROR* OLDERR
     OLDERR NIL
   )
-  ;;Versional housekeeping
-  (if (= 'subr (type *pop-error-mode*)) (*pop-error-mode*))
 )
 ;;END ERROR HANDLER
 
