@@ -5142,7 +5142,7 @@ ImportLayerSettings=No
   )
 )
 (DEFUN
-   HCNM_LDRBLK_GET_P1_DATA (ENAME_BLOCK_OLD / ELIST_BLOCK_OLD ENAME_330 ENAME_BLOCK_OLD ENAME_LEADER_OLD P1_DATA P1_ENTRY REPLACE_BLOCK_P)
+   HCNM_LDRBLK_GET_P1_DATA (ENAME_BLOCK_OLD / ELIST_BLOCK_OLD ENAME_330 ENAME_LEADER_OLD P1_DATA P1_ENTRY REPLACE_BLOCK_P)
   (COND
     (ENAME_BLOCK_OLD
      (SETQ ELIST_BLOCK_OLD (ENTGET ENAME_BLOCK_OLD)
@@ -5427,7 +5427,7 @@ ImportLayerSettings=No
     )
   )
 )
-(DEFUN HCNM_LDRBLK_SET_DYNPROPS (ENAME_BLOCK_NEW ENAME_BLOCK_OLD NOTETYPE REPLACE_BLOCK_P /  DYN_PROPS_OLD DYN_PROPS_OLD_I REPLACE_BLOCK_P VLAOBJ_BLOCK_NEW VLAOBJ_BLOCK_OLD)
+(DEFUN HCNM_LDRBLK_SET_DYNPROPS (ENAME_BLOCK_NEW ENAME_BLOCK_OLD NOTETYPE REPLACE_BLOCK_P /  DYN_PROPS_OLD DYN_PROPS_OLD_I VLAOBJ_BLOCK_NEW VLAOBJ_BLOCK_OLD)
   (SETQ
     VLAOBJ_BLOCK_NEW
      (VLAX-ENAME->VLA-OBJECT ENAME_BLOCK_NEW)
@@ -5516,19 +5516,24 @@ ImportLayerSettings=No
            (CONS (LIST "NOTEGAP" "") ATTRIBUTE_LIST)
            ATTRIBUTE_LIST
            (CONS (LIST "NOTENUM" NUM) ATTRIBUTE_LIST)
-           ATTRIBUTE_LIST
-		(HCNM_LDRBLK_ADJUST_FORMATS ATTRIBUTE_LIST)
         )
        )
      )
     )
   )
-  (SETQ BLOCK_DATA (LIST ENAME_BLOCK_OLD ATTRIBUTE_LIST))
+  (SETQ
+    BLOCK_DATA
+     (LIST
+       ENAME_BLOCK_OLD
+       (HCNM_LDRBLK_ADJUST_FORMATS ATTRIBUTE_LIST)
+     )
+  )
 )
 (DEFUN
-   HCNM_LDRBLK_ADJUST_FORMATS (ATTRIBUTE_LIST / BUBBLEMTEXT TXT1
-                               TXT2 GAP OVERLINE UNDERLINE
+   HCNM_LDRBLK_ADJUST_FORMATS (ATTRIBUTE_LIST / BUBBLEMTEXT TXT1 TXT2
+                               GAP OVERLINE UNDERLINE
                               )
+  ;; Adjust underlining and overlining
   (SETQ
     BUBBLEMTEXT
      (HCNM_LDRBLK_GET_MTEXT_STRING)
@@ -5576,10 +5581,42 @@ ImportLayerSettings=No
        ATTRIBUTE_LIST
      )
   )
+  ;; Strip mtext codes if not using mtext
+  (COND
+    ((= BUBBLEMTEXT "")
+     (SETQ
+       ATTRIBUTE_LIST
+        (MAPCAR
+          '(LAMBDA (ATTRIBUTE)
+             (COND
+               ((WCMATCH (CADR ATTRIBUTE) "*\\*")
+                (LIST
+                  (CAR ATTRIBUTE)
+                  (LM:UNFORMAT (CADR ATTRIBUTE) NIL)
+                )
+               )
+               (ATTRIBUTE)
+             )
+           )
+          ATTRIBUTE_LIST
+        )
+     )
+    )
+  )
 )
-(DEFUN HCNM_LDRBLK_ADJUST_FORMAT (STRING CODE)
-  ;; If there is already an underline or overline, don't add one again.
-  (COND ((OR (= STRING "") (wcmatch (SUBSTR STRING 1 1) "\\,%")) STRING) (T (STRCAT CODE STRING)))
+;;; Underline or overline string unless it's empty.
+;;; Remove braces. Risky but true.
+(DEFUN
+   HCNM_LDRBLK_ADJUST_FORMAT (STRING CODE)
+  (COND
+    ;; If empty, do nothing
+    ((= STRING "") STRING)
+    ;; If already underlined or overlined, strip that. Assumes that's the first code.
+    ((WCMATCH STRING "\\*") (STRCAT CODE (SUBSTR STRING 3)))
+    ((WCMATCH STRING "%%*") (STRCAT CODE (SUBSTR STRING 4)))
+    ;; Otherwise just underline or overline.
+    (T (STRCAT CODE STRING))
+  )
 )
 (DEFUN
    HCNM_LDRBLK_GET_TEXT_ENTRY (P1_ENTRY LINE_NUMBER /  ENTRY-P INPUT LOOP-P prompt-p STRING)
@@ -5972,10 +6009,11 @@ ImportLayerSettings=No
   (haws-editall T)
   (haws-core-restore)
 )
-(DEFUN HCNM_EDIT_BUBBLE (ENAME_BLOCK / P1_DATA DCLFILE P1_ENTRY ENAME_BLOCK
-                        ENAME_LEADER_OLD HCNM_EB:ATTRIBUTE_LIST NOTETEXTRADIOCOLUMN
-                       REPLACE_BLOCK_P RETURN_LIST
-                      ) 
+(DEFUN
+   HCNM_EDIT_BUBBLE (ENAME_BLOCK / P1_DATA DCLFILE P1_ENTRY
+                     ENAME_LEADER_OLD HCNM_EB:ATTRIBUTE_LIST
+                     NOTETEXTRADIOCOLUMN REPLACE_BLOCK_P RETURN_LIST
+                    )
   (SETQ
     P1_DATA
      (HCNM_LDRBLK_GET_P1_DATA ENAME_BLOCK)
@@ -5995,19 +6033,12 @@ ImportLayerSettings=No
     (COND
       ((= DONE_CODE 0) (SETQ DONE_CODE (HCNM_EDIT_BUBBLE_CANCEL)))
       ((= DONE_CODE 1)
-       (SETQ
-         DONE_CODE
-          (HCNM_EB:SAVE ENAME_BLOCK)
-       )
+       (SETQ DONE_CODE (HCNM_EB:SAVE ENAME_BLOCK))
       )
       ((= DONE_CODE 2)
        (SETQ
          RETURN_LIST
-          (HCNM_EB:SHOW
-            DCLFILE
-            NOTETEXTRADIOCOLUMN
-            P1_DATA
-          )
+          (HCNM_EB:SHOW DCLFILE NOTETEXTRADIOCOLUMN P1_DATA)
          DONE_CODE
           (CAR RETURN_LIST)
          NOTETEXTRADIOCOLUMN
@@ -6016,14 +6047,15 @@ ImportLayerSettings=No
           (SUBSTR NOTETEXTRADIOCOLUMN 6)
        )
       )
-      (T (HCNM_EB:GET_TEXT DONE_CODE TAG P1_ENTRY)
-         (SETQ DONE_CODE 2)
+      (T
+       (HCNM_EB:GET_TEXT DONE_CODE TAG P1_ENTRY)
+       (SETQ DONE_CODE 2)
       )
     )
   )
   ;; Change its arrowhead if needed.
   (HCNM_LDRBLK_CHANGE_ARROWHEAD ENAME_LEADER_OLD)
-  (haws-core-restore)
+  (HAWS-CORE-RESTORE)
   (PRINC)
 )
 (DEFUN
