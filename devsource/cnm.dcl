@@ -440,6 +440,10 @@ HCNMEditBubble : dialog {
 				label = "";
 			}
 			: edit_box {
+				key = "EditNOTEGAP";
+				label = "";
+			}
+			: edit_box {
 				key = "EditNOTETXT1";
 				label = "";
 			}
@@ -481,6 +485,11 @@ HCNMEditBubble : dialog {
 				label = "Note phase";
 				is_enabled = false;
  			}
+			: radio_button {
+				key = "RadioNOTEGAP";
+				label = "Gap text";
+				is_enabled = false;
+			}
 			: radio_button {
 				key = "RadioNOTETXT1";
 				label = "Line 1 text";

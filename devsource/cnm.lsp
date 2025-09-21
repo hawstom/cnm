@@ -5582,7 +5582,8 @@ ImportLayerSettings=No
      )
   )
   ;; Strip mtext codes if not using mtext
-  (COND
+  ;; Disabled because LM:Unformat breaks field codes
+  ;|(COND
     ((= BUBBLEMTEXT "")
      (SETQ
        ATTRIBUTE_LIST
@@ -5603,6 +5604,7 @@ ImportLayerSettings=No
      )
     )
   )
+  |;
 )
 ;;; Underline or overline string unless it's empty.
 ;;; Remove braces. Risky but true.
@@ -5758,7 +5760,7 @@ ImportLayerSettings=No
 )
 
 (DEFUN
-   HCNM_LDRBLK_AUTO_QTY (KEY AUTO_TYPE FACTOR / INPUT1 PSPACE_RESTORE_P
+   HCNM_LDRBLK_AUTO_QTY (KEY AUTO_TYPE FACTOR / STR_BACKSLASH INPUT1 PSPACE_RESTORE_P
                          SS-P STRING
                         )
   (COND
@@ -5830,6 +5832,14 @@ ImportLayerSettings=No
   )
   (HCNM_LDRBLK_SPACE_RESTORE PSPACE_RESTORE_P)
   STRING
+)
+(DEFUN
+   HCNM_LDRBLK_MTEXTATRIBUTE_P (EN)
+  (SETQ OBJ (VLAX-ENAME->VLA-OBJECT EN))
+  (AND
+    (VLAX-PROPERTY-AVAILABLE-P OBJ 'MTEXTATTRIBUTE)
+    (VLA-GET-MTEXTATTRIBUTE OBJ)
+  )
 )
 (DEFUN
    HCNM_LDRBLK_SPACE_SET_MODEL ()
