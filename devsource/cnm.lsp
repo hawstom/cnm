@@ -5032,7 +5032,9 @@ ImportLayerSettings=No
 (DEFUN C:HCNM-REPLACE-BUBBLE () (haws-core-init 338) (HCNM_LDRBLK_DYNAMIC NIL))
 
 (DEFUN
-   HCNM_LDRBLK_DYNAMIC (NOTETYPE / BLOCKNAME BUBBLEHOOKS ENAME_BLOCK_OLD P1_DATA P2_DATA REPLACE_BLOCK_P TH
+   HCNM_LDRBLK_DYNAMIC (NOTETYPE / BLOCKNAME BUBBLE_DATA BUBBLEHOOKS
+                        ENAME_BLOCK_OLD P1_DATA P2_DATA REPLACE_BLOCK_P
+                        TH
                        )
   (HAWS-VSAVE '("attreq" "aunits" "clayer" "cmdecho"))
   (COND
@@ -5082,8 +5084,10 @@ ImportLayerSettings=No
   (HAWS-MKLAYR "NOTESLDR")
   (SETVAR "attreq" 0)
   (SETQ
-    REPLACE_BLOCK_P (NOT NOTETYPE)
-    ENAME_BLOCK_OLD (HCNM_LDRBLK_GET_ENAME_BLOCK_OLD REPLACE_BLOCK_P)
+    REPLACE_BLOCK_P
+     (NOT NOTETYPE)
+    ENAME_BLOCK_OLD
+     (HCNM_LDRBLK_GET_ENAME_BLOCK_OLD REPLACE_BLOCK_P)
     P1_DATA
      (HCNM_LDRBLK_GET_P1_DATA ENAME_BLOCK_OLD)
     NOTETYPE
@@ -5095,19 +5099,22 @@ ImportLayerSettings=No
         )
        )
      )
-    P2_DATA (HCNM_LDRBLK_GET_P2_DATA P1_DATA TH BLOCKNAME NOTETYPE)
+    P2_DATA
+     (HCNM_LDRBLK_GET_P2_DATA P1_DATA TH BLOCKNAME NOTETYPE)
+    ;; bubble-data-update: Trying this refactoring.
   )
-  (HCNM_LDRBLK_DRAW
-    P1_DATA P2_DATA TH NOTETYPE BLOCKNAME
+  (HCNM_LDRBLK_DRAW_BUBBLE
+    P1_DATA P2_DATA BUBBLE_DATA TH NOTETYPE BLOCKNAME
    )
-  (princ "\nUse the ATTIPEDIT command to edit bubble note.")
+  (SETQ BUBBLE_DATA (HCNM_LDRBLK_GET_BUBBLE_DATA P1_DATA))
+  (HCNM_LDRBLK_FINISH_BUBBLE P1_DATA BUBBLE_DATA NOTETYPE)
+  (PRINC "\nUse the ATTIPEDIT command to edit bubble note.")
   (HCNM_RESTORE_DIMSTYLE)
   (HAWS-VRSTOR)
   (VL-CMDF "._undo" "_e")
   (HAWS-CORE-RESTORE)
   (PRINC)
 )
-
 (DEFUN
    HCNM_LDRBLK_GET_ENAME_BLOCK_OLD (REPLACE_BLOCK_P / ELIST_BLOCK_OLD ENAME_BLOCK_OLD)
   (COND
@@ -5224,9 +5231,8 @@ ImportLayerSettings=No
   (VL-CMDF "._erase" SS1 "")
   (SETQ P2_DATA (LIST P2))
 )
-
 (DEFUN
-   HCNM_LDRBLK_DRAW (P1_DATA P2_DATA TH NOTETYPE BLOCKNAME / ANG1
+   HCNM_LDRBLK_DRAW_BUBBLE (P1_DATA P2_DATA ATTRIBUTE_LIST TH NOTETYPE BLOCKNAME / ANG1
                      ASSOCIATE_P ATTRIBUTES_OLD AUOLD BLOCK_DATA ELIST_LEADER_OLD
                      ENAME_BLOCK_NEW ENAME_BLOCK_OLD ENAME_LEADER
                      ENAME_LEADER_OLD ETYPE FLIPSTATE INPUT1 P1_ENTRY P2
@@ -5376,34 +5382,87 @@ ImportLayerSettings=No
      (SETVAR "aunits" AUOLD)
     )
   )
+)
+(DEFUN HCNM_LDRBLK_GET_BUBBLE_DATA (P1_DATA / ATTRIBUTE_LIST BLOCK_DATA ENAME_BLOCK_OLD INDEX NUM P1_ENTRY)
   (SETQ
+    P1_ENTRY
+     (CAR P1_DATA)
+    ENAME_BLOCK_OLD
+     (CADR P1_DATA)
+  )
+  (COND
+    (ENAME_BLOCK_OLD
+     (SETQ ATTRIBUTE_LIST (HCNM_GET_ATTRIBUTES ENAME_BLOCK_OLD T))
+    )
+    (T
+     (INITGET 128 "Copy")
+     (SETQ NUM (GETKWORD "\nNote number or [Copy note]: "))
+     (COND
+       ((= NUM "Copy")
+        (SETQ
+          ATTRIBUTE_LIST
+           (HCNM_GET_ATTRIBUTES
+             (SETQ ENAME_BLOCK_OLD (CAR (ENTSEL)))
+             T
+           )
+        )
+       )
+       (T
+        (SETQ ATTRIBUTE_LIST (HCNM_LDRBLK_INITIALIZE_ATTRIBUTE_LIST))
+        ;; This is start point 1 of 2 of the bubble data logic. This start point is for the bubble note creation process.
+        ;; This is one place where ATTRIBUTE_LIST gets created. The other is when a bubble note to be edited or copied has its attributes read in HCNM_GET_ATTRIBUTES.
+        (MAPCAR
+          '(LAMBDA (INDEX)
+             (SETQ
+               ATTRIBUTE_LIST
+                (HCNM_LDRBLK_GET_TEXT_ENTRY
+                  P1_ENTRY
+                  INDEX
+                  ATTRIBUTE_LIST
+                )
+             )
+           )
+          '(1 2 3 4 5 6 0)
+        )
+       )
+     )
+    )
+  )
+  (HCNM_LDRBLK_ADJUST_FORMATS ATTRIBUTE_LIST)
+)
+(DEFUN
+   HCNM_LDRBLK_FINISH_BUBBLE (P1_DATA ATTRIBUTE_LIST NOTETYPE
+                              / ENAME_BLOCK_NEW
+                              ENAME_BLOCK_OLD ENAME_LEADER ETYPE
+                             )
+  (SETQ
+    ENAME_BLOCK_OLD
+     (CADR P1_DATA)
+    REPLACE_BLOCK_P
+     (CADDDR P1_DATA)
     ENAME_BLOCK_NEW
      (ENTLAST)
   )
-  (HCNM_LDRBLK_SET_DYNPROPS ENAME_BLOCK_NEW ENAME_BLOCK_OLD NOTETYPE REPLACE_BLOCK_P)
-  (SETQ
-    BLOCK_DATA
-     (HCNM_LDRBLK_GET_BLOCK_DATA P1_ENTRY ENAME_BLOCK_OLD)
-    ATTRIBUTES_OLD
-     (CADR BLOCK_DATA)
+  (HCNM_LDRBLK_SET_DYNPROPS
+    ENAME_BLOCK_NEW
+    ENAME_BLOCK_OLD
+    NOTETYPE
+    REPLACE_BLOCK_P
   )
-  (IF REPLACE_BLOCK_P (ENTDEL ENAME_BLOCK_OLD))
-  (HCNM_SET_ATTRIBUTES ENAME_BLOCK_NEW ATTRIBUTES_OLD)
+  (IF REPLACE_BLOCK_P
+    (ENTDEL ENAME_BLOCK_OLD)
+  )
+  (HCNM_SET_ATTRIBUTES ENAME_BLOCK_NEW ATTRIBUTE_LIST)
   ;; Change leader arrowhead if needed.
-  (WHILE (AND
-           (= (C:HCNM-CONFIG-GETVAR "BubbleArrowIntegralPending") "1")
-           (/= "LEADER"
-               (SETQ
-                 ETYPE
-                  (CDR
-                    (ASSOC
-                      0
-                      (ENTGET (SETQ ENAME_LEADER (ENTNEXT ENAME_LEADER)))
-                    )
-                  )
-               )
-           )
-         )
+  (WHILE
+    (AND
+      (= (C:HCNM-CONFIG-GETVAR "BubbleArrowIntegralPending") "1")
+      (/= "LEADER"
+          (CDR
+            (ASSOC 0 (ENTGET (SETQ ENAME_LEADER (ENTNEXT ENAME_LEADER))))
+          )
+      )
+    )
   )
   (HCNM_LDRBLK_CHANGE_ARROWHEAD ENAME_LEADER)
 )
@@ -5481,64 +5540,10 @@ ImportLayerSettings=No
     (T (LM:SETDYNPROPVALUE VLAOBJ_BLOCK_NEW "Shape" NOTETYPE))
   )
 )
-;; This is the function that should have all the interface loops and none of the data.
-;; Maybe it should be called something like INTERFACE_MAIN
-(DEFUN
-   HCNM_LDRBLK_GET_BLOCK_DATA
-   (P1_ENTRY ENAME_BLOCK_OLD / ATTRIBUTE_LIST BLOCK_DATA NUM)
-  (COND
-    (ENAME_BLOCK_OLD
-     (SETQ ATTRIBUTE_LIST (HCNM_GET_ATTRIBUTES ENAME_BLOCK_OLD T))
-    )
-    (T
-     (INITGET 128 "Copy")
-     (SETQ NUM (GETKWORD "\nNote number or [Copy note]: "))
-     (COND
-       ((= NUM "Copy")
-        (SETQ
-          ATTRIBUTE_LIST
-           (HCNM_GET_ATTRIBUTES
-             (SETQ ENAME_BLOCK_OLD (CAR (ENTSEL)))
-             T
-           )
-        )
-       )
-       (T
-        (SETQ ATTRIBUTE_LIST (HCNM_LDRBLK_INITIALIZE_ATTRIBUTE_LIST))
-        ;; bubble-data-update: This is start point 1 of 2 of the bubble data logic. This one is for the bubble note creation process.
-        ;; This is one place where ATTRIBUTE_LIST gets created. The other is when a bubble note to be edited or copied has its attributes read in HCNM_GET_ATTRIBUTES.
-        (MAPCAR
-          '(LAMBDA (INDEX)
-             (SETQ
-               ATTRIBUTE_LIST
-                (HCNM_LDRBLK_GET_TEXT_ENTRY
-                  P1_ENTRY
-                  INDEX
-                  ATTRIBUTE_LIST
-                )
-             )
-           )
-          '(1 2 3 4 5 6 0)
-        )
-       )
-     )
-    )
-  )
-  (SETQ
-    BLOCK_DATA
-     (LIST
-       ENAME_BLOCK_OLD
-       (HCNM_LDRBLK_ADJUST_FORMATS ATTRIBUTE_LIST)
-     )
-  )
-)
 (DEFUN
    HCNM_LDRBLK_INITIALIZE_ATTRIBUTE_LIST (/ ATTRIBUTE_LIST)
   (SETQ
     ATTRIBUTE_LIST
-     ;; bubble-data-update: This is start point 1 of 2 of the bubble data logic. This one is for the bubble note creation process.
-     ;; This is one place where ATTRIBUTE_LIST gets created. The other is when a bubble note to be edited or copied has its attributes read in HCNM_GET_ATTRIBUTES.
-     ;; Need to be sure that the functions we are passing ATTRIBUTE_LIST to can handle an empty, even nil, attribute list.
      (MAPCAR
        '(LAMBDA (INDEX)
           (LIST
@@ -5813,7 +5818,7 @@ ImportLayerSettings=No
 ;; HCNM_LDRBLK_GET_AUTO_DATA returns STRING. should return object, type, and string.
 ;; HCNM_LDRBLK_GET_TEXT_DATA returns STRING
 ;; HCNM_LDRBLK_GET_TEXT_ENTRY returns STRING
-;; HCNM_LDRBLK_GET_BLOCK_DATA returns BLOCK_DATA that includes ATTRIBUTE_LIST
+;; HCNM_LDRBLK_GET_BUBBLE_DATA returns BLOCK_DATA that includes ATTRIBUTE_LIST
 ;; HCNM_SET_ATTRIBUTES puts ATTRIBUTE_LIST into bubble note
 ;; 
 ;; Bubble note editing process from inside out:
@@ -6769,8 +6774,4 @@ ImportLayerSettings=No
     )
   )
 )
-
 (LOAD "ini-edit")
- ;|«Visual LISP© Format Options»
-(72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)
-;*** DO NOT add text below the comment! ***|;
