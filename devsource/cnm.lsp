@@ -5554,6 +5554,8 @@ ImportLayerSettings=No
        '(1 2 3 4 5 6 0)
      )
     ATTRIBUTE_LIST
+     (CONS (LIST "NOTEDATA" "") ATTRIBUTE_LIST)
+    ATTRIBUTE_LIST
      (CONS (LIST "NOTEGAP" "") ATTRIBUTE_LIST)
     ATTRIBUTE_LIST
      (CONS (LIST "NOTENUM" NUM) ATTRIBUTE_LIST)
@@ -5562,6 +5564,24 @@ ImportLayerSettings=No
 )
 (DEFUN HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST (TAG VALUE ATTRIBUTE_LIST / )
  (SUBST (LIST TAG VALUE) (ASSOC TAG ATTRIBUTE_LIST) ATTRIBUTE_LIST)
+)
+;; Adds object to notedata attribute's list if it's not already in the list.
+;; Returns ATTRIBUTE_LIST
+(DEFUN HCNM_LDRBLK_SAVE_OBJECT_REFERENCE_TO_NOTEDATA (LINE_TAG OBJECT DATA_KEY ATTRIBUTE_LIST / DATA_KEY_OLD HANDLE HANDLE_OLD LINE_DATA LINE_DATA_OLD LINE_KEY LINE_TAG NOTEDATA)
+  (SETQ
+    LINE_KEY (SUBSTR LINE_TAG 8 1)
+    HANDLE (VLA-GET-HANDLE OBJECT)
+    LINE_DATA (LIST LINE_KEY HANDLE DATA_KEY)
+    NOTEDATA (READ (CADR(ASSOC "NOTEDATA" ATTRIBUTE_LIST)))
+    LINE_DATA_OLD (ASSOC LINE_KEY NOTEDATA)
+    HANDLE_OLD (CADR LINE_DATA_OLD)
+    DATA_KEY_OLD (CADDR LINE_DATA_OLD)
+  )
+  (COND 
+    ((NOT LINE_DATA_OLD) (SETQ NOTEDATA (CONS LINE_DATA NOTEDATA)))
+    ((OR (/= HANDLE_OLD HANDLE) (/= DATA_KEY_OLD DATA_KEY))(SETQ NOTEDATA (SUBST LINE_DATA LINE_DATA_OLD NOTEDATA)))
+  )
+  (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST "NOTEDATA" (VL-PRIN1-TO-STRING NOTEDATA) ATTRIBUTE_LIST)
 )
 (DEFUN
    HCNM_LDRBLK_ADJUST_FORMATS (ATTRIBUTE_LIST / BUBBLEMTEXT TXT1 TXT2
@@ -5655,7 +5675,7 @@ ImportLayerSettings=No
 )
 (DEFUN
    HCNM_LDRBLK_GET_TEXT_ENTRY (P1_ENTRY LINE_NUMBER ATTRIBUTE_LIST /
-                               ENTRY-P INPUT LOOP-P PROMPT-P STRING TAG
+                               SKIP_ENTRY_P INPUT LOOP-P PROMPT-P STRING TAG
                               )
   (SETQ
     LOOP-P T
@@ -5665,15 +5685,15 @@ ImportLayerSettings=No
         )
         "1"
      )
-    ENTRY-P
-     (= (C:HCNM-CONFIG-GETVAR "BubbleSkipEntryPrompt") "0")
+    SKIP_ENTRY_P
+     (= (C:HCNM-CONFIG-GETVAR "BubbleSkipEntryPrompt") "1")
     STRING ""
     TAG
      (STRCAT "NOTETXT" (ITOA LINE_NUMBER))
   )
   (WHILE (AND PROMPT-P LOOP-P)
     (COND
-      ((OR (NOT ENTRY-P)
+      ((OR SKIP_ENTRY_P
            (= (SETQ
                 INPUT
                  (GETSTRING
@@ -5688,11 +5708,9 @@ ImportLayerSettings=No
               "."
            )
        )
-       ;; bubble-data-update: this is called only here on bubble note insertion.
-       ;; Maybe this should be called GET_AUTO_TYPE then GET_AUTO_DATA
        (SETQ
          ATTRIBUTE_LIST
-          (HCNM_LDRBLK_GET_TEXT_DATA
+          (HCNM_LDRBLK_GET_AUTO_TYPE
             P1_ENTRY
             LINE_NUMBER
             TAG
@@ -5715,8 +5733,8 @@ ImportLayerSettings=No
       )
     )
     (SETQ
-      ENTRY-P
-       (OR ENTRY-P (= STRING "ENtry"))
+      SKIP_ENTRY_P
+       (AND SKIP_ENTRY_P (/= STRING "ENtry"))
       LOOP-P
        (OR (NOT STRING) (= STRING "ENtry"))
     )
@@ -5740,9 +5758,8 @@ ImportLayerSettings=No
     ("ENtry" "ENtry" nil)
   )
 )
-;;; bubble-data-update: maybe this should be broken into GET_AUTO_TYPE and GET_AUTO_DATA
 (DEFUN
-   HCNM_LDRBLK_GET_TEXT_DATA (P1_ENTRY LINE_NUMBER TAG ATTRIBUTE_LIST /
+   HCNM_LDRBLK_GET_AUTO_TYPE (P1_ENTRY LINE_NUMBER TAG ATTRIBUTE_LIST /
                               CVPORT_OLD HAWS-QT-NEW INPUT SPACE STRING
                              )
   (INITGET
@@ -5792,16 +5809,15 @@ ImportLayerSettings=No
       )
     )
     (T
-     ;; bubble-data-update: this is called from command line and from edit box to get string as requested by user. It needs to get not only string, but also data (reference object and reference type).
      (SETQ
        ATTRIBUTE_LIST
         (HCNM_LDRBLK_GET_AUTO_DATA
+          ATTRIBUTE_LIST
           (STRCAT "NOTETXT" (ITOA LINE_NUMBER))
           (CADR
             (ASSOC INPUT (HCNM_LDRBLK_GET_AUTO_TYPE_KEYS))
           )
           P1_ENTRY
-          ATTRIBUTE_LIST
         )
      )
     )
@@ -5815,15 +5831,15 @@ ImportLayerSettings=No
 ;; This is how bubble note auto text works.
 ;; 
 ;; Bubble note creation process from inside out:
-;; HCNM_LDRBLK_GET_AUTO_DATA returns STRING. should return object, type, and string.
-;; HCNM_LDRBLK_GET_TEXT_DATA returns STRING
-;; HCNM_LDRBLK_GET_TEXT_ENTRY returns STRING
-;; HCNM_LDRBLK_GET_BUBBLE_DATA returns BLOCK_DATA that includes ATTRIBUTE_LIST
+;; HCNM_LDRBLK_GET_AUTO_DATA returns ATTRIBUTE_LIST including NOTEDATA information
+;; HCNM_LDRBLK_GET_AUTO_TYPE returns ATTRIBUTE_LIST
+;; HCNM_LDRBLK_GET_TEXT_ENTRY returns ATTRIBUTE_LIST
+;; HCNM_LDRBLK_GET_BUBBLE_DATA returns BLOCK_DATA that includes ATTRIBUTE_LIST after adjusting formatting  (overline and underline)
 ;; HCNM_SET_ATTRIBUTES puts ATTRIBUTE_LIST into bubble note
 ;; 
 ;; Bubble note editing process from inside out:
-;; HCNM_LDRBLK_GET_AUTO_DATA returns STRING
-;; HCNM_EB:GET_TEXT modifies semi-global HCNM_EB:ATTRIBUTE_LIST
+;; HCNM_LDRBLK_GET_AUTO_DATA returns ATTRIBUTE_LIST including NOTEDATA information
+;; HCNM_EB:GET_TEXT modifies semi-global HCNM_EB:ATTRIBUTE_LIST after adjusting formatting (overline and underline)
 ;; HCNM_EB:SAVE calls HCNM_SET_ATTRIBUTES to save semi-global HCNM_EB:ATTRIBUTE_LIST
 ;; HCNM_EDIT_BUBBLE top level manages editing dialog
 ;; 
@@ -5837,52 +5853,52 @@ ImportLayerSettings=No
 ;; (HCNM_LDRBLK_UPDATE_DATA KEY OBJECT)
 ;; NOTEDATA attribute value needs to look something like this:
 ;; Object table                   Object references as needed
-;; "((object1 object2 ... objecti)(line_key_1 object_index type/key)(line_key_i object_index type/key))"
-;; We return only the current object, type, and string, and we let another function figure out how to update the table.
+;; "((line_key_1 object_handle type/key)(line_key_i object_handle type/key))"
+;; Since what has to be done on update varies widely, we pass the attribute list to each sub-function and let it decided what to do with it. I think we also need to pass in an indication of whether this is a refresh or a user prompt.
+;; We return the modified attribute_list.
 ;; 
 ;; Returns ATTRIBUTE_LIST with the requested auto data added.
 (DEFUN
-   HCNM_LDRBLK_GET_AUTO_DATA (TAG KEY P1_ENTRY ATTRIBUTE_LIST / DATA HANDLE STRING)
-  (SETQ
-    ;; bubble-data-update: all of these have to return reference object, reference type (key?), and string instead of just string.
-    STRING
+   HCNM_LDRBLK_GET_AUTO_DATA (ATTRIBUTE_LIST TAG KEY P1_ENTRY / DATA HANDLE STRING)
+    ;; bubble-data-update: all of these have to take and return ATTRIBUTE_LIST instead of just string. That's because they could need to get NOTEDATA info from ATTRIBUTE_LIST
+  (SETQ ATTRIBUTE_LIST
      (COND
-       ((= KEY "Text") (HCNM_LDRBLK_AUTO_ES KEY))
-       ((= KEY "LF") (HCNM_LDRBLK_AUTO_QTY KEY "Length" "1"))
-       ((= KEY "SF") (HCNM_LDRBLK_AUTO_QTY KEY "Area" "1"))
+       ((= KEY "Text") (HCNM_LDRBLK_AUTO_ES ATTRIBUTE_LIST TAG KEY))
+       ((= KEY "LF") (HCNM_LDRBLK_AUTO_QTY ATTRIBUTE_LIST TAG KEY "Length" "1"))
+       ((= KEY "SF") (HCNM_LDRBLK_AUTO_QTY ATTRIBUTE_LIST TAG KEY "Area" "1"))
        ((= KEY "SY")
-        (HCNM_LDRBLK_AUTO_QTY KEY "Area" "0.11111111")
+        (HCNM_LDRBLK_AUTO_QTY KEY ATTRIBUTE_LIST TAG KEY "Area" "0.11111111")
        )
-       ((= KEY "Sta") (HCNM_LDRBLK_AUTO_AL KEY P1_ENTRY))
-       ((= KEY "Off") (HCNM_LDRBLK_AUTO_AL KEY P1_ENTRY))
+       ((= KEY "Sta") (HCNM_LDRBLK_AUTO_AL ATTRIBUTE_LIST TAG KEY P1_ENTRY))
+       ((= KEY "Off") (HCNM_LDRBLK_AUTO_AL ATTRIBUTE_LIST TAG KEY P1_ENTRY))
        ((= KEY "StaOff")
-        (HCNM_LDRBLK_AUTO_AL KEY P1_ENTRY)
+        (HCNM_LDRBLK_AUTO_AL ATTRIBUTE_LIST TAG KEY P1_ENTRY)
        )
-       ((= KEY "N") (HCNM_LDRBLK_AUTO_NE KEY P1_ENTRY))
-       ((= KEY "E") (HCNM_LDRBLK_AUTO_NE KEY P1_ENTRY))
-       ((= KEY "NE") (HCNM_LDRBLK_AUTO_NE KEY P1_ENTRY))
-       ((= KEY "Z") (HCNM_LDRBLK_AUTO_SU KEY P1_ENTRY))
+       ((= KEY "N") (HCNM_LDRBLK_AUTO_NE ATTRIBUTE_LIST TAG KEY P1_ENTRY))
+       ((= KEY "E") (HCNM_LDRBLK_AUTO_NE ATTRIBUTE_LIST TAG KEY P1_ENTRY))
+       ((= KEY "NE") (HCNM_LDRBLK_AUTO_NE ATTRIBUTE_LIST TAG KEY P1_ENTRY))
+       ((= KEY "Z") (HCNM_LDRBLK_AUTO_SU ATTRIBUTE_LIST TAG KEY P1_ENTRY))
      )
-    ;; bubble-data-update: Placeholder stuff
-    HANDLE nil ; bubble-data-update: This line shouldn't be needed. To be included in DATA returned by functions dispatched above.
-    DATA (LIST KEY HANDLE STRING) ; bubble-data-update: DATA to be returned by functions dispatched above.
-    DATA (CONS TAG DATA) 
-  )
-  ;; bubble-data-update: The called function is only a placeholder at the moment. I believe this is the core new magic for this phase. This should put the object and ref type for any text line into attribute list to be saved to the block.
-  (HCNM_LDRBLK_ADJUST_NOTEDATA DATA ATTRIBUTE_LIST)
-)
-
-(DEFUN
-   HCNM_LDRBLK_AUTO_ES (KEY / ENAME)
-  (SETQ ENAME (CAR (NENTSEL (STRCAT "\nSelect object with " KEY ": "))))
-  (COND
-    (ENAME (CDR (ASSOC 1 (ENTGET ENAME))))
-    (T NIL)
   )
 )
 
+(DEFUN HCNM_LDRBLK_AUTO_ES (ATTRIBUTE_LIST TAG KEY / ENAME) 
+  (SETQ 
+    ENAME          
+    (CAR (NENTSEL (STRCAT "\nSelect object with " KEY ": ")))
+    ATTRIBUTE_LIST 
+     (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST 
+       TAG
+       (COND 
+         (ENAME (CDR (ASSOC 1 (ENTGET ENAME))))
+         (T "")
+       )
+       ATTRIBUTE_LIST
+     )
+  )
+)
 (DEFUN
-   HCNM_LDRBLK_AUTO_QTY (KEY AUTO_TYPE FACTOR / STR_BACKSLASH INPUT1 PSPACE_RESTORE_P
+   HCNM_LDRBLK_AUTO_QTY (ATTRIBUTE_LIST TAG KEY AUTO_TYPE FACTOR / STR_BACKSLASH INPUT1 PSPACE_BUBBLE_P
                          SS-P STRING
                         )
   (COND
@@ -5893,7 +5909,7 @@ ImportLayerSettings=No
      (C:HCNM-CONFIG-SETVAR "BubbleArrowIntegralPending" "1")
     )
   )
-  (SETQ PSPACE_RESTORE_P (HCNM_LDRBLK_SPACE_SET_MODEL))
+  (SETQ PSPACE_BUBBLE_P (HCNM_LDRBLK_SPACE_SET_MODEL))
   (INITGET "Selection")
   (SETQ
     INPUT1
@@ -5952,8 +5968,12 @@ ImportLayerSettings=No
        )
      )
   )
-  (HCNM_LDRBLK_SPACE_RESTORE PSPACE_RESTORE_P)
-  STRING
+  (HCNM_LDRBLK_SPACE_RESTORE PSPACE_BUBBLE_P)
+  (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST 
+    TAG
+    STRING
+    ATTRIBUTE_LIST
+  )
 )
 (DEFUN
    HCNM_LDRBLK_MTEXTATRIBUTE_P (EN)
@@ -5968,94 +5988,105 @@ ImportLayerSettings=No
   (COND ((= (GETVAR "CVPORT") 1) (VL-CMDF "._MSPACE") T))
 )
 (DEFUN
-   HCNM_LDRBLK_SPACE_RESTORE (PSPACE_RESTORE_P)
-  (COND (PSPACE_RESTORE_P (VL-CMDF "._PSPACE")))
+   HCNM_LDRBLK_SPACE_RESTORE (PSPACE_BUBBLE_P)
+  (COND (PSPACE_BUBBLE_P (VL-CMDF "._PSPACE")))
 )
 ;; bubble-data-update: This has to be split into
 ;; 1. HCNM_LDRBLK_AUTO_AL_GET_OBJECT that returns object
-;; 2. HCNM_LDRBLK_AUTO_AL_GET_STRING that returns string given object and point so that this function can be used to update string.
-;; A complication is the management of paper/model space and point translation. May need to break out a simple HCNM_LDRBLK_PSPACE_P function instead of detecting pspace and setting mspace in one fell swoop.
+;; 2. HCNM_LDRBLK_AUTO_AL_GET_STRING that returns staoff string of given object and point so that this function can be used to update string.
+;; I think maybe all the following is bad thinking since we can always only edit bubble notes in the current space. A complication is the management of paper/model space and point translation because on update we have to check the current staoff of our point of interest; or maybe not complicated. May need to break out a simple HCNM_LDRBLK_PSPACE_P function instead of detecting pspace and setting mspace in one fell swoop.
 (DEFUN
-   HCNM_LDRBLK_AUTO_AL (KEY P1_ENTRY / DRAWSTATION NAME OBJALIGN OFF PSPACE_RESTORE_P STA)
+   HCNM_LDRBLK_AUTO_AL (ATTRIBUTE_LIST TAG KEY P1_ENTRY / DRAWSTATION NAME OBJALIGN OFF PSPACE_BUBBLE_P STA STRING)
   (SETQ
-    PSPACE_RESTORE_P
+    PSPACE_BUBBLE_P
      (HCNM_LDRBLK_SPACE_SET_MODEL)
     OBJALIGN
      (HCNM_LDRBLK_AUTO_AL_GET_ALIGNMENT)
-    P1_WORLD (HCNM_LDRBLK_TRANS_TO_WORLD P1_ENTRY PSPACE_RESTORE_P)
+    P1_WORLD (HCNM_LDRBLK_TRANS_TO_WORLD P1_ENTRY PSPACE_BUBBLE_P)
   )
-  (HCNM_LDRBLK_SPACE_RESTORE PSPACE_RESTORE_P)
-  (COND
+  (HCNM_LDRBLK_SPACE_RESTORE PSPACE_BUBBLE_P)
+  (COND 
     ((= (TYPE OBJALIGN) 'VLA-OBJECT)
-     ;; http://docs.autodesk.com/CIV3D/2012/ENU/API_Reference_Guide/com/AeccXLandLib__IAeccAlignment__StationOffset@[in]_double@[in]_double@[out]_double_@[out]_double_.htm
-     (VLAX-INVOKE-METHOD
-       OBJALIGN
-       'STATIONOFFSET
-       (VLAX-MAKE-VARIANT
-         (CAR P1_WORLD)
-         VLAX-VBDOUBLE
-       )
-       (VLAX-MAKE-VARIANT
-         (CADR P1_WORLD)
-         VLAX-VBDOUBLE
-       )
-       'DRAWSTATION
-       'OFF
-     )
-     (SETQ
-       NAME (VLAX-GET-PROPERTY OBJALIGN 'NAME)
-       STA  (STRCAT
-              (C:HCNM-CONFIG-GETVAR "BubbleTextPrefixSta")
-              (VLAX-INVOKE-METHOD
-                OBJALIGN
-                'GETSTATIONSTRINGWITHEQUATIONS
-                DRAWSTATION
-              )
-              (C:HCNM-CONFIG-GETVAR "BubbleTextPostfixSta")
-            )
-       OFF  (STRCAT
-              (COND
-                ((MINUSP OFF)
-                 (C:HCNM-CONFIG-GETVAR "BubbleTextPrefixOff-")
-                )
-                (T (C:HCNM-CONFIG-GETVAR "BubbleTextPrefixOff+"))
-              )
-              (RTOS
-                (COND
-                  ((= (C:HCNM-CONFIG-GETVAR "BubbleOffsetDropSign") "1")
-                   (ABS OFF)
-                  )
-                  (T OFF)
-                )
-                2
-                (ATOI (C:HCNM-CONFIG-GETVAR "BubbleTextPrecisionOff+"))
-              )
-              (COND
-                ((MINUSP OFF)
-                 (C:HCNM-CONFIG-GETVAR "BubbleTextPostfixOff-")
-                )
-                (T (C:HCNM-CONFIG-GETVAR "BubbleTextPostfixOff+"))
-              )
-            )
-     )
-     (COND
-       ((= KEY "Sta") STA)
-       ((= KEY "Off") OFF)
-       ((= KEY "StaOff")
-        (STRCAT
-          STA
-          (C:HCNM-CONFIG-GETVAR "BubbleTextJoinDelSta")
-          OFF
+      ;; http://docs.autodesk.com/CIV3D/2012/ENU/API_Reference_Guide/com/AeccXLandLib__IAeccAlignment__StationOffset@[in]_double@[in]_double@[out]_double_@[out]_double_.htm
+      (VLAX-INVOKE-METHOD 
+        OBJALIGN
+        'STATIONOFFSET
+        (VLAX-MAKE-VARIANT 
+          (CAR P1_WORLD)
+          VLAX-VBDOUBLE
         )
-       )
-     )
+        (VLAX-MAKE-VARIANT 
+          (CADR P1_WORLD)
+          VLAX-VBDOUBLE
+        )
+        'DRAWSTATION
+        'OFF
+      )
+      (SETQ 
+        ATTRIBUTE_LIST
+        (HCNM_LDRBLK_SAVE_OBJECT_REFERENCE_TO_NOTEDATA TAG OBJALIGN KEY ATTRIBUTE_LIST)
+        NAME 
+        (VLAX-GET-PROPERTY OBJALIGN 'NAME)             
+        STA  
+        (STRCAT 
+          (C:HCNM-CONFIG-GETVAR "BubbleTextPrefixSta")
+          (VLAX-INVOKE-METHOD 
+            OBJALIGN
+            'GETSTATIONSTRINGWITHEQUATIONS
+            DRAWSTATION
+          )
+          (C:HCNM-CONFIG-GETVAR "BubbleTextPostfixSta")
+        )
+        OFF  
+        (STRCAT 
+          (COND 
+            ((MINUSP OFF)
+              (C:HCNM-CONFIG-GETVAR "BubbleTextPrefixOff-")
+            )
+            (T (C:HCNM-CONFIG-GETVAR "BubbleTextPrefixOff+"))
+          )
+          (RTOS 
+            (COND 
+              ((= (C:HCNM-CONFIG-GETVAR "BubbleOffsetDropSign") "1")
+                (ABS OFF)
+              )
+              (T OFF)
+            )
+            2
+            (ATOI (C:HCNM-CONFIG-GETVAR "BubbleTextPrecisionOff+"))
+          )
+          (COND 
+            ((MINUSP OFF)
+              (C:HCNM-CONFIG-GETVAR "BubbleTextPostfixOff-")
+            )
+            (T (C:HCNM-CONFIG-GETVAR "BubbleTextPostfixOff+"))
+          )
+        )
+        STRING
+        (COND 
+          ((= KEY "Sta") STA)
+          ((= KEY "Off") OFF)
+          ((= KEY "StaOff")
+           (STRCAT 
+             STA
+             (C:HCNM-CONFIG-GETVAR "BubbleTextJoinDelSta")
+             OFF
+           )
+          )
+        )
+      )
     )
-    (T "N/A")
+    (T (SETQ STRING "N/A"))
+  )
+  (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST 
+    TAG
+    STRING
+    ATTRIBUTE_LIST
   )
 )
 (DEFUN
    HCNM_LDRBLK_AUTO_AL_GET_ALIGNMENT
-   (/ EALIGN NAME OBJALIGN OBJALIGN_OLD PSPACE_RESTORE_P)
+   (/ EALIGN NAME OBJALIGN OBJALIGN_OLD PSPACE_BUBBLE_P)
   (SETQ
     OBJALIGN_OLD
      (C:HCNM-CONFIG-GETVAR "BubbleCurrentAlignment")
@@ -6085,15 +6116,16 @@ ImportLayerSettings=No
      (SETQ OBJALIGN (VLAX-ENAME->VLA-OBJECT (CAR EALIGN)))
      (C:HCNM-CONFIG-SETVAR "BubbleCurrentAlignment" OBJALIGN)
     )
-    (T (alert (princ "\nSelected object is not an alignment. Keeping previous alignment."))(SETQ OBJALIGN OBJALIGN_OLD))
+    (EALIGN (alert (princ "\nSelected object is not an alignment. Keeping previous alignment."))(SETQ OBJALIGN OBJALIGN_OLD))
+    (T (princ "\nNo object selected. Keeping previous alignment.")(SETQ OBJALIGN OBJALIGN_OLD))
   )
 )
 (DEFUN
-   HCNM_LDRBLK_AUTO_NE (AUTO_TYPE P1_ENTRY / E N NE P1_WORLD)
+   HCNM_LDRBLK_AUTO_NE (ATTRIBUTE_LIST TAG KEY AUTO_TYPE P1_ENTRY / E N NE P1_WORLD)
   (SETQ
-    PSPACE_RESTORE_P
+    PSPACE_BUBBLE_P
      (HCNM_LDRBLK_SPACE_SET_MODEL)
-    P1_WORLD (HCNM_LDRBLK_TRANS_TO_WORLD P1_ENTRY PSPACE_RESTORE_P)
+    P1_WORLD (HCNM_LDRBLK_TRANS_TO_WORLD P1_ENTRY PSPACE_BUBBLE_P)
     N  (HCNM_LDRBLK_AUTO_RTOS (CADR P1_WORLD) "N")
     E  (HCNM_LDRBLK_AUTO_RTOS (CAR P1_WORLD) "E")
     NE (STRCAT
@@ -6102,11 +6134,15 @@ ImportLayerSettings=No
          E
        )
   )
-  (HCNM_LDRBLK_SPACE_RESTORE PSPACE_RESTORE_P)
-  (cond
-    ((= AUTO_TYPE "N") N)
-    ((= AUTO_TYPE "E") E)
-    ((= AUTO_TYPE "NE") NE)
+  (HCNM_LDRBLK_SPACE_RESTORE PSPACE_BUBBLE_P)
+  (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST 
+    TAG
+    (COND
+      ((= AUTO_TYPE "N") N)
+      ((= AUTO_TYPE "E") E)
+      ((= AUTO_TYPE "NE") NE)
+    )
+    ATTRIBUTE_LIST
   )
 )
 (DEFUN
@@ -6121,16 +6157,20 @@ ImportLayerSettings=No
     (C:HCNM-CONFIG-GETVAR (STRCAT "BubbleTextPostfix" KEY))
   )
 )
-(DEFUN HCNM_LDRBLK_AUTO_SU (AUTO_TYPE P1_ENTRY)
-  (HCNM_LDRBLK_AUTO_APOLOGY AUTO_TYPE)
+(DEFUN HCNM_LDRBLK_AUTO_SU (ATTRIBUTE_LIST TAG KEY AUTO_TYPE P1_ENTRY)
+  (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST 
+    TAG
+    (HCNM_LDRBLK_AUTO_APOLOGY AUTO_TYPE)
+    ATTRIBUTE_LIST
+  )
 )
 ;; Translates from current user or paper coordinate system to world.
 ;; Assumes that the entry coordinate system was the same as the current.
 (DEFUN
-   HCNM_LDRBLK_TRANS_TO_WORLD (P1_ENTRY PSPACE_P)
+   HCNM_LDRBLK_TRANS_TO_WORLD (P1_ENTRY PSPACE_BUBBLE_P)
   (COND
     ((= (GETVAR "CVPORT") 1) (ALERT (PRINC "\nProgramming error: HCNM_LDRBLK_TRANS_TO_WORLD cannot be called from paper space.")))
-    (PSPACE_P (TRANS (TRANS P1_ENTRY 3 2) 2 0))
+    (PSPACE_BUBBLE_P (TRANS (TRANS P1_ENTRY 3 2) 2 0))
     (T (TRANS P1_ENTRY 1 0))
   )
 )
@@ -6220,15 +6260,14 @@ ImportLayerSettings=No
   (SETQ
     AUTO_TYPE
      (CADR (ASSOC DONE_CODE (HCNM_EDIT_BUBBLE_DONE_CODES)))
-    ;; bubble-data-update: this isn't enough. We also need the reference object and the reference type so that we can rebuild the string in case the reference object or our point changes.
-    ;; bubble-data-update: this is called from command line and from edit box to get string as requested by user. It needs to get not only string, but also data (reference object and reference type).
+    ;; bubble-data-update: this is called from command line and from edit box to get string as requested by user.
     HCNM_EB:ATTRIBUTE_LIST
      (HCNM_LDRBLK_ADJUST_FORMATS
        (HCNM_LDRBLK_GET_AUTO_DATA
+         HCNM_EB:ATTRIBUTE_LIST
          TAG
          AUTO_TYPE
          P1_ENTRY
-         HCNM_EB:ATTRIBUTE_LIST
        )
      )
   )
@@ -6775,3 +6814,6 @@ ImportLayerSettings=No
   )
 )
 (LOAD "ini-edit")
+;|�Visual LISP� Format Options�
+(72 2 40 2 nil "end of " 100 2 2 2 1 nil nil nil T)
+;*** DO NOT add text below the comment! ***|;
