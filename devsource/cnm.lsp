@@ -1,3 +1,4 @@
+;#region Header comments
 ;;; CONSTRUCTION NOTES MANAGER
 ;;;
 ;;; PHASING
@@ -64,6 +65,8 @@
 ;;; 2000     v3.21  Stopped the counting of table quantities by renaming table attributes.
 ;;; 2000            Added user size variables to CONSTNOT.TXT
 ;;; 1999     v3.20  Improved performance by rewriting code.
+;#endregion
+;#region Table from search
 (DEFUN
    HCNM_GETPHASELISTFROMTBLQTY (/ EL EN I DSCTAG NOTEQTYONDISK OLDTAGS
                                 PHASEALIAS PHASELIST
@@ -1314,6 +1317,8 @@
   ;;Make a new notes table
   (HCNM_KEY_TABLE_MAKE "E" QTYPT QTYSET DN TXTHT)
 )
+;#endregion
+;#region Table from import
 ;;HCNM_IMPORT
 ;;In the NOTES strategy, this routine is second of three main routines.
 ;;Reads from .NOT file, created by HCNM_KEY_TABLE_FROM_SEARCH, everything necessary and creates a table. 
@@ -1370,6 +1375,8 @@
   ;;Make a new notes table after erasing qtyset
   (HCNM_KEY_TABLE_MAKE "I" QTYPT QTYSET DN TXTHT)
 )
+;#endregion
+;#region Tally
 ;;HCNM_TALLY
 ;;In the NOTES strategy, this routine is the third of three main routines.
 ;;Reads from a group of .NOT files everything necessary to create a list of total quantities for job.
@@ -2154,6 +2161,8 @@
     (STRCAT "\nUsed project notes file found at " PROJNOTES)
   )
 )
+;#endregion
+;#region CNM Main
 ;;CNM main commands
 (DEFUN C:HCNM-CNM ()
 (haws-core-init 179) (HCNM_CNM NIL)(haws-core-restore))
@@ -2236,6 +2245,8 @@
 ;;;End of CNM
 ;;;
 
+;#endregion
+;#region Project Management
 ;;;================================================================================================================
 ;;;
 ;;; Begin Project Management functions
@@ -2676,7 +2687,8 @@
   (SETQ F2 (CLOSE F2))
 )
 
-
+;#endregion
+;#region Config
 ;;;================================================================================================================
 ;;;
 ;;; Begin Settings Config functions
@@ -3634,6 +3646,8 @@ ImportLayerSettings=No
   )
 )
 
+;#endregion
+;#region Project Notes
 ;;;============================================================================
 ;;;
 ;;; Begin Project Notes functions
@@ -4560,6 +4574,8 @@ ImportLayerSettings=No
   FORMAT
 )
 
+;#endregion
+;#region Project Notes Editor
 ;;;================================================================================================================
 ;;;
 ;;; Begin Project Notes Editor functions section
@@ -4636,6 +4652,8 @@ ImportLayerSettings=No
   NEW_FILENAME
 )
 
+;#endregion
+;#region Layers Editor
 ;;;================================================================================================================
 ;;;
 ;;; Begin Layers Editor functions section
@@ -4693,138 +4711,8 @@ ImportLayerSettings=No
 )
 
 
-;;;================================================================================================================
-;;;
-;;; Begin Bubble Notes commands
-;;;
-;;;================================================================================================================
-;;; SETNOTESBUBBLESTYLE
-;;; Saves the users preferred Notes Bubble Style to the registry
-(DEFUN
-   C:HCNM-SETNOTESBUBBLESTYLE (/ BUBBLEHOOKS)
-(haws-core-init 190)
-  (INITGET "Yes No")
-  (SETQ
-    BUBBLEHOOKS
-     (GETKWORD
-       "\nInsert bubble notes with hooks? [Yes/No]: "
-     )
-  )
-  (IF BUBBLEHOOKS
-    (c:hcnm-config-setvar
-      "BubbleHooks"
-      (COND
-        ((= BUBBLEHOOKS "Yes") "1")
-        ("0")
-      )
-    )
-  )
-  (haws-core-restore)
-  (PRINC)
-)
-;;; Global edit of bubble note phases
-(DEFUN
-   C:HAWS-PHASEEDIT (/ NEWPHASE OLDPHASE)
-(haws-core-init 191)
-  (SETQ
-    OLDPHASE
-     (GETSTRING "\nEnter phase to change: ")
-    NEWPHASE
-     (GETSTRING "\nEnter new phase: ")
-  )
-  (VL-CMDF
-    "._attedit" "_n" "_n" "note???l,note???r" "notephase" "*" OLDPHASE
-    NEWPHASE
-   )
-  (GRAPHSCR)
-  (haws-core-restore)
-  (PRINC)
-)
-;;; Put attributes on NOPLOT layer
-(DEFUN
-   C:HCNM-ATTNOPLOT ()
-(haws-core-init 192)
-  (HCNM_ATTLAYER "NOTESNOPLOT")
-  (VL-CMDF
-    "._layer"
-    "_Plot"
-    "_No"
-    (HAWS-GETLAYR "NOTESNOPLOT")
-    ""
-  )
-  (haws-core-restore)
-)
-(DEFUN C:HCNM-ATTPLOT () (HCNM_ATTLAYER "0"))
-(DEFUN
-   HCNM_ATTLAYER (LAYER / AT EL EN ET NPLAYER NPLIST SSET SSLEN)
-  (haws-core-init 193)
-  (HAWS-VSAVE '("CLAYER"))
-  (VL-CMDF "._undo" "_g")
-  (SETQ NPLAYER (CAR (HAWS-GETLAYR LAYER)))
-  (IF (NOT (TBLSEARCH "LAYER" NPLAYER))
-    (HAWS-MKLAYR LAYER)
-  )
-  (PROMPT "\nBlocks to change: ")
-  (SETQ SSET (SSGET '((0 . "INSERT"))))
-  (IF (NOT SSET)
-    (PROGN (PROMPT "\nNone found.") (EXIT))
-    (PROGN
-      (WHILE (SETQ
-               EN (CAR
-                    (NENTSEL
-                      (STRCAT
-                        "\nAttributes to change to layer "
-                        NPLAYER
-                        " by example/<enter when finished>: "
-                      )
-                    )
-                  )
-             )
-        (IF (= "ATTRIB" (CDR (ASSOC 0 (ENTGET EN))))
-          (PROGN
-            (REDRAW EN 3)
-            (SETQ
-              NPLIST
-               (CONS (LIST (CDR (ASSOC 2 (ENTGET EN))) EN) NPLIST)
-            )
-          )
-        )
-      )
-      (FOREACH EN NPLIST (REDRAW (CADR EN) 4))
-      ;; Change all of the entities in the selection set.
-      (PROMPT
-        (STRCAT "\nPutting attributes on " NPLAYER " layer...")
-      )
-      (SETQ SSLEN (SSLENGTH SSET))
-      (WHILE (> SSLEN 0)
-        (SETQ EN (SSNAME SSET (SETQ SSLEN (1- SSLEN))))
-        (WHILE (AND
-                 (SETQ EN (ENTNEXT EN))
-                 (/= "SEQEND"
-                     (SETQ ET (CDR (ASSOC 0 (SETQ EL (ENTGET EN)))))
-                 )
-               )
-          (COND
-            ((AND
-               (= ET "ATTRIB")
-               (SETQ AT (CDR (ASSOC 2 EL)))
-               (ASSOC AT NPLIST)
-             )
-             (ENTMOD (SUBST (CONS 8 NPLAYER) (ASSOC 8 EL) EL))
-             (ENTUPD EN)
-            )
-          )
-        )
-      )
-      (PROMPT "done.")
-    )
-  )
-  (VL-CMDF "._undo" "_e")
-  (HAWS-VRSTOR)
-  (haws-core-restore)
-  (PRINC)
-)
-
+;#endregion
+;#region Misc commands
 ;;;================================================================================================================================================================
 ;;;
 ;;; Begin Miscellaneous commands
@@ -5018,6 +4906,301 @@ ImportLayerSettings=No
   (haws-core-restore)
   (PRINC)
 )
+
+;#endregion
+;#region Bubble notes utility commands
+;;;================================================================================================================
+;;;
+;;; Begin Bubble Notes commands
+;;;
+;;;================================================================================================================
+;;; SETNOTESBUBBLESTYLE
+;;; Saves the users preferred Notes Bubble Style to the registry
+(DEFUN
+   C:HCNM-SETNOTESBUBBLESTYLE (/ BUBBLEHOOKS)
+(haws-core-init 190)
+  (INITGET "Yes No")
+  (SETQ
+    BUBBLEHOOKS
+     (GETKWORD
+       "\nInsert bubble notes with hooks? [Yes/No]: "
+     )
+  )
+  (IF BUBBLEHOOKS
+    (c:hcnm-config-setvar
+      "BubbleHooks"
+      (COND
+        ((= BUBBLEHOOKS "Yes") "1")
+        ("0")
+      )
+    )
+  )
+  (haws-core-restore)
+  (PRINC)
+)
+;;; Global edit of bubble note phases
+(DEFUN
+   C:HAWS-PHASEEDIT (/ NEWPHASE OLDPHASE)
+(haws-core-init 191)
+  (SETQ
+    OLDPHASE
+     (GETSTRING "\nEnter phase to change: ")
+    NEWPHASE
+     (GETSTRING "\nEnter new phase: ")
+  )
+  (VL-CMDF
+    "._attedit" "_n" "_n" "note???l,note???r" "notephase" "*" OLDPHASE
+    NEWPHASE
+   )
+  (GRAPHSCR)
+  (haws-core-restore)
+  (PRINC)
+)
+;;; Put attributes on NOPLOT layer
+(DEFUN
+   C:HCNM-ATTNOPLOT ()
+(haws-core-init 192)
+  (HCNM_ATTLAYER "NOTESNOPLOT")
+  (VL-CMDF
+    "._layer"
+    "_Plot"
+    "_No"
+    (HAWS-GETLAYR "NOTESNOPLOT")
+    ""
+  )
+  (haws-core-restore)
+)
+(DEFUN C:HCNM-ATTPLOT () (HCNM_ATTLAYER "0"))
+(DEFUN
+   HCNM_ATTLAYER (LAYER / AT EL EN ET NPLAYER NPLIST SSET SSLEN)
+  (haws-core-init 193)
+  (HAWS-VSAVE '("CLAYER"))
+  (VL-CMDF "._undo" "_g")
+  (SETQ NPLAYER (CAR (HAWS-GETLAYR LAYER)))
+  (IF (NOT (TBLSEARCH "LAYER" NPLAYER))
+    (HAWS-MKLAYR LAYER)
+  )
+  (PROMPT "\nBlocks to change: ")
+  (SETQ SSET (SSGET '((0 . "INSERT"))))
+  (IF (NOT SSET)
+    (PROGN (PROMPT "\nNone found.") (EXIT))
+    (PROGN
+      (WHILE (SETQ
+               EN (CAR
+                    (NENTSEL
+                      (STRCAT
+                        "\nAttributes to change to layer "
+                        NPLAYER
+                        " by example/<enter when finished>: "
+                      )
+                    )
+                  )
+             )
+        (IF (= "ATTRIB" (CDR (ASSOC 0 (ENTGET EN))))
+          (PROGN
+            (REDRAW EN 3)
+            (SETQ
+              NPLIST
+               (CONS (LIST (CDR (ASSOC 2 (ENTGET EN))) EN) NPLIST)
+            )
+          )
+        )
+      )
+      (FOREACH EN NPLIST (REDRAW (CADR EN) 4))
+      ;; Change all of the entities in the selection set.
+      (PROMPT
+        (STRCAT "\nPutting attributes on " NPLAYER " layer...")
+      )
+      (SETQ SSLEN (SSLENGTH SSET))
+      (WHILE (> SSLEN 0)
+        (SETQ EN (SSNAME SSET (SETQ SSLEN (1- SSLEN))))
+        (WHILE (AND
+                 (SETQ EN (ENTNEXT EN))
+                 (/= "SEQEND"
+                     (SETQ ET (CDR (ASSOC 0 (SETQ EL (ENTGET EN)))))
+                 )
+               )
+          (COND
+            ((AND
+               (= ET "ATTRIB")
+               (SETQ AT (CDR (ASSOC 2 EL)))
+               (ASSOC AT NPLIST)
+             )
+             (ENTMOD (SUBST (CONS 8 NPLAYER) (ASSOC 8 EL) EL))
+             (ENTUPD EN)
+            )
+          )
+        )
+      )
+      (PROMPT "done.")
+    )
+  )
+  (VL-CMDF "._undo" "_e")
+  (HAWS-VRSTOR)
+  (haws-core-restore)
+  (PRINC)
+)
+
+;#endregion
+;#region Legacy LDRBLK (not for CNM)
+;;; ------------------------------------------------------------------------------
+;;; LDRBLK.LSP
+;;; (C) Copyright 1997 by Thomas Gail Haws
+;;; Thomas Gail Haws, Feb. 1996
+;;; LDRBLK attaches a left or right block to an AutoCAD LEADER and fills in 
+;;; special attributes for bubble notes.
+;;; LDRBLK explodes any block inserted that doesn't have attributes.
+;;; 
+;;; Developer notes for NOTE* blocks:
+;;; Each NOTE???D block contains a NOTE???L, a NOTE???R block, and left and right NOTEHK blocks.
+;;; Each L or R block contains a pline shape and attributes.
+;;; The NOTETYPE attribute is preset to the shape of the block.
+;;; I use a script to make changes to all the blocks by exploding, editing,
+;;; then wblocking from each D block to the L and R blocks.
+;;; I make the root entities layer zero so layers.dat truly controls all layers.
+;;;
+;;; Hint: Toggle the [INSERT] key off to fill in the blanks for a new command.
+;;;       This will keep the columns aligned and easy to read.
+;;; 
+;;;|COMMAND|LEFT BLK |RIGHT BLK |DRAG BLK |LAYER KEY |DIMSTYLE KEY
+;;; -------------------------------------------------------------------------
+(DEFUN
+   C:HAWS-TCG ()
+(haws-core-init 208)
+  (HAWS-LDRBLK
+    "ldrtcgl" "ldrtcgr" "ldrtcgd" "TCGLDR" "TCGLeader"
+   )
+  (haws-core-restore)
+)
+(DEFUN
+   C:HAWS-TXTL ()
+  (HAWS-LDRBLK
+    "ldrtxtl" "ldrtxtr" "ldrtxtd" "NOTESLDR" "NotesLeader"
+   )
+)
+
+(DEFUN
+   HAWS-LDRBLK (BLLEFT BLRGHT BLDRAG BLLAY BLDSTY / APOLD AS ASSOCIATE_P ANG AUOLD
+                BLGF BLLINE BLK DSTY DSTYOLD DTOLD EL EN ENBLK ENDRAG
+                FIXHOOK FIXPHASE FIXTXT3 I P1 P2 P3 P4 P5 P6 P7 P8
+                PFOUND R1 DS TS LEFT NUM TXT1 TXT2 ANG1 ANG2 FIXORDER
+                OSMOLD
+               )
+  (haws-core-init 209)
+  (HAWS-VSAVE
+    '("aperture" "attdia" "attreq" "aunits" "clayer" "cmdecho" "osmode"
+      "plinegen" "regenmode"
+     )
+  )
+  (VL-CMDF "._undo" "_g")
+  ;; Block isn't annotative. Can't associate with annotative leader.
+  (SETQ
+    ASSOCIATE_P
+     (COND
+       ((= (GETVAR "DIMANNO") 1) NIL)
+       (T)
+     )
+  )
+  (HCNM_PROJINIT)
+  (HCNM_SET_DIMSTYLE (STRCAT BLDSTY "Dimstyle"))
+  (SETVAR "osmode" 0)
+  (HAWS-MKLAYR BLLAY)
+  (SETQ
+    P1 (GETPOINT "\nStart point for leader:")
+  )
+  (SETQ
+    DS (HAWS-DWGSCALE)
+    TS (* DS (GETVAR "dimtxt"))
+    AS (* DS (GETVAR "dimasz"))
+  )
+  (VL-CMDF
+    "._insert"
+    BLDRAG
+    "_Scale"
+    TS
+    "_Rotate"
+    (ANGTOS (GETVAR "snapang"))
+    P1
+  )
+  (SETQ EN (ENTLAST))
+  (PROMPT "\nEnd point for leader: ")
+  (VL-CMDF "._move" EN "" P1 PAUSE)
+  (SETQ
+    P2     (TRANS (CDR (ASSOC 10 (ENTGET (ENTLAST)))) (ENTLAST) 1)
+    ANG    (ANGLE P1 P2)
+    LEFT   (MINUSP (COS (+ ANG (GETVAR "snapang"))))
+    P3     (POLAR P1 ANG AS)
+    P4     (POLAR
+             P2
+             (IF LEFT
+               PI
+               0
+             )
+             AS
+           )
+    P5     (POLAR P4 (/ PI 2) (* TS 3.0))
+    P6     (POLAR
+             (POLAR
+               P5
+               (IF LEFT
+                 PI
+                 0
+               )
+               (* TS 10)
+             )
+             (/ PI -2)
+             (* TS 6.0)
+           )
+    ENDRAG (ENTLAST)
+  )
+  (SETVAR "attdia" 0)
+  (SETVAR "attreq" 1)
+  (COND
+    ((>= (ATOF (GETVAR "acadver")) 14)
+     (VL-CMDF "._leader" P1 P2 "" "")
+     (COND
+       (ASSOCIATE_P (VL-CMDF "_block"))
+       (T (VL-CMDF "_none" "._INSERT"))
+     )
+    )
+  )
+  (SETQ AUOLD (GETVAR "aunits"))
+  (SETVAR "aunits" 3)
+  (VL-CMDF
+    (IF LEFT
+      BLLEFT
+      BLRGHT
+    )
+    P2
+    TS
+    TS
+    (GETVAR "snapang")
+  )
+  (SETVAR "aunits" AUOLD)
+  (VL-CMDF "._erase" ENDRAG "")
+  (IF (NOT (ENTNEXT (ENTLAST)))
+    (VL-CMDF
+      "._explode"
+      "_l"
+      "._change"
+      "_p"
+      ""
+      "_p"
+      "_la"
+      (GETVAR "clayer")
+      ""
+    )
+  )
+  (HCNM_RESTORE_DIMSTYLE)
+  (HAWS-VRSTOR)
+  (VL-CMDF "._undo" "_e")
+  (haws-core-restore)
+  (PRINC)
+)
+;;end of LDRBLK
+
+;#endregion
+;#region Bubble insertion and editing
 
 (DEFUN C:HAWS-BOXL () (haws-core-init 198) (HCNM_LDRBLK_DYNAMIC "BOX")(haws-core-restore))
 (DEFUN C:HAWS-CIRL () (haws-core-init 199) (HCNM_LDRBLK_DYNAMIC "CIR")(haws-core-restore))
@@ -5994,7 +6177,6 @@ ImportLayerSettings=No
 ;; bubble-data-update: This has to be split into
 ;; 1. HCNM_LDRBLK_AUTO_AL_GET_OBJECT that returns object
 ;; 2. HCNM_LDRBLK_AUTO_AL_GET_STRING that returns staoff string of given object and point so that this function can be used to update string.
-;; I think maybe all the following is bad thinking since we can always only edit bubble notes in the current space. A complication is the management of paper/model space and point translation because on update we have to check the current staoff of our point of interest; or maybe not complicated. May need to break out a simple HCNM_LDRBLK_PSPACE_P function instead of detecting pspace and setting mspace in one fell swoop.
 (DEFUN
    HCNM_LDRBLK_AUTO_AL (ATTRIBUTE_LIST TAG KEY P1_ENTRY / DRAWSTATION NAME OBJALIGN OFF PSPACE_BUBBLE_P STA STRING)
   (SETQ
@@ -6078,6 +6260,7 @@ ImportLayerSettings=No
     )
     (T (SETQ STRING "N/A"))
   )
+  (HCNM_LDRBLK_ASSURE_REACTOR_ON_OBJECT)
   (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST 
     TAG
     STRING
@@ -6351,170 +6534,115 @@ ImportLayerSettings=No
      )
   )
 )
-;;; ------------------------------------------------------------------------------
-;;; LDRBLK.LSP
-;;; (C) Copyright 1997 by Thomas Gail Haws
-;;; Thomas Gail Haws, Feb. 1996
-;;; LDRBLK attaches a left or right block to an AutoCAD LEADER and fills in 
-;;; special attributes for bubble notes.
-;;; LDRBLK explodes any block inserted that doesn't have attributes.
-;;; 
-;;; Developer notes for NOTE* blocks:
-;;; Each NOTE???D block contains a NOTE???L, a NOTE???R block, and left and right NOTEHK blocks.
-;;; Each L or R block contains a pline shape and attributes.
-;;; The NOTETYPE attribute is preset to the shape of the block.
-;;; I use a script to make changes to all the blocks by exploding, editing,
-;;; then wblocking from each D block to the L and R blocks.
-;;; I make the root entities layer zero so layers.dat truly controls all layers.
-;;;
-;;; Hint: Toggle the [INSERT] key off to fill in the blanks for a new command.
-;;;       This will keep the columns aligned and easy to read.
-;;; 
-;;;|COMMAND|LEFT BLK |RIGHT BLK |DRAG BLK |LAYER KEY |DIMSTYLE KEY
-;;; -------------------------------------------------------------------------
 (DEFUN
-   C:HAWS-TCG ()
-(haws-core-init 208)
-  (HAWS-LDRBLK
-    "ldrtcgl" "ldrtcgr" "ldrtcgd" "TCGLDR" "TCGLeader"
-   )
-  (haws-core-restore)
+   HCNM_GET_ATTRIBUTES (ENAME_BLOCK FIELD_CODE_P / ATTRIBUTE_LIST ELIST ENAME_NEXT ETYPE FIELD_CODE OBJ_NEXT)
+  (SETQ ENAME_NEXT ENAME_BLOCK)
+  (WHILE (AND
+           (SETQ ENAME_NEXT (ENTNEXT ENAME_NEXT))
+           (/= "SEQEND"
+               (SETQ ETYPE (CDR (ASSOC 0 (SETQ ELIST (ENTGET ENAME_NEXT)))))
+           )
+         )
+    (COND
+      ((= ETYPE "ATTRIB")
+       (SETQ
+         OBJ_NEXT (VLAX-ENAME->VLA-OBJECT ENAME_NEXT)
+         ATTRIBUTE_LIST
+          (CONS
+            (LIST (CDR (ASSOC 2 ELIST)) (COND ((AND FIELD_CODE_P (SETQ FIELD_CODE (LM:FieldCode ENAME_NEXT)))FIELD_CODE)(T (VLA-GET-TEXTSTRING OBJ_NEXT))))
+            ATTRIBUTE_LIST
+          )
+       )
+      ) ;_ end of and
+    )
+  )
+  ATTRIBUTE_LIST
 )
-(DEFUN
-   C:HAWS-TXTL ()
-  (HAWS-LDRBLK
-    "ldrtxtl" "ldrtxtr" "ldrtxtd" "NOTESLDR" "NotesLeader"
-   )
+(defun LM:FieldCode ( en / fd id )
+    (cond
+        (   (and
+                (wcmatch (cdr (assoc 0 (setq en (entget en)))) "TEXT,MTEXT,ATTRIB")
+                (setq en (cdr (assoc 360 en)))
+                (setq en (dictsearch en "ACAD_FIELD"))
+                (setq en (dictsearch (cdr (assoc -1 en)) "TEXT"))
+                (setq fd (entget (cdr (assoc 360 en))))
+            )
+            (if (vl-string-search "\\_FldIdx " (cdr (assoc 2 en)))
+                (vl-string-subst
+                    (if (setq id (cdr (assoc 331 fd)))
+                        (vl-string-subst
+                            (strcat "ObjId " (itoa (vla-get-objectid (vlax-ename->vla-object id))))
+                            "ObjIdx 0"
+                            (cdr (assoc 2 fd))
+                        )
+                        (cdr (assoc 2 fd))
+                    )
+                    "\\_FldIdx 0"
+                    (cdr (assoc 2 en))
+                )
+                (cdr (assoc 2 en))
+            )
+        )
+    )
 )
 
 (DEFUN
-   HAWS-LDRBLK (BLLEFT BLRGHT BLDRAG BLLAY BLDSTY / APOLD AS ASSOCIATE_P ANG AUOLD
-                BLGF BLLINE BLK DSTY DSTYOLD DTOLD EL EN ENBLK ENDRAG
-                FIXHOOK FIXPHASE FIXTXT3 I P1 P2 P3 P4 P5 P6 P7 P8
-                PFOUND R1 DS TS LEFT NUM TXT1 TXT2 ANG1 ANG2 FIXORDER
-                OSMOLD
-               )
-  (haws-core-init 209)
-  (HAWS-VSAVE
-    '("aperture" "attdia" "attreq" "aunits" "clayer" "cmdecho" "osmode"
-      "plinegen" "regenmode"
-     )
-  )
-  (VL-CMDF "._undo" "_g")
-  ;; Block isn't annotative. Can't associate with annotative leader.
-  (SETQ
-    ASSOCIATE_P
-     (COND
-       ((= (GETVAR "DIMANNO") 1) NIL)
-       (T)
-     )
-  )
-  (HCNM_PROJINIT)
-  (HCNM_SET_DIMSTYLE (STRCAT BLDSTY "Dimstyle"))
-  (SETVAR "osmode" 0)
-  (HAWS-MKLAYR BLLAY)
-  (SETQ
-    P1 (GETPOINT "\nStart point for leader:")
-  )
-  (SETQ
-    DS (HAWS-DWGSCALE)
-    TS (* DS (GETVAR "dimtxt"))
-    AS (* DS (GETVAR "dimasz"))
-  )
-  (VL-CMDF
-    "._insert"
-    BLDRAG
-    "_Scale"
-    TS
-    "_Rotate"
-    (ANGTOS (GETVAR "snapang"))
-    P1
-  )
-  (SETQ EN (ENTLAST))
-  (PROMPT "\nEnd point for leader: ")
-  (VL-CMDF "._move" EN "" P1 PAUSE)
-  (SETQ
-    P2     (TRANS (CDR (ASSOC 10 (ENTGET (ENTLAST)))) (ENTLAST) 1)
-    ANG    (ANGLE P1 P2)
-    LEFT   (MINUSP (COS (+ ANG (GETVAR "snapang"))))
-    P3     (POLAR P1 ANG AS)
-    P4     (POLAR
-             P2
-             (IF LEFT
-               PI
-               0
-             )
-             AS
+   HCNM_SET_ATTRIBUTES (ENAME_BLOCK ATTRIBUTE_LIST / ATAG ELIST ENAME_NEXT ETYPE OBJ_NEXT)
+  (SETQ ENAME_NEXT ENAME_BLOCK)
+  (WHILE (AND
+           (SETQ ENAME_NEXT (ENTNEXT ENAME_NEXT))
+           (/= "SEQEND"
+               (SETQ ETYPE (CDR (ASSOC 0 (SETQ ELIST (ENTGET ENAME_NEXT)))))
            )
-    P5     (POLAR P4 (/ PI 2) (* TS 3.0))
-    P6     (POLAR
-             (POLAR
-               P5
-               (IF LEFT
-                 PI
-                 0
-               )
-               (* TS 10)
-             )
-             (/ PI -2)
-             (* TS 6.0)
-           )
-    ENDRAG (ENTLAST)
-  )
-  (SETVAR "attdia" 0)
-  (SETVAR "attreq" 1)
-  (COND
-    ((>= (ATOF (GETVAR "acadver")) 14)
-     (VL-CMDF "._leader" P1 P2 "" "")
-     (COND
-       (ASSOCIATE_P (VL-CMDF "_block"))
-       (T (VL-CMDF "_none" "._INSERT"))
-     )
+         )
+    (COND
+      ((AND
+         (= ETYPE "ATTRIB")
+         (SETQ ATAG (CDR (ASSOC 2 ELIST)))
+         (ASSOC ATAG ATTRIBUTE_LIST)
+       ) ;_ end of and
+        (SETQ OBJ_NEXT (VLAX-ENAME->VLA-OBJECT ENAME_NEXT))
+        (VLA-PUT-TEXTSTRING
+          OBJ_NEXT
+          (CADR (ASSOC ATAG ATTRIBUTE_LIST))
+        )
+        (COND ((= (HCNM_LDRBLK_GET_MTEXT_STRING) "")(VL-CMDF "._updatefield" ENAME_NEXT "")))
+      )
     )
   )
-  (SETQ AUOLD (GETVAR "aunits"))
-  (SETVAR "aunits" 3)
-  (VL-CMDF
-    (IF LEFT
-      BLLEFT
-      BLRGHT
-    )
-    P2
-    TS
-    TS
-    (GETVAR "snapang")
-  )
-  (SETVAR "aunits" AUOLD)
-  (VL-CMDF "._erase" ENDRAG "")
-  (IF (NOT (ENTNEXT (ENTLAST)))
-    (VL-CMDF
-      "._explode"
-      "_l"
-      "._change"
-      "_p"
-      ""
-      "_p"
-      "_la"
-      (GETVAR "clayer")
-      ""
-    )
-  )
-  (HCNM_RESTORE_DIMSTYLE)
-  (HAWS-VRSTOR)
-  (VL-CMDF "._undo" "_e")
-  (haws-core-restore)
-  (PRINC)
 )
-;;end of LDRBLK
-
 ;;Playing with reactors
-;;(defun hcnm-bubblesmoving ()
-;;  ()
-;;)
-;;(defun hcnm-bubblesmoved ()
-;;  ( )
-;;)
-
+(DEFUN HCNM_LDRBLK_ASSURE_REACTOR_ON_OBJECT (/ OBJECT OWNERS DATA CALLBACKS REACTOR)
+  (PRINC "\nSelect object to receive test persistent reactor: ")
+  (SETQ
+    OBJECT (CAR (ENTSEL))
+    OWNERS (LIST (VLAX-ENAME->VLA-OBJECT OBJECT))
+    DATA 
+     (STRCAT 
+       "Handle: " 
+       (CDR (ASSOC 5 (ENTGET OBJECT))) 
+       ". (This data can be Integer, Real, String, List, VLA-object, Safearray, Variant, T, or nil.)"
+     )
+    CALLBACKS '((:vlr-modified . HCNM_LDRBLK_REACTOR_CALLBACK))
+    REACTOR (VLR-OBJECT-REACTOR OWNERS DATA CALLBACKS)
+    REACTOR (VLR-PERS REACTOR)    
+  )  
+)
+(DEFUN HCNM_LDRBLK_REACTOR_CALLBACK (NOTIFIER-OBJECT REACTOR-OBJECT PARAMETER-LIST)
+  (PRINC 
+    (STRCAT 
+      "\nA CNM reactor was just triggered."
+      "\nNOTIFIER-OBJECT: "
+      (VL-PRIN1-TO-STRING NOTIFIER-OBJECT)
+      "\nREACTOR-OBJECT: "      
+      (VL-PRIN1-TO-STRING REACTOR-OBJECT) 
+      "\nPARAMETER-LIST: " 
+      (VL-PRIN1-TO-STRING PARAMETER-LIST)
+    )
+  )
+)
+;#endregion
+;#region CNM Options dialog
 (DEFUN
    C:HCNM-CNMOPTIONS (/ CNMDCL DONE_CODE RETN)
   (haws-core-init 210)
@@ -6736,83 +6864,9 @@ ImportLayerSettings=No
     (CAR (NTH (READ VALUE) (CADR (ASSOC KEY (HCNM_OPTIONS_LIST_DATA)))))
   )
 )
-(DEFUN
-   HCNM_GET_ATTRIBUTES (ENAME_BLOCK FIELD_CODE_P / ATTRIBUTE_LIST ELIST ENAME_NEXT ETYPE FIELD_CODE OBJ_NEXT)
-  (SETQ ENAME_NEXT ENAME_BLOCK)
-  (WHILE (AND
-           (SETQ ENAME_NEXT (ENTNEXT ENAME_NEXT))
-           (/= "SEQEND"
-               (SETQ ETYPE (CDR (ASSOC 0 (SETQ ELIST (ENTGET ENAME_NEXT)))))
-           )
-         )
-    (COND
-      ((= ETYPE "ATTRIB")
-       (SETQ
-         OBJ_NEXT (VLAX-ENAME->VLA-OBJECT ENAME_NEXT)
-         ATTRIBUTE_LIST
-          (CONS
-            (LIST (CDR (ASSOC 2 ELIST)) (COND ((AND FIELD_CODE_P (SETQ FIELD_CODE (LM:FieldCode ENAME_NEXT)))FIELD_CODE)(T (VLA-GET-TEXTSTRING OBJ_NEXT))))
-            ATTRIBUTE_LIST
-          )
-       )
-      ) ;_ end of and
-    )
-  )
-  ATTRIBUTE_LIST
-)
-(defun LM:FieldCode ( en / fd id )
-    (cond
-        (   (and
-                (wcmatch (cdr (assoc 0 (setq en (entget en)))) "TEXT,MTEXT,ATTRIB")
-                (setq en (cdr (assoc 360 en)))
-                (setq en (dictsearch en "ACAD_FIELD"))
-                (setq en (dictsearch (cdr (assoc -1 en)) "TEXT"))
-                (setq fd (entget (cdr (assoc 360 en))))
-            )
-            (if (vl-string-search "\\_FldIdx " (cdr (assoc 2 en)))
-                (vl-string-subst
-                    (if (setq id (cdr (assoc 331 fd)))
-                        (vl-string-subst
-                            (strcat "ObjId " (itoa (vla-get-objectid (vlax-ename->vla-object id))))
-                            "ObjIdx 0"
-                            (cdr (assoc 2 fd))
-                        )
-                        (cdr (assoc 2 fd))
-                    )
-                    "\\_FldIdx 0"
-                    (cdr (assoc 2 en))
-                )
-                (cdr (assoc 2 en))
-            )
-        )
-    )
-)
 
-(DEFUN
-   HCNM_SET_ATTRIBUTES (ENAME_BLOCK ATTRIBUTE_LIST / ATAG ELIST ENAME_NEXT ETYPE OBJ_NEXT)
-  (SETQ ENAME_NEXT ENAME_BLOCK)
-  (WHILE (AND
-           (SETQ ENAME_NEXT (ENTNEXT ENAME_NEXT))
-           (/= "SEQEND"
-               (SETQ ETYPE (CDR (ASSOC 0 (SETQ ELIST (ENTGET ENAME_NEXT)))))
-           )
-         )
-    (COND
-      ((AND
-         (= ETYPE "ATTRIB")
-         (SETQ ATAG (CDR (ASSOC 2 ELIST)))
-         (ASSOC ATAG ATTRIBUTE_LIST)
-       ) ;_ end of and
-        (SETQ OBJ_NEXT (VLAX-ENAME->VLA-OBJECT ENAME_NEXT))
-        (VLA-PUT-TEXTSTRING
-          OBJ_NEXT
-          (CADR (ASSOC ATAG ATTRIBUTE_LIST))
-        )
-        (COND ((= (HCNM_LDRBLK_GET_MTEXT_STRING) "")(VL-CMDF "._updatefield" ENAME_NEXT "")))
-      )
-    )
-  )
-)
+;#endregion
+
 (LOAD "ini-edit")
 ;|�Visual LISP� Format Options�
 (72 2 40 2 nil "end of " 100 2 2 2 1 nil nil nil T)
