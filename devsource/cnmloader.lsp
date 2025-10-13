@@ -9,8 +9,7 @@
 ;;; Instead, it simply loads command autoloaders for the CNM Plus tools submenu,
 ;;; which contains all the old HawsEDC commands.
 
-(DEFUN
-   HAWS-autoload (FILENAME COMMANDS / QFN)
+(DEFUN HAWS-autoload (FILENAME COMMANDS / QFN)
   (SETQ
     QFN    (STRCAT "\"" FILENAME "\"")
   )

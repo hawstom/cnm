@@ -2,14 +2,12 @@
 ;; combined dialogue editor for
 ;; blocks, attdefs, text, and dimensions.
 
-(defun
-   c:haws-ee ()
+(DEFUN c:haws-ee ()
   (haws-core-init 27)
   (haws-editall nil)
   (haws-core-restore)
 )
-(defun
-   haws-editall (cnm-p / e etype set1 obj1)
+(DEFUN haws-editall (cnm-p / e etype set1 obj1)
   (vl-cmdf "._undo" "_group")
   (prompt "\nText Editor:")
   (setq set1 (ssget))

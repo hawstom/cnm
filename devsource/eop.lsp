@@ -1,5 +1,4 @@
-(DEFUN
-   C:HAWS-EOP (/ P1 P2 P3 S1 S2 S3 C1 C2 WT W1 A1 A2 A3)
+(DEFUN C:HAWS-EOP (/ P1 P2 P3 S1 S2 S3 C1 C2 WT W1 A1 A2 A3)
   (HAWS-CORE-INIT 221)
   (SETQ
     P1 (GETPOINT "\nPick outside end of pipe (either side): ")

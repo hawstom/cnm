@@ -1,6 +1,5 @@
 ;(C) Copyright 1997 by Thomas Gail Haws
-(defun
-  c:haws-txtsum
+(DEFUN c:haws-txtsum
   ( / ss1 i sum enamei blname ELISTI TS TXPT)
 (haws-core-init 319)
   (setq

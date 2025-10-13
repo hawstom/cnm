@@ -3,8 +3,7 @@
 ;; block-object-1 - [vla] VLA Dynamic Block Reference object
 ;; dynamic-property-name - [str] Dynamic Block property name (case-insensitive)
 
-(DEFUN
-   LM:GETDYNPROPVALUE (BLOCK-OBJECT-1
+(DEFUN LM:GETDYNPROPVALUE (BLOCK-OBJECT-1
                        DYNAMIC-PROPERTY-NAME
                        /
                        DYNAMIC-PROPERTY-NAME-UPPER
@@ -30,8 +29,7 @@
 ;; val - [any] New value for property
 ;; Returns: [any] New value if successful, else nil
 
-(DEFUN
-   LM:SETDYNPROPVALUE (BLOCK-OBJECT-1 DYNAMIC-PROPERTY-NAME VAL /
+(DEFUN LM:SETDYNPROPVALUE (BLOCK-OBJECT-1 DYNAMIC-PROPERTY-NAME VAL /
                        DYNAMIC-PROPERTY-NAME-UPPER
                       )
   (SETQ DYNAMIC-PROPERTY-NAME-UPPER (STRCASE DYNAMIC-PROPERTY-NAME))

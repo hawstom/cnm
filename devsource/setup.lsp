@@ -34,8 +34,7 @@
   (prompt"\nEnter DIMSTY to set up dimension styles.")
   (princ)
 )
-(DEFUN
-   setup:vset
+(DEFUN setup:vset
             (VLST)
   (FOREACH
      V

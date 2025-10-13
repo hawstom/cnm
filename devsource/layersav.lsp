@@ -10,8 +10,7 @@
 ;;;                   Added wildcard (* and ?) option to LAR.
 ;;;           5/22/00 Added linetype loading in LAR from default .lin file.
 ;;Function to save layer settings to a file
-(defun
-	 c:haws-las (/ fname layer count mvsset mvlist layers)
+(DEFUN 	 c:haws-las (/ fname layer count mvsset mvlist layers)
 	(haws-core-init 238) ;_ end of if
 	(setq
 		f1 (if (= (getvar "filedia") 1)
@@ -49,8 +48,7 @@
 )																				;end defun LAS
 
 ;;Dialogue box function to restore layer settings saved by previous function.
-(defun
-	 c:haws-lar (/ mvsset laline)
+(DEFUN 	 c:haws-lar (/ mvsset laline)
 	(haws-core-init 239) ;_ end of if
 	(HAWS-resfun)
 	(HAWS-VSAVE '("clayer" "cmdecho" "regenmode" "tilemode"))
@@ -86,10 +84,8 @@
 	(princ)
 )																				;end defun LAR
 
-(defun
-	 HAWS-resfun	()
-	(defun
-		 HAWS-restla	(layer / name color ltype ltfail off frozen locked)
+(DEFUN 	 HAWS-resfun	()
+	(DEFUN 		 HAWS-restla	(layer / name color ltype ltfail off frozen locked)
 		(cond
 			((or (wcmatch (setq name (cdr (assoc 2 layer))) "*`**,*`?*") (tblsearch "LAYER" name))
 			 (setq
@@ -142,8 +138,7 @@
 			)
 		) ;_ end of cond
 	) ;_ end of defun
-	(defun
-		 HAWS-restvp	(/ mvcen mvwid mvhgt mvpt minx miny maxx maxy lalist)
+	(DEFUN 		 HAWS-restvp	(/ mvcen mvwid mvhgt mvpt minx miny maxx maxy lalist)
 		(cond
 			((or (= (getvar "tilemode") 0)
 					 (progn

@@ -3,8 +3,7 @@
 ;;;A collection of related civil profile drafting tools
 
 ;;;GETHVX is used in various profile routines to get vertical exaggeration.
-(DEFUN
-   HAWS-GETHVX
+(DEFUN HAWS-GETHVX
               (/ HVOLD)
   (IF (NOT HVEXAG)
     (SETQ HVOLD 10.0)
@@ -29,8 +28,7 @@
   ) ;_ end of IF
 ) ;_ end of DEFUN
 
-(DEFUN
-   c:haws-PROPIPE
+(DEFUN c:haws-PROPIPE
             (/ P1 P2 D1 PIPSLD D2 P3 P4)
   (haws-core-init 273)
   (HAWS-VSAVE '("filedia"))
@@ -77,8 +75,7 @@
   (haws-core-restore)
 ) ;_ end of DEFUN
 
-(DEFUN
-   c:haws-PROSUP
+(DEFUN c:haws-PROSUP
            (/  BOTPIP ELLIP1 HVEXAG LEFT LINE1 LINE2 LINE3
               PT1 PT2 PT3 PT4 PTCEN RIGHT UCSYDIR VRAD
            )
@@ -172,8 +169,7 @@
 
 (DEFUN c:haws-PC ()
 (haws-core-init 275) (c:haws-PROCB))
-(DEFUN
-   c:haws-PROCB
+(DEFUN c:haws-PROCB
           (/ TOPPT BOTPT CBVIEW WIDTH)
   (haws-core-init 276)
   (IF (NOT HVEXAG)
@@ -209,8 +205,7 @@
   (PRINC)
 ) ;_ end of DEFUN
 
-(DEFUN
-   HAWS-DRAWCB
+(DEFUN HAWS-DRAWCB
               (BOTPT TOPPT CBVIEW WIDTH BRKPT / PT1 PT2 PT3 PT4 PT5 PTBL PTBR CB
               )
   (SETQ
@@ -298,8 +293,7 @@
 
 (DEFUN c:haws-PM ()
 (haws-core-init 277) (c:haws-PROMH))
-(DEFUN
-   c:haws-PROMH
+(DEFUN c:haws-PROMH
           (/ TOPPT BOTPT)
   (haws-core-init 278)
   (HAWS-VSAVE '("clayer"))
@@ -323,8 +317,7 @@
 ) ;_ end of DEFUN
 
 ;;Drawmh draws a cartoon manhole from botpt to toppt.
-(DEFUN
-   HAWS-DRAWMH
+(DEFUN HAWS-DRAWMH
               (BOTPT TOPPT BRKPT / EXIST BROKEN PT1 PT2 PT3 PT4 MH LINE1 LINE2
               )
   (SETQ
@@ -368,15 +361,13 @@
   ) ;_ end of COND
 ) ;_ end of DEFUN
 
-(DEFUN
-   c:haws-PRED
+(DEFUN c:haws-PRED
          ()
 (haws-core-init 279)
   (vl-cmdf "_ai_editcustfile" (STRCAT (HAWS-GETDNPATH) ".pro"))
 ) ;_ end of defun
 
-(DEFUN
-   c:haws-PROE
+(DEFUN c:haws-PROE
          (/ LANAME INVERT DIAM PIPSLD WALTHK CENPT INRAD OUTRAD
          )
   (haws-core-init 280)
@@ -456,8 +447,7 @@
   (PRINC)
 ) ;_ end of DEFUN
 
-(DEFUN
-   c:haws-PLDR
+(DEFUN c:haws-PLDR
          (/ P1 P2 DS TS AS DG ANG LEFT P3 P4 P5 STR TEMP)
   (haws-core-init 281)
   (SETQ
@@ -556,8 +546,7 @@
   (haws-core-restore)
 ) ;_ end of DEFUN
 
-(DEFUN
-   c:haws-NEWPRO
+(DEFUN c:haws-NEWPRO
            (/ EXPOLD PROINPUTFILE prolaywc SS1)
 (haws-core-init 282)
   (SETQ EXPOLD (GETVAR "expert"))
@@ -580,8 +569,7 @@
 
 ;;File version converter for PRO
 ;;Adds or removes fields between the slope and label column.
-(DEFUN
-   c:haws-PROFC
+(DEFUN c:haws-PROFC
           (/ COLWID FLIST FM FNAME I M N RDLIN TEMP TEMPFILE)
   (haws-core-init 283)
   (SETQ
@@ -679,8 +667,7 @@
   ) ;_ end of WHILE
 ) ;_ end of DEFUN
 ;;;;-----------------------------PRO------------------------------------------
-(DEFUN
-   c:HAWS-PRO;;Localize the variables
+(DEFUN c:HAWS-PRO;;Localize the variables
              (/ I PLTPT1A TS LINGAP LUP FM STA EL1DSC ELEV1 OFFSET SLOPE NUM2 PTOPT LBLTXT ACADX ACADY1 ACADY2
               LBLMHRIM MHRIM LBLCBTC CBTC PEXIST PLTPT1 PLTSTA PLTELV INVMIR INVUP STATXT OFFTXT EL1TXT TOPTX BOTPT
               LBLPT1 LBLPT2 LBLPT3 TXLEN TXPT1 TXPT2 TXPT3 TXPT4 TXPT5 TXPT6 TXPT7 TXPT8 TOPPT TXPT11 TXPT12 TXPT13
@@ -690,8 +677,7 @@
   (PROMPT
     "\nProfile drafter version 5.06.  Copyright 2000, Thomas Gail Haws."
   ) ;_ end of prompt
-  (DEFUN
-     c:haws-TGH2_PRO
+  (DEFUN c:haws-TGH2_PRO
                ()
     (WHILE (PROGN
              (INITGET "Ref Type Vertical Precision New File Plot")
@@ -728,8 +714,7 @@
     ) ;_ end of while
   ) ;_ end of defun
   ;;Call the different setup sub-functions
-  (DEFUN
-     HAWS-PROSET
+  (DEFUN HAWS-PROSET
                 (/ OPT)
     (WHILE (SETQ
              OPT
@@ -762,8 +747,7 @@
     ) ;_ end of WHILE
   ) ;_ end of DEFUN
   ;;Get the profile reference point to tie profile to ACAD coordinates
-  (DEFUN
-     GETREF
+  (DEFUN GETREF
            (/ R)
     (WHILE (NOT
              (AND
@@ -793,8 +777,7 @@
     ) ;_ end of IF
   ) ;_ end of DEFUN
   ;;Setup layers for the profile
-  (DEFUN
-     SETLAY
+  (DEFUN SETLAY
            (/ LLINC LLINLT LTXC LTXLT)
     (COND
       ((AND (= PROHT -20000) (WCMATCH PROTYP "X*"))
@@ -882,8 +865,7 @@
     ) ;_ end of SETQ
   ) ;_ end of DEFUN
   ;;Get the type of profile and set up layers.
-  (DEFUN
-     GETTYP
+  (DEFUN GETTYP
            (/ PIPSLD)
     (SETQ
       WALTHK
@@ -967,8 +949,7 @@
     (SETLAY)
   ) ;_ end of DEFUN
   ;;Get precisions for numbers.
-  (DEFUN
-     GETPREC
+  (DEFUN GETPREC
             ()
     (WHILE (PROGN
              (INITGET "STa Offset Elev SLope")
@@ -989,8 +970,7 @@
     (SETVAR "luprec" STPREC)
   ) ;_ end of DEFUN
   ;;Increment elevations in a file
-  (DEFUN
-     INCFIL
+  (DEFUN INCFIL
            (/ INCSEW INCSD INCGEN)
     (SETQ
       INCSEW
@@ -1072,8 +1052,7 @@
     ) ;_ end of WHILE
   ) ;_ end of DEFUN
   ;;Get file options
-  (DEFUN
-     GETFOP
+  (DEFUN GETFOP
            (/ RDWRT FPRMPT FBIT DATFIL)
     (INITGET "Read Save Increment")
     (SETQ
@@ -1136,8 +1115,7 @@
     ) ;_ end of COND
   ) ;_ end of DEFUN
   ;;Prompt for station to plot
-  (DEFUN
-     HAWS-GETPNT
+  (DEFUN HAWS-GETPNT
                 ()
     (SETQ
       STA
@@ -1182,8 +1160,7 @@
   ) ;_ end of DEFUN
   ;;Read and interpret the lines of the data file.
   ;;First six letters of each data file line are the line title.
-  (DEFUN
-     HAWS-RDFILE
+  (DEFUN HAWS-RDFILE
                 (/ LINERR RDLIN TITLE)
     (IF (NOT FM)
       (SETQ FM ",")
@@ -1335,8 +1312,7 @@
     ) ;_ end of IF
   ) ;_ end of DEFUN
   ;;Plot profile given sta, elev1, and offset.
-  (DEFUN
-     HAWS-PLTHARDPRO
+  (DEFUN HAWS-PLTHARDPRO
                     ()
     (SETQ
       ;;Extract plotting instructions then actual elevation from input
@@ -1471,8 +1447,7 @@
     ) ;_ end of COND
   ) ;_ end of defun
   ;;Plot profile given sta, elev1, and offset.
-  (DEFUN
-     HAWS-PLTSOFTPRO
+  (DEFUN HAWS-PLTSOFTPRO
                     (/ CNFFREEPT CNFTESTPT I J K LBLCNF LDRCNF LNGSTR LDRCNFPT)
     (SETQ
       ;;Make label strings
@@ -1846,8 +1821,7 @@
     (SETQ OFFSET NIL)
   ) ;_ end of DEFUN
   ;;Plot a vertical upward profile point label.
-  (DEFUN
-     HAWS-PLTLBL1
+  (DEFUN HAWS-PLTLBL1
                  (/ I)
     (HAWS-MKLAYR (LIST LAYTX "" ""))
     (COND
@@ -1952,8 +1926,7 @@
     ) ;_ end of COND
   ) ;_ end of DEFUN
   ;;Plot a downward slant elevation tail.
-  (DEFUN
-     HAWS-PLTLBL2
+  (DEFUN HAWS-PLTLBL2
                  (/ I)
     (HAWS-MKLAYR (LIST LAYTX "" ""))
     (HAWS-MKLINE PLTPT1 TXPT6)
@@ -1970,8 +1943,7 @@
     ) ;_ end of mktext
   ) ;_ end of DEFUN
   ;;Plot a circle or ellipse
-  (DEFUN
-     HAWS-PLTPNT
+  (DEFUN HAWS-PLTPNT
                 (/ I XCENTER XINVERT XDIAM XWALTHK XCROWN XBOTPT XTOPPT XINRAD XOUTRAD TXPT1 TXPT2 Y
                 )
     (COND
@@ -2116,8 +2088,7 @@
     ) ;_ end of COND
   ) ;_ end of DEFUN
   ;;Plot a line between two points at a vertical offset
-  (DEFUN
-     HAWS-PLTLIN
+  (DEFUN HAWS-PLTLIN
                 (PT1 PT2 OFFSET)
     (HAWS-MKLINE
       (POLAR PT1 (/ PI 2) OFFSET)
@@ -2125,8 +2096,7 @@
     ) ;_ end of HAWS-MKLINE
   ) ;_ end of defun
   ;;Connect two profile points with lines
-  (DEFUN
-     HAWS-CONNECTHARD
+  (DEFUN HAWS-CONNECTHARD
                      ()
     (HAWS-MKLAYR (LIST LAYLIN "" ""))
     (COND
@@ -2162,8 +2132,7 @@
     ) ;_ end of cond
   ) ;_ end of defun
   ;;Connect two profile points with slope text, etc.
-  (DEFUN
-     HAWS-CONNECTSOFT
+  (DEFUN HAWS-CONNECTSOFT
                      (/ SLOPESTRING PT1 GUTLIP)
     ;;Calculate slope
     (COND
@@ -2468,8 +2437,7 @@
 ) ;_ end of DEFUN
 
 ;;----------------------------LIST POINT----------------------------
-(DEFUN
-   c:haws-LST
+(DEFUN c:haws-LST
         (/ PT X Y STA EL1)
 (haws-core-init 286)
   (SETQ
@@ -2487,8 +2455,7 @@
 ) ;_ end of DEFUN
 ;;------------------------------------------------------------------
 ;;ELLABEL labels elevations with reference to a known point.
-(DEFUN
-   HAWS-ELLSET
+(DEFUN HAWS-ELLSET
               (/ OPTION RPT)
   (WHILE (PROGN
            (INITGET "Reference Vertical Flip")
@@ -2525,8 +2492,7 @@
     ) ;_ end of COND
   ) ;_ end of WHILE
 ) ;_ end of DEFUN
-(DEFUN
-   HAWS-ELLPLT
+(DEFUN HAWS-ELLPLT
               (/ ANG1 TS EL1 ELEV2 TXLEN LEFT PT2 PT3 PT4 PT5)
   (SETQ PT5 NIL)
   (WHILE (PROGN
@@ -2642,8 +2608,7 @@
     ) ;_ end of mktext
   ) ;_ end of IF
 ) ;_ end of DEFUN
-(DEFUN
-   c:haws-ELLABEL
+(DEFUN c:haws-ELLABEL
             (/ PT1)
   (haws-core-init 287)
   (HAWS-VSAVE '("osmode"))
@@ -2670,8 +2635,7 @@
 ) ;_ end of DEFUN
 
 ;;---------------------------STATION LABEL-------------------------
-(DEFUN
-   c:haws-STALABEL
+(DEFUN c:haws-STALABEL
              (/ PNT1 INC N STA1 ENDSTA STA)
   (haws-core-init 288)
   (HAWS-MKLAYR "PSTALBL")
@@ -2705,8 +2669,7 @@
   (PRINC)
 ) ;_ end of DEFUN
 ;;---------------------------ELEVATION LABEL------------------------
-(DEFUN
-   c:haws-ELV
+(DEFUN c:haws-ELV
         (/ PNT1 INC N ELV1 ENDELV ELV)
 (haws-core-init 289)
   (IF (NOT HVEXAG)
@@ -2742,12 +2705,10 @@
   (PRINC)
 ) ;_ end of DEFUN
 ;;--------------------------SLOPE CALCULATOR------------------------------
-(DEFUN
-   c:haws-GRD
+(DEFUN c:haws-GRD
         (/ A)
 (haws-core-init 290)
-  (DEFUN
-     HAWS-GR1
+  (DEFUN HAWS-GR1
              (/ STA1 EL1 STA2 ELEV2 STAD ELD X1 GR)
     (PROMPT "\nTo Determine the Slope Between 2 Points.")
     (SETQ
@@ -2770,8 +2731,7 @@
     (PROMPT (RTOS GR 2 4))
     (PROMPT "%")
   ) ;_ end of DEFUN
-  (DEFUN
-     HAWS-GR2
+  (DEFUN HAWS-GR2
              (/ STA1 EL1 STA2 GR STAD ELEV2)
     (PROMPT
       "\nTo Determine the Elevation at a Specified Station."
@@ -2802,8 +2762,7 @@
 (haws-core-init 291) (HAWS-LINBLK "*GRC" "PGC"))
 (DEFUN c:haws-GRB ()
 (haws-core-init 292) (HAWS-LINBLK "*GRB" "PGB"))
-(DEFUN
-   HAWS-LINBLK
+(DEFUN HAWS-LINBLK
               (BLNAME BLLAY / PT1 PT2)
   (HAWS-MKLAYR BLLAY)
   (SETQ PT1 (GETPOINT "\nFirst point: "))

@@ -1,7 +1,6 @@
 ;;; Written by Thomas Gail Haws
 ;;; Change layer colors by picking.
-(DEFUN
-   C:HAWS-LCP
+(DEFUN C:HAWS-LCP
              (/ SS CC I EC LC)
 (haws-core-init 240)
   (COND
@@ -40,8 +39,7 @@
 )
 ;;; (C) Copyright 1997 by Thomas Gail Haws
 ;;; Change layer color by picking nested entities
-(DEFUN
-   C:HAWS-LCPX
+(DEFUN C:HAWS-LCPX
               (/ CC EC LOPERA NESTED)
 (haws-core-init 241)
   (COND
@@ -68,8 +66,7 @@
   (PRINC "Color ")
   CC
 )
-(DEFUN
-   HAWS-LCPICK
+(DEFUN HAWS-LCPICK
               (/ ES EN LA PARNTL VP)
   (WHILE (SETQ ES (NENTSEL))
     (SETQ

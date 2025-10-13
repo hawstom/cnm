@@ -1,6 +1,5 @@
 ;;; PJL joins as a polyline objects that are on the layer of the selected object.
-(DEFUN
-   C:HAWS-PJL (/ EG EN ET LA PEAOLD)
+(DEFUN C:HAWS-PJL (/ EG EN ET LA PEAOLD)
 (haws-core-init 97)
   (SETQ
     EN	(CAR (ENTSEL))

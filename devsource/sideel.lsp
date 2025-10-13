@@ -25,15 +25,13 @@
 ;;;    
 ;;;    
 ;;;
-(defun
-	 se_getel	(/ en)
+(DEFUN 	 se_getel	(/ en)
 	(setq en (car (nentsel "\nSelect elevation text on profile: ")))
 	(if	en
 		(HAWS-ATOFX (cdr (assoc 1 (entget en))) "*" 1)
 	) ;_ end of if
 ) ;_ end of defun
-(defun
-	 se_mktxt	(side el1 y1 pt1 / eli pti)
+(DEFUN 	 se_mktxt	(side el1 y1 pt1 / eli pti)
 	(HAWS-MKLAYR '("p-elev" "m" ""))
 	(setq
 		eli	(+ el1 (/ (- (cadr pt1) (* ds vs) y1) hvexag));Elevation for first text
@@ -47,8 +45,7 @@
 		) ;_ end of setq
 	) ;_ end of repeat
 ) ;_ end of defun
-(defun
-	 sideel	(side / ds el1 ho hvexag pt1 ts vs y1)
+(DEFUN 	 sideel	(side / ds el1 ho hvexag pt1 ts vs y1)
 	(setq
 	  hvexag 10                          ;Vertical exaggeration
 	  ds (HAWS-DWGSCALE)             ;Dimscale

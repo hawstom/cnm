@@ -1,5 +1,4 @@
-(DEFUN
-   C:HAWS-CLEAN ( / inp)
+(DEFUN C:HAWS-CLEAN ( / inp)
 (haws-core-init 9)
   (initget "Yes No")
   (setq inp (getkword "\nClean uses the wlock * command, which does not preserve Civil 3D styles.  Continue? [Yes/No]: "))

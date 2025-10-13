@@ -6,8 +6,7 @@
 ;;;
 ;;; CRVS is an Autodesk registered symbol to avoid conflicts with other applications.
 
-(DEFUN
-   CRVS-CIRDATA
+(DEFUN CRVS-CIRDATA
            (EL / R)
   (SETQ
     R (CDR (ASSOC 40 EL))
@@ -19,8 +18,7 @@
   NIL
 ) ;_ end of defun
 
-(DEFUN
-   CRVS-linedata
+(DEFUN CRVS-linedata
            (EL / P1 P2)
   (SETQ P1 (CDR (ASSOC 10 EL)))
   (SETQ P2 (CDR (ASSOC 11 EL)))
@@ -34,8 +32,7 @@
   NIL
 ) ;_ end of defun
 
-(DEFUN
-   CRVS-arcdata
+(DEFUN CRVS-arcdata
           (EL / DELTA DOVER2 EA R SA)
   (SETQ
     R (CDR (ASSOC 40 EL))
@@ -59,8 +56,7 @@
   ) ;_ end of list
 ) ;_ end of defun
 
-(DEFUN
-   CRVS-pldata
+(DEFUN CRVS-pldata
          (ES / BULGE1 D DELTA DOVER2 EN ENEXT P1 P2 R)
   (SETQ
     EN (CAR ES)
@@ -108,8 +104,7 @@
   ) ;_ end of cond
 ) ;_ end of defun
 
-(DEFUN
-   CRVS-LDR
+(DEFUN CRVS-LDR
              (CRVDATA PICKPT / ANG1 DG LEFT PTXT TXHT LLINE PT10 PT11 LBEAR LDIST PT1 PT2 PT3 PT4 ROT
              )
   (SETQ
@@ -200,8 +195,7 @@
   (PRINC)
 ) ;_ end of defun
 
-(DEFUN
-   CRVS-savedata
+(DEFUN CRVS-savedata
            (EN CRVDATA / AT AV EL ET N SAVED)
   (TERPRI)
   (WHILE
@@ -243,8 +237,7 @@
 ;;; ========== End sub-functions to GEODATA ===========
 
 ;;; Main function
-(DEFUN
-   c:haws-GEODATA
+(DEFUN c:haws-GEODATA
             (/ CRVDATA EL EN ES ES1 PICKPT ETYPE
             )
 (haws-core-init 222)

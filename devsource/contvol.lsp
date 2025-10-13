@@ -1,7 +1,6 @@
 ;;;Calculate volume between contours
 ;;;(C) Copyright 2008 by Thomas Gail Haws
-(defun
-   c:haws-contvol (/ cv-cont cv-add-factor cv-area-0
+(DEFUN c:haws-contvol (/ cv-cont cv-add-factor cv-area-0
                    cv-area-1 cv-area-temp cv-elev-0 CV-ELEV-1 cv-report cv-vol-0 cv-vol-1 cv-vol-inc
                    pt1
                   )
@@ -107,19 +106,16 @@
   (haws-core-restore)
   (princ)
 )
-(defun
-   HAWS-cvmethset ()
+(DEFUN HAWS-cvmethset ()
   (initget "Average Conic")
   (setq *haws-cv-method* (getkword "\nVolume method [Average/Conic]: "))
   (princ)
 ) ;_ end of defun
-(defun
-   HAWS-cvintset ()
+(DEFUN HAWS-cvintset ()
   (setq *haws-cv-interval* (HAWS-GETREALX "\nContour interval" *haws-cv-interval* 1))
   (princ)
 )
-(defun
-   haws-cv-close-elev ()
+(DEFUN haws-cv-close-elev ()
   (setq
     cv-area-0 cv-area-1
     cv-area-1 cv-area-temp
@@ -137,8 +133,7 @@
   )
   (princ)
 )
-(defun
-   haws-cv-vol-calc ()
+(DEFUN haws-cv-vol-calc ()
   (setq
     cv-vol-inc
      (* *haws-cv-interval*
@@ -158,8 +153,7 @@
      (+ cv-vol-0 cv-vol-inc)
   )
 )
-(defun
-   haws-cv-line-print ()
+(DEFUN haws-cv-line-print ()
   (setq cv-report (strcat cv-report "\n" (rtos cv-elev-1 2) "\t" (rtos cv-area-1 2)))
   (cond
     (cv-vol-inc

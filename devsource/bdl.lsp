@@ -1,8 +1,7 @@
 ;;Label line with bearing and distance
 ;;(C) Copyright 1997 by Thomas Gail Haws
 ;;Written by Thomas Gail Haws
-(defun
-   c:haws-bdl
+(DEFUN c:haws-bdl
 	(/ ANG1 DG LBEAR LDIST LEFT LLINE LTOP PT1 PT10 PT11 PT2 PT3 PT4 PTXT ROT TXHT UCSP)
   (haws-core-init 163)
   (HAWS-VSAVE

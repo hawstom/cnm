@@ -1,8 +1,7 @@
 ;;;XROFFSET
 (defun c:haws-xro ()
 (haws-core-init 331) (c:haws-xroffset))
-(defun
-	 c:haws-xroffset	(/ ofdist temp xrodistr PT1 PT2 XRODISTS)
+(DEFUN 	 c:haws-xroffset	(/ ofdist temp xrodistr PT1 PT2 XRODISTS)
 	(haws-core-init 332)
 	(setq ofdist (getvar "offsetdist"))
 	(if	(not *HAWS-xrosetupdone*)

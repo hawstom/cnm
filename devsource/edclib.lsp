@@ -1,12 +1,10 @@
 (PROMPT "\nHawsEDC library functions...")
 
 ;;;This is the current version of HawsEDC and CNM
-(DEFUN
-   HAWS-UNIFIED-VERSION ()
+(DEFUN HAWS-UNIFIED-VERSION ()
   "5.5.17"
 )
-(DEFUN
-   HAWS-COPYRIGHT ()
+(DEFUN HAWS-COPYRIGHT ()
   "Copyright 2025 Thomas Gail Haws"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
@@ -47,8 +45,7 @@
 ;;; lisputil.lsp
 (DEFUN C:HCNM-ABOUT ()
 (haws-core-init 216) (C:HAWS-ABOUT))
-(DEFUN
-   C:HAWS-ABOUT (/ LICENSEREPORT)
+(DEFUN C:HAWS-ABOUT (/ LICENSEREPORT)
 (haws-core-init 217)
   (ALERT
     (PRINC
@@ -145,8 +142,7 @@
 ;;;To restore previous UCS, set a global symbol 'ucsp to non-nil.
 ;;; To restore another previous UCS, set a global symbol 'ucspp to
 ;;; non-nil.
-(DEFUN
-   haws-core-init (COMMAND-ID / APPGROUP VALIDATED)
+(DEFUN haws-core-init (COMMAND-ID / APPGROUP VALIDATED)
   (setq APPGROUP (cadr (assoc command-id *haws-edccommands*)))
   ;; If computer already has authorization,
   (COND
@@ -183,8 +179,7 @@
 
 ;;Stperr replaces the standard error function.
 ;;It sets everything back in case of an error.
-(DEFUN
-   HAWS-CORE-STPERR (S)
+(DEFUN HAWS-CORE-STPERR (S)
   ;; Restore old *error* handler
   (IF OLDERR
     (SETQ
@@ -242,8 +237,7 @@
   )
   (PRINC)
 )
-(DEFUN
-   haws-core-restore ()
+(DEFUN haws-core-restore ()
   (SETQ
     UCSP NIL
     UCSPP NIL
@@ -265,8 +259,7 @@
 ;; network
 ;; license,
 ;;takes an appgroup token from the network server.
-(DEFUN
-   HAWS-VALIDATEAPPGROUP (APPGROUP / AUTHDATEDAYSAHEAD
+(DEFUN HAWS-VALIDATEAPPGROUP (APPGROUP / AUTHDATEDAYSAHEAD
                           USERSTRINGDATEDIFF AUTHORIZEDPERMANENT
                           AUTHSTRING ORDERSTRING PACKAGE TRIALDAYSLEFT
                          )
@@ -368,8 +361,7 @@
 ;;; and records authorization for future reference.
 ;;;
 ;;; This is the nag routine.
-(DEFUN
-   HAWS-AUTHORIZEAPPGROUP (APPGROUP)
+(DEFUN HAWS-AUTHORIZEAPPGROUP (APPGROUP)
   ;;Choose nag mode or expire mode prompt.
   (COND
     ;;If nag mode is active
@@ -412,8 +404,7 @@
   )
 )
 
-(DEFUN
-   HAWS-PACKAGELICENSEREPORT (PACKAGE / DATEDIFF)
+(DEFUN HAWS-PACKAGELICENSEREPORT (PACKAGE / DATEDIFF)
   (SETQ
     AUTHSTRING
      (HAWS-READAUTHCODE PACKAGE)
@@ -430,8 +421,7 @@
   )
 )
 
-(DEFUN
-   HAWS-PACKAGEUSERSTRINGDATEDIFF
+(DEFUN HAWS-PACKAGEUSERSTRINGDATEDIFF
    (PACKAGE / AUTHSTRING ORDERSTRING USERSTRINGDATEDIFF)
   (COND
     ((AND
@@ -470,8 +460,7 @@
 ;;; string.
 ;;; Returns a date difference if the strings match.
 ;;; Returns nil if strings don't match.
-(DEFUN
-   HAWS-USERSTRINGDATEDIFF
+(DEFUN HAWS-USERSTRINGDATEDIFF
    (ORDERSTRING AUTHSTRING / ACADDATE AUTHLIST ORDERLIST)
   (COND
     ;; If AUTHSTRING isn't the same length as ORDERSTRING,
@@ -492,13 +481,11 @@
   )
 )
 
-(DEFUN
-   HAWS-READORDERCODE (PACKAGE)
+(DEFUN HAWS-READORDERCODE (PACKAGE)
   (HAWS-READPACKAGECODE PACKAGE "OrderString")
 )
 
-(DEFUN
-   HAWS-READAUTHCODE (PACKAGE)
+(DEFUN HAWS-READAUTHCODE (PACKAGE)
   (HAWS-READPACKAGECODE PACKAGE "AuthString")
 )
 
@@ -510,8 +497,7 @@
 ;;; (getcfg) returns nil if the section doesn't exist.  Returns "" if the param doesn't exist.
 ;;; Since this is executed by (HAWS-CHECKSTOREDSTRINGS) on load, we can use this function to transfer stored info from the registry
 ;;; to the new storage location, and we can depend on (getcfg) returning nil the first time.
-(DEFUN
-   HAWS-READPACKAGECODE (PACKAGE STRINGNAME / STOREDSTRING)
+(DEFUN HAWS-READPACKAGECODE (PACKAGE STRINGNAME / STOREDSTRING)
   (HAWS-MILEPOST
     (STRCAT
       "Beginning READPACKAGECODE for package "
@@ -527,8 +513,7 @@
 
 ;;; HAWS-READCFG gets the value of a setting from the favorite HAWS-location.
 ;;; (getcfg) returns nil if the section doesn't exist.  Returns "" if the param doesn't exist.
-(DEFUN
-   HAWS-READCFG (LOCATIONLIST / MOVEREQUIRED RETURNVALUE STOREDSTRING)
+(DEFUN HAWS-READCFG (LOCATIONLIST / MOVEREQUIRED RETURNVALUE STOREDSTRING)
   (COND
     ;;If the requested value is in (getcfg), use it.
     ;;Intentionally here, we are using "".
@@ -596,8 +581,7 @@
 
 ;;; Stores string and returns stored string or nil.
 ;;; (getcfg) returns nil if the section doesn't exist.  Returns "" if the param doesn't exist.
-(DEFUN
-   HAWS-WRITEPACKAGECODE
+(DEFUN HAWS-WRITEPACKAGECODE
    (PACKAGE STRINGNAME STRINGVALUE / STOREDSTRING)
   (HAWS-MILEPOST
     (STRCAT
@@ -615,8 +599,7 @@
 
 
 ;;; HAWS-WRITECFG sets the value of a setting in the favorite HAWS- location.
-(DEFUN
-   HAWS-WRITECFG (LOCATIONLIST INPUTSTRING / STOREDSTRING)
+(DEFUN HAWS-WRITECFG (LOCATIONLIST INPUTSTRING / STOREDSTRING)
   (SETQ
     STOREDSTRING
     (SETCFG
@@ -628,8 +611,7 @@
   )
 )
 
-(DEFUN
-   HAWS-LOCATIONTOCFGSECTION (LOCATIONLIST)
+(DEFUN HAWS-LOCATIONTOCFGSECTION (LOCATIONLIST)
   (STRCAT
     ;;Start path with the AppData/ prefix per AutoCAD help.
     "AppData/"
@@ -638,8 +620,7 @@
   )
 )
 
-(DEFUN
-   HAWS-LOCATIONTOREGISTRYPATH (LOCATIONLIST ROOT)
+(DEFUN HAWS-LOCATIONTOREGISTRYPATH (LOCATIONLIST ROOT)
   (STRCAT
     ;;Start with the prefix to get into the software area
     ROOT
@@ -658,8 +639,7 @@
 ;;; If authorization is provided correctly, it writes both to the storage location.,
 ;;; Returns T if successful, nil if not successful.
 
-(DEFUN
-   HAWS-ORDERPACKAGE (APPGROUP / AUTHMATCHSUCCESS AUTHSTRING
+(DEFUN HAWS-ORDERPACKAGE (APPGROUP / AUTHMATCHSUCCESS AUTHSTRING
                       AUTHWRITESUCCESS NAGMATCHSUCCESS NAGSTRINGS
                       ORDERLIST ORDERSTRING PACKAGE WRITESTRINGS
                      )
@@ -765,8 +745,7 @@
 
 
 ;;; HAWS-ORDERLICENSES gets an order code from the command line
-(DEFUN
-   C:HAWS-ORDERLICENSES ()
+(DEFUN C:HAWS-ORDERLICENSES ()
 (haws-core-init 218)
   (HAWS-ORDERPACKAGE 128)
   (PRINC)
@@ -776,8 +755,7 @@
 ;;Returns a list of package number and number of authorizations.
 ;; 0 authorizations means authorization is for single user unlimited
 ;; use.
-(DEFUN
-   HAWS-GETPACKAGE (APPGROUP / PACKAGES STRING)
+(DEFUN HAWS-GETPACKAGE (APPGROUP / PACKAGES STRING)
 ;;;Begin user choice section
   (TEXTPAGE)
   (PROMPT
@@ -834,8 +812,7 @@
 
 ;;GetBiosDate uses BIOSDATE.EXE to return system bios date as a
 ;;list in the form '(mm dd yy).
-(DEFUN
-   HAWS-GETBIOSDATE (/ BIOSDATEFULL X)
+(DEFUN HAWS-GETBIOSDATE (/ BIOSDATEFULL X)
   (SETQ
     BIOSDATEFULL
      (COND
@@ -878,8 +855,7 @@
 ;;; GetComputerName gets the computer name from the registry if
 ;;; possible.
 ;;; If not, returns "".
-(DEFUN
-   HAWS-GETCOMPUTERNAME ()
+(DEFUN HAWS-GETCOMPUTERNAME ()
   (SETQ
     *HAWS-COMPUTERNAME*
      (COND
@@ -903,8 +879,7 @@
 ;;; GETSHORTCOMPUTERNAME gets the first and last characters of the computer name
 ;;; if possible.
 ;;; If not, returns "".
-(DEFUN
-   HAWS-GETSHORTCOMPUTERNAME (/ COMPUTERNAME)
+(DEFUN HAWS-GETSHORTCOMPUTERNAME (/ COMPUTERNAME)
   (SETQ COMPUTERNAME (HAWS-GETCOMPUTERNAME))
   (STRCAT
     (SUBSTR COMPUTERNAME 1 1)
@@ -925,8 +900,7 @@
 ;;; Bits 61-65 5-bit binary number of the BIOS date day
 ;;; Bits 66-72 7-bit binary number of the BIOS date year
 ;;; to an order list
-(DEFUN
-   HAWS-LISTTOBINARY
+(DEFUN HAWS-LISTTOBINARY
    (ORDERLIST / BINARYDATE BINARYSALES BINARYSTRING I)
   ;;Pad BINARYSTRING from 68 to 72 bits to make 12 6-bit bytes.
   (SETQ
@@ -1048,8 +1022,7 @@
 ;;; to an order list
 ;;; Orderlist    '(pkgid numauths compname biosmonth biosday biosyear
 ;;; startdate)
-(DEFUN
-   HAWS-BINARYTOLIST (BINARYSTRING / DEC I)
+(DEFUN HAWS-BINARYTOLIST (BINARYSTRING / DEC I)
   (LIST
     ;;Get the AutoCAD date
     (HAWS-CONVERTTODECIMAL
@@ -1091,8 +1064,7 @@
 
 ;;; ENCRYPTAUTHSTRING encrypts a padded binarystring
 ;;; for translation to a user authorization string
-(DEFUN
-   HAWS-ENCRYPTAUTHSTRING (S / SI SJ X)
+(DEFUN HAWS-ENCRYPTAUTHSTRING (S / SI SJ X)
   ;;Make list 8x9 of characters
   (REPEAT 8
     (REPEAT 9
@@ -1117,8 +1089,7 @@
 
 ;;; DECRYPTAUTHSTRING decrypts a padded authorization binarystring
 ;;; for translation to an order list
-(DEFUN
-   HAWS-DECRYPTAUTHSTRING (S / SI SJ)
+(DEFUN HAWS-DECRYPTAUTHSTRING (S / SI SJ)
   ;;Make list 9x8 of characters
   (REPEAT 9
     (REPEAT 8
@@ -1143,8 +1114,7 @@
 
 ;;; ENCRYPTORDERSTRING encrypts a padded binarystring
 ;;; for translation to a user order string
-(DEFUN
-   HAWS-ENCRYPTORDERSTRING (S / SI SJ)
+(DEFUN HAWS-ENCRYPTORDERSTRING (S / SI SJ)
   ;;Make list 12x6 of characters
   (REPEAT 12
     (REPEAT 6
@@ -1169,8 +1139,7 @@
 
 ;;; DECRYPTORDERSTRING decrypts a padded order binarystring
 ;;; for translation to an order list
-(DEFUN
-   HAWS-DECRYPTORDERSTRING (S / SI SJ)
+(DEFUN HAWS-DECRYPTORDERSTRING (S / SI SJ)
   ;;Make list 6x12 of characters
   (REPEAT 6
     (REPEAT 12
@@ -1198,8 +1167,7 @@
 ;; 12 character user string for e-mailing from or to user.
 ;; The user string consists only of upper and lower case letters plus
 ;; @ and &. Eg.  aR3YjMmhi@57
-(DEFUN
-   HAWS-BINARYTOUSER (BINARYSTRING / DEC I USERSTRING)
+(DEFUN HAWS-BINARYTOUSER (BINARYSTRING / DEC I USERSTRING)
   (SETQ
     USERSTRING ""
     I 0
@@ -1233,8 +1201,7 @@
 ;; USERTOBINARY translates the 12-character user string generated by
 ;; BINARYTOUSER
 ;;into a 68 character (still encrypted) binary string as follows:
-(DEFUN
-   HAWS-USERTOBINARY (USERSTRING / BINARYSTRING DEC I TEMP)
+(DEFUN HAWS-USERTOBINARY (USERSTRING / BINARYSTRING DEC I TEMP)
   (SETQ
     BINARYSTRING ""
     I 0
@@ -1264,8 +1231,7 @@
 
 ;;ConvertDecimalTo converts a decimal number to another integer base.
 ;;Returns a string
-(DEFUN
-   HAWS-CONVERTDECIMALTO (NUM NEWBASE / ATOMI DONE RETURNSTRING)
+(DEFUN HAWS-CONVERTDECIMALTO (NUM NEWBASE / ATOMI DONE RETURNSTRING)
   (SETQ
     RETURNSTRING ""
     ATOMI 0
@@ -1292,8 +1258,7 @@
 )
 ;;ConvertToDecimal converts a string representing a number in another base
 ;;to a decimal integer
-(DEFUN
-   HAWS-CONVERTTODECIMAL (STRING BASE / CHARI DECIMAL M)
+(DEFUN HAWS-CONVERTTODECIMAL (STRING BASE / CHARI DECIMAL M)
   (SETQ
     DECIMAL 0
     M 1
@@ -1325,8 +1290,7 @@
 ;; translates a user order string and a number of trial days
 ;; into a user authorization string
 ;; TRIALDAYS = -1000000 for unlimited authorization
-(DEFUN
-   HAWS-ORDERTOAUTH (ORDERSTRING TRIALDAYS / ORDERLIST)
+(DEFUN HAWS-ORDERTOAUTH (ORDERSTRING TRIALDAYS / ORDERLIST)
   (SETQ
     ORDERLIST
      (HAWS-BINARYTOLIST
@@ -1346,44 +1310,38 @@
 ;; ORDERTOTRIAL
 ;; translates a user order string into a timed trial
 ;; authorization
-(DEFUN
-   HAWS-ORDERTOTRIAL (ORDERSTRING TRIALDAYS / ORDERLIST)
+(DEFUN HAWS-ORDERTOTRIAL (ORDERSTRING TRIALDAYS / ORDERLIST)
   (HAWS-ORDERTOAUTH ORDERSTRING TRIALDAYS)
 )
 ;; ORDERTOUNLIMITED
 ;; translates a user order string into an unlimited
 ;; authorization
-(DEFUN
-   HAWS-ORDERTOUNLIMITED (ORDERSTRING / ORDERLIST)
+(DEFUN HAWS-ORDERTOUNLIMITED (ORDERSTRING / ORDERLIST)
   (HAWS-ORDERTOAUTH ORDERSTRING -1000000)
 )
 
 ;;ORDERTOLIST translates a user order string into an order list.
-(DEFUN
-   HAWS-ORDERTOLIST (ORDERSTRING)
+(DEFUN HAWS-ORDERTOLIST (ORDERSTRING)
   (HAWS-BINARYTOLIST
     (HAWS-DECRYPTORDERSTRING (HAWS-USERTOBINARY ORDERSTRING))
   )
 )
 ;; AUTHTOLIST translates a user authorization string into an order
 ;; list.
-(DEFUN
-   HAWS-AUTHTOLIST (AUTHSTRING)
+(DEFUN HAWS-AUTHTOLIST (AUTHSTRING)
   (HAWS-BINARYTOLIST
     (HAWS-DECRYPTAUTHSTRING (HAWS-USERTOBINARY AUTHSTRING))
   )
 )
 ;;LISTTOORDER translates a an order list into a user order string.
-(DEFUN
-   HAWS-LISTTOORDER (ORDERLIST)
+(DEFUN HAWS-LISTTOORDER (ORDERLIST)
   (HAWS-BINARYTOUSER
     (HAWS-ENCRYPTORDERSTRING (HAWS-LISTTOBINARY ORDERLIST))
   )
 )
 ;; LISTTOAUTH translates a an order list into a user authorization
 ;; string.
-(DEFUN
-   HAWS-LISTTOAUTH (AUTHLIST)
+(DEFUN HAWS-LISTTOAUTH (AUTHLIST)
   (HAWS-BINARYTOUSER
     (HAWS-ENCRYPTAUTHSTRING (HAWS-LISTTOBINARY AUTHLIST))
   )
@@ -1762,8 +1720,7 @@
   (SETQ LOG-STRING (STRCAT (SUBSTR LOG-STRING 1 COMMAND-ID) (CHR (1+ (ASCII (SUBSTR LOG-STRING (1+ COMMAND-ID) 1)))) (SUBSTR LOG-STRING (+ COMMAND-ID 2))))
 )
 
-(DEFUN
-   HAWS-USE-LOG-REMOTE (/ URL HTTP BIOS-DATE LOG-DATA)
+(DEFUN HAWS-USE-LOG-REMOTE (/ URL HTTP BIOS-DATE LOG-DATA)
   (SETQ
     URL  "http://www.constructionnotesmanager.com/cnm_log.php"
     HTTP (VLAX-CREATE-OBJECT "MSXML2.XMLHTTP")
@@ -1808,8 +1765,7 @@
 ;;Type 1 tries to match the wild cards with text following a number
 ;;Returns 0.0 if search unsuccesful
 (VL-ACAD-DEFUN 'HAWS-ATOFX)
-(DEFUN
-   HAWS-ATOFX (S WC OPT / X)
+(DEFUN HAWS-ATOFX (S WC OPT / X)
   (SETQ X (CADR (HAWS-EXTRACTX S WC OPT)))
   (IF X
     (ATOF X)
@@ -1824,8 +1780,7 @@
 ;;;Tests whether intellicad behavior is current.
 ;;;Bricscad has advanced to the point we no longer have to use a special mode for it.
 (VL-ACAD-DEFUN 'C:HAWS-ICAD-P)
-(DEFUN
-   C:HAWS-ICAD-P ()
+(DEFUN C:HAWS-ICAD-P ()
   (OR *HAWS-ICADMODE*
       (SETQ *HAWS-ICADMODE* (WCMATCH (GETVAR "acadver") "*i"))
   )
@@ -1839,8 +1794,7 @@
 ;;Type 1 tries to match the wild cards with text following a number
 ;;Returns nil if search unsuccesful
 (VL-ACAD-DEFUN 'HAWS-DISTOFX)
-(DEFUN
-   HAWS-DISTOFX (S WC OPT / X)
+(DEFUN HAWS-DISTOFX (S WC OPT / X)
   (SETQ X (CADR (HAWS-EXTRACTX S WC OPT)))
   (IF X
     (DISTOF X)
@@ -1854,16 +1808,14 @@
 ;; character
 ;;and continuing l characters.
 (VL-ACAD-DEFUN 'HAWS-ENDSTR)
-(DEFUN
-   HAWS-ENDSTR (S I L)
+(DEFUN HAWS-ENDSTR (S I L)
   (SUBSTR S (1+ (- (MAX (STRLEN S) 1) I)) L)
 )
 
 ;;Extract used to extract numerical info from a text string.
 ;;Ignores commas in numbers.  Not international compatible.
 (VL-ACAD-DEFUN 'HAWS-EXTRACT)
-(DEFUN
-   HAWS-EXTRACT (S / C I PREFIX NUMBER SUFFIX)
+(DEFUN HAWS-EXTRACT (S / C I PREFIX NUMBER SUFFIX)
   (SETQ
     I 0
     PREFIX ""
@@ -1908,8 +1860,7 @@
 ;; extended
 ;; options.
 (VL-ACAD-DEFUN 'HAWS-EXTRACTX)
-(DEFUN
-   HAWS-EXTRACTX (S WC OPT / C DONE I PRE PREI NUMBER SUF SUFI)
+(DEFUN HAWS-EXTRACTX (S WC OPT / C DONE I PRE PREI NUMBER SUF SUFI)
   (SETQ
     I (IF (= OPT 0)
         0
@@ -2013,8 +1964,7 @@
 ;; CAUTION: May not return the same value as vl-file-copy.
 ;;
 (VL-ACAD-DEFUN 'HAWS-FILE-COPY)
-(DEFUN
-   HAWS-FILE-COPY (SOURCE DESTINATION / RDLIN RETURN)
+(DEFUN HAWS-FILE-COPY (SOURCE DESTINATION / RDLIN RETURN)
   (SETQ RETURN T)
   (COND
     ((AND (= (SUBSTR (GETVAR "DWGNAME") 1 7) "Drawing") (WCMATCH DESTINATION (STRCAT (GETVAR "DWGPREFIX") "*")) (WCMATCH (getvar "ACADVER") "*BricsCAD"))
@@ -2047,8 +1997,7 @@
 ;; If a write directive file is locked, allows user to provide an alternate filename to open.
 ;;
 ;;
-(DEFUN
-   HAWS-FILE-OPEN (FILENAME MODE / ERROBJ FP INPUT)
+(DEFUN HAWS-FILE-OPEN (FILENAME MODE / ERROBJ FP INPUT)
   (SETQ ERROBJ (VL-CATCH-ALL-APPLY 'OPEN (LIST FILENAME MODE)))
   (COND
     ((VL-CATCH-ALL-ERROR-P ERROBJ)
@@ -2087,8 +2036,7 @@
 ;; Intellicad substitute for vl-filename-base.
 ;;
 (VL-ACAD-DEFUN 'HAWS-FILENAME-BASE)
-(DEFUN
-   HAWS-FILENAME-BASE (FILENAME / BASE)
+(DEFUN HAWS-FILENAME-BASE (FILENAME / BASE)
   (COND
     ((HAWS-VLISP-P) (VL-FILENAME-BASE FILENAME))
     (T
@@ -2127,8 +2075,7 @@
 ;; Intellicad substitute for vl-filename-directory. 
 ;;
 (VL-ACAD-DEFUN 'HAWS-FILENAME-DIRECTORY)
-(DEFUN
-   HAWS-FILENAME-DIRECTORY (FILENAME / DIRECTORY)
+(DEFUN HAWS-FILENAME-DIRECTORY (FILENAME / DIRECTORY)
   (COND
     ((HAWS-VLISP-P) (VL-FILENAME-DIRECTORY FILENAME))
     (T
@@ -2162,8 +2109,7 @@
 ;;;
 ;;; Returns extension including dot.
 (VL-ACAD-DEFUN 'HAWS-FILENAME-EXTENSION)
-(DEFUN
-   HAWS-FILENAME-EXTENSION (FILENAME / EXTENSION)
+(DEFUN HAWS-FILENAME-EXTENSION (FILENAME / EXTENSION)
   (COND
     ((AND
        (HAWS-VLISP-P)
@@ -2203,14 +2149,12 @@
 )
 ;;;  HAWS-FLATTEN
 (VL-ACAD-DEFUN 'HAWS-FLATTEN)
-(DEFUN
-   HAWS-FLATTEN (PNT)
+(DEFUN HAWS-FLATTEN (PNT)
 ;;;Returns flattened coordinates of a 3d point
   (LIST (CAR PNT) (CADR PNT) 0.0)
 )
 
-(DEFUN
-   HAWS-GETANGLEX (GX-STARTINGPOINT GX-PROMPT GX-DEFAULTVALUE
+(DEFUN HAWS-GETANGLEX (GX-STARTINGPOINT GX-PROMPT GX-DEFAULTVALUE
                    GX-INITIALVALUE / GX-INPUT
                   )
   (SETQ
@@ -2264,8 +2208,7 @@
 ;;;HAWS-GETDISTX
 ;;;Returns a distance
 (VL-ACAD-DEFUN 'HAWS-GETDISTX)
-(DEFUN
-   HAWS-GETDISTX (GX-POINT1 GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE / GX-ARCMODE)
+(DEFUN HAWS-GETDISTX (GX-POINT1 GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE / GX-ARCMODE)
   (CAR
     (HAWS-GETDISTPOINT
       GX-POINT1
@@ -2280,8 +2223,7 @@
 ;;;Returns a distance, the endpoint of the distance, and the bulge used for the distance.
 ;;;'(distance endpoint bulge)
 (VL-ACAD-DEFUN 'HAWS-GETDISTPOINT)
-(DEFUN
-   HAWS-GETDISTPOINT (GX-POINT1 GX-PROMPT GX-DEFAULTVALUE
+(DEFUN HAWS-GETDISTPOINT (GX-POINT1 GX-PROMPT GX-DEFAULTVALUE
                       GX-INITIALVALUE GX-ARCMODE-P / GX-POINT2 GX-POINT3 GX-BULGE
                       GX-DISTANCE
                      )
@@ -2379,8 +2321,7 @@
 )
 
 (VL-ACAD-DEFUN 'HAWS-GETDN)
-(DEFUN
-   HAWS-GETDN (/ DN)
+(DEFUN HAWS-GETDN (/ DN)
   (SETQ DN (GETVAR "dwgname"))
   (IF (WCMATCH (STRCASE DN) "*`.DWG")
     (SETQ DN (SUBSTR DN 1 (- (STRLEN DN) 4)))
@@ -2392,8 +2333,7 @@
 )
 
 (VL-ACAD-DEFUN 'HAWS-GETDNPATH)
-(DEFUN
-   HAWS-GETDNPATH (/ DNPATH)
+(DEFUN HAWS-GETDNPATH (/ DNPATH)
   (SETQ DNPATH (GETVAR "dwgname"))
   (IF (WCMATCH (STRCASE DNPATH) "*`.DWG")
     (SETQ
@@ -2406,8 +2346,7 @@
   DNPATH
 )
 
-(DEFUN
-   HAWS-GETFIL (FPRMPT FDFLT FTYPE FEXT / FNAME FNINP)
+(DEFUN HAWS-GETFIL (FPRMPT FDFLT FTYPE FEXT / FNAME FNINP)
   (WHILE (NOT F1)
     (SETQ
       FNINP
@@ -2438,8 +2377,7 @@
 ;;HAWS-GETINTX
 ;;Provided for legacy compatability and user experience.
 (VL-ACAD-DEFUN 'HAWS-GETINTX)
-(DEFUN
-   HAWS-GETINTX (GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE)
+(DEFUN HAWS-GETINTX (GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE)
   (HAWS-GETINTXX GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE 0)
 )
 ;;;HAWS-GETINTXX
@@ -2450,8 +2388,7 @@
 ;;;3. If no default is supplied and MODE is 1, the first prompt is for drawing text selection, with fallback to standard input.
 ;;;Returns an INT or nil if nothing provided.
 (VL-ACAD-DEFUN 'HAWS-GETINTXX)
-(DEFUN
-   HAWS-GETINTXX (GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE
+(DEFUN HAWS-GETINTXX (GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE
                   GX-PROMPTMODE / GX-RESPONSE
                  )
   ;;Log all calls to this function.
@@ -2602,8 +2539,7 @@
 ;;HAWS-GETREALX
 ;;Provided for legacy compatability and user experience.
 (VL-ACAD-DEFUN 'HAWS-GETREALX)
-(DEFUN
-   HAWS-GETREALX (GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE)
+(DEFUN HAWS-GETREALX (GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE)
   (HAWS-GETREALXX GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE 0)
 )
 ;;;HAWS-GETREALXX
@@ -2614,8 +2550,7 @@
 ;;;3. If no default is supplied and MODE is 1, the first prompt is for drawing text selection, with fallback to standard input.
 ;;;Returns an REAL or nil if nothing provided.
 (VL-ACAD-DEFUN 'HAWS-GETREALXX)
-(DEFUN
-   HAWS-GETREALXX (GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE
+(DEFUN HAWS-GETREALXX (GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE
                    GX-PROMPTMODE / GX-RESPONSE
                   )
   ;;Log all calls to this function.
@@ -2765,8 +2700,7 @@
 
 ;;;HAWSGETPOINTX
 (VL-ACAD-DEFUN 'HAWS-GETPOINTX)
-(DEFUN
-   HAWS-GETPOINTX (GX-STARTINGPOINT GX-PROMPT GX-DEFAULTVALUE
+(DEFUN HAWS-GETPOINTX (GX-STARTINGPOINT GX-PROMPT GX-DEFAULTVALUE
                    GX-INITIALVALUE / GX-INPUT
                   )
   (SETQ
@@ -2804,8 +2738,7 @@
 )
 
 (VL-ACAD-DEFUN 'HAWS-GETSTRINGX)
-(DEFUN
-   HAWS-GETSTRINGX
+(DEFUN HAWS-GETSTRINGX
    (GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE / GX-INPUT)
   (SETQ
     GX-DEFAULTVALUE
@@ -2847,8 +2780,7 @@
 ;;;(HAWS-LSTTOSTR '("1" "2\""" "3") "," "\"")
 (VL-ACAD-DEFUN 'HAWS-LSTTOSTR)
 
-(DEFUN
-   HAWS-LSTTOSTR (INPUTLIST FIELDSEPARATOR TEXTDELIMITER / CURRENTFIELD
+(DEFUN HAWS-LSTTOSTR (INPUTLIST FIELDSEPARATOR TEXTDELIMITER / CURRENTFIELD
                   OUTPUTSTRING
                  )
   ;;Initialize values of variables
@@ -2886,8 +2818,7 @@
 ;;; default),
 ;;; from the folder that contains cnm.mnl
 ;;;
-(DEFUN
-   C:HAWS-LOAD-FROM-APP-DIR (FILENAME / FILE-PATH)
+(DEFUN C:HAWS-LOAD-FROM-APP-DIR (FILENAME / FILE-PATH)
   (PRINC "\nLoading ")
   (COND
     ((VL-CATCH-ALL-ERROR-P
@@ -2908,8 +2839,7 @@
 ;;; HAWS-LOG
 ;;; Writes a message to a log file including the username and timestamp
 (VL-ACAD-DEFUN 'HAWS-LOG)
-(DEFUN
-   HAWS-LOG (MESSAGE)
+(DEFUN HAWS-LOG (MESSAGE)
             ;|
   (SETQ
     F1 (OPEN
@@ -2937,8 +2867,7 @@
 ;;; HAWS-MILEPOST
 ;;; Echos a progress message depending on debug level.
 (VL-ACAD-DEFUN 'HAWS-MILEPOST)
-(DEFUN
-   HAWS-MILEPOST (MESSAGESTRING)
+(DEFUN HAWS-MILEPOST (MESSAGESTRING)
   (IF (> *HAWS-DEBUGLEVEL* 0)
     (PRINC (STRCAT "\nHawsEDC debug message: " MESSAGESTRING))
     MESSAGESTRING
@@ -2952,8 +2881,7 @@
 ;;         [uniform field width or field delimiter character]
 ;;       )
 (VL-ACAD-DEFUN 'HAWS-MKFLD)
-(DEFUN
-   HAWS-MKFLD (STRING FORMAT / CHAR I MKFLD_FIELD MKFLD_LITERAL)
+(DEFUN HAWS-MKFLD (STRING FORMAT / CHAR I MKFLD_FIELD MKFLD_LITERAL)
   (COND
     ((= (TYPE FORMAT) 'STR)
      (SETQ
@@ -3002,8 +2930,7 @@
 ;; MKLAYR sub-function defines and makes current a layer for another routine.
 ;; Usage: (haws-mklayr (list "laname" "lacolr" "laltyp"))
 ;; Use empty quotes for default color and linetype (eg. (mklay (list "AZ" "" ""))
-(DEFUN
-   HAWS-GETUSL (/ I RDLIN TEMP)
+(DEFUN HAWS-GETUSL (/ I RDLIN TEMP)
   (SETQ TEMP (FINDFILE "layers.dat"))
   (COND
     (TEMP
@@ -3027,8 +2954,7 @@
   (SETQ F3 (CLOSE F3))
 )
 (VL-ACAD-DEFUN 'HAWS-GETLAYR)
-(DEFUN
-   HAWS-GETLAYR (KEY / TEMP)
+(DEFUN HAWS-GETLAYR (KEY / TEMP)
   (IF (OR (NOT *HAWS:LAYERS*)
           (COND
             ((= (C:HCNM-CONFIG-GETVAR "ImportLayerSettings") "Yes")
@@ -3054,8 +2980,7 @@
   )
 )
 (VL-ACAD-DEFUN 'HAWS-MKLAYR)
-(DEFUN
-   HAWS-MKLAYR (LAOPT / LANAME LACOLR LALTYP LTFILE LTFILES TEMP)
+(DEFUN HAWS-MKLAYR (LAOPT / LANAME LACOLR LALTYP LTFILE LTFILES TEMP)
   ;;(princ "\nHAWS-MKLAYR in edclib")
   (IF (= 'STR (TYPE LAOPT))
     (SETQ
@@ -3127,8 +3052,7 @@
   LAOPT
 )
 
-(DEFUN
-   HAWS-LOAD-LINETYPE (LTYPE / I LTFILES)
+(DEFUN HAWS-LOAD-LINETYPE (LTYPE / I LTFILES)
   (SETQ
     LTFILES
      (LIST "acad" "hawsedc" "default")
@@ -3164,8 +3088,7 @@
 
 
 (VL-ACAD-DEFUN 'HAWS-DWGSCALE)
-(DEFUN
-   HAWS-DWGSCALE ()
+(DEFUN HAWS-DWGSCALE ()
   (COND
     ((OR (= (GETVAR "DIMANNO") 1) (= (GETVAR "DIMSCALE") 0))
      (/ 1 (GETVAR "CANNOSCALEVALUE"))
@@ -3174,19 +3097,16 @@
   )
 )
 
-(DEFUN
-   HAWS-TEXT-HEIGHT-PAPER ()
+(DEFUN HAWS-TEXT-HEIGHT-PAPER ()
   (GETVAR "DIMTXT")
 )
 
-(DEFUN
-   HAWS-TEXT-HEIGHT-MODEL ()
+(DEFUN HAWS-TEXT-HEIGHT-MODEL ()
   (* (GETVAR "DIMTXT") (HAWS-DWGSCALE))
 )
 
 (VL-ACAD-DEFUN 'HAWS-MKTEXT)
-(DEFUN
-   HAWS-MKTEXT (J I H R S / ENT JX JY)
+(DEFUN HAWS-MKTEXT (J I H R S / ENT JX JY)
   (SETQ
     I  (TRANS
          (IF (= 2 (LENGTH I))
@@ -3254,8 +3174,7 @@
   (ENTMOD ENT)
 )
 
-(defun
-   haws-make-mtext (i j h w s masked-p / ename-mtext)
+(DEFUN haws-make-mtext (i j h w s masked-p / ename-mtext)
   ;; creates annotative text if style is annotative.
   (setq h
     (cond
@@ -3279,8 +3198,7 @@
 )
 
 (VL-ACAD-DEFUN 'HAWS-MKLINE)
-(DEFUN
-   HAWS-MKLINE (PT1 PT2)
+(DEFUN HAWS-MKLINE (PT1 PT2)
   (SETQ
     PT1 (IF (= 2 (LENGTH PT1))
           (APPEND PT1 '(0.0))
@@ -3307,8 +3225,7 @@
 ;; Useful for relating paths.
 ;;
 (VL-ACAD-DEFUN 'HAWS-PATH-CHOP-TRUNK)
-(DEFUN
-   HAWS-PATH-CHOP-TRUNK (TREES CASE-SENSITIVE-P / LENGTH-COMMON)
+(DEFUN HAWS-PATH-CHOP-TRUNK (TREES CASE-SENSITIVE-P / LENGTH-COMMON)
   (SETQ
     TREE-COMMON
      (CAR TREES)
@@ -3350,8 +3267,7 @@
 ;; given path and comparison path, both including filename.
 ;;
 (VL-ACAD-DEFUN 'HAWS-PATH-RELATE)
-(DEFUN
-   HAWS-PATH-RELATE (PATH-ABSOLUTE PATH-COMPARE CASE-SENSITIVE-P / BRANCH-ABSOLUTE BRANCH-COMPARE BRANCHES LIST-ABSOLUTE LIST-COMPARE RELATIVE-PATH)
+(DEFUN HAWS-PATH-RELATE (PATH-ABSOLUTE PATH-COMPARE CASE-SENSITIVE-P / BRANCH-ABSOLUTE BRANCH-COMPARE BRANCHES LIST-ABSOLUTE LIST-COMPARE RELATIVE-PATH)
   (SETQ
     ;; Parse to lists.
     LIST-ABSOLUTE
@@ -3397,8 +3313,7 @@
 ;; given path and comparison path, both including filename.
 ;;
 (VL-ACAD-DEFUN 'HAWS-PATH-UNRELATE)
-(DEFUN
-   HAWS-PATH-UNRELATE
+(DEFUN HAWS-PATH-UNRELATE
    (PATH-RELATIVE PATH-COMPARE / LIST-COMPARE LIST-RELATIVE)
   (SETQ
     ;; Parse to lists.
@@ -3437,8 +3352,7 @@
 ;; substitute
 ;;
 (VL-ACAD-DEFUN 'HAWS-PRIN1-TO-STRING)
-(DEFUN
-   HAWS-PRIN1-TO-STRING (ATOMX / F1 F2 STRING)
+(DEFUN HAWS-PRIN1-TO-STRING (ATOMX / F1 F2 STRING)
   (COND
     ((HAWS-VLISP-P) (VL-PRIN1-TO-STRING ATOMX))
     (T
@@ -3484,8 +3398,7 @@
 ;;;
 ;;;
 (VL-ACAD-DEFUN 'HAWS-3PTTOBULGE)
-(DEFUN
-   HAWS-3PTTOBULGE
+(DEFUN HAWS-3PTTOBULGE
    (PNT1 PNT2 PNT3 / ANG1 ANG2 ANG3 BULGE CHORD DELTA DELTA1 R)
 ;;;Returns the bulge of an arc defined by three points, PNT1, PNT2, and PNT3
 ;;;If point 2 nil, returns 0.
@@ -3542,8 +3455,7 @@
 
 ;;;  HAWS-SEGMENT-LENGTH
 (VL-ACAD-DEFUN 'HAWS-SEGMENT-LENGTH)
-(DEFUN
-   HAWS-SEGMENT-LENGTH
+(DEFUN HAWS-SEGMENT-LENGTH
 ;;;  Returns curve or straight length of a segment.
                        (2DPNT1 2DPNT2 BULGE / D DELTA DOVER2 L R)
   (SETQ
@@ -3590,8 +3502,7 @@
 ;;;(alert (apply 'strcat (mapcar '(lambda (x) (strcat "\n----\n" x)) (haws-strtolst "1 John,\"2 2\"\" pipe,\nheated\",3 the end,,,,," "," "\"" nil))))
 ;;;(alert (apply 'strcat (mapcar '(lambda (x) (strcat "\n----\n" x)) (haws-strtolst "1 John,\"2 2\"\" pipe,\nheated\",3 the end,,,,," "," "\"" T))))
 (VL-ACAD-DEFUN 'HAWS-STRTOLST)
-(DEFUN
-   HAWS-STRTOLST (INPUTSTRING FIELDSEPARATORWC TEXTDELIMITER
+(DEFUN HAWS-STRTOLST (INPUTSTRING FIELDSEPARATORWC TEXTDELIMITER
                   EMPTYFIELDSDOCOUNT / CHARACTERCOUNTER CONVERSIONISDONE
                   CURRENTCHARACTER CURRENTFIELD CURRENTFIELDISDONE
                   PREVIOUSCHARACTER RETURNLIST TEXTMODEISON TextPairIsOpen
@@ -3741,8 +3652,7 @@
 ;;;Tests
 ;;;(haws-rdfld 3 "1 John,\"2 2\"\" pipe,\nheated\",3 the end,,,,," "," 1))))
 (VL-ACAD-DEFUN 'HAWS-RDFLD)
-(DEFUN
-   HAWS-RDFLD (FIELDNO INPUTSTRING FIELDSEPARATOR OPT / ATOMCOUNTER
+(DEFUN HAWS-RDFLD (FIELDNO INPUTSTRING FIELDSEPARATOR OPT / ATOMCOUNTER
                ATOMY ATOMX EMPTYFIELDSDOCOUNT ISCHRISLONG PARSEDLIST
                TEXTDELIMITER FIELDSEPARATORWC ISCHR ISLONG
               )
@@ -3828,8 +3738,7 @@
 
 ;;Strip white space from beginning and end of a string
 (VL-ACAD-DEFUN 'HAWS-RDFLD-UNPAD)
-(DEFUN
-   HAWS-RDFLD-UNPAD (STR)
+(DEFUN HAWS-RDFLD-UNPAD (STR)
   (WHILE (WCMATCH (SUBSTR STR 1 1) " ,\t")
     (SETQ STR (SUBSTR STR 2))
   )
@@ -3841,8 +3750,7 @@
 
 ;;Returns nil if in ICAD mode
 (VL-ACAD-DEFUN 'HAWS-REGISTRY-READ)
-(DEFUN
-   HAWS-REGISTRY-READ (REG-KEY VAL-NAME)
+(DEFUN HAWS-REGISTRY-READ (REG-KEY VAL-NAME)
   (COND
     ((C:HAWS-ICAD-P) NIL)
     ((VL-REGISTRY-READ REG-KEY VAL-NAME))
@@ -3851,8 +3759,7 @@
 
 ;;Returns nil if in ICAD mode
 (VL-ACAD-DEFUN 'HAWS-REGISTRY-WRITE)
-(DEFUN
-   HAWS-REGISTRY-WRITE (REG-KEY VAL-NAME VAL-DATA)
+(DEFUN HAWS-REGISTRY-WRITE (REG-KEY VAL-NAME VAL-DATA)
   (COND
     ((C:HAWS-ICAD-P) NIL)
     ((VL-REGISTRY-WRITE REG-KEY VAL-NAME VAL-DATA))
@@ -3862,8 +3769,7 @@
 
 ;;Remove an element from a list
 (VL-ACAD-DEFUN 'HAWS-REMOVE)
-(DEFUN
-   HAWS-REMOVE (ELEMENT LST)
+(DEFUN HAWS-REMOVE (ELEMENT LST)
   (APPEND
     (REVERSE (CDR (MEMBER ELEMENT (REVERSE LST))))
     (CDR (MEMBER ELEMENT LST))
@@ -3872,8 +3778,7 @@
 
 ;;Convert a radian angle to a presentation quality bearing.
 (VL-ACAD-DEFUN 'HAWS-RTOB)
-(DEFUN
-   HAWS-RTOB (RAD AU / B I)
+(DEFUN HAWS-RTOB (RAD AU / B I)
   (SETQ B (ANGTOS RAD AU))
   (IF (WCMATCH B "*d*")
     (PROGN
@@ -3910,8 +3815,7 @@
 ;; RTOSTA sub-function converts a real number to a base 100 road
 ;; station.
 (VL-ACAD-DEFUN 'HAWS-RTOSTA)
-(DEFUN
-   HAWS-RTOSTA (STA LUP / ISNEG AFTER BEFORE)
+(DEFUN HAWS-RTOSTA (STA LUP / ISNEG AFTER BEFORE)
   (SETQ
     LUP
      (COND
@@ -3961,8 +3865,7 @@
 (VL-ACAD-DEFUN 'TAN)
 (DEFUN HAWS-TAN (X) (/ (SIN X) (COS X)))
 (VL-ACAD-DEFUN 'HAWS-VSET)
-(DEFUN
-   HAWS-VSET (VLST)
+(DEFUN HAWS-VSET (VLST)
   (FOREACH
      V VLST
     (IF (GETVAR (CAR V))
@@ -3972,8 +3875,7 @@
 )
 
 (VL-ACAD-DEFUN 'HAWS-VTOG)
-(DEFUN
-   HAWS-VTOG (VLST)
+(DEFUN HAWS-VTOG (VLST)
   (FOREACH
      V VLST
     (PRINC (STRCAT "\n" V " toggled to "))
@@ -3991,14 +3893,12 @@
 )
 
 (VL-ACAD-DEFUN 'HAWS-VSAVE)
-(DEFUN
-   HAWS-VSAVE (VLST)
+(DEFUN HAWS-VSAVE (VLST)
   (SETQ *HAWS-VSTR* (MAPCAR '(LAMBDA (V) (LIST V (GETVAR V))) VLST))
 )
 
 (VL-ACAD-DEFUN 'HAWS-VRSTOR)
-(DEFUN
-   HAWS-VRSTOR ()
+(DEFUN HAWS-VRSTOR ()
   (MAPCAR '(LAMBDA (V) (SETVAR (CAR V) (CADR V))) *HAWS-VSTR*)
 )
 
@@ -4012,8 +3912,7 @@
 ;;Example: (wrap "Go home, eat dinner, comb, brush, sleep" 15 ",")
 ;;Returns  ("Go home" "eat dinner" "comb, brush" "sleep")
 (VL-ACAD-DEFUN 'HAWS-WRAP)
-(DEFUN
-   HAWS-WRAP (STRNG1 MAXLEN CHAR / FIRST I LSTRNI STRIPC STRIPS STRNG2
+(DEFUN HAWS-WRAP (STRNG1 MAXLEN CHAR / FIRST I LSTRNI STRIPC STRIPS STRNG2
               STRNGI TEMP WLIST
              )
   (SETQ
@@ -4084,8 +3983,7 @@
 
 ;;Selcerob--Selects a certain type of object. Returns entsel list.
 (VL-ACAD-DEFUN 'HAWS-SELCEROB)
-(DEFUN
-   HAWS-SELCEROB (PRMPT SERCH / E ELST ENM OK)
+(DEFUN HAWS-SELCEROB (PRMPT SERCH / E ELST ENM OK)
   (WHILE (NOT OK)
     (WHILE (NOT (SETQ E (ENTSEL PRMPT))))
     (SETQ ELST (ENTGET (SETQ ENM (CAR E))))
@@ -4103,8 +4001,7 @@
 ;; For Intellicad compatibility
 ;;
 (VL-ACAD-DEFUN 'HAWS-TXLEN)
-(DEFUN
-   HAWS-TXLEN (STRING HEIGHT)
+(DEFUN HAWS-TXLEN (STRING HEIGHT)
   (IF (C:HAWS-ICAD-P)
     (* HEIGHT (STRLEN STRING) 0.80)
     (CAADR (TEXTBOX (LIST (CONS 1 STRING) (CONS 40 HEIGHT))))
@@ -4116,8 +4013,7 @@
 ;;
 ;;Tests whether visual lisp functions are available.
 (VL-ACAD-DEFUN 'HAWS-VLISP-P)
-(DEFUN
-   HAWS-VLISP-P ()
+(DEFUN HAWS-VLISP-P ()
   (NOT (< (ATOF (GETVAR "acadver")) 15))
 )
 
@@ -4132,8 +4028,7 @@
 ;;; Getting a little more lax.
 ;;; If (HAWS-READCFG "/HawsEDC/Modules/package/OrderString") "",
 ;;; we assume quite trustingly that the application has never yet been tried.
-(DEFUN
-   HAWS-CHECKSTOREDSTRINGS (/ AUTHLIST AUTHSTRING DELETEALL TEMP)
+(DEFUN HAWS-CHECKSTOREDSTRINGS (/ AUTHLIST AUTHSTRING DELETEALL TEMP)
   (HAWS-MILEPOST "Entering HAWS-CHECKSTOREDSTRINGS")
   (FOREACH
      PACKAGE '(0 3)

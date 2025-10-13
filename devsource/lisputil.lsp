@@ -54,14 +54,12 @@
 ;;; To restore previous UCS, set a global symbol 'ucsp to non-nil.
 ;;; To restore another previous UCS, set a global symbol 'ucspp to non-nil.
 (defun erdf$@ () (errdef))
-(DEFUN
-	  errdef
+(DEFUN 	  errdef
 		()
   (haws-deprecation-01 "errdef")
 )
 
-(DEFUN
-   haws-errdef ()
+(DEFUN haws-errdef ()
   (PRINC "\nThank you for using this HawsEDC tool.  See HawsEDC.com for support.")
   ;;Load extended visual lisp functions
   (VL-LOAD-COM)
@@ -94,8 +92,7 @@
   (setq ucsp nil ucspp nil enm nil)
   (princ)
 )
-(DEFUN
-	  errrst
+(DEFUN 	  errrst
 		()
   (haws-deprecation-01 "errrst")
 )
@@ -107,8 +104,7 @@
 )
 ;;; END ERROR HANDLER
 
-(DEFUN
-   HAWS-DWGSCALE ()
+(DEFUN HAWS-DWGSCALE ()
   (COND
     ((OR (= (GETVAR "DIMANNO") 1) (= (GETVAR "DIMSCALE") 0)) (/ 1 (GETVAR "CANNOSCALEVALUE")))
     ((GETVAR "DIMSCALE"))
@@ -352,8 +348,7 @@
     )
   )
 )
-(DEFUN
-	  mklayr
+(DEFUN 	  mklayr
 		(laopt)
   (haws-deprecation-01 "mklayr")
 )
@@ -393,8 +388,7 @@
   (vl-cmdf "")
   laopt
 )
-(DEFUN
-	  mktext
+(DEFUN 	  mktext
 		(j i h r s)
   (haws-deprecation-01 "mktext")
 )
@@ -551,8 +545,7 @@
   (if isneg (setq before (strcat "-(" before) after (strcat after ")")))
   (strcat before "+" after)
 )
-(DEFUN
-	  vset
+(DEFUN 	  vset
 		(vlst)
   (haws-deprecation-01 "vset")
 )
@@ -569,8 +562,7 @@
   (princ)
 )
 
-(DEFUN
-	  vsave
+(DEFUN 	  vsave
 		(vlst)
   (haws-deprecation-01 "vsave")
 )
@@ -582,8 +574,7 @@
   )
 )
 
-(DEFUN
-	  vrstor
+(DEFUN 	  vrstor
 		()
   (haws-deprecation-01 "vrstor")
 )

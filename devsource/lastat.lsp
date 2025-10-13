@@ -8,8 +8,7 @@
 (haws-core-init 230) (HAWS-LASTAT "lock" NIL)(princ))
 (DEFUN C:HAWS-OFF () (HAWS-LASTAT "off" NIL)(princ))
 
-(DEFUN
-   HAWS-LASTAT (LOPERA NESTED)
+(DEFUN HAWS-LASTAT (LOPERA NESTED)
   (haws-core-init 231)
   (HAWS-VSAVE '("EXPERT"))
   (SETVAR "EXPERT" 5)
@@ -38,8 +37,7 @@
   (haws-core-restore)
 )
 
-(DEFUN
-   HAWS-LALOOP (VP / SS1 I EN LA LALIST)
+(DEFUN HAWS-LALOOP (VP / SS1 I EN LA LALIST)
   (SETQ
     LASSET
      (SSGET)
@@ -83,8 +81,7 @@
 (haws-core-init 232) (HAWS-NLSTAT "freeze")(princ))
 (DEFUN C:HAWS-OFFX () (HAWS-NLSTAT "off")(princ))
 
-(DEFUN
-   HAWS-NLSTAT (LOPERA / NESTED)
+(DEFUN HAWS-NLSTAT (LOPERA / NESTED)
   (haws-core-init 233)
   (HAWS-VSAVE '("EXPERT"))
   (SETVAR "EXPERT" 5)
@@ -111,8 +108,7 @@
   (HAWS-VRSTOR)
   (haws-core-restore)
 )
-(DEFUN
-   HAWS-LSPICK (LOPERA VP / ES EN LA PARNTL LALIST LOPERAkey)
+(DEFUN HAWS-LSPICK (LOPERA VP / ES EN LA PARNTL LALIST LOPERAkey)
   (WHILE (SETQ ES (NENTSEL))
     (SETQ
       EN     (CAR ES)
@@ -168,8 +164,7 @@
 (haws-core-init 236) (HAWS-ULSTAT "off" "on")(princ))
 (DEFUN C:HAWS-UOFFX ()
 (haws-core-init 237) (HAWS-ULSTAT "noff" "on")(princ))
-(DEFUN
-   HAWS-ULSTAT (LKEY LOPERA / EN LT I)
+(DEFUN HAWS-ULSTAT (LKEY LOPERA / EN LT I)
   ;; Undo layers frozen/off by picking
   (COND
     ((NOT (ASSOC LKEY *HAWS-LASTATLIST*))

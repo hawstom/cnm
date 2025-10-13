@@ -1,7 +1,6 @@
 ;;; Written by Thomas Gail Haws
 ;;; Change layer lineweights by picking.
-(DEFUN
-   C:HAWS-LWP
+(DEFUN C:HAWS-LWP
              (/ SS CC I EC LC)
 (haws-core-init 253)
   (COND
@@ -40,8 +39,7 @@
 )
 ;;; (C) Copyright 1997 by Thomas Gail Haws
 ;;; Change layer lineweight by picking nested entities
-(DEFUN
-   C:HAWS-LWPX
+(DEFUN C:HAWS-LWPX
               (/ CC EC LOPERA NESTED)
 (haws-core-init 254)
   (COND
@@ -69,8 +67,7 @@
   (PRINC "lineweight ")
   CC
 )
-(DEFUN
-   HAWS-LWPICK
+(DEFUN HAWS-LWPICK
               (/ ES EN LA PARNTL VP)
   (WHILE (SETQ ES (NENTSEL))
     (SETQ

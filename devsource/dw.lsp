@@ -1,6 +1,5 @@
 ;;; (C) Copyright 1997 by Thomas Gail Haws
-(DEFUN
-   C:HAWS-DW
+(DEFUN C:HAWS-DW
             (/ ANG1 ANG2 ANG3 ANG4 ANG5 BCCEN CL1 CL2 CL3 DWMID DWWID
              INCANG LEFT OSMOLD PT1 PT2 PT3 PT4 PT5 PT6 PT7 PT8 TS RAD
              WNGANG
@@ -153,8 +152,7 @@
   (HAWS-VRSTOR)
   (haws-core-restore)
 )
-(DEFUN
-   HAWS-DRAWDW
+(DEFUN HAWS-DRAWDW
               (PT1 PT2 PT3 PT4 PT5 PT6 PT7 PT8 LEFT ANG1 CL1 CL2 CL3 TS
               )
   (SETVAR "osmode" 0)

@@ -1,5 +1,4 @@
-(DEFUN
-   C:HAWS-LTP
+(DEFUN C:HAWS-LTP
              (/ SS CC I EC LC)
 (haws-core-init 251)
   (COND
@@ -52,8 +51,7 @@
 )
 ;;; (C) Copyright 1997 by Thomas Gail Haws
 ;;; Change layer color by picking nested entities
-(DEFUN
-   C:HAWS-LTPX
+(DEFUN C:HAWS-LTPX
               (/ CC EC LOPERA NESTED)
 (haws-core-init 252)
   (COND
@@ -93,8 +91,7 @@
   (PRINC "Linetype ")
   CC
 )
-(DEFUN
-   HAWS-LTPICK
+(DEFUN HAWS-LTPICK
               (/ ES EN LA PARNTL VP)
   (WHILE (SETQ ES (NENTSEL))
     (SETQ
