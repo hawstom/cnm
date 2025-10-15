@@ -1,4 +1,4 @@
-HOW TO DEVELOP AND TEST CNM
+# HOW TO DEVELOP AND TEST CNM
 1. Run Git Bash Here in the Windows File Explorer context (right-click) menu under hawsedc\develop.
 2. Check 'git status'
 3. 'git commit -am"..."' as needed.

@@ -1,3 +1,4 @@
+;#region HEAD
 (PROMPT "\nHawsEDC library functions...")
 
 ;;;This is the current version of HawsEDC and CNM
@@ -80,17 +81,20 @@
   )
   (PRINC)
 )
-;;;=================================================================
-;;;
-;;;                Error Handler and Licensing functions
-;;;
-;;;=================================================================
-;;;
-;;; The HawsEDC authorization routine
-;;;
-;;; Data forms:
-;;; Orderlist    '(pkgid numauths compname biosmonth biosday biosyear
-;;; startdate)
+
+;#endregion;
+;#region ERROR AND PACKAGING
+;;=================================================================
+;;
+;;                Error Handler and Licensing functions
+;;
+;;=================================================================
+;;
+;; The HawsEDC authorization routine
+;;
+;; Data forms:
+;; Orderlist    '(pkgid numauths compname biosmonth biosday biosyear
+;; startdate)
 
 ;;App groups are:
 ;;  0 HawsEDC catch-all misc apps
@@ -1346,7 +1350,8 @@
     (HAWS-ENCRYPTAUTHSTRING (HAWS-LISTTOBINARY AUTHLIST))
   )
 )
-
+;#endregion
+;#region USE LOG
 ;;; ======================================================================
 ;;;
 ;;;                 Usage logging functions
@@ -1751,409 +1756,8 @@
   (princ)
 )
 
-;;; ======================================================================
-;;;
-;;;                 Miscellaneous Utility functions
-;;;
-;;; ======================================================================
-
-;; Atofx extracts a real number from a text string when text before
-;; or
-;; after
-;;the number matches a give wild card spec.  Requires EXTRACTX.
-;;Type 0 tries to match the wild cards with text preceding a number.
-;;Type 1 tries to match the wild cards with text following a number
-;;Returns 0.0 if search unsuccesful
-(VL-ACAD-DEFUN 'HAWS-ATOFX)
-(DEFUN HAWS-ATOFX (S WC OPT / X)
-  (SETQ X (CADR (HAWS-EXTRACTX S WC OPT)))
-  (IF X
-    (ATOF X)
-    0.0
-  )
-)
-
-
-;;;
-;;; c:haws-icad-p
-;;;
-;;;Tests whether intellicad behavior is current.
-;;;Bricscad has advanced to the point we no longer have to use a special mode for it.
-(VL-ACAD-DEFUN 'C:HAWS-ICAD-P)
-(DEFUN C:HAWS-ICAD-P ()
-  (OR *HAWS-ICADMODE*
-      (SETQ *HAWS-ICADMODE* (WCMATCH (GETVAR "acadver") "*i"))
-  )
-)
-
-;;; Distofx extracts a real number from a text string when text before
-;;; or
-;;; after
-;;the number matches a give wild card spec.  Requires EXTRACTX.
-;;Type 0 tries to match the wild cards with text preceding a number.
-;;Type 1 tries to match the wild cards with text following a number
-;;Returns nil if search unsuccesful
-(VL-ACAD-DEFUN 'HAWS-DISTOFX)
-(DEFUN HAWS-DISTOFX (S WC OPT / X)
-  (SETQ X (CADR (HAWS-EXTRACTX S WC OPT)))
-  (IF X
-    (DISTOF X)
-    NIL
-  )
-)
-
-(DEFUN HAWS-DXF (GCODE ENTLST) (CDR (ASSOC GCODE ENTLST)))
-
-;; Endstr returns a substring of s starting with the ith to last
-;; character
-;;and continuing l characters.
-(VL-ACAD-DEFUN 'HAWS-ENDSTR)
-(DEFUN HAWS-ENDSTR (S I L)
-  (SUBSTR S (1+ (- (MAX (STRLEN S) 1) I)) L)
-)
-
-;;Extract used to extract numerical info from a text string.
-;;Ignores commas in numbers.  Not international compatible.
-(VL-ACAD-DEFUN 'HAWS-EXTRACT)
-(DEFUN HAWS-EXTRACT (S / C I PREFIX NUMBER SUFFIX)
-  (SETQ
-    I 0
-    PREFIX ""
-    NUMBER ""
-    SUFFIX ""
-  )
-  (REPEAT (STRLEN S)
-    (SETQ C (SUBSTR S (SETQ I (1+ I)) 1))
-    (COND
-      ((AND (WCMATCH C "#") (EQ SUFFIX ""))
-       (SETQ NUMBER (STRCAT NUMBER C))
-      )
-      ((AND
-         (EQ C "-")
-         (= SUFFIX NUMBER "")
-         (WCMATCH (SUBSTR S (1+ I) 1) "#")
-       )
-       (SETQ NUMBER (STRCAT NUMBER C))
-      )
-      ((AND
-         (EQ C ".")
-         (= SUFFIX "")
-         (WCMATCH (SUBSTR S (1+ I) 1) "#")
-       )
-       (SETQ NUMBER (STRCAT NUMBER C))
-      )
-      ;;Swallow commas inside numbers.  Not int'l compatible.
-      ((AND
-         (EQ C ",")
-         (= SUFFIX "")
-         (WCMATCH (SUBSTR S (1+ I) 1) "#")
-       )
-      )
-      ((EQ NUMBER "") (SETQ PREFIX (STRCAT PREFIX C)))
-      (T (SETQ SUFFIX (STRCAT SUFFIX C)))
-    )
-  )
-  (LIST PREFIX NUMBER SUFFIX)
-)
-
-;; Extractx used to extract numerical info from a text string with
-;; extended
-;; options.
-(VL-ACAD-DEFUN 'HAWS-EXTRACTX)
-(DEFUN HAWS-EXTRACTX (S WC OPT / C DONE I PRE PREI NUMBER SUF SUFI)
-  (SETQ
-    I (IF (= OPT 0)
-        0
-        (1+ (STRLEN S))
-      )
-    PRE ""
-    NUMBER ""
-    SUF ""
-  )
-  (REPEAT (STRLEN S)
-    (SETQ
-      C    (SUBSTR
-             S
-             (SETQ
-               I (IF (= OPT 0)
-                   (1+ I)
-                   (1- I)
-                 )
-             )
-             1
-           )
-      PREI (SUBSTR S 1 (1- I))
-      SUFI (SUBSTR S (1+ I))
-    )
-    (COND
-      ((NOT
-         (WCMATCH
-           (IF (= OPT 0)
-             PREI
-             SUFI
-           )
-           WC
-         )
-       )
-       (IF (= OPT 0)
-         (SETQ PRE (STRCAT PRE C))
-         (SETQ SUF (STRCAT C SUF))
-       )
-      )
-      ((AND (WCMATCH C "#") (NOT DONE))
-       (SETQ
-         NUMBER
-          (IF (= OPT 0)
-            (STRCAT NUMBER C)
-            (STRCAT C NUMBER)
-          )
-       )
-      )
-      ((AND
-         (EQ C "-")
-         (= NUMBER "")
-         (NOT DONE)
-         (WCMATCH (SUBSTR S (1+ I) 1) "#")
-       )
-       (SETQ
-         NUMBER
-          (IF (= OPT 0)
-            (STRCAT NUMBER C)
-            (STRCAT C NUMBER)
-          )
-       )
-      )
-      ((AND
-         (EQ C ".")
-         (NOT DONE)
-         (WCMATCH (SUBSTR S (1+ I) 1) "#")
-       )
-       (SETQ
-         NUMBER
-          (IF (= OPT 0)
-            (STRCAT NUMBER C)
-            (STRCAT C NUMBER)
-          )
-       )
-      )
-      ((EQ NUMBER "")
-       (IF (= OPT 0)
-         (SETQ PRE (STRCAT PRE C))
-         (SETQ SUF (STRCAT C SUF))
-       )
-      )
-      (T
-       (SETQ DONE T)
-       (IF (= OPT 0)
-         (SETQ SUF (STRCAT SUF C))
-         (SETQ PRE (STRCAT C PRE))
-       )
-      )
-    )
-  )
-  (IF (NOT (ZEROP (STRLEN NUMBER)))
-    (LIST PRE NUMBER SUF)
-  )
-)
-
-;;
-;; HAWS-FILE-COPY
-;;
-;; Intellicad substitute for VL-FILE-COPY
-;;
-;; CAUTION: May not return the same value as vl-file-copy.
-;;
-(VL-ACAD-DEFUN 'HAWS-FILE-COPY)
-(DEFUN HAWS-FILE-COPY (SOURCE DESTINATION / RDLIN RETURN)
-  (SETQ RETURN T)
-  (COND
-    ((AND (= (SUBSTR (GETVAR "DWGNAME") 1 7) "Drawing") (WCMATCH DESTINATION (STRCAT (GETVAR "DWGPREFIX") "*")) (WCMATCH (getvar "ACADVER") "*BricsCAD"))
-      (ALERT "BricsCAD may crash if this drawing is not in a writable folder.")
-      (INITGET "Yes No")
-      (IF (/= (GETKWORD "\nBricsCAD may crash. Continue anyway? [Yes/No] <No>: ") "Yes")(exit))
-    )
-  )
-  (COND
-    ((HAWS-VLISP-P) 
-     (VL-FILE-COPY SOURCE DESTINATION))
-    (T
-     (IF (NOT(SETQ F1 (OPEN SOURCE "r")))
-       (SETQ RETURN nil)
-     )
-     (IF (NOT (AND RETURN (SETQ F2 (OPEN DESTINATION "w"))))
-       (SETQ RETURN nil)
-     )
-     (WHILE (SETQ RDLIN (READ-LINE F1)) (WRITE-LINE RDLIN F2))
-     (SETQ F1 (CLOSE F1))
-     (SETQ F2 (CLOSE F2))
-     RETURN
-    )
-  )
-)
-
-;;
-;; HAWS-FILE-OPEN
-;;
-;; If a write directive file is locked, allows user to provide an alternate filename to open.
-;;
-;;
-(DEFUN HAWS-FILE-OPEN (FILENAME MODE / ERROBJ FP INPUT)
-  (SETQ ERROBJ (VL-CATCH-ALL-APPLY 'OPEN (LIST FILENAME MODE)))
-  (COND
-    ((VL-CATCH-ALL-ERROR-P ERROBJ)
-     (ALERT
-       (PRINC
-         (STRCAT
-           "Couldn't write to "
-           FILENAME
-           "\nPlease close if possible and follow command prompts."
-         )
-       )
-     )
-     (INITGET "Continue Specify")
-     (SETQ
-       INPUT
-        (GETKWORD
-          "\n[Continue with file closed/Specify another filename] <Continue>: "
-        )
-     )
-     (COND
-       ((= INPUT "Continue"))
-       ((= INPUT "Specify")
-        (SETQ FILENAME (GETFILED "Specify filename" FILENAME "" 1))
-        (SETQ FP (HAWS-FILE-OPEN FILENAME MODE))
-       )
-     )
-    )
-    (T (SETQ FP ERROBJ))
-  )
-)
-
-
-;;
-;;HAWS-FILENAME-BASE
-;;
-;; Intellicad substitute for vl-filename-base.
-;;
-(VL-ACAD-DEFUN 'HAWS-FILENAME-BASE)
-(DEFUN HAWS-FILENAME-BASE (FILENAME / BASE)
-  (COND
-    ((HAWS-VLISP-P) (VL-FILENAME-BASE FILENAME))
-    (T
-     ;;Trim off the directory.
-     (SETQ BASE (STRCAT " " FILENAME))  ;Pad with a space
-     (WHILE (WCMATCH
-              (SETQ
-                BASE
-                 (SUBSTR BASE 2)        ;Trim first character.
-              )
-              "*[\\/]*"                 ; and do again if slashes in name.
-            )
-     )
-     ;;Trim the extension off one character at a time
-     (IF (WCMATCH BASE "*`.*")          ; If there are any dots in remaining name.
-       (PROGN
-         (WHILE (/= (HAWS-ENDSTR BASE 1 1) ".")
-                                        ; While the last character isn't a dot.
-           (SETQ
-             BASE
-              (SUBSTR BASE 1 (1- (STRLEN BASE))) ;Trim it.
-           )
-         )
-         (SUBSTR BASE 1 (1- (STRLEN BASE)))
-       )
-       BASE
-     )
-    )
-  )
-)
-
-
-;;
-;;HAWS-FILENAME-DIRECTORY
-;;
-;; Intellicad substitute for vl-filename-directory. 
-;;
-(VL-ACAD-DEFUN 'HAWS-FILENAME-DIRECTORY)
-(DEFUN HAWS-FILENAME-DIRECTORY (FILENAME / DIRECTORY)
-  (COND
-    ((HAWS-VLISP-P) (VL-FILENAME-DIRECTORY FILENAME))
-    (T
-     (COND
-       ((WCMATCH FILENAME "*[\\/]*")    ;If file has any directories.
-        (SETQ DIRECTORY (STRCAT FILENAME " "))
-        (WHILE (NOT
-                 (WCMATCH
-                   (SETQ
-                     DIRECTORY
-                      (SUBSTR DIRECTORY 1 (1- (STRLEN DIRECTORY)))
-                                        ;Trim last character
-                   )
-                   "*[\\/]"             ; and do again if the last character is not a slash.
-                 )
-               )
-        )
-        (SUBSTR DIRECTORY 1 (1- (STRLEN DIRECTORY))) ;Trim slash
-       )
-       (T "")
-     )
-    )
-  )
-)
-
-;;;
-;;;HAWS-FILENAME-EXTENSION
-;;;
-;;; Intellicad substitute for vl-filename-extension.
-;;; Trims everything up to but excluding last dot from file name.
-;;;
-;;; Returns extension including dot.
-(VL-ACAD-DEFUN 'HAWS-FILENAME-EXTENSION)
-(DEFUN HAWS-FILENAME-EXTENSION (FILENAME / EXTENSION)
-  (COND
-    ((AND
-       (HAWS-VLISP-P)
-       (SETQ EXTENSION (VL-FILENAME-EXTENSION FILENAME))
-     )
-     EXTENSION
-    )
-    ;;Trim off the directory.
-    (T
-     (SETQ EXTENSION (STRCAT " " FILENAME)) ;Pad with a space
-     (WHILE (WCMATCH
-              (SETQ
-                EXTENSION
-                 (SUBSTR EXTENSION 2)   ;Trim first character.
-              )
-              "*[\\/]*"                 ; and do again if slashes in name.
-            )
-     )
-     ;;Trim off the base name.
-     (IF (WCMATCH EXTENSION "*`.*")     ; If there are any dots in remaining name.
-       (PROGN
-         (SETQ EXTENSION (STRCAT " " EXTENSION))
-         (WHILE (WCMATCH
-                  (SETQ
-                    EXTENSION
-                     (SUBSTR EXTENSION 2) ;Trim first character
-                  )
-                  "*`.*"                ; and do again if there is still a dot.
-                )
-         )
-         EXTENSION
-       )
-       ""
-     )
-    )
-  )
-)
-;;;  HAWS-FLATTEN
-(VL-ACAD-DEFUN 'HAWS-FLATTEN)
-(DEFUN HAWS-FLATTEN (PNT)
-;;;Returns flattened coordinates of a 3d point
-  (LIST (CAR PNT) (CADR PNT) 0.0)
-)
-
+;#endregion
+;#region GETTERS
 (DEFUN HAWS-GETANGLEX (GX-STARTINGPOINT GX-PROMPT GX-DEFAULTVALUE
                    GX-INITIALVALUE / GX-INPUT
                   )
@@ -2763,6 +2367,609 @@
   )
 )
 
+;#endregion
+;#region STRING EXTRACTION
+;; Atofx extracts a real number from a text string when text before
+;; or
+;; after
+;;the number matches a give wild card spec.  Requires EXTRACTX.
+;;Type 0 tries to match the wild cards with text preceding a number.
+;;Type 1 tries to match the wild cards with text following a number
+;;Returns 0.0 if search unsuccesful
+(VL-ACAD-DEFUN 'HAWS-ATOFX)
+(DEFUN HAWS-ATOFX (S WC OPT / X)
+  (SETQ X (CADR (HAWS-EXTRACTX S WC OPT)))
+  (IF X
+    (ATOF X)
+    0.0
+  )
+)
+
+;;; Distofx extracts a real number from a text string when text before
+;;; or
+;;; after
+;;the number matches a give wild card spec.  Requires EXTRACTX.
+;;Type 0 tries to match the wild cards with text preceding a number.
+;;Type 1 tries to match the wild cards with text following a number
+;;Returns nil if search unsuccesful
+(VL-ACAD-DEFUN 'HAWS-DISTOFX)
+(DEFUN HAWS-DISTOFX (S WC OPT / X)
+  (SETQ X (CADR (HAWS-EXTRACTX S WC OPT)))
+  (IF X
+    (DISTOF X)
+    NIL
+  )
+)
+
+(DEFUN HAWS-DXF (GCODE ENTLST) (CDR (ASSOC GCODE ENTLST)))
+
+;; Endstr returns a substring of s starting with the ith to last
+;; character
+;;and continuing l characters.
+(VL-ACAD-DEFUN 'HAWS-ENDSTR)
+(DEFUN HAWS-ENDSTR (S I L)
+  (SUBSTR S (1+ (- (MAX (STRLEN S) 1) I)) L)
+)
+
+;;Extract used to extract numerical info from a text string.
+;;Ignores commas in numbers.  Not international compatible.
+(VL-ACAD-DEFUN 'HAWS-EXTRACT)
+(DEFUN HAWS-EXTRACT (S / C I PREFIX NUMBER SUFFIX)
+  (SETQ
+    I 0
+    PREFIX ""
+    NUMBER ""
+    SUFFIX ""
+  )
+  (REPEAT (STRLEN S)
+    (SETQ C (SUBSTR S (SETQ I (1+ I)) 1))
+    (COND
+      ((AND (WCMATCH C "#") (EQ SUFFIX ""))
+       (SETQ NUMBER (STRCAT NUMBER C))
+      )
+      ((AND
+         (EQ C "-")
+         (= SUFFIX NUMBER "")
+         (WCMATCH (SUBSTR S (1+ I) 1) "#")
+       )
+       (SETQ NUMBER (STRCAT NUMBER C))
+      )
+      ((AND
+         (EQ C ".")
+         (= SUFFIX "")
+         (WCMATCH (SUBSTR S (1+ I) 1) "#")
+       )
+       (SETQ NUMBER (STRCAT NUMBER C))
+      )
+      ;;Swallow commas inside numbers.  Not int'l compatible.
+      ((AND
+         (EQ C ",")
+         (= SUFFIX "")
+         (WCMATCH (SUBSTR S (1+ I) 1) "#")
+       )
+      )
+      ((EQ NUMBER "") (SETQ PREFIX (STRCAT PREFIX C)))
+      (T (SETQ SUFFIX (STRCAT SUFFIX C)))
+    )
+  )
+  (LIST PREFIX NUMBER SUFFIX)
+)
+
+;; Extractx used to extract numerical info from a text string with
+;; extended
+;; options.
+(VL-ACAD-DEFUN 'HAWS-EXTRACTX)
+(DEFUN HAWS-EXTRACTX (S WC OPT / C DONE I PRE PREI NUMBER SUF SUFI)
+  (SETQ
+    I (IF (= OPT 0)
+        0
+        (1+ (STRLEN S))
+      )
+    PRE ""
+    NUMBER ""
+    SUF ""
+  )
+  (REPEAT (STRLEN S)
+    (SETQ
+      C    (SUBSTR
+             S
+             (SETQ
+               I (IF (= OPT 0)
+                   (1+ I)
+                   (1- I)
+                 )
+             )
+             1
+           )
+      PREI (SUBSTR S 1 (1- I))
+      SUFI (SUBSTR S (1+ I))
+    )
+    (COND
+      ((NOT
+         (WCMATCH
+           (IF (= OPT 0)
+             PREI
+             SUFI
+           )
+           WC
+         )
+       )
+       (IF (= OPT 0)
+         (SETQ PRE (STRCAT PRE C))
+         (SETQ SUF (STRCAT C SUF))
+       )
+      )
+      ((AND (WCMATCH C "#") (NOT DONE))
+       (SETQ
+         NUMBER
+          (IF (= OPT 0)
+            (STRCAT NUMBER C)
+            (STRCAT C NUMBER)
+          )
+       )
+      )
+      ((AND
+         (EQ C "-")
+         (= NUMBER "")
+         (NOT DONE)
+         (WCMATCH (SUBSTR S (1+ I) 1) "#")
+       )
+       (SETQ
+         NUMBER
+          (IF (= OPT 0)
+            (STRCAT NUMBER C)
+            (STRCAT C NUMBER)
+          )
+       )
+      )
+      ((AND
+         (EQ C ".")
+         (NOT DONE)
+         (WCMATCH (SUBSTR S (1+ I) 1) "#")
+       )
+       (SETQ
+         NUMBER
+          (IF (= OPT 0)
+            (STRCAT NUMBER C)
+            (STRCAT C NUMBER)
+          )
+       )
+      )
+      ((EQ NUMBER "")
+       (IF (= OPT 0)
+         (SETQ PRE (STRCAT PRE C))
+         (SETQ SUF (STRCAT C SUF))
+       )
+      )
+      (T
+       (SETQ DONE T)
+       (IF (= OPT 0)
+         (SETQ SUF (STRCAT SUF C))
+         (SETQ PRE (STRCAT C PRE))
+       )
+      )
+    )
+  )
+  (IF (NOT (ZEROP (STRLEN NUMBER)))
+    (LIST PRE NUMBER SUF)
+  )
+)
+
+;#endregion
+;#region ICAD SUBSTITUTES
+;;;
+;;; c:haws-icad-p
+;;;
+;;;Tests whether intellicad behavior is current.
+;;;Bricscad has advanced to the point we no longer have to use a special mode for it.
+(VL-ACAD-DEFUN 'C:HAWS-ICAD-P)
+(DEFUN C:HAWS-ICAD-P ()
+  (OR *HAWS-ICADMODE*
+      (SETQ *HAWS-ICADMODE* (WCMATCH (GETVAR "acadver") "*i"))
+  )
+)
+
+;;
+;; HAWS-FILE-COPY
+;;
+;; Intellicad substitute for VL-FILE-COPY
+;;
+;; CAUTION: May not return the same value as vl-file-copy.
+;;
+(VL-ACAD-DEFUN 'HAWS-FILE-COPY)
+(DEFUN HAWS-FILE-COPY (SOURCE DESTINATION / RDLIN RETURN)
+  (SETQ RETURN T)
+  (COND
+    ((AND (= (SUBSTR (GETVAR "DWGNAME") 1 7) "Drawing") (WCMATCH DESTINATION (STRCAT (GETVAR "DWGPREFIX") "*")) (WCMATCH (getvar "ACADVER") "*BricsCAD"))
+      (ALERT "BricsCAD may crash if this drawing is not in a writable folder.")
+      (INITGET "Yes No")
+      (IF (/= (GETKWORD "\nBricsCAD may crash. Continue anyway? [Yes/No] <No>: ") "Yes")(exit))
+    )
+  )
+  (COND
+    ((HAWS-VLISP-P) 
+     (VL-FILE-COPY SOURCE DESTINATION))
+    (T
+     (IF (NOT(SETQ F1 (OPEN SOURCE "r")))
+       (SETQ RETURN nil)
+     )
+     (IF (NOT (AND RETURN (SETQ F2 (OPEN DESTINATION "w"))))
+       (SETQ RETURN nil)
+     )
+     (WHILE (SETQ RDLIN (READ-LINE F1)) (WRITE-LINE RDLIN F2))
+     (SETQ F1 (CLOSE F1))
+     (SETQ F2 (CLOSE F2))
+     RETURN
+    )
+  )
+)
+;;
+;;HAWS-FILENAME-BASE
+;;
+;; Intellicad substitute for vl-filename-base.
+;;
+(VL-ACAD-DEFUN 'HAWS-FILENAME-BASE)
+(DEFUN HAWS-FILENAME-BASE (FILENAME / BASE)
+  (COND
+    ((HAWS-VLISP-P) (VL-FILENAME-BASE FILENAME))
+    (T
+     ;;Trim off the directory.
+     (SETQ BASE (STRCAT " " FILENAME))  ;Pad with a space
+     (WHILE (WCMATCH
+              (SETQ
+                BASE
+                 (SUBSTR BASE 2)        ;Trim first character.
+              )
+              "*[\\/]*"                 ; and do again if slashes in name.
+            )
+     )
+     ;;Trim the extension off one character at a time
+     (IF (WCMATCH BASE "*`.*")          ; If there are any dots in remaining name.
+       (PROGN
+         (WHILE (/= (HAWS-ENDSTR BASE 1 1) ".")
+                                        ; While the last character isn't a dot.
+           (SETQ
+             BASE
+              (SUBSTR BASE 1 (1- (STRLEN BASE))) ;Trim it.
+           )
+         )
+         (SUBSTR BASE 1 (1- (STRLEN BASE)))
+       )
+       BASE
+     )
+    )
+  )
+)
+
+
+;;
+;;HAWS-FILENAME-DIRECTORY
+;;
+;; Intellicad substitute for vl-filename-directory. 
+;;
+(VL-ACAD-DEFUN 'HAWS-FILENAME-DIRECTORY)
+(DEFUN HAWS-FILENAME-DIRECTORY (FILENAME / DIRECTORY)
+  (COND
+    ((HAWS-VLISP-P) (VL-FILENAME-DIRECTORY FILENAME))
+    (T
+     (COND
+       ((WCMATCH FILENAME "*[\\/]*")    ;If file has any directories.
+        (SETQ DIRECTORY (STRCAT FILENAME " "))
+        (WHILE (NOT
+                 (WCMATCH
+                   (SETQ
+                     DIRECTORY
+                      (SUBSTR DIRECTORY 1 (1- (STRLEN DIRECTORY)))
+                                        ;Trim last character
+                   )
+                   "*[\\/]"             ; and do again if the last character is not a slash.
+                 )
+               )
+        )
+        (SUBSTR DIRECTORY 1 (1- (STRLEN DIRECTORY))) ;Trim slash
+       )
+       (T "")
+     )
+    )
+  )
+)
+
+;;;
+;;;HAWS-FILENAME-EXTENSION
+;;;
+;;; Intellicad substitute for vl-filename-extension.
+;;; Trims everything up to but excluding last dot from file name.
+;;;
+;;; Returns extension including dot.
+(VL-ACAD-DEFUN 'HAWS-FILENAME-EXTENSION)
+(DEFUN HAWS-FILENAME-EXTENSION (FILENAME / EXTENSION)
+  (COND
+    ((AND
+       (HAWS-VLISP-P)
+       (SETQ EXTENSION (VL-FILENAME-EXTENSION FILENAME))
+     )
+     EXTENSION
+    )
+    ;;Trim off the directory.
+    (T
+     (SETQ EXTENSION (STRCAT " " FILENAME)) ;Pad with a space
+     (WHILE (WCMATCH
+              (SETQ
+                EXTENSION
+                 (SUBSTR EXTENSION 2)   ;Trim first character.
+              )
+              "*[\\/]*"                 ; and do again if slashes in name.
+            )
+     )
+     ;;Trim off the base name.
+     (IF (WCMATCH EXTENSION "*`.*")     ; If there are any dots in remaining name.
+       (PROGN
+         (SETQ EXTENSION (STRCAT " " EXTENSION))
+         (WHILE (WCMATCH
+                  (SETQ
+                    EXTENSION
+                     (SUBSTR EXTENSION 2) ;Trim first character
+                  )
+                  "*`.*"                ; and do again if there is still a dot.
+                )
+         )
+         EXTENSION
+       )
+       ""
+     )
+    )
+  )
+)
+;#endregion;;
+;#region DEVELOP
+;; HAWS_UNIT_TEST EXAMPLE
+;|
+(HAWS_UNIT_TEST 
+  '+ 
+  '(
+    ((1 0 0) 1)
+    ((2 0 0) 2)
+    ((3 0 0) 3)
+    ((4 0 0) 1)
+    ((5 0 0) 5)
+    ((6 0 0) 6)
+  )
+)
+|;
+(DEFUN HAWS_UNIT_TEST (F ASSERTIONS / ANSWER ARGS CONTINUE_P I RESULT) 
+  (SETQ I          0
+        CONTINUE_P T
+  )
+  (MAPCAR 
+    '(LAMBDA (ASSERTION) 
+       (AND 
+         CONTINUE_P
+         (SETQ ARGS   (CAR ASSERTION)
+               ANSWER (CADR ASSERTION)
+         )
+         (SETQ CONTINUE_P (EQUAL 
+                            (SETQ RESULT (APPLY F (LIST ARGS)))
+                            ANSWER
+                          )
+         )
+         (SETQ I (1+ I))
+         (PRINC (STRCAT "\nSuccess on test " (ITOA I)))
+       )
+       (AND
+         (NOT CONTINUE_P)
+         (PRINT RESULT)
+       )
+     )
+    ASSERTIONS
+  )
+  I
+)
+;|
+(DEFUN HAWS_NESTED_LIST_UPDATE_TEST () 
+  (HAWS_UNIT_TEST 
+    'HAWS_NESTED_LIST_UPDATE
+    ;;ASSERTION ARGS  NESTEDS                VALUES           ANSWER                                 
+    (LIST (LIST (LIST (LIST 1 (LIST 11 "A")) (LIST 1 11 "1")) (LIST 1 (LIST 11 "1"))) 
+          (LIST (LIST (LIST 1 (LIST 11 "A") (LIST 12 "B")) (LIST 1 11 "2")) (LIST 1 (LIST 11 "2") (LIST 12 "B")))
+          (LIST (LIST (LIST 1 (LIST 11 (LIST 111 "A")) (LIST 12 "B")) (LIST 1 11 111 "3")) 
+                (LIST 1 (LIST 11 (LIST 111 "3")) (LIST 12 "B"))
+          )
+          (LIST (LIST (LIST 1 (LIST 11 (LIST 111 "A") (LIST 112 "B"))) (LIST 1 11 113 "4")) 
+                (LIST 1 (LIST 11 (LIST 111 "A") (LIST 112 "B") (LIST 113 "4")))
+          )
+          (LIST (LIST (LIST 1 (LIST 11 (LIST 111 "A") (LIST 112 "B"))) (LIST 1 11 113 1131 "5")) 
+                (LIST 1 (LIST 11 (LIST 111 "A") (LIST 112 "B") (LIST 113 (LIST 1131 "5"))))
+          )
+          (LIST (LIST (LIST 1 (LIST 11 "6")) (LIST 1 11 "6")) (LIST 1 (LIST 11 "6")))
+          (LIST (LIST (LIST 1 (LIST 11 "7")) NIL) (LIST 1 (LIST 11 "7")))
+          (LIST (LIST (LIST 1 (LIST 11 (LIST 111 "A") (LIST 112 "B"))) (LIST 1 11 113 1131 11311 "8")) 
+                (LIST 1 (LIST 11 (LIST 111 "A") (LIST 112 "B") (LIST 113 (LIST 1131 (LIST 11311 "8")))))
+          )
+    )
+  )
+  (PRINC)
+)
+|;
+(DEFUN HAWS_NESTED_LIST_UPDATE (ARGS / KEY NESTEDS VALUE VALUES) 
+  ;; ARGS MUST BE A LIST WITH TWO LIST ELEMENTS:
+  ;;   NESTEDS: MUST HAVE A NON-LIST FIRST ELEMENT KEY AT EVERY LEVEL INCLUDING THE TOP/OUTER LEVEL.
+  ;;   VALUES: MUST HAVE THE VALUES TO PUT IN ALL LEVELS OF THE NESTED_LIST INCLUDING THE TOP/OUTER LEVEL.
+  ;; EXAMPLE 1: SHORTEST VALID NESTED_LIST. SUBSTITUTES IN LIST
+  ;;   (HAWS_NESTED_LIST_UPDATE
+  ;;     (LIST
+  ;;       (1 (11 "A"))
+  ;;       (1 11 "B")
+  ;;     )
+  ;;   )
+  ;; RETURNS:
+  ;;   (1 (11 "C"))
+  ;; EXAMPLE 1: ADDS TO LIST
+  ;;   (HAWS_NESTED_LIST_UPDATE
+  ;;     '(
+  ;;       (1 (11 (111 "A")(112 "B"))(21 "A")(22 "B")(31 "A")(32 "B"))
+  ;;       (1 11 113 "C")
+  ;;     )
+  ;;   )
+  ;; RETURNS:
+  ;;   (1 (11 (111 "A")(112 "B")(113 "C"))(21 "A")(22 "B")(31 "A")(32 "B")))
+  ;; STOPS RECURSING WHEN IT COMES TO END OF VALUES OR RUNS INTO A NON-LIST VALUE.
+  (SETQ NESTEDS (CAR ARGS)
+        VALUES  (CADR ARGS)
+        KEY     (CADR VALUES)
+        VALUE   (CADDR VALUES)
+  )
+  (COND 
+    ;; REJECT SHORT LISTS
+    ((< (LENGTH VALUES) 3)
+     NESTEDS
+    )
+    ((/= (TYPE (CADR NESTEDS)) 'LIST)
+     (HAWS_NESTED_LIST_UPDATE 
+       (LIST (LIST (CAR NESTEDS) (LIST (CADR NESTEDS) VALUE)) 
+             VALUES
+       )
+     )
+    )
+    ((AND 
+       (= (LENGTH VALUES) 3)
+       (EQUAL (ASSOC KEY (CDR NESTEDS)) (LIST KEY VALUE))
+     )
+     NESTEDS
+    )
+    ((AND (= (LENGTH VALUES) 3) (ASSOC KEY (CDR NESTEDS)))
+     (HAWS_SUBST_IN_NESTEDS (LIST KEY VALUE) KEY NESTEDS)
+    )
+    ((AND (= (LENGTH VALUES) 3) (NOT (ASSOC KEY (CDR NESTEDS))))
+     (HAWS_ADD_TO_NESTEDS (LIST KEY VALUE) NESTEDS)
+    )
+    ((AND (> (LENGTH VALUES) 3) (ASSOC KEY (CDR NESTEDS)))
+     (HAWS_SUBST_IN_NESTEDS 
+       (HAWS_NESTED_LIST_UPDATE 
+         (LIST (ASSOC KEY (CDR NESTEDS)) 
+               (CDR VALUES)
+         )
+       )
+       KEY
+       NESTEDS
+     )
+    )
+    ((AND (> (LENGTH VALUES) 3) (NOT (ASSOC KEY (CDR NESTEDS))))
+     (HAWS_NESTED_LIST_UPDATE 
+       (LIST 
+         (HAWS_ADD_TO_NESTEDS (LIST KEY VALUE) NESTEDS)
+         VALUES
+       )
+     )
+    )
+  )
+)
+(DEFUN HAWS_SUBST_IN_NESTEDS (ELEMENT KEY NESTEDS) 
+  (CONS 
+    (CAR NESTEDS)
+    (SUBST 
+      ELEMENT
+      (ASSOC KEY 
+             (CDR NESTEDS)
+      )
+      (CDR NESTEDS)
+    )
+  )
+)
+(DEFUN HAWS_ADD_TO_NESTEDS (ELEMENT NESTEDS) 
+  (REVERSE 
+    (CONS 
+      ELEMENT
+      (REVERSE NESTEDS)
+    )
+  )
+)
+;;; HAWS-LOG
+;;; Writes a message to a log file including the username and timestamp
+(VL-ACAD-DEFUN 'HAWS-LOG)
+(DEFUN HAWS-LOG (MESSAGE)
+            ;|
+  (SETQ
+    F1 (OPEN
+         (STRCAT
+           (HAWS-FILENAME-DIRECTORY (FINDFILE "hawsedc.mnu"))
+           "\\haws-log.txt"
+         )
+         "a"
+       )
+  )
+  (WRITE-LINE
+    (STRCAT
+      (HAWS-GETCOMPUTERNAME)
+      " - "
+      (RTOS (GETVAR "cdate") 2 6)
+      " - "
+      MESSAGE
+    )
+    F1
+  )
+  (SETQ F1 (CLOSE F1))
+  |;
+  (PRINC)
+)
+;;; HAWS-MILEPOST
+;;; Echos a progress message depending on debug level.
+(VL-ACAD-DEFUN 'HAWS-MILEPOST)
+(DEFUN HAWS-MILEPOST (MESSAGESTRING)
+  (IF (> *HAWS-DEBUGLEVEL* 0)
+    (PRINC (STRCAT "\nHawsEDC debug message: " MESSAGESTRING))
+    MESSAGESTRING
+  )
+)
+
+;#endregion
+;#region MISC
+;; ======================================================================
+;;
+;;                 Miscellaneous Utility functions
+;;
+;; ======================================================================
+;; HAWS-FILE-OPEN
+;;
+;; If a write directive file is locked, allows user to provide an alternate filename to open.
+;;
+;;
+(DEFUN HAWS-FILE-OPEN (FILENAME MODE / ERROBJ FP INPUT)
+  (SETQ ERROBJ (VL-CATCH-ALL-APPLY 'OPEN (LIST FILENAME MODE)))
+  (COND
+    ((VL-CATCH-ALL-ERROR-P ERROBJ)
+     (ALERT
+       (PRINC
+         (STRCAT
+           "Couldn't write to "
+           FILENAME
+           "\nPlease close if possible and follow command prompts."
+         )
+       )
+     )
+     (INITGET "Continue Specify")
+     (SETQ
+       INPUT
+        (GETKWORD
+          "\n[Continue with file closed/Specify another filename] <Continue>: "
+        )
+     )
+     (COND
+       ((= INPUT "Continue"))
+       ((= INPUT "Specify")
+        (SETQ FILENAME (GETFILED "Specify filename" FILENAME "" 1))
+        (SETQ FP (HAWS-FILE-OPEN FILENAME MODE))
+       )
+     )
+    )
+    (T (SETQ FP ERROBJ))
+  )
+)
+;;;  HAWS-FLATTEN
+(VL-ACAD-DEFUN 'HAWS-FLATTEN)
+(DEFUN HAWS-FLATTEN (PNT)
+;;;Returns flattened coordinates of a 3d point
+  (LIST (CAR PNT) (CADR PNT) 0.0)
+)
 ;;; HAWS-LSTTOSTR
 ;;;Assembles a list of fields into a delimited string.
 ;;;Usage: (haws-lsttostr
@@ -2834,44 +3041,6 @@
     )
   )
   (PRINC)
-)
-
-;;; HAWS-LOG
-;;; Writes a message to a log file including the username and timestamp
-(VL-ACAD-DEFUN 'HAWS-LOG)
-(DEFUN HAWS-LOG (MESSAGE)
-            ;|
-  (SETQ
-    F1 (OPEN
-         (STRCAT
-           (HAWS-FILENAME-DIRECTORY (FINDFILE "hawsedc.mnu"))
-           "\\haws-log.txt"
-         )
-         "a"
-       )
-  )
-  (WRITE-LINE
-    (STRCAT
-      (HAWS-GETCOMPUTERNAME)
-      " - "
-      (RTOS (GETVAR "cdate") 2 6)
-      " - "
-      MESSAGE
-    )
-    F1
-  )
-  (SETQ F1 (CLOSE F1))
-  |;
-  (PRINC)
-)
-;;; HAWS-MILEPOST
-;;; Echos a progress message depending on debug level.
-(VL-ACAD-DEFUN 'HAWS-MILEPOST)
-(DEFUN HAWS-MILEPOST (MESSAGESTRING)
-  (IF (> *HAWS-DEBUGLEVEL* 0)
-    (PRINC (STRCAT "\nHawsEDC debug message: " MESSAGESTRING))
-    MESSAGESTRING
-  )
 )
 
 ;;MKFLD sub-function makes a field string out of a string.
@@ -3079,6 +3248,7 @@
     )
   )
 )
+
 
 ;;; ======================================================================
 ;;;
@@ -4020,6 +4190,8 @@
 
 ;;end sub-functions
 
+;#endregion
+;#region USE_LOG
 ;;; Verify/Check values of stored authorization strings at
 ;;; load-time
 ;;; against computer name and bios date.
@@ -4138,7 +4310,8 @@
 )
 (HAWS-CHECKSTOREDSTRINGS)
 (IF (/=(HAWS-USE-GET-LOCAL-LOG-STRING)(HAWS-USE-INITIALIZE-LOG-STRING))(HAWS-USE-LOG-REMOTE))
-(PROMPT "loaded.")
- ;|«Visual LISP© Format Options»
+
+;#endregion(PROMPT "loaded.")
+ ;|ï¿½Visual LISPï¿½ Format Optionsï¿½
 (72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)
 ;*** DO NOT add text below the comment! ***|;

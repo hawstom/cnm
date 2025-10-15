@@ -258,9 +258,9 @@
                                    NOTTYP PHASE PHASELIST QTYOPT
                                    SKIPPEDPHASES USRVAR VPLAYERS X
                                   )
-;;;
-;;; Section 1.  Make an empty NOTELIST from tblqty and constnot.txt.  TGHI can use this section for Tally, except there is a conflict in the way they do PHASELIST.
-;;;
+  ;;
+  ;; Section 1.  Make an empty NOTELIST from tblqty and constnot.txt.  TGHI can use this section for Tally, except there is a conflict in the way they do PHASELIST.
+  ;;
   (SETQ
     PHASELIST
      (HCNM_GETPHASELISTFROMTBLQTY)
@@ -310,10 +310,10 @@
     )
   )
   (SETQ NOTELIST (APPEND (LIST PHASELIST) (LIST NOTELIST)))
-;;;
-;;; Section 2.  Get quantities from bubble notes and save to file
-;;;
-  ;;Make a list of all layers frozen in current viewport.
+  ;;
+  ;; Section 2.  Get quantities from bubble notes and save to file
+  ;;
+  ;; Make a list of all layers frozen in current viewport.
   (SETQ
     COUNT 0
     MVSSET
@@ -5195,7 +5195,8 @@ ImportLayerSettings=No
      )
     P2_DATA
      (HCNM_LDRBLK_GET_P2_DATA P1_DATA TH BLOCKNAME NOTETYPE)
-    ;; bubble-data-update: Trying this refactoring.
+    ;; bubble-data-update: Refactored to Draw bubble, get data, then finish bubble. 
+    ;; Hopefully this is more readable.
   )
   (HCNM_LDRBLK_DRAW_BUBBLE
     P1_DATA P2_DATA BUBBLE_DATA TH NOTETYPE BLOCKNAME
@@ -5506,6 +5507,7 @@ ImportLayerSettings=No
              (SETQ
                ATTRIBUTE_LIST
                 (HCNM_LDRBLK_GET_TEXT_ENTRY
+                  ENAME_BLOCK_OLD
                   P1_ENTRY
                   INDEX
                   ATTRIBUTE_LIST
@@ -5653,6 +5655,7 @@ ImportLayerSettings=No
 )
 ;; Adds object to notedata attribute's list if it's not already in the list.
 ;; Returns ATTRIBUTE_LIST
+;; THIS FUNCTION LIKELY NOT NEEDED SINCE IT WAS FOR REACTORS AND WE ARE PUTTING ALL THE SAME INFO IN REACTOR DATA. LEARNING PROCESS
 (DEFUN HCNM_LDRBLK_SAVE_OBJECT_REFERENCE_TO_NOTEDATA (LINE_TAG OBJECT DATA_KEY ATTRIBUTE_LIST / DATA_KEY_OLD HANDLE HANDLE_OLD LINE_DATA LINE_DATA_OLD LINE_KEY LINE_TAG NOTEDATA)
   (SETQ
     LINE_KEY (SUBSTR LINE_TAG 8 1)
@@ -5757,7 +5760,7 @@ ImportLayerSettings=No
     (T (STRCAT CODE STRING))
   )
 )
-(DEFUN HCNM_LDRBLK_GET_TEXT_ENTRY (P1_ENTRY LINE_NUMBER ATTRIBUTE_LIST /
+(DEFUN HCNM_LDRBLK_GET_TEXT_ENTRY (ENAME_BLOCK P1_ENTRY LINE_NUMBER ATTRIBUTE_LIST /
                                SKIP_ENTRY_P INPUT LOOP-P PROMPT-P STRING TAG
                               )
   (SETQ
@@ -5794,6 +5797,7 @@ ImportLayerSettings=No
        (SETQ
          ATTRIBUTE_LIST
           (HCNM_LDRBLK_GET_AUTO_TYPE
+            ENAME_BLOCK
             P1_ENTRY
             LINE_NUMBER
             TAG
@@ -5841,7 +5845,7 @@ ImportLayerSettings=No
     ("ENtry" "ENtry" nil)
   )
 )
-(DEFUN HCNM_LDRBLK_GET_AUTO_TYPE (P1_ENTRY LINE_NUMBER TAG ATTRIBUTE_LIST /
+(DEFUN HCNM_LDRBLK_GET_AUTO_TYPE (ENAME_BLOCK P1_ENTRY LINE_NUMBER TAG ATTRIBUTE_LIST /
                               CVPORT_OLD HAWS-QT-NEW INPUT SPACE STRING
                              )
   (INITGET
@@ -5893,13 +5897,15 @@ ImportLayerSettings=No
     (T
      (SETQ
        ATTRIBUTE_LIST
-        (HCNM_LDRBLK_GET_AUTO_DATA
+        (HCNM_LDRBLK_AUTO_DISPATCH
+          ENAME_BLOCK
           ATTRIBUTE_LIST
           (STRCAT "NOTETXT" (ITOA LINE_NUMBER))
           (CADR
             (ASSOC INPUT (HCNM_LDRBLK_GET_AUTO_TYPE_KEYS))
           )
           P1_ENTRY
+          NIL
         )
      )
     )
@@ -5908,19 +5914,19 @@ ImportLayerSettings=No
   ;; I feel like I really should find a way to abstract the interface from this other business logic. There may be a good example in my recent subdivision tools.
   ATTRIBUTE_LIST
 )
-;; bubble-data-update: HCNM_LDRBLK_GET_AUTO_DATA is called from command line (insertion) and from edit box (editing) to get string as requested by user. It needs to get not only string, but also data (reference object and reference type).
+;; bubble-data-update: HCNM_LDRBLK_AUTO_DISPATCH is called from command line (insertion) and from edit box (editing) to get string as requested by user. It needs to get not only string, but also data (reference object and reference type).
 ;; 
 ;; This is how bubble note auto text works.
 ;; 
 ;; Bubble note creation process from inside out:
-;; HCNM_LDRBLK_GET_AUTO_DATA returns ATTRIBUTE_LIST including NOTEDATA information
+;; HCNM_LDRBLK_AUTO_DISPATCH returns ATTRIBUTE_LIST including NOTEDATA information
 ;; HCNM_LDRBLK_GET_AUTO_TYPE returns ATTRIBUTE_LIST
 ;; HCNM_LDRBLK_GET_TEXT_ENTRY returns ATTRIBUTE_LIST
 ;; HCNM_LDRBLK_GET_BUBBLE_DATA returns BLOCK_DATA that includes ATTRIBUTE_LIST after adjusting formatting  (overline and underline)
 ;; HCNM_SET_ATTRIBUTES puts ATTRIBUTE_LIST into bubble note
 ;; 
 ;; Bubble note editing process from inside out:
-;; HCNM_LDRBLK_GET_AUTO_DATA returns ATTRIBUTE_LIST including NOTEDATA information
+;; HCNM_LDRBLK_AUTO_DISPATCH returns ATTRIBUTE_LIST including NOTEDATA information
 ;; HCNM_EB:GET_TEXT modifies semi-global HCNM_EB:ATTRIBUTE_LIST after adjusting formatting (overline and underline)
 ;; HCNM_EB:SAVE calls HCNM_SET_ATTRIBUTES to save semi-global HCNM_EB:ATTRIBUTE_LIST
 ;; HCNM_EDIT_BUBBLE top level manages editing dialog
@@ -5938,35 +5944,42 @@ ImportLayerSettings=No
 ;; "((line_key_1 object_handle type/key)(line_key_i object_handle type/key))"
 ;; Since what has to be done on update varies widely, we pass the attribute list to each sub-function and let it decided what to do with it. I think we also need to pass in an indication of whether this is a refresh or a user prompt.
 ;; We return the modified attribute_list.
-;; 
+;; INPUT IS THE OBJECT (ENAME OR VLA-OBJECT; COULD BE STANDARDIZED) OR STRING WE NEED TO EXAMINE IF WE AREN'T ASKING THE USER FOR IT OR NIL IF WE NEED TO GET IT.
 ;; Returns ATTRIBUTE_LIST with the requested auto data added.
-(DEFUN HCNM_LDRBLK_GET_AUTO_DATA (ATTRIBUTE_LIST TAG KEY P1_ENTRY / DATA HANDLE STRING)
+(DEFUN HCNM_LDRBLK_AUTO_DISPATCH (ENAME_BLOCK ATTRIBUTE_LIST TAG KEY P1_ENTRY INPUT / DATA HANDLE STRING)
     ;; bubble-data-update: all of these have to take and return ATTRIBUTE_LIST instead of just string. That's because they could need to get NOTEDATA info from ATTRIBUTE_LIST
   (SETQ ATTRIBUTE_LIST
      (COND
-       ((= KEY "Text") (HCNM_LDRBLK_AUTO_ES ATTRIBUTE_LIST TAG KEY))
-       ((= KEY "LF") (HCNM_LDRBLK_AUTO_QTY ATTRIBUTE_LIST TAG KEY "Length" "1"))
-       ((= KEY "SF") (HCNM_LDRBLK_AUTO_QTY ATTRIBUTE_LIST TAG KEY "Area" "1"))
+       ((= KEY "Text") (HCNM_LDRBLK_AUTO_ES ENAME_BLOCK ATTRIBUTE_LIST TAG KEY INPUT))
+       ((= KEY "LF") (HCNM_LDRBLK_AUTO_QTY ENAME_BLOCK ATTRIBUTE_LIST TAG KEY "Length" "1" INPUT))
+       ((= KEY "SF") (HCNM_LDRBLK_AUTO_QTY ENAME_BLOCK ATTRIBUTE_LIST TAG KEY "Area" "1" INPUT))
        ((= KEY "SY")
-        (HCNM_LDRBLK_AUTO_QTY KEY ATTRIBUTE_LIST TAG KEY "Area" "0.11111111")
+        (HCNM_LDRBLK_AUTO_QTY ENAME_BLOCK ATTRIBUTE_LIST TAG KEY "Area" "0.11111111" INPUT)
        )
-       ((= KEY "Sta") (HCNM_LDRBLK_AUTO_AL ATTRIBUTE_LIST TAG KEY P1_ENTRY))
-       ((= KEY "Off") (HCNM_LDRBLK_AUTO_AL ATTRIBUTE_LIST TAG KEY P1_ENTRY))
+       ((= KEY "Sta") (HCNM_LDRBLK_AUTO_AL ENAME_BLOCK ATTRIBUTE_LIST TAG KEY P1_ENTRY INPUT))
+       ((= KEY "Off") (HCNM_LDRBLK_AUTO_AL ENAME_BLOCK ATTRIBUTE_LIST TAG KEY P1_ENTRY INPUT))
        ((= KEY "StaOff")
-        (HCNM_LDRBLK_AUTO_AL ATTRIBUTE_LIST TAG KEY P1_ENTRY)
+        (HCNM_LDRBLK_AUTO_AL ENAME_BLOCK ATTRIBUTE_LIST TAG KEY P1_ENTRY INPUT)
        )
-       ((= KEY "N") (HCNM_LDRBLK_AUTO_NE ATTRIBUTE_LIST TAG KEY P1_ENTRY))
-       ((= KEY "E") (HCNM_LDRBLK_AUTO_NE ATTRIBUTE_LIST TAG KEY P1_ENTRY))
-       ((= KEY "NE") (HCNM_LDRBLK_AUTO_NE ATTRIBUTE_LIST TAG KEY P1_ENTRY))
-       ((= KEY "Z") (HCNM_LDRBLK_AUTO_SU ATTRIBUTE_LIST TAG KEY P1_ENTRY))
+       ((= KEY "N") (HCNM_LDRBLK_AUTO_NE ENAME_BLOCK ATTRIBUTE_LIST TAG KEY P1_ENTRY INPUT))
+       ((= KEY "E") (HCNM_LDRBLK_AUTO_NE ENAME_BLOCK ATTRIBUTE_LIST TAG KEY P1_ENTRY INPUT))
+       ((= KEY "NE") (HCNM_LDRBLK_AUTO_NE ENAME_BLOCK ATTRIBUTE_LIST TAG KEY P1_ENTRY INPUT))
+       ((= KEY "Z") (HCNM_LDRBLK_AUTO_SU ENAME_BLOCK ATTRIBUTE_LIST TAG KEY P1_ENTRY INPUT))
      )
   )
 )
 
-(DEFUN HCNM_LDRBLK_AUTO_ES (ATTRIBUTE_LIST TAG KEY / ENAME) 
-  (SETQ 
-    ENAME          
-    (CAR (NENTSEL (STRCAT "\nSelect object with " KEY ": ")))
+(DEFUN HCNM_LDRBLK_AUTO_ES (ENAME_BLOCK ATTRIBUTE_LIST TAG KEY INPUT / ENAME) 
+  (SETQ
+    ENAME
+    (COND
+      (INPUT)
+      (T (CAR (NENTSEL (STRCAT "\nSelect object with " KEY ": "))))
+    )     
+  )
+  ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
+  ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
+  (SETQ  
     ATTRIBUTE_LIST 
      (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST 
        TAG
@@ -5978,83 +5991,91 @@ ImportLayerSettings=No
      )
   )
 )
-(DEFUN HCNM_LDRBLK_AUTO_QTY (ATTRIBUTE_LIST TAG KEY AUTO_TYPE FACTOR / STR_BACKSLASH INPUT1 PSPACE_BUBBLE_P
+(DEFUN HCNM_LDRBLK_AUTO_QTY (ENAME_BLOCK ATTRIBUTE_LIST TAG KEY AUTO_TYPE FACTOR INPUT / STR_BACKSLASH INPUT1 PSPACE_BUBBLE_P
                          SS-P STRING
                         )
   (COND
-    ((AND
-       (= AUTO_TYPE "Area")
-       (= (C:HCNM-CONFIG-GETVAR "BubbleAreaIntegral") "1")
+    ((SETQ STRING INPUT))
+    (T  
+      (COND
+        ((AND
+          (= AUTO_TYPE "Area")
+          (= (C:HCNM-CONFIG-GETVAR "BubbleAreaIntegral") "1")
+          )
+        (C:HCNM-CONFIG-SETVAR "BubbleArrowIntegralPending" "1")
+        )
       )
-     (C:HCNM-CONFIG-SETVAR "BubbleArrowIntegralPending" "1")
+      (SETQ PSPACE_BUBBLE_P (HCNM_LDRBLK_SPACE_SET_MODEL))
+      (INITGET "Selection")
+      (SETQ
+        INPUT1
+        (NENTSEL
+          (STRCAT
+            "\nSelect object to link dynamically or [Selection set (not dynamic) including AECC_PIPEs] <Selection set>: "
+          )
+        )
+        SS-P
+        (OR (NOT INPUT1) (= INPUT1 "Selection"))
+        STRING
+        (COND
+          (SS-P
+            (IF (NOT HAWS-QT-NEW)
+              (LOAD "HAWS-QT")
+            )
+            (HAWS-QT-NEW "ldrblk")
+            (HAWS-QT-SET-PROPERTY "ldrblk" "type" (STRCASE AUTO_TYPE T))
+            (HAWS-QT-SET-PROPERTY "ldrblk" "factor" (READ FACTOR))
+            (HAWS-QT-SET-PROPERTY
+              "ldrblk"
+              "postfix"
+              (C:HCNM-CONFIG-GETVAR
+                (STRCAT "BubbleTextPostfix" KEY)
+              )
+            )
+            (HAWS-QT-STRING "ldrblk")
+            (HAWS-QT-GET-PROPERTY "ldrblk" "string")
+          )
+          (T
+            (STRCAT
+              (C:HCNM-CONFIG-GETVAR
+                (STRCAT "BubbleTextPrefix" KEY)
+              )
+              "%<\\AcObjProp Object(%<\\_ObjId "
+              (VLA-GETOBJECTIDSTRING
+                (VLA-GET-UTILITY
+                  (VLA-GET-ACTIVEDOCUMENT (VLAX-GET-ACAD-OBJECT))
+                )
+                (VLAX-ENAME->VLA-OBJECT (CAR INPUT1))
+                :VLAX-FALSE
+              )
+              ">%)."
+              AUTO_TYPE
+              " \\f \"%lu2%pr"
+              (C:HCNM-CONFIG-GETVAR
+                (STRCAT "BubbleTextPrecision" KEY)
+              )
+              "%ct8["
+              FACTOR
+              "]\">%"
+              (C:HCNM-CONFIG-GETVAR
+                (STRCAT "BubbleTextPostfix" KEY)
+              )
+            )
+          )
+        )
+      )
+      (HCNM_LDRBLK_SPACE_RESTORE PSPACE_BUBBLE_P)
     )
   )
-  (SETQ PSPACE_BUBBLE_P (HCNM_LDRBLK_SPACE_SET_MODEL))
-  (INITGET "Selection")
-  (SETQ
-    INPUT1
-     (NENTSEL
-       (STRCAT
-         "\nSelect object to link dynamically or [Selection set (not dynamic) including AECC_PIPEs] <Selection set>: "
-       )
-     )
-    SS-P
-     (OR (NOT INPUT1) (= INPUT1 "Selection"))
-    STRING
-     (COND
-       (SS-P
-        (IF (NOT HAWS-QT-NEW)
-          (LOAD "HAWS-QT")
-        )
-        (HAWS-QT-NEW "ldrblk")
-        (HAWS-QT-SET-PROPERTY "ldrblk" "type" (STRCASE AUTO_TYPE T))
-        (HAWS-QT-SET-PROPERTY "ldrblk" "factor" (READ FACTOR))
-        (HAWS-QT-SET-PROPERTY
-          "ldrblk"
-          "postfix"
-          (C:HCNM-CONFIG-GETVAR
-            (STRCAT "BubbleTextPostfix" KEY)
-          )
-        )
-        (HAWS-QT-STRING "ldrblk")
-        (HAWS-QT-GET-PROPERTY "ldrblk" "string")
-       )
-       (T
-        (STRCAT
-          (C:HCNM-CONFIG-GETVAR
-            (STRCAT "BubbleTextPrefix" KEY)
-          )
-          "%<\\AcObjProp Object(%<\\_ObjId "
-          (VLA-GETOBJECTIDSTRING
-            (VLA-GET-UTILITY
-              (VLA-GET-ACTIVEDOCUMENT (VLAX-GET-ACAD-OBJECT))
-            )
-            (VLAX-ENAME->VLA-OBJECT (CAR INPUT1))
-            :VLAX-FALSE
-          )
-          ">%)."
-          AUTO_TYPE
-          " \\f \"%lu2%pr"
-          (C:HCNM-CONFIG-GETVAR
-            (STRCAT "BubbleTextPrecision" KEY)
-          )
-          "%ct8["
-          FACTOR
-          "]\">%"
-          (C:HCNM-CONFIG-GETVAR
-            (STRCAT "BubbleTextPostfix" KEY)
-          )
-        )
-       )
-     )
-  )
-  (HCNM_LDRBLK_SPACE_RESTORE PSPACE_BUBBLE_P)
+  ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
+  ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
   (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST 
     TAG
     STRING
     ATTRIBUTE_LIST
   )
 )
+;; NOT USED
 (DEFUN HCNM_LDRBLK_MTEXTATRIBUTE_P (EN)
   (SETQ OBJ (VLAX-ENAME->VLA-OBJECT EN))
   (AND
@@ -6071,15 +6092,22 @@ ImportLayerSettings=No
 ;; bubble-data-update: This has to be split into
 ;; 1. HCNM_LDRBLK_AUTO_AL_GET_OBJECT that returns object
 ;; 2. HCNM_LDRBLK_AUTO_AL_GET_STRING that returns staoff string of given object and point so that this function can be used to update string.
-(DEFUN HCNM_LDRBLK_AUTO_AL (ATTRIBUTE_LIST TAG KEY P1_ENTRY / DRAWSTATION NAME OBJALIGN OFF PSPACE_BUBBLE_P STA STRING)
-  (SETQ
-    PSPACE_BUBBLE_P
-     (HCNM_LDRBLK_SPACE_SET_MODEL)
-    OBJALIGN
-     (HCNM_LDRBLK_AUTO_AL_GET_ALIGNMENT)
-    P1_WORLD (HCNM_LDRBLK_TRANS_TO_WORLD P1_ENTRY PSPACE_BUBBLE_P)
+(DEFUN HCNM_LDRBLK_AUTO_AL (ENAME_BLOCK ATTRIBUTE_LIST TAG KEY P1_ENTRY INPUT / DRAWSTATION NAME OBJALIGN OFF PSPACE_BUBBLE_P STA STRING)
+  (COND
+    ((SETQ OBJALIGN INPUT))
+    (T
+      (SETQ
+        PSPACE_BUBBLE_P
+        (HCNM_LDRBLK_SPACE_SET_MODEL)
+        OBJALIGN
+        (HCNM_LDRBLK_AUTO_AL_GET_ALIGNMENT)
+        P1_WORLD (HCNM_LDRBLK_TRANS_TO_WORLD P1_ENTRY PSPACE_BUBBLE_P)
+      )
+      (HCNM_LDRBLK_SPACE_RESTORE PSPACE_BUBBLE_P)
+    )
   )
-  (HCNM_LDRBLK_SPACE_RESTORE PSPACE_BUBBLE_P)
+  ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
+  ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
   (COND 
     ((= (TYPE OBJALIGN) 'VLA-OBJECT)
       ;; http://docs.autodesk.com/CIV3D/2012/ENU/API_Reference_Guide/com/AeccXLandLib__IAeccAlignment__StationOffset@[in]_double@[in]_double@[out]_double_@[out]_double_.htm
@@ -6142,18 +6170,18 @@ ImportLayerSettings=No
           ((= KEY "Sta") STA)
           ((= KEY "Off") OFF)
           ((= KEY "StaOff")
-           (STRCAT 
-             STA
-             (C:HCNM-CONFIG-GETVAR "BubbleTextJoinDelSta")
-             OFF
-           )
+          (STRCAT 
+            STA
+            (C:HCNM-CONFIG-GETVAR "BubbleTextJoinDelSta")
+            OFF
+          )
           )
         )
       )
     )
     (T (SETQ STRING "N/A"))
   )
-  ;;(HCNM_LDRBLK_ASSURE_REACTOR_ON_OBJECT)
+  (HCNM_LDRBLK_ASSURE_AUTO_TEXT_HAS_REACTOR OBJALIGN ENAME_BLOCK TAG KEY)
   (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST 
     TAG
     STRING
@@ -6195,27 +6223,37 @@ ImportLayerSettings=No
     (T (princ "\nNo object selected. Keeping previous alignment.")(SETQ OBJALIGN OBJALIGN_OLD))
   )
 )
-(DEFUN HCNM_LDRBLK_AUTO_NE (ATTRIBUTE_LIST TAG KEY AUTO_TYPE P1_ENTRY / E N NE P1_WORLD)
-  (SETQ
-    PSPACE_BUBBLE_P
-     (HCNM_LDRBLK_SPACE_SET_MODEL)
-    P1_WORLD (HCNM_LDRBLK_TRANS_TO_WORLD P1_ENTRY PSPACE_BUBBLE_P)
-    N  (HCNM_LDRBLK_AUTO_RTOS (CADR P1_WORLD) "N")
-    E  (HCNM_LDRBLK_AUTO_RTOS (CAR P1_WORLD) "E")
-    NE (STRCAT
-         N
-         (C:HCNM-CONFIG-GETVAR (STRCAT "BubbleTextJoinDel" "N"))
-         E
-       )
+(DEFUN HCNM_LDRBLK_AUTO_NE (ENAME_BLOCK ATTRIBUTE_LIST TAG KEY AUTO_TYPE P1_ENTRY INPUT / E N NE P1_WORLD STRING)
+  (COND
+    ((SETQ INPUT STRING))
+    (T
+      (SETQ
+        PSPACE_BUBBLE_P
+        (HCNM_LDRBLK_SPACE_SET_MODEL)
+        P1_WORLD (HCNM_LDRBLK_TRANS_TO_WORLD P1_ENTRY PSPACE_BUBBLE_P)
+        N  (HCNM_LDRBLK_AUTO_RTOS (CADR P1_WORLD) "N")
+        E  (HCNM_LDRBLK_AUTO_RTOS (CAR P1_WORLD) "E")
+        NE (STRCAT
+            N
+            (C:HCNM-CONFIG-GETVAR (STRCAT "BubbleTextJoinDel" "N"))
+            E
+          )
+      )
+      (HCNM_LDRBLK_SPACE_RESTORE PSPACE_BUBBLE_P)
+      (SETQ STRING
+        (COND
+          ((= AUTO_TYPE "N") N)
+          ((= AUTO_TYPE "E") E)
+          ((= AUTO_TYPE "NE") NE)
+        )
+      )
+    )
   )
-  (HCNM_LDRBLK_SPACE_RESTORE PSPACE_BUBBLE_P)
+  ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
+  ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
   (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST 
     TAG
-    (COND
-      ((= AUTO_TYPE "N") N)
-      ((= AUTO_TYPE "E") E)
-      ((= AUTO_TYPE "NE") NE)
-    )
+    STRING
     ATTRIBUTE_LIST
   )
 )
@@ -6230,7 +6268,9 @@ ImportLayerSettings=No
     (C:HCNM-CONFIG-GETVAR (STRCAT "BubbleTextPostfix" KEY))
   )
 )
-(DEFUN HCNM_LDRBLK_AUTO_SU (ATTRIBUTE_LIST TAG KEY AUTO_TYPE P1_ENTRY)
+(DEFUN HCNM_LDRBLK_AUTO_SU (ENAME_BLOCK ATTRIBUTE_LIST TAG KEY AUTO_TYPE P1_ENTRY STRING)
+  ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
+  ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
   (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST 
     TAG
     (HCNM_LDRBLK_AUTO_APOLOGY AUTO_TYPE)
@@ -6250,7 +6290,8 @@ ImportLayerSettings=No
   (ALERT (PRINC (STRCAT "Sorry. Selection of " AUTO_TYPE " is not fully programmed yet and is not anticipated to be dynamic once programmed.\n\nPlease let Tom Haws <tom.haws@gmail.com> know if you are eager for this as static text.")))
   "N/A"
 )
-;; bubble-data-update: Placeholder. Does nothing . Needs to adjust the NOTEDATA element of ATTRIBUTE_LIST to contain DATA.
+;; bubble-data-update: 2025-10-15 update: I think NOTEDATA (new attribute for this reactor project) may be repurposed to hold information about whether each bubble line is auto text (and what kind) or manual.
+;; Placeholder. Does nothing . Needs to adjust the NOTEDATA element of ATTRIBUTE_LIST to contain DATA.
 ;; Steps:
 ;; 1. Delete any references whose STRING has been deleted by user.
 ;; 2. Delete any objects that are no longer needed in object list. Renumber references as needed.
@@ -6313,7 +6354,7 @@ ImportLayerSettings=No
        ;; Process clicked action tile (button) other than cancel or save.
        ;; bubble-data-update: This is start point 2 of 2 of the bubble data logic. This one is for the bubble note editing process.
        ;; this is called whenever a dialog auto-text button is clicked.
-       (HCNM_EB:GET_TEXT DONE_CODE TAG P1_ENTRY)
+       (HCNM_EB:GET_TEXT ENAME_BLOCK DONE_CODE TAG P1_ENTRY)
        (SETQ DONE_CODE 2)
       )
     )
@@ -6324,18 +6365,20 @@ ImportLayerSettings=No
   (PRINC)
 )
 ;;; bubble-data-update: this or something below it needs to populate the NOTEDATA attribute.
-(DEFUN HCNM_EB:GET_TEXT (DONE_CODE TAG P1_ENTRY / AUTO_STRING AUTO_TYPE)
+(DEFUN HCNM_EB:GET_TEXT (ENAME_BLOCK DONE_CODE TAG P1_ENTRY / AUTO_STRING AUTO_TYPE)
   (SETQ
     AUTO_TYPE
      (CADR (ASSOC DONE_CODE (HCNM_EDIT_BUBBLE_DONE_CODES)))
     ;; bubble-data-update: this is called from command line and from edit box to get string as requested by user.
     HCNM_EB:ATTRIBUTE_LIST
      (HCNM_LDRBLK_ADJUST_FORMATS
-       (HCNM_LDRBLK_GET_AUTO_DATA
+       (HCNM_LDRBLK_AUTO_DISPATCH
+         ENAME_BLOCK
          HCNM_EB:ATTRIBUTE_LIST
          TAG
          AUTO_TYPE
          P1_ENTRY
+         NIL
        )
      )
   )
@@ -6416,6 +6459,7 @@ ImportLayerSettings=No
      )
   )
 )
+;; FIELD_CODE_P NIL SIMPLIFIES PROCESSING WHEN BLOCKS LIKE NOTEQTY ARE KNOWN NOT TO HAVE FIELD CODES IN THEM
 (DEFUN HCNM_GET_ATTRIBUTES (ENAME_BLOCK FIELD_CODE_P / ATTRIBUTE_LIST ELIST ENAME_NEXT ETYPE FIELD_CODE OBJ_NEXT)
   (SETQ ENAME_NEXT ENAME_BLOCK)
   (WHILE (AND
@@ -6430,7 +6474,12 @@ ImportLayerSettings=No
          OBJ_NEXT (VLAX-ENAME->VLA-OBJECT ENAME_NEXT)
          ATTRIBUTE_LIST
           (CONS
-            (LIST (CDR (ASSOC 2 ELIST)) (COND ((AND FIELD_CODE_P (SETQ FIELD_CODE (LM:FieldCode ENAME_NEXT)))FIELD_CODE)(T (VLA-GET-TEXTSTRING OBJ_NEXT))))
+            (LIST 
+              (CDR (ASSOC 2 ELIST)) 
+              (COND 
+                ((AND FIELD_CODE_P (SETQ FIELD_CODE (LM:FieldCode ENAME_NEXT))) FIELD_CODE)
+                (T (VLA-GET-TEXTSTRING OBJ_NEXT)))
+            )
             ATTRIBUTE_LIST
           )
        )
@@ -6513,47 +6562,85 @@ ImportLayerSettings=No
   (SETQ REACTORS (CDAR(VLR-REACTORS :VLR-OBJECT-REACTOR)))
   (FOREACH REACTOR REACTORS
     ;;(vlax-dump-object REACTOR)
-    (PRINC (VL-PRIN1-TO-STRING (VLR-DATA REACTOR)))
-    (PRINC (VL-PRIN1-TO-STRING (VLR-REACTIONS REACTOR)))
+    (PRINT (VL-PRIN1-TO-STRING (VLR-DATA REACTOR)))
+    (PRINT (VL-PRIN1-TO-STRING (VLR-REACTIONS REACTOR)))
     ;; (vlr-remove REACTOR)
   )
 )
 ;; (DEFUN HCNM_LDRBLK_ASSURE_REACTOR_FOR_ON_OBJECT (/ OBJECT OWNERS DATA CALLBACKS REACTOR)
 ;; )
 
-(DEFUN HCNM_LDRBLK_ASSURE_REACTOR_ON_OBJECT (/ OBJECT OWNERS DATA CALLBACKS REACTOR)
-  (PRINC "\nSelect object to receive test persistent reactor: ")
+(DEFUN HCNM_LDRBLK_ASSURE_AUTO_TEXT_HAS_REACTOR (NOTIFIER ENAME_BUBBLE TAG KEY / CALLBACKS DATA REACTOR REACTOR_OLD REACTORS_OLD OWNERS)
   (SETQ
-    OBJECT (CAR (ENTSEL))
-    OWNERS (LIST (VLAX-ENAME->VLA-OBJECT OBJECT))
-    DATA 
-     (LIST
-       "CNM-BUBBLE" 
-       ("BUBBLE1_ENAME" "ATTRIBUTE_TAG_1" "ATTRIBUTE_TAG_I")
-       ("BUBBLEI_ENAME" "ATTRIBUTE_TAG_1" "ATTRIBUTE_TAG_I")
-     )
-    CALLBACKS '((:vlr-modified . HCNM_LDRBLK_REACTOR_CALLBACK)(:vlr-modified . vlr-trace-reaction))
-    REACTOR (VLR-OBJECT-REACTOR OWNERS DATA CALLBACKS)
-    REACTOR (VLR-PERS REACTOR)    
-  )  
-)
-(DEFUN HCNM_LDRBLK_REACTOR_CALLBACK (NOTIFIER-OBJECT REACTOR-OBJECT PARAMETER-LIST / VERTICES)
-  ;; (HCNM-LDRBLK-UPDATE NOTIFIER-OBJECT REACTOR-OBJECT)
-  (SETQ VERTICES (VLAX-GET-PROPERTY NOTIFIER-OBJECT 'COORDINATES))   
-  (SETQ VERTICES (VLAX-SAFEARRAY->LIST (VLAX-VARIANT-VALUE VERTICES)))
-  (PRINC 
-    (STRCAT 
-      "\nA CNM reactor was just triggered."
-      "\nNOTIFIER-OBJECT (which of the reactor's owners triggered this reaction): "
-      (VL-PRIN1-TO-STRING NOTIFIER-OBJECT)
-      "\nLEADER POINTS (extracted from the notifier object): "
-      (VL-PRIN1-TO-STRING VERTICES)
-      "\nREACTOR: "      
-      (VL-PRIN1-TO-STRING REACTOR-OBJECT) 
-      "\nPARAMETER-LIST (always empty for the :vlr-modified event): " 
-      (VL-PRIN1-TO-STRING PARAMETER-LIST)
+    CALLBACKS 
+     '((:vlr-modified . HCNM_LDRBLK_REACTOR_CALLBACK)(:vlr-modified . vlr-trace-reaction))
+    REACTORS_OLD 
+     (CDAR (VLR-REACTORS :VLR-OBJECT-REACTOR))
+  )
+  (FOREACH REACTOR REACTORS_OLD
+    (COND
+      ((= (CAR (VLR-DATA REACTOR)) "CNM-BUBBLE")
+       (SETQ REACTOR_OLD REACTOR)
+      )
     )
   )
+  (COND
+    (REACTOR_OLD
+      ;; IF THIS OWNER IS ALREADY ATTACHED, JUST UPDATE THE DATA
+      (COND 
+        ((MEMBER OBJECT (VLR-OWNERS REACTOR_OLD))
+         (VLR-DATA-SET REACTOR_OLD (HCNM_LDRBLK_UPDATE_DATA (VLR-DATA REACTOR_OLD) ENAME_BUBBLE TAG KEY))
+        )
+      )
+    )
+  )
+  (SETQ
+  ;; MAKE REACTOR
+    REACTOR (VLR-OBJECT-REACTOR OWNERS DATA CALLBACKS)
+  ;; MAKE IT PERSISTENT
+    REACTOR (VLR-PERS REACTOR)    
+  )
+)
+(DEFUN HCNM_LDRBLK_UPDATE_DATA (DATA ENAME_BUBBLE TAG KEY)
+  (SETQ 
+    HANDLE_BUBBLE (HANDENT ENAME_BUBBLE)
+    BUBBLE (LIST HANDLE_BUBBLE (LIST TAG KEY))
+  )
+  (COND 
+    ;; ADD BUBBLE IF NOT IN DATA
+    ((NOT (ASSOC HANDLE_BUBBLE (CDR DATA))) 
+      (SETQ DATA (REVERSE (CONS (LIST HANDLE_BUBBLE (LIST TAG KEY)) (REVERSE DATA))))
+    )
+    ;; ADD ATTRIBUTE IF NOT IN BUBBLE
+    ((NOT (ASSOC TAG (CDR (ASSOC HANDLE_BUBBLE (CDR DATA))))) 
+      (SETQ DATA (SUBST 
+                   (CONS HANDLE_BUBBLE 
+                         (CONS (LIST TAG KEY) (CDR (ASSOC HANDLE_BUBBLE (CDR DATA))))
+                   )
+                   (ASSOC HANDLE_BUBBLE (CDR DATA))
+                   DATA
+                 )
+      )
+    )
+    ;; CHANGE KEY IF NEEDED
+    ((/= (ASSOC TAG (CDR (ASSOC HANDLE_BUBBLE (CDR DATA)))) KEY)
+      (SETQ DATA (SUBST 
+                   (CONS HANDLE_BUBBLE 
+                         (CONS (LIST TAG KEY) (CDR (ASSOC HANDLE_BUBBLE (CDR DATA))))
+                   )
+                   (SUBST
+                     (LIST TAG KEY)
+                     (ASSOC TAG (CDR (ASSOC HANDLE_BUBBLE (CDR DATA))))
+                     (ASSOC HANDLE_BUBBLE (CDR DATA))
+                   )
+                   DATA
+                 )
+      )
+    )
+  )
+)
+(DEFUN HCNM_LDRBLK_REACTOR_CALLBACK (NOTIFIER-OBJECT REACTOR-OBJECT PARAMETER-LIST / VERTICES)
+  (HCNM_LDRBLK_UPDATE_NOTIFIER NOTIFIER-OBJECT REACTOR-OBJECT)
 )
 ;;; NEED TO DEFINE THE REACTOR DATA FOR THIS APPLICATION. PROBABLY SOMETHING THAT MAKES IT EASY FOR THE CALLBACK TO PROCESS WHAT'S REQUIRED AND FOR THE REACTOR ASSURER TO KNOW WHETHER A GIVEN REACTOR IS FOR THIS ATTRIBUTE OF THIS BLOCK OF THIS APPLICATION AND WHAT IS THE DATA TYPE. PROBABLY THIS LIST 
 ;;; '("CNM-BUBBLE" 
@@ -6567,25 +6654,73 @@ ImportLayerSettings=No
 ;;;   )
 ;;; )
 ;;; 
-(DEFUN HCNM_LDRBLK_UPDATE_NOTIFIER (NOTIFIER REACTOR / DATA)
-  (SETQ
-    DATA (VLR-DATA REACTOR)
+(DEFUN HCNM_LDRBLK_UPDATE_NOTIFIER (NOTIFIER REACTOR / BUBBLE DATA DATA_OLD) 
+  (SETQ DATA_OLD (VLR-DATA REACTOR)
+        DATA     DATA_OLD
   )
   (PRINT DATA)
-  (COND
-    ((/= (CAR DATA) "CNM-BUBBLE")(ALERT "\nFatal error in reactor. Data is not for CNM-BUBBLE")(EXIT))
+  (COND 
+    ((/= (CAR DATA) "CNM-BUBBLE") (ALERT "\nFatal error in reactor. Data is not for CNM-BUBBLE") (EXIT))
   )
-  (FOREACH BUBBLE (CDR DATA)
-    (HCNM_LDRBLK_UPDATE_BUBBLE BUBBLE NOTIFIER)
+  (CONS 
+    (CAR DATA)
+    (MAPCAR 
+      '(LAMBDA (BUBBLE) 
+         (HCNM_LDRBLK_UPDATE_BUBBLE BUBBLE NOTIFIER)
+       )
+      (CDR DATA)
+    )
+  )
+  (COND 
+    ;; DETACH THE NOTIFIER IF USER REMOVED ALL ITS DEPENDENT AUTO-TEXT FROM ALL BUBBLES.
+    ((NOT (CDR DATA))
+     (VLR-OWNER-REMOVE REACTOR NOTIFIER)
+    )
+    ;; UPDATE THE REACTOR DATA IF USER REMOVED SOME OF ITS DEPENDENT AUTO-TEXT
+    ((/= DATA DATA_OLD)
+     (VLR-DATA-SET REACTOR DATA)
+    )
   )
 )
-(DEFUN HCNM_LDRBLK_UPDATE_BUBBLE (BUBBLE NOTIFIER / DATA)
-  (FOREACH ATTRIBUTE (CDR BUBBLE)
-    (HCNM_LDRBLK_UPDATE_ATTRIBUTE ATTRIBUTE NOTIFIER)
+;; UPDATES A BUBBLE INSERTION. RETURNS BUBBLE WITH ATTRIBUTES REMOVED IF USER REMOVED THEM (SINCE WE DON'T YET HAVE A STRUCTURED INTERFACE THAT WOULD LET THE USER REMOVE IN REAL TIME. MAYBE IT WOULD BE EASIEST TO JUST HAVE A WAY TO DISABLE EDITING AUTO ATTRIBUTES UNLESS USER CLICKS A "MANUAL" BUTTON. I LOVE THAT. EDIT BUBBLE COULD READ THE REACTOR DATA OR EACH BUBBLE COULD HAVE A LIST IN NOTEDATA)
+(DEFUN HCNM_LDRBLK_UPDATE_BUBBLE (BUBBLE NOTIFIER / ATTRIBUTE_LIST ATTRIBUTE_LIST_OLD ENAME_BUBBLE PT_LEADER_START) 
+  (SETQ ENAME_BUBBLE       (HANDENT (CAR BUBBLE))
+        PT_LEADER_START    (CDR (ASSOC 10 (ENTGET ENAME_BUBBLE)))
+        ATTRIBUTE_LIST_OLD (HCNM_GET_ATTRIBUTES ENAME_BUBBLE T)
+        ATTRIBUTE_LIST     ATTRIBUTE_LIST_OLD
   )
-)
-(DEFUN HCNM_LDRBLK_UPDATE_ATTRIBUTE (ATTRIBUTE NOTIFIER / DATA)
-  NIL
+  (FOREACH ATTRIBUTE BUBBLE 
+    (COND 
+      ;; AT THE MOMENT, ONLY TOTAL ATTRIBUTE DELETION CANCELS A REACTOR.
+      ((= (CADR (ASSOC (CAR ATTRIBUTE) ATTRIBUTE_LIST)) "")
+       ;; I AM CURIOUS WHETHER MODIFYING BUBBLE WITHIN FOREACH WILL CAUSE A BUG. I THINK NOT SINCE IT ITERATES OVER A COPY.
+       (SETQ BUBBLE (VL-REMOVE ATTRIBUTE BUBBLE))
+      )
+      (T
+       (SETQ ATTRIBUTE_LIST (HCNM_LDRBLK_AUTO_DISPATCH 
+                              ENAME_BUBBLE
+                              ATTRIBUTE_LIST
+                              (CAR ATTRIBUTE) ; TAG
+                              (CADR ATTRIBUTE) ; KEY
+                              PT_LEADER_START
+                              NOTIFIER ; INPUT
+                            )
+       )
+      )
+    )
+  )
+  (COND 
+    ((/= ATTRIBUTE_LIST ATTRIBUTE_LIST_OLD)
+     ;; UPDATE BLOCK INSERTION
+     (HCNM_SET_ATTRIBUTES 
+       ENAME_BUBBLE
+       (HCNM_LDRBLK_ADJUST_FORMATS 
+         ATTRIBUTE_LIST
+       )
+     )
+    )
+  )
+  BUBBLE
 )
 ;#endregion
 ;#region CNM Options dialog
