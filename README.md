@@ -7,7 +7,7 @@ Welcome to the Construction Notes Manager suite of AutoCAD productivity tools st
 - From github: Put all the files from devsource into a folder of your choice and follow the Installation Help instructions at the [download page](https://constructionnotesmanager.com/download.htm).
 
 # INTRODUCTION
-- Videos: Watch [CNM From The Beginning](https://www.youtube.com/watch?v=49cvLI28sb8&list=PLb4Ow6sAWuXMENceM_eZaqMjshpefO0uN&index=13&t=822s&pp=gAQBiAQB) or browse [this playlist](https://www.youtube.com/playlist?list=PLb4Ow6sAWuXMENceM_eZaqMjshpefO0uN).
+- Videos: Watch [CNM From The Beginning](https://youtu.be/49cvLI28sb8?t=268) or browse [this playlist](https://www.youtube.com/playlist?list=PLb4Ow6sAWuXMENceM_eZaqMjshpefO0uN).
 - Command list: Open the very nice spreadsheet list [CNM-Command-Reference.ods](https://github.com/hawstom/cnm/blob/master/devsource/CNM-Command-Reference.ods) that has dozens of productivity enhancing commands and a column ranking the "coolness" of each command.
 
 # HOW I DEVELOP AND TEST CNM
