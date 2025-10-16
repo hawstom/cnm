@@ -2764,32 +2764,51 @@
   )
   I
 )
-;|
-(DEFUN HAWS_NESTED_LIST_UPDATE_TEST () 
-  (HAWS_UNIT_TEST 
-    'HAWS_NESTED_LIST_UPDATE
-    ;;ASSERTION ARGS  NESTEDS                VALUES           ANSWER                                 
-    (LIST (LIST (LIST (LIST 1 (LIST 11 "A")) (LIST 1 11 "1")) (LIST 1 (LIST 11 "1"))) 
-          (LIST (LIST (LIST 1 (LIST 11 "A") (LIST 12 "B")) (LIST 1 11 "2")) (LIST 1 (LIST 11 "2") (LIST 12 "B")))
-          (LIST (LIST (LIST 1 (LIST 11 (LIST 111 "A")) (LIST 12 "B")) (LIST 1 11 111 "3")) 
-                (LIST 1 (LIST 11 (LIST 111 "3")) (LIST 12 "B"))
-          )
-          (LIST (LIST (LIST 1 (LIST 11 (LIST 111 "A") (LIST 112 "B"))) (LIST 1 11 113 "4")) 
-                (LIST 1 (LIST 11 (LIST 111 "A") (LIST 112 "B") (LIST 113 "4")))
-          )
-          (LIST (LIST (LIST 1 (LIST 11 (LIST 111 "A") (LIST 112 "B"))) (LIST 1 11 113 1131 "5")) 
-                (LIST 1 (LIST 11 (LIST 111 "A") (LIST 112 "B") (LIST 113 (LIST 1131 "5"))))
-          )
-          (LIST (LIST (LIST 1 (LIST 11 "6")) (LIST 1 11 "6")) (LIST 1 (LIST 11 "6")))
-          (LIST (LIST (LIST 1 (LIST 11 "7")) NIL) (LIST 1 (LIST 11 "7")))
-          (LIST (LIST (LIST 1 (LIST 11 (LIST 111 "A") (LIST 112 "B"))) (LIST 1 11 113 1131 11311 "8")) 
-                (LIST 1 (LIST 11 (LIST 111 "A") (LIST 112 "B") (LIST 113 (LIST 1131 (LIST 11311 "8")))))
-          )
-    )
+;;; HAWS-LOG
+;;; Writes a message to a log file including the username and timestamp
+(VL-ACAD-DEFUN 'HAWS-LOG)
+(DEFUN HAWS-LOG (MESSAGE)
+            ;|
+  (SETQ
+    F1 (OPEN
+         (STRCAT
+           (HAWS-FILENAME-DIRECTORY (FINDFILE "hawsedc.mnu"))
+           "\\haws-log.txt"
+         )
+         "a"
+       )
   )
+  (WRITE-LINE
+    (STRCAT
+      (HAWS-GETCOMPUTERNAME)
+      " - "
+      (RTOS (GETVAR "cdate") 2 6)
+      " - "
+      MESSAGE
+    )
+    F1
+  )
+  (SETQ F1 (CLOSE F1))
+  |;
   (PRINC)
 )
-|;
+;;; HAWS-MILEPOST
+;;; Echos a progress message depending on debug level.
+(VL-ACAD-DEFUN 'HAWS-MILEPOST)
+(DEFUN HAWS-MILEPOST (MESSAGESTRING)
+  (IF (> *HAWS-DEBUGLEVEL* 0)
+    (PRINC (STRCAT "\nHawsEDC debug message: " MESSAGESTRING))
+    MESSAGESTRING
+  )
+)
+
+;#endregion
+;#region MISC
+;; ======================================================================
+;;
+;;                 Miscellaneous Utility functions
+;;
+;; ======================================================================
 (DEFUN HAWS_NESTED_LIST_UPDATE (ARGS / KEY NESTEDS VALUE VALUES) 
   ;; ARGS MUST BE A LIST WITH TWO LIST ELEMENTS:
   ;;   NESTEDS: MUST HAVE A NON-LIST FIRST ELEMENT KEY AT EVERY LEVEL INCLUDING THE TOP/OUTER LEVEL.
@@ -2883,51 +2902,33 @@
     )
   )
 )
-;;; HAWS-LOG
-;;; Writes a message to a log file including the username and timestamp
-(VL-ACAD-DEFUN 'HAWS-LOG)
-(DEFUN HAWS-LOG (MESSAGE)
-            ;|
-  (SETQ
-    F1 (OPEN
-         (STRCAT
-           (HAWS-FILENAME-DIRECTORY (FINDFILE "hawsedc.mnu"))
-           "\\haws-log.txt"
-         )
-         "a"
-       )
-  )
-  (WRITE-LINE
-    (STRCAT
-      (HAWS-GETCOMPUTERNAME)
-      " - "
-      (RTOS (GETVAR "cdate") 2 6)
-      " - "
-      MESSAGE
+
+(DEFUN HAWS_NESTED_LIST_UPDATE_TEST () 
+  (HAWS_UNIT_TEST 
+    'HAWS_NESTED_LIST_UPDATE
+    ;;ASSERTION ARGS  NESTEDS                VALUES           ANSWER                                 
+    (LIST (LIST (LIST (LIST 1 (LIST 11 "A")) (LIST 1 11 "1")) (LIST 1 (LIST 11 "1"))) 
+          (LIST (LIST (LIST 1 (LIST 11 "A") (LIST 12 "B")) (LIST 1 11 "2")) (LIST 1 (LIST 11 "2") (LIST 12 "B")))
+          (LIST (LIST (LIST 1 (LIST 11 (LIST 111 "A")) (LIST 12 "B")) (LIST 1 11 111 "3")) 
+                (LIST 1 (LIST 11 (LIST 111 "3")) (LIST 12 "B"))
+          )
+          (LIST (LIST (LIST 1 (LIST 11 (LIST 111 "A") (LIST 112 "B"))) (LIST 1 11 113 "4")) 
+                (LIST 1 (LIST 11 (LIST 111 "A") (LIST 112 "B") (LIST 113 "4")))
+          )
+          (LIST (LIST (LIST 1 (LIST 11 (LIST 111 "A") (LIST 112 "B"))) (LIST 1 11 113 1131 "5")) 
+                (LIST 1 (LIST 11 (LIST 111 "A") (LIST 112 "B") (LIST 113 (LIST 1131 "5"))))
+          )
+          (LIST (LIST (LIST 1 (LIST 11 "6")) (LIST 1 11 "6")) (LIST 1 (LIST 11 "6")))
+          (LIST (LIST (LIST 1 (LIST 11 "7")) NIL) (LIST 1 (LIST 11 "7")))
+          (LIST (LIST (LIST 1 (LIST 11 (LIST 111 "A") (LIST 112 "B"))) (LIST 1 11 113 1131 11311 "8")) 
+                (LIST 1 (LIST 11 (LIST 111 "A") (LIST 112 "B") (LIST 113 (LIST 1131 (LIST 11311 "8")))))
+          )
+          (LIST (LIST (LIST 1) (LIST 1 11 "6")) (LIST 1 (LIST 11 "6")))
     )
-    F1
   )
-  (SETQ F1 (CLOSE F1))
-  |;
   (PRINC)
 )
-;;; HAWS-MILEPOST
-;;; Echos a progress message depending on debug level.
-(VL-ACAD-DEFUN 'HAWS-MILEPOST)
-(DEFUN HAWS-MILEPOST (MESSAGESTRING)
-  (IF (> *HAWS-DEBUGLEVEL* 0)
-    (PRINC (STRCAT "\nHawsEDC debug message: " MESSAGESTRING))
-    MESSAGESTRING
-  )
-)
 
-;#endregion
-;#region MISC
-;; ======================================================================
-;;
-;;                 Miscellaneous Utility functions
-;;
-;; ======================================================================
 ;; HAWS-FILE-OPEN
 ;;
 ;; If a write directive file is locked, allows user to provide an alternate filename to open.
