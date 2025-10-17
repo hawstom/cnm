@@ -3,7 +3,7 @@
 Welcome to the Construction Notes Manager suite of AutoCAD productivity tools started by Thomas Gail Haws in 1994 and released as Free Libre Open Source Software on July 26, 2020. These tools are AutoCAD commands ready for AutoCAD and Civil 3D users who have no knowledge of AutoLISP. Please contact me if you need any help using or modifying these tools.
 
 # INSTALLATION
-- Windows installer: Choose, download and run a Windows installer from the [download page](https://constructionnotesmanager.com/download.htm).
+- Windows installer: Choose, download, and run a Windows installer from the [download page](https://constructionnotesmanager.com/download.htm).
 - From github: Put all the files from devsource into a folder of your choice and follow the Installation Help instructions at the [download page](https://constructionnotesmanager.com/download.htm).
 
 # INTRODUCTION
@@ -20,4 +20,4 @@ Welcome to the Construction Notes Manager suite of AutoCAD productivity tools st
 7. In AutoCAD command VLISP IDE, open hawsedc\develop\devsource\cnm.prj
 8. Develop and test in VLISP.
 9. Final test using CNM-Demo.scr with a copy (outside source for safety) of CNM-Demo.*
-10. Save, then compile FAS and see hawsedc\compile\README.TXT for compile and distribe instructions.
+10. Save, then compile FAS and see hawsedc\compile\README.TXT for compile and distrib instructions.
