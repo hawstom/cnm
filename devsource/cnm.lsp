@@ -5089,9 +5089,11 @@ ImportLayerSettings=No
     NOTETYPE
      (COND
        (NOTETYPE)
-       ((LM:GETDYNPROPVALUE
-          (VLAX-ENAME->VLA-OBJECT (CADR P1_DATA))
-          "Shape"
+       ((AND (CADR P1_DATA)
+             (LM:GETDYNPROPVALUE
+               (VLAX-ENAME->VLA-OBJECT (CADR P1_DATA))
+               "Shape"
+             )
         )
        )
      )
@@ -6659,6 +6661,6 @@ ImportLayerSettings=No
 )
 
 (LOAD "ini-edit")
- ;|«Visual LISP© Format Options»
+ ;|ï¿½Visual LISPï¿½ Format Optionsï¿½
 (72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)
 ;*** DO NOT add text below the comment! ***|;
