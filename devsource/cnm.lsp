@@ -5130,6 +5130,12 @@ ImportLayerSettings=No
                         ENAME_BLOCK_OLD P1_DATA P2_DATA REPLACE_BLOCK_P
                         TH
                        )
+  ;; Workaround for intermittent first-insertion crash bug:
+  ;; On first bubble insertion in a fresh drawing session, AutoCAD's command/input
+  ;; system can be uninitialized, causing crashes at GETKWORD prompts (specifically
+  ;; the dimension scale prompt). Issuing any command first initializes the system.
+  ;; Must use (COMMAND) not (VL-CMDF) - synchronous execution is required.
+  (COMMAND "._REDRAW")
   (HAWS-VSAVE '("attreq" "aunits" "clayer" "cmdecho"))
   (COND
     ((AND (GETVAR "wipeoutframe") (/= (GETVAR "wipeoutframe") 2))
