@@ -7013,7 +7013,7 @@ ImportLayerSettings=No
 )
 ;; Updates a specific tag in a bubble based on reactor notification
 ;; Called when either the leader moves or the reference object changes
-(DEFUN HCNM_LDRBLK_UPDATE_BUBBLE_TAG (HANDLE_BUBBLE TAG AUTO_TYPE HANDLE_REFERENCE / ENAME_BUBBLE ENAME_REFERENCE ATTRIBUTE_LIST ATTRIBUTE_LIST_OLD OBJREF REACTIONS_ENABLED)
+(DEFUN HCNM_LDRBLK_UPDATE_BUBBLE_TAG (HANDLE_BUBBLE TAG AUTO_TYPE HANDLE_REFERENCE / ENAME_BUBBLE ENAME_REFERENCE ATTRIBUTE_LIST ATTRIBUTE_LIST_OLD OBJREF)
   (SETQ ENAME_BUBBLE       (HANDENT HANDLE_BUBBLE)
         ENAME_REFERENCE    (HANDENT HANDLE_REFERENCE)
         ATTRIBUTE_LIST_OLD (HCNM_GET_ATTRIBUTES ENAME_BUBBLE T)
@@ -7033,8 +7033,6 @@ ImportLayerSettings=No
       )
       (COND 
         ((/= ATTRIBUTE_LIST ATTRIBUTE_LIST_OLD)
-         ;; Disable reactions to prevent infinite loop when modifying bubble
-         (SETQ REACTIONS_ENABLED (VLR-REACTION-SET NIL))
          ;; UPDATE BLOCK INSERTION
          (HCNM_SET_ATTRIBUTES 
            ENAME_BUBBLE
@@ -7042,8 +7040,6 @@ ImportLayerSettings=No
              ATTRIBUTE_LIST
            )
          )
-         ;; Re-enable reactions
-         (VLR-REACTION-SET REACTIONS_ENABLED)
         )
       )
     )
