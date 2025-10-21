@@ -5486,15 +5486,16 @@ ImportLayerSettings=No
 
 (DEFUN
    HCNM_LDRBLK_GET_BLOCK_DATA (P1_ENTRY ENAME_BLOCK_OLD / ATTRIBUTE_LIST
-                                BLOCK_DATA NUM
+                                BLOCK_DATA INPUT NUM
                               )
   (COND
     (ENAME_BLOCK_OLD
      (SETQ ATTRIBUTE_LIST (HCNM_GET_ATTRIBUTES ENAME_BLOCK_OLD T))
     )
     (T
-     (INITGET 128 "Copy")
-     (SETQ NUM (GETKWORD "\nNote number or [Copy note]: "))
+     ;; Use GETSTRING instead of INITGET+GETKWORD to avoid intermittent crash on first insertion
+     (SETQ INPUT (GETSTRING "\nNote number or [Copy note]: "))
+     (SETQ NUM (IF (AND INPUT (WCMATCH (STRCASE INPUT) "C*")) "Copy" INPUT))
      (COND
        ((= NUM "Copy")
         (SETQ
