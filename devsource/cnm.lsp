@@ -5486,16 +5486,19 @@ ImportLayerSettings=No
 
 (DEFUN
    HCNM_LDRBLK_GET_BLOCK_DATA (P1_ENTRY ENAME_BLOCK_OLD / ATTRIBUTE_LIST
-                                BLOCK_DATA INPUT NUM
+                                BLOCK_DATA NUM
                               )
   (COND
     (ENAME_BLOCK_OLD
      (SETQ ATTRIBUTE_LIST (HCNM_GET_ATTRIBUTES ENAME_BLOCK_OLD T))
     )
     (T
-     ;; Use GETSTRING instead of INITGET+GETKWORD to avoid intermittent crash on first insertion
-     (SETQ INPUT (GETSTRING "\nNote number or [Copy note]: "))
-     (SETQ NUM (IF (AND INPUT (WCMATCH (STRCASE INPUT) "C*")) "Copy" INPUT))
+     ;; Known intermittent bug: On first bubble insertion in a drawing session,
+     ;; this sometimes crashes after displaying the prompt. The crash occurs with
+     ;; or without INITGET+GETKWORD (tested). Appears to be an AutoCAD internal
+     ;; issue with attributed blocks on first insertion. No known workaround.
+     (INITGET 128 "Copy")
+     (SETQ NUM (GETKWORD "\nNote number or [Copy note]: "))
      (COND
        ((= NUM "Copy")
         (SETQ
