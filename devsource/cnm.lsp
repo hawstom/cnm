@@ -3166,7 +3166,8 @@ ImportLayerSettings=No
      (LIST "BubbleTextPrecisionN" "2" 4)
      (LIST "BubbleTextPrecisionE" "2" 4)
      (LIST "BubbleTextPrecisionZ" "2" 4)
-     (LIST "BubbleCurrentAlignment" T 0)
+     (LIST "BubbleCurrentAlignment" "" 0)
+     (LIST "AllowReactors" "1" 0)
      (LIST "BubbleArrowIntegralPending" "0" 0)
     )
    )
@@ -5114,20 +5115,21 @@ ImportLayerSettings=No
 ;#endregion
 ;#region Bubble insertion and editing
 
-(DEFUN C:HAWS-BOXL () (haws-core-init 198) (HCNM_LDRBLK_DYNAMIC "BOX")(haws-core-restore))
-(DEFUN C:HAWS-CIRL () (haws-core-init 199) (HCNM_LDRBLK_DYNAMIC "CIR")(haws-core-restore))
-(DEFUN C:HAWS-DIAL () (haws-core-init 200) (HCNM_LDRBLK_DYNAMIC "DIA")(haws-core-restore))
-(DEFUN C:HAWS-ELLL () (haws-core-init 201) (HCNM_LDRBLK_DYNAMIC "ELL")(haws-core-restore))
-(DEFUN C:HAWS-HEXL () (haws-core-init 202) (HCNM_LDRBLK_DYNAMIC "HEX")(haws-core-restore))
-(DEFUN C:HAWS-OCTL () (haws-core-init 203) (HCNM_LDRBLK_DYNAMIC "OCT")(haws-core-restore))
-(DEFUN C:HAWS-PENL () (haws-core-init 204) (HCNM_LDRBLK_DYNAMIC "PEN")(haws-core-restore))
-(DEFUN C:HAWS-RECL () (haws-core-init 205) (HCNM_LDRBLK_DYNAMIC "REC")(haws-core-restore))
-(DEFUN C:HAWS-SSTL () (haws-core-init 206) (HCNM_LDRBLK_DYNAMIC "SST")(haws-core-restore))
-(DEFUN C:HAWS-TRIL () (haws-core-init 207) (HCNM_LDRBLK_DYNAMIC "TRI")(haws-core-restore))
+
+(DEFUN C:HAWS-BOXL () (haws-core-init 198) (HCNM_LDRBLK_DYNAMIC "BOX"))
+(DEFUN C:HAWS-CIRL () (haws-core-init 199) (HCNM_LDRBLK_DYNAMIC "CIR"))
+(DEFUN C:HAWS-DIAL () (haws-core-init 200) (HCNM_LDRBLK_DYNAMIC "DIA"))
+(DEFUN C:HAWS-ELLL () (haws-core-init 201) (HCNM_LDRBLK_DYNAMIC "ELL"))
+(DEFUN C:HAWS-HEXL () (haws-core-init 202) (HCNM_LDRBLK_DYNAMIC "HEX"))
+(DEFUN C:HAWS-OCTL () (haws-core-init 203) (HCNM_LDRBLK_DYNAMIC "OCT"))
+(DEFUN C:HAWS-PENL () (haws-core-init 204) (HCNM_LDRBLK_DYNAMIC "PEN"))
+(DEFUN C:HAWS-RECL () (haws-core-init 205) (HCNM_LDRBLK_DYNAMIC "REC"))
+(DEFUN C:HAWS-SSTL () (haws-core-init 206) (HCNM_LDRBLK_DYNAMIC "SST"))
+(DEFUN C:HAWS-TRIL () (haws-core-init 207) (HCNM_LDRBLK_DYNAMIC "TRI"))
 (DEFUN C:HCNM-REPLACE-BUBBLE () (haws-core-init 338) (HCNM_LDRBLK_DYNAMIC NIL))
 
 (DEFUN HCNM_LDRBLK_DYNAMIC (NOTETYPE / BLOCKNAME BUBBLE_DATA BUBBLEHOOKS
-                        ENAME_BLOCK_OLD P1_DATA P2_DATA REPLACE_BLOCK_P
+                        ENAME_BUBBLE_OLD REPLACE_BUBBLE_P
                         TH
                        )
   ;; Workaround for intermittent first-insertion crash bug:
@@ -5183,57 +5185,134 @@ ImportLayerSettings=No
   )
   (HAWS-MKLAYR "NOTESLDR")
   (SETVAR "attreq" 0)
-  (SETQ
-    REPLACE_BLOCK_P
-     (NOT NOTETYPE)
-    ENAME_BLOCK_OLD
-     (HCNM_LDRBLK_GET_ENAME_BLOCK_OLD REPLACE_BLOCK_P)
-    P1_DATA
-     (HCNM_LDRBLK_GET_P1_DATA ENAME_BLOCK_OLD)
-    NOTETYPE
-     (COND
-       (NOTETYPE)
-       ((LM:GETDYNPROPVALUE
-          (VLAX-ENAME->VLA-OBJECT (CADR P1_DATA))
-          "Shape"
-        )
-       )
-     )
-    P2_DATA
-     (HCNM_LDRBLK_GET_P2_DATA P1_DATA TH BLOCKNAME NOTETYPE)
-    ;; bubble-data-update: Refactored to Draw bubble, get data, then finish bubble. 
-    ;; Hopefully this is more readable.
+  (SETQ BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "TH" TH)
+        BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "BLOCKNAME" BLOCKNAME)
+        BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "NOTETYPE" NOTETYPE)
+        BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "REPLACE_BUBBLE_P" (NOT NOTETYPE))
+        BUBBLE_DATA (HCNM_LDRBLK_GET_ENAME_BUBBLE_OLD BUBBLE_DATA)
+        BUBBLE_DATA (COND 
+                      ((HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE_OLD")
+                       (HCNM_LB:BD_ENSURE_P1_WORLD BUBBLE_DATA) ;  WE REALLY ONLY NEED ENAME_LEADER_OLD AND P1_OCS, BUT THIS ISN'T A BAD WAY TO GET IT.
+                      )
+                      (T
+                       (HCNM_LDRBLK_GET_USER_START_POINT BUBBLE_DATA)
+                      )
+                    )
+        NOTETYPE    (COND 
+                      (NOTETYPE)
+                      ((HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE")
+                       (LM:GETDYNPROPVALUE 
+                         (VLAX-ENAME->VLA-OBJECT 
+                           (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE")
+                         )
+                         "Shape"
+                       )
+                      )
+                      (T NOTETYPE)
+                    )
+        BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "NOTETYPE" NOTETYPE)
   )
-  (HCNM_LDRBLK_DRAW_BUBBLE
-    P1_DATA P2_DATA BUBBLE_DATA TH NOTETYPE BLOCKNAME
-   )
-  (SETQ BUBBLE_DATA (HCNM_LDRBLK_GET_BUBBLE_DATA P1_DATA))
-  (HCNM_LDRBLK_FINISH_BUBBLE P1_DATA BUBBLE_DATA NOTETYPE)
-  (PRINC "\nUse the ATTIPEDIT command to edit bubble note.")
+  ;; Draw bubble, update BUBBLE_DATA with P2 and new entities
+  (SETQ BUBBLE_DATA (HCNM_LDRBLK_GET_P2_DATA BUBBLE_DATA))
+  (SETQ BUBBLE_DATA (HCNM_LDRBLK_DRAW_BUBBLE BUBBLE_DATA))
+  (SETQ BUBBLE_DATA (HCNM_LDRBLK_GET_BUBBLE_DATA BUBBLE_DATA))
+  (HCNM_LDRBLK_FINISH_BUBBLE BUBBLE_DATA)
   (HCNM_RESTORE_DIMSTYLE)
   (HAWS-VRSTOR)
   (VL-CMDF "._undo" "_e")
   (HAWS-CORE-RESTORE)
   (PRINC)
 )
-(DEFUN HCNM_LDRBLK_GET_ENAME_BLOCK_OLD (REPLACE_BLOCK_P / ELIST_BLOCK_OLD ENAME_BLOCK_OLD)
+;; Create a bubble data structure (alist) for passing state
+;; All parameters optional - pass nil for unset fields
+(DEFUN HCNM_LB:BD_DEF ()
+  (LIST
+    (CONS "ATTRIBUTES" NIL)
+    (CONS "AVPORT" NIL)
+    (CONS "BLOCKNAME" NIL)
+    (CONS "ENAME_BUBBLE" NIL)
+    (CONS "ENAME_BUBBLE_OLD" NIL)
+    (CONS "ENAME_LAST" NIL)
+    (CONS "ENAME_LEADER" NIL)
+    (CONS "ENAME_LEADER_OLD" NIL)
+    (CONS "NOTETYPE" NIL)
+    (CONS "P1_OCS" NIL)
+    (CONS "P1_UCS" NIL)
+    (CONS "P1_WORLD" NIL)
+    (CONS "P2" NIL)
+    (CONS "PSPACE_BUBBLE_P" NIL)
+    (CONS "REPLACE_BUBBLE_P" NIL)
+    (CONS "TH" NIL)  )
+)
+
+;; Get a value from bubble data using HAWS_NESTED_LIST_GET
+(DEFUN HCNM_LB:BD_GET (bd key)
+  (HAWS_NESTED_LIST_GET bd (list key))
+)
+
+;; Set a value in bubble data using HAWS_NESTED_LIST_UPDATE
+;; Validates key against known schema
+(DEFUN HCNM_LB:BD_SET (bd key val )
+   (if (not (assoc key (HCNM_LB:BD_DEF)))
+    (progn
+      (princ (strcat "\nError: Invalid BUBBLE_DATA key: " key))
+      bd
+    )
+    (HAWS_NESTED_LIST_UPDATE bd (list key) val)
+  )
+)
+
+;; Ensure P1_WORLD is present in bubble data (computes if missing)
+(DEFUN HCNM_LB:BD_ENSURE_P1_WORLD (BUBBLE_DATA / ENAME_BUBBLE ENAME_LEADER P1_OCS P1_WORLD)
+  (AND
+    (SETQ ENAME_BUBBLE (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE"))
+    (OR
+      (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_LEADER")
+      (SETQ BUBBLE_DATA (HCNM_LB:BD_SET
+                          BUBBLE_DATA
+                          "ENAME_LEADER"
+                          (HCNM_LDRBLK_BUBBLE_LEADER ENAME_BUBBLE)
+                        )
+      )
+      (PRINC "\nError in HCNM_LB:BD_ENSURE_P1_WORLD: Could not find leader associated with bubble note.")
+    )
+    (SETQ ENAME_LEADER (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_LEADER"))
+    (OR
+      (HCNM_LB:BD_GET BUBBLE_DATA "P1_OCS")
+      (SETQ BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "P1_OCS" (HCNM_LDRBLK_P1_OCS ENAME_LEADER)))
+      (PRINC "\nError in HCNM_LB:BD_ENSURE_P1_WORLD: Could not determine P1_OCS from leader.")
+    )
+    (SETQ P1_OCS (HCNM_LB:BD_GET BUBBLE_DATA "P1_OCS"))
+    (OR
+      (HCNM_LB:BD_GET BUBBLE_DATA "P1_WORLD")
+      (SETQ BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "P1_WORLD" (HCNM_LDRBLK_P1_WORLD ENAME_LEADER P1_OCS ENAME_BUBBLE)))
+      (PRINC "\nError in HCNM_LB:BD_ENSURE_P1_WORLD: Could not compute P1_WORLD from P1_OCS.")
+    )
+    (SETQ P1_WORLD (HCNM_LB:BD_GET BUBBLE_DATA "P1_WORLD"))
+    (PRINC (STRCAT "\nDebug P1_OCS: " (vl-princ-to-string P1_OCS) " P1_WORLD: " (vl-princ-to-string P1_WORLD)))
+  )
+  BUBBLE_DATA
+)
+
+(DEFUN HCNM_LDRBLK_GET_ENAME_BUBBLE_OLD (BUBBLE_DATA / ELIST_BLOCK_OLD ENAME_BUBBLE_OLD REPLACE_BUBBLE_P)
+  (SETQ REPLACE_BUBBLE_P (HCNM_LB:BD_GET BUBBLE_DATA "REPLACE_BUBBLE_P"))
   (COND
-    (REPLACE_BLOCK_P
+    (REPLACE_BUBBLE_P
      ;; Prompt and check for old block.
      (WHILE (OR (NOT
                   (SETQ
-                    ENAME_BLOCK_OLD
+                    ENAME_BUBBLE_OLD
                      (CAR (ENTSEL "\nSelect bubble note: "))
                   )
                 )
-                (NOT (SETQ ELIST_BLOCK_OLD (ENTGET ENAME_BLOCK_OLD)))
+                (NOT (SETQ ELIST_BLOCK_OLD (ENTGET ENAME_BUBBLE_OLD)))
                 (NOT
                   (AND
                     (= (CDR (ASSOC 0 ELIST_BLOCK_OLD)) "INSERT")
                     (WCMATCH
                       (STRCASE
                         (VLA-GET-EFFECTIVENAME
-                          (VLAX-ENAME->VLA-OBJECT ENAME_BLOCK_OLD)
+                          (VLAX-ENAME->VLA-OBJECT ENAME_BUBBLE_OLD)
                         )
                       )
                       "CNM-BUBBLE-*"
@@ -5243,66 +5322,66 @@ ImportLayerSettings=No
             )
        (PRINC "\nSelected entity is not a CNM bubble note.")
      )
-     ENAME_BLOCK_OLD
+     (SETQ BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "ENAME_BUBBLE_OLD" ENAME_BUBBLE_OLD))
     )
     (T NIL)
   )
+  BUBBLE_DATA
 )
-(DEFUN HCNM_LDRBLK_GET_P1_DATA (ENAME_BLOCK_OLD / ELIST_BLOCK_OLD ENAME_330 ENAME_LEADER_OLD P1_DATA P1_ENTRY REPLACE_BLOCK_P)
-  (COND
-    (ENAME_BLOCK_OLD
-     (SETQ ELIST_BLOCK_OLD (ENTGET ENAME_BLOCK_OLD)
-       REPLACE_BLOCK_P T
-     )
-     ;; Get start point
-     ;; Find associated leader.
-     (WHILE ;; Check all 330 groups
-            (AND
-              (NOT ENAME_LEADER_OLD)
-              (SETQ ENAME_330 (CDR (ASSOC 330 ELIST_BLOCK_OLD)))
-            )
-       ;; Use the one that refers back to this block. Or move to the next one.
-       (COND
-         ((EQ (CDR (ASSOC 340 (ENTGET ENAME_330))) ENAME_BLOCK_OLD)
-          (SETQ ENAME_LEADER_OLD ENAME_330)
-         )
-         (T
-          (SETQ
-            ELIST_BLOCK_OLD
-             (CDR
-               (MEMBER
-                 (ASSOC 330 ELIST_BLOCK_OLD)
-                 ELIST_BLOCK_OLD
-               )
-             )
-            ENAME_LEADER_OLD NIL
-          )
-         )
-       )
-     )
-     (SETQ
-       P1_ENTRY (COND
-            (ENAME_LEADER_OLD
-             (CDR (ASSOC 10 (ENTGET ENAME_LEADER_OLD)))
-            )
-            (T (CDR (ASSOC 10 ELIST_BLOCK_OLD)))
-          )
-     )
+(DEFUN HCNM_LDRBLK_GET_USER_START_POINT (BUBBLE_DATA) 
+    (HCNM_LB:BD_SET BUBBLE_DATA "P1_UCS" (GETPOINT "\nStart point for leader:"))
+)
+(DEFUN HCNM_LDRBLK_BUBBLE_LEADER (ENAME_BUBBLE / ELIST_BUBBLE ENAME_330 ENAME_LEADER) 
+  (SETQ ELIST_BUBBLE (ENTGET ENAME_BUBBLE))
+  ;; Get start point
+  ;; Find associated leader.
+  (WHILE  ;; Check all 330 groups
+    (AND 
+      (NOT ENAME_LEADER)
+      (SETQ ENAME_330 (CDR (ASSOC 330 ELIST_BUBBLE)))
     )
-    (T 
-       (SETQ P1_ENTRY (GETPOINT "\nStart point for leader:"))
+    ;; Use the one that refers back to this block. Or move to the next one.
+    (COND 
+      ((EQ (CDR (ASSOC 340 (ENTGET ENAME_330))) ENAME_BUBBLE)
+       (SETQ ENAME_LEADER ENAME_330)
+      )
+      (T
+       (SETQ ELIST_BUBBLE (CDR 
+                            (MEMBER 
+                              (ASSOC 330 
+                                     ELIST_BUBBLE
+                              )
+                              ELIST_BUBBLE
+                            )
+                          )
+             ENAME_LEADER NIL
+       )
+      )
     )
   )
-  (SETQ P1_DATA (LIST P1_ENTRY ENAME_BLOCK_OLD ENAME_LEADER_OLD REPLACE_BLOCK_P))
+  ENAME_LEADER
 )
-(DEFUN HCNM_LDRBLK_GET_P2_DATA
-   (P1_DATA TH BLOCKNAME NOTETYPE / BLOCK_DATA ENAME_BLOCK P1_ENTRY P2 P2_DATA SS1 VLAOBJ)
+(DEFUN HCNM_LDRBLK_P1_OCS (ENAME_LEADER)
+  (COND 
+    (ENAME_LEADER
+     (CDR (ASSOC 10 (ENTGET ENAME_LEADER)))
+    )
+    (T
+     NIL
+    )
+  )
+)
+;; Gets insertion point of bubble in UCS coordinates
+;; Bubble still doesn't exist. Draws temp bubbles only.
+(DEFUN HCNM_LDRBLK_GET_P2_DATA (BUBBLE_DATA / ENAME_BUBBLE_TEMP P1_UCS P2 SS1 OBJ_BUBBLE_TEMP TH BLOCKNAME NOTETYPE)
   (SETQ
-    P1_ENTRY (CAR P1_DATA)
+    P1_UCS (HCNM_LB:BD_GET BUBBLE_DATA "P1_UCS")
+    TH (HCNM_LB:BD_GET BUBBLE_DATA "TH")
+    BLOCKNAME (HCNM_LB:BD_GET BUBBLE_DATA "BLOCKNAME")
+    NOTETYPE (HCNM_LB:BD_GET BUBBLE_DATA "NOTETYPE")
     SS1 (SSADD)
   )
-  (FOREACH
-     FLIPSTATE '("right" "left")
+  (FOREACH FLIPSTATE '("right" "left")
     (VL-CMDF
       "._insert"
       (STRCAT BLOCKNAME "-" FLIPSTATE)
@@ -5310,55 +5389,45 @@ ImportLayerSettings=No
       TH
       "_Rotate"
       (ANGTOS (GETVAR "snapang"))
-      P1_ENTRY
+      P1_UCS
     )
     (SETQ
-      ENAME_BLOCK
-       (ENTLAST)
-      VLAOBJ
-       (VLAX-ENAME->VLA-OBJECT ENAME_BLOCK)
+      ENAME_BUBBLE_TEMP (ENTLAST)
+      OBJ_BUBBLE_TEMP (VLAX-ENAME->VLA-OBJECT ENAME_BUBBLE_TEMP)
     )
-    (LM:SETDYNPROPVALUE VLAOBJ "Shape" NOTETYPE)
-    (SSADD ENAME_BLOCK SS1)
+    (LM:SETDYNPROPVALUE OBJ_BUBBLE_TEMP "Shape" NOTETYPE)
+    (SSADD ENAME_BUBBLE_TEMP SS1)
   )
   (PROMPT "\nLocation for bubble: ")
-  (VL-CMDF "._MOVE" SS1 "" P1_ENTRY PAUSE)
+  (VL-CMDF "._MOVE" SS1 "" P1_UCS PAUSE)
   (SETQ
-    P2     (TRANS (CDR (ASSOC 10 (ENTGET ENAME_BLOCK))) ENAME_BLOCK 1)
+    P2 (TRANS (CDR (ASSOC 10 (ENTGET ENAME_BUBBLE_TEMP))) ENAME_BUBBLE_TEMP 1)
+    BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "P2" P2)
   )
   (VL-CMDF "._erase" SS1 "")
-  (SETQ P2_DATA (LIST P2))
+  BUBBLE_DATA
 )
-(DEFUN HCNM_LDRBLK_DRAW_BUBBLE (P1_DATA P2_DATA ATTRIBUTE_LIST TH NOTETYPE BLOCKNAME / ANG1
-                     ASSOCIATE_P ATTRIBUTES_OLD AUOLD BLOCK_DATA ELIST_LEADER_OLD
-                     ENAME_BLOCK_NEW ENAME_BLOCK_OLD ENAME_LEADER
-                     ENAME_LEADER_OLD ETYPE FLIPSTATE INPUT1 P1_ENTRY P2
-                     REPLACE_BLOCK_P
-                    )
-  (SETQ
-    P1_ENTRY
-     (CAR P1_DATA)
-    ENAME_BLOCK_OLD
-     (CADR P1_DATA)
-    ENAME_LEADER_OLD
-     (CADDR P1_DATA)
-    REPLACE_BLOCK_P
-     (CADDDR P1_DATA)
-    P2 (CAR P2_DATA)
-    ANG1
-     (- (ANGLE P1_ENTRY P2) (GETVAR "snapang"))
-    FLIPSTATE
-     (COND
-       ((MINUSP (COS ANG1)) "left")
-       (T "right")
-     )
+;; Draw bubble and update BUBBLE_DATA with new leader/block info
+(DEFUN HCNM_LDRBLK_DRAW_BUBBLE (BUBBLE_DATA / P1_UCS ENAME_BUBBLE ENAME_BUBBLE_OLD 
+                                ENAME_LEADER P2 ANG1 FLIPSTATE ASSOCIATE_P AUOLD TH 
+                                BLOCKNAME NOTETYPE INPUT1 ELIST_LEADER_OLD
+                               ) 
+  (SETQ P1_UCS           (HCNM_LB:BD_GET BUBBLE_DATA "P1_UCS")
+        ENAME_BUBBLE_OLD (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE_OLD")
+        ENAME_LEADER_OLD (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_LEADER_OLD")
+        P2               (HCNM_LB:BD_GET BUBBLE_DATA "P2")
+        TH               (HCNM_LB:BD_GET BUBBLE_DATA "TH")
+        BLOCKNAME        (HCNM_LB:BD_GET BUBBLE_DATA "BLOCKNAME")
+        NOTETYPE         (HCNM_LB:BD_GET BUBBLE_DATA "NOTETYPE")
+        ANG1             (- (ANGLE P1_UCS P2) (GETVAR "snapang"))
+        FLIPSTATE        (COND ((MINUSP (COS ANG1)) "left") (T "right"))
   )
-  (COND
+  (COND 
     ;; If it's not a new insertion, don't draw a leader.
-    (ENAME_BLOCK_OLD
+    (ENAME_BUBBLE_OLD
      (SETQ AUOLD (GETVAR "aunits"))
      (SETVAR "aunits" 3)
-     (VL-CMDF
+     (VL-CMDF 
        "._insert"
        (STRCAT BLOCKNAME "-" FLIPSTATE)
        "_Scale"
@@ -5368,27 +5437,27 @@ ImportLayerSettings=No
        P2
      )
      (SETVAR "aunits" AUOLD)
+     (SETQ ENAME_BUBBLE (ENTLAST))
      ;; If there is an old leader, stretch it and associate it.
-     (COND
+     (COND 
        (ENAME_LEADER_OLD
         (SETQ ELIST_LEADER_OLD (ENTGET ENAME_LEADER_OLD))
         ;; Change its arrowhead if needed.
         (HCNM_LDRBLK_CHANGE_ARROWHEAD ENAME_LEADER_OLD)
         ;; Stretch it.
-        (ENTMOD
-          (SUBST
+        (ENTMOD 
+          (SUBST 
             (CONS 10 P2)
-            (ASSOC
+            (ASSOC 
               10
-              (CDR
+              (CDR 
                 (MEMBER (ASSOC 10 ELIST_LEADER_OLD) ELIST_LEADER_OLD)
               )
             )
             ELIST_LEADER_OLD
           )
         )
-        ;; Associate it.
-        (VL-CMDF
+        (VL-CMDF 
           "._qldetachset"
           ENAME_LEADER_OLD
           ""
@@ -5404,22 +5473,15 @@ ImportLayerSettings=No
      )
     )
     (T
-     (SETQ
-       ASSOCIATE_P
-        (COND
-          ((= (GETVAR "DIMANNO") 1) T)
-          (NIL)
+     (SETQ ASSOCIATE_P (COND ((= (GETVAR "DIMANNO") 1) T) (NIL)))
+     (COND 
+       ((AND (NOT ASSOCIATE_P) 
+             (GETVAR "CANNOSCALEVALUE")
+             (/= (GETVAR "DIMSCALE") (/ 1.0 (GETVAR "CANNOSCALEVALUE")))
         )
-     )
-     (COND
-       ((AND
-          (NOT ASSOCIATE_P)
-          (GETVAR "CANNOSCALEVALUE")
-          (/= (GETVAR "DIMSCALE") (/ 1.0 (GETVAR "CANNOSCALEVALUE")))
-        )
-        (ALERT
-          (PRINC
-            (STRCAT
+        (ALERT 
+          (PRINC 
+            (STRCAT 
               "\nDimension scale ("
               (RTOS (GETVAR "DIMSCALE") 2 2)
               ") and\nAnnotation scale ("
@@ -5429,67 +5491,47 @@ ImportLayerSettings=No
           )
         )
         (INITGET 1 "Yes No")
-        (SETQ
-          INPUT1
-           (GETKWORD
-             "\nSet dimension scale to match annotation scale? [Yes/No]: "
-           )
-        )
-        (COND
-          ((= INPUT1 "Yes")
-           (SETVAR "DIMSCALE" (/ 1.0 (GETVAR "CANNOSCALEVALUE")))
-          )
+        (SETQ INPUT1 (GETKWORD "\nSet dimension scale to match annotation scale? [Yes/No]: "))
+        (COND 
+          ((= INPUT1 "Yes") (SETVAR "DIMSCALE" (/ 1.0 (GETVAR "CANNOSCALEVALUE"))))
         )
        )
      )
-     (SETQ
-       ANG1      (- (ANGLE P1_ENTRY P2) (GETVAR "snapang"))
-       FLIPSTATE (COND
-                   ((MINUSP (COS ANG1)) "left")
-                   (T "right")
-                 )
+     (SETQ ANG1      (- (ANGLE P1_UCS P2) (GETVAR "snapang"))
+           FLIPSTATE (COND ((MINUSP (COS ANG1)) "left") (T "right"))
      )
-     (SETQ ENAME_LEADER (ENTLAST))
+      ;; SAVE LAST ENTITY FOR ENTNEXT USAGE.
+     (SETQ BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "ENAME_LAST" (ENTLAST)))
      ;;Start insertion
-     (COND
+     (COND 
        ((>= (ATOF (GETVAR "acadver")) 14)
-        (VL-CMDF "._leader" P1_ENTRY P2 "_Annotation" "")
-        (COND
-          (ASSOCIATE_P (VL-CMDF "_block"))
-          (T (VL-CMDF "_none" "._INSERT"))
-        )
+        (VL-CMDF "._leader" P1_UCS P2 "_Annotation" "")
+        (COND (ASSOCIATE_P (VL-CMDF "_block")) (T (VL-CMDF "_none" "._INSERT")))
        )
        (T
-        (ALERT
-          (PRINC
-            "\nThe bubble notes inserter in CNM 4.2.3 and higher is not compatible with AutoCAD pre-R14."
-          )
-        )
+        (ALERT (PRINC "\nThe bubble notes inserter in CNM 4.2.3 and higher is not compatible with AutoCAD pre-R14."))
        )
      )
      (SETQ AUOLD (GETVAR "aunits"))
      (SETVAR "aunits" 3)
-     (VL-CMDF
-       (STRCAT BLOCKNAME "-" FLIPSTATE)
-       "_Scale"
-       TH
-       P2
-       (GETVAR "snapang")
-     )
+     (VL-CMDF (STRCAT BLOCKNAME "-" FLIPSTATE) "_Scale" TH P2 (GETVAR "snapang"))
      (SETVAR "aunits" AUOLD)
+     (SETQ ENAME_BUBBLE (ENTLAST)
+           BUBBLE_DATA  (HCNM_LB:BD_SET BUBBLE_DATA "ENAME_BUBBLE" ENAME_BUBBLE)
+     )
     )
   )
+  BUBBLE_DATA
 )
-(DEFUN HCNM_LDRBLK_GET_BUBBLE_DATA (P1_DATA / ATTRIBUTE_LIST BLOCK_DATA ENAME_BLOCK_OLD INDEX NUM P1_ENTRY)
+(DEFUN HCNM_LDRBLK_GET_BUBBLE_DATA (BUBBLE_DATA / ATTRIBUTE_LIST ENAME_BUBBLE P1_UCS NUM)
   (SETQ
-    P1_ENTRY
-     (CAR P1_DATA)
-    ENAME_BLOCK_OLD
-     (CADR P1_DATA)
+    REPLACE_BUBBLE_P (HCNM_LB:BD_GET BUBBLE_DATA "REPLACE_BUBBLE_P")
+    ENAME_BUBBLE (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE")
+    P1_UCS (HCNM_LB:BD_GET BUBBLE_DATA "P1_UCS")
   )
   (COND
-    (ENAME_BLOCK_OLD
-     (SETQ ATTRIBUTE_LIST (HCNM_GET_ATTRIBUTES ENAME_BLOCK_OLD T))
+    (ENAME_REPLACE_BUBBLE_P
+     (SETQ ATTRIBUTE_LIST (HCNM_GET_ATTRIBUTES ENAME_BUBBLE T))
     )
     (T
      (INITGET 128 "Copy")
@@ -5499,22 +5541,19 @@ ImportLayerSettings=No
         (SETQ
           ATTRIBUTE_LIST
            (HCNM_GET_ATTRIBUTES
-             (SETQ ENAME_BLOCK_OLD (CAR (ENTSEL)))
+             (SETQ ENAME_BUBBLE (CAR (ENTSEL)))
              T
            )
         )
        )
        (T
         (SETQ ATTRIBUTE_LIST (HCNM_LDRBLK_INITIALIZE_ATTRIBUTE_LIST))
-        ;; This is start point 1 of 2 of the bubble data logic. This start point is for the bubble note creation process.
-        ;; This is one place where ATTRIBUTE_LIST gets created. The other is when a bubble note to be edited or copied has its attributes read in HCNM_GET_ATTRIBUTES.
         (MAPCAR
           '(LAMBDA (INDEX)
              (SETQ
                ATTRIBUTE_LIST
                 (HCNM_LDRBLK_GET_TEXT_ENTRY
-                  ENAME_BLOCK_OLD
-                  P1_ENTRY
+                  ENAME_BUBBLE
                   INDEX
                   ATTRIBUTE_LIST
                 )
@@ -5526,41 +5565,29 @@ ImportLayerSettings=No
      )
     )
   )
-  (HCNM_LDRBLK_ADJUST_FORMATS ATTRIBUTE_LIST)
+  (HCNM_LB:BD_SET BUBBLE_DATA "ATTRIBUTES" (HCNM_LDRBLK_ADJUST_FORMATS ATTRIBUTE_LIST))
 )
-(DEFUN HCNM_LDRBLK_FINISH_BUBBLE (P1_DATA ATTRIBUTE_LIST NOTETYPE
-                              / ENAME_BLOCK_NEW
-                              ENAME_BLOCK_OLD ENAME_LEADER ETYPE
-                             )
+(DEFUN HCNM_LDRBLK_FINISH_BUBBLE (BUBBLE_DATA / ENAME_BUBBLE ENAME_BUBBLE_OLD ENAME_LAST ENAME_LEADER ENAME_TEMP REPLACE_BUBBLE_P ATTRIBUTES NOTETYPE)
   (SETQ
-    ENAME_BLOCK_OLD
-     (CADR P1_DATA)
-    REPLACE_BLOCK_P
-     (CADDDR P1_DATA)
-    ENAME_BLOCK_NEW
-     (ENTLAST)
+    ENAME_LAST (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_LAST")
+    ENAME_TEMP ENAME_LAST
+    ENAME_BUBBLE (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE")
+    ENAME_BUBBLE_OLD (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE_OLD")
+    REPLACE_BUBBLE_P (HCNM_LB:BD_GET BUBBLE_DATA "REPLACE_BUBBLE_P")
+    ATTRIBUTES (HCNM_LB:BD_GET BUBBLE_DATA "ATTRIBUTES")
+    NOTETYPE (HCNM_LB:BD_GET BUBBLE_DATA "NOTETYPE")
   )
-  (HCNM_LDRBLK_SET_DYNPROPS
-    ENAME_BLOCK_NEW
-    ENAME_BLOCK_OLD
-    NOTETYPE
-    REPLACE_BLOCK_P
-  )
-  (IF REPLACE_BLOCK_P
-    (ENTDEL ENAME_BLOCK_OLD)
-  )
-  (HCNM_SET_ATTRIBUTES ENAME_BLOCK_NEW ATTRIBUTE_LIST)
-  ;; Change leader arrowhead if needed.
+  (HCNM_LDRBLK_SET_DYNPROPS ENAME_BUBBLE ENAME_BUBBLE_OLD NOTETYPE REPLACE_BUBBLE_P)
+  (IF REPLACE_BUBBLE_P (ENTDEL ENAME_BUBBLE_OLD))
+  (HCNM_SET_ATTRIBUTES ENAME_BUBBLE ATTRIBUTES)
+  ;; Use entnext to look for a leader starting from the last entity before this bubble.
   (WHILE
     (AND
-      (= (C:HCNM-CONFIG-GETVAR "BubbleArrowIntegralPending") "1")
-      (/= "LEADER"
-          (CDR
-            (ASSOC 0 (ENTGET (SETQ ENAME_LEADER (ENTNEXT ENAME_LEADER))))
-          )
-      )
+      (/= "LEADER" (CDR (ASSOC 0 (ENTGET (SETQ ENAME_TEMP (ENTNEXT ENAME_TEMP))))))
     )
   )
+  (SETQ ENAME_LEADER ENAME_TEMP)
+  ;; Change leader arrowhead if needed.
   (HCNM_LDRBLK_CHANGE_ARROWHEAD ENAME_LEADER)
 )
 (DEFUN HCNM_LDRBLK_GET_MTEXT_STRING ()
@@ -5581,16 +5608,16 @@ ImportLayerSettings=No
     )
   )
 )
-(DEFUN HCNM_LDRBLK_SET_DYNPROPS (ENAME_BLOCK_NEW ENAME_BLOCK_OLD NOTETYPE REPLACE_BLOCK_P /  DYN_PROPS_OLD DYN_PROPS_OLD_I VLAOBJ_BLOCK_NEW VLAOBJ_BLOCK_OLD)
+(DEFUN HCNM_LDRBLK_SET_DYNPROPS (ENAME_BUBBLE_NEW ENAME_BUBBLE_OLD NOTETYPE REPLACE_BUBBLE_P /  DYN_PROPS_OLD DYN_PROPS_OLD_I VLAOBJ_BLOCK_NEW VLAOBJ_BLOCK_OLD)
   (SETQ
     VLAOBJ_BLOCK_NEW
-     (VLAX-ENAME->VLA-OBJECT ENAME_BLOCK_NEW)
+     (VLAX-ENAME->VLA-OBJECT ENAME_BUBBLE_NEW)
   )
   (COND
-    (ENAME_BLOCK_OLD
+    (ENAME_BUBBLE_OLD
      (SETQ
        VLAOBJ_BLOCK_OLD
-        (VLAX-ENAME->VLA-OBJECT ENAME_BLOCK_OLD)
+        (VLAX-ENAME->VLA-OBJECT ENAME_BUBBLE_OLD)
        DYN_PROPS_OLD
         (MAPCAR
           '(LAMBDA (X)
@@ -5658,25 +5685,6 @@ ImportLayerSettings=No
 )
 (DEFUN HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST (TAG VALUE ATTRIBUTE_LIST / )
  (SUBST (LIST TAG VALUE) (ASSOC TAG ATTRIBUTE_LIST) ATTRIBUTE_LIST)
-)
-;; Adds object to notedata attribute's list if it's not already in the list.
-;; Returns ATTRIBUTE_LIST
-;; THIS FUNCTION LIKELY NOT NEEDED SINCE IT WAS FOR REACTORS AND WE ARE PUTTING ALL THE SAME INFO IN REACTOR DATA. LEARNING PROCESS
-(DEFUN HCNM_LDRBLK_SAVE_OBJECT_REFERENCE_TO_NOTEDATA (LINE_TAG OBJECT DATA_KEY ATTRIBUTE_LIST / DATA_KEY_OLD HANDLE HANDLE_OLD LINE_DATA LINE_DATA_OLD LINE_KEY LINE_TAG NOTEDATA)
-  (SETQ
-    LINE_KEY (SUBSTR LINE_TAG 8 1)
-    HANDLE (VLA-GET-HANDLE OBJECT)
-    LINE_DATA (LIST LINE_KEY HANDLE DATA_KEY)
-    NOTEDATA (READ (CADR(ASSOC "NOTEDATA" ATTRIBUTE_LIST)))
-    LINE_DATA_OLD (ASSOC LINE_KEY NOTEDATA)
-    HANDLE_OLD (CADR LINE_DATA_OLD)
-    DATA_KEY_OLD (CADDR LINE_DATA_OLD)
-  )
-  (COND 
-    ((NOT LINE_DATA_OLD) (SETQ NOTEDATA (CONS LINE_DATA NOTEDATA)))
-    ((OR (/= HANDLE_OLD HANDLE) (/= DATA_KEY_OLD DATA_KEY))(SETQ NOTEDATA (SUBST LINE_DATA LINE_DATA_OLD NOTEDATA)))
-  )
-  (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST "NOTEDATA" (VL-PRIN1-TO-STRING NOTEDATA) ATTRIBUTE_LIST)
 )
 (DEFUN HCNM_LDRBLK_ADJUST_FORMATS (ATTRIBUTE_LIST / BUBBLEMTEXT TXT1 TXT2
                                GAP OVERLINE UNDERLINE
@@ -5766,8 +5774,8 @@ ImportLayerSettings=No
     (T (STRCAT CODE STRING))
   )
 )
-(DEFUN HCNM_LDRBLK_GET_TEXT_ENTRY (ENAME_BLOCK P1_ENTRY LINE_NUMBER ATTRIBUTE_LIST /
-                               SKIP_ENTRY_P INPUT LOOP-P PROMPT-P STRING TAG
+(DEFUN HCNM_LDRBLK_GET_TEXT_ENTRY (ENAME_BUBBLE LINE_NUMBER ATTRIBUTE_LIST /
+                               INPUT SKIP_ENTRY_P INPUT LOOP-P PROMPT-P STRING TAG
                               )
   (SETQ
     LOOP-P T
@@ -5803,8 +5811,7 @@ ImportLayerSettings=No
        (SETQ
          ATTRIBUTE_LIST
           (HCNM_LDRBLK_GET_AUTO_TYPE
-            ENAME_BLOCK
-            P1_ENTRY
+            ENAME_BUBBLE
             LINE_NUMBER
             TAG
             ATTRIBUTE_LIST
@@ -5836,22 +5843,27 @@ ImportLayerSettings=No
 )
 ;;; bubble-data-update: I believe that this needs to also define any data reference types.
 (DEFUN HCNM_LDRBLK_GET_AUTO_TYPE_KEYS ()
-  ;; Input Key Reference_type
+  ;; Returns list of auto-text type definitions
+  ;; Structure: (Input_Key Display_Type Reference_Type Requires_Coordinates)
+  ;; - Input_Key: Keyword entered by user (initget format)
+  ;; - Display_Type: Canonical type name used in code
+  ;; - Reference_Type: Type of reference object ("AL"=Alignment, "SU"=Surface, nil=none)
+  ;; - Requires_Coordinates: T if needs P1_WORLD from leader, nil otherwise
   '(
-    ("Lf" "LF" nil)
-    ("SF" "SF" nil)
-    ("SY" "SY" nil)
-    ("STa" "Sta" "AL")
-    ("Off" "Off" "AL")
-    ("stAoff" "StaOff" "AL")
-    ("N" "N" nil)
-    ("E" "E" nil)
-    ("Z" "Z" nil)
-    ("Text" "Text" nil)
-    ("ENtry" "ENtry" nil)
+    ("Lf" "LF" nil nil)        ; Length (QTY) - user picks objects
+    ("SF" "SF" nil nil)        ; Square Feet (QTY) - user picks objects
+    ("SY" "SY" nil nil)        ; Square Yards (QTY) - user picks objects
+    ("STa" "Sta" "AL" T)       ; Station - needs P1_WORLD for alignment query
+    ("Off" "Off" "AL" T)       ; Offset - needs P1_WORLD for alignment query
+    ("stAoff" "StaOff" "AL" T) ; Station+Offset - needs P1_WORLD for alignment query
+    ("N" "N" nil T)            ; Northing - needs P1_WORLD for coordinate
+    ("E" "E" nil T)            ; Easting - needs P1_WORLD for coordinate
+    ("Z" "Z" "SU" T)           ; Elevation - needs P1_WORLD for surface query (unimplemented)
+    ("Text" "Text" nil nil)    ; Static text - user enters manually
+    ("ENtry" "ENtry" nil nil)  ; Entry number - static text
   )
 )
-(DEFUN HCNM_LDRBLK_GET_AUTO_TYPE (ENAME_BLOCK P1_ENTRY LINE_NUMBER TAG ATTRIBUTE_LIST /
+(DEFUN HCNM_LDRBLK_GET_AUTO_TYPE (ENAME_BUBBLE LINE_NUMBER TAG ATTRIBUTE_LIST /
                               CVPORT_OLD HAWS-QT-NEW INPUT SPACE STRING
                              )
   (INITGET
@@ -5904,13 +5916,12 @@ ImportLayerSettings=No
      (SETQ
        ATTRIBUTE_LIST
         (HCNM_LDRBLK_AUTO_DISPATCH
-          ENAME_BLOCK
+          ENAME_BUBBLE
           ATTRIBUTE_LIST
           (STRCAT "NOTETXT" (ITOA LINE_NUMBER))
           (CADR
             (ASSOC INPUT (HCNM_LDRBLK_GET_AUTO_TYPE_KEYS))
           )
-          P1_ENTRY
           NIL
         )
      )
@@ -5945,42 +5956,46 @@ ImportLayerSettings=No
 ;; We also need to update this data in the attribute list.
 ;; Possibly we call a function here:
 ;; (HCNM_LDRBLK_UPDATE_DATA KEY OBJECT)
-;; NOTEDATA attribute value needs to look something like this:
-;; Object table                   Object references as needed
-;; "((line_key_1 object_handle type/key)(line_key_i object_handle type/key))"
 ;; Since what has to be done on update varies widely, we pass the attribute list to each sub-function and let it decided what to do with it. I think we also need to pass in an indication of whether this is a refresh or a user prompt.
 ;; We return the modified attribute_list.
 ;; INPUT IS THE OBJECT (ENAME OR VLA-OBJECT; COULD BE STANDARDIZED) OR STRING WE NEED TO EXAMINE IF WE AREN'T ASKING THE USER FOR IT OR NIL IF WE NEED TO GET IT.
 ;; Returns ATTRIBUTE_LIST with the requested auto data added.
-(DEFUN HCNM_LDRBLK_AUTO_DISPATCH (ENAME_BLOCK ATTRIBUTE_LIST TAG KEY P1_ENTRY INPUT / DATA HANDLE STRING)
-    ;; bubble-data-update: all of these have to take and return ATTRIBUTE_LIST instead of just string. That's because they could need to get NOTEDATA info from ATTRIBUTE_LIST
-  (SETQ ATTRIBUTE_LIST
+(DEFUN HCNM_LDRBLK_AUTO_DISPATCH (ENAME_BUBBLE ATTRIBUTE_LIST TAG AUTO_TYPE INPUT / BUBBLE_DATA)
+    ;; bubble-data-update: Build BUBBLE_DATA and pass to subfunctions
+  (SETQ 
+    BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "ENAME_BUBBLE" ENAME_BUBBLE)
+    BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
+    BUBBLE_DATA (HCNM_LB:BD_ENSURE_P1_WORLD BUBBLE_DATA)
+    BUBBLE_DATA
      (COND
-       ((= KEY "Text") (HCNM_LDRBLK_AUTO_ES ENAME_BLOCK ATTRIBUTE_LIST TAG KEY INPUT))
-       ((= KEY "LF") (HCNM_LDRBLK_AUTO_QTY ENAME_BLOCK ATTRIBUTE_LIST TAG KEY "Length" "1" INPUT))
-       ((= KEY "SF") (HCNM_LDRBLK_AUTO_QTY ENAME_BLOCK ATTRIBUTE_LIST TAG KEY "Area" "1" INPUT))
-       ((= KEY "SY")
-        (HCNM_LDRBLK_AUTO_QTY ENAME_BLOCK ATTRIBUTE_LIST TAG KEY "Area" "0.11111111" INPUT)
+       ((= AUTO_TYPE "Text") (HCNM_LDRBLK_AUTO_ES BUBBLE_DATA TAG AUTO_TYPE INPUT))
+       ((= AUTO_TYPE "LF") (HCNM_LDRBLK_AUTO_QTY BUBBLE_DATA TAG AUTO_TYPE "Length" "1" INPUT))
+       ((= AUTO_TYPE "SF") (HCNM_LDRBLK_AUTO_QTY BUBBLE_DATA TAG AUTO_TYPE "Area" "1" INPUT))
+       ((= AUTO_TYPE "SY")
+        (HCNM_LDRBLK_AUTO_QTY BUBBLE_DATA TAG AUTO_TYPE "Area" "0.11111111" INPUT)
        )
-       ((= KEY "Sta") (HCNM_LDRBLK_AUTO_AL ENAME_BLOCK ATTRIBUTE_LIST TAG KEY P1_ENTRY INPUT))
-       ((= KEY "Off") (HCNM_LDRBLK_AUTO_AL ENAME_BLOCK ATTRIBUTE_LIST TAG KEY P1_ENTRY INPUT))
-       ((= KEY "StaOff")
-        (HCNM_LDRBLK_AUTO_AL ENAME_BLOCK ATTRIBUTE_LIST TAG KEY P1_ENTRY INPUT)
+       ((= AUTO_TYPE "Sta") (HCNM_LDRBLK_AUTO_AL BUBBLE_DATA TAG AUTO_TYPE INPUT))
+       ((= AUTO_TYPE "Off") (HCNM_LDRBLK_AUTO_AL BUBBLE_DATA TAG AUTO_TYPE INPUT))
+       ((= AUTO_TYPE "StaOff")
+        (HCNM_LDRBLK_AUTO_AL BUBBLE_DATA TAG AUTO_TYPE INPUT)
        )
-       ((= KEY "N") (HCNM_LDRBLK_AUTO_NE ENAME_BLOCK ATTRIBUTE_LIST TAG KEY P1_ENTRY INPUT))
-       ((= KEY "E") (HCNM_LDRBLK_AUTO_NE ENAME_BLOCK ATTRIBUTE_LIST TAG KEY P1_ENTRY INPUT))
-       ((= KEY "NE") (HCNM_LDRBLK_AUTO_NE ENAME_BLOCK ATTRIBUTE_LIST TAG KEY P1_ENTRY INPUT))
-       ((= KEY "Z") (HCNM_LDRBLK_AUTO_SU ENAME_BLOCK ATTRIBUTE_LIST TAG KEY P1_ENTRY INPUT))
+       ((= AUTO_TYPE "N") (HCNM_LDRBLK_AUTO_NE BUBBLE_DATA TAG AUTO_TYPE INPUT))
+       ((= AUTO_TYPE "E") (HCNM_LDRBLK_AUTO_NE BUBBLE_DATA TAG AUTO_TYPE INPUT))
+       ((= AUTO_TYPE "NE") (HCNM_LDRBLK_AUTO_NE BUBBLE_DATA TAG AUTO_TYPE INPUT))
+       ((= AUTO_TYPE "Z") (HCNM_LDRBLK_AUTO_SU BUBBLE_DATA TAG AUTO_TYPE INPUT))
      )
+    ATTRIBUTE_LIST (HCNM_LB:BD_GET BUBBLE_DATA "ATTRIBUTES")
   )
+  ATTRIBUTE_LIST
 )
 
-(DEFUN HCNM_LDRBLK_AUTO_ES (ENAME_BLOCK ATTRIBUTE_LIST TAG KEY INPUT / ENAME) 
+(DEFUN HCNM_LDRBLK_AUTO_ES (BUBBLE_DATA TAG AUTO_TYPE INPUT / ENAME ATTRIBUTE_LIST) 
   (SETQ
+    ATTRIBUTE_LIST (HCNM_LB:BD_GET BUBBLE_DATA "ATTRIBUTES")
     ENAME
     (COND
       (INPUT)
-      (T (CAR (NENTSEL (STRCAT "\nSelect object with " KEY ": "))))
+      (T (CAR (NENTSEL (STRCAT "\nSelect object with " AUTO_TYPE ": "))))
     )     
   )
   ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
@@ -5995,17 +6010,19 @@ ImportLayerSettings=No
        )
        ATTRIBUTE_LIST
      )
+    BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
   )
+  BUBBLE_DATA
 )
-(DEFUN HCNM_LDRBLK_AUTO_QTY (ENAME_BLOCK ATTRIBUTE_LIST TAG KEY AUTO_TYPE FACTOR INPUT / STR_BACKSLASH INPUT1 PSPACE_BUBBLE_P
-                         SS-P STRING
-                        )
+(DEFUN HCNM_LDRBLK_AUTO_QTY (BUBBLE_DATA TAG AUTO_TYPE QT_TYPE FACTOR INPUT / ATTRIBUTE_LIST STR_BACKSLASH INPUT1 PSPACE_BUBBLE_P
+                         SS-P STRING)
+  (SETQ ATTRIBUTE_LIST (HCNM_LB:BD_GET BUBBLE_DATA "ATTRIBUTES"))
   (COND
     ((SETQ STRING INPUT))
     (T  
       (COND
         ((AND
-          (= AUTO_TYPE "Area")
+          (= QT_TYPE "Area")
           (= (C:HCNM-CONFIG-GETVAR "BubbleAreaIntegral") "1")
           )
         (C:HCNM-CONFIG-SETVAR "BubbleArrowIntegralPending" "1")
@@ -6029,13 +6046,13 @@ ImportLayerSettings=No
               (LOAD "HAWS-QT")
             )
             (HAWS-QT-NEW "ldrblk")
-            (HAWS-QT-SET-PROPERTY "ldrblk" "type" (STRCASE AUTO_TYPE T))
+            (HAWS-QT-SET-PROPERTY "ldrblk" "type" (STRCASE QT_TYPE T))
             (HAWS-QT-SET-PROPERTY "ldrblk" "factor" (READ FACTOR))
             (HAWS-QT-SET-PROPERTY
               "ldrblk"
               "postfix"
               (C:HCNM-CONFIG-GETVAR
-                (STRCAT "BubbleTextPostfix" KEY)
+                (STRCAT "BubbleTextPostfix" AUTO_TYPE)
               )
             )
             (HAWS-QT-STRING "ldrblk")
@@ -6044,7 +6061,7 @@ ImportLayerSettings=No
           (T
             (STRCAT
               (C:HCNM-CONFIG-GETVAR
-                (STRCAT "BubbleTextPrefix" KEY)
+                (STRCAT "BubbleTextPrefix" AUTO_TYPE)
               )
               "%<\\AcObjProp Object(%<\\_ObjId "
               (VLA-GETOBJECTIDSTRING
@@ -6055,31 +6072,37 @@ ImportLayerSettings=No
                 :VLAX-FALSE
               )
               ">%)."
-              AUTO_TYPE
+              QT_TYPE
               " \\f \"%lu2%pr"
               (C:HCNM-CONFIG-GETVAR
-                (STRCAT "BubbleTextPrecision" KEY)
+                (STRCAT "BubbleTextPrecision" AUTO_TYPE)
               )
               "%ct8["
               FACTOR
               "]\">%"
               (C:HCNM-CONFIG-GETVAR
-                (STRCAT "BubbleTextPostfix" KEY)
+                (STRCAT "BubbleTextPostfix" AUTO_TYPE)
               )
             )
           )
         )
       )
       (HCNM_LDRBLK_SPACE_RESTORE PSPACE_BUBBLE_P)
+      
     )
   )
   ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
   ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
-  (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST 
-    TAG
-    STRING
+  (SETQ
     ATTRIBUTE_LIST
+    (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST 
+      TAG
+      STRING
+      ATTRIBUTE_LIST
+    )
+    BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
   )
+  BUBBLE_DATA
 )
 ;; NOT USED
 (DEFUN HCNM_LDRBLK_MTEXTATRIBUTE_P (EN)
@@ -6090,32 +6113,39 @@ ImportLayerSettings=No
   )
 )
 (DEFUN HCNM_LDRBLK_SPACE_SET_MODEL ()
+  (C:HCNM-CONFIG-SETVAR "AllowReactors" "0")
   (COND ((= (GETVAR "CVPORT") 1) (VL-CMDF "._MSPACE") T))
 )
 (DEFUN HCNM_LDRBLK_SPACE_RESTORE (PSPACE_BUBBLE_P)
   (COND (PSPACE_BUBBLE_P (VL-CMDF "._PSPACE")))
+  (C:HCNM-CONFIG-SETVAR "AllowReactors" "1")
 )
 ;; bubble-data-update: This has to be split into
 ;; 1. HCNM_LDRBLK_AUTO_AL_GET_OBJECT that returns object
 ;; 2. HCNM_LDRBLK_AUTO_AL_GET_STRING that returns staoff string of given object and point so that this function can be used to update string.
-(DEFUN HCNM_LDRBLK_AUTO_AL (ENAME_BLOCK ATTRIBUTE_LIST TAG KEY P1_ENTRY INPUT / DRAWSTATION NAME OBJALIGN OFF PSPACE_BUBBLE_P STA STRING)
-  (COND
-    ((SETQ OBJALIGN INPUT))
+(DEFUN HCNM_LDRBLK_AUTO_AL (BUBBLE_DATA TAG AUTO_TYPE INPUT / ATTRIBUTE_LIST ENAME_BUBBLE ENAME_LEADER DRAWSTATION NAME OBJALIGN OFF P1_WORLD PSPACE_BUBBLE_P STA STRING)
+  (SETQ 
+    ATTRIBUTE_LIST (HCNM_LB:BD_GET BUBBLE_DATA "ATTRIBUTES")
+    ENAME_BUBBLE (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE")
+    ENAME_LEADER (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_LEADER")
+    P1_WORLD (HCNM_LB:BD_GET BUBBLE_DATA "P1_WORLD")
+  )
+  (COND 
+    ((SETQ OBJALIGN INPUT)
+    )
     (T
-      (SETQ
-        PSPACE_BUBBLE_P
-        (HCNM_LDRBLK_SPACE_SET_MODEL)
-        OBJALIGN
-        (HCNM_LDRBLK_AUTO_AL_GET_ALIGNMENT)
-        P1_WORLD (HCNM_LDRBLK_TRANS_TO_WORLD P1_ENTRY PSPACE_BUBBLE_P)
-      )
-      (HCNM_LDRBLK_SPACE_RESTORE PSPACE_BUBBLE_P)
+     (SETQ PSPACE_BUBBLE_P (HCNM_LDRBLK_SPACE_SET_MODEL)
+           OBJALIGN        (HCNM_LDRBLK_AUTO_AL_GET_ALIGNMENT ENAME_BUBBLE TAG AUTO_TYPE)
+     )
+     (HCNM_LDRBLK_SPACE_RESTORE PSPACE_BUBBLE_P)
+      (HCNM_LDRBLK_ASSURE_AUTO_TEXT_HAS_REACTOR OBJALIGN ENAME_BUBBLE ENAME_LEADER TAG AUTO_TYPE)
+
     )
   )
   ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
   ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
   (COND 
-    ((= (TYPE OBJALIGN) 'VLA-OBJECT)
+    ((AND (= (TYPE OBJALIGN) 'VLA-OBJECT) P1_WORLD)
       ;; http://docs.autodesk.com/CIV3D/2012/ENU/API_Reference_Guide/com/AeccXLandLib__IAeccAlignment__StationOffset@[in]_double@[in]_double@[out]_double_@[out]_double_.htm
       (VLAX-INVOKE-METHOD 
         OBJALIGN
@@ -6132,8 +6162,6 @@ ImportLayerSettings=No
         'OFF
       )
       (SETQ 
-        ATTRIBUTE_LIST
-        (HCNM_LDRBLK_SAVE_OBJECT_REFERENCE_TO_NOTEDATA TAG OBJALIGN KEY ATTRIBUTE_LIST)
         NAME 
         (VLAX-GET-PROPERTY OBJALIGN 'NAME)             
         STA  
@@ -6173,9 +6201,9 @@ ImportLayerSettings=No
         )
         STRING
         (COND 
-          ((= KEY "Sta") STA)
-          ((= KEY "Off") OFF)
-          ((= KEY "StaOff")
+          ((= AUTO_TYPE "Sta") STA)
+          ((= AUTO_TYPE "Off") OFF)
+          ((= AUTO_TYPE "StaOff")
           (STRCAT 
             STA
             (C:HCNM-CONFIG-GETVAR "BubbleTextJoinDelSta")
@@ -6185,28 +6213,38 @@ ImportLayerSettings=No
         )
       )
     )
-    (T (SETQ STRING "N/A"))
+    (T 
+      ;; P1_WORLD is NIL - couldn't get world coordinates
+      ;; This could happen if leader was deleted or bubble is orphaned
+      (SETQ STRING "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
+    )
   )
-  (HCNM_LDRBLK_ASSURE_AUTO_TEXT_HAS_REACTOR OBJALIGN ENAME_BLOCK TAG KEY)
-  (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST 
-    TAG
-    STRING
+  (SETQ
     ATTRIBUTE_LIST
+    (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST 
+      TAG
+      STRING
+      ATTRIBUTE_LIST
+    )
+    BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
   )
+  BUBBLE_DATA
 )
 (DEFUN HCNM_LDRBLK_AUTO_AL_GET_ALIGNMENT
-   (/ EALIGN NAME OBJALIGN OBJALIGN_OLD PSPACE_BUBBLE_P)
+   (ENAME_BUBBLE TAG AUTO_TYPE / CVPORT ESALIGN NAME OBJALIGN OBJALIGN_OLD 
+    REF_OCS_1 REF_OCS_2 REF_OCS_3 REF_WCS_1 REF_WCS_2 REF_WCS_3 )
   (SETQ
     OBJALIGN_OLD
      (C:HCNM-CONFIG-GETVAR "BubbleCurrentAlignment")
     NAME
      (COND
-       ((= (TYPE OBJALIGN_OLD) 'VLA-OBJECT)
-        (VLAX-GET-PROPERTY OBJALIGN_OLD 'NAME)
+       ((AND (= (TYPE OBJALIGN_OLD) 'VLA-OBJECT) 
+             (NOT (VL-CATCH-ALL-ERROR-P (VL-CATCH-ALL-APPLY 'VLAX-GET-PROPERTY (LIST OBJALIGN_OLD 'NAME)))))
+        (VL-CATCH-ALL-APPLY 'VLAX-GET-PROPERTY (LIST OBJALIGN_OLD 'NAME))
        )
        (T (SETQ OBJALIGN_OLD NIL) "")
      )
-    EALIGN
+    ESALIGN
      (NENTSEL
        (STRCAT
          "\nSelect alignment"
@@ -6219,24 +6257,57 @@ ImportLayerSettings=No
   )
   (COND
     ((AND
-       EALIGN
-       (= (CDR (ASSOC 0 (ENTGET (CAR EALIGN)))) "AECC_ALIGNMENT")
+       ESALIGN
+       (= (CDR (ASSOC 0 (ENTGET (CAR ESALIGN)))) "AECC_ALIGNMENT")
      )
-     (SETQ OBJALIGN (VLAX-ENAME->VLA-OBJECT (CAR EALIGN)))
+     (SETQ OBJALIGN (VLAX-ENAME->VLA-OBJECT (CAR ESALIGN)))
      (C:HCNM-CONFIG-SETVAR "BubbleCurrentAlignment" OBJALIGN)
     )
-    (EALIGN (alert (princ "\nSelected object is not an alignment. Keeping previous alignment."))(SETQ OBJALIGN OBJALIGN_OLD))
-    (T (princ "\nNo object selected. Keeping previous alignment.")(SETQ OBJALIGN OBJALIGN_OLD))
+    (ESALIGN 
+      (alert (princ "\nSelected object is not an alignment. Keeping previous alignment."))
+      (SETQ OBJALIGN OBJALIGN_OLD)
+    )
+    (T 
+      (princ "\nNo object selected. Keeping previous alignment.")
+      (SETQ OBJALIGN OBJALIGN_OLD)
+    )
   )
-)
-(DEFUN HCNM_LDRBLK_AUTO_NE (ENAME_BLOCK ATTRIBUTE_LIST TAG KEY AUTO_TYPE P1_ENTRY INPUT / E N NE P1_WORLD STRING)
+  ;; Capture viewport transformation data if we have a valid alignment and bubble is not on Model tab
+  ;; At this point, we're in MSPACE in the correct viewport (set by caller HCNM_LDRBLK_AUTO_AL)
+  ;; We can capture the transformation by testing a reference point
   (COND
-    ((SETQ INPUT STRING))
-    (T
+    ((AND OBJALIGN ENAME_BUBBLE (NOT (HCNM_LDRBLK_IS_ON_MODEL_TAB ENAME_BUBBLE)))
+     (SETQ CVPORT (GETVAR "CVPORT"))
+     (COND
+       ((AND CVPORT (> CVPORT 1))
+        ;; We're in a viewport - capture transformation matrix
+        ;; Use 3 reference points to capture rotation, scale, and translation
+        (SETQ REF_OCS_1 '(0.0 0.0 0.0)    ; Origin
+              REF_OCS_2 '(1.0 0.0 0.0)    ; X-axis unit vector
+              REF_OCS_3 '(0.0 1.0 0.0)    ; Y-axis unit vector
+              REF_WCS_1 (TRANS (TRANS REF_OCS_1 3 2) 2 0)
+              REF_WCS_2 (TRANS (TRANS REF_OCS_2 3 2) 2 0)
+              REF_WCS_3 (TRANS (TRANS REF_OCS_3 3 2) 2 0))
+        (HCNM_LDRBLK_SET_VIEWPORT_TRANSFORM_XDATA ENAME_BUBBLE CVPORT 
+                                                    REF_OCS_1 REF_WCS_1
+                                                    REF_OCS_2 REF_WCS_2
+                                                    REF_OCS_3 REF_WCS_3)
+        (PRINC (STRCAT "\nStored viewport " (ITOA CVPORT) " transformation matrix"))
+       )
+     )
+    )
+  )
+  OBJALIGN  ; Return the alignment object
+)
+(DEFUN HCNM_LDRBLK_AUTO_NE (BUBBLE_DATA TAG AUTO_TYPE INPUT / ATTRIBUTE_LIST E N NE P1_WORLD STRING)
+  (SETQ 
+    ATTRIBUTE_LIST (HCNM_LB:BD_GET BUBBLE_DATA "ATTRIBUTES")
+    P1_WORLD (HCNM_LB:BD_GET BUBBLE_DATA "P1_WORLD")
+  )
+  (COND
+    ((SETQ STRING INPUT))
+    (P1_WORLD
       (SETQ
-        PSPACE_BUBBLE_P
-        (HCNM_LDRBLK_SPACE_SET_MODEL)
-        P1_WORLD (HCNM_LDRBLK_TRANS_TO_WORLD P1_ENTRY PSPACE_BUBBLE_P)
         N  (HCNM_LDRBLK_AUTO_RTOS (CADR P1_WORLD) "N")
         E  (HCNM_LDRBLK_AUTO_RTOS (CAR P1_WORLD) "E")
         NE (STRCAT
@@ -6245,7 +6316,6 @@ ImportLayerSettings=No
             E
           )
       )
-      (HCNM_LDRBLK_SPACE_RESTORE PSPACE_BUBBLE_P)
       (SETQ STRING
         (COND
           ((= AUTO_TYPE "N") N)
@@ -6254,14 +6324,23 @@ ImportLayerSettings=No
         )
       )
     )
+    (T
+      ;; P1_WORLD is NIL - couldn't get world coordinates
+      (SETQ STRING "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
+    )
   )
   ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
   ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
-  (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST 
-    TAG
-    STRING
+  (SETQ
     ATTRIBUTE_LIST
+    (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST 
+      TAG
+      STRING
+      ATTRIBUTE_LIST
+    )
+    BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
   )
+  BUBBLE_DATA
 )
 (DEFUN HCNM_LDRBLK_AUTO_RTOS (NUMBER KEY)
   (STRCAT
@@ -6274,22 +6353,246 @@ ImportLayerSettings=No
     (C:HCNM-CONFIG-GETVAR (STRCAT "BubbleTextPostfix" KEY))
   )
 )
-(DEFUN HCNM_LDRBLK_AUTO_SU (ENAME_BLOCK ATTRIBUTE_LIST TAG KEY AUTO_TYPE P1_ENTRY STRING)
+;; Civil 3D Surface query auto-text (Z elevation)
+;; Currently unimplemented - returns apology message
+(DEFUN HCNM_LDRBLK_AUTO_SU (BUBBLE_DATA TAG AUTO_TYPE INPUT / ATTRIBUTE_LIST)
+  (SETQ ATTRIBUTE_LIST (HCNM_LB:BD_GET BUBBLE_DATA "ATTRIBUTES"))
   ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
   ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
-  (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST 
-    TAG
-    (HCNM_LDRBLK_AUTO_APOLOGY AUTO_TYPE)
+  (SETQ
     ATTRIBUTE_LIST
+    (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST 
+      TAG
+      (HCNM_LDRBLK_AUTO_APOLOGY AUTO_TYPE)
+      ATTRIBUTE_LIST
+    )
+    BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
+  )
+  BUBBLE_DATA
+)
+;; Gets the target viewport from user. This would only be called because we needed it before we could determine it automatically or when user clicks the button to change association.
+(DEFUN HCNM_LDRBLK_GET_TARGET_VPORT ( / INPUT PSPACE_P)
+  ;; Ensure user is in model space so they can activate a viewport
+  (SETQ PSPACE_P (HCNM_LDRBLK_SPACE_SET_MODEL))
+  (WHILE 
+    (NOT 
+      (PROGN 
+        (PRINC "\nSet the TARGET viewport active and press ENTER to continue: ")
+        (EQUAL (SETQ INPUT (GRREAD NIL 10)) '(2 13)) ; WAIT FOR ENTER (ASCII 13)
+      )
+    )
+  )
+  (SETQ INPUT (GETVAR "CVPORT")) ; Capture the viewport ID
+  ;; Restore user's original space
+  (HCNM_LDRBLK_SPACE_RESTORE PSPACE_P)
+  INPUT ; Return the viewport ID
+)
+;; Apply affine transformation using 3-point correspondence
+;; Given 3 OCS points and their corresponding 3 WCS points, transform any OCS point to WCS
+;; Uses barycentric coordinates to interpolate the transformation
+(DEFUN HCNM_LDRBLK_APPLY_TRANSFORM_MATRIX (P_OCS 
+                                            OCS1 WCS1 
+                                            OCS2 WCS2 
+                                            OCS3 WCS3
+                                            / DX DY D11 D12 D21 D22 DET U V W PX PY)
+  ;; Calculate barycentric coordinates of P_OCS relative to the OCS triangle
+  ;; First, express P_OCS in terms of the basis vectors (OCS2-OCS1) and (OCS3-OCS1)
+  (SETQ DX  (- (CAR P_OCS) (CAR OCS1))
+        DY  (- (CADR P_OCS) (CADR OCS1))
+        D11 (- (CAR OCS2) (CAR OCS1))
+        D12 (- (CADR OCS2) (CADR OCS1))
+        D21 (- (CAR OCS3) (CAR OCS1))
+        D22 (- (CADR OCS3) (CADR OCS1))
+        DET (- (* D11 D22) (* D12 D21)))
+  
+  (COND
+    ((NOT (EQUAL DET 0.0 1e-10))
+      ;; Calculate barycentric coordinates
+      (SETQ U (/ (- (* DX D22) (* DY D21)) DET)
+            V (/ (- (* D11 DY) (* D12 DX)) DET)
+            W (- 1.0 U V))
+      ;; Apply same barycentric coordinates to WCS points
+      (SETQ PX (+ (* W (CAR WCS1)) (* U (CAR WCS2)) (* V (CAR WCS3)))
+            PY (+ (* W (CADR WCS1)) (* U (CADR WCS2)) (* V (CADR WCS3))))
+      (LIST PX PY 0.0)
+    )
+    (T
+      ;; Degenerate case - matrix not invertible, fall back to simple translation
+      (PRINC "\nWarning: Degenerate transformation matrix, using translation only")
+      (LIST (+ (CAR P_OCS) (- (CAR WCS1) (CAR OCS1)))
+            (+ (CADR P_OCS) (- (CADR WCS1) (CADR OCS1)))
+            0.0)
+    )
   )
 )
-;; Translates from current user or paper coordinate system to world.
-;; Assumes that the entry coordinate system was the same as the current.
-(DEFUN HCNM_LDRBLK_TRANS_TO_WORLD (P1_ENTRY PSPACE_BUBBLE_P)
+
+;; Get viewport transformation matrix from bubble's XDATA
+;; Returns list: (CVPORT REF_OCS_1 REF_WCS_1 REF_OCS_2 REF_WCS_2 REF_OCS_3 REF_WCS_3) or NIL
+(DEFUN HCNM_LDRBLK_GET_VIEWPORT_TRANSFORM_XDATA (ENAME_BUBBLE / XDATA APPNAME CVPORT POINTS)
+  (SETQ APPNAME "HCNM-BUBBLE")
   (COND
-    ((= (GETVAR "CVPORT") 1) (ALERT (PRINC "\nProgramming error: HCNM_LDRBLK_TRANS_TO_WORLD cannot be called from paper space.")))
-    (PSPACE_BUBBLE_P (TRANS (TRANS P1_ENTRY 3 2) 2 0))
-    (T (TRANS P1_ENTRY 1 0))
+    ((SETQ XDATA (ASSOC -3 (ENTGET ENAME_BUBBLE '("HCNM-BUBBLE"))))
+      (SETQ XDATA (CDR (ASSOC APPNAME (CDR XDATA))))
+      (PRINC (STRCAT "\nDebug XDATA found: " (VL-PRINC-TO-STRING XDATA)))
+      ;; Check if this is new format (VPTRANS) or old format (AVPORT)
+      (COND
+        ((= (CDR (ASSOC 1000 XDATA)) "VPTRANS")
+          ;; New format - extract transformation matrix
+          (SETQ POINTS '())
+          ;; Collect all 1010 (3D point) entries
+          (FOREACH PAIR XDATA
+            (COND
+              ((= (CAR PAIR) 1070) (SETQ CVPORT (CDR PAIR)))
+              ((= (CAR PAIR) 1010) (SETQ POINTS (APPEND POINTS (LIST (CDR PAIR)))))
+            )
+          )
+          (COND
+            ((AND CVPORT (= (LENGTH POINTS) 6))
+              ;; We have CVPORT and 6 points (3 OCS + 3 WCS)
+              (PRINC (STRCAT "\nDebug transform matrix: CVPORT=" (ITOA CVPORT) 
+                            " " (ITOA (LENGTH POINTS)) " points"))
+              (CONS CVPORT POINTS)  ; Return (CVPORT pt1 pt2 pt3 pt4 pt5 pt6)
+            )
+            (T
+              (PRINC "\nDebug: Incomplete VPTRANS data")
+              NIL
+            )
+          )
+        )
+        (T
+          ;; Old format - just AVPORT integer, no transformation data
+          (PRINC "\nDebug: Old AVPORT format (no transform data)")
+          NIL
+        )
+      )
+    )
+    (T
+      (PRINC "\nDebug: No XDATA found on bubble")
+      NIL
+    )
+  )
+)
+
+;; DEPRECATED: Old function - use HCNM_LDRBLK_GET_VIEWPORT_TRANSFORM_XDATA instead
+(DEFUN HCNM_LDRBLK_GET_AVPORT_XDATA (ENAME_BUBBLE / XDATA APPNAME RESULT)
+  (SETQ APPNAME "HCNM-BUBBLE")
+  (SETQ RESULT
+    (COND
+      ((SETQ XDATA (ASSOC -3 (ENTGET ENAME_BUBBLE '("HCNM-BUBBLE"))))
+        (SETQ XDATA (CDR (ASSOC APPNAME (CDR XDATA))))
+        (CDR (ASSOC 1070 XDATA)) ; Return integer value
+      )
+    )
+  )
+  RESULT
+)
+;; Set viewport transformation matrix in bubble's XDATA
+;; Stores CVPORT and 3 pairs of reference points (OCS and WCS)
+;; These 3 points define the full transformation including rotation and scale
+(DEFUN HCNM_LDRBLK_SET_VIEWPORT_TRANSFORM_XDATA (ENAME_BUBBLE CVPORT 
+                                                   REF_OCS_1 REF_WCS_1
+                                                   REF_OCS_2 REF_WCS_2
+                                                   REF_OCS_3 REF_WCS_3
+                                                   / APPNAME XDATA_NEW)
+  (SETQ APPNAME "HCNM-BUBBLE")
+  ;; Register application if not already registered
+  (COND
+    ((NOT (TBLSEARCH "APPID" APPNAME))
+      (REGAPP APPNAME)
+    )
+  )
+  ;; Create XDATA structure with transformation matrix data
+  ;; Format: (1000 "VPTRANS") (1070 CVPORT) 
+  ;;         (1010 REF_OCS_1) (1010 REF_WCS_1)
+  ;;         (1010 REF_OCS_2) (1010 REF_WCS_2)
+  ;;         (1010 REF_OCS_3) (1010 REF_WCS_3)
+  (SETQ XDATA_NEW (LIST (CONS -3 
+                          (LIST (CONS APPNAME 
+                                  (LIST (CONS 1000 "VPTRANS")
+                                        (CONS 1070 CVPORT)
+                                        (CONS 1010 REF_OCS_1)
+                                        (CONS 1010 REF_WCS_1)
+                                        (CONS 1010 REF_OCS_2)
+                                        (CONS 1010 REF_WCS_2)
+                                        (CONS 1010 REF_OCS_3)
+                                        (CONS 1010 REF_WCS_3)))))))
+  ;; Apply XDATA to entity
+  (ENTMOD (APPEND (ENTGET ENAME_BUBBLE) XDATA_NEW))
+)
+
+;; DEPRECATED: Old function that only stored AVPORT integer
+;; Kept for reference - now replaced by HCNM_LDRBLK_SET_VIEWPORT_TRANSFORM_XDATA
+(DEFUN HCNM_LDRBLK_SET_AVPORT_XDATA (ENAME_BUBBLE AVPORT / APPNAME XDATA_NEW)
+  (SETQ APPNAME "HCNM-BUBBLE")
+  (COND
+    ((NOT (TBLSEARCH "APPID" APPNAME))
+      (REGAPP APPNAME)
+    )
+  )
+  (SETQ XDATA_NEW (LIST (CONS -3 
+                          (LIST (CONS APPNAME 
+                                  (LIST (CONS 1000 "AVPORT")
+                                        (CONS 1070 AVPORT)))))))
+  (ENTMOD (APPEND (ENTGET ENAME_BUBBLE) XDATA_NEW))
+)
+;; RETURNS P1_WORLD GIVEN P1_OCS
+;; Uses viewport transformation data from bubble's XDATA if available
+;; This allows coordinate transformation without switching viewports
+;; If bubble is on Model tab, no viewport processing needed
+(DEFUN HCNM_LDRBLK_P1_WORLD (ENAME_LEADER P1_OCS ENAME_BUBBLE / ELIST_LEADER LAYOUT_NAME
+                             PSPACE_CURRENT_P ON_MODEL_TAB_P TRANSFORM_DATA
+                             CVPORT_STORED REF_OCS_1 REF_WCS_1 REF_OCS_2 REF_WCS_2 REF_OCS_3 REF_WCS_3
+                            ) 
+  (SETQ ELIST_LEADER   (ENTGET ENAME_LEADER)
+        LAYOUT_NAME    (CDR (ASSOC 410 ELIST_LEADER))
+        ON_MODEL_TAB_P (OR 
+                         (= LAYOUT_NAME "Model")
+                         (= LAYOUT_NAME "MODEL")
+                         (NOT LAYOUT_NAME)  ;; Older drawings without layout
+                       )
+  )
+  (COND 
+    ((NOT ON_MODEL_TAB_P)
+     ;; Bubble is on a layout tab - need viewport processing
+     ;; Try to get viewport transformation data from XDATA
+     (SETQ TRANSFORM_DATA (COND 
+                            (ENAME_BUBBLE (HCNM_LDRBLK_GET_VIEWPORT_TRANSFORM_XDATA ENAME_BUBBLE))
+                            (T NIL)))
+     (COND
+       (TRANSFORM_DATA
+         ;; We have transformation matrix - use it to transform without switching viewports
+         (SETQ CVPORT_STORED (CAR TRANSFORM_DATA)
+               REF_OCS_1 (NTH 1 TRANSFORM_DATA)
+               REF_WCS_1 (NTH 2 TRANSFORM_DATA)
+               REF_OCS_2 (NTH 3 TRANSFORM_DATA)
+               REF_WCS_2 (NTH 4 TRANSFORM_DATA)
+               REF_OCS_3 (NTH 5 TRANSFORM_DATA)
+               REF_WCS_3 (NTH 6 TRANSFORM_DATA))
+         (PRINC (STRCAT "\nUsing stored viewport " (ITOA CVPORT_STORED) " transformation matrix"))
+         ;; Apply affine transformation using the 3-point matrix
+         ;; Calculate the transformation: P1_WORLD = f(P1_OCS)
+         (SETQ P1_WORLD (HCNM_LDRBLK_APPLY_TRANSFORM_MATRIX 
+                          P1_OCS
+                          REF_OCS_1 REF_WCS_1
+                          REF_OCS_2 REF_WCS_2
+                          REF_OCS_3 REF_WCS_3))
+         (PRINC (STRCAT "\nTransformed P1_WORLD: " (VL-PRINC-TO-STRING P1_WORLD)))
+       )
+       (T
+         ;; No AVPORT stored - use current viewport (will be set properly later)
+         (PRINC "\nDebug: No AVPORT - using current viewport")
+         (SETQ PSPACE_CURRENT_P (HCNM_LDRBLK_SPACE_SET_MODEL)
+               P1_WORLD         (TRANS (TRANS P1_OCS 3 2) 2 0))
+         (HCNM_LDRBLK_SPACE_RESTORE PSPACE_CURRENT_P)
+         (PRINC (STRCAT "\nDebug P1_WORLD without AVPORT: " (VL-PRINC-TO-STRING P1_WORLD)))
+       )
+     )
+     P1_WORLD
+    )
+    (T
+     ;; Bubble is on Model tab - simple transformation, no viewport processing
+     (TRANS P1_OCS 1 0)
+    )
   )
 )
 (DEFUN HCNM_LDRBLK_AUTO_APOLOGY (AUTO_TYPE)
@@ -6318,36 +6621,32 @@ ImportLayerSettings=No
   (haws-editall T)
   (haws-core-restore)
 )
-(DEFUN HCNM_EDIT_BUBBLE (ENAME_BLOCK / P1_DATA DCLFILE P1_ENTRY
-                     ENAME_LEADER_OLD HCNM_EB:ATTRIBUTE_LIST
-                     NOTETEXTRADIOCOLUMN REPLACE_BLOCK_P RETURN_LIST
+(DEFUN HCNM_EDIT_BUBBLE (ENAME_BUBBLE / BUBBLE_DATA DCLFILE
+                     ENAME_LEADER HCNM_EB:ATTRIBUTE_LIST
+                     NOTETEXTRADIOCOLUMN RETURN_LIST TAG DONE_CODE
                     )
   (SETQ
-    P1_DATA
-     (HCNM_LDRBLK_GET_P1_DATA ENAME_BLOCK)
-    P1_ENTRY
-     (CAR P1_DATA)
-    ENAME_LEADER_OLD
-     (CADDR P1_DATA)
+    ENAME_LEADER
+      (HCNM_LDRBLK_BUBBLE_LEADER ENAME_BUBBLE)
     ;; Semi-global variable. Global to the HCNM-EB: functions called from here.
     HCNM_EB:ATTRIBUTE_LIST
-     (HCNM_GET_ATTRIBUTES ENAME_BLOCK T)
+      (HCNM_GET_ATTRIBUTES ENAME_BUBBLE T)
     NOTETEXTRADIOCOLUMN "RadioNOTETXT1"
     DCLFILE
-     (LOAD_DIALOG "cnm.dcl")
+      (LOAD_DIALOG "cnm.dcl")
     DONE_CODE 2
   )
   (WHILE (> DONE_CODE -1)
     (COND
       ((= DONE_CODE 0) (SETQ DONE_CODE (HCNM_EDIT_BUBBLE_CANCEL)))
       ((= DONE_CODE 1)
-       (SETQ DONE_CODE (HCNM_EB:SAVE ENAME_BLOCK))
+       (SETQ DONE_CODE (HCNM_EB:SAVE ENAME_BUBBLE))
       )
       ((= DONE_CODE 2)
        ;; Show the CNM Bubble Note Editor dialog with the requested text line's radio button selected.
        (SETQ
          RETURN_LIST
-          (HCNM_EB:SHOW DCLFILE NOTETEXTRADIOCOLUMN P1_DATA)
+          (HCNM_EB:SHOW DCLFILE NOTETEXTRADIOCOLUMN)
          DONE_CODE
           (CAR RETURN_LIST)
          NOTETEXTRADIOCOLUMN
@@ -6360,18 +6659,18 @@ ImportLayerSettings=No
        ;; Process clicked action tile (button) other than cancel or save.
        ;; bubble-data-update: This is start point 2 of 2 of the bubble data logic. This one is for the bubble note editing process.
        ;; this is called whenever a dialog auto-text button is clicked.
-       (HCNM_EB:GET_TEXT ENAME_BLOCK DONE_CODE TAG P1_ENTRY)
+       (HCNM_EB:GET_TEXT ENAME_BUBBLE DONE_CODE TAG) 
        (SETQ DONE_CODE 2)
       )
     )
   )
   ;; Change its arrowhead if needed.
-  (HCNM_LDRBLK_CHANGE_ARROWHEAD ENAME_LEADER_OLD)
+  (HCNM_LDRBLK_CHANGE_ARROWHEAD ENAME_LEADER)
   (HAWS-CORE-RESTORE)
   (PRINC)
 )
 ;;; bubble-data-update: this or something below it needs to populate the NOTEDATA attribute.
-(DEFUN HCNM_EB:GET_TEXT (ENAME_BLOCK DONE_CODE TAG P1_ENTRY / AUTO_STRING AUTO_TYPE)
+(DEFUN HCNM_EB:GET_TEXT (ENAME_BUBBLE DONE_CODE TAG / AUTO_STRING AUTO_TYPE)
   (SETQ
     AUTO_TYPE
      (CADR (ASSOC DONE_CODE (HCNM_EDIT_BUBBLE_DONE_CODES)))
@@ -6379,12 +6678,11 @@ ImportLayerSettings=No
     HCNM_EB:ATTRIBUTE_LIST
      (HCNM_LDRBLK_ADJUST_FORMATS
        (HCNM_LDRBLK_AUTO_DISPATCH
-         ENAME_BLOCK
+         ENAME_BUBBLE
          HCNM_EB:ATTRIBUTE_LIST
          TAG
          AUTO_TYPE
-         P1_ENTRY
-         NIL
+         NIL  ; NIL = prompt user to select/confirm alignment
        )
      )
   )
@@ -6393,8 +6691,8 @@ ImportLayerSettings=No
 (defun HCNM_EDIT_BUBBLE_CANCEL ()
  -1
 )
-(defun HCNM_EB:SAVE (ENAME_BLOCK)
-  (HCNM_SET_ATTRIBUTES ENAME_BLOCK HCNM_EB:ATTRIBUTE_LIST)
+(defun HCNM_EB:SAVE (ENAME_BUBBLE)
+  (HCNM_SET_ATTRIBUTES ENAME_BUBBLE HCNM_EB:ATTRIBUTE_LIST)
  -1
 ) 
 (DEFUN HCNM_EDIT_BUBBLE_DONE_CODES ( / EB_DONE)
@@ -6413,8 +6711,7 @@ ImportLayerSettings=No
    )
 )
 (DEFUN HCNM_EB:SHOW
-   (DCLFILE NOTETEXTRADIOCOLUMN P1_DATA / )
-  (SETQ P1_ENTRY (CAR P1_DATA))
+   (DCLFILE NOTETEXTRADIOCOLUMN)
   (NEW_DIALOG "HCNMEditBubble" DCLFILE)
   (SET_TILE "Title" "Edit CNM Bubble Note")
   ;; Note attribute edit boxes
@@ -6541,7 +6838,9 @@ ImportLayerSettings=No
           OBJ_NEXT
           (CADR (ASSOC ATAG ATTRIBUTE_LIST))
         )
-        (COND ((= (HCNM_LDRBLK_GET_MTEXT_STRING) "")(VL-CMDF "._updatefield" ENAME_NEXT "")))
+        ;; UPDATEFIELD commented out to avoid "0 field(s) found/updated" messages
+        ;; May be necessary for some bubble types - uncomment if needed
+        ;(COND ((= (HCNM_LDRBLK_GET_MTEXT_STRING) "")(VL-CMDF "._updatefield" ENAME_NEXT "")))
       )
     )
   )
@@ -6576,62 +6875,69 @@ ImportLayerSettings=No
 ;; ABOUT MODIFYING REACTORS: https://help.autodesk.com/view/ACDLT/2025/ENU/?guid=GUID-F6B719E4-537B-42C2-8D22-9A313FE900A0
 ;; You can add and remove owners (objects) of a reactor.
 ;; You can reset the data of a reactor.
-(DEFUN HCNM_LDRBLK_ASSURE_AUTO_TEXT_HAS_REACTOR (NOTIFIER ENAME_BUBBLE TAG KEY / CAR_DATA CALLBACKS DATA REACTOR REACTOR_OLD 
-                                                 REACTORS_OLD OWNERS
+;; (VLR-REMOVE-ALL :VLR-OBJECT-REACTOR) TO REMOVE ALL
+;; (VLR-DATA (CADAR (VLR-REACTORS :VLR-OBJECT-REACTOR))) IF THERE IS ONLY ONE REACTOR
+;; (VLR-OWNERS (CADAR (VLR-REACTORS :VLR-OBJECT-REACTOR))) IF THERE IS ONLY ONE REACTOR
+;; New structure: KEYS = '("HCNM-BUBBLE" HANDLE_REFERENCE HANDLE_BUBBLE TAG)
+;; VALUE = AUTO_TYPE (just the string)
+(DEFUN HCNM_LDRBLK_ASSURE_AUTO_TEXT_HAS_REACTOR (OBJREF ENAME_BUBBLE ENAME_LEADER TAG AUTO_TYPE / CALLBACKS DATA DATA_OLD REACTOR 
+                                                 HANDLE_BUBBLE HANDLE_REFERENCE KEYS KEY_APP REACTOR_OLD REACTORS_OLD OWNER OWNERS OBJECT_LEADER
                                                 ) 
-  (SETQ CALLBACKS    '((:vlr-modified . HCNM_LDRBLK_REACTOR_CALLBACK)
-                       ;; vlr-trace-reaction IS A CANNED CALLBACK PROVIDED BY AUTODESK FOR TESTING. IT PRINTS A MESSAGE. IT CAN BE REMOVED.
-                       ;; (:vlr-modified . vlr-trace-reaction)
-                      )
-        REACTORS_OLD (CDAR (VLR-REACTORS :VLR-OBJECT-REACTOR))
-        CAR_DATA "CNM-BUBBLE"
+  (SETQ CALLBACKS       '((:vlr-modified . HCNM_LDRBLK_REACTOR_CALLBACK)
+                          ;; vlr-trace-reaction IS A CANNED CALLBACK PROVIDED BY AUTODESK FOR TESTING. IT PRINTS A MESSAGE. IT CAN BE REMOVED.
+                          ;; (:vlr-modified . vlr-trace-reaction)
+                         )
+        REACTORS_OLD    (CDAR (VLR-REACTORS :VLR-OBJECT-REACTOR))
+        OBJECT_LEADER   (COND (ENAME_LEADER (VLAX-ENAME->VLA-OBJECT ENAME_LEADER)))
+        OWNERS          (COND 
+                          (OBJECT_LEADER (LIST OBJREF OBJECT_LEADER))
+                          (T (LIST OBJREF))
+                        )
+        KEY_APP         "HCNM-BUBBLE"
+        HANDLE_REFERENCE (VLA-GET-HANDLE OBJREF)
+        HANDLE_BUBBLE   (CDR (ASSOC 5 (ENTGET ENAME_BUBBLE)))
+        KEYS            (LIST KEY_APP HANDLE_REFERENCE HANDLE_BUBBLE TAG)
   )
   (FOREACH REACTOR REACTORS_OLD 
     (COND 
-      ;; THERE IS ONLY ONE CAR_DATA REACTOR BECAUSE THIS SEARCH ENSURES THAT WE DON'T CREATE MORE
-      ((= (CAR (VLR-DATA REACTOR)) CAR_DATA)
+      ;; THERE IS ONLY ONE REACTOR FOR THIS APP BECAUSE THIS SEARCH ENSURES THAT WE DON'T CREATE MORE
+      ((AND (LISTP (SETQ DATA_OLD (VLR-DATA REACTOR))) (ASSOC KEY_APP DATA_OLD))
        (SETQ REACTOR_OLD REACTOR)
       )
     )
   )
   (COND 
     (REACTOR_OLD
-     ;; UPDATE THE DATA (either way, whether owner already attached or not)
-     (VLR-DATA-SET REACTOR_OLD 
-                   (HAWS_NESTED_LIST_UPDATE 
-                     (LIST (VLR-DATA REACTOR_OLD) 
-                           (LIST CAR_DATA 
+     ;; ATTACH THIS OWNER NOTIFIER IF NOT ALREADY ATTACHED.
+      (FOREACH OWNER OWNERS
+        (COND
+          ((NOT (MEMBER OWNER (VLR-OWNERS REACTOR_OLD)))
+           (VLR-OWNER-ADD REACTOR_OLD OWNER)
+          )
                                  (CDR (ASSOC 5 (ENTGET ENAME_BUBBLE)))
                                  (LIST TAG KEY)
                            )
-                     )
+        )
+      )
+     ;; UPDATE THE DATA
+     (VLR-DATA-SET REACTOR_OLD 
+                   (SETQ DATA (HAWS_NESTED_LIST_UPDATE 
+                                (VLR-DATA REACTOR_OLD)
+                                KEYS
+                                AUTO_TYPE
+                              )
                    )
-     )
-     ;; IF THIS OWNER IS NOT ALREADY ATTACHED, ADD IT
-     (COND 
-       ((NOT (MEMBER NOTIFIER (VLR-OWNERS REACTOR_OLD)))
-        (VLR-OWNER-ADD REACTOR_OLD NOTIFIER)
-       )
      )
     )
     (T
-    ;; ELSE MAKE REACTOR AND MAKE IT PERSISTENT
-    ;; (VLR-REMOVE-ALL :VLR-OBJECT-REACTOR) TO REMOVE ALL
-     (SETQ DATA    (LIST CAR_DATA 
-                         (LIST 
-                           (CDR 
-                             (ASSOC 5 
-                                    (ENTGET ENAME_BUBBLE)
-                             )
-                           )
-                           (LIST 
-                             TAG
-                             KEY
-                           )
-                         )
+     ;; ELSE MAKE REACTOR AND MAKE IT PERSISTENT
+     (SETQ DATA    (HAWS_NESTED_LIST_UPDATE 
+                     NIL
+                     KEYS
+                     AUTO_TYPE
                    )
            REACTOR (VLR-OBJECT-REACTOR 
-                     (LIST NOTIFIER) ; ATTACHED OWNERS OF REACTOR
+                     OWNERS ; ATTACHED OWNERS OF REACTOR
                      DATA
                      CALLBACKS
                    )
@@ -6640,66 +6946,183 @@ ImportLayerSettings=No
     )
   )
 )
-(DEFUN HCNM_LDRBLK_REACTOR_CALLBACK (NOTIFIER-OBJECT REACTOR-OBJECT PARAMETER-LIST / VERTICES)
-  (HCNM_LDRBLK_UPDATE_NOTIFIER NOTIFIER-OBJECT REACTOR-OBJECT)
-)
-;;; THIS IS THE REACTOR DATA FOR THIS APPLICATION. THIS MAKES IT EASY FOR THE CALLBACK TO PROCESS WHAT'S REQUIRED AND FOR THE REACTOR ASSURER TO KNOW WHETHER A GIVEN REACTOR IS FOR THIS ATTRIBUTE OF THIS BLOCK OF THIS APPLICATION AND WHAT IS THE DATA TYPE. 
-;;; '("CNM-BUBBLE" 
-;;;   (BUBBLE1_ENAME 
-;;;     (ATTRIBUTE_TAG_1 TYPE1) 
-;;;     (ATTRIBUTE_TAG_I TYPEI)
-;;;   )
-;;;   (BUBBLEI_ENAME 
-;;;     (ATTRIBUTE_TAG_1 TYPE1)
-;;;     (ATTRIBUTE_TAG_I TYPEI)
-;;;   )
-;;; )
-;;; 
-(DEFUN HCNM_LDRBLK_UPDATE_NOTIFIER (NOTIFIER REACTOR / BUBBLE DATA DATA_OLD) 
-  (SETQ DATA_OLD (VLR-DATA REACTOR)
-        DATA     DATA_OLD
-  )
-  (PRINT DATA)
-  (MAPCAR 
-    '(LAMBDA (BUBBLE) 
-        (HCNM_LDRBLK_UPDATE_BUBBLE BUBBLE NOTIFIER)
-      )
-    (CDR DATA)
-  )
-  (COND 
-    ;; DETACH THE NOTIFIER IF USER REMOVED ALL ITS DEPENDENT AUTO-TEXT FROM ALL BUBBLES.
-    ((NOT (CDR DATA))
-     (VLR-OWNER-REMOVE REACTOR NOTIFIER)
+(DEFUN HCNM_LDRBLK_REACTOR_CALLBACK (OBJ_NOTIFIER OBJ_REACTOR PARAMETER-LIST / KEY_APP DATA_OLD DATA HANDLE_NOTIFIER REFERENCE_LIST FOUND_P HANDLE_REFERENCE BUBBLE_LIST HANDLE_BUBBLE TAG_LIST TAG AUTO_TYPE)
+  ;; Skip reactor processing during space transitions to avoid spurious modification events
+  (COND
+    ((= (C:HCNM-CONFIG-GETVAR "AllowReactors") "0") 
+     NIL  ; Return early if reactors are not allowed
     )
-    ;; UPDATE THE REACTOR DATA IF USER REMOVED SOME OF ITS DEPENDENT AUTO-TEXT
-    ((NOT (EQUAL DATA DATA_OLD))
-     (VLR-DATA-SET REACTOR DATA)
+    (T
+     ;; Wrap in error handler to catch erased objects
+     (IF (NOT (VL-CATCH-ALL-ERROR-P 
+               (VL-CATCH-ALL-APPLY 'VLA-GET-HANDLE (LIST OBJ_NOTIFIER))))
+       (PROGN
+         ;; Normal reactor processing - object is valid
+         (SETQ KEY_APP         "HCNM-BUBBLE"
+               DATA_OLD        (VLR-DATA OBJ_REACTOR)
+               DATA            DATA_OLD
+               HANDLE_NOTIFIER (VLA-GET-HANDLE OBJ_NOTIFIER)
+               REFERENCE_LIST  (CADR (ASSOC KEY_APP DATA))
+               FOUND_P         NIL
+         )
+     ;; Iterate through all references in the reactor data
+     (FOREACH REFERENCE REFERENCE_LIST
+    (SETQ HANDLE_REFERENCE (CAR REFERENCE)
+          BUBBLE_LIST      (CADR REFERENCE))
+    ;; Check if this is the reference that was modified
+    (COND
+      ((= HANDLE_NOTIFIER HANDLE_REFERENCE)
+       ;; Reference object modified - update all bubbles using this reference
+       (SETQ FOUND_P T)
+       (PRINC (STRCAT "\nReference modified: " HANDLE_REFERENCE))
+       ;; Temporarily disable reactors to prevent infinite loop during updates
+       (C:HCNM-CONFIG-SETVAR "AllowReactors" "0")
+       (FOREACH BUBBLE BUBBLE_LIST
+         (SETQ HANDLE_BUBBLE (CAR BUBBLE)
+               TAG_LIST      (CADR BUBBLE))
+         ;; Update all tags for this bubble
+         (FOREACH TAG_DATA TAG_LIST
+           (SETQ TAG       (CAR TAG_DATA)
+                 AUTO_TYPE (CADR TAG_DATA))
+           (HCNM_LDRBLK_UPDATE_BUBBLE_TAG HANDLE_BUBBLE TAG AUTO_TYPE HANDLE_REFERENCE)
+         )
+       )
+       ;; Re-enable reactors after updates complete
+       (C:HCNM-CONFIG-SETVAR "AllowReactors" "1")
+      )
+      (T
+       ;; Notifier is not this reference, might be a leader - check each bubble
+       (FOREACH BUBBLE BUBBLE_LIST
+         (SETQ HANDLE_BUBBLE (CAR BUBBLE)
+               TAG_LIST      (CADR BUBBLE))
+         ;; Check if this bubble's leader moved by comparing with notifier
+         ;; We need to check if the leader for this bubble is the notifier
+         ;; Since leaders are associated with bubbles, we check the bubble's leader
+         (COND
+           ((HCNM_LDRBLK_BUBBLE_HAS_LEADER HANDLE_BUBBLE HANDLE_NOTIFIER)
+            ;; This bubble's leader moved - update all its tags with the correct reference
+            (SETQ FOUND_P T)
+            (PRINC (STRCAT "\nLeader modified for bubble: " HANDLE_BUBBLE " using reference: " HANDLE_REFERENCE))
+            ;; Temporarily disable reactors to prevent infinite loop during updates
+            (C:HCNM-CONFIG-SETVAR "AllowReactors" "0")
+            (FOREACH TAG_DATA TAG_LIST
+              (SETQ TAG       (CAR TAG_DATA)
+                    AUTO_TYPE (CADR TAG_DATA))
+              (HCNM_LDRBLK_UPDATE_BUBBLE_TAG HANDLE_BUBBLE TAG AUTO_TYPE HANDLE_REFERENCE)
+            )
+            ;; Re-enable reactors after updates complete
+            (C:HCNM-CONFIG-SETVAR "AllowReactors" "1")
+           )
+         )
+       )
+      )
+    )
+  )
+  (COND
+    ((NOT FOUND_P)
+      (PRINC (STRCAT "\nWarning: Notifier " HANDLE_NOTIFIER " not found in reactor data"))
+    )
+  )
+         (COND 
+           ;; DETACH THE NOTIFIER IF USER REMOVED ALL ITS DEPENDENT AUTO-TEXT FROM ALL BUBBLES.
+           ((NOT REFERENCE_LIST)
+            (VLR-OWNER-REMOVE OBJ_REACTOR OBJ_NOTIFIER)
+           )
+           ;; UPDATE THE REACTOR DATA IF USER REMOVED SOME OF ITS DEPENDENT AUTO-TEXT
+           ((NOT (EQUAL DATA DATA_OLD))
+            (VLR-DATA-SET OBJ_REACTOR DATA)
+           )
+         )
+       )  ; End of PROGN for valid object
+       ;; ELSE: Object was erased, silently ignore
+       (PRINC "\nReactor fired on erased object - ignoring")
+     )  ; End of IF checking for valid object
+    )  ; End of normal reactor processing (T branch)
+  )  ; End of suppression check COND
+)
+;; Helper function to check if a bubble has a specific leader
+(DEFUN HCNM_LDRBLK_BUBBLE_HAS_LEADER (HANDLE_BUBBLE HANDLE_LEADER / ENAME_BUBBLE ENAME_LEADER)
+  (SETQ ENAME_BUBBLE (HANDENT HANDLE_BUBBLE))
+  (COND
+    (ENAME_BUBBLE
+      (SETQ ENAME_LEADER (HCNM_LDRBLK_BUBBLE_LEADER ENAME_BUBBLE))
+      (COND
+        (ENAME_LEADER
+          (= HANDLE_LEADER (CDR (ASSOC 5 (ENTGET ENAME_LEADER))))
+        )
+        (T NIL)
+      )
+    )
+    (T NIL)
+  )
+)
+;; Helper function to check if entity is on the "Model" tab
+(DEFUN HCNM_LDRBLK_IS_ON_MODEL_TAB (ENAME / LAYOUT_NAME)
+  (SETQ LAYOUT_NAME (CDR (ASSOC 410 (ENTGET ENAME))))
+    (= (STRCASE LAYOUT_NAME) "MODEL")
+)
+;; Updates a specific tag in a bubble based on reactor notification
+;; Called when either the leader moves or the reference object changes
+(DEFUN HCNM_LDRBLK_UPDATE_BUBBLE_TAG (HANDLE_BUBBLE TAG AUTO_TYPE HANDLE_REFERENCE / ENAME_BUBBLE ENAME_REFERENCE ATTRIBUTE_LIST ATTRIBUTE_LIST_OLD OBJREF)
+  (SETQ ENAME_BUBBLE       (HANDENT HANDLE_BUBBLE)
+        ENAME_REFERENCE    (HANDENT HANDLE_REFERENCE)
+        ATTRIBUTE_LIST_OLD (HCNM_GET_ATTRIBUTES ENAME_BUBBLE T)
+        ATTRIBUTE_LIST     ATTRIBUTE_LIST_OLD
+  )
+  (COND
+    ((AND ENAME_BUBBLE ENAME_REFERENCE)
+      (SETQ OBJREF (VLAX-ENAME->VLA-OBJECT ENAME_REFERENCE))
+      (SETQ ATTRIBUTE_LIST 
+        (HCNM_LDRBLK_AUTO_DISPATCH 
+          ENAME_BUBBLE
+          ATTRIBUTE_LIST
+          TAG
+          AUTO_TYPE
+          OBJREF  ; Pass the reference object as INPUT
+        )
+      )
+      (COND 
+        ((/= ATTRIBUTE_LIST ATTRIBUTE_LIST_OLD)
+         ;; UPDATE BLOCK INSERTION
+         (HCNM_SET_ATTRIBUTES 
+           ENAME_BUBBLE
+           (HCNM_LDRBLK_ADJUST_FORMATS 
+             ATTRIBUTE_LIST
+           )
+         )
+        )
+      )
+    )
+    (T
+      (PRINC (STRCAT "\nError in HCNM_LDRBLK_UPDATE_BUBBLE_TAG: "
+                     (COND ((NOT ENAME_BUBBLE) "BUBBLE not found")
+                           ((NOT ENAME_REFERENCE) "REFERENCE not found")
+                           (T "Unknown error"))))
     )
   )
 )
 ;; UPDATES A BUBBLE INSERTION. RETURNS BUBBLE WITH ATTRIBUTES REMOVED IF USER REMOVED THEM (SINCE WE DON'T YET HAVE A STRUCTURED INTERFACE THAT WOULD LET THE USER REMOVE IN REAL TIME. MAYBE IT WOULD BE EASIEST TO JUST HAVE A WAY TO DISABLE EDITING AUTO ATTRIBUTES UNLESS USER CLICKS A "MANUAL" BUTTON. I LOVE THAT. EDIT BUBBLE COULD READ THE REACTOR DATA OR EACH BUBBLE COULD HAVE A LIST IN NOTEDATA)
 ;; @returns {list} Testing
-(DEFUN HCNM_LDRBLK_UPDATE_BUBBLE (BUBBLE NOTIFIER / ATTRIBUTE_LIST ATTRIBUTE_LIST_OLD ENAME_BUBBLE PT_LEADER_START) 
-  (SETQ ENAME_BUBBLE       (HANDENT (CAR BUBBLE))
-        PT_LEADER_START    (CDR (ASSOC 10 (ENTGET ENAME_BUBBLE)))
+;; NOTE: This function is now deprecated in favor of HCNM_LDRBLK_UPDATE_BUBBLE_TAG but kept for reference
+(DEFUN HCNM_LDRBLK_UPDATE_BUBBLE (LST_BUBBLE OBJ_NOTIFIER / ATTRIBUTE_LIST ATTRIBUTE_LIST_OLD ENAME_BUBBLE PT_LEADER_START) 
+  (SETQ ENAME_BUBBLE       (HANDENT (CAR LST_BUBBLE))
         ATTRIBUTE_LIST_OLD (HCNM_GET_ATTRIBUTES ENAME_BUBBLE T)
         ATTRIBUTE_LIST     ATTRIBUTE_LIST_OLD
   )
-  (FOREACH ATTRIBUTE (CDR BUBBLE) 
+  (FOREACH ATTRIBUTE (CADR LST_BUBBLE) 
     (COND 
       ;; AT THE MOMENT, ONLY TOTAL ATTRIBUTE DELETION CANCELS A REACTOR.
       ((= (CADR (ASSOC (CAR ATTRIBUTE) ATTRIBUTE_LIST)) "")
        ;; I AM CURIOUS WHETHER MODIFYING BUBBLE WITHIN FOREACH WILL CAUSE A BUG. I THINK NOT SINCE IT ITERATES OVER A COPY.
-       (SETQ BUBBLE (VL-REMOVE ATTRIBUTE BUBBLE))
+       (SETQ LST_BUBBLE (VL-REMOVE ATTRIBUTE LST_BUBBLE))
       )
       (T
        (SETQ ATTRIBUTE_LIST (HCNM_LDRBLK_AUTO_DISPATCH 
                               ENAME_BUBBLE
                               ATTRIBUTE_LIST
                               (CAR ATTRIBUTE) ; TAG
-                              (CADR ATTRIBUTE) ; KEY
-                              PT_LEADER_START
-                              NOTIFIER ; INPUT
+                              (CDR ATTRIBUTE) ; KEY
+                              OBJ_NOTIFIER ; INPUT bubble-data-update: This is not right. We need, not the notifier object (which could be a leader or an alignment or other), but the reference object. So the reactor data has to include handle, tag, ref_type, and ref_object
                             )
        )
       )
@@ -6716,7 +7139,7 @@ ImportLayerSettings=No
      )
     )
   )
-  BUBBLE
+  LST_BUBBLE
 )
 ;#endregion
 ;#region CNM Options dialog

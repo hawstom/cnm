@@ -2735,6 +2735,14 @@
     ((6 0 0) 6)
   )
 )
+(HAWS_UNIT_TEST
+  'HAWS_NESTED_LIST_UPDATE
+  '(
+    (((1 . ((11 . "A")(12 . ((121 . "B")(122 . ((1221 . "C")))))))) (1 12 1221 "1")
+    ((1 . ((11 . "A")(12 . ((121 . "B")(122 . ((1221 . "1"))))))))
+    )
+  )
+)
 |;
 (DEFUN HAWS_UNIT_TEST (F ASSERTIONS / ANSWER ARGS CONTINUE_P I RESULT) 
   (SETQ I          0
@@ -2748,7 +2756,7 @@
                ANSWER (CADR ASSERTION)
          )
          (SETQ CONTINUE_P (EQUAL 
-                            (SETQ RESULT (APPLY F (LIST ARGS)))
+                            (SETQ RESULT (APPLY F ARGS))
                             ANSWER
                           )
          )
@@ -2809,127 +2817,138 @@
 ;;                 Miscellaneous Utility functions
 ;;
 ;; ======================================================================
-(DEFUN HAWS_NESTED_LIST_UPDATE (ARGS / KEY NESTEDS VALUE VALUES) 
-  ;; ARGS MUST BE A LIST WITH TWO LIST ELEMENTS:
-  ;;   NESTEDS: MUST HAVE A NON-LIST FIRST ELEMENT KEY AT EVERY LEVEL INCLUDING THE TOP/OUTER LEVEL.
-  ;;   VALUES: MUST HAVE THE VALUES TO PUT IN ALL LEVELS OF THE NESTED_LIST INCLUDING THE TOP/OUTER LEVEL.
-  ;; EXAMPLE 1: SHORTEST VALID NESTED_LIST. SUBSTITUTES IN LIST
-  ;;   (HAWS_NESTED_LIST_UPDATE
-  ;;     (LIST
-  ;;       (1 (11 "A"))
-  ;;       (1 11 "B")
-  ;;     )
-  ;;   )
-  ;; RETURNS:
-  ;;   (1 (11 "C"))
-  ;; EXAMPLE 1: ADDS TO LIST
-  ;;   (HAWS_NESTED_LIST_UPDATE
-  ;;     '(
-  ;;       (1 (11 (111 "A")(112 "B"))(21 "A")(22 "B")(31 "A")(32 "B"))
-  ;;       (1 11 113 "C")
-  ;;     )
-  ;;   )
-  ;; RETURNS:
-  ;;   (1 (11 (111 "A")(112 "B")(113 "C"))(21 "A")(22 "B")(31 "A")(32 "B")))
-  ;; STOPS RECURSING WHEN IT COMES TO END OF VALUES OR RUNS INTO A NON-LIST VALUE.
-  (SETQ NESTEDS (CAR ARGS)
-        VALUES  (CADR ARGS)
-        KEY     (CADR VALUES)
-        VALUE   (CADDR VALUES)
-  )
-  (COND 
-    ;; REJECT SHORT LISTS
-    ((< (LENGTH VALUES) 3)
-     NESTEDS
-    )
-    ((/= (TYPE (CADR NESTEDS)) 'LIST)
-     (HAWS_NESTED_LIST_UPDATE 
-       (LIST (LIST (CAR NESTEDS) (LIST (CADR NESTEDS) VALUE)) 
-             VALUES
-       )
-     )
-    )
-    ((AND 
-       (= (LENGTH VALUES) 3)
-       (EQUAL (ASSOC KEY (CDR NESTEDS)) (LIST KEY VALUE))
-     )
-     NESTEDS
-    )
-    ((AND (= (LENGTH VALUES) 3) (ASSOC KEY (CDR NESTEDS)))
-     (HAWS_SUBST_IN_NESTEDS (LIST KEY VALUE) KEY NESTEDS)
-    )
-    ((AND (= (LENGTH VALUES) 3) (NOT (ASSOC KEY (CDR NESTEDS))))
-     (HAWS_ADD_TO_NESTEDS (LIST KEY VALUE) NESTEDS)
-    )
-    ((AND (> (LENGTH VALUES) 3) (ASSOC KEY (CDR NESTEDS)))
-     (HAWS_SUBST_IN_NESTEDS 
-       (HAWS_NESTED_LIST_UPDATE 
-         (LIST (ASSOC KEY (CDR NESTEDS)) 
-               (CDR VALUES)
-         )
-       )
-       KEY
-       NESTEDS
-     )
-    )
-    ((AND (> (LENGTH VALUES) 3) (NOT (ASSOC KEY (CDR NESTEDS))))
-     (HAWS_NESTED_LIST_UPDATE 
-       (LIST 
-         (HAWS_ADD_TO_NESTEDS (LIST KEY VALUE) NESTEDS)
-         VALUES
-       )
-     )
-    )
-  )
-)
-(DEFUN HAWS_SUBST_IN_NESTEDS (ELEMENT KEY NESTEDS) 
-  (CONS 
-    (CAR NESTEDS)
-    (SUBST 
-      ELEMENT
-      (ASSOC KEY 
-             (CDR NESTEDS)
+
+;; Function to read a value at a nested path (returns nil if not found)
+;; Usage: (HAWS_NESTED_LIST_GET DATA '(1 13 132 1323))
+;; Credit to Grok AI 2025-10-17
+(DEFUN HAWS_NESTED_LIST_GET (ALIST KEYS / KEY REST PAIR VAL)
+  (COND
+    ((NULL KEYS) NIL)  ; Invalid empty path
+    (T
+      (SETQ KEY (CAR KEYS)
+            REST (CDR KEYS)
+            PAIR (ASSOC KEY ALIST))
+      (COND
+        ((NULL PAIR) NIL)
+        (T
+          (SETQ VAL (CADR PAIR))  ; Changed from (CDR PAIR) to (CADR PAIR) for uniform LIST structure
+          (COND
+            ((NULL REST)
+             VAL  ; Return value directly - no need to check if it's a branch
+            )
+            (T
+              (COND
+                ((LISTP VAL) (HAWS_NESTED_LIST_GET VAL REST))  ; Recurse into sub-alist - removed (CAR VAL)
+                (T NIL)  ; Cannot go deeper
+              )
+            )
+          )
+        )
       )
-      (CDR NESTEDS)
-    )
-  )
-)
-(DEFUN HAWS_ADD_TO_NESTEDS (ELEMENT NESTEDS) 
-  (REVERSE 
-    (CONS 
-      ELEMENT
-      (REVERSE NESTEDS)
     )
   )
 )
 
-(DEFUN HAWS_NESTED_LIST_UPDATE_TEST () 
-  (HAWS_UNIT_TEST 
-    'HAWS_NESTED_LIST_UPDATE
-    ;;ASSERTION ARGS  NESTEDS                VALUES           ANSWER                                 
-    (LIST (LIST (LIST (LIST 1 (LIST 11 "A")) (LIST 1 11 "1")) (LIST 1 (LIST 11 "1"))) 
-          (LIST (LIST (LIST 1 (LIST 11 "A") (LIST 12 "B")) (LIST 1 11 "2")) (LIST 1 (LIST 11 "2") (LIST 12 "B")))
-          (LIST (LIST (LIST 1 (LIST 11 (LIST 111 "A")) (LIST 12 "B")) (LIST 1 11 111 "3")) 
-                (LIST 1 (LIST 11 (LIST 111 "3")) (LIST 12 "B"))
+;; Function to update or create a value at a nested path
+;; Uses subst to preserve original list order, returns modified list
+;; Usage: (HAWS_NESTED_LIST_UPDATE DATA '(1 13 132 1323) "2")
+;; Credit to Grok AI 2025-10-17
+(DEFUN HAWS_NESTED_LIST_UPDATE (ALIST KEYS VAL / KEY REST PAIR SUB NEW_SUB_ALIST NEW_PAIR)
+  (COND
+    ((NULL KEYS) ALIST)  ; Nothing to do for empty path
+    (T
+      (SETQ KEY (CAR KEYS)
+            REST (CDR KEYS))
+      (SETQ PAIR (ASSOC KEY ALIST))
+      (COND
+        ((NULL REST)
+          (SETQ NEW_PAIR (LIST KEY VAL))  ; Changed from (CONS KEY VAL) to (LIST KEY VAL) for uniform structure
+          (COND
+            (PAIR (SUBST NEW_PAIR PAIR ALIST))
+            (T (APPEND ALIST (LIST NEW_PAIR)))
           )
-          (LIST (LIST (LIST 1 (LIST 11 (LIST 111 "A") (LIST 112 "B"))) (LIST 1 11 113 "4")) 
-                (LIST 1 (LIST 11 (LIST 111 "A") (LIST 112 "B") (LIST 113 "4")))
+        )
+        (T
+          (SETQ SUB (CADR PAIR))  ; Changed from (CDR PAIR) then (CAR SUB) to just (CADR PAIR)
+          (SETQ NEW_SUB_ALIST (HAWS_NESTED_LIST_UPDATE SUB REST VAL))
+          (SETQ NEW_PAIR (LIST KEY NEW_SUB_ALIST))  ; Changed from (CONS KEY (LIST ...)) to (LIST KEY ...)
+          (COND
+            (PAIR (SUBST NEW_PAIR PAIR ALIST))
+            (T (APPEND ALIST (LIST NEW_PAIR)))
           )
-          (LIST (LIST (LIST 1 (LIST 11 (LIST 111 "A") (LIST 112 "B"))) (LIST 1 11 113 1131 "5")) 
-                (LIST 1 (LIST 11 (LIST 111 "A") (LIST 112 "B") (LIST 113 (LIST 1131 "5"))))
-          )
-          (LIST (LIST (LIST 1 (LIST 11 "6")) (LIST 1 11 "6")) (LIST 1 (LIST 11 "6")))
-          (LIST (LIST (LIST 1 (LIST 11 "7")) NIL) (LIST 1 (LIST 11 "7")))
-          (LIST (LIST (LIST 1 (LIST 11 (LIST 111 "A") (LIST 112 "B"))) (LIST 1 11 113 1131 11311 "8")) 
-                (LIST 1 (LIST 11 (LIST 111 "A") (LIST 112 "B") (LIST 113 (LIST 1131 (LIST 11311 "8")))))
-          )
-          (LIST (LIST (LIST 1) (LIST 1 11 "6")) (LIST 1 (LIST 11 "6")))
+        )
+      )
     )
   )
+)
+
+;; Function to delete a key at a nested path
+;; Uses subst to preserve original list order, prunes empty branches, returns modified list
+;; Usage: (HAWS_NESTED_LIST_DELETE DATA '(1 13 132 1323))
+;; Credit to Grok AI 2025-10-17
+(DEFUN HAWS_NESTED_LIST_DELETE (ALIST KEYS / KEY REST PAIR SUB NEW_SUB_ALIST NEW_PAIR)
+  (COND
+    ((NULL KEYS) ALIST)  ; Nothing to do
+    (T
+      (SETQ KEY (CAR KEYS)
+            REST (CDR KEYS))
+      (SETQ PAIR (ASSOC KEY ALIST))
+      (COND
+        ((NULL PAIR) ALIST)  ; Nothing to delete
+        ((NULL REST) (VL-REMOVE PAIR ALIST))  ; Remove leaf or branch
+        (T
+          (SETQ SUB (CADR PAIR))  ; Changed from (CDR PAIR) then (CAR SUB) to just (CADR PAIR)
+          (COND
+            ((NOT (LISTP SUB)) ALIST)  ; Cannot delete deeper into leaf
+            (T
+              (SETQ NEW_SUB_ALIST (HAWS_NESTED_LIST_DELETE SUB REST))
+              (COND
+                ((NULL NEW_SUB_ALIST) (VL-REMOVE PAIR ALIST))  ; Prune empty branch
+                (T
+                  (SETQ NEW_PAIR (LIST KEY NEW_SUB_ALIST))  ; Changed from (CONS KEY (LIST ...))
+                  (SUBST NEW_PAIR PAIR ALIST)
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+)
+
+;; Function to test nested list operations
+;; Usage: (HAWS_NESTED_LIST_TEST)
+;; Credit to Grok AI 2025-10-17, updated 2025-10-20 for uniform LIST structure
+(DEFUN HAWS_NESTED_LIST_TEST (/ DATA)
+  (SETQ DATA NIL)
+  ;; Test long path creation
+  (SETQ DATA (HAWS_NESTED_LIST_UPDATE DATA '(1 12 121) "121A"))
+  (PRINC "\nExpecting ((1 ((12 ((121 \"121A\")))))) we get ")
+  (PRINT DATA)
+  (PRINC "\nExpecting \"121A\" we get ")
+  (PRINT (HAWS_NESTED_LIST_GET DATA '(1 12 121)))
+  ;; Test NIL value creation
+  (SETQ DATA (HAWS_NESTED_LIST_UPDATE DATA '(1 11 111) NIL))
+  (PRINC "\nExpecting nil we get ")
+  (PRINT (HAWS_NESTED_LIST_GET DATA '(1 11 111)))
+  (PRINC "\nExpecting ((1 ((12 ((121 \"121A\"))) (11 ((111 nil)))))) we get ")
+  (PRINT DATA)
+  ;; Test deletion
+  (SETQ DATA (HAWS_NESTED_LIST_UPDATE DATA '(1 13 131) "131A"))
+  (PRINC "\nAfter adding (1 13 131) \"131A\", expecting ((1 ((12 ((121 \"121A\"))) (11 ((111 nil))) (13 ((131 \"131A\")))))) we get ")
+  (PRINT DATA)
+  (SETQ DATA (HAWS_NESTED_LIST_DELETE DATA '(1 13 131)))
+  (PRINC "\nAfter deleting (1 13 131), expecting ((1 ((12 ((121 \"121A\"))) (11 ((111 nil)))))) we get ")
+  (PRINT DATA)
+  ;; Test list value storage (like ATTRIBUTE_LIST)
+  (SETQ DATA (HAWS_NESTED_LIST_UPDATE DATA '("ATTRIBUTES") '(("TAG1" "value1") ("TAG2" "value2"))))
+  (PRINC "\nAfter adding ATTRIBUTES list, we get ")
+  (PRINT DATA)
+  (PRINC "\nExpecting ((\"TAG1\" \"value1\") (\"TAG2\" \"value2\")) we get ")
+  (PRINT (HAWS_NESTED_LIST_GET DATA '("ATTRIBUTES")))
   (PRINC)
-)
-
-;; HAWS-FILE-OPEN
+);; HAWS-FILE-OPEN
 ;;
 ;; If a write directive file is locked, allows user to provide an alternate filename to open.
 ;;
