@@ -5034,6 +5034,12 @@ ImportLayerSettings=No
 (DEFUN
    HCNM_LDRBLK_DYNAMIC (NOTETYPE / BLOCKNAME BUBBLEHOOKS P1_DATA P2_DATA REPLACE_BLOCK_P TH
                        )
+  ;; Workaround for intermittent first-insertion crash bug:
+  ;; On first bubble insertion in a fresh drawing session, AutoCAD's command/input
+  ;; system can be uninitialized, causing crashes at GETKWORD prompts (specifically
+  ;; the dimension scale prompt). Issuing any command first initializes the system.
+  ;; Must use (COMMAND) not (VL-CMDF) - synchronous execution is required.
+  (COMMAND "._REDRAW")
   (HAWS-VSAVE '("attreq" "aunits" "clayer" "cmdecho"))
   (COND
     ((AND (GETVAR "wipeoutframe") (/= (GETVAR "wipeoutframe") 2))
@@ -5089,9 +5095,11 @@ ImportLayerSettings=No
     NOTETYPE
      (COND
        (NOTETYPE)
-       ((LM:GETDYNPROPVALUE
-          (VLAX-ENAME->VLA-OBJECT (CADR P1_DATA))
-          "Shape"
+       ((AND (CADR P1_DATA)
+             (LM:GETDYNPROPVALUE
+               (VLAX-ENAME->VLA-OBJECT (CADR P1_DATA))
+               "Shape"
+             )
         )
        )
      )
@@ -5491,6 +5499,10 @@ ImportLayerSettings=No
      (SETQ ATTRIBUTE_LIST (HCNM_GET_ATTRIBUTES ENAME_BLOCK_OLD T))
     )
     (T
+     ;; Known intermittent bug: On first bubble insertion in a drawing session,
+     ;; this sometimes crashes after displaying the prompt. The crash occurs with
+     ;; or without INITGET+GETKWORD (tested). Appears to be an AutoCAD internal
+     ;; issue with attributed blocks on first insertion. No known workaround.
      (INITGET 128 "Copy")
      (SETQ NUM (GETKWORD "\nNote number or [Copy note]: "))
      (COND
@@ -6659,6 +6671,6 @@ ImportLayerSettings=No
 )
 
 (LOAD "ini-edit")
- ;|«Visual LISP© Format Options»
+ ;|ï¿½Visual LISPï¿½ Format Optionsï¿½
 (72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)
 ;*** DO NOT add text below the comment! ***|;
