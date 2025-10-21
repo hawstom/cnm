@@ -3166,7 +3166,8 @@ ImportLayerSettings=No
      (LIST "BubbleTextPrecisionN" "2" 4)
      (LIST "BubbleTextPrecisionE" "2" 4)
      (LIST "BubbleTextPrecisionZ" "2" 4)
-     (LIST "BubbleCurrentAlignment" T 0)
+     (LIST "BubbleCurrentAlignment" "" 0)
+     (LIST "AllowReactors" "1" 0)
      (LIST "BubbleArrowIntegralPending" "0" 0)
     )
    )
@@ -5115,16 +5116,16 @@ ImportLayerSettings=No
 ;#region Bubble insertion and editing
 
 
-(DEFUN C:HAWS-BOXL () (haws-core-init 198) (HCNM_LDRBLK_DYNAMIC "BOX")(haws-core-restore))
-(DEFUN C:HAWS-CIRL () (haws-core-init 199) (HCNM_LDRBLK_DYNAMIC "CIR")(haws-core-restore))
-(DEFUN C:HAWS-DIAL () (haws-core-init 200) (HCNM_LDRBLK_DYNAMIC "DIA")(haws-core-restore))
-(DEFUN C:HAWS-ELLL () (haws-core-init 201) (HCNM_LDRBLK_DYNAMIC "ELL")(haws-core-restore))
-(DEFUN C:HAWS-HEXL () (haws-core-init 202) (HCNM_LDRBLK_DYNAMIC "HEX")(haws-core-restore))
-(DEFUN C:HAWS-OCTL () (haws-core-init 203) (HCNM_LDRBLK_DYNAMIC "OCT")(haws-core-restore))
-(DEFUN C:HAWS-PENL () (haws-core-init 204) (HCNM_LDRBLK_DYNAMIC "PEN")(haws-core-restore))
-(DEFUN C:HAWS-RECL () (haws-core-init 205) (HCNM_LDRBLK_DYNAMIC "REC")(haws-core-restore))
-(DEFUN C:HAWS-SSTL () (haws-core-init 206) (HCNM_LDRBLK_DYNAMIC "SST")(haws-core-restore))
-(DEFUN C:HAWS-TRIL () (haws-core-init 207) (HCNM_LDRBLK_DYNAMIC "TRI")(haws-core-restore))
+(DEFUN C:HAWS-BOXL () (haws-core-init 198) (HCNM_LDRBLK_DYNAMIC "BOX"))
+(DEFUN C:HAWS-CIRL () (haws-core-init 199) (HCNM_LDRBLK_DYNAMIC "CIR"))
+(DEFUN C:HAWS-DIAL () (haws-core-init 200) (HCNM_LDRBLK_DYNAMIC "DIA"))
+(DEFUN C:HAWS-ELLL () (haws-core-init 201) (HCNM_LDRBLK_DYNAMIC "ELL"))
+(DEFUN C:HAWS-HEXL () (haws-core-init 202) (HCNM_LDRBLK_DYNAMIC "HEX"))
+(DEFUN C:HAWS-OCTL () (haws-core-init 203) (HCNM_LDRBLK_DYNAMIC "OCT"))
+(DEFUN C:HAWS-PENL () (haws-core-init 204) (HCNM_LDRBLK_DYNAMIC "PEN"))
+(DEFUN C:HAWS-RECL () (haws-core-init 205) (HCNM_LDRBLK_DYNAMIC "REC"))
+(DEFUN C:HAWS-SSTL () (haws-core-init 206) (HCNM_LDRBLK_DYNAMIC "SST"))
+(DEFUN C:HAWS-TRIL () (haws-core-init 207) (HCNM_LDRBLK_DYNAMIC "TRI"))
 (DEFUN C:HCNM-REPLACE-BUBBLE () (haws-core-init 338) (HCNM_LDRBLK_DYNAMIC NIL))
 
 (DEFUN HCNM_LDRBLK_DYNAMIC (NOTETYPE / BLOCKNAME BUBBLE_DATA BUBBLEHOOKS
@@ -5191,7 +5192,7 @@ ImportLayerSettings=No
         BUBBLE_DATA (HCNM_LDRBLK_GET_ENAME_BUBBLE_OLD BUBBLE_DATA)
         BUBBLE_DATA (COND 
                       ((HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE_OLD")
-                       (HCNM_LB:BD_ENSURE_P1_WORLD BUBBLE_DATA)
+                       (HCNM_LB:BD_ENSURE_P1_WORLD BUBBLE_DATA) ;  WE REALLY ONLY NEED ENAME_LEADER_OLD AND P1_OCS, BUT THIS ISN'T A BAD WAY TO GET IT.
                       )
                       (T
                        (HCNM_LDRBLK_GET_USER_START_POINT BUBBLE_DATA)
@@ -5216,7 +5217,6 @@ ImportLayerSettings=No
   (SETQ BUBBLE_DATA (HCNM_LDRBLK_DRAW_BUBBLE BUBBLE_DATA))
   (SETQ BUBBLE_DATA (HCNM_LDRBLK_GET_BUBBLE_DATA BUBBLE_DATA))
   (HCNM_LDRBLK_FINISH_BUBBLE BUBBLE_DATA)
-  (PRINC "\nUse the ATTIPEDIT command to edit bubble note.")
   (HCNM_RESTORE_DIMSTYLE)
   (HAWS-VRSTOR)
   (VL-CMDF "._undo" "_e")
@@ -5232,6 +5232,7 @@ ImportLayerSettings=No
     (CONS "BLOCKNAME" NIL)
     (CONS "ENAME_BUBBLE" NIL)
     (CONS "ENAME_BUBBLE_OLD" NIL)
+    (CONS "ENAME_LAST" NIL)
     (CONS "ENAME_LEADER" NIL)
     (CONS "ENAME_LEADER_OLD" NIL)
     (CONS "NOTETYPE" NIL)
@@ -5370,7 +5371,9 @@ ImportLayerSettings=No
     )
   )
 )
-(DEFUN HCNM_LDRBLK_GET_P2_DATA (BUBBLE_DATA / ENAME_BUBBLE P1_UCS P2 SS1 VLAOBJ TH BLOCKNAME NOTETYPE)
+;; Gets insertion point of bubble in UCS coordinates
+;; Bubble still doesn't exist. Draws temp bubbles only.
+(DEFUN HCNM_LDRBLK_GET_P2_DATA (BUBBLE_DATA / ENAME_BUBBLE_TEMP P1_UCS P2 SS1 OBJ_BUBBLE_TEMP TH BLOCKNAME NOTETYPE)
   (SETQ
     P1_UCS (HCNM_LB:BD_GET BUBBLE_DATA "P1_UCS")
     TH (HCNM_LB:BD_GET BUBBLE_DATA "TH")
@@ -5389,40 +5392,42 @@ ImportLayerSettings=No
       P1_UCS
     )
     (SETQ
-      ENAME_BUBBLE (ENTLAST)
-      VLAOBJ (VLAX-ENAME->VLA-OBJECT ENAME_BUBBLE)
+      ENAME_BUBBLE_TEMP (ENTLAST)
+      OBJ_BUBBLE_TEMP (VLAX-ENAME->VLA-OBJECT ENAME_BUBBLE_TEMP)
     )
-    (LM:SETDYNPROPVALUE VLAOBJ "Shape" NOTETYPE)
-    (SSADD ENAME_BUBBLE SS1)
+    (LM:SETDYNPROPVALUE OBJ_BUBBLE_TEMP "Shape" NOTETYPE)
+    (SSADD ENAME_BUBBLE_TEMP SS1)
   )
   (PROMPT "\nLocation for bubble: ")
   (VL-CMDF "._MOVE" SS1 "" P1_UCS PAUSE)
   (SETQ
-    P2 (TRANS (CDR (ASSOC 10 (ENTGET ENAME_BUBBLE))) ENAME_BUBBLE 1)
+    P2 (TRANS (CDR (ASSOC 10 (ENTGET ENAME_BUBBLE_TEMP))) ENAME_BUBBLE_TEMP 1)
     BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "P2" P2)
-    BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "ENAME_BUBBLE" ENAME_BUBBLE)
   )
   (VL-CMDF "._erase" SS1 "")
   BUBBLE_DATA
 )
 ;; Draw bubble and update BUBBLE_DATA with new leader/block info
-(DEFUN HCNM_LDRBLK_DRAW_BUBBLE (BUBBLE_DATA / P1_UCS ENAME_BUBBLE ENAME_LEADER P2 ANG1 FLIPSTATE ASSOCIATE_P AUOLD TH BLOCKNAME NOTETYPE INPUT1 ELIST_LEADER_OLD)
-  (SETQ
-    P1_UCS (HCNM_LB:BD_GET BUBBLE_DATA "P1_UCS")
-    ENAME_BUBBLE (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE")
-    P2 (HCNM_LB:BD_GET BUBBLE_DATA "P2")
-    TH (HCNM_LB:BD_GET BUBBLE_DATA "TH")
-    BLOCKNAME (HCNM_LB:BD_GET BUBBLE_DATA "BLOCKNAME")
-    NOTETYPE (HCNM_LB:BD_GET BUBBLE_DATA "NOTETYPE")
-    ANG1 (- (ANGLE P1_UCS P2) (GETVAR "snapang"))
-    FLIPSTATE (COND ((MINUSP (COS ANG1)) "left") (T "right"))
+(DEFUN HCNM_LDRBLK_DRAW_BUBBLE (BUBBLE_DATA / P1_UCS ENAME_BUBBLE ENAME_BUBBLE_OLD 
+                                ENAME_LEADER P2 ANG1 FLIPSTATE ASSOCIATE_P AUOLD TH 
+                                BLOCKNAME NOTETYPE INPUT1 ELIST_LEADER_OLD
+                               ) 
+  (SETQ P1_UCS           (HCNM_LB:BD_GET BUBBLE_DATA "P1_UCS")
+        ENAME_BUBBLE_OLD (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE_OLD")
+        ENAME_LEADER_OLD (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_LEADER_OLD")
+        P2               (HCNM_LB:BD_GET BUBBLE_DATA "P2")
+        TH               (HCNM_LB:BD_GET BUBBLE_DATA "TH")
+        BLOCKNAME        (HCNM_LB:BD_GET BUBBLE_DATA "BLOCKNAME")
+        NOTETYPE         (HCNM_LB:BD_GET BUBBLE_DATA "NOTETYPE")
+        ANG1             (- (ANGLE P1_UCS P2) (GETVAR "snapang"))
+        FLIPSTATE        (COND ((MINUSP (COS ANG1)) "left") (T "right"))
   )
-  (COND
+  (COND 
     ;; If it's not a new insertion, don't draw a leader.
-    (ENAME_BUBBLE
+    (ENAME_BUBBLE_OLD
      (SETQ AUOLD (GETVAR "aunits"))
      (SETVAR "aunits" 3)
-     (VL-CMDF
+     (VL-CMDF 
        "._insert"
        (STRCAT BLOCKNAME "-" FLIPSTATE)
        "_Scale"
@@ -5432,61 +5437,73 @@ ImportLayerSettings=No
        P2
      )
      (SETVAR "aunits" AUOLD)
+     (SETQ ENAME_BUBBLE (ENTLAST))
      ;; If there is an old leader, stretch it and associate it.
-     (COND
+     (COND 
        (ENAME_LEADER_OLD
         (SETQ ELIST_LEADER_OLD (ENTGET ENAME_LEADER_OLD))
         ;; Change its arrowhead if needed.
         (HCNM_LDRBLK_CHANGE_ARROWHEAD ENAME_LEADER_OLD)
         ;; Stretch it.
-        (ENTMOD
-          (SUBST
+        (ENTMOD 
+          (SUBST 
             (CONS 10 P2)
-            (ASSOC
+            (ASSOC 
               10
-              (CDR
+              (CDR 
                 (MEMBER (ASSOC 10 ELIST_LEADER_OLD) ELIST_LEADER_OLD)
               )
             )
             ELIST_LEADER_OLD
           )
         )
-         (VL-CMDF
-           "._qldetachset" ENAME_LEADER_OLD "" "._qlattach" ENAME_LEADER_OLD (ENTLAST)
-           "._draworder" (ENTLAST) "" "_front"
-         )
+        (VL-CMDF 
+          "._qldetachset"
+          ENAME_LEADER_OLD
+          ""
+          "._qlattach"
+          ENAME_LEADER_OLD
+          (ENTLAST)
+          "._draworder"
+          (ENTLAST)
+          ""
+          "_front"
+        )
        )
      )
     )
     (T
-     (SETQ
-       ASSOCIATE_P (COND ((= (GETVAR "DIMANNO") 1) T) (NIL))
-     )
-     (COND
-       ((AND (NOT ASSOCIATE_P) (GETVAR "CANNOSCALEVALUE") (/= (GETVAR "DIMSCALE") (/ 1.0 (GETVAR "CANNOSCALEVALUE"))))
-        (ALERT
-          (PRINC
-            (STRCAT
-              "\nDimension scale (" (RTOS (GETVAR "DIMSCALE") 2 2)
-              ") and\nAnnotation scale (" (RTOS (/ 1.0 (GETVAR "CANNOSCALEVALUE")) 2 2)
+     (SETQ ASSOCIATE_P (COND ((= (GETVAR "DIMANNO") 1) T) (NIL)))
+     (COND 
+       ((AND (NOT ASSOCIATE_P) 
+             (GETVAR "CANNOSCALEVALUE")
+             (/= (GETVAR "DIMSCALE") (/ 1.0 (GETVAR "CANNOSCALEVALUE")))
+        )
+        (ALERT 
+          (PRINC 
+            (STRCAT 
+              "\nDimension scale ("
+              (RTOS (GETVAR "DIMSCALE") 2 2)
+              ") and\nAnnotation scale ("
+              (RTOS (/ 1.0 (GETVAR "CANNOSCALEVALUE")) 2 2)
               ")\nare not equal.\nCNM recommends setting dimension scale to match annotation scale."
             )
           )
         )
         (INITGET 1 "Yes No")
         (SETQ INPUT1 (GETKWORD "\nSet dimension scale to match annotation scale? [Yes/No]: "))
-        (COND ((= INPUT1 "Yes") (SETVAR "DIMSCALE" (/ 1.0 (GETVAR "CANNOSCALEVALUE")))))
+        (COND 
+          ((= INPUT1 "Yes") (SETVAR "DIMSCALE" (/ 1.0 (GETVAR "CANNOSCALEVALUE"))))
+        )
        )
      )
-     (SETQ
-       ANG1 (- (ANGLE P1_UCS P2) (GETVAR "snapang"))
-       FLIPSTATE (COND ((MINUSP (COS ANG1)) "left") (T "right"))
+     (SETQ ANG1      (- (ANGLE P1_UCS P2) (GETVAR "snapang"))
+           FLIPSTATE (COND ((MINUSP (COS ANG1)) "left") (T "right"))
      )
-     (SETQ ENAME_LEADER (ENTLAST))
-     ;; Store new leader in BUBBLE_DATA
-     (SETQ BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "ENAME_LEADER" ENAME_LEADER))
+      ;; SAVE LAST ENTITY FOR ENTNEXT USAGE.
+     (SETQ BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "ENAME_LAST" (ENTLAST)))
      ;;Start insertion
-     (COND
+     (COND 
        ((>= (ATOF (GETVAR "acadver")) 14)
         (VL-CMDF "._leader" P1_UCS P2 "_Annotation" "")
         (COND (ASSOCIATE_P (VL-CMDF "_block")) (T (VL-CMDF "_none" "._INSERT")))
@@ -5499,6 +5516,9 @@ ImportLayerSettings=No
      (SETVAR "aunits" 3)
      (VL-CMDF (STRCAT BLOCKNAME "-" FLIPSTATE) "_Scale" TH P2 (GETVAR "snapang"))
      (SETVAR "aunits" AUOLD)
+     (SETQ ENAME_BUBBLE (ENTLAST)
+           BUBBLE_DATA  (HCNM_LB:BD_SET BUBBLE_DATA "ENAME_BUBBLE" ENAME_BUBBLE)
+     )
     )
   )
   BUBBLE_DATA
@@ -5547,11 +5567,12 @@ ImportLayerSettings=No
   )
   (HCNM_LB:BD_SET BUBBLE_DATA "ATTRIBUTES" (HCNM_LDRBLK_ADJUST_FORMATS ATTRIBUTE_LIST))
 )
-(DEFUN HCNM_LDRBLK_FINISH_BUBBLE (BUBBLE_DATA / ENAME_BUBBLE ENAME_BUBBLE_OLD ENAME_LEADER REPLACE_BUBBLE_P ATTRIBUTES NOTETYPE)
+(DEFUN HCNM_LDRBLK_FINISH_BUBBLE (BUBBLE_DATA / ENAME_BUBBLE ENAME_BUBBLE_OLD ENAME_LAST ENAME_LEADER ENAME_TEMP REPLACE_BUBBLE_P ATTRIBUTES NOTETYPE)
   (SETQ
+    ENAME_LAST (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_LAST")
+    ENAME_TEMP ENAME_LAST
     ENAME_BUBBLE (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE")
     ENAME_BUBBLE_OLD (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE_OLD")
-    ENAME_LEADER (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_LEADER")
     REPLACE_BUBBLE_P (HCNM_LB:BD_GET BUBBLE_DATA "REPLACE_BUBBLE_P")
     ATTRIBUTES (HCNM_LB:BD_GET BUBBLE_DATA "ATTRIBUTES")
     NOTETYPE (HCNM_LB:BD_GET BUBBLE_DATA "NOTETYPE")
@@ -5559,13 +5580,14 @@ ImportLayerSettings=No
   (HCNM_LDRBLK_SET_DYNPROPS ENAME_BUBBLE ENAME_BUBBLE_OLD NOTETYPE REPLACE_BUBBLE_P)
   (IF REPLACE_BUBBLE_P (ENTDEL ENAME_BUBBLE_OLD))
   (HCNM_SET_ATTRIBUTES ENAME_BUBBLE ATTRIBUTES)
-  ;; Change leader arrowhead if needed.
+  ;; Use entnext to look for a leader starting from the last entity before this bubble.
   (WHILE
     (AND
-      (= (C:HCNM-CONFIG-GETVAR "BubbleArrowIntegralPending") "1")
-      (/= "LEADER" (CDR (ASSOC 0 (ENTGET (SETQ ENAME_LEADER (ENTNEXT ENAME_LEADER))))))
+      (/= "LEADER" (CDR (ASSOC 0 (ENTGET (SETQ ENAME_TEMP (ENTNEXT ENAME_TEMP))))))
     )
   )
+  (SETQ ENAME_LEADER ENAME_TEMP)
+  ;; Change leader arrowhead if needed.
   (HCNM_LDRBLK_CHANGE_ARROWHEAD ENAME_LEADER)
 )
 (DEFUN HCNM_LDRBLK_GET_MTEXT_STRING ()
@@ -5753,7 +5775,7 @@ ImportLayerSettings=No
   )
 )
 (DEFUN HCNM_LDRBLK_GET_TEXT_ENTRY (ENAME_BUBBLE LINE_NUMBER ATTRIBUTE_LIST /
-                               SKIP_ENTRY_P INPUT LOOP-P PROMPT-P STRING TAG
+                               INPUT SKIP_ENTRY_P INPUT LOOP-P PROMPT-P STRING TAG
                               )
   (SETQ
     LOOP-P T
@@ -5992,16 +6014,15 @@ ImportLayerSettings=No
   )
   BUBBLE_DATA
 )
-(DEFUN HCNM_LDRBLK_AUTO_QTY (BUBBLE_DATA TAG AUTO_TYPE KEY FACTOR INPUT / ATTRIBUTE_LIST STR_BACKSLASH INPUT1 PSPACE_BUBBLE_P
-                         SS-P STRING
-                        )
+(DEFUN HCNM_LDRBLK_AUTO_QTY (BUBBLE_DATA TAG AUTO_TYPE QT_TYPE FACTOR INPUT / ATTRIBUTE_LIST STR_BACKSLASH INPUT1 PSPACE_BUBBLE_P
+                         SS-P STRING)
   (SETQ ATTRIBUTE_LIST (HCNM_LB:BD_GET BUBBLE_DATA "ATTRIBUTES"))
   (COND
     ((SETQ STRING INPUT))
     (T  
       (COND
         ((AND
-          (= AUTO_TYPE "Area")
+          (= QT_TYPE "Area")
           (= (C:HCNM-CONFIG-GETVAR "BubbleAreaIntegral") "1")
           )
         (C:HCNM-CONFIG-SETVAR "BubbleArrowIntegralPending" "1")
@@ -6025,13 +6046,13 @@ ImportLayerSettings=No
               (LOAD "HAWS-QT")
             )
             (HAWS-QT-NEW "ldrblk")
-            (HAWS-QT-SET-PROPERTY "ldrblk" "type" (STRCASE AUTO_TYPE T))
+            (HAWS-QT-SET-PROPERTY "ldrblk" "type" (STRCASE QT_TYPE T))
             (HAWS-QT-SET-PROPERTY "ldrblk" "factor" (READ FACTOR))
             (HAWS-QT-SET-PROPERTY
               "ldrblk"
               "postfix"
               (C:HCNM-CONFIG-GETVAR
-                (STRCAT "BubbleTextPostfix" KEY)
+                (STRCAT "BubbleTextPostfix" AUTO_TYPE)
               )
             )
             (HAWS-QT-STRING "ldrblk")
@@ -6040,7 +6061,7 @@ ImportLayerSettings=No
           (T
             (STRCAT
               (C:HCNM-CONFIG-GETVAR
-                (STRCAT "BubbleTextPrefix" KEY)
+                (STRCAT "BubbleTextPrefix" AUTO_TYPE)
               )
               "%<\\AcObjProp Object(%<\\_ObjId "
               (VLA-GETOBJECTIDSTRING
@@ -6051,22 +6072,23 @@ ImportLayerSettings=No
                 :VLAX-FALSE
               )
               ">%)."
-              AUTO_TYPE
+              QT_TYPE
               " \\f \"%lu2%pr"
               (C:HCNM-CONFIG-GETVAR
-                (STRCAT "BubbleTextPrecision" KEY)
+                (STRCAT "BubbleTextPrecision" AUTO_TYPE)
               )
               "%ct8["
               FACTOR
               "]\">%"
               (C:HCNM-CONFIG-GETVAR
-                (STRCAT "BubbleTextPostfix" KEY)
+                (STRCAT "BubbleTextPostfix" AUTO_TYPE)
               )
             )
           )
         )
       )
       (HCNM_LDRBLK_SPACE_RESTORE PSPACE_BUBBLE_P)
+      
     )
   )
   ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
@@ -6091,10 +6113,12 @@ ImportLayerSettings=No
   )
 )
 (DEFUN HCNM_LDRBLK_SPACE_SET_MODEL ()
+  (C:HCNM-CONFIG-SETVAR "AllowReactors" "0")
   (COND ((= (GETVAR "CVPORT") 1) (VL-CMDF "._MSPACE") T))
 )
 (DEFUN HCNM_LDRBLK_SPACE_RESTORE (PSPACE_BUBBLE_P)
   (COND (PSPACE_BUBBLE_P (VL-CMDF "._PSPACE")))
+  (C:HCNM-CONFIG-SETVAR "AllowReactors" "1")
 )
 ;; bubble-data-update: This has to be split into
 ;; 1. HCNM_LDRBLK_AUTO_AL_GET_OBJECT that returns object
@@ -6658,7 +6682,7 @@ ImportLayerSettings=No
          HCNM_EB:ATTRIBUTE_LIST
          TAG
          AUTO_TYPE
-         NIL
+         NIL  ; NIL = prompt user to select/confirm alignment
        )
      )
   )
@@ -6814,7 +6838,9 @@ ImportLayerSettings=No
           OBJ_NEXT
           (CADR (ASSOC ATAG ATTRIBUTE_LIST))
         )
-        (COND ((= (HCNM_LDRBLK_GET_MTEXT_STRING) "")(VL-CMDF "._updatefield" ENAME_NEXT "")))
+        ;; UPDATEFIELD commented out to avoid "0 field(s) found/updated" messages
+        ;; May be necessary for some bubble types - uncomment if needed
+        ;(COND ((= (HCNM_LDRBLK_GET_MTEXT_STRING) "")(VL-CMDF "._updatefield" ENAME_NEXT "")))
       )
     )
   )
@@ -6875,7 +6901,7 @@ ImportLayerSettings=No
   (FOREACH REACTOR REACTORS_OLD 
     (COND 
       ;; THERE IS ONLY ONE REACTOR FOR THIS APP BECAUSE THIS SEARCH ENSURES THAT WE DON'T CREATE MORE
-      ((ASSOC KEY_APP (VLR-DATA REACTOR))
+      ((AND (LISTP (SETQ DATA_OLD (VLR-DATA REACTOR))) (ASSOC KEY_APP DATA_OLD))
        (SETQ REACTOR_OLD REACTOR)
       )
     )
@@ -6917,16 +6943,27 @@ ImportLayerSettings=No
     )
   )
 )
-(DEFUN HCNM_LDRBLK_REACTOR_CALLBACK (OBJ_NOTIFIER OBJ_REACTOR PARAMETER-LIST / KEY_APP DATA_OLD DATA HANDLE_NOTIFIER REFERENCE_LIST FOUND_P)
-  (SETQ KEY_APP         "HCNM-BUBBLE"
-        DATA_OLD        (VLR-DATA OBJ_REACTOR)
-        DATA            DATA_OLD
-        HANDLE_NOTIFIER (VLA-GET-HANDLE OBJ_NOTIFIER)
-        REFERENCE_LIST  (CADR (ASSOC KEY_APP DATA))
-        FOUND_P         NIL
-  )
-  ;; Iterate through all references in the reactor data
-  (FOREACH REFERENCE REFERENCE_LIST
+(DEFUN HCNM_LDRBLK_REACTOR_CALLBACK (OBJ_NOTIFIER OBJ_REACTOR PARAMETER-LIST / KEY_APP DATA_OLD DATA HANDLE_NOTIFIER REFERENCE_LIST FOUND_P HANDLE_REFERENCE BUBBLE_LIST HANDLE_BUBBLE TAG_LIST TAG AUTO_TYPE)
+  ;; Skip reactor processing during space transitions to avoid spurious modification events
+  (COND
+    ((= (C:HCNM-CONFIG-GETVAR "AllowReactors") "0") 
+     NIL  ; Return early if reactors are not allowed
+    )
+    (T
+     ;; Wrap in error handler to catch erased objects
+     (IF (NOT (VL-CATCH-ALL-ERROR-P 
+               (VL-CATCH-ALL-APPLY 'VLA-GET-HANDLE (LIST OBJ_NOTIFIER))))
+       (PROGN
+         ;; Normal reactor processing - object is valid
+         (SETQ KEY_APP         "HCNM-BUBBLE"
+               DATA_OLD        (VLR-DATA OBJ_REACTOR)
+               DATA            DATA_OLD
+               HANDLE_NOTIFIER (VLA-GET-HANDLE OBJ_NOTIFIER)
+               REFERENCE_LIST  (CADR (ASSOC KEY_APP DATA))
+               FOUND_P         NIL
+         )
+     ;; Iterate through all references in the reactor data
+     (FOREACH REFERENCE REFERENCE_LIST
     (SETQ HANDLE_REFERENCE (CAR REFERENCE)
           BUBBLE_LIST      (CADR REFERENCE))
     ;; Check if this is the reference that was modified
@@ -6935,6 +6972,8 @@ ImportLayerSettings=No
        ;; Reference object modified - update all bubbles using this reference
        (SETQ FOUND_P T)
        (PRINC (STRCAT "\nReference modified: " HANDLE_REFERENCE))
+       ;; Temporarily disable reactors to prevent infinite loop during updates
+       (C:HCNM-CONFIG-SETVAR "AllowReactors" "0")
        (FOREACH BUBBLE BUBBLE_LIST
          (SETQ HANDLE_BUBBLE (CAR BUBBLE)
                TAG_LIST      (CADR BUBBLE))
@@ -6945,6 +6984,8 @@ ImportLayerSettings=No
            (HCNM_LDRBLK_UPDATE_BUBBLE_TAG HANDLE_BUBBLE TAG AUTO_TYPE HANDLE_REFERENCE)
          )
        )
+       ;; Re-enable reactors after updates complete
+       (C:HCNM-CONFIG-SETVAR "AllowReactors" "1")
       )
       (T
        ;; Notifier is not this reference, might be a leader - check each bubble
@@ -6959,11 +7000,15 @@ ImportLayerSettings=No
             ;; This bubble's leader moved - update all its tags with the correct reference
             (SETQ FOUND_P T)
             (PRINC (STRCAT "\nLeader modified for bubble: " HANDLE_BUBBLE " using reference: " HANDLE_REFERENCE))
+            ;; Temporarily disable reactors to prevent infinite loop during updates
+            (C:HCNM-CONFIG-SETVAR "AllowReactors" "0")
             (FOREACH TAG_DATA TAG_LIST
               (SETQ TAG       (CAR TAG_DATA)
                     AUTO_TYPE (CADR TAG_DATA))
               (HCNM_LDRBLK_UPDATE_BUBBLE_TAG HANDLE_BUBBLE TAG AUTO_TYPE HANDLE_REFERENCE)
             )
+            ;; Re-enable reactors after updates complete
+            (C:HCNM-CONFIG-SETVAR "AllowReactors" "1")
            )
          )
        )
@@ -6975,16 +7020,22 @@ ImportLayerSettings=No
       (PRINC (STRCAT "\nWarning: Notifier " HANDLE_NOTIFIER " not found in reactor data"))
     )
   )
-  (COND 
-    ;; DETACH THE NOTIFIER IF USER REMOVED ALL ITS DEPENDENT AUTO-TEXT FROM ALL BUBBLES.
-    ((NOT REFERENCE_LIST)
-     (VLR-OWNER-REMOVE OBJ_REACTOR OBJ_NOTIFIER)
-    )
-    ;; UPDATE THE REACTOR DATA IF USER REMOVED SOME OF ITS DEPENDENT AUTO-TEXT
-    ((NOT (EQUAL DATA DATA_OLD))
-     (VLR-DATA-SET OBJ_REACTOR DATA)
-    )
-  )
+         (COND 
+           ;; DETACH THE NOTIFIER IF USER REMOVED ALL ITS DEPENDENT AUTO-TEXT FROM ALL BUBBLES.
+           ((NOT REFERENCE_LIST)
+            (VLR-OWNER-REMOVE OBJ_REACTOR OBJ_NOTIFIER)
+           )
+           ;; UPDATE THE REACTOR DATA IF USER REMOVED SOME OF ITS DEPENDENT AUTO-TEXT
+           ((NOT (EQUAL DATA DATA_OLD))
+            (VLR-DATA-SET OBJ_REACTOR DATA)
+           )
+         )
+       )  ; End of PROGN for valid object
+       ;; ELSE: Object was erased, silently ignore
+       (PRINC "\nReactor fired on erased object - ignoring")
+     )  ; End of IF checking for valid object
+    )  ; End of normal reactor processing (T branch)
+  )  ; End of suppression check COND
 )
 ;; Helper function to check if a bubble has a specific leader
 (DEFUN HCNM_LDRBLK_BUBBLE_HAS_LEADER (HANDLE_BUBBLE HANDLE_LEADER / ENAME_BUBBLE ENAME_LEADER)
@@ -7005,11 +7056,7 @@ ImportLayerSettings=No
 ;; Helper function to check if entity is on the "Model" tab
 (DEFUN HCNM_LDRBLK_IS_ON_MODEL_TAB (ENAME / LAYOUT_NAME)
   (SETQ LAYOUT_NAME (CDR (ASSOC 410 (ENTGET ENAME))))
-  (OR
-    (= LAYOUT_NAME "Model")
-    (= LAYOUT_NAME "MODEL")
-    (NOT LAYOUT_NAME) ;; Older drawings might not have layout name
-  )
+    (= (STRCASE LAYOUT_NAME) "MODEL")
 )
 ;; Updates a specific tag in a bubble based on reactor notification
 ;; Called when either the leader moves or the reference object changes
