@@ -5321,7 +5321,7 @@ ImportLayerSettings=No
             )
        (PRINC "\nSelected entity is not a CNM bubble note.")
      )
-     (SETQ BUBBLE_DATA (HCNM_LB:BD_SET "ENAME_BUBBLE_OLD" ENAME_BUBBLE_OLD))
+     (SETQ BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "ENAME_BUBBLE_OLD" ENAME_BUBBLE_OLD))
     )
     (T NIL)
   )
