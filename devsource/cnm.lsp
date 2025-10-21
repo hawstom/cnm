@@ -6596,16 +6596,21 @@ ImportLayerSettings=No
   )
   (COND 
     (REACTOR_OLD
-     ;; IF THIS OWNER IS ALREADY ATTACHED, JUST UPDATE THE DATA
+     ;; UPDATE THE DATA (either way, whether owner already attached or not)
+     (VLR-DATA-SET REACTOR_OLD 
+                   (HAWS_NESTED_LIST_UPDATE 
+                     (LIST (VLR-DATA REACTOR_OLD) 
+                           (LIST CAR_DATA 
+                                 (CDR (ASSOC 5 (ENTGET ENAME_BUBBLE)))
+                                 (LIST TAG KEY)
+                           )
+                     )
+                   )
+     )
+     ;; IF THIS OWNER IS NOT ALREADY ATTACHED, ADD IT
      (COND 
-       ((MEMBER OBJECT (VLR-OWNERS REACTOR_OLD))
-        (VLR-DATA-SET REACTOR_OLD 
-                      (HAWS_NESTED_LIST_UPDATE 
-                        (LIST (VLR-DATA REACTOR_OLD) 
-                              (CAR_DATA ENAME_BUBBLE TAG KEY)
-                        )
-                      )
-        )
+       ((NOT (MEMBER NOTIFIER (VLR-OWNERS REACTOR_OLD)))
+        (VLR-OWNER-ADD REACTOR_OLD NOTIFIER)
        )
      )
     )
