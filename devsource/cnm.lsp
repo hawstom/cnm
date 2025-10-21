@@ -2746,6 +2746,73 @@
   (hcnm_concept_TESTGETVAR (GETSTRING "\nVariable name: "))
   (haws-core-restore)
 )
+
+;;==============================================================================
+;; C:PRETEST - Clean up before testing bubble notes
+;;==============================================================================
+;; Removes all reactors and deletes all bubbles with HCNM-BUBBLE XDATA
+;; Usage: Type PRETEST at command line before testing
+(DEFUN C:PRETEST (/ ENAME ENAME_NEXT ENAME_LEADER XDATA COUNT_MS COUNT_PS COUNT_LDR REACTORS)
+  (PRINC "\n=== PRE-TEST CLEANUP ===")
+  (SETQ COUNT_MS 0 COUNT_PS 0 COUNT_LDR 0)
+  
+  ;; Step 1: Remove all reactors
+  (PRINC "\nRemoving all object reactors...")
+  (SETQ REACTORS (CDAR (VLR-REACTORS :VLR-OBJECT-REACTOR)))
+  (COND
+    (REACTORS
+     (FOREACH REACTOR REACTORS
+       (VLR-REMOVE REACTOR)
+       (PRINC ".")
+     )
+     (PRINC (STRCAT "\nRemoved " (ITOA (LENGTH REACTORS)) " reactor(s)"))
+    )
+    (T (PRINC "\nNo reactors found"))
+  )
+  
+  ;; Step 2: Erase all bubbles with HCNM-BUBBLE XDATA and their leaders
+  (PRINC "\nScanning for bubbles with XDATA...")
+  (SETQ ENAME (ENTNEXT))
+  (WHILE ENAME
+    (SETQ ENAME_NEXT (ENTNEXT ENAME))  ; Get next before potential deletion
+    ;; Check if entity has HCNM-BUBBLE XDATA
+    (SETQ XDATA (ASSOC -3 (ENTGET ENAME '("HCNM-BUBBLE"))))
+    (COND
+      (XDATA
+       ;; Found a bubble - determine if it's in model or paper space
+       (COND
+         ((HCNM_LDRBLK_IS_ON_MODEL_TAB ENAME)
+          (SETQ COUNT_MS (1+ COUNT_MS))
+         )
+         (T
+          (SETQ COUNT_PS (1+ COUNT_PS))
+         )
+       )
+       ;; Find and delete the associated leader first
+       (SETQ ENAME_LEADER (HCNM_LDRBLK_BUBBLE_LEADER ENAME))
+       (COND
+         (ENAME_LEADER
+          (ENTDEL ENAME_LEADER)
+          (SETQ COUNT_LDR (1+ COUNT_LDR))
+         )
+       )
+       ;; Erase the bubble
+       (ENTDEL ENAME)
+       (PRINC ".")
+      )
+    )
+    (SETQ ENAME ENAME_NEXT)
+  )
+  
+  ;; Step 3: Report results
+  (PRINC (STRCAT "\n\nDeleted " (ITOA COUNT_MS) " bubble(s) from Model Space"))
+  (PRINC (STRCAT "\nDeleted " (ITOA COUNT_PS) " bubble(s) from Paper Space"))
+  (PRINC (STRCAT "\nDeleted " (ITOA COUNT_LDR) " leader(s)"))
+  (PRINC (STRCAT "\nTotal: " (ITOA (+ COUNT_MS COUNT_PS)) " bubble(s) deleted"))
+  (PRINC "\n\n=== CLEANUP COMPLETE ===")
+  (PRINC)
+)
+
 (DEFUN hcnm_concept_TESTSETVAR (VAR VAL)
   (hcnm_concept_SETVAR
     ;; variable
@@ -5858,6 +5925,7 @@ ImportLayerSettings=No
     ("stAoff" "StaOff" "AL" T) ; Station+Offset - needs P1_WORLD for alignment query
     ("N" "N" nil T)            ; Northing - needs P1_WORLD for coordinate
     ("E" "E" nil T)            ; Easting - needs P1_WORLD for coordinate
+    ("NE" "NE" nil T)          ; Northing+Easting - needs P1_WORLD for coordinate
     ("Z" "Z" "SU" T)           ; Elevation - needs P1_WORLD for surface query (unimplemented)
     ("Text" "Text" nil nil)    ; Static text - user enters manually
     ("ENtry" "ENtry" nil nil)  ; Entry number - static text
@@ -6120,105 +6188,232 @@ ImportLayerSettings=No
   (COND (PSPACE_BUBBLE_P (VL-CMDF "._PSPACE")))
   (C:HCNM-CONFIG-SETVAR "AllowReactors" "1")
 )
-;; bubble-data-update: This has to be split into
-;; 1. HCNM_LDRBLK_AUTO_AL_GET_OBJECT that returns object
-;; 2. HCNM_LDRBLK_AUTO_AL_GET_STRING that returns staoff string of given object and point so that this function can be used to update string.
-(DEFUN HCNM_LDRBLK_AUTO_AL (BUBBLE_DATA TAG AUTO_TYPE INPUT / ATTRIBUTE_LIST ENAME_BUBBLE ENAME_LEADER DRAWSTATION NAME OBJALIGN OFF P1_WORLD PSPACE_BUBBLE_P STA STRING)
+
+;;==============================================================================
+;; COORDINATE AUTO-TEXT VALIDATION AND WARNING SYSTEM
+;;==============================================================================
+;; These functions determine if an auto-text type requires coordinates and
+;; warn users about paper space viewport behavior to prevent drawing issues.
+
+;; Check if AUTO_TYPE is coordinate-based using GET_AUTO_TYPE_KEYS
+;; Returns: T if auto-type requires coordinates (Sta/Off/N/E/Z), NIL otherwise
+;; Usage: Determines if paper space warning should be shown
+(DEFUN HCNM_LDRBLK_AUTO_TYPE_IS_COORDINATE_P (AUTO_TYPE / TYPE_DEF)
+  (SETQ TYPE_DEF 
+    (CAR 
+      (VL-REMOVE-IF-NOT 
+        '(LAMBDA (X) (= (CADR X) AUTO_TYPE))
+        (HCNM_LDRBLK_GET_AUTO_TYPE_KEYS)
+      )
+    )
+  )
+  (COND
+    (TYPE_DEF (CADDDR TYPE_DEF))  ; Return 4th element (Requires_Coordinates)
+    (T nil)
+  )
+)
+
+;; Display critical warning about paper space coordinate behavior
+;; Why: Prevents users from changing viewport views which breaks coordinate accuracy
+;; When: Only shown for coordinate-based auto-text in paper space bubbles
+;; TODO: Replace with dismissable tip system when implemented
+(DEFUN HCNM_LDRBLK_WARN_PSPACE_COORDINATES (ENAME_BUBBLE AUTO_TYPE)
+  (COND
+    ((AND ENAME_BUBBLE 
+          (NOT (HCNM_LDRBLK_IS_ON_MODEL_TAB ENAME_BUBBLE))
+          (HCNM_LDRBLK_AUTO_TYPE_IS_COORDINATE_P AUTO_TYPE))
+     ;; Bubble is in paper space and auto-type is coordinate-based - show warning
+     (ALERT (PRINC "IMPORTANT: Paper space bubble notes don't react to viewport changes.\n\nTo avoid causing chaos when changing viewport views, auto text for coordinates\ndoes not react to viewport view changes.\n\nYou must use the ____ command if you want to refresh the world space coordinates of all bubble notes on a viewport."))
+    )
+  )
+)
+
+;;==============================================================================
+;; ALIGNMENT AUTO-TEXT (Sta/Off/StaOff)
+;;==============================================================================
+;; Calculates station and offset values from alignment and leader position
+;; Workflow: Get alignment → Calculate Sta/Off → Format text → Attach reactor
+;;
+;; REFACTORED: Split into modular functions for better maintainability
+;;   - HCNM_LDRBLK_AUTO_ALIGNMENT_CALCULATE: Pure calculation (testable)
+;;   - HCNM_LDRBLK_AUTO_ALIGNMENT_FORMAT_STATION: Format station string
+;;   - HCNM_LDRBLK_AUTO_ALIGNMENT_FORMAT_OFFSET: Format offset string
+;;   - HCNM_LDRBLK_AUTO_AL: Main orchestrator (backward compatible)
+
+;; Calculate raw station and offset from alignment and world point
+;; Pure function: No side effects, easily testable
+;; Arguments:
+;;   ALIGNMENT_OBJECT - VLA-OBJECT of Civil 3D alignment
+;;   P1_WORLD - (X Y Z) point in world coordinates
+;; Returns:
+;;   (DRAWSTATION . OFFSET) on success
+;;   NIL on failure
+(DEFUN HCNM_LDRBLK_AUTO_ALIGNMENT_CALCULATE (ALIGNMENT_OBJECT P1_WORLD / DRAWSTATION OFFSET)
+  (COND
+    ((AND (= (TYPE ALIGNMENT_OBJECT) 'VLA-OBJECT) P1_WORLD)
+     ;; Call Civil 3D alignment method to get station/offset
+     ;; http://docs.autodesk.com/CIV3D/2012/ENU/API_Reference_Guide/com/AeccXLandLib__IAeccAlignment__StationOffset
+     (VLAX-INVOKE-METHOD 
+       ALIGNMENT_OBJECT
+       'STATIONOFFSET
+       (VLAX-MAKE-VARIANT (CAR P1_WORLD) VLAX-VBDOUBLE)
+       (VLAX-MAKE-VARIANT (CADR P1_WORLD) VLAX-VBDOUBLE)
+       'DRAWSTATION
+       'OFFSET
+     )
+     ;; Return as dotted pair
+     (CONS DRAWSTATION OFFSET)
+    )
+    (T NIL)  ; Invalid inputs
+  )
+)
+
+;; Format station value with config-based prefix/postfix
+;; Arguments:
+;;   ALIGNMENT_OBJECT - VLA-OBJECT to get station string with equations
+;;   DRAWSTATION - Raw station value from StationOffset method
+;; Returns: Formatted station string (e.g., "STA 10+50.00")
+(DEFUN HCNM_LDRBLK_AUTO_ALIGNMENT_FORMAT_STATION (ALIGNMENT_OBJECT DRAWSTATION)
+  (STRCAT 
+    (C:HCNM-CONFIG-GETVAR "BubbleTextPrefixSta")
+    (VLAX-INVOKE-METHOD 
+      ALIGNMENT_OBJECT
+      'GETSTATIONSTRINGWITHEQUATIONS
+      DRAWSTATION
+    )
+    (C:HCNM-CONFIG-GETVAR "BubbleTextPostfixSta")
+  )
+)
+
+;; Format offset value with config-based prefix/postfix and sign handling
+;; Arguments:
+;;   OFFSET - Raw offset value (positive = right, negative = left)
+;; Returns: Formatted offset string (e.g., "25.00 RT" or "LT 10.50")
+(DEFUN HCNM_LDRBLK_AUTO_ALIGNMENT_FORMAT_OFFSET (OFFSET / OFFSET_VALUE)
+  ;; Determine offset value (absolute or with sign)
+  (SETQ OFFSET_VALUE
+    (COND 
+      ((= (C:HCNM-CONFIG-GETVAR "BubbleOffsetDropSign") "1")
+       (ABS OFFSET)  ; Drop sign, show absolute value
+      )
+      (T OFFSET)  ; Keep sign
+    )
+  )
+  ;; Build offset string with appropriate prefix/postfix
+  (STRCAT 
+    ;; Prefix depends on offset direction
+    (COND 
+      ((MINUSP OFFSET)
+       (C:HCNM-CONFIG-GETVAR "BubbleTextPrefixOff-")
+      )
+      (T (C:HCNM-CONFIG-GETVAR "BubbleTextPrefixOff+"))
+    )
+    ;; Format number with configured precision
+    (RTOS 
+      OFFSET_VALUE
+      2
+      (ATOI (C:HCNM-CONFIG-GETVAR "BubbleTextPrecisionOff+"))
+    )
+    ;; Postfix depends on offset direction
+    (COND 
+      ((MINUSP OFFSET)
+       (C:HCNM-CONFIG-GETVAR "BubbleTextPostfixOff-")
+      )
+      (T (C:HCNM-CONFIG-GETVAR "BubbleTextPostfixOff+"))
+    )
+  )
+)
+
+;; Main alignment auto-text function (backward compatible)
+;; Orchestrates: get alignment → calculate → format → attach reactor
+;; Arguments:
+;;   BUBBLE_DATA - Bubble data alist
+;;   TAG - Attribute tag to update
+;;   AUTO_TYPE - "Sta", "Off", or "StaOff"
+;;   INPUT - Optional: Pre-selected alignment object (used by reactor updates)
+;; Returns: Updated BUBBLE_DATA with new attribute value
+(DEFUN HCNM_LDRBLK_AUTO_AL (BUBBLE_DATA TAG AUTO_TYPE INPUT / ATTRIBUTE_LIST ENAME_BUBBLE ENAME_LEADER STA_OFF_PAIR DRAWSTATION OFFSET OBJALIGN P1_WORLD PSPACE_BUBBLE_P STA_STRING OFF_STRING STRING CVPORT REF_OCS_1 REF_OCS_2 REF_OCS_3 REF_WCS_1 REF_WCS_2 REF_WCS_3)
   (SETQ 
     ATTRIBUTE_LIST (HCNM_LB:BD_GET BUBBLE_DATA "ATTRIBUTES")
     ENAME_BUBBLE (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE")
     ENAME_LEADER (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_LEADER")
     P1_WORLD (HCNM_LB:BD_GET BUBBLE_DATA "P1_WORLD")
   )
+  
+  ;; STEP 1: Get alignment object (user selection or provided input)
   (COND 
     ((SETQ OBJALIGN INPUT)
+     ;; Alignment provided (reactor update or programmatic call)
     )
     (T
+     ;; Get alignment from user
      (SETQ PSPACE_BUBBLE_P (HCNM_LDRBLK_SPACE_SET_MODEL)
            OBJALIGN        (HCNM_LDRBLK_AUTO_AL_GET_ALIGNMENT ENAME_BUBBLE TAG AUTO_TYPE)
      )
+     ;; NOTE: Still in MSPACE at this point - capture viewport transformation if needed
+     ;; Capture viewport transformation data if bubble is in paper space
+     (COND
+       ((AND OBJALIGN ENAME_BUBBLE (NOT (HCNM_LDRBLK_IS_ON_MODEL_TAB ENAME_BUBBLE)))
+        ;; Bubble is in paper space - capture transformation matrix
+        (SETQ CVPORT (GETVAR "CVPORT"))
+        (COND
+          ((AND CVPORT (> CVPORT 1))
+           ;; We're in a viewport - capture transformation matrix
+           ;; Use 3 reference points to capture rotation, scale, and translation
+           (SETQ REF_OCS_1 '(0.0 0.0 0.0)    ; Origin
+                 REF_OCS_2 '(1.0 0.0 0.0)    ; X-axis unit vector
+                 REF_OCS_3 '(0.0 1.0 0.0)    ; Y-axis unit vector
+                 REF_WCS_1 (TRANS (TRANS REF_OCS_1 3 2) 2 0)
+                 REF_WCS_2 (TRANS (TRANS REF_OCS_2 3 2) 2 0)
+                 REF_WCS_3 (TRANS (TRANS REF_OCS_3 3 2) 2 0))
+           (HCNM_LDRBLK_SET_VIEWPORT_TRANSFORM_XDATA ENAME_BUBBLE CVPORT 
+                                                       REF_OCS_1 REF_WCS_1
+                                                       REF_OCS_2 REF_WCS_2
+                                                       REF_OCS_3 REF_WCS_3)
+           (PRINC (STRCAT "\nStored viewport " (ITOA CVPORT) " transformation matrix"))
+          )
+        )
+       )
+     )
+     ;; Attach reactor to watch for alignment/leader changes
+     (HCNM_LDRBLK_ASSURE_AUTO_TEXT_HAS_REACTOR OBJALIGN ENAME_BUBBLE ENAME_LEADER TAG AUTO_TYPE)
+     ;; Now restore space after everything is done
      (HCNM_LDRBLK_SPACE_RESTORE PSPACE_BUBBLE_P)
-      (HCNM_LDRBLK_ASSURE_AUTO_TEXT_HAS_REACTOR OBJALIGN ENAME_BUBBLE ENAME_LEADER TAG AUTO_TYPE)
-
     )
   )
-  ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
-  ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
+  
+  ;; STEP 2: Calculate station and offset
+  (SETQ STA_OFF_PAIR (HCNM_LDRBLK_AUTO_ALIGNMENT_CALCULATE OBJALIGN P1_WORLD))
+  
+  ;; STEP 3: Format the result based on AUTO_TYPE
   (COND 
-    ((AND (= (TYPE OBJALIGN) 'VLA-OBJECT) P1_WORLD)
-      ;; http://docs.autodesk.com/CIV3D/2012/ENU/API_Reference_Guide/com/AeccXLandLib__IAeccAlignment__StationOffset@[in]_double@[in]_double@[out]_double_@[out]_double_.htm
-      (VLAX-INVOKE-METHOD 
-        OBJALIGN
-        'STATIONOFFSET
-        (VLAX-MAKE-VARIANT 
-          (CAR P1_WORLD)
-          VLAX-VBDOUBLE
-        )
-        (VLAX-MAKE-VARIANT 
-          (CADR P1_WORLD)
-          VLAX-VBDOUBLE
-        )
-        'DRAWSTATION
-        'OFF
-      )
-      (SETQ 
-        NAME 
-        (VLAX-GET-PROPERTY OBJALIGN 'NAME)             
-        STA  
-        (STRCAT 
-          (C:HCNM-CONFIG-GETVAR "BubbleTextPrefixSta")
-          (VLAX-INVOKE-METHOD 
-            OBJALIGN
-            'GETSTATIONSTRINGWITHEQUATIONS
-            DRAWSTATION
-          )
-          (C:HCNM-CONFIG-GETVAR "BubbleTextPostfixSta")
-        )
-        OFF  
-        (STRCAT 
-          (COND 
-            ((MINUSP OFF)
-              (C:HCNM-CONFIG-GETVAR "BubbleTextPrefixOff-")
-            )
-            (T (C:HCNM-CONFIG-GETVAR "BubbleTextPrefixOff+"))
-          )
-          (RTOS 
-            (COND 
-              ((= (C:HCNM-CONFIG-GETVAR "BubbleOffsetDropSign") "1")
-                (ABS OFF)
+    (STA_OFF_PAIR
+     ;; Calculation succeeded - extract and format
+     (SETQ DRAWSTATION (CAR STA_OFF_PAIR)
+           OFFSET      (CDR STA_OFF_PAIR)
+           STA_STRING  (HCNM_LDRBLK_AUTO_ALIGNMENT_FORMAT_STATION OBJALIGN DRAWSTATION)
+           OFF_STRING  (HCNM_LDRBLK_AUTO_ALIGNMENT_FORMAT_OFFSET OFFSET)
+           STRING
+           (COND 
+             ((= AUTO_TYPE "Sta") STA_STRING)
+             ((= AUTO_TYPE "Off") OFF_STRING)
+             ((= AUTO_TYPE "StaOff")
+              (STRCAT 
+                STA_STRING
+                (C:HCNM-CONFIG-GETVAR "BubbleTextJoinDelSta")
+                OFF_STRING
               )
-              (T OFF)
-            )
-            2
-            (ATOI (C:HCNM-CONFIG-GETVAR "BubbleTextPrecisionOff+"))
-          )
-          (COND 
-            ((MINUSP OFF)
-              (C:HCNM-CONFIG-GETVAR "BubbleTextPostfixOff-")
-            )
-            (T (C:HCNM-CONFIG-GETVAR "BubbleTextPostfixOff+"))
-          )
-        )
-        STRING
-        (COND 
-          ((= AUTO_TYPE "Sta") STA)
-          ((= AUTO_TYPE "Off") OFF)
-          ((= AUTO_TYPE "StaOff")
-          (STRCAT 
-            STA
-            (C:HCNM-CONFIG-GETVAR "BubbleTextJoinDelSta")
-            OFF
-          )
-          )
-        )
-      )
-    )
+             )
+           )  ; End inner COND for STRING
+     )  ; End SETQ
+    )  ; End first branch of outer COND
     (T 
-      ;; P1_WORLD is NIL - couldn't get world coordinates
-      ;; This could happen if leader was deleted or bubble is orphaned
-      (SETQ STRING "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
+     ;; Calculation failed - couldn't get coordinates or invalid alignment
+     (SETQ STRING "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
     )
-  )
+  )  ; End outer COND
+  
+  ;; Step 4: Save the formatted string to the attribute list and update BUBBLE_DATA
   (SETQ
     ATTRIBUTE_LIST
     (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST 
@@ -6231,7 +6426,7 @@ ImportLayerSettings=No
   BUBBLE_DATA
 )
 (DEFUN HCNM_LDRBLK_AUTO_AL_GET_ALIGNMENT
-   (ENAME_BUBBLE TAG AUTO_TYPE / CVPORT ESALIGN NAME OBJALIGN OBJALIGN_OLD 
+   (ENAME_BUBBLE TAG AUTO_TYPE / AVPORT CVPORT ESALIGN NAME OBJALIGN OBJALIGN_OLD 
     REF_OCS_1 REF_OCS_2 REF_OCS_3 REF_WCS_1 REF_WCS_2 REF_WCS_3 )
   (SETQ
     OBJALIGN_OLD
@@ -6270,42 +6465,67 @@ ImportLayerSettings=No
     (T 
       (princ "\nNo object selected. Keeping previous alignment.")
       (SETQ OBJALIGN OBJALIGN_OLD)
-    )
-  )
-  ;; Capture viewport transformation data if we have a valid alignment and bubble is not on Model tab
-  ;; At this point, we're in MSPACE in the correct viewport (set by caller HCNM_LDRBLK_AUTO_AL)
-  ;; We can capture the transformation by testing a reference point
-  (COND
-    ((AND OBJALIGN ENAME_BUBBLE (NOT (HCNM_LDRBLK_IS_ON_MODEL_TAB ENAME_BUBBLE)))
-     (SETQ CVPORT (GETVAR "CVPORT"))
-     (COND
-       ((AND CVPORT (> CVPORT 1))
-        ;; We're in a viewport - capture transformation matrix
-        ;; Use 3 reference points to capture rotation, scale, and translation
-        (SETQ REF_OCS_1 '(0.0 0.0 0.0)    ; Origin
-              REF_OCS_2 '(1.0 0.0 0.0)    ; X-axis unit vector
-              REF_OCS_3 '(0.0 1.0 0.0)    ; Y-axis unit vector
-              REF_WCS_1 (TRANS (TRANS REF_OCS_1 3 2) 2 0)
-              REF_WCS_2 (TRANS (TRANS REF_OCS_2 3 2) 2 0)
-              REF_WCS_3 (TRANS (TRANS REF_OCS_3 3 2) 2 0))
-        (HCNM_LDRBLK_SET_VIEWPORT_TRANSFORM_XDATA ENAME_BUBBLE CVPORT 
-                                                    REF_OCS_1 REF_WCS_1
-                                                    REF_OCS_2 REF_WCS_2
-                                                    REF_OCS_3 REF_WCS_3)
-        (PRINC (STRCAT "\nStored viewport " (ITOA CVPORT) " transformation matrix"))
-       )
-     )
+      ;; If using previous alignment and bubble is in paper space, user must select viewport
+      (COND
+        ((AND OBJALIGN ENAME_BUBBLE (NOT (HCNM_LDRBLK_IS_ON_MODEL_TAB ENAME_BUBBLE)))
+         ;; Show paper space warning before viewport selection
+         (HCNM_LDRBLK_WARN_PSPACE_COORDINATES ENAME_BUBBLE AUTO_TYPE)
+         (SETQ AVPORT (HCNM_LDRBLK_GET_TARGET_VPORT))
+         ;; Capture viewport transformation data now while in MSPACE with selected viewport
+         (SETQ CVPORT AVPORT)
+         (COND
+           ((AND CVPORT (> CVPORT 1))
+            ;; We're in a viewport - capture transformation matrix
+            ;; Use 3 reference points to capture rotation, scale, and translation
+            (SETQ REF_OCS_1 '(0.0 0.0 0.0)    ; Origin
+                  REF_OCS_2 '(1.0 0.0 0.0)    ; X-axis unit vector
+                  REF_OCS_3 '(0.0 1.0 0.0)    ; Y-axis unit vector
+                  REF_WCS_1 (TRANS (TRANS REF_OCS_1 3 2) 2 0)
+                  REF_WCS_2 (TRANS (TRANS REF_OCS_2 3 2) 2 0)
+                  REF_WCS_3 (TRANS (TRANS REF_OCS_3 3 2) 2 0))
+            (HCNM_LDRBLK_SET_VIEWPORT_TRANSFORM_XDATA ENAME_BUBBLE CVPORT 
+                                                        REF_OCS_1 REF_WCS_1
+                                                        REF_OCS_2 REF_WCS_2
+                                                        REF_OCS_3 REF_WCS_3)
+            (PRINC (STRCAT "\nStored viewport " (ITOA CVPORT) " transformation matrix"))
+           )
+         )
+        )
+      )
     )
   )
   OBJALIGN  ; Return the alignment object
 )
-(DEFUN HCNM_LDRBLK_AUTO_NE (BUBBLE_DATA TAG AUTO_TYPE INPUT / ATTRIBUTE_LIST E N NE P1_WORLD STRING)
+(DEFUN HCNM_LDRBLK_AUTO_NE (BUBBLE_DATA TAG AUTO_TYPE INPUT / ATTRIBUTE_LIST E ENAME_BUBBLE ENAME_LEADER N NE P1_OCS P1_WORLD REACTOR_UPDATE_P STRING)
   (SETQ 
     ATTRIBUTE_LIST (HCNM_LB:BD_GET BUBBLE_DATA "ATTRIBUTES")
-    P1_WORLD (HCNM_LB:BD_GET BUBBLE_DATA "P1_WORLD")
+    ENAME_BUBBLE (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE")
+    ENAME_LEADER (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_LEADER")
+    ;; INPUT = NIL means initial creation
+    ;; INPUT = T means reactor update for coordinate types (sentinel value)
+    ;; INPUT = VLA-OBJECT means reactor update with reference object (not used for N/E/NE)
+    REACTOR_UPDATE_P (AND INPUT (OR (= INPUT T) (= (TYPE INPUT) 'VLA-OBJECT)))
   )
+  ;; Show paper space warning only during initial insertion, not reactor updates
   (COND
-    ((SETQ STRING INPUT))
+    ((NOT REACTOR_UPDATE_P)
+     (HCNM_LDRBLK_WARN_PSPACE_COORDINATES ENAME_BUBBLE AUTO_TYPE)
+    )
+  )
+  ;; Calculate or get P1_WORLD
+  (COND
+    (REACTOR_UPDATE_P
+     ;; Reactor update - recalculate P1_WORLD from current leader position using stored transformation
+     (SETQ P1_OCS (HCNM_LDRBLK_P1_OCS ENAME_LEADER))
+     (SETQ P1_WORLD (HCNM_LDRBLK_P1_WORLD ENAME_LEADER P1_OCS ENAME_BUBBLE))
+    )
+    (T
+     ;; Initial creation - get from BUBBLE_DATA (already calculated by BD_ENSURE_P1_WORLD which prompts for viewport)
+     (SETQ P1_WORLD (HCNM_LB:BD_GET BUBBLE_DATA "P1_WORLD"))
+    )
+  )
+  ;; Calculate coordinates from P1_WORLD
+  (COND
     (P1_WORLD
       (SETQ
         N  (HCNM_LDRBLK_AUTO_RTOS (CADR P1_WORLD) "N")
@@ -6327,6 +6547,12 @@ ImportLayerSettings=No
     (T
       ;; P1_WORLD is NIL - couldn't get world coordinates
       (SETQ STRING "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
+    )
+  )
+  ;; Attach reactor to leader for coordinate updates (only on initial creation, not reactor updates)
+  (COND
+    ((NOT REACTOR_UPDATE_P)
+     (HCNM_LDRBLK_ASSURE_AUTO_TEXT_HAS_REACTOR NIL ENAME_BUBBLE ENAME_LEADER TAG AUTO_TYPE)
     )
   )
   ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
@@ -6355,8 +6581,13 @@ ImportLayerSettings=No
 )
 ;; Civil 3D Surface query auto-text (Z elevation)
 ;; Currently unimplemented - returns apology message
-(DEFUN HCNM_LDRBLK_AUTO_SU (BUBBLE_DATA TAG AUTO_TYPE INPUT / ATTRIBUTE_LIST)
-  (SETQ ATTRIBUTE_LIST (HCNM_LB:BD_GET BUBBLE_DATA "ATTRIBUTES"))
+(DEFUN HCNM_LDRBLK_AUTO_SU (BUBBLE_DATA TAG AUTO_TYPE INPUT / ATTRIBUTE_LIST ENAME_BUBBLE)
+  (SETQ 
+    ATTRIBUTE_LIST (HCNM_LB:BD_GET BUBBLE_DATA "ATTRIBUTES")
+    ENAME_BUBBLE (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE")
+  )
+  ;; Show paper space warning if applicable
+  (HCNM_LDRBLK_WARN_PSPACE_COORDINATES ENAME_BUBBLE AUTO_TYPE)
   ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
   ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
   (SETQ
@@ -6371,9 +6602,16 @@ ImportLayerSettings=No
   BUBBLE_DATA
 )
 ;; Gets the target viewport from user. This would only be called because we needed it before we could determine it automatically or when user clicks the button to change association.
-(DEFUN HCNM_LDRBLK_GET_TARGET_VPORT ( / INPUT PSPACE_P)
-  ;; Ensure user is in model space so they can activate a viewport
-  (SETQ PSPACE_P (HCNM_LDRBLK_SPACE_SET_MODEL))
+;; NOTE: Warning should be shown BEFORE calling this function (via HCNM_LDRBLK_WARN_PSPACE_COORDINATES)
+;; NOTE: This function does NOT restore space - caller must handle that after capturing transformation matrix
+(DEFUN HCNM_LDRBLK_GET_TARGET_VPORT ( / INPUT)
+  ;; Ensure user is in model space so they can activate a viewport (caller should have already done this)
+  (COND
+    ((= (GETVAR "CVPORT") 1)
+     (PRINC "\nWARNING: Not in model space - switching to MSPACE first")
+     (VL-CMDF "._MSPACE")
+    )
+  )
   (WHILE 
     (NOT 
       (PROGN 
@@ -6383,8 +6621,7 @@ ImportLayerSettings=No
     )
   )
   (SETQ INPUT (GETVAR "CVPORT")) ; Capture the viewport ID
-  ;; Restore user's original space
-  (HCNM_LDRBLK_SPACE_RESTORE PSPACE_P)
+  ;; DO NOT restore space here - caller needs to capture transformation matrix first!
   INPUT ; Return the viewport ID
 )
 ;; Apply affine transformation using 3-point correspondence
@@ -6579,12 +6816,36 @@ ImportLayerSettings=No
          (PRINC (STRCAT "\nTransformed P1_WORLD: " (VL-PRINC-TO-STRING P1_WORLD)))
        )
        (T
-         ;; No AVPORT stored - use current viewport (will be set properly later)
-         (PRINC "\nDebug: No AVPORT - using current viewport")
-         (SETQ PSPACE_CURRENT_P (HCNM_LDRBLK_SPACE_SET_MODEL)
-               P1_WORLD         (TRANS (TRANS P1_OCS 3 2) 2 0))
+         ;; No transformation data stored - user must select viewport
+         (PRINC "\nDebug: No transformation data - prompting for viewport selection")
+         (SETQ PSPACE_CURRENT_P (HCNM_LDRBLK_SPACE_SET_MODEL))
+         ;; Prompt user to select target viewport
+         (SETQ CVPORT_STORED (HCNM_LDRBLK_GET_TARGET_VPORT))
+         (COND
+           ((AND CVPORT_STORED (> CVPORT_STORED 1) ENAME_BUBBLE)
+            ;; User selected a viewport - capture transformation matrix and store in XDATA
+            (SETQ REF_OCS_1 '(0.0 0.0 0.0)    ; Origin
+                  REF_OCS_2 '(1.0 0.0 0.0)    ; X-axis unit vector
+                  REF_OCS_3 '(0.0 1.0 0.0)    ; Y-axis unit vector
+                  REF_WCS_1 (TRANS (TRANS REF_OCS_1 3 2) 2 0)
+                  REF_WCS_2 (TRANS (TRANS REF_OCS_2 3 2) 2 0)
+                  REF_WCS_3 (TRANS (TRANS REF_OCS_3 3 2) 2 0))
+            ;; Calculate P1_WORLD using TRANS
+            (SETQ P1_WORLD (TRANS (TRANS P1_OCS 3 2) 2 0))
+            ;; Store transformation matrix in XDATA for future use
+            (HCNM_LDRBLK_SET_VIEWPORT_TRANSFORM_XDATA ENAME_BUBBLE CVPORT_STORED 
+                                                        REF_OCS_1 REF_WCS_1
+                                                        REF_OCS_2 REF_WCS_2
+                                                        REF_OCS_3 REF_WCS_3)
+            (PRINC (STRCAT "\nCaptured and stored viewport " (ITOA CVPORT_STORED) " transformation matrix"))
+           )
+           (T
+            ;; Not in a viewport or no bubble entity - just calculate P1_WORLD
+            (SETQ P1_WORLD (TRANS (TRANS P1_OCS 3 2) 2 0))
+           )
+         )
          (HCNM_LDRBLK_SPACE_RESTORE PSPACE_CURRENT_P)
-         (PRINC (STRCAT "\nDebug P1_WORLD without AVPORT: " (VL-PRINC-TO-STRING P1_WORLD)))
+         (PRINC (STRCAT "\nDebug P1_WORLD: " (VL-PRINC-TO-STRING P1_WORLD)))
        )
      )
      P1_WORLD
@@ -6890,11 +7151,13 @@ ImportLayerSettings=No
         REACTORS_OLD    (CDAR (VLR-REACTORS :VLR-OBJECT-REACTOR))
         OBJECT_LEADER   (COND (ENAME_LEADER (VLAX-ENAME->VLA-OBJECT ENAME_LEADER)))
         OWNERS          (COND 
+                          ;; If OBJREF is NIL (for N/E/NE), only attach to leader
+                          ((AND (NOT OBJREF) OBJECT_LEADER) (LIST OBJECT_LEADER))
                           (OBJECT_LEADER (LIST OBJREF OBJECT_LEADER))
                           (T (LIST OBJREF))
                         )
         KEY_APP         "HCNM-BUBBLE"
-        HANDLE_REFERENCE (VLA-GET-HANDLE OBJREF)
+        HANDLE_REFERENCE (COND (OBJREF (VLA-GET-HANDLE OBJREF)) (T ""))
         HANDLE_BUBBLE   (CDR (ASSOC 5 (ENTGET ENAME_BUBBLE)))
         KEYS            (LIST KEY_APP HANDLE_REFERENCE HANDLE_BUBBLE TAG)
   )
@@ -6914,9 +7177,6 @@ ImportLayerSettings=No
           ((NOT (MEMBER OWNER (VLR-OWNERS REACTOR_OLD)))
            (VLR-OWNER-ADD REACTOR_OLD OWNER)
           )
-                                 (CDR (ASSOC 5 (ENTGET ENAME_BUBBLE)))
-                                 (LIST TAG KEY)
-                           )
         )
       )
      ;; UPDATE THE DATA
@@ -7065,20 +7325,29 @@ ImportLayerSettings=No
 ;; Called when either the leader moves or the reference object changes
 (DEFUN HCNM_LDRBLK_UPDATE_BUBBLE_TAG (HANDLE_BUBBLE TAG AUTO_TYPE HANDLE_REFERENCE / ENAME_BUBBLE ENAME_REFERENCE ATTRIBUTE_LIST ATTRIBUTE_LIST_OLD OBJREF)
   (SETQ ENAME_BUBBLE       (HANDENT HANDLE_BUBBLE)
-        ENAME_REFERENCE    (HANDENT HANDLE_REFERENCE)
+        ;; Handle empty string for N/E/NE which have no reference object
+        ENAME_REFERENCE    (COND 
+                             ((= HANDLE_REFERENCE "") NIL)
+                             (T (HANDENT HANDLE_REFERENCE))
+                           )
         ATTRIBUTE_LIST_OLD (HCNM_GET_ATTRIBUTES ENAME_BUBBLE T)
         ATTRIBUTE_LIST     ATTRIBUTE_LIST_OLD
   )
   (COND
-    ((AND ENAME_BUBBLE ENAME_REFERENCE)
-      (SETQ OBJREF (VLAX-ENAME->VLA-OBJECT ENAME_REFERENCE))
+    (ENAME_BUBBLE
+      ;; For reactor updates, use a special marker for coordinate types (no reference object)
+      ;; This allows auto-text functions to distinguish between initial creation (NIL) and reactor update (T)
+      (SETQ OBJREF (COND 
+                     (ENAME_REFERENCE (VLAX-ENAME->VLA-OBJECT ENAME_REFERENCE))
+                     (T T)  ; Use T as sentinel value for reactor updates with no reference object
+                   ))
       (SETQ ATTRIBUTE_LIST 
         (HCNM_LDRBLK_AUTO_DISPATCH 
           ENAME_BUBBLE
           ATTRIBUTE_LIST
           TAG
           AUTO_TYPE
-          OBJREF  ; Pass the reference object as INPUT
+          OBJREF  ; Pass the reference object as INPUT, or T for coordinate-only reactor updates
         )
       )
       (COND 
@@ -7094,10 +7363,7 @@ ImportLayerSettings=No
       )
     )
     (T
-      (PRINC (STRCAT "\nError in HCNM_LDRBLK_UPDATE_BUBBLE_TAG: "
-                     (COND ((NOT ENAME_BUBBLE) "BUBBLE not found")
-                           ((NOT ENAME_REFERENCE) "REFERENCE not found")
-                           (T "Unknown error"))))
+      (PRINC (STRCAT "\nError in HCNM_LDRBLK_UPDATE_BUBBLE_TAG: BUBBLE not found"))
     )
   )
 )
