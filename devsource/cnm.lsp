@@ -5821,19 +5821,24 @@ ImportLayerSettings=No
 )
 ;;; bubble-data-update: I believe that this needs to also define any data reference types.
 (DEFUN HCNM_LDRBLK_GET_AUTO_TYPE_KEYS ()
-  ;; Input Key Reference_type
+  ;; Returns list of auto-text type definitions
+  ;; Structure: (Input_Key Display_Type Reference_Type Requires_Coordinates)
+  ;; - Input_Key: Keyword entered by user (initget format)
+  ;; - Display_Type: Canonical type name used in code
+  ;; - Reference_Type: Type of reference object ("AL"=Alignment, "SU"=Surface, nil=none)
+  ;; - Requires_Coordinates: T if needs P1_WORLD from leader, nil otherwise
   '(
-    ("Lf" "LF" nil)
-    ("SF" "SF" nil)
-    ("SY" "SY" nil)
-    ("STa" "Sta" "AL")
-    ("Off" "Off" "AL")
-    ("stAoff" "StaOff" "AL")
-    ("N" "N" nil)
-    ("E" "E" nil)
-    ("Z" "Z" nil)
-    ("Text" "Text" nil)
-    ("ENtry" "ENtry" nil)
+    ("Lf" "LF" nil nil)        ; Length (QTY) - user picks objects
+    ("SF" "SF" nil nil)        ; Square Feet (QTY) - user picks objects
+    ("SY" "SY" nil nil)        ; Square Yards (QTY) - user picks objects
+    ("STa" "Sta" "AL" T)       ; Station - needs P1_WORLD for alignment query
+    ("Off" "Off" "AL" T)       ; Offset - needs P1_WORLD for alignment query
+    ("stAoff" "StaOff" "AL" T) ; Station+Offset - needs P1_WORLD for alignment query
+    ("N" "N" nil T)            ; Northing - needs P1_WORLD for coordinate
+    ("E" "E" nil T)            ; Easting - needs P1_WORLD for coordinate
+    ("Z" "Z" "SU" T)           ; Elevation - needs P1_WORLD for surface query (unimplemented)
+    ("Text" "Text" nil nil)    ; Static text - user enters manually
+    ("ENtry" "ENtry" nil nil)  ; Entry number - static text
   )
 )
 (DEFUN HCNM_LDRBLK_GET_AUTO_TYPE (ENAME_BUBBLE LINE_NUMBER TAG ATTRIBUTE_LIST /
@@ -6116,7 +6121,7 @@ ImportLayerSettings=No
   ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
   ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
   (COND 
-    ((= (TYPE OBJALIGN) 'VLA-OBJECT)
+    ((AND (= (TYPE OBJALIGN) 'VLA-OBJECT) P1_WORLD)
       ;; http://docs.autodesk.com/CIV3D/2012/ENU/API_Reference_Guide/com/AeccXLandLib__IAeccAlignment__StationOffset@[in]_double@[in]_double@[out]_double_@[out]_double_.htm
       (VLAX-INVOKE-METHOD 
         OBJALIGN
@@ -6184,7 +6189,11 @@ ImportLayerSettings=No
         )
       )
     )
-    (T (SETQ STRING "N/A"))
+    (T 
+      ;; P1_WORLD is NIL - couldn't get world coordinates
+      ;; This could happen if leader was deleted or bubble is orphaned
+      (SETQ STRING "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
+    )
   )
   (SETQ
     ATTRIBUTE_LIST
@@ -6272,7 +6281,7 @@ ImportLayerSettings=No
   )
   (COND
     ((SETQ STRING INPUT))
-    (T
+    (P1_WORLD
       (SETQ
         N  (HCNM_LDRBLK_AUTO_RTOS (CADR P1_WORLD) "N")
         E  (HCNM_LDRBLK_AUTO_RTOS (CAR P1_WORLD) "E")
@@ -6289,6 +6298,10 @@ ImportLayerSettings=No
           ((= AUTO_TYPE "NE") NE)
         )
       )
+    )
+    (T
+      ;; P1_WORLD is NIL - couldn't get world coordinates
+      (SETQ STRING "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
     )
   )
   ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
@@ -6315,6 +6328,8 @@ ImportLayerSettings=No
     (C:HCNM-CONFIG-GETVAR (STRCAT "BubbleTextPostfix" KEY))
   )
 )
+;; Civil 3D Surface query auto-text (Z elevation)
+;; Currently unimplemented - returns apology message
 (DEFUN HCNM_LDRBLK_AUTO_SU (BUBBLE_DATA TAG AUTO_TYPE INPUT / ATTRIBUTE_LIST)
   (SETQ ATTRIBUTE_LIST (HCNM_LB:BD_GET BUBBLE_DATA "ATTRIBUTES"))
   ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
