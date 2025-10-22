@@ -5261,14 +5261,14 @@ ImportLayerSettings=No
   )
   (HAWS-MKLAYR "NOTESLDR")
   (SETVAR "attreq" 0)
-  (SETQ BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "TH" TH)
-        BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "BLOCKNAME" BLOCKNAME)
-        BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "NOTETYPE" NOTETYPE)
-        BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "REPLACE_BUBBLE_P" (NOT NOTETYPE))
+  (SETQ BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "TH" TH)
+        BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "BLOCKNAME" BLOCKNAME)
+        BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "NOTETYPE" NOTETYPE)
+        BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "REPLACE_BUBBLE_P" (NOT NOTETYPE))
         BUBBLE_DATA (HCNM_LDRBLK_GET_ENAME_BUBBLE_OLD BUBBLE_DATA)
         BUBBLE_DATA (COND 
-                      ((HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE_OLD")
-                       (HCNM_LB:BD_ENSURE_P1_WORLD BUBBLE_DATA) ;  WE REALLY ONLY NEED ENAME_LEADER_OLD AND P1_OCS, BUT THIS ISN'T A BAD WAY TO GET IT.
+                      ((HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_BUBBLE_OLD")
+                       (HCNM_LDRBLK_BD_ENSURE_P1_WORLD BUBBLE_DATA) ;  WE REALLY ONLY NEED ENAME_LEADER_OLD AND P1_OCS, BUT THIS ISN'T A BAD WAY TO GET IT.
                       )
                       (T
                        (HCNM_LDRBLK_GET_USER_START_POINT BUBBLE_DATA)
@@ -5276,17 +5276,17 @@ ImportLayerSettings=No
                     )
         NOTETYPE    (COND 
                       (NOTETYPE)
-                      ((HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE")
+                      ((HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_BUBBLE")
                        (LM:GETDYNPROPVALUE 
                          (VLAX-ENAME->VLA-OBJECT 
-                           (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE")
+                           (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_BUBBLE")
                          )
                          "Shape"
                        )
                       )
                       (T NOTETYPE)
                     )
-        BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "NOTETYPE" NOTETYPE)
+        BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "NOTETYPE" NOTETYPE)
   )
   ;; Draw bubble, update BUBBLE_DATA with P2 and new entities
   (SETQ BUBBLE_DATA (HCNM_LDRBLK_GET_P2_DATA BUBBLE_DATA))
@@ -5301,7 +5301,7 @@ ImportLayerSettings=No
 )
 ;; Create a bubble data structure (alist) for passing state
 ;; All parameters optional - pass nil for unset fields
-(DEFUN HCNM_LB:BD_DEF ()
+(DEFUN HCNM_LDRBLK_BD_DEF ()
   (LIST
     (CONS "ATTRIBUTES" NIL)
     (CONS "AVPORT" NIL)
@@ -5321,15 +5321,23 @@ ImportLayerSettings=No
     (CONS "TH" NIL)  )
 )
 
+;;==============================================================================
+;; HCNM_LDRBLK_BD Module - Bubble Data Accessors
+;;==============================================================================
+;; Provides typed accessors for bubble data alist structure.
+;; BD = "Bubble Data" (commonly used abbreviation in this module)
+;; LDRBLK = "Leader Block" (consistent with rest of codebase)
+;;==============================================================================
+
 ;; Get a value from bubble data using HAWS_NESTED_LIST_GET
-(DEFUN HCNM_LB:BD_GET (bd key)
+(DEFUN HCNM_LDRBLK_BD_GET (bd key)
   (HAWS_NESTED_LIST_GET bd (list key))
 )
 
 ;; Set a value in bubble data using HAWS_NESTED_LIST_UPDATE
 ;; Validates key against known schema
-(DEFUN HCNM_LB:BD_SET (bd key val )
-   (if (not (assoc key (HCNM_LB:BD_DEF)))
+(DEFUN HCNM_LDRBLK_BD_SET (bd key val )
+   (if (not (assoc key (HCNM_LDRBLK_BD_DEF)))
     (progn
       (princ (strcat "\nError: Invalid BUBBLE_DATA key: " key))
       bd
@@ -5339,39 +5347,39 @@ ImportLayerSettings=No
 )
 
 ;; Ensure P1_WORLD is present in bubble data (computes if missing)
-(DEFUN HCNM_LB:BD_ENSURE_P1_WORLD (BUBBLE_DATA / ENAME_BUBBLE ENAME_LEADER P1_OCS P1_WORLD)
+(DEFUN HCNM_LDRBLK_BD_ENSURE_P1_WORLD (BUBBLE_DATA / ENAME_BUBBLE ENAME_LEADER P1_OCS P1_WORLD)
   (AND
-    (SETQ ENAME_BUBBLE (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE"))
+    (SETQ ENAME_BUBBLE (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_BUBBLE"))
     (OR
-      (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_LEADER")
-      (SETQ BUBBLE_DATA (HCNM_LB:BD_SET
+      (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_LEADER")
+      (SETQ BUBBLE_DATA (HCNM_LDRBLK_BD_SET
                           BUBBLE_DATA
                           "ENAME_LEADER"
                           (HCNM_LDRBLK_BUBBLE_LEADER ENAME_BUBBLE)
                         )
       )
-      (PRINC "\nError in HCNM_LB:BD_ENSURE_P1_WORLD: Could not find leader associated with bubble note.")
+      (PRINC "\nError in HCNM_LDRBLK_BD_ENSURE_P1_WORLD: Could not find leader associated with bubble note.")
     )
-    (SETQ ENAME_LEADER (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_LEADER"))
+    (SETQ ENAME_LEADER (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_LEADER"))
     (OR
-      (HCNM_LB:BD_GET BUBBLE_DATA "P1_OCS")
-      (SETQ BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "P1_OCS" (HCNM_LDRBLK_P1_OCS ENAME_LEADER)))
-      (PRINC "\nError in HCNM_LB:BD_ENSURE_P1_WORLD: Could not determine P1_OCS from leader.")
+      (HCNM_LDRBLK_BD_GET BUBBLE_DATA "P1_OCS")
+      (SETQ BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "P1_OCS" (HCNM_LDRBLK_P1_OCS ENAME_LEADER)))
+      (PRINC "\nError in HCNM_LDRBLK_BD_ENSURE_P1_WORLD: Could not determine P1_OCS from leader.")
     )
-    (SETQ P1_OCS (HCNM_LB:BD_GET BUBBLE_DATA "P1_OCS"))
+    (SETQ P1_OCS (HCNM_LDRBLK_BD_GET BUBBLE_DATA "P1_OCS"))
     (OR
-      (HCNM_LB:BD_GET BUBBLE_DATA "P1_WORLD")
-      (SETQ BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "P1_WORLD" (HCNM_LDRBLK_P1_WORLD ENAME_LEADER P1_OCS ENAME_BUBBLE)))
-      (PRINC "\nError in HCNM_LB:BD_ENSURE_P1_WORLD: Could not compute P1_WORLD from P1_OCS.")
+      (HCNM_LDRBLK_BD_GET BUBBLE_DATA "P1_WORLD")
+      (SETQ BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "P1_WORLD" (HCNM_LDRBLK_P1_WORLD ENAME_LEADER P1_OCS ENAME_BUBBLE)))
+      (PRINC "\nError in HCNM_LDRBLK_BD_ENSURE_P1_WORLD: Could not compute P1_WORLD from P1_OCS.")
     )
-    (SETQ P1_WORLD (HCNM_LB:BD_GET BUBBLE_DATA "P1_WORLD"))
+    (SETQ P1_WORLD (HCNM_LDRBLK_BD_GET BUBBLE_DATA "P1_WORLD"))
     (PRINC (STRCAT "\nDebug P1_OCS: " (vl-princ-to-string P1_OCS) " P1_WORLD: " (vl-princ-to-string P1_WORLD)))
   )
   BUBBLE_DATA
 )
 
 (DEFUN HCNM_LDRBLK_GET_ENAME_BUBBLE_OLD (BUBBLE_DATA / ELIST_BLOCK_OLD ENAME_BUBBLE_OLD REPLACE_BUBBLE_P)
-  (SETQ REPLACE_BUBBLE_P (HCNM_LB:BD_GET BUBBLE_DATA "REPLACE_BUBBLE_P"))
+  (SETQ REPLACE_BUBBLE_P (HCNM_LDRBLK_BD_GET BUBBLE_DATA "REPLACE_BUBBLE_P"))
   (COND
     (REPLACE_BUBBLE_P
      ;; Prompt and check for old block.
@@ -5398,14 +5406,14 @@ ImportLayerSettings=No
             )
        (PRINC "\nSelected entity is not a CNM bubble note.")
      )
-     (SETQ BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "ENAME_BUBBLE_OLD" ENAME_BUBBLE_OLD))
+     (SETQ BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "ENAME_BUBBLE_OLD" ENAME_BUBBLE_OLD))
     )
     (T NIL)
   )
   BUBBLE_DATA
 )
 (DEFUN HCNM_LDRBLK_GET_USER_START_POINT (BUBBLE_DATA) 
-    (HCNM_LB:BD_SET BUBBLE_DATA "P1_UCS" (GETPOINT "\nStart point for leader:"))
+    (HCNM_LDRBLK_BD_SET BUBBLE_DATA "P1_UCS" (GETPOINT "\nStart point for leader:"))
 )
 (DEFUN HCNM_LDRBLK_BUBBLE_LEADER (ENAME_BUBBLE / ELIST_BUBBLE ENAME_330 ENAME_LEADER) 
   (SETQ ELIST_BUBBLE (ENTGET ENAME_BUBBLE))
@@ -5451,10 +5459,10 @@ ImportLayerSettings=No
 ;; Bubble still doesn't exist. Draws temp bubbles only.
 (DEFUN HCNM_LDRBLK_GET_P2_DATA (BUBBLE_DATA / ENAME_BUBBLE_TEMP P1_UCS P2 SS1 OBJ_BUBBLE_TEMP TH BLOCKNAME NOTETYPE)
   (SETQ
-    P1_UCS (HCNM_LB:BD_GET BUBBLE_DATA "P1_UCS")
-    TH (HCNM_LB:BD_GET BUBBLE_DATA "TH")
-    BLOCKNAME (HCNM_LB:BD_GET BUBBLE_DATA "BLOCKNAME")
-    NOTETYPE (HCNM_LB:BD_GET BUBBLE_DATA "NOTETYPE")
+    P1_UCS (HCNM_LDRBLK_BD_GET BUBBLE_DATA "P1_UCS")
+    TH (HCNM_LDRBLK_BD_GET BUBBLE_DATA "TH")
+    BLOCKNAME (HCNM_LDRBLK_BD_GET BUBBLE_DATA "BLOCKNAME")
+    NOTETYPE (HCNM_LDRBLK_BD_GET BUBBLE_DATA "NOTETYPE")
     SS1 (SSADD)
   )
   (FOREACH FLIPSTATE '("right" "left")
@@ -5478,7 +5486,7 @@ ImportLayerSettings=No
   (VL-CMDF "._MOVE" SS1 "" P1_UCS PAUSE)
   (SETQ
     P2 (TRANS (CDR (ASSOC 10 (ENTGET ENAME_BUBBLE_TEMP))) ENAME_BUBBLE_TEMP 1)
-    BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "P2" P2)
+    BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "P2" P2)
   )
   (VL-CMDF "._erase" SS1 "")
   BUBBLE_DATA
@@ -5488,13 +5496,13 @@ ImportLayerSettings=No
                                 ENAME_LEADER P2 ANG1 FLIPSTATE ASSOCIATE_P AUOLD TH 
                                 BLOCKNAME NOTETYPE INPUT1 ELIST_LEADER_OLD
                                ) 
-  (SETQ P1_UCS           (HCNM_LB:BD_GET BUBBLE_DATA "P1_UCS")
-        ENAME_BUBBLE_OLD (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE_OLD")
-        ENAME_LEADER_OLD (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_LEADER_OLD")
-        P2               (HCNM_LB:BD_GET BUBBLE_DATA "P2")
-        TH               (HCNM_LB:BD_GET BUBBLE_DATA "TH")
-        BLOCKNAME        (HCNM_LB:BD_GET BUBBLE_DATA "BLOCKNAME")
-        NOTETYPE         (HCNM_LB:BD_GET BUBBLE_DATA "NOTETYPE")
+  (SETQ P1_UCS           (HCNM_LDRBLK_BD_GET BUBBLE_DATA "P1_UCS")
+        ENAME_BUBBLE_OLD (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_BUBBLE_OLD")
+        ENAME_LEADER_OLD (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_LEADER_OLD")
+        P2               (HCNM_LDRBLK_BD_GET BUBBLE_DATA "P2")
+        TH               (HCNM_LDRBLK_BD_GET BUBBLE_DATA "TH")
+        BLOCKNAME        (HCNM_LDRBLK_BD_GET BUBBLE_DATA "BLOCKNAME")
+        NOTETYPE         (HCNM_LDRBLK_BD_GET BUBBLE_DATA "NOTETYPE")
         ANG1             (- (ANGLE P1_UCS P2) (GETVAR "snapang"))
         FLIPSTATE        (COND ((MINUSP (COS ANG1)) "left") (T "right"))
   )
@@ -5577,7 +5585,7 @@ ImportLayerSettings=No
            FLIPSTATE (COND ((MINUSP (COS ANG1)) "left") (T "right"))
      )
       ;; SAVE LAST ENTITY FOR ENTNEXT USAGE.
-     (SETQ BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "ENAME_LAST" (ENTLAST)))
+     (SETQ BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "ENAME_LAST" (ENTLAST)))
      ;;Start insertion
      (COND 
        ((>= (ATOF (GETVAR "acadver")) 14)
@@ -5593,7 +5601,7 @@ ImportLayerSettings=No
      (VL-CMDF (STRCAT BLOCKNAME "-" FLIPSTATE) "_Scale" TH P2 (GETVAR "snapang"))
      (SETVAR "aunits" AUOLD)
      (SETQ ENAME_BUBBLE (ENTLAST)
-           BUBBLE_DATA  (HCNM_LB:BD_SET BUBBLE_DATA "ENAME_BUBBLE" ENAME_BUBBLE)
+           BUBBLE_DATA  (HCNM_LDRBLK_BD_SET BUBBLE_DATA "ENAME_BUBBLE" ENAME_BUBBLE)
      )
     )
   )
@@ -5601,9 +5609,9 @@ ImportLayerSettings=No
 )
 (DEFUN HCNM_LDRBLK_GET_BUBBLE_DATA (BUBBLE_DATA / ATTRIBUTE_LIST ENAME_BUBBLE P1_UCS NUM)
   (SETQ
-    REPLACE_BUBBLE_P (HCNM_LB:BD_GET BUBBLE_DATA "REPLACE_BUBBLE_P")
-    ENAME_BUBBLE (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE")
-    P1_UCS (HCNM_LB:BD_GET BUBBLE_DATA "P1_UCS")
+    REPLACE_BUBBLE_P (HCNM_LDRBLK_BD_GET BUBBLE_DATA "REPLACE_BUBBLE_P")
+    ENAME_BUBBLE (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_BUBBLE")
+    P1_UCS (HCNM_LDRBLK_BD_GET BUBBLE_DATA "P1_UCS")
   )
   (COND
     (ENAME_REPLACE_BUBBLE_P
@@ -5641,17 +5649,17 @@ ImportLayerSettings=No
      )
     )
   )
-  (HCNM_LB:BD_SET BUBBLE_DATA "ATTRIBUTES" (HCNM_LDRBLK_ADJUST_FORMATS ATTRIBUTE_LIST))
+  (HCNM_LDRBLK_BD_SET BUBBLE_DATA "ATTRIBUTES" (HCNM_LDRBLK_ADJUST_FORMATS ATTRIBUTE_LIST))
 )
 (DEFUN HCNM_LDRBLK_FINISH_BUBBLE (BUBBLE_DATA / ENAME_BUBBLE ENAME_BUBBLE_OLD ENAME_LAST ENAME_LEADER ENAME_TEMP REPLACE_BUBBLE_P ATTRIBUTES NOTETYPE)
   (SETQ
-    ENAME_LAST (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_LAST")
+    ENAME_LAST (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_LAST")
     ENAME_TEMP ENAME_LAST
-    ENAME_BUBBLE (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE")
-    ENAME_BUBBLE_OLD (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE_OLD")
-    REPLACE_BUBBLE_P (HCNM_LB:BD_GET BUBBLE_DATA "REPLACE_BUBBLE_P")
-    ATTRIBUTES (HCNM_LB:BD_GET BUBBLE_DATA "ATTRIBUTES")
-    NOTETYPE (HCNM_LB:BD_GET BUBBLE_DATA "NOTETYPE")
+    ENAME_BUBBLE (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_BUBBLE")
+    ENAME_BUBBLE_OLD (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_BUBBLE_OLD")
+    REPLACE_BUBBLE_P (HCNM_LDRBLK_BD_GET BUBBLE_DATA "REPLACE_BUBBLE_P")
+    ATTRIBUTES (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ATTRIBUTES")
+    NOTETYPE (HCNM_LDRBLK_BD_GET BUBBLE_DATA "NOTETYPE")
   )
   (HCNM_LDRBLK_SET_DYNPROPS ENAME_BUBBLE ENAME_BUBBLE_OLD NOTETYPE REPLACE_BUBBLE_P)
   (IF REPLACE_BUBBLE_P (ENTDEL ENAME_BUBBLE_OLD))
@@ -6189,13 +6197,13 @@ ImportLayerSettings=No
 (DEFUN HCNM_LDRBLK_AUTO_DISPATCH (ENAME_BUBBLE ATTRIBUTE_LIST TAG AUTO_TYPE INPUT / BUBBLE_DATA)
     ;; bubble-data-update: Build BUBBLE_DATA and pass to subfunctions
   (SETQ 
-    BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "ENAME_BUBBLE" ENAME_BUBBLE)
-    BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
+    BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "ENAME_BUBBLE" ENAME_BUBBLE)
+    BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
   )
   ;; Only calculate P1_WORLD for auto-types that require coordinates
   (COND
     ((HCNM_LDRBLK_AUTO_TYPE_IS_COORDINATE_P AUTO_TYPE)
-     (SETQ BUBBLE_DATA (HCNM_LB:BD_ENSURE_P1_WORLD BUBBLE_DATA))
+     (SETQ BUBBLE_DATA (HCNM_LDRBLK_BD_ENSURE_P1_WORLD BUBBLE_DATA))
     )
   )
   (SETQ
@@ -6222,14 +6230,14 @@ ImportLayerSettings=No
        ((= AUTO_TYPE "Slope") (HCNM_LDRBLK_AUTO_PIPE BUBBLE_DATA TAG AUTO_TYPE INPUT))
        ((= AUTO_TYPE "L") (HCNM_LDRBLK_AUTO_PIPE BUBBLE_DATA TAG AUTO_TYPE INPUT))
      )
-    ATTRIBUTE_LIST (HCNM_LB:BD_GET BUBBLE_DATA "ATTRIBUTES")
+    ATTRIBUTE_LIST (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ATTRIBUTES")
   )
   ATTRIBUTE_LIST
 )
 
 (DEFUN HCNM_LDRBLK_AUTO_ES (BUBBLE_DATA TAG AUTO_TYPE INPUT / ENAME ATTRIBUTE_LIST) 
   (SETQ
-    ATTRIBUTE_LIST (HCNM_LB:BD_GET BUBBLE_DATA "ATTRIBUTES")
+    ATTRIBUTE_LIST (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ATTRIBUTES")
     ENAME
     (COND
       (INPUT)
@@ -6248,13 +6256,13 @@ ImportLayerSettings=No
        )
        ATTRIBUTE_LIST
      )
-    BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
+    BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
   )
   BUBBLE_DATA
 )
 (DEFUN HCNM_LDRBLK_AUTO_QTY (BUBBLE_DATA TAG AUTO_TYPE QT_TYPE FACTOR INPUT / ATTRIBUTE_LIST STR_BACKSLASH INPUT1 PSPACE_BUBBLE_P
                          SS-P STRING)
-  (SETQ ATTRIBUTE_LIST (HCNM_LB:BD_GET BUBBLE_DATA "ATTRIBUTES"))
+  (SETQ ATTRIBUTE_LIST (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ATTRIBUTES"))
   (COND
     ((SETQ STRING INPUT))
     (T  
@@ -6338,7 +6346,7 @@ ImportLayerSettings=No
       STRING
       ATTRIBUTE_LIST
     )
-    BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
+    BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
   )
   BUBBLE_DATA
 )
@@ -6498,13 +6506,30 @@ ImportLayerSettings=No
 ;; Civil 3D Pipe Network Auto-Text Functions
 ;; ============================================================================
 
-;; Get pipe object from user selection
+;;==============================================================================
+;; HCNM_LDRBLK_AUTO_PIPE_GET_OBJECT
+;;==============================================================================
+;; Purpose:
+;;   Prompts user to select a Civil 3D pipe network pipe object.
+;;
 ;; Arguments:
-;;   ENAME_BUBBLE - Entity name of the bubble (for error context)
-;;   TAG - Attribute tag being updated
-;;   AUTO_TYPE - "Dia", "Slope", or "L"
-;; Returns: VLA-OBJECT of selected pipe, or nil if selection failed
-(DEFUN HCNM_LDRBLK_AUTO_PIPE_GET_OBJECT (ENAME_BUBBLE TAG AUTO_TYPE / ESAPIPE OBJPIPE)
+;;   ENAME_BUBBLE - Entity name of bubble being edited (required)
+;;   TAG - Attribute tag being updated (required)
+;;   AUTO_TYPE - Property type: "Dia", "Slope", or "L" (required)
+;;
+;; Returns:
+;;   VLA-OBJECT of selected pipe, or NIL if selection failed
+;;
+;; Side Effects:
+;;   - Prompts user to select pipe with custom message
+;;
+;; Related:
+;;   HCNM_LDRBLK_AUTO_PIPE
+;;
+;; Example:
+;;   (SETQ OBJ_PIPE (HCNM_LDRBLK_AUTO_PIPE_GET_OBJECT ENAME_BUBBLE "NOTETXT1" "Dia"))
+;;==============================================================================
+(DEFUN HCNM_LDRBLK_AUTO_PIPE_GET_OBJECT (ENAME_BUBBLE TAG AUTO_TYPE / ESAPIPE OBJ_PIPE)
   (SETQ ESAPIPE
     (NENTSEL 
       (STRCAT 
@@ -6521,31 +6546,50 @@ ImportLayerSettings=No
   )
   (COND
     (ESAPIPE
-     (SETQ OBJPIPE
+     (SETQ OBJ_PIPE
        (VL-CATCH-ALL-APPLY 
          'VLAX-ENAME->VLA-OBJECT
          (LIST (CAR ESAPIPE))
        )
      )
      (COND
-       ((VL-CATCH-ALL-ERROR-P OBJPIPE)
+       ((VL-CATCH-ALL-ERROR-P OBJ_PIPE)
         (PRINC "\nError: Could not get pipe object.")
         NIL
        )
-       (T OBJPIPE)
+       (T OBJ_PIPE)
      )
     )
     (T NIL)
   )
 )
 
-;; Format pipe diameter with config-based prefix/postfix
+;;==============================================================================
+;; HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER
+;;==============================================================================
+;; Purpose:
+;;   Formats pipe diameter value with user-configured prefix, postfix, and precision.
+;;   Converts from Civil 3D units (feet) to inches for display.
+;;
 ;; Arguments:
-;;   OBJPIPE - VLA-OBJECT of Civil 3D pipe
-;; Returns: Formatted diameter string (e.g., "12 IN")
-(DEFUN HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER (OBJPIPE / DIA_VALUE DIA_INCHES)
+;;   OBJ_PIPE - VLA-OBJECT of Civil 3D pipe (required)
+;;
+;; Returns:
+;;   Formatted string (e.g., "12 IN", "18\"") or error string if property unavailable
+;;
+;; Side Effects:
+;;   - Reads config variables: BubbleTextPrefixPipeDia, PostfixPipeDia, PrecisionPipeDia
+;;
+;; Related:
+;;   HCNM_LDRBLK_AUTO_PIPE
+;;   HCNM_LDRBLK_AUTO_PIPE_FORMAT_SLOPE
+;;
+;; Example:
+;;   (SETQ TEXT (HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER OBJ_PIPE))
+;;==============================================================================
+(DEFUN HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER (OBJ_PIPE / DIA_VALUE DIA_INCHES)
   (SETQ 
-    DIA_VALUE (VL-CATCH-ALL-APPLY 'VLAX-GET-PROPERTY (LIST OBJPIPE 'InnerDiameterOrWidth))
+    DIA_VALUE (VL-CATCH-ALL-APPLY 'VLAX-GET-PROPERTY (LIST OBJ_PIPE 'InnerDiameterOrWidth))
   )
   (COND
     ((VL-CATCH-ALL-ERROR-P DIA_VALUE)
@@ -6569,13 +6613,32 @@ ImportLayerSettings=No
   )
 )
 
-;; Format pipe slope with config-based prefix/postfix
+;;==============================================================================
+;; HCNM_LDRBLK_AUTO_PIPE_FORMAT_SLOPE
+;;==============================================================================
+;; Purpose:
+;;   Formats pipe slope value with user-configured prefix, postfix, and precision.
+;;   Converts from Civil 3D units (decimal) to percentage for display.
+;;
 ;; Arguments:
-;;   OBJPIPE - VLA-OBJECT of Civil 3D pipe
-;; Returns: Formatted slope string (e.g., "2.00%")
-(DEFUN HCNM_LDRBLK_AUTO_PIPE_FORMAT_SLOPE (OBJPIPE / SLOPE_VALUE SLOPE_PERCENT)
+;;   OBJ_PIPE - VLA-OBJECT of Civil 3D pipe (required)
+;;
+;; Returns:
+;;   Formatted string (e.g., "2.00%", "0.5%") or error string if property unavailable
+;;
+;; Side Effects:
+;;   - Reads config variables: BubbleTextPrefixPipeSlope, PostfixPipeSlope, PrecisionPipeSlope
+;;
+;; Related:
+;;   HCNM_LDRBLK_AUTO_PIPE
+;;   HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER
+;;
+;; Example:
+;;   (SETQ TEXT (HCNM_LDRBLK_AUTO_PIPE_FORMAT_SLOPE OBJ_PIPE))
+;;==============================================================================
+(DEFUN HCNM_LDRBLK_AUTO_PIPE_FORMAT_SLOPE (OBJ_PIPE / SLOPE_VALUE SLOPE_PERCENT)
   (SETQ 
-    SLOPE_VALUE (VL-CATCH-ALL-APPLY 'VLAX-GET-PROPERTY (LIST OBJPIPE 'Slope))
+    SLOPE_VALUE (VL-CATCH-ALL-APPLY 'VLAX-GET-PROPERTY (LIST OBJ_PIPE 'Slope))
   )
   (COND
     ((VL-CATCH-ALL-ERROR-P SLOPE_VALUE)
@@ -6599,13 +6662,32 @@ ImportLayerSettings=No
   )
 )
 
-;; Format pipe length with config-based prefix/postfix
+;;==============================================================================
+;; HCNM_LDRBLK_AUTO_PIPE_FORMAT_LENGTH
+;;==============================================================================
+;; Purpose:
+;;   Formats pipe length value with user-configured prefix, postfix, and precision.
+;;   Uses 2D length from Civil 3D (horizontal projection).
+;;
 ;; Arguments:
-;;   OBJPIPE - VLA-OBJECT of Civil 3D pipe
-;; Returns: Formatted length string (e.g., "L=125.50")
-(DEFUN HCNM_LDRBLK_AUTO_PIPE_FORMAT_LENGTH (OBJPIPE / LENGTH_VALUE)
+;;   OBJ_PIPE - VLA-OBJECT of Civil 3D pipe (required)
+;;
+;; Returns:
+;;   Formatted string (e.g., "L=125.50", "125.5'") or error string if property unavailable
+;;
+;; Side Effects:
+;;   - Reads config variables: BubbleTextPrefixPipeLength, PostfixPipeLength, PrecisionPipeLength
+;;
+;; Related:
+;;   HCNM_LDRBLK_AUTO_PIPE
+;;   HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER
+;;
+;; Example:
+;;   (SETQ TEXT (HCNM_LDRBLK_AUTO_PIPE_FORMAT_LENGTH OBJ_PIPE))
+;;==============================================================================
+(DEFUN HCNM_LDRBLK_AUTO_PIPE_FORMAT_LENGTH (OBJ_PIPE / LENGTH_VALUE)
   (SETQ 
-    LENGTH_VALUE (VL-CATCH-ALL-APPLY 'VLAX-GET-PROPERTY (LIST OBJPIPE 'Length2D))
+    LENGTH_VALUE (VL-CATCH-ALL-APPLY 'VLAX-GET-PROPERTY (LIST OBJ_PIPE 'Length2D))
   )
   (COND
     ((VL-CATCH-ALL-ERROR-P LENGTH_VALUE)
@@ -6626,35 +6708,62 @@ ImportLayerSettings=No
   )
 )
 
-;; Main pipe network auto-text function
-;; Orchestrates: get pipe → extract property → format → update attribute
+;;==============================================================================
+;; HCNM_LDRBLK_AUTO_PIPE
+;;==============================================================================
+;; Purpose:
+;;   Main pipe network auto-text orchestrator. Gets pipe object, extracts
+;;   specified property (diameter/slope/length), formats with config settings,
+;;   and attaches reactor for automatic updates when pipe changes.
+;;
 ;; Arguments:
-;;   BUBBLE_DATA - Bubble data alist
-;;   TAG - Attribute tag to update
-;;   AUTO_TYPE - "Dia", "Slope", or "L"
-;;   INPUT - Optional: Pre-selected pipe object (for reactor support)
-;; Returns: Updated BUBBLE_DATA with new attribute value
-(DEFUN HCNM_LDRBLK_AUTO_PIPE (BUBBLE_DATA TAG AUTO_TYPE INPUT / ATTRIBUTE_LIST ENAME_BUBBLE ENAME_LEADER OBJPIPE PSPACE_BUBBLE_P STRING)
+;;   BUBBLE_DATA - Bubble data alist (required)
+;;   TAG - Attribute tag to update (required)
+;;   AUTO_TYPE - Property type: "Dia", "Slope", or "L" (required)
+;;   INPUT - Pre-selected pipe VLA-OBJECT (optional, for reactor callbacks)
+;;
+;; Returns:
+;;   Updated BUBBLE_DATA with new attribute value
+;;
+;; Side Effects:
+;;   - Prompts user for pipe selection if INPUT is NIL
+;;   - Attaches VLR-OBJECT-REACTOR to pipe for automatic updates
+;;   - Switches to model space temporarily if bubble is in paper space
+;;   - Updates ATTRIBUTE_LIST within BUBBLE_DATA
+;;
+;; Related:
+;;   HCNM_LDRBLK_AUTO_PIPE_GET_OBJECT
+;;   HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER
+;;   HCNM_LDRBLK_AUTO_PIPE_FORMAT_SLOPE
+;;   HCNM_LDRBLK_AUTO_PIPE_FORMAT_LENGTH
+;;   HCNM_LDRBLK_ASSURE_AUTO_TEXT_HAS_REACTOR
+;;
+;; Example:
+;;   (SETQ BUBBLE_DATA
+;;     (HCNM_LDRBLK_AUTO_PIPE BUBBLE_DATA "NOTETXT1" "Dia" NIL)
+;;   )
+;;==============================================================================
+(DEFUN HCNM_LDRBLK_AUTO_PIPE (BUBBLE_DATA TAG AUTO_TYPE INPUT / ATTRIBUTE_LIST ENAME_BUBBLE ENAME_LEADER OBJ_PIPE PSPACE_BUBBLE_P STRING)
   (SETQ 
-    ATTRIBUTE_LIST (HCNM_LB:BD_GET BUBBLE_DATA "ATTRIBUTES")
-    ENAME_BUBBLE (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE")
-    ENAME_LEADER (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_LEADER")
+    ATTRIBUTE_LIST (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ATTRIBUTES")
+    ENAME_BUBBLE (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_BUBBLE")
+    ENAME_LEADER (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_LEADER")
   )
   
   ;; STEP 1: Get pipe object (user selection or provided input)
   (COND 
-    ((SETQ OBJPIPE INPUT)
+    ((SETQ OBJ_PIPE INPUT)
      ;; Pipe provided (reactor update or programmatic call)
     )
     (T
      ;; Get pipe from user
      (SETQ PSPACE_BUBBLE_P (HCNM_LDRBLK_SPACE_SET_MODEL)
-           OBJPIPE         (HCNM_LDRBLK_AUTO_PIPE_GET_OBJECT ENAME_BUBBLE TAG AUTO_TYPE)
+           OBJ_PIPE         (HCNM_LDRBLK_AUTO_PIPE_GET_OBJECT ENAME_BUBBLE TAG AUTO_TYPE)
      )
      ;; Attach reactor to watch for pipe changes (no leader needed since not coordinate-based)
      (COND
-       (OBJPIPE
-        (HCNM_LDRBLK_ASSURE_AUTO_TEXT_HAS_REACTOR OBJPIPE ENAME_BUBBLE NIL TAG AUTO_TYPE)
+       (OBJ_PIPE
+        (HCNM_LDRBLK_ASSURE_AUTO_TEXT_HAS_REACTOR OBJ_PIPE ENAME_BUBBLE NIL TAG AUTO_TYPE)
        )
      )
      ;; Restore space after selection
@@ -6665,17 +6774,17 @@ ImportLayerSettings=No
   ;; STEP 2: Extract and format the property based on AUTO_TYPE
   (SETQ STRING
     (COND 
-      ((NOT OBJPIPE)
+      ((NOT OBJ_PIPE)
        "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
       )
       ((= AUTO_TYPE "Dia")
-       (HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER OBJPIPE)
+       (HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER OBJ_PIPE)
       )
       ((= AUTO_TYPE "Slope")
-       (HCNM_LDRBLK_AUTO_PIPE_FORMAT_SLOPE OBJPIPE)
+       (HCNM_LDRBLK_AUTO_PIPE_FORMAT_SLOPE OBJ_PIPE)
       )
       ((= AUTO_TYPE "L")
-       (HCNM_LDRBLK_AUTO_PIPE_FORMAT_LENGTH OBJPIPE)
+       (HCNM_LDRBLK_AUTO_PIPE_FORMAT_LENGTH OBJ_PIPE)
       )
       (T "!!!!!!!!!!!!!!!!!INVALID TYPE!!!!!!!!!!!!!!!!!!!!!!!")
     )
@@ -6689,7 +6798,7 @@ ImportLayerSettings=No
       STRING
       ATTRIBUTE_LIST
     )
-    BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
+    BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
   )
   BUBBLE_DATA
 )
@@ -6704,10 +6813,10 @@ ImportLayerSettings=No
 ;; Returns: Updated BUBBLE_DATA with new attribute value
 (DEFUN HCNM_LDRBLK_AUTO_AL (BUBBLE_DATA TAG AUTO_TYPE INPUT / ALIGNMENT_NAME ATTRIBUTE_LIST ENAME_BUBBLE ENAME_LEADER STA_OFF_PAIR DRAWSTATION OFFSET OBJALIGN P1_WORLD PSPACE_BUBBLE_P STA_STRING OFF_STRING STRING CVPORT REF_OCS_1 REF_OCS_2 REF_OCS_3 REF_WCS_1 REF_WCS_2 REF_WCS_3)
   (SETQ 
-    ATTRIBUTE_LIST (HCNM_LB:BD_GET BUBBLE_DATA "ATTRIBUTES")
-    ENAME_BUBBLE (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE")
-    ENAME_LEADER (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_LEADER")
-    P1_WORLD (HCNM_LB:BD_GET BUBBLE_DATA "P1_WORLD")
+    ATTRIBUTE_LIST (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ATTRIBUTES")
+    ENAME_BUBBLE (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_BUBBLE")
+    ENAME_LEADER (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_LEADER")
+    P1_WORLD (HCNM_LDRBLK_BD_GET BUBBLE_DATA "P1_WORLD")
   )
   
   ;; STEP 1: Get alignment object (user selection or provided input)
@@ -6824,7 +6933,7 @@ ImportLayerSettings=No
       STRING
       ATTRIBUTE_LIST
     )
-    BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
+    BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
   )
   BUBBLE_DATA
 )
@@ -6911,9 +7020,9 @@ ImportLayerSettings=No
 )
 (DEFUN HCNM_LDRBLK_AUTO_NE (BUBBLE_DATA TAG AUTO_TYPE INPUT / ATTRIBUTE_LIST E ENAME_BUBBLE ENAME_LEADER N NE P1_OCS P1_WORLD REACTOR_UPDATE_P STRING)
   (SETQ 
-    ATTRIBUTE_LIST (HCNM_LB:BD_GET BUBBLE_DATA "ATTRIBUTES")
-    ENAME_BUBBLE (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE")
-    ENAME_LEADER (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_LEADER")
+    ATTRIBUTE_LIST (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ATTRIBUTES")
+    ENAME_BUBBLE (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_BUBBLE")
+    ENAME_LEADER (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_LEADER")
     ;; INPUT = NIL means initial creation
     ;; INPUT = T means reactor update for coordinate types (sentinel value)
     ;; INPUT = VLA-OBJECT means reactor update with reference object (not used for N/E/NE)
@@ -6934,7 +7043,7 @@ ImportLayerSettings=No
     )
     (T
      ;; Initial creation - get from BUBBLE_DATA (already calculated by BD_ENSURE_P1_WORLD which prompts for viewport)
-     (SETQ P1_WORLD (HCNM_LB:BD_GET BUBBLE_DATA "P1_WORLD"))
+     (SETQ P1_WORLD (HCNM_LDRBLK_BD_GET BUBBLE_DATA "P1_WORLD"))
     )
   )
   ;; Calculate coordinates from P1_WORLD
@@ -6977,7 +7086,7 @@ ImportLayerSettings=No
       STRING
       ATTRIBUTE_LIST
     )
-    BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
+    BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
   )
   BUBBLE_DATA
 )
@@ -6996,8 +7105,8 @@ ImportLayerSettings=No
 ;; Currently unimplemented - returns apology message
 (DEFUN HCNM_LDRBLK_AUTO_SU (BUBBLE_DATA TAG AUTO_TYPE INPUT / ATTRIBUTE_LIST ENAME_BUBBLE)
   (SETQ 
-    ATTRIBUTE_LIST (HCNM_LB:BD_GET BUBBLE_DATA "ATTRIBUTES")
-    ENAME_BUBBLE (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE")
+    ATTRIBUTE_LIST (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ATTRIBUTES")
+    ENAME_BUBBLE (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_BUBBLE")
   )
   ;; Show paper space warning if applicable
   (HCNM_LDRBLK_WARN_PSPACE_COORDINATES ENAME_BUBBLE AUTO_TYPE)
@@ -7010,7 +7119,7 @@ ImportLayerSettings=No
       (HCNM_LDRBLK_AUTO_APOLOGY AUTO_TYPE)
       ATTRIBUTE_LIST
     )
-    BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
+    BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
   )
   BUBBLE_DATA
 )
