@@ -3215,6 +3215,9 @@ ImportLayerSettings=No
      (LIST "BubbleTextPrefixN" "N " 2)
      (LIST "BubbleTextPrefixE" "E " 2)
      (LIST "BubbleTextPrefixZ" "" 2)
+     (LIST "BubbleTextPrefixPipeDia" "" 2)
+     (LIST "BubbleTextPrefixPipeSlope" "" 2)
+     (LIST "BubbleTextPrefixPipeLength" "L=" 2)
      (LIST "BubbleTextPostfixLF" " LF" 2)
      (LIST "BubbleTextPostfixSF" " SF" 2)
      (LIST "BubbleTextPostfixSY" " SY" 2)
@@ -3224,6 +3227,9 @@ ImportLayerSettings=No
      (LIST "BubbleTextPostfixN" "" 2)
      (LIST "BubbleTextPostfixE" "" 2)
      (LIST "BubbleTextPostfixZ" "" 2)
+     (LIST "BubbleTextPostfixPipeDia" "\"" 2)
+     (LIST "BubbleTextPostfixPipeSlope" "%" 2)
+     (LIST "BubbleTextPostfixPipeLength" "'" 2)
      (LIST "BubbleTextJoinDelSta" ", " 2)
      (LIST "BubbleTextJoinDelN" ", " 2)
      (LIST "BubbleTextPrecisionLF" "0" 4)
@@ -3233,6 +3239,9 @@ ImportLayerSettings=No
      (LIST "BubbleTextPrecisionN" "2" 4)
      (LIST "BubbleTextPrecisionE" "2" 4)
      (LIST "BubbleTextPrecisionZ" "2" 4)
+     (LIST "BubbleTextPrecisionPipeDia" "0" 4)
+     (LIST "BubbleTextPrecisionPipeSlope" "2" 4)
+     (LIST "BubbleTextPrecisionPipeLength" "2" 4)
      (LIST "BubbleCurrentAlignment" "" 0)
      (LIST "AllowReactors" "1" 0)
      (LIST "BubbleArrowIntegralPending" "0" 0)
@@ -6073,6 +6082,9 @@ ImportLayerSettings=No
     ("E" "E" nil T)            ; Easting - needs P1_WORLD for coordinate
     ("NE" "NE" nil T)          ; Northing+Easting - needs P1_WORLD for coordinate
     ("Z" "Z" "SU" T)           ; Elevation - needs P1_WORLD for surface query (unimplemented)
+    ("Dia" "Dia" "PIPE" nil)   ; Pipe Diameter - user selects pipe object
+    ("Slope" "Slope" "PIPE" nil) ; Pipe Slope - user selects pipe object
+    ("L" "L" "PIPE" nil)       ; Pipe Length - user selects pipe object
     ("Text" "Text" nil nil)    ; Static text - user enters manually
     ("ENtry" "ENtry" nil nil)  ; Entry number - static text
   )
@@ -6206,6 +6218,9 @@ ImportLayerSettings=No
        ((= AUTO_TYPE "E") (HCNM_LDRBLK_AUTO_NE BUBBLE_DATA TAG AUTO_TYPE INPUT))
        ((= AUTO_TYPE "NE") (HCNM_LDRBLK_AUTO_NE BUBBLE_DATA TAG AUTO_TYPE INPUT))
        ((= AUTO_TYPE "Z") (HCNM_LDRBLK_AUTO_SU BUBBLE_DATA TAG AUTO_TYPE INPUT))
+       ((= AUTO_TYPE "Dia") (HCNM_LDRBLK_AUTO_PIPE BUBBLE_DATA TAG AUTO_TYPE INPUT))
+       ((= AUTO_TYPE "Slope") (HCNM_LDRBLK_AUTO_PIPE BUBBLE_DATA TAG AUTO_TYPE INPUT))
+       ((= AUTO_TYPE "L") (HCNM_LDRBLK_AUTO_PIPE BUBBLE_DATA TAG AUTO_TYPE INPUT))
      )
     ATTRIBUTE_LIST (HCNM_LB:BD_GET BUBBLE_DATA "ATTRIBUTES")
   )
@@ -6477,6 +6492,206 @@ ImportLayerSettings=No
       (T (C:HCNM-CONFIG-GETVAR "BubbleTextPostfixOff+"))
     )
   )
+)
+
+;; ============================================================================
+;; Civil 3D Pipe Network Auto-Text Functions
+;; ============================================================================
+
+;; Get pipe object from user selection
+;; Arguments:
+;;   ENAME_BUBBLE - Entity name of the bubble (for error context)
+;;   TAG - Attribute tag being updated
+;;   AUTO_TYPE - "Dia", "Slope", or "L"
+;; Returns: VLA-OBJECT of selected pipe, or nil if selection failed
+(DEFUN HCNM_LDRBLK_AUTO_PIPE_GET_OBJECT (ENAME_BUBBLE TAG AUTO_TYPE / ESAPIPE OBJPIPE)
+  (SETQ ESAPIPE
+    (NENTSEL 
+      (STRCAT 
+        "\nSelect Civil 3D pipe for "
+        (COND
+          ((= AUTO_TYPE "Dia") "diameter")
+          ((= AUTO_TYPE "Slope") "slope")
+          ((= AUTO_TYPE "L") "length")
+          (T "property")
+        )
+        ": "
+      )
+    )
+  )
+  (COND
+    (ESAPIPE
+     (SETQ OBJPIPE
+       (VL-CATCH-ALL-APPLY 
+         'VLAX-ENAME->VLA-OBJECT
+         (LIST (CAR ESAPIPE))
+       )
+     )
+     (COND
+       ((VL-CATCH-ALL-ERROR-P OBJPIPE)
+        (PRINC "\nError: Could not get pipe object.")
+        NIL
+       )
+       (T OBJPIPE)
+     )
+    )
+    (T NIL)
+  )
+)
+
+;; Format pipe diameter with config-based prefix/postfix
+;; Arguments:
+;;   OBJPIPE - VLA-OBJECT of Civil 3D pipe
+;; Returns: Formatted diameter string (e.g., "12 IN")
+(DEFUN HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER (OBJPIPE / DIA_VALUE DIA_INCHES)
+  (SETQ 
+    DIA_VALUE (VL-CATCH-ALL-APPLY 'VLAX-GET-PROPERTY (LIST OBJPIPE 'InnerDiameterOrWidth))
+  )
+  (COND
+    ((VL-CATCH-ALL-ERROR-P DIA_VALUE)
+     (PRINC (STRCAT "\nError getting diameter: " (VL-PRINC-TO-STRING DIA_VALUE)))
+     "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
+    )
+    (T
+     ;; Civil 3D returns diameter in drawing units (typically feet for US)
+     ;; Convert to inches for display
+     (SETQ DIA_INCHES (* DIA_VALUE 12.0))
+     (STRCAT 
+       (C:HCNM-CONFIG-GETVAR "BubbleTextPrefixPipeDia")
+       (RTOS 
+         DIA_INCHES
+         2
+         (ATOI (C:HCNM-CONFIG-GETVAR "BubbleTextPrecisionPipeDia"))
+       )
+       (C:HCNM-CONFIG-GETVAR "BubbleTextPostfixPipeDia")
+     )
+    )
+  )
+)
+
+;; Format pipe slope with config-based prefix/postfix
+;; Arguments:
+;;   OBJPIPE - VLA-OBJECT of Civil 3D pipe
+;; Returns: Formatted slope string (e.g., "2.00%")
+(DEFUN HCNM_LDRBLK_AUTO_PIPE_FORMAT_SLOPE (OBJPIPE / SLOPE_VALUE SLOPE_PERCENT)
+  (SETQ 
+    SLOPE_VALUE (VL-CATCH-ALL-APPLY 'VLAX-GET-PROPERTY (LIST OBJPIPE 'Slope))
+  )
+  (COND
+    ((VL-CATCH-ALL-ERROR-P SLOPE_VALUE)
+     (PRINC (STRCAT "\nError getting slope: " (VL-PRINC-TO-STRING SLOPE_VALUE)))
+     "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
+    )
+    (T
+     ;; Civil 3D returns slope as decimal (e.g., 0.02 for 2%)
+     ;; Convert to percentage for display (take absolute value)
+     (SETQ SLOPE_PERCENT (* (ABS SLOPE_VALUE) 100.0))
+     (STRCAT 
+       (C:HCNM-CONFIG-GETVAR "BubbleTextPrefixPipeSlope")
+       (RTOS 
+         SLOPE_PERCENT
+         2
+         (ATOI (C:HCNM-CONFIG-GETVAR "BubbleTextPrecisionPipeSlope"))
+       )
+       (C:HCNM-CONFIG-GETVAR "BubbleTextPostfixPipeSlope")
+     )
+    )
+  )
+)
+
+;; Format pipe length with config-based prefix/postfix
+;; Arguments:
+;;   OBJPIPE - VLA-OBJECT of Civil 3D pipe
+;; Returns: Formatted length string (e.g., "L=125.50")
+(DEFUN HCNM_LDRBLK_AUTO_PIPE_FORMAT_LENGTH (OBJPIPE / LENGTH_VALUE)
+  (SETQ 
+    LENGTH_VALUE (VL-CATCH-ALL-APPLY 'VLAX-GET-PROPERTY (LIST OBJPIPE 'Length2D))
+  )
+  (COND
+    ((VL-CATCH-ALL-ERROR-P LENGTH_VALUE)
+     (PRINC (STRCAT "\nError getting length: " (VL-PRINC-TO-STRING LENGTH_VALUE)))
+     "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
+    )
+    (T
+     (STRCAT 
+       (C:HCNM-CONFIG-GETVAR "BubbleTextPrefixPipeLength")
+       (RTOS 
+         LENGTH_VALUE
+         2
+         (ATOI (C:HCNM-CONFIG-GETVAR "BubbleTextPrecisionPipeLength"))
+       )
+       (C:HCNM-CONFIG-GETVAR "BubbleTextPostfixPipeLength")
+     )
+    )
+  )
+)
+
+;; Main pipe network auto-text function
+;; Orchestrates: get pipe → extract property → format → update attribute
+;; Arguments:
+;;   BUBBLE_DATA - Bubble data alist
+;;   TAG - Attribute tag to update
+;;   AUTO_TYPE - "Dia", "Slope", or "L"
+;;   INPUT - Optional: Pre-selected pipe object (for reactor support)
+;; Returns: Updated BUBBLE_DATA with new attribute value
+(DEFUN HCNM_LDRBLK_AUTO_PIPE (BUBBLE_DATA TAG AUTO_TYPE INPUT / ATTRIBUTE_LIST ENAME_BUBBLE ENAME_LEADER OBJPIPE PSPACE_BUBBLE_P STRING)
+  (SETQ 
+    ATTRIBUTE_LIST (HCNM_LB:BD_GET BUBBLE_DATA "ATTRIBUTES")
+    ENAME_BUBBLE (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE")
+    ENAME_LEADER (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_LEADER")
+  )
+  
+  ;; STEP 1: Get pipe object (user selection or provided input)
+  (COND 
+    ((SETQ OBJPIPE INPUT)
+     ;; Pipe provided (reactor update or programmatic call)
+    )
+    (T
+     ;; Get pipe from user
+     (SETQ PSPACE_BUBBLE_P (HCNM_LDRBLK_SPACE_SET_MODEL)
+           OBJPIPE         (HCNM_LDRBLK_AUTO_PIPE_GET_OBJECT ENAME_BUBBLE TAG AUTO_TYPE)
+     )
+     ;; Attach reactor to watch for pipe changes (no leader needed since not coordinate-based)
+     (COND
+       (OBJPIPE
+        (HCNM_LDRBLK_ASSURE_AUTO_TEXT_HAS_REACTOR OBJPIPE ENAME_BUBBLE NIL TAG AUTO_TYPE)
+       )
+     )
+     ;; Restore space after selection
+     (HCNM_LDRBLK_SPACE_RESTORE PSPACE_BUBBLE_P)
+    )
+  )
+  
+  ;; STEP 2: Extract and format the property based on AUTO_TYPE
+  (SETQ STRING
+    (COND 
+      ((NOT OBJPIPE)
+       "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
+      )
+      ((= AUTO_TYPE "Dia")
+       (HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER OBJPIPE)
+      )
+      ((= AUTO_TYPE "Slope")
+       (HCNM_LDRBLK_AUTO_PIPE_FORMAT_SLOPE OBJPIPE)
+      )
+      ((= AUTO_TYPE "L")
+       (HCNM_LDRBLK_AUTO_PIPE_FORMAT_LENGTH OBJPIPE)
+      )
+      (T "!!!!!!!!!!!!!!!!!INVALID TYPE!!!!!!!!!!!!!!!!!!!!!!!")
+    )
+  )
+  
+  ;; STEP 3: Save the formatted string to the attribute list and update BUBBLE_DATA
+  (SETQ
+    ATTRIBUTE_LIST
+    (HCNM_LDRBLK_SAVE_AUTO_TO_LIST 
+      TAG
+      STRING
+      ATTRIBUTE_LIST
+    )
+    BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
+  )
+  BUBBLE_DATA
 )
 
 ;; Main alignment auto-text function (backward compatible)
@@ -7232,8 +7447,8 @@ ImportLayerSettings=No
      (CADR (ASSOC DONE_CODE (HCNM_EDIT_BUBBLE_DONE_CODES)))
   )
   (COND
-    ;; Handle ClearAuto button (code 24)
-    ((= DONE_CODE 24)
+    ;; Handle ClearAuto button (code 28)
+    ((= DONE_CODE 28)
      ;; Get current value, split it, clear the auto part, and save
      (SETQ VALUE (CADR (ASSOC TAG HCNM_EB:ATTRIBUTE_LIST))
            PARTS (HCNM_EB:SPLIT_ON_NBSP VALUE)
@@ -7250,8 +7465,8 @@ ImportLayerSettings=No
        )
      )
     )
-    ;; Handle auto-text generation buttons
-    (T
+    ;; Handle auto-text generation buttons (only if AUTO_TYPE is valid)
+    ((AND AUTO_TYPE (NOT (= AUTO_TYPE "")))
      ;; bubble-data-update: this is called from command line and from edit box to get string as requested by user.
      (SETQ HCNM_EB:ATTRIBUTE_LIST
        (HCNM_LDRBLK_ADJUST_FORMATS
@@ -7264,6 +7479,10 @@ ImportLayerSettings=No
          )
        )
      )
+    )
+    ;; Invalid DONE_CODE - just ignore
+    (T
+     (PRINC (STRCAT "\nWarning: Invalid button code " (ITOA DONE_CODE)))
     )
   )
 )
@@ -7371,6 +7590,9 @@ ImportLayerSettings=No
     (21 "NE" EB_DONE)
     (22 "Z" EB_DONE)
     (23 "Text" EB_DONE)
+    (25 "Dia" EB_DONE)
+    (26 "Slope" EB_DONE)
+    (27 "L" EB_DONE)
    )
 )
 ;;; Migrate legacy format codes from auto field to prefix field.
@@ -7462,7 +7684,7 @@ ImportLayerSettings=No
     (HCNM_EDIT_BUBBLE_DONE_CODES)
   )
   ;; Clear Auto Text button
-  (ACTION_TILE "ClearAuto" "(DONE_DIALOG 24)")
+  (ACTION_TILE "ClearAuto" "(DONE_DIALOG 28)")
   (ACTION_TILE "accept" "(DONE_DIALOG 1)")
   (ACTION_TILE "cancel" "(DONE_DIALOG 0)")
   (LIST (START_DIALOG) NOTETEXTRADIOCOLUMN)
@@ -8072,6 +8294,15 @@ ImportLayerSettings=No
   (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrecisionN")
   (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrecisionE")
   (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrecisionZ")
+  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrefixPipeDia")
+  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPostfixPipeDia")
+  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrecisionPipeDia")
+  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrefixPipeSlope")
+  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPostfixPipeSlope")
+  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrecisionPipeSlope")
+  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrefixPipeLength")
+  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPostfixPipeLength")
+  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrecisionPipeLength")
   (ACTION_TILE "close" "(DONE_DIALOG 2)")
   (START_DIALOG)
 )

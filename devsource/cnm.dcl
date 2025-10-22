@@ -209,6 +209,9 @@ HCNMBubble : dialog {
 				: text {label = "Location: Northing";}
 				: text {label = "Location: Easting";}
 				: text {label = "Elevation";}
+				: text {label = "Pipe: Diameter";}
+				: text {label = "Pipe: Slope";}
+				: text {label = "Pipe: Length";}
 				: text {label = "Where saved ->";}
 			}
 		: column {
@@ -240,6 +243,15 @@ HCNMBubble : dialog {
 				: edit_box {
 					key = "BubbleTextPrefixZ";
 				}
+				: edit_box {
+					key = "BubbleTextPrefixPipeDia";
+				}
+				: edit_box {
+					key = "BubbleTextPrefixPipeSlope";
+				}
+				: edit_box {
+					key = "BubbleTextPrefixPipeLength";
+				}
 				: text {label = "Project";}
 			}
 			: column {
@@ -270,6 +282,15 @@ HCNMBubble : dialog {
 				}
 				: edit_box {
 					key = "BubbleTextPostfixZ";
+				}
+				: edit_box {
+					key = "BubbleTextPostfixPipeDia";
+				}
+				: edit_box {
+					key = "BubbleTextPostfixPipeSlope";
+				}
+				: edit_box {
+					key = "BubbleTextPostfixPipeLength";
 				}
 				: text {label = "Project";}
 			}
@@ -311,6 +332,18 @@ HCNMBubble : dialog {
 					key = "BubbleTextJoinDelZ";
 					is_enabled = false;
 				}
+				: edit_box {				
+					key = "BubbleTextJoinDelPipeDia";
+					is_enabled = false;
+				}
+				: edit_box {				
+					key = "BubbleTextJoinDelPipeSlope";
+					is_enabled = false;
+				}
+				: edit_box {				
+					key = "BubbleTextJoinDelPipeLength";
+					is_enabled = false;
+				}
 				: text {label = "Project";}
 			}
 			: column {
@@ -343,6 +376,15 @@ HCNMBubble : dialog {
 				}
 				: edit_box {
 					key = "BubbleTextPrecisionZ";
+				}
+				: edit_box {
+					key = "BubbleTextPrecisionPipeDia";
+				}
+				: edit_box {
+					key = "BubbleTextPrecisionPipeSlope";
+				}
+				: edit_box {
+					key = "BubbleTextPrecisionPipeLength";
 				}
 				: text {label = "User";}
 			}
@@ -629,11 +671,12 @@ HCNMEditBubble : dialog {
 		: button {label = "StaOff"; key = "StaOff";}
 		: button {label = "Name"; key = "AlName";}
 		: button {label = "StaName"; key = "StaName";}
-		: button {label = "_"; key = "ClearAuto"; width = 3;}
 	}
-	: text {
-		label = "Note: Coordinate auto-text for paper space notes does NOT react to viewport changes.";
-		alignment = centered;
+	: row {
+		: button {label = "Dia"; key = "Dia";}
+		: button {label = "Slope"; key = "Slope";}
+		: button {label = "L"; key = "L";}
+		: button {label = "_"; key = "ClearAuto"; width = 3;}
 	}
 	ok_cancel;	
 }
