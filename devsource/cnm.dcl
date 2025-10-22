@@ -430,45 +430,139 @@ HCNMEditBubble : dialog {
 	key = "Title";
 	label = "";
 	: row {
+		: column {
+			: edit_box {
+				key = "PrefixNOTENUM";
+				label = "";
+			}
+			: edit_box {
+				key = "PrefixNOTEPHASE";
+				label = "";
+			}
+			: edit_box {
+				key = "PrefixNOTEGAP";
+				label = "";
+			}
+			: edit_box {
+				key = "PrefixNOTETXT1";
+				label = "";
+			}
+			: edit_box {
+				key = "PrefixNOTETXT2";
+				label = "";
+			}
+			: edit_box {
+				key = "PrefixNOTETXT3";
+				label = "";
+			}
+			: edit_box {
+				key = "PrefixNOTETXT4";
+				label = "";
+			}
+			: edit_box {
+				key = "PrefixNOTETXT5";
+				label = "";
+			}
+			: edit_box {
+				key = "PrefixNOTETXT6";
+				label = "";
+			}
+			: edit_box {
+				key = "PrefixNOTETXT0";
+				label = "";
+			}
+		}
 		: column {	
 			: edit_box {
 				key = "EditNOTENUM";
 				label = "";
+				is_enabled = false;
 			}
 			: edit_box {
 				key = "EditNOTEPHASE";
 				label = "";
+				is_enabled = false;
 			}
 			: edit_box {
 				key = "EditNOTEGAP";
 				label = "";
+				is_enabled = false;
 			}
 			: edit_box {
 				key = "EditNOTETXT1";
 				label = "";
+				is_enabled = false;
 			}
 			: edit_box {
 				key = "EditNOTETXT2";
 				label = "";
+				is_enabled = false;
 			}
 			: edit_box {
 				key = "EditNOTETXT3";
 				label = "";
+				is_enabled = false;
 			}
 			: edit_box {
 				key = "EditNOTETXT4";
 				label = "";
+				is_enabled = false;
 			}
 			: edit_box {
 				key = "EditNOTETXT5";
 				label = "";
+				is_enabled = false;
 			}
 			: edit_box {
 				key = "EditNOTETXT6";
 				label = "";
+				is_enabled = false;
 			}
 			: edit_box {
 				key = "EditNOTETXT0";
+				label = "";
+				is_enabled = false;
+			}
+		}
+		: column {
+			: edit_box {
+				key = "PostfixNOTENUM";
+				label = "";
+			}
+			: edit_box {
+				key = "PostfixNOTEPHASE";
+				label = "";
+			}
+			: edit_box {
+				key = "PostfixNOTEGAP";
+				label = "";
+			}
+			: edit_box {
+				key = "PostfixNOTETXT1";
+				label = "";
+			}
+			: edit_box {
+				key = "PostfixNOTETXT2";
+				label = "";
+			}
+			: edit_box {
+				key = "PostfixNOTETXT3";
+				label = "";
+			}
+			: edit_box {
+				key = "PostfixNOTETXT4";
+				label = "";
+			}
+			: edit_box {
+				key = "PostfixNOTETXT5";
+				label = "";
+			}
+			: edit_box {
+				key = "PostfixNOTETXT6";
+				label = "";
+			}
+			: edit_box {
+				key = "PostfixNOTETXT0";
 				label = "";
 			}
 		}
@@ -524,13 +618,22 @@ HCNMEditBubble : dialog {
 		: button {label = "LF"; key = "LF";}
 		: button {label = "SF"; key = "SF";}
 		: button {label = "SY"; key = "SY";}
-		: button {label = "Sta"; key = "Sta";}
-		: button {label = "Off"; key = "Off";}
-		: button {label = "StaOff"; key = "StaOff";}
 		: button {label = "N"; key = "N";}
 		: button {label = "E"; key = "E";}
 		: button {label = "NE"; key = "NE";}
 		: button {label = "Z"; key = "Z";}
+	}
+	: row {
+		: button {label = "Sta"; key = "Sta";}
+		: button {label = "Off"; key = "Off";}
+		: button {label = "StaOff"; key = "StaOff";}
+		: button {label = "Name"; key = "AlName";}
+		: button {label = "StaName"; key = "StaName";}
+		: button {label = "_"; key = "ClearAuto"; width = 3;}
+	}
+	: text {
+		label = "Note: Coordinate auto-text for paper space notes does NOT react to viewport changes.";
+		alignment = centered;
 	}
 	ok_cancel;	
 }

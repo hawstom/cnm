@@ -5750,13 +5750,30 @@ ImportLayerSettings=No
   )
   ATTRIBUTE_LIST
 )
-(DEFUN HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST (TAG VALUE ATTRIBUTE_LIST / )
- (SUBST (LIST TAG VALUE) (ASSOC TAG ATTRIBUTE_LIST) ATTRIBUTE_LIST)
+;;; Save attribute value to attribute list (replaces entire value)
+(DEFUN HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST (TAG VALUE ATTRIBUTE_LIST / ATTR)
+  (SETQ ATTR (ASSOC TAG ATTRIBUTE_LIST))
+  (SUBST (LIST TAG VALUE) ATTR ATTRIBUTE_LIST)
 )
-(DEFUN HCNM_LDRBLK_ADJUST_FORMATS (ATTRIBUTE_LIST / BUBBLEMTEXT TXT1 TXT2
+;;; Save auto-generated text using search-and-replace in delimiter structure
+;;; - Gets old auto-text from "auto" field (between delimiters)
+;;; - Replaces it with new auto-text
+;;; - Preserves prefix and postfix from user edits
+;;; This allows users to add prefix/postfix text while still enabling auto-updates
+(DEFUN HCNM_LDRBLK_SAVE_AUTO_TO_LIST (TAG AUTO_NEW ATTRIBUTE_LIST / ATTR VALUE PARTS PREFIX POSTFIX VALUE_NEW)
+  (SETQ ATTR (ASSOC TAG ATTRIBUTE_LIST)
+        VALUE (CADR ATTR)
+        PARTS (HCNM_EB:SPLIT_ON_NBSP VALUE)
+        PREFIX (NTH 0 PARTS)
+        POSTFIX (NTH 2 PARTS)
+        VALUE_NEW (HCNM_EB:CONCAT_PARTS PREFIX AUTO_NEW POSTFIX))
+  (SUBST (LIST TAG VALUE_NEW) ATTR ATTRIBUTE_LIST)
+)
+(DEFUN HCNM_LDRBLK_ADJUST_FORMATS (ATTRIBUTE_LIST / BUBBLEMTEXT TXT1 TXT2 TXT1_RAW TXT2_RAW
                                GAP OVERLINE UNDERLINE
                               )
   ;; Adjust underlining and overlining
+  ;; Only add underline to line 1 and overline to line 2 if they have any content
   (SETQ
     BUBBLEMTEXT
      (HCNM_LDRBLK_GET_MTEXT_STRING)
@@ -5770,20 +5787,37 @@ ImportLayerSettings=No
        ((= BUBBLEMTEXT "") "%%o")
        (T "\\O")
      )
+    TXT1_RAW (CADR (ASSOC "NOTETXT1" ATTRIBUTE_LIST))
+    TXT2_RAW (CADR (ASSOC "NOTETXT2" ATTRIBUTE_LIST))
+    ;; Only apply formatting if line has actual content
     TXT1
-     (HCNM_LDRBLK_ADJUST_FORMAT
-       (CADR (ASSOC "NOTETXT1" ATTRIBUTE_LIST))
-       UNDERLINE
+     (COND
+       ((HCNM_LDRBLK_ATTR_HAS_CONTENT_P TXT1_RAW)
+        (HCNM_LDRBLK_ADJUST_FORMAT TXT1_RAW UNDERLINE)
+       )
+       (T TXT1_RAW)  ; No content, return as-is (could be "" or "§§")
      )
     TXT2
-     (HCNM_LDRBLK_ADJUST_FORMAT
-       (CADR (ASSOC "NOTETXT2" ATTRIBUTE_LIST))
-       OVERLINE
+     (COND
+       ((HCNM_LDRBLK_ATTR_HAS_CONTENT_P TXT2_RAW)
+        (HCNM_LDRBLK_ADJUST_FORMAT TXT2_RAW OVERLINE)
+       )
+       (T TXT2_RAW)  ; No content, return as-is (could be "" or "§§")
      )
+    ;; GAP gets underline + two spaces if either line has content
+    ;; NOTEGAP is system-controlled and goes in prefix field with delimiters
     GAP
      (COND
-       ((= TXT1 TXT2 "") "")
-       (T "%%u ")
+       ;; If both lines empty, gap is empty (with empty delimiter structure)
+       ((AND (NOT (HCNM_LDRBLK_ATTR_HAS_CONTENT_P TXT1_RAW))
+             (NOT (HCNM_LDRBLK_ATTR_HAS_CONTENT_P TXT2_RAW))
+        )
+        (HCNM_EB:CONCAT_PARTS "" "" "")
+       )
+       ;; Otherwise, gap is "%%u  " (underline + 2 spaces) in prefix field
+       (T 
+        (HCNM_EB:CONCAT_PARTS "%%u  " "" "")
+       )
      )
     ATTRIBUTE_LIST
      (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST
@@ -5829,16 +5863,126 @@ ImportLayerSettings=No
   )
   |;
 )
+;;; Check if attribute has actual content (not just empty or delimiters).
+;;; Returns T if there's text content, NIL otherwise.
+(DEFUN HCNM_LDRBLK_ATTR_HAS_CONTENT_P (STRING / SEP POS PREFIX AUTO POSTFIX)
+  (COND
+    ;; Empty string has no content
+    ((= STRING "") NIL)
+    ;; Check if string has delimiters
+    ((VL-STRING-SEARCH (SETQ SEP (CHR 160)) STRING)
+     ;; Parse into parts
+     (SETQ POS (VL-STRING-SEARCH SEP STRING))
+     (SETQ PREFIX (SUBSTR STRING 1 POS))
+     (SETQ STRING (SUBSTR STRING (+ POS 2)))
+     (SETQ POS (VL-STRING-SEARCH SEP STRING))
+     (IF POS
+       (PROGN
+         (SETQ AUTO (SUBSTR STRING 1 POS))
+         (SETQ POSTFIX (SUBSTR STRING (+ POS 2)))
+       )
+       (PROGN
+         (SETQ AUTO STRING)
+         (SETQ POSTFIX "")
+       )
+     )
+     ;; Has content if any part is non-empty
+     (OR (/= PREFIX "") (/= AUTO "") (/= POSTFIX ""))
+    )
+    ;; No delimiters, has content if non-empty
+    (T T)
+  )
+)
 ;;; Underline or overline string unless it's empty.
-(DEFUN HCNM_LDRBLK_ADJUST_FORMAT (STRING CODE)
+;;; With prefix/auto/postfix split using chr(160) as delimiter,
+;;; the format code goes in the prefix, not the auto text.
+;;; If format codes are found in the auto text, move them to prefix.
+(DEFUN HCNM_LDRBLK_ADJUST_FORMAT (STRING CODE / SEP POS PREFIX AUTO POSTFIX AUTO_HAS_FORMAT)
   (COND
     ;; If empty, do nothing
     ((= STRING "") STRING)
-    ;; If already underlined or overlined, strip that. Assumes that's the first code.
-    ((WCMATCH STRING "\\*") (STRCAT CODE (SUBSTR STRING 3)))
-    ((WCMATCH STRING "%%*") (STRCAT CODE (SUBSTR STRING 4)))
-    ;; Otherwise just underline or overline.
-    (T (STRCAT CODE STRING))
+    ;; Otherwise, split by chr(160) delimiter and add format code to prefix
+    (T
+     (SETQ SEP (CHR 160))
+     (SETQ POS (VL-STRING-SEARCH SEP STRING))
+     (COND
+       ;; If no delimiter, treat entire string as prefix (old-style attribute)
+       ((NOT POS)
+        (COND
+          ;; If already underlined or overlined, strip that. Assumes that's the first code.
+          ((WCMATCH STRING "\\*") (STRCAT CODE (SUBSTR STRING 3)))
+          ((WCMATCH STRING "%%*") (STRCAT CODE (SUBSTR STRING 4)))
+          ;; Otherwise just underline or overline.
+          (T (STRCAT CODE STRING))
+        )
+       )
+       ;; If delimiter exists, extract prefix/auto/postfix and format the prefix
+       (T
+        (SETQ PREFIX (SUBSTR STRING 1 POS))
+        (SETQ STRING (SUBSTR STRING (+ POS 2)))  ; Skip separator
+        (SETQ POS (VL-STRING-SEARCH SEP STRING))
+        (COND
+          ;; Extract auto and postfix
+          (POS
+           (SETQ AUTO (SUBSTR STRING 1 POS))
+           (SETQ POSTFIX (SUBSTR STRING (+ POS 2)))
+          )
+          ;; No second delimiter, rest is auto
+          (T
+           (SETQ AUTO STRING)
+           (SETQ POSTFIX "")
+          )
+        )
+        ;; Check if auto text has format codes and move them to prefix
+        (SETQ AUTO_HAS_FORMAT NIL)
+        (COND
+          ;; If auto has mtext format codes, strip them and flag
+          ((WCMATCH AUTO "\\L*")
+           (SETQ AUTO (SUBSTR AUTO 3))
+           (SETQ AUTO_HAS_FORMAT "\\L")
+          )
+          ((WCMATCH AUTO "\\O*")
+           (SETQ AUTO (SUBSTR AUTO 3))
+           (SETQ AUTO_HAS_FORMAT "\\O")
+          )
+          ;; If auto has dtext format codes, strip them and flag
+          ((WCMATCH AUTO "%%u*")
+           (SETQ AUTO (SUBSTR AUTO 4))
+           (SETQ AUTO_HAS_FORMAT "%%u")
+          )
+          ((WCMATCH AUTO "%%o*")
+           (SETQ AUTO (SUBSTR AUTO 4))
+           (SETQ AUTO_HAS_FORMAT "%%o")
+          )
+        )
+        ;; Add format code to prefix (use code from auto if found, else use CODE parameter)
+        (SETQ PREFIX
+          (COND
+            ;; If auto had format, use that instead of CODE
+            (AUTO_HAS_FORMAT
+             (COND
+               ((= PREFIX "") AUTO_HAS_FORMAT)
+               ((WCMATCH PREFIX "\\*") (STRCAT AUTO_HAS_FORMAT (SUBSTR PREFIX 3)))
+               ((WCMATCH PREFIX "%%*") (STRCAT AUTO_HAS_FORMAT (SUBSTR PREFIX 4)))
+               (T (STRCAT AUTO_HAS_FORMAT PREFIX))
+             )
+            )
+            ;; Otherwise use CODE parameter
+            (T
+             (COND
+               ((= PREFIX "") CODE)  ; Empty prefix gets just the code
+               ((WCMATCH PREFIX "\\*") (STRCAT CODE (SUBSTR PREFIX 3)))
+               ((WCMATCH PREFIX "%%*") (STRCAT CODE (SUBSTR PREFIX 4)))
+               (T (STRCAT CODE PREFIX))
+             )
+            )
+          )
+        )
+        ;; Reassemble with delimiters
+        (STRCAT PREFIX SEP AUTO SEP POSTFIX)
+       )
+     )
+    )
   )
 )
 (DEFUN HCNM_LDRBLK_GET_TEXT_ENTRY (ENAME_BUBBLE LINE_NUMBER ATTRIBUTE_LIST /
@@ -5923,6 +6067,8 @@ ImportLayerSettings=No
     ("STa" "Sta" "AL" T)       ; Station - needs P1_WORLD for alignment query
     ("Off" "Off" "AL" T)       ; Offset - needs P1_WORLD for alignment query
     ("stAoff" "StaOff" "AL" T) ; Station+Offset - needs P1_WORLD for alignment query
+    ("alName" "AlName" "AL" nil)     ; Alignment Name - no coordinates needed
+    ("staName" "StaName" "AL" T)     ; Station + Alignment Name - needs P1_WORLD
     ("N" "N" nil T)            ; Northing - needs P1_WORLD for coordinate
     ("E" "E" nil T)            ; Easting - needs P1_WORLD for coordinate
     ("NE" "NE" nil T)          ; Northing+Easting - needs P1_WORLD for coordinate
@@ -6033,7 +6179,14 @@ ImportLayerSettings=No
   (SETQ 
     BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "ENAME_BUBBLE" ENAME_BUBBLE)
     BUBBLE_DATA (HCNM_LB:BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
-    BUBBLE_DATA (HCNM_LB:BD_ENSURE_P1_WORLD BUBBLE_DATA)
+  )
+  ;; Only calculate P1_WORLD for auto-types that require coordinates
+  (COND
+    ((HCNM_LDRBLK_AUTO_TYPE_IS_COORDINATE_P AUTO_TYPE)
+     (SETQ BUBBLE_DATA (HCNM_LB:BD_ENSURE_P1_WORLD BUBBLE_DATA))
+    )
+  )
+  (SETQ
     BUBBLE_DATA
      (COND
        ((= AUTO_TYPE "Text") (HCNM_LDRBLK_AUTO_ES BUBBLE_DATA TAG AUTO_TYPE INPUT))
@@ -6047,6 +6200,8 @@ ImportLayerSettings=No
        ((= AUTO_TYPE "StaOff")
         (HCNM_LDRBLK_AUTO_AL BUBBLE_DATA TAG AUTO_TYPE INPUT)
        )
+       ((= AUTO_TYPE "AlName") (HCNM_LDRBLK_AUTO_AL BUBBLE_DATA TAG AUTO_TYPE INPUT))
+       ((= AUTO_TYPE "StaName") (HCNM_LDRBLK_AUTO_AL BUBBLE_DATA TAG AUTO_TYPE INPUT))
        ((= AUTO_TYPE "N") (HCNM_LDRBLK_AUTO_NE BUBBLE_DATA TAG AUTO_TYPE INPUT))
        ((= AUTO_TYPE "E") (HCNM_LDRBLK_AUTO_NE BUBBLE_DATA TAG AUTO_TYPE INPUT))
        ((= AUTO_TYPE "NE") (HCNM_LDRBLK_AUTO_NE BUBBLE_DATA TAG AUTO_TYPE INPUT))
@@ -6070,7 +6225,7 @@ ImportLayerSettings=No
   ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
   (SETQ  
     ATTRIBUTE_LIST 
-     (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST 
+     (HCNM_LDRBLK_SAVE_AUTO_TO_LIST 
        TAG
        (COND 
          (ENAME (CDR (ASSOC 1 (ENTGET ENAME))))
@@ -6329,10 +6484,10 @@ ImportLayerSettings=No
 ;; Arguments:
 ;;   BUBBLE_DATA - Bubble data alist
 ;;   TAG - Attribute tag to update
-;;   AUTO_TYPE - "Sta", "Off", or "StaOff"
+;;   AUTO_TYPE - "Sta", "Off", "StaOff", "AlName", or "StaName"
 ;;   INPUT - Optional: Pre-selected alignment object (used by reactor updates)
 ;; Returns: Updated BUBBLE_DATA with new attribute value
-(DEFUN HCNM_LDRBLK_AUTO_AL (BUBBLE_DATA TAG AUTO_TYPE INPUT / ATTRIBUTE_LIST ENAME_BUBBLE ENAME_LEADER STA_OFF_PAIR DRAWSTATION OFFSET OBJALIGN P1_WORLD PSPACE_BUBBLE_P STA_STRING OFF_STRING STRING CVPORT REF_OCS_1 REF_OCS_2 REF_OCS_3 REF_WCS_1 REF_WCS_2 REF_WCS_3)
+(DEFUN HCNM_LDRBLK_AUTO_AL (BUBBLE_DATA TAG AUTO_TYPE INPUT / ALIGNMENT_NAME ATTRIBUTE_LIST ENAME_BUBBLE ENAME_LEADER STA_OFF_PAIR DRAWSTATION OFFSET OBJALIGN P1_WORLD PSPACE_BUBBLE_P STA_STRING OFF_STRING STRING CVPORT REF_OCS_1 REF_OCS_2 REF_OCS_3 REF_WCS_1 REF_WCS_2 REF_WCS_3)
   (SETQ 
     ATTRIBUTE_LIST (HCNM_LB:BD_GET BUBBLE_DATA "ATTRIBUTES")
     ENAME_BUBBLE (HCNM_LB:BD_GET BUBBLE_DATA "ENAME_BUBBLE")
@@ -6382,11 +6537,31 @@ ImportLayerSettings=No
     )
   )
   
-  ;; STEP 2: Calculate station and offset
-  (SETQ STA_OFF_PAIR (HCNM_LDRBLK_AUTO_ALIGNMENT_CALCULATE OBJALIGN P1_WORLD))
+  ;; STEP 2: Calculate station and offset (only needed for coordinate-based types)
+  (COND
+    ((OR (= AUTO_TYPE "Sta") (= AUTO_TYPE "Off") (= AUTO_TYPE "StaOff") (= AUTO_TYPE "StaName"))
+     (SETQ STA_OFF_PAIR (HCNM_LDRBLK_AUTO_ALIGNMENT_CALCULATE OBJALIGN P1_WORLD))
+    )
+  )
   
   ;; STEP 3: Format the result based on AUTO_TYPE
   (COND 
+    ((= AUTO_TYPE "AlName")
+     ;; Alignment name only - no coordinates needed
+     (COND
+       (OBJALIGN
+        (SETQ STRING (VL-CATCH-ALL-APPLY 'VLAX-GET-PROPERTY (LIST OBJALIGN 'NAME)))
+        (COND
+          ((VL-CATCH-ALL-ERROR-P STRING)
+           (SETQ STRING "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
+          )
+        )
+       )
+       (T
+        (SETQ STRING "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
+       )
+     )
+    )
     (STA_OFF_PAIR
      ;; Calculation succeeded - extract and format
      (SETQ DRAWSTATION (CAR STA_OFF_PAIR)
@@ -6403,6 +6578,19 @@ ImportLayerSettings=No
                 (C:HCNM-CONFIG-GETVAR "BubbleTextJoinDelSta")
                 OFF_STRING
               )
+             )
+             ((= AUTO_TYPE "StaName")
+              ;; Station + alignment name
+              (SETQ STRING (VL-CATCH-ALL-APPLY 'VLAX-GET-PROPERTY (LIST OBJALIGN 'NAME)))
+              (COND
+                ((VL-CATCH-ALL-ERROR-P STRING)
+                 (SETQ STRING STA_STRING)  ; If name fails, just use station
+                )
+                (T
+                 (SETQ STRING (STRCAT STA_STRING " " STRING))
+                )
+              )
+              STRING
              )
            )  ; End inner COND for STRING
      )  ; End SETQ
@@ -6465,29 +6653,39 @@ ImportLayerSettings=No
     (T 
       (princ "\nNo object selected. Keeping previous alignment.")
       (SETQ OBJALIGN OBJALIGN_OLD)
-      ;; If using previous alignment and bubble is in paper space, user must select viewport
+      ;; If using previous alignment and bubble is in paper space, check if we need viewport selection
       (COND
         ((AND OBJALIGN ENAME_BUBBLE (NOT (HCNM_LDRBLK_IS_ON_MODEL_TAB ENAME_BUBBLE)))
-         ;; Show paper space warning before viewport selection
-         (HCNM_LDRBLK_WARN_PSPACE_COORDINATES ENAME_BUBBLE AUTO_TYPE)
-         (SETQ AVPORT (HCNM_LDRBLK_GET_TARGET_VPORT))
-         ;; Capture viewport transformation data now while in MSPACE with selected viewport
-         (SETQ CVPORT AVPORT)
+         ;; Bubble is in paper space with previous alignment
+         ;; Only prompt for viewport if transformation data doesn't already exist
          (COND
-           ((AND CVPORT (> CVPORT 1))
-            ;; We're in a viewport - capture transformation matrix
-            ;; Use 3 reference points to capture rotation, scale, and translation
-            (SETQ REF_OCS_1 '(0.0 0.0 0.0)    ; Origin
-                  REF_OCS_2 '(1.0 0.0 0.0)    ; X-axis unit vector
-                  REF_OCS_3 '(0.0 1.0 0.0)    ; Y-axis unit vector
-                  REF_WCS_1 (TRANS (TRANS REF_OCS_1 3 2) 2 0)
-                  REF_WCS_2 (TRANS (TRANS REF_OCS_2 3 2) 2 0)
-                  REF_WCS_3 (TRANS (TRANS REF_OCS_3 3 2) 2 0))
-            (HCNM_LDRBLK_SET_VIEWPORT_TRANSFORM_XDATA ENAME_BUBBLE CVPORT 
-                                                        REF_OCS_1 REF_WCS_1
-                                                        REF_OCS_2 REF_WCS_2
-                                                        REF_OCS_3 REF_WCS_3)
-            (PRINC (STRCAT "\nStored viewport " (ITOA CVPORT) " transformation matrix"))
+           ((NOT (HCNM_LDRBLK_GET_VIEWPORT_TRANSFORM_XDATA ENAME_BUBBLE))
+            ;; No XDATA exists - show warning and prompt for viewport
+            (HCNM_LDRBLK_WARN_PSPACE_COORDINATES ENAME_BUBBLE AUTO_TYPE)
+            (SETQ AVPORT (HCNM_LDRBLK_GET_TARGET_VPORT))
+            ;; Capture viewport transformation data now while in MSPACE with selected viewport
+            (SETQ CVPORT AVPORT)
+            (COND
+              ((AND CVPORT (> CVPORT 1))
+               ;; We're in a viewport - capture transformation matrix
+               ;; Use 3 reference points to capture rotation, scale, and translation
+               (SETQ REF_OCS_1 '(0.0 0.0 0.0)    ; Origin
+                     REF_OCS_2 '(1.0 0.0 0.0)    ; X-axis unit vector
+                     REF_OCS_3 '(0.0 1.0 0.0)    ; Y-axis unit vector
+                     REF_WCS_1 (TRANS (TRANS REF_OCS_1 3 2) 2 0)
+                     REF_WCS_2 (TRANS (TRANS REF_OCS_2 3 2) 2 0)
+                     REF_WCS_3 (TRANS (TRANS REF_OCS_3 3 2) 2 0))
+               (HCNM_LDRBLK_SET_VIEWPORT_TRANSFORM_XDATA ENAME_BUBBLE CVPORT 
+                                                           REF_OCS_1 REF_WCS_1
+                                                           REF_OCS_2 REF_WCS_2
+                                                           REF_OCS_3 REF_WCS_3)
+               (PRINC (STRCAT "\nStored viewport " (ITOA CVPORT) " transformation matrix"))
+              )
+            )
+           )
+           (T
+            ;; XDATA already exists - no need to prompt, will use stored transformation
+            (PRINC "\nUsing existing viewport transformation from XDATA")
            )
          )
         )
@@ -6882,6 +7080,102 @@ ImportLayerSettings=No
   (haws-editall T)
   (haws-core-restore)
 )
+;;; Add delimiter structure to plain text attributes for editing
+;;; For attributes without delimiters, put entire value in "auto" field
+(DEFUN HCNM_EB:ADD_DELIMITERS (ATTRIBUTE_LIST ENAME_BUBBLE / RESULT)
+  (SETQ RESULT '())
+  (FOREACH ATTR ATTRIBUTE_LIST
+    (SETQ RESULT 
+      (APPEND RESULT 
+        (LIST 
+          (LIST 
+            (CAR ATTR)  ; TAG
+            (HCNM_EB:EXPAND_VALUE_WITH_XDATA (CAR ATTR) (CADR ATTR) ENAME_BUBBLE)
+          )
+        )
+      )
+    )
+  )
+  RESULT
+)
+;;; Expand plain text value to delimiter structure using XDATA if available
+;;; If value doesn't have chr(160) delimiters, try to parse using XDATA auto-text
+;;; Otherwise migrate legacy format codes (%%u, %%o, \L, \O) to prefix field
+;;; Special handling for NOTENUM, NOTEPHASE, NOTEGAP - these go to prefix field
+(DEFUN HCNM_EB:EXPAND_VALUE_WITH_XDATA (TAG VALUE ENAME_BUBBLE / AUTO_TEXT POS PREFIX POSTFIX MIGRATED)
+  (COND
+    ((NOT VALUE) (HCNM_EB:CONCAT_PARTS "" "" ""))  ; NIL -> empty structure
+    ((VL-STRING-SEARCH (CHR 160) VALUE) VALUE)  ; Already has delimiters
+    ((= VALUE "") (HCNM_EB:CONCAT_PARTS "" "" ""))  ; Empty -> empty structure
+    ;; NOTENUM, NOTEPHASE, NOTEGAP are system-controlled - put in prefix, not auto
+    ((MEMBER TAG '("NOTENUM" "NOTEPHASE" "NOTEGAP"))
+     (HCNM_EB:CONCAT_PARTS VALUE "" "")
+    )
+    (T 
+     ;; Try to get auto-text from XDATA
+     (SETQ AUTO_TEXT (HCNM_EB:GET_AUTO_FROM_XDATA TAG ENAME_BUBBLE))
+     (COND
+       ;; If XDATA found and auto-text exists in value, extract prefix/postfix
+       ((AND AUTO_TEXT 
+             (/= AUTO_TEXT "")
+             (SETQ POS (VL-STRING-SEARCH AUTO_TEXT VALUE)))
+        (SETQ PREFIX (SUBSTR VALUE 1 (MAX 1 POS))
+              POSTFIX (IF (> (STRLEN VALUE) (+ POS (STRLEN AUTO_TEXT)))
+                        (SUBSTR VALUE (+ POS (STRLEN AUTO_TEXT) 1))
+                        ""
+                      ))
+        ;; Trim trailing space from prefix, leading space from postfix
+        (IF (AND (> (STRLEN PREFIX) 0)
+                 (= (SUBSTR PREFIX (STRLEN PREFIX)) " "))
+          (SETQ PREFIX (SUBSTR PREFIX 1 (1- (STRLEN PREFIX))))
+        )
+        (IF (AND (> (STRLEN POSTFIX) 0)
+                 (= (SUBSTR POSTFIX 1 1) " "))
+          (SETQ POSTFIX (SUBSTR POSTFIX 2))
+        )
+        (HCNM_EB:CONCAT_PARTS PREFIX AUTO_TEXT POSTFIX)
+       )
+       ;; No XDATA, try legacy format code migration
+       (T
+        (SETQ MIGRATED (HCNM_EB:MIGRATE_LEGACY_FORMAT VALUE))
+        (IF (VL-STRING-SEARCH (CHR 160) MIGRATED)
+          ;; Migration created delimiter structure: prefix§auto
+          (HCNM_EB:CONCAT_PARTS 
+            (SUBSTR MIGRATED 1 (VL-STRING-SEARCH (CHR 160) MIGRATED))  ; prefix
+            (SUBSTR MIGRATED (+ (VL-STRING-SEARCH (CHR 160) MIGRATED) 2))  ; auto
+            ""  ; empty postfix
+          )
+          ;; No format codes, put entire value in auto field
+          (HCNM_EB:CONCAT_PARTS "" VALUE "")
+        )
+       )
+     )
+    )
+  )
+)
+
+;; Get auto-text for a specific tag from XDATA
+(DEFUN HCNM_EB:GET_AUTO_FROM_XDATA (TAG ENAME_BUBBLE / XDATA ENTRY KEY AUTO)
+  (SETQ XDATA (CDR (ASSOC -3 (ENTGET ENAME_BUBBLE '("HCNM_AUTO")))))
+  (IF XDATA
+    (PROGN
+      (SETQ XDATA (CDR (ASSOC "HCNM_AUTO" XDATA)))
+      ;; Look for TAG:AUTO_TEXT entry
+      (FOREACH ITEM XDATA
+        (IF (= (CAR ITEM) 1000)
+          (PROGN
+            (SETQ ENTRY (CDR ITEM)
+                  KEY (SUBSTR ENTRY 1 (VL-STRING-SEARCH ":" ENTRY)))
+            (IF (= KEY TAG)
+              (SETQ AUTO (SUBSTR ENTRY (+ (VL-STRING-SEARCH ":" ENTRY) 2)))
+            )
+          )
+        )
+      )
+      AUTO
+    )
+  )
+)
 (DEFUN HCNM_EDIT_BUBBLE (ENAME_BUBBLE / BUBBLE_DATA DCLFILE
                      ENAME_LEADER HCNM_EB:ATTRIBUTE_LIST
                      NOTETEXTRADIOCOLUMN RETURN_LIST TAG DONE_CODE
@@ -6890,8 +7184,9 @@ ImportLayerSettings=No
     ENAME_LEADER
       (HCNM_LDRBLK_BUBBLE_LEADER ENAME_BUBBLE)
     ;; Semi-global variable. Global to the HCNM-EB: functions called from here.
+    ;; Add delimiter structure for editing (uses XDATA to reconstruct prefix/auto/postfix)
     HCNM_EB:ATTRIBUTE_LIST
-      (HCNM_GET_ATTRIBUTES ENAME_BUBBLE T)
+      (HCNM_EB:ADD_DELIMITERS (HCNM_GET_ATTRIBUTES ENAME_BUBBLE T) ENAME_BUBBLE)
     NOTETEXTRADIOCOLUMN "RadioNOTETXT1"
     DCLFILE
       (LOAD_DIALOG "cnm.dcl")
@@ -6931,28 +7226,133 @@ ImportLayerSettings=No
   (PRINC)
 )
 ;;; bubble-data-update: this or something below it needs to populate the NOTEDATA attribute.
-(DEFUN HCNM_EB:GET_TEXT (ENAME_BUBBLE DONE_CODE TAG / AUTO_STRING AUTO_TYPE)
+(DEFUN HCNM_EB:GET_TEXT (ENAME_BUBBLE DONE_CODE TAG / AUTO_STRING AUTO_TYPE PARTS PREFIX AUTO POSTFIX VALUE)
   (SETQ
     AUTO_TYPE
      (CADR (ASSOC DONE_CODE (HCNM_EDIT_BUBBLE_DONE_CODES)))
-    ;; bubble-data-update: this is called from command line and from edit box to get string as requested by user.
-    HCNM_EB:ATTRIBUTE_LIST
-     (HCNM_LDRBLK_ADJUST_FORMATS
-       (HCNM_LDRBLK_AUTO_DISPATCH
-         ENAME_BUBBLE
-         HCNM_EB:ATTRIBUTE_LIST
-         TAG
-         AUTO_TYPE
-         NIL  ; NIL = prompt user to select/confirm alignment
+  )
+  (COND
+    ;; Handle ClearAuto button (code 24)
+    ((= DONE_CODE 24)
+     ;; Get current value, split it, clear the auto part, and save
+     (SETQ VALUE (CADR (ASSOC TAG HCNM_EB:ATTRIBUTE_LIST))
+           PARTS (HCNM_EB:SPLIT_ON_NBSP VALUE)
+           PREFIX (NTH 0 PARTS)
+           POSTFIX (NTH 2 PARTS))
+     ;; Save with empty auto field
+     (SETQ HCNM_EB:ATTRIBUTE_LIST
+       (HCNM_LDRBLK_ADJUST_FORMATS
+         (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST
+           TAG
+           (HCNM_EB:CONCAT_PARTS PREFIX "" POSTFIX)
+           HCNM_EB:ATTRIBUTE_LIST
+         )
        )
      )
+    )
+    ;; Handle auto-text generation buttons
+    (T
+     ;; bubble-data-update: this is called from command line and from edit box to get string as requested by user.
+     (SETQ HCNM_EB:ATTRIBUTE_LIST
+       (HCNM_LDRBLK_ADJUST_FORMATS
+         (HCNM_LDRBLK_AUTO_DISPATCH
+           ENAME_BUBBLE
+           HCNM_EB:ATTRIBUTE_LIST
+           TAG
+           AUTO_TYPE
+           NIL  ; NIL = prompt user to select/confirm alignment
+         )
+       )
+     )
+    )
   )
 )
 
 (defun HCNM_EDIT_BUBBLE_CANCEL ()
  -1
 )
+;;; Remove delimiters from ATTRIBUTE_LIST before saving
+;;; Concatenates prefix+auto+postfix into plain text
+(DEFUN HCNM_EB:REMOVE_DELIMITERS (ATTRIBUTE_LIST / RESULT)
+  (SETQ RESULT '())
+  (FOREACH ATTR ATTRIBUTE_LIST
+    (SETQ RESULT 
+      (APPEND RESULT 
+        (LIST 
+          (LIST 
+            (CAR ATTR)  ; TAG
+            (HCNM_EB:FLATTEN_VALUE (CADR ATTR))  ; Remove delimiters from VALUE
+          )
+        )
+      )
+    )
+  )
+  RESULT
+)
+;;; Flatten a delimited value to plain text
+;;; If value contains chr(160) delimiters, concatenate parts with spaces between non-empty parts
+;;; Otherwise return as-is
+(DEFUN HCNM_EB:FLATTEN_VALUE (VALUE / PARTS PREFIX AUTO POSTFIX RESULT)
+  (COND
+    ((NOT VALUE) "")
+    ((VL-STRING-SEARCH (CHR 160) VALUE)
+     (SETQ PARTS (HCNM_EB:SPLIT_ON_NBSP VALUE)
+           PREFIX (NTH 0 PARTS)
+           AUTO (NTH 1 PARTS)
+           POSTFIX (NTH 2 PARTS)
+           RESULT "")
+     ;; Add prefix
+     (IF (AND PREFIX (/= PREFIX ""))
+       (SETQ RESULT PREFIX)
+     )
+     ;; Add auto with space if needed
+     (IF (AND AUTO (/= AUTO ""))
+       (SETQ RESULT 
+         (IF (= RESULT "")
+           AUTO
+           (STRCAT RESULT " " AUTO)
+         )
+       )
+     )
+     ;; Add postfix with space if needed
+     (IF (AND POSTFIX (/= POSTFIX ""))
+       (SETQ RESULT 
+         (IF (= RESULT "")
+           POSTFIX
+           (STRCAT RESULT " " POSTFIX)
+         )
+       )
+     )
+     RESULT
+    )
+    (T VALUE)
+  )
+)
+;; Save auto-text to XDATA for each attribute tag
+;; XDATA format: (1001 "HCNM_AUTO") (1000 "TAG:AUTO_TEXT") ...
+(DEFUN HCNM_EB:SAVE_AUTO_XDATA (ENAME_BUBBLE ATTRIBUTE_LIST / XDATA_LIST PARTS TAG AUTO)
+  (SETQ XDATA_LIST '((1001 . "HCNM_AUTO")))
+  (FOREACH ATTR ATTRIBUTE_LIST
+    (SETQ TAG (CAR ATTR)
+          PARTS (HCNM_EB:SPLIT_ON_NBSP (CADR ATTR))
+          AUTO (NTH 1 PARTS))
+    ;; Only save non-empty auto text
+    (IF (AND AUTO (/= AUTO ""))
+      (SETQ XDATA_LIST 
+        (APPEND XDATA_LIST 
+          (LIST (CONS 1000 (STRCAT TAG ":" AUTO)))
+        )
+      )
+    )
+  )
+  ;; Save XDATA to bubble entity
+  (REGAPP "HCNM_AUTO")
+  (ENTMOD (APPEND (ENTGET ENAME_BUBBLE) (LIST XDATA_LIST)))
+)
+
 (defun HCNM_EB:SAVE (ENAME_BUBBLE)
+  ;; Save WITH delimiters (chr 160 non-breaking space is invisible in AutoCAD)
+  ;; This preserves prefix/auto/postfix structure for next edit
   (HCNM_SET_ATTRIBUTES ENAME_BUBBLE HCNM_EB:ATTRIBUTE_LIST)
  -1
 ) 
@@ -6964,28 +7364,82 @@ ImportLayerSettings=No
     (14 "Sta" EB_DONE)
     (15 "Off" EB_DONE)
     (16 "StaOff" EB_DONE)
-    (17 "N" EB_DONE)
-    (18 "E" EB_DONE)
-    (19 "NE" EB_DONE)
-    (20 "Z" EB_DONE)
-    (21 "Text" EB_DONE)
+    (17 "AlName" EB_DONE)
+    (18 "StaName" EB_DONE)
+    (19 "N" EB_DONE)
+    (20 "E" EB_DONE)
+    (21 "NE" EB_DONE)
+    (22 "Z" EB_DONE)
+    (23 "Text" EB_DONE)
    )
 )
+;;; Migrate legacy format codes from auto field to prefix field.
+;;; If VALUE doesn't have delimiters but starts with format codes,
+;;; move the codes to a new prefix field and create delimiter structure.
+;;; Returns migrated value with prefix§auto§postfix structure if codes found,
+;;; otherwise returns VALUE unchanged.
+(DEFUN HCNM_EB:MIGRATE_LEGACY_FORMAT (VALUE / SEP FORMAT_CODE TEXT)
+  (COND
+    ;; Empty or nil - return as-is
+    ((OR (NOT VALUE) (= VALUE "")) VALUE)
+    ;; Already has delimiters - no migration needed
+    ((VL-STRING-SEARCH (CHR 160) VALUE) VALUE)
+    ;; Check for mtext underline
+    ((WCMATCH VALUE "\\L*")
+     (SETQ FORMAT_CODE "\\L"
+           TEXT (SUBSTR VALUE 3))
+     (STRCAT FORMAT_CODE (CHR 160) TEXT)
+    )
+    ;; Check for mtext overline
+    ((WCMATCH VALUE "\\O*")
+     (SETQ FORMAT_CODE "\\O"
+           TEXT (SUBSTR VALUE 3))
+     (STRCAT FORMAT_CODE (CHR 160) TEXT)
+    )
+    ;; Check for dtext underline
+    ((WCMATCH VALUE "%%u*")
+     (SETQ FORMAT_CODE "%%u"
+           TEXT (SUBSTR VALUE 4))
+     (STRCAT FORMAT_CODE (CHR 160) TEXT)
+    )
+    ;; Check for dtext overline
+    ((WCMATCH VALUE "%%o*")
+     (SETQ FORMAT_CODE "%%o"
+           TEXT (SUBSTR VALUE 4))
+     (STRCAT FORMAT_CODE (CHR 160) TEXT)
+    )
+    ;; No format codes - return as-is
+    (T VALUE)
+  )
+)
 (DEFUN HCNM_EB:SHOW
-   (DCLFILE NOTETEXTRADIOCOLUMN)
+   (DCLFILE NOTETEXTRADIOCOLUMN / TAG VALUE PARTS PREFIX AUTO POSTFIX)
   (NEW_DIALOG "HCNMEditBubble" DCLFILE)
   (SET_TILE "Title" "Edit CNM Bubble Note")
-  ;; Note attribute edit boxes
+  ;; Note attribute edit boxes - split into prefix/auto/postfix
+  ;; Migration already happened in EXPAND_VALUE during ADD_DELIMITERS
   (FOREACH
      ATTRIBUTE HCNM_EB:ATTRIBUTE_LIST
-    (SET_TILE (STRCAT "Edit" (CAR ATTRIBUTE)) (CADR ATTRIBUTE))
+    (SETQ TAG (CAR ATTRIBUTE)
+          VALUE (CADR ATTRIBUTE)
+          ;; Split by chr(1) delimiter
+          PARTS (HCNM_EB:SPLIT_ON_NBSP VALUE)
+          PREFIX (NTH 0 PARTS)
+          AUTO (NTH 1 PARTS)
+          POSTFIX (NTH 2 PARTS))
+    ;; Set prefix field
+    (SET_TILE (STRCAT "Prefix" TAG) PREFIX)
     (ACTION_TILE
-      (STRCAT "Edit" (CAR ATTRIBUTE))
-      (STRCAT
-        "(HCNM_EB:SAVE_EDIT_BOX \""
-        (CAR ATTRIBUTE)
-        "\" $value)"
-      )
+      (STRCAT "Prefix" TAG)
+      (STRCAT "(HCNM_EB:SAVE_PREFIX \"" TAG "\" $value)")
+    )
+    ;; Set auto field (disabled, for display only)
+    (SET_TILE (STRCAT "Edit" TAG) AUTO)
+    ;; Set postfix field
+    (SET_TILE (STRCAT "Postfix" TAG) POSTFIX)
+    (ACTION_TILE
+      (STRCAT "Postfix" TAG)
+      (STRCAT "(HCNM_EB:SAVE_POSTFIX \"" TAG "\" $value)")
     )
   )
   ;;Radio buttons
@@ -7007,10 +7461,94 @@ ImportLayerSettings=No
      )
     (HCNM_EDIT_BUBBLE_DONE_CODES)
   )
+  ;; Clear Auto Text button
+  (ACTION_TILE "ClearAuto" "(DONE_DIALOG 24)")
   (ACTION_TILE "accept" "(DONE_DIALOG 1)")
   (ACTION_TILE "cancel" "(DONE_DIALOG 0)")
   (LIST (START_DIALOG) NOTETEXTRADIOCOLUMN)
 )
+;; Split value on chr(1) delimiter into (prefix auto postfix)
+;; Returns list of three strings, using "" for missing parts
+(DEFUN HCNM_EB:SPLIT_ON_NBSP (VALUE / NBSP PARTS)
+  (SETQ NBSP (CHR 160))  ; Non-breaking space - invisible delimiter
+  (COND
+    ((NOT VALUE) '("" "" ""))
+    ((NOT (VL-STRING-SEARCH NBSP VALUE))
+     ;; No separator - treat entire value as auto text
+     (LIST "" VALUE ""))
+    (T
+     ;; Split on NBSP
+     (SETQ PARTS (HCNM_EB:SPLIT_STRING VALUE NBSP))
+     (COND
+       ((= (LENGTH PARTS) 3) PARTS)
+       ((= (LENGTH PARTS) 2) (APPEND PARTS '("")))
+       ((= (LENGTH PARTS) 1) (APPEND '("") PARTS '("")))
+       (T '("" "" ""))
+     )
+    )
+  )
+)
+
+;; Split string on delimiter
+(DEFUN HCNM_EB:SPLIT_STRING (STR DELIM / POS RESULT)
+  (SETQ RESULT '())
+  (WHILE (SETQ POS (VL-STRING-SEARCH DELIM STR))
+    (SETQ RESULT (APPEND RESULT (LIST (SUBSTR STR 1 POS)))
+          STR (SUBSTR STR (+ POS 2)))
+  )
+  (APPEND RESULT (LIST STR))
+)
+
+;; Concatenate prefix/auto/postfix with chr(1) delimiter
+(DEFUN HCNM_EB:CONCAT_PARTS (PREFIX AUTO POSTFIX / NBSP)
+  (SETQ NBSP (CHR 160))  ; Non-breaking space - invisible delimiter
+  (STRCAT 
+    (IF PREFIX PREFIX "")
+    NBSP
+    (IF AUTO AUTO "")
+    NBSP
+    (IF POSTFIX POSTFIX "")
+  )
+)
+
+;; Save prefix - get current auto and postfix, then concatenate
+(DEFUN HCNM_EB:SAVE_PREFIX (TAG PREFIX_NEW / ATTR PARTS AUTO POSTFIX VALUE_NEW UPDATED_PARTS)
+  (SETQ ATTR (ASSOC TAG HCNM_EB:ATTRIBUTE_LIST)
+        PARTS (HCNM_EB:SPLIT_ON_NBSP (CADR ATTR))
+        AUTO (NTH 1 PARTS)
+        POSTFIX (NTH 2 PARTS)
+        VALUE_NEW (HCNM_EB:CONCAT_PARTS PREFIX_NEW AUTO POSTFIX))
+  (SETQ HCNM_EB:ATTRIBUTE_LIST
+    (HCNM_LDRBLK_ADJUST_FORMATS
+      (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST TAG VALUE_NEW HCNM_EB:ATTRIBUTE_LIST)
+    )
+  )
+  ;; Update dialog display to reflect any changes from ADJUST_FORMATS
+  (SETQ UPDATED_PARTS (HCNM_EB:SPLIT_ON_NBSP (CADR (ASSOC TAG HCNM_EB:ATTRIBUTE_LIST))))
+  (SET_TILE (STRCAT "Prefix" TAG) (NTH 0 UPDATED_PARTS))
+  (SET_TILE (STRCAT "Edit" TAG) (NTH 1 UPDATED_PARTS))
+  (SET_TILE (STRCAT "Postfix" TAG) (NTH 2 UPDATED_PARTS))
+)
+
+;; Save postfix - get current prefix and auto, then concatenate
+(DEFUN HCNM_EB:SAVE_POSTFIX (TAG POSTFIX_NEW / ATTR PARTS PREFIX AUTO VALUE_NEW UPDATED_PARTS)
+  (SETQ ATTR (ASSOC TAG HCNM_EB:ATTRIBUTE_LIST)
+        PARTS (HCNM_EB:SPLIT_ON_NBSP (CADR ATTR))
+        PREFIX (NTH 0 PARTS)
+        AUTO (NTH 1 PARTS)
+        VALUE_NEW (HCNM_EB:CONCAT_PARTS PREFIX AUTO POSTFIX_NEW))
+  (SETQ HCNM_EB:ATTRIBUTE_LIST
+    (HCNM_LDRBLK_ADJUST_FORMATS
+      (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST TAG VALUE_NEW HCNM_EB:ATTRIBUTE_LIST)
+    )
+  )
+  ;; Update dialog display to reflect any changes from ADJUST_FORMATS
+  (SETQ UPDATED_PARTS (HCNM_EB:SPLIT_ON_NBSP (CADR (ASSOC TAG HCNM_EB:ATTRIBUTE_LIST))))
+  (SET_TILE (STRCAT "Prefix" TAG) (NTH 0 UPDATED_PARTS))
+  (SET_TILE (STRCAT "Edit" TAG) (NTH 1 UPDATED_PARTS))
+  (SET_TILE (STRCAT "Postfix" TAG) (NTH 2 UPDATED_PARTS))
+)
+
 (DEFUN HCNM_EB:SAVE_EDIT_BOX (TAG INPUT)
   (SETQ
     HCNM_EB:ATTRIBUTE_LIST
