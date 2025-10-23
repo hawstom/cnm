@@ -678,5 +678,12 @@ HCNMEditBubble : dialog {
 		: button {label = "L"; key = "L";}
 		: button {label = "_"; key = "ClearAuto"; width = 3;}
 	}
+	: row {
+		: button {label = "Chg View"; key = "ChgView";}
+	}
+	: text {
+		key = "PaperSpaceDisclaimer";
+		label = "";
+	}
 	ok_cancel;	
 }

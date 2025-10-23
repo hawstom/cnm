@@ -6201,8 +6201,12 @@ ImportLayerSettings=No
     BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
   )
   ;; Only calculate P1_WORLD for auto-types that require coordinates
+  ;; BUT: For alignment auto-text, only calculate P1_WORLD when we have INPUT (reactor update)
+  ;; When INPUT is NIL (user selection), AUTO_AL will handle viewport selection AFTER user picks alignment
   (COND
-    ((HCNM_LDRBLK_AUTO_TYPE_IS_COORDINATE_P AUTO_TYPE)
+    ((AND (HCNM_LDRBLK_AUTO_TYPE_IS_COORDINATE_P AUTO_TYPE)
+          (OR INPUT  ; Reactor update - have alignment already
+              (NOT (MEMBER AUTO_TYPE '("Sta" "Off" "StaOff" "AlName" "StaName")))))  ; Not alignment-based
      (SETQ BUBBLE_DATA (HCNM_LDRBLK_BD_ENSURE_P1_WORLD BUBBLE_DATA))
     )
   )
@@ -6854,6 +6858,14 @@ ImportLayerSettings=No
         )
        )
      )
+     ;; Now calculate P1_WORLD if needed for coordinate-based types and not already in BUBBLE_DATA
+     (COND
+       ((AND (NOT P1_WORLD)
+             (OR (= AUTO_TYPE "Sta") (= AUTO_TYPE "Off") (= AUTO_TYPE "StaOff") (= AUTO_TYPE "StaName")))
+        (SETQ BUBBLE_DATA (HCNM_LDRBLK_BD_ENSURE_P1_WORLD BUBBLE_DATA)
+              P1_WORLD (HCNM_LDRBLK_BD_GET BUBBLE_DATA "P1_WORLD"))
+       )
+     )
      ;; Attach reactor to watch for alignment/leader changes
      (HCNM_LDRBLK_ASSURE_AUTO_TEXT_HAS_REACTOR OBJALIGN ENAME_BUBBLE ENAME_LEADER TAG AUTO_TYPE)
      ;; Now restore space after everything is done
@@ -7279,6 +7291,17 @@ ImportLayerSettings=No
   (ENTMOD (APPEND (ENTGET ENAME_BUBBLE) XDATA_NEW))
 )
 
+;; Clear viewport transformation XDATA from bubble
+;; Used when user wants to change viewport association via "Chg View" button
+(DEFUN HCNM_LDRBLK_CLEAR_VIEWPORT_TRANSFORM_XDATA (ENAME_BUBBLE / APPNAME ELIST ELIST_NO_XDATA)
+  (SETQ APPNAME "HCNM-BUBBLE")
+  ;; Get entity list without XDATA
+  (SETQ ELIST (ENTGET ENAME_BUBBLE)
+        ELIST_NO_XDATA (VL-REMOVE-IF '(LAMBDA (X) (= (CAR X) -3)) ELIST))
+  ;; Update entity without XDATA
+  (ENTMOD ELIST_NO_XDATA)
+)
+
 ;; DEPRECATED: Old function that only stored AVPORT integer
 ;; Kept for reference - now replaced by HCNM_LDRBLK_SET_VIEWPORT_TRANSFORM_XDATA
 (DEFUN HCNM_LDRBLK_SET_AVPORT_XDATA (ENAME_BUBBLE AVPORT / APPNAME XDATA_NEW)
@@ -7526,7 +7549,7 @@ ImportLayerSettings=No
        ;; Show the CNM Bubble Note Editor dialog with the requested text line's radio button selected.
        (SETQ
          RETURN_LIST
-          (HCNM_EB:SHOW DCLFILE NOTETEXTRADIOCOLUMN)
+          (HCNM_EB:SHOW DCLFILE NOTETEXTRADIOCOLUMN ENAME_BUBBLE)
          DONE_CODE
           (CAR RETURN_LIST)
          NOTETEXTRADIOCOLUMN
@@ -7534,6 +7557,12 @@ ImportLayerSettings=No
          TAG
           (SUBSTR NOTETEXTRADIOCOLUMN 6)
        )
+      )
+      ((= DONE_CODE 29)
+       ;; Change View button - clear viewport transformation data and reprompt
+       (HCNM_LDRBLK_CLEAR_VIEWPORT_TRANSFORM_XDATA ENAME_BUBBLE)
+       (PRINC "\nViewport association cleared. Next coordinate-based auto-text will prompt for new viewport.")
+       (SETQ DONE_CODE 2)  ; Return to dialog
       )
       (T
        ;; Process clicked action tile (button) other than cancel or save.
@@ -7744,9 +7773,24 @@ ImportLayerSettings=No
   )
 )
 (DEFUN HCNM_EB:SHOW
-   (DCLFILE NOTETEXTRADIOCOLUMN / TAG VALUE PARTS PREFIX AUTO POSTFIX)
+   (DCLFILE NOTETEXTRADIOCOLUMN ENAME_BUBBLE / TAG VALUE PARTS PREFIX AUTO POSTFIX ON_MODEL_TAB_P)
   (NEW_DIALOG "HCNMEditBubble" DCLFILE)
   (SET_TILE "Title" "Edit CNM Bubble Note")
+  ;; Check if bubble is in paper space
+  (SETQ ON_MODEL_TAB_P (OR (NOT ENAME_BUBBLE) (HCNM_LDRBLK_IS_ON_MODEL_TAB ENAME_BUBBLE)))
+  ;; Show/hide paper space disclaimer and Chg View button
+  (COND
+    (ON_MODEL_TAB_P
+     ;; Model space - hide disclaimer and disable button
+     (SET_TILE "PaperSpaceDisclaimer" "")
+     (MODE_TILE "ChgView" 1)  ; Disable
+    )
+    (T
+     ;; Paper space - show disclaimer and enable button
+     (SET_TILE "PaperSpaceDisclaimer" "Note: Paper space bubbles don't react to viewport changes.")
+     (MODE_TILE "ChgView" 0)  ; Enable
+    )
+  )
   ;; Note attribute edit boxes - split into prefix/auto/postfix
   ;; Migration already happened in EXPAND_VALUE during ADD_DELIMITERS
   (FOREACH
@@ -7794,6 +7838,8 @@ ImportLayerSettings=No
   )
   ;; Clear Auto Text button
   (ACTION_TILE "ClearAuto" "(DONE_DIALOG 28)")
+  ;; Change View button (paper space only)
+  (ACTION_TILE "ChgView" "(DONE_DIALOG 29)")
   (ACTION_TILE "accept" "(DONE_DIALOG 1)")
   (ACTION_TILE "cancel" "(DONE_DIALOG 0)")
   (LIST (START_DIALOG) NOTETEXTRADIOCOLUMN)
@@ -7835,9 +7881,9 @@ ImportLayerSettings=No
   (SETQ NBSP (CHR 160))  ; Non-breaking space - invisible delimiter
   (STRCAT 
     (IF PREFIX PREFIX "")
-    NBSP
+    (IF (AND PREFIX AUTO (> (STRLEN PREFIX) 0) (> (STRLEN AUTO) 0)) NBSP "")
     (IF AUTO AUTO "")
-    NBSP
+    (IF (AND AUTO POSTFIX (> (STRLEN AUTO) 0) (> (STRLEN POSTFIX) 0)) NBSP "")
     (IF POSTFIX POSTFIX "")
   )
 )
