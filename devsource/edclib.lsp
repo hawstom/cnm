@@ -5,7 +5,7 @@
 ;; Returns a random CNM evangelism message for tips/prompts
 
 ;; Returns a random CNM evangelism message for tips/prompts (sharing-focused)
-(DEFUN HAWS_EVANGEL_MSG (/ MSGS IDX)
+(DEFUN HAWS_EVANGEL_MSG (/ BIG_DATE MSGS IDX)
   (SETQ MSGS (LIST
     "\nCNM is open source! Share it far and wide. Contribute and report issues at https://github.com/hawstom/cnm ."
     "\nShare CNM with your colleagues and help it grow! https://github.com/hawstom/cnm ."
@@ -14,7 +14,8 @@
     "\nGet involved with CNM at https://github.com/hawstom/cnm ."
     "\nShare CNM all over town and help it grow!"
   ))
-  (SETQ IDX (REM (GETVAR "DATE") (LENGTH MSGS)))
+  (SETQ BIG_DATE (* (GETVAR "DATE") 100000000))
+  (SETQ IDX  (REM (FIX (* 100000 (- BIG_DATE (FIX BIG_DATE)))) (LENGTH MSGS)))
   (NTH IDX MSGS)
 )
 

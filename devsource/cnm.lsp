@@ -5577,6 +5577,8 @@ ImportLayerSettings=No
             )
           )
         )
+        ;; Workaround: Initialize command/input system before GETKWORD
+        (COMMAND "._REDRAW")
         (INITGET 1 "Yes No")
         (SETQ INPUT1 (GETKWORD "\nSet dimension scale to match annotation scale? [Yes/No]: "))
         (COND 

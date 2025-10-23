@@ -4,6 +4,9 @@
 ;;; Command: HAWS_LABEL (aliases: LABEL, LAB)
 ;;; Tracker ID: 339
 ;;;
+;;; TO CUSTOMIZE: Edit haws-label-settings.lsp to define layer-specific text
+;;; styles and labels for your drawing standards.
+;;;
 ;;; Purpose:
 ;;;   Labels lines, arcs, and polylines with text aligned to the entity at the
 ;;;   pick point. Text orientation is perpendicular to the radial for curved
@@ -89,7 +92,24 @@
   (SETQ PICK_POINT (OSNAP PICK_POINT "near"))
   
   (SETQ TEXT_HEIGHT (haws-text-height-model))
-  (HAWS-MKTEXT "MC" PICK_POINT TEXT_HEIGHT TEXT_ANGLE LABEL_TEXT)
+  
+  ;; Create MTEXT with background mask
+  (ENTMAKE (LIST
+    '(0 . "MTEXT")
+    '(100 . "AcDbEntity")
+    '(100 . "AcDbMText")
+    (CONS 10 PICK_POINT)              ; Insertion point
+    (CONS 40 TEXT_HEIGHT)             ; Text height
+    (CONS 71 5)                       ; Attachment point: 5 = Middle Center
+    (CONS 50 TEXT_ANGLE)              ; Rotation angle
+    (CONS 1 LABEL_TEXT)               ; Text content
+    (CONS 7 TEXT_STYLE_NAME)          ; Text style
+    '(90 . 3)                         ; Background mask flag: 3 = use background fill
+    '(63 . 256)                       ; Background fill color: 256 = drawing background
+    '(45 . 1.1)                       ; Fill box scale (border offset factor)
+    '(441 . 0)                        ; Background fill setting
+  ))
+
   
   (HAWS-VRSTOR)
   (haws-core-restore)
@@ -268,3 +288,11 @@
   )
   CLOSEST_INDEX
 )
+
+(PRINC
+  (STRCAT
+    "\nHAWS-LABEL.LSP loaded. Type HAWS_LABEL (or LABEL or LAB) to start."
+    "\nTo customize labels: Edit haws-label-settings.lsp"
+  )
+)
+(PRINC)
