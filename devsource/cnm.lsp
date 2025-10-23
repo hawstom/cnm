@@ -7813,18 +7813,9 @@ ImportLayerSettings=No
     ))
     (NTH (REM (GETVAR "DATE") (LENGTH MSGS)) MSGS)
   )
-  (COND
-    (ON_MODEL_TAB_P
-     ;; Model space - hide disclaimer and disable button
-     (SET_TILE "PaperSpaceDisclaimer" "")
-     (MODE_TILE "ChgView" 1)  ; Disable
-    )
-    (T
-     ;; Paper space - show disclaimer and enable button
-     (SET_TILE "PaperSpaceDisclaimer" (STRCAT "Note: Paper space bubbles don't react to viewport changes.\n" (HCNM_EB:GET_EVANGEL_MSG)))
-     (MODE_TILE "ChgView" 0)  ; Enable
-    )
-  )
+  ;; Always show paper space warning above OKCancel
+  (SET_TILE "PaperSpaceDisclaimer" (STRCAT "Note: Paper space bubbles don't react to viewport changes.\n" (HCNM_EB:GET_EVANGEL_MSG)))
+  (MODE_TILE "ChgView" 0)  ; Always enable
   ;; Note attribute edit boxes - split into prefix/auto/postfix
   ;; Migration already happened in EXPAND_VALUE during ADD_DELIMITERS
   (FOREACH
@@ -8579,6 +8570,41 @@ ImportLayerSettings=No
     KEY
     (CAR (NTH (READ VALUE) (CADR (ASSOC KEY (HCNM_OPTIONS_LIST_DATA)))))
   )
+)
+
+;; Shows reactor, its data, and XDATA of a selected bubble note
+(defun HCNM_DSBR ()
+  (HCNM_DEBUG_SHOW_BUBBLE_REACTOR_XDATA)
+  (princ)
+)
+(defun HCNM_DEBUG_SHOW_BUBBLE_REACTOR_XDATA ()
+  (vl-load-com)
+  (princ "\nSelect a bubble note: ")
+  (setq en (car (entsel)))
+  (if en
+    (progn
+      (setq reactors (vlr-reactors :vlr-object-reactor))
+      (setq found nil)
+      (foreach reactor (cdar reactors)
+        (setq data (vlr-data reactor))
+        (if (and (listp data) (assoc "HCNM-BUBBLE" data))
+          (progn
+            (setq found reactor)
+            (alert (strcat
+              "Reactor: " (vl-prin1-to-string reactor) "\n\n"
+              "Data: " (vl-prin1-to-string data) "\n\n"
+              "XDATA: " (vl-prin1-to-string (assoc -3 (entget en '("HCNM-BUBBLE"))))
+            ))
+          )
+        )
+      )
+      (if (not found)
+        (alert "No CNM bubble reactor found.")
+      )
+    )
+    (alert "No entity selected.")
+  )
+  (princ)
 )
 
 ;#endregion
