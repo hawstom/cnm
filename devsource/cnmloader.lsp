@@ -1,3 +1,20 @@
+
+;;; ============================================================================
+;;; HOW TO ADD A NEW CNM/HAWSEDC COMMAND
+;;; ============================================================================
+;;; 1. Create the canonical command function (DEFUN C:COMMAND_NAME ...) in the appropriate .lsp file.
+;;; 2. Add a new entry to *HAWS-EDCCOMMANDS* in edclib.LSP to get a tracker id for the command: (<tracker-id> <appgroup> "command-name")
+;;;    - Use the next available sequential id below the gap (below 1000) (see comment in edclib.LSP).
+;;; 3. Add (haws-core-init <tracker-id>) at the top for usage tracking.
+;;; 3. Add the command and its file to a line in cnmloader.lsp using haws-autoload.
+;;; 4. Add command aliases to cnmalias.lsp if needed. If nothing else, just strip the "haws-" prefix.
+;;; 5. Add the alias name of the command to CNM-Command-Reference.ods for end-user documentation.
+;;;   - Describe the command and its options in like manner as other commands.
+;;;   - Assign a category for the command (Text, Dimensioning, Layer Management, etc.)
+;;;   - Add cross-references to related commands.
+;;;   - Add a subjective Coolness % to that column.
+;;;   - Sort by Category and then alphabetically by command name.
+;;; ============================================================================
 ;;;     CNMLOADER.LSP
 ;;;     Copyright (C) 2001 by Thomas Gail Haws
 ;;;
@@ -105,6 +122,7 @@
 
 ;;---------------Text Section---------------
 (haws-autoload "add"      '("haws-add"))
+(haws-autoload "haws-label" '("haws-label"))
 (haws-autoload "chnum"    '("haws-chnum"))
 (haws-autoload "chtext"   '("haws-cht"))
 (haws-autoload "cmt"      '("haws-cmt"))

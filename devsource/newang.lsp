@@ -3,6 +3,7 @@
 (DEFUN C:HAWS-NA () (HAWS-NEWANG))
 (DEFUN HAWS-NEWANG (/ SSET)
   (haws-core-init 267)
+  (prompt (strcat "\n" (HAWS_EVANGEL_MSG)))
   (HAWS-VSAVE '("aunits"))
   (vl-cmdf "._undo" "_g")
   (SETQ SSET (SSGET))
@@ -272,4 +273,4 @@
 )
  ;|«Visual LISP© Format Options»
 (72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)
-;*** DO NOT add text below the comment! ***|;
+;*** DO NOT add text below the comment! ***|

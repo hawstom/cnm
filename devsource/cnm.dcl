@@ -681,9 +681,12 @@ HCNMEditBubble : dialog {
 	: row {
 		: button {label = "Chg View"; key = "ChgView";}
 	}
-	: text {
-		key = "PaperSpaceDisclaimer";
-		label = "";
+	: row {
+		alignment = centered;
+		: text {
+			key = "PaperSpaceDisclaimer";
+			label = "";
+		}
 	}
 	ok_cancel;	
 }

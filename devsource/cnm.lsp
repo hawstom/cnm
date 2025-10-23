@@ -2157,7 +2157,10 @@
 (DEFUN C:HCNM-CNM ()
 (haws-core-init 179) (HCNM_CNM NIL)(haws-core-restore))
 (DEFUN C:HCNM-CNMKT ()
-(haws-core-init 180) (HCNM_CNM "Search")(haws-core-restore))
+  (haws-core-init 180)
+  (PROMPT (STRCAT "\n" (HAWS_CNM_EVANGEL_MSG)))
+  (HCNM_CNM "Search")
+  (haws-core-restore))
 (DEFUN C:HCNM-CNMKTI ()
 (haws-core-init 181) (HCNM_CNM "Import")(haws-core-restore))
 (DEFUN C:HCNM-CNMQT ()
@@ -6078,20 +6081,20 @@ ImportLayerSettings=No
   ;; - Reference_Type: Type of reference object ("AL"=Alignment, "SU"=Surface, nil=none)
   ;; - Requires_Coordinates: T if needs P1_WORLD from leader, nil otherwise
   '(
-    ("Lf" "LF" nil nil)        ; Length (QTY) - user picks objects
+    ("LF" "LF" nil nil)        ; Length (QTY) - user picks objects
     ("SF" "SF" nil nil)        ; Square Feet (QTY) - user picks objects
     ("SY" "SY" nil nil)        ; Square Yards (QTY) - user picks objects
     ("STa" "Sta" "AL" T)       ; Station - needs P1_WORLD for alignment query
     ("Off" "Off" "AL" T)       ; Offset - needs P1_WORLD for alignment query
     ("stAoff" "StaOff" "AL" T) ; Station+Offset - needs P1_WORLD for alignment query
-    ("alName" "AlName" "AL" nil)     ; Alignment Name - no coordinates needed
-    ("staName" "StaName" "AL" T)     ; Station + Alignment Name - needs P1_WORLD
+    ("Name" "AlName" "AL" nil)     ; Alignment Name - no coordinates needed
+    ("STAName" "StaName" "AL" T)     ; Station + Alignment Name - needs P1_WORLD
     ("N" "N" nil T)            ; Northing - needs P1_WORLD for coordinate
     ("E" "E" nil T)            ; Easting - needs P1_WORLD for coordinate
     ("NE" "NE" nil T)          ; Northing+Easting - needs P1_WORLD for coordinate
     ("Z" "Z" "SU" T)           ; Elevation - needs P1_WORLD for surface query (unimplemented)
     ("Dia" "Dia" "PIPE" nil)   ; Pipe Diameter - user selects pipe object
-    ("Slope" "Slope" "PIPE" nil) ; Pipe Slope - user selects pipe object
+    ("SLope" "Slope" "PIPE" nil) ; Pipe Slope - user selects pipe object
     ("L" "L" "PIPE" nil)       ; Pipe Length - user selects pipe object
     ("Text" "Text" nil nil)    ; Static text - user enters manually
     ("ENtry" "ENtry" nil nil)  ; Entry number - static text
@@ -6404,8 +6407,10 @@ ImportLayerSettings=No
     ((AND ENAME_BUBBLE 
           (NOT (HCNM_LDRBLK_IS_ON_MODEL_TAB ENAME_BUBBLE))
           (HCNM_LDRBLK_AUTO_TYPE_IS_COORDINATE_P AUTO_TYPE))
-     ;; Bubble is in paper space and auto-type is coordinate-based - show warning
-     (ALERT (PRINC "IMPORTANT: Paper space bubble notes don't react to viewport changes.\n\nTo avoid causing chaos when changing viewport views, auto text for coordinates\ndoes not react to viewport view changes.\n\nYou must use the ____ command if you want to refresh the world space coordinates of all bubble notes on a viewport."))
+     ;; Bubble is in paper space and auto-type is coordinate-based - show warning (tip system)
+     (HAWS_TIP_SHOW
+       1001 ; Unique tip ID for paper space warning
+       "IMPORTANT: Paper space bubble notes don't react to viewport changes.\n\nTo avoid causing chaos when changing viewport views, auto text for coordinates\ndoes not react to viewport view changes.\n\nYou must use the ____ command if you want to refresh the world coordinates of all bubble notes on a viewport.")
     )
   )
 )
@@ -7559,10 +7564,28 @@ ImportLayerSettings=No
        )
       )
       ((= DONE_CODE 29)
-       ;; Change View button - clear viewport transformation data and reprompt
-       (HCNM_LDRBLK_CLEAR_VIEWPORT_TRANSFORM_XDATA ENAME_BUBBLE)
-       (PRINC "\nViewport association cleared. Next coordinate-based auto-text will prompt for new viewport.")
-       (SETQ DONE_CODE 2)  ; Return to dialog
+         ;; Change View button - clear viewport transformation data and immediately prompt for new association
+         (HCNM_LDRBLK_CLEAR_VIEWPORT_TRANSFORM_XDATA ENAME_BUBBLE)
+         (PRINC "\nViewport association cleared. Please select the new target viewport.")
+         (HCNM_LDRBLK_WARN_PSPACE_COORDINATES ENAME_BUBBLE "Sta")
+         (SETQ CVPORT (HCNM_LDRBLK_GET_TARGET_VPORT))
+         (COND
+           ((AND CVPORT (> CVPORT 1))
+            ;; We're in a viewport - capture transformation matrix
+            (SETQ REF_OCS_1 '(0.0 0.0 0.0)    ; Origin
+                  REF_OCS_2 '(1.0 0.0 0.0)    ; X-axis unit vector
+                  REF_OCS_3 '(0.0 1.0 0.0)    ; Y-axis unit vector
+                  REF_WCS_1 (TRANS (TRANS REF_OCS_1 3 2) 2 0)
+                  REF_WCS_2 (TRANS (TRANS REF_OCS_2 3 2) 2 0)
+                  REF_WCS_3 (TRANS (TRANS REF_OCS_3 3 2) 2 0))
+            (HCNM_LDRBLK_SET_VIEWPORT_TRANSFORM_XDATA ENAME_BUBBLE CVPORT 
+                                                        REF_OCS_1 REF_WCS_1
+                                                        REF_OCS_2 REF_WCS_2
+                                                        REF_OCS_3 REF_WCS_3)
+            (PRINC (STRCAT "\nStored new viewport " (ITOA CVPORT) " transformation matrix"))
+           )
+         )
+         (SETQ DONE_CODE 2)  ; Return to dialog
       )
       (T
        ;; Process clicked action tile (button) other than cancel or save.
@@ -7779,6 +7802,15 @@ ImportLayerSettings=No
   ;; Check if bubble is in paper space
   (SETQ ON_MODEL_TAB_P (OR (NOT ENAME_BUBBLE) (HCNM_LDRBLK_IS_ON_MODEL_TAB ENAME_BUBBLE)))
   ;; Show/hide paper space disclaimer and Chg View button
+  (DEFUN HCNM_EB:GET_EVANGEL_MSG ()
+    (SETQ MSGS (LIST
+      "CNM is open source! Help spread it everywhere! Take it wherever you go and share it far and wide. Contribute to development using AI. See the source code and report issues at https://github.com/hawstom/cnm"
+      "Share, contribute, discuss, and report at https://github.com/hawstom/cnm"
+      "Love CNM? It's open source! Spread the word and help improve it at https://github.com/hawstom/cnm"
+      "Contribute to CNM using your ideas plus AI. Help build the future of civil drafting!"
+    ))
+    (NTH (REM (GETVAR "DATE") (LENGTH MSGS)) MSGS)
+  )
   (COND
     (ON_MODEL_TAB_P
      ;; Model space - hide disclaimer and disable button
@@ -7787,7 +7819,7 @@ ImportLayerSettings=No
     )
     (T
      ;; Paper space - show disclaimer and enable button
-     (SET_TILE "PaperSpaceDisclaimer" "Note: Paper space bubbles don't react to viewport changes.")
+     (SET_TILE "PaperSpaceDisclaimer" (STRCAT "Note: Paper space bubbles don't react to viewport changes.\n" (HCNM_EB:GET_EVANGEL_MSG)))
      (MODE_TILE "ChgView" 0)  ; Enable
     )
   )

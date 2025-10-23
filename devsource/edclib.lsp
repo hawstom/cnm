@@ -1,5 +1,22 @@
 ;#region HEAD
 (PROMPT "\nHawsEDC library functions...")
+(LOAD "haws-tip")
+
+;; Returns a random CNM evangelism message for tips/prompts
+
+;; Returns a random CNM evangelism message for tips/prompts (sharing-focused)
+(DEFUN HAWS_EVANGEL_MSG (/ MSGS IDX)
+  (SETQ MSGS (LIST
+    "\nCNM is open source! Share it far and wide. Contribute and report issues at https://github.com/hawstom/cnm ."
+    "\nShare CNM with your colleagues and help it grow! https://github.com/hawstom/cnm ."
+    "\nSpread the word: CNM is open source and welcomes contributions."
+    "\nShare, discuss, and contribute at https://github.com/hawstom/cnm ."
+    "\nGet involved with CNM at https://github.com/hawstom/cnm ."
+    "\nShare CNM all over town and help it grow!"
+  ))
+  (SETQ IDX (REM (GETVAR "DATE") (LENGTH MSGS)))
+  (NTH IDX MSGS)
+)
 
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN HAWS-UNIFIED-VERSION ()
@@ -1686,8 +1703,9 @@
      (334 0 "haws-xy")
      (335 2 "hcnm-notesedit-pro") ; Not really the command name. Disambiguating from regular use.
      (336 1 "hcnm-cnmqt")
-     (337 1 "hcnm-replace-bubble")
+     (337 1 "hcnm-edit-bubbles")
      (338 1 "hcnm-replace-bubble")
+     (339 -1 "haws_label")
      (1000 1 "untracked")
    )
 )
@@ -3675,9 +3693,9 @@
 ;;;Parses a string into a list of fields.
 ;;;Usage: (haws-strtolst
 ;;;         [InputString containing fields]
-;;;         [FieldSeparatorWC field delimiter wildcard string]
-;;;         [TextDelimiter text delimiter character.
+;;;         [FieldSeparatorWC field delimiter wildcard string
 ;;;          Use "`," for comma and " ,\t,\n" for white space]
+;;;         [TextDelimiter text delimiter character.]
 ;;;         [EmptyFieldsDoCount flag.
 ;;;           If nil, consecutive field delimiters are ignored.
 ;;;           Nil is good for word (white space) delimited strings.

@@ -42,6 +42,7 @@
 (DEFUN C:HAWS-LCPX
               (/ CC EC LOPERA NESTED)
 (haws-core-init 241)
+(prompt (strcat "\n" (HAWS_EVANGEL_MSG)))
   (COND
     ((/= (SETQ CC (GETSTRING "\nNew layer color (return to pick):"))
          ""

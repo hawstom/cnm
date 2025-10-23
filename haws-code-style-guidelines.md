@@ -55,7 +55,36 @@ HCNM_LB:BD_GET    ; "Leader-Bubble : Bubble-Data getter"
 
 ---
 
-## 3. Type Prefixing
+## 3. File Naming
+
+**Standard: Lowercase with hyphens**
+
+Rationale:
+- Easier to use with git (case-sensitive on Linux)
+- Sorts consistently across platforms
+- No shift key needed for hyphens
+- Matches modern conventions
+
+```
+;; ✅ Correct
+haws-label.lsp
+haws-code-style-guidelines.md
+refactoring-suggestions.md
+cnm-bubble-develop.dwg
+
+;; ❌ Avoid (inconsistent sorting, git issues)
+HAWS-LABEL.lsp
+Haws_Label.LSP
+REFACTORING_SUGGESTIONS.md
+```
+
+**Exceptions:**
+- Legacy files may use uppercase (don't rename without good reason)
+- AutoCAD system files that require specific naming
+
+---
+
+## 4. Type Prefixing
 
 **Standard: Prefix critical types, suffix booleans**
 
@@ -128,7 +157,7 @@ LS_PHASES
 
 ---
 
-## 4. Name Length Guidelines
+## 5. Name Length Guidelines
 
 **Principle: Favor clarity over brevity**
 
@@ -179,7 +208,7 @@ ALREF         ; Worse than ALIGN_REFERENCE
 
 ---
 
-## 5. Function Naming Pattern
+## 6. Function Naming Pattern
 
 **Standard: VERB_NOUN or GET/SET/UPDATE/CALCULATE pattern**
 
@@ -202,7 +231,7 @@ HCNM_LDRBLK_UPDATE_BUBBLE_TAG            ; Modifies existing
 
 ---
 
-## 6. Organization Within Files
+## 7. Organization Within Files
 
 **Standard: Public API first, then private helpers, alphabetically within sections**
 
@@ -233,7 +262,7 @@ HCNM_LDRBLK_UPDATE_BUBBLE_TAG            ; Modifies existing
 
 ---
 
-## 7. Formal Comment Headers
+## 8. Formal Comment Headers
 
 **Standard: Use structured headers for all public functions**
 
@@ -309,7 +338,7 @@ HCNM_LDRBLK_UPDATE_BUBBLE_TAG            ; Modifies existing
 
 ---
 
-## 8. Special Cases
+## 9. Special Cases
 
 ### Constants
 Use descriptive names, no special prefix:
@@ -350,7 +379,7 @@ In small scopes, single letters acceptable:
 
 ---
 
-## 9. Migration Strategy
+## 10. Migration Strategy
 
 ### For New Code
 - ✅ Apply all conventions immediately
@@ -373,7 +402,7 @@ In small scopes, single letters acceptable:
 
 ---
 
-## 10. Examples Summary
+## 11. Examples Summary
 
 ```lisp
 ;; ✅ GOOD - Follows all conventions

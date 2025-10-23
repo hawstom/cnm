@@ -3,7 +3,9 @@
 (if (not c:hcnm-config-getvar)(c:haws-load-from-app-dir "cnm"))
 
 (DEFUN C:HAWS-LX ()
-(haws-core-init 255) (HAWS-XLIST 0))
+(haws-core-init 255)
+(prompt (strcat "\n" (HAWS_EVANGEL_MSG)))
+(HAWS-XLIST 0))
 (DEFUN C:HAWS-LXX ()
 (haws-core-init 256) (HAWS-XLIST-MULTI))
 
@@ -237,4 +239,4 @@
 
  ;|«Visual LISP© Format Options»
 (72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)
-;*** DO NOT add text below the comment! ***|;
+;*** DO NOT add text below the comment! ***|

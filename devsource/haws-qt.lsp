@@ -5,7 +5,11 @@
   (HAWS-AET (/ 1.0 43560) " AC")
 )
 (DEFUN C:HAWS-SF () (HAWS-CORE-INIT 157) (HAWS-AET 1 " SF"))
-(DEFUN C:HAWS-AET () (HAWS-CORE-INIT 158) (HAWS-AET 1 ""))
+(DEFUN HAWS_EVANGEL_MSG_PROMPT ()
+  (PROMPT (STRCAT "\n" (HAWS_EVANGEL_MSG)))
+)
+
+(DEFUN C:HAWS-AET () (HAWS-CORE-INIT 158) (HAWS_EVANGEL_MSG_PROMPT) (HAWS-AET 1 ""))
 (DEFUN C:HAWS-SM ()
   (HAWS-CORE-INIT 159)
   (HAWS-AET (/ 1.0 27878400) " SQ. MI.")
@@ -312,4 +316,4 @@
 )
  ;|«Visual LISP© Format Options»
 (72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)
-;*** DO NOT add text below the comment! ***|;
+;*** DO NOT add text below the comment! ***|

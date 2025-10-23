@@ -78,8 +78,15 @@
 ;;;Freeze or off by picking nested entities
 
 (DEFUN C:HAWS-FFX ()
-(haws-core-init 232) (HAWS-NLSTAT "freeze")(princ))
-(DEFUN C:HAWS-OFFX () (HAWS-NLSTAT "off")(princ))
+  (PROMPT (STRCAT "\n" (HAWS_EVANGEL_MSG)))
+  (haws-core-init 232)
+  (HAWS-NLSTAT "freeze")
+  (princ))
+
+(DEFUN C:HAWS-OFFX ()
+  (PROMPT (STRCAT "\n" (HAWS_EVANGEL_MSG)))
+  (HAWS-NLSTAT "off")
+  (princ))
 
 (DEFUN HAWS-NLSTAT (LOPERA / NESTED)
   (haws-core-init 233)
@@ -197,4 +204,4 @@
 )
  ;|«Visual LISP© Format Options»
 (72 2 40 2 nil "end of " 60 2 2 2 1 T nil nil T)
-;*** DO NOT add text below the comment! ***|;
+;*** DO NOT add text below the comment! ***|
