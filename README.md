@@ -11,7 +11,7 @@ With the help of the Claude Sonnet 4.5 AI model of Copilot AI agent in VS Code, 
 Thanks to my AI assistant, I can now implement your ideas fast. Try me!
 
 # INSTALLATION
-- Windows installer: Choose, download and run a Windows installer from the [download page](https://constructionnotesmanager.com/download.htm).
+- Windows installer: Choose, download, and run a Windows installer from the [download page](https://constructionnotesmanager.com/download.htm).
 - From github: Put all the files from devsource into a folder of your choice and follow the Installation Help instructions at the [download page](https://constructionnotesmanager.com/download.htm).
 
 # INTRODUCTION
@@ -28,4 +28,4 @@ Thanks to my AI assistant, I can now implement your ideas fast. Try me!
 7. In AutoCAD command VLISP IDE, open hawsedc\develop\devsource\cnm.prj
 8. Develop and test in VLISP.
 9. Final test using CNM-Demo.scr with a copy (outside source for safety) of CNM-Demo.*
-10. Save, then compile FAS and see hawsedc\compile\README.TXT for compile and distribe instructions.
+10. Save, then compile FAS and see hawsedc\compile\README.TXT for compile and distrib instructions.
