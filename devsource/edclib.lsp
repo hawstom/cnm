@@ -33,7 +33,7 @@
 (LOAD "haws-tip")
 ;;;This is the current version of HawsEDC and CNM
 (DEFUN HAWS-UNIFIED-VERSION ()
-  "5.5.17.04"
+  "5.5.18"
 )
 (DEFUN HAWS-COPYRIGHT ()
   "Copyright 2025 Thomas Gail Haws"
@@ -49,7 +49,12 @@
     "\nCNM is open source! Share it far and wide."
     "\nShare CNM with your colleagues and help it grow! https://github.com/hawstom/cnm ."
     "\nSpread the word: CNM is open source."
+    "\nIf you can describe it, we can make it happen."
+    "\nLeverage modern AI plus 30 years of human experience to make AutoCAD work for you!"
     "\nShare CNM, discuss CNM, and contribute to CNM at https://github.com/hawstom/cnm ."
+    "\nCNM Bubble notes now offer auto text that reacts to leader and reference object changes."
+    "\nYou can open a suggestion or bug issue at at https://github.com/hawstom/cnm by registering at Github."
+    "\nThe latest upgrades to CNM were made possible by the VS Code IDE > Copilot AI agent > Claude Sonnet 4.5 model."
     "\nGet involved with CNM at https://github.com/hawstom/cnm ."
     "\nTake CNM with you wherever you work. Share it, share your ideas, and help it grow!"
     "\nCNM is a community project! Make a difference by sharing it and making it better."

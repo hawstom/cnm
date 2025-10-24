@@ -6416,34 +6416,45 @@ ImportLayerSettings=No
 ;; Why: Prevents users from changing viewport views which breaks coordinate accuracy
 ;; When: Only shown for coordinate-based auto-text in paper space bubbles
 ;; TODO: Replace with dismissable tip system when implemented
+;; Capture and store viewport transformation matrix for paper space bubble
+;; This captures 3 reference points to calculate rotation, scale, and translation
+;; Returns T if successful, NIL if failed
+(DEFUN HCNM_LDRBLK_CAPTURE_VIEWPORT_TRANSFORM (ENAME_BUBBLE CVPORT / REF_OCS_1 REF_OCS_2 REF_OCS_3 REF_WCS_1 REF_WCS_2 REF_WCS_3)
+  (COND
+    ((AND CVPORT (> CVPORT 1))
+     ;; We're in a viewport - capture transformation matrix
+     ;; Use 3 reference points: origin, X-axis unit vector, Y-axis unit vector
+     (SETQ REF_OCS_1 '(0.0 0.0 0.0)    ; Origin
+           REF_OCS_2 '(1.0 0.0 0.0)    ; X-axis unit vector
+           REF_OCS_3 '(0.0 1.0 0.0)    ; Y-axis unit vector
+           REF_WCS_1 (TRANS (TRANS REF_OCS_1 3 2) 2 0)
+           REF_WCS_2 (TRANS (TRANS REF_OCS_2 3 2) 2 0)
+           REF_WCS_3 (TRANS (TRANS REF_OCS_3 3 2) 2 0))
+     (HCNM_LDRBLK_SET_VIEWPORT_TRANSFORM_XDATA ENAME_BUBBLE CVPORT 
+                                                 REF_OCS_1 REF_WCS_1
+                                                 REF_OCS_2 REF_WCS_2
+                                                 REF_OCS_3 REF_WCS_3)
+     (PRINC (STRCAT "\nStored viewport " (ITOA CVPORT) " transformation matrix"))
+     T  ; Success
+    )
+    (T NIL)  ; Failed - not in a viewport
+  )
+)
+
 ;; Queue a paper space coordinate warning tip to be shown after any modal dialogs close
 ;; This is necessary because you can't show a modal dialog from inside another modal dialog
-(DEFUN HCNM_LDRBLK_QUEUE_PSPACE_TIP (ENAME_BUBBLE AUTO_TYPE)
+;; Show paper space coordinate warning tip
+;; Can be called from anywhere - shows tip immediately
+(DEFUN HCNM_LDRBLK_WARN_PSPACE_COORDINATES (ENAME_BUBBLE AUTO_TYPE)
   (COND
     ((AND ENAME_BUBBLE 
           (NOT (HCNM_LDRBLK_IS_ON_MODEL_TAB ENAME_BUBBLE))
           (HCNM_LDRBLK_AUTO_TYPE_IS_COORDINATE_P AUTO_TYPE))
-     ;; Bubble is in paper space and auto-type is coordinate-based - queue warning
-     (SETQ *HCNM_PENDING_TIP* (LIST 1001 ; Unique tip ID for paper space warning
-       "IMPORTANT: Paper space bubble notes don't react to viewport changes.\n\nTo avoid causing chaos when changing viewport views, auto text for coordinates\ndoes not react to viewport view changes.\n\nYou must use the ____ command if you want to refresh the world coordinates of selected bubble notes on a viewport."))
+     ;; Bubble is in paper space and auto-type is coordinate-based - show warning
+     (HAWS_TIP_SHOW 1001 ; Unique tip ID for paper space warning
+       "IMPORTANT: Paper space bubble notes don't react to viewport changes.\n\nTo avoid causing chaos when changing viewport views, auto text for coordinates\ndoes not react to viewport view changes.\n\nYou must use the ____ command if you want to refresh the world coordinates of selected bubble notes on a viewport.")
     )
   )
-)
-
-;; Show any pending tip (called after modal dialogs close)
-(DEFUN HCNM_LDRBLK_SHOW_PENDING_TIP ()
-  (COND
-    (*HCNM_PENDING_TIP*
-     (HAWS_TIP_SHOW (CAR *HCNM_PENDING_TIP*) (CADR *HCNM_PENDING_TIP*))
-     (SETQ *HCNM_PENDING_TIP* NIL)
-    )
-  )
-)
-
-;; Legacy function - now just queues the tip
-(DEFUN HCNM_LDRBLK_WARN_PSPACE_COORDINATES (ENAME_BUBBLE AUTO_TYPE)
-  (HCNM_LDRBLK_QUEUE_PSPACE_TIP ENAME_BUBBLE AUTO_TYPE)
-  (HCNM_LDRBLK_SHOW_PENDING_TIP)
 )
 
 ;;==============================================================================
@@ -7017,12 +7028,11 @@ ImportLayerSettings=No
      )
      (SETQ OBJALIGN (VLAX-ENAME->VLA-OBJECT (CAR ESALIGN)))
      (C:HCNM-CONFIG-SETVAR "BubbleCurrentAlignment" OBJALIGN)
-     ;; Queue paper space warning if bubble is in paper space and auto-type requires coordinates
-     ;; Can't show modal tip dialog from inside modal edit dialog (if called from there), so queue it
+     ;; Show paper space warning if bubble is in paper space and auto-type requires coordinates
      (COND
        ((AND ENAME_BUBBLE (NOT (HCNM_LDRBLK_IS_ON_MODEL_TAB ENAME_BUBBLE))
              (HCNM_LDRBLK_AUTO_TYPE_IS_COORDINATE_P AUTO_TYPE))
-        (HCNM_LDRBLK_QUEUE_PSPACE_TIP ENAME_BUBBLE AUTO_TYPE)
+        (HCNM_LDRBLK_WARN_PSPACE_COORDINATES ENAME_BUBBLE AUTO_TYPE)
        )
      )
     )
@@ -7040,8 +7050,8 @@ ImportLayerSettings=No
          ;; Only prompt for viewport if transformation data doesn't already exist
          (COND
            ((NOT (HCNM_LDRBLK_GET_VIEWPORT_TRANSFORM_XDATA ENAME_BUBBLE))
-            ;; No XDATA exists - queue warning and prompt for viewport
-            (HCNM_LDRBLK_QUEUE_PSPACE_TIP ENAME_BUBBLE AUTO_TYPE)
+            ;; No XDATA exists - show warning and prompt for viewport
+            (HCNM_LDRBLK_WARN_PSPACE_COORDINATES ENAME_BUBBLE AUTO_TYPE)
             (SETQ AVPORT (HCNM_LDRBLK_GET_TARGET_VPORT))
             ;; Capture viewport transformation data now while in MSPACE with selected viewport
             (SETQ CVPORT AVPORT)
@@ -7084,11 +7094,10 @@ ImportLayerSettings=No
     ;; INPUT = VLA-OBJECT means reactor update with reference object (not used for N/E/NE)
     REACTOR_UPDATE_P (AND INPUT (OR (= INPUT T) (= (TYPE INPUT) 'VLA-OBJECT)))
   )
-  ;; Queue paper space warning only during initial insertion, not reactor updates
-  ;; Can't show modal tip dialog from inside modal edit dialog, so queue it
+  ;; Show paper space warning only during initial insertion, not reactor updates
   (COND
     ((NOT REACTOR_UPDATE_P)
-     (HCNM_LDRBLK_QUEUE_PSPACE_TIP ENAME_BUBBLE AUTO_TYPE)
+     (HCNM_LDRBLK_WARN_PSPACE_COORDINATES ENAME_BUBBLE AUTO_TYPE)
     )
   )
   ;; Calculate or get P1_WORLD
@@ -7470,13 +7479,11 @@ ImportLayerSettings=No
   (haws-core-init 337)
   (princ "\nCNM version: ")
   (princ (HAWS-UNIFIED-VERSION))
-
   (if (not haws-editall)(load "editall"))
   (haws-editall T)
   (haws-core-restore)
 )
 ;;; Add delimiter structure to plain text attributes for editing
-;;; For attributes without delimiters, put entire value in "auto" field
 (DEFUN HCNM_EB:ADD_DELIMITERS (ATTRIBUTE_LIST ENAME_BUBBLE / RESULT)
   (SETQ RESULT '())
   (FOREACH ATTR ATTRIBUTE_LIST
@@ -7485,7 +7492,7 @@ ImportLayerSettings=No
         (LIST 
           (LIST 
             (CAR ATTR)  ; TAG
-            (HCNM_EB:EXPAND_VALUE_WITH_XDATA (CAR ATTR) (CADR ATTR) ENAME_BUBBLE)
+            (HCNM_EB:EXPAND_VALUE_TO_DELIMITED (CAR ATTR) (CADR ATTR))
           )
         )
       )
@@ -7497,7 +7504,12 @@ ImportLayerSettings=No
 ;;; If value doesn't have chr(160) delimiters, try to parse using XDATA auto-text
 ;;; Otherwise migrate legacy format codes (%%u, %%o, \L, \O) to prefix field
 ;;; Special handling for NOTENUM, NOTEPHASE, NOTEGAP - these go to prefix field
-(DEFUN HCNM_EB:EXPAND_VALUE_WITH_XDATA (TAG VALUE ENAME_BUBBLE / AUTO_TEXT POS PREFIX POSTFIX MIGRATED)
+;; Expand plain attribute value to delimited structure for editing.
+;; Returns value with CHR 160 delimiters: prefix§auto§postfix
+;; System-controlled tags (NOTENUM, NOTEPHASE, NOTEGAP) go entirely to prefix.
+;; Legacy format codes (%%u, %%o, \L, \O) are migrated to prefix field.
+;; User manual text is preserved in prefix field.
+(DEFUN HCNM_EB:EXPAND_VALUE_TO_DELIMITED (TAG VALUE / MIGRATED DELIM_POS)
   (COND
     ((NOT VALUE) (HCNM_EB:CONCAT_PARTS "" "" ""))  ; NIL -> empty structure
     ((VL-STRING-SEARCH (CHR 160) VALUE) VALUE)  ; Already has delimiters
@@ -7507,70 +7519,24 @@ ImportLayerSettings=No
      (HCNM_EB:CONCAT_PARTS VALUE "" "")
     )
     (T 
-     ;; Try to get auto-text from XDATA
-     (SETQ AUTO_TEXT (HCNM_EB:GET_AUTO_FROM_XDATA TAG ENAME_BUBBLE))
-     (COND
-       ;; If XDATA found and auto-text exists in value, extract prefix/postfix
-       ((AND AUTO_TEXT 
-             (/= AUTO_TEXT "")
-             (SETQ POS (VL-STRING-SEARCH AUTO_TEXT VALUE)))
-        (SETQ PREFIX (SUBSTR VALUE 1 (MAX 1 POS))
-              POSTFIX (IF (> (STRLEN VALUE) (+ POS (STRLEN AUTO_TEXT)))
-                        (SUBSTR VALUE (+ POS (STRLEN AUTO_TEXT) 1))
-                        ""
-                      ))
-        ;; Trim trailing space from prefix, leading space from postfix
-        (IF (AND (> (STRLEN PREFIX) 0)
-                 (= (SUBSTR PREFIX (STRLEN PREFIX)) " "))
-          (SETQ PREFIX (SUBSTR PREFIX 1 (1- (STRLEN PREFIX))))
-        )
-        (IF (AND (> (STRLEN POSTFIX) 0)
-                 (= (SUBSTR POSTFIX 1 1) " "))
-          (SETQ POSTFIX (SUBSTR POSTFIX 2))
-        )
-        (HCNM_EB:CONCAT_PARTS PREFIX AUTO_TEXT POSTFIX)
+     ;; Try legacy format code migration
+     (SETQ MIGRATED (HCNM_EB:MIGRATE_LEGACY_FORMAT VALUE))
+     (IF (SETQ DELIM_POS (VL-STRING-SEARCH (CHR 160) MIGRATED))
+       ;; Migration created delimiter structure: prefix§auto - split it properly
+       ;; VL-STRING-SEARCH returns 0-based position, SUBSTR uses 1-based
+       (HCNM_EB:CONCAT_PARTS 
+         (SUBSTR MIGRATED 1 DELIM_POS)  ; prefix: chars 1 through DELIM_POS
+         (SUBSTR MIGRATED (+ DELIM_POS 2))  ; auto: skip delimiter (position is 0-based, add 2 for 1-based + skip char)
+         ""  ; empty postfix
        )
-       ;; No XDATA, try legacy format code migration
-       (T
-        (SETQ MIGRATED (HCNM_EB:MIGRATE_LEGACY_FORMAT VALUE))
-        (IF (VL-STRING-SEARCH (CHR 160) MIGRATED)
-          ;; Migration created delimiter structure: prefix§auto
-          (HCNM_EB:CONCAT_PARTS 
-            (SUBSTR MIGRATED 1 (VL-STRING-SEARCH (CHR 160) MIGRATED))  ; prefix
-            (SUBSTR MIGRATED (+ (VL-STRING-SEARCH (CHR 160) MIGRATED) 2))  ; auto
-            ""  ; empty postfix
-          )
-          ;; No format codes, put entire value in auto field
-          (HCNM_EB:CONCAT_PARTS "" VALUE "")
-        )
-       )
+       ;; No format codes, put entire value in PREFIX to preserve user's manual text
+       ;; (Auto field gets replaced by auto-text buttons, prefix/postfix are preserved)
+       (HCNM_EB:CONCAT_PARTS VALUE "" "")
      )
     )
   )
 )
 
-;; Get auto-text for a specific tag from XDATA
-(DEFUN HCNM_EB:GET_AUTO_FROM_XDATA (TAG ENAME_BUBBLE / XDATA ENTRY KEY AUTO)
-  (SETQ XDATA (CDR (ASSOC -3 (ENTGET ENAME_BUBBLE '("HCNM_AUTO")))))
-  (IF XDATA
-    (PROGN
-      (SETQ XDATA (CDR (ASSOC "HCNM_AUTO" XDATA)))
-      ;; Look for TAG:AUTO_TEXT entry
-      (FOREACH ITEM XDATA
-        (IF (= (CAR ITEM) 1000)
-          (PROGN
-            (SETQ ENTRY (CDR ITEM)
-                  KEY (SUBSTR ENTRY 1 (VL-STRING-SEARCH ":" ENTRY)))
-            (IF (= KEY TAG)
-              (SETQ AUTO (SUBSTR ENTRY (+ (VL-STRING-SEARCH ":" ENTRY) 2)))
-            )
-          )
-        )
-      )
-      AUTO
-    )
-  )
-)
 (DEFUN HCNM_EDIT_BUBBLE (ENAME_BUBBLE / BUBBLE_DATA DCLFILE
                      ENAME_LEADER HCNM_EB:ATTRIBUTE_LIST
                      NOTETEXTRADIOCOLUMN RETURN_LIST TAG DONE_CODE
@@ -7579,7 +7545,7 @@ ImportLayerSettings=No
     ENAME_LEADER
       (HCNM_LDRBLK_BUBBLE_LEADER ENAME_BUBBLE)
     ;; Semi-global variable. Global to the HCNM-EB: functions called from here.
-    ;; Add delimiter structure for editing (uses XDATA to reconstruct prefix/auto/postfix)
+    ;; Add delimiter structure for editing
     HCNM_EB:ATTRIBUTE_LIST
       (HCNM_EB:ADD_DELIMITERS (HCNM_GET_ATTRIBUTES ENAME_BUBBLE T) ENAME_BUBBLE)
     NOTETEXTRADIOCOLUMN "RadioNOTETXT1"
@@ -7587,6 +7553,9 @@ ImportLayerSettings=No
       (LOAD_DIALOG "cnm.dcl")
     DONE_CODE 2
   )
+  ;; Show delimiter tip to help users understand the internal structure
+  (HAWS_TIP_SHOW 1002  ; Unique tip ID for delimiter explanation
+    "CNM uses a non-breaking space (ASCII code 160 or Alt+0160) to separate your text from auto text.\n\nKeep this in mind in the event you edit bubble notes without this editor.")
   (WHILE (> DONE_CODE -1)
     (COND
       ((= DONE_CODE 0) (SETQ DONE_CODE (HCNM_EDIT_BUBBLE_CANCEL)))
@@ -7611,38 +7580,20 @@ ImportLayerSettings=No
          (HCNM_LDRBLK_CLEAR_VIEWPORT_TRANSFORM_XDATA ENAME_BUBBLE)
          (PRINC "\nViewport association cleared. Please select the new target viewport.")
          (HCNM_LDRBLK_WARN_PSPACE_COORDINATES ENAME_BUBBLE "Sta")
-         (SETQ CVPORT (HCNM_LDRBLK_GET_TARGET_VPORT))
-         (COND
-           ((AND CVPORT (> CVPORT 1))
-            ;; We're in a viewport - capture transformation matrix
-            (SETQ REF_OCS_1 '(0.0 0.0 0.0)    ; Origin
-                  REF_OCS_2 '(1.0 0.0 0.0)    ; X-axis unit vector
-                  REF_OCS_3 '(0.0 1.0 0.0)    ; Y-axis unit vector
-                  REF_WCS_1 (TRANS (TRANS REF_OCS_1 3 2) 2 0)
-                  REF_WCS_2 (TRANS (TRANS REF_OCS_2 3 2) 2 0)
-                  REF_WCS_3 (TRANS (TRANS REF_OCS_3 3 2) 2 0))
-            (HCNM_LDRBLK_SET_VIEWPORT_TRANSFORM_XDATA ENAME_BUBBLE CVPORT 
-                                                        REF_OCS_1 REF_WCS_1
-                                                        REF_OCS_2 REF_WCS_2
-                                                        REF_OCS_3 REF_WCS_3)
-            (PRINC (STRCAT "\nStored new viewport " (ITOA CVPORT) " transformation matrix"))
-           )
-         )
+         (HCNM_LDRBLK_CAPTURE_VIEWPORT_TRANSFORM ENAME_BUBBLE (HCNM_LDRBLK_GET_TARGET_VPORT))
          (SETQ DONE_CODE 2)  ; Return to dialog
       )
       (T
        ;; Process clicked action tile (button) other than cancel or save.
        ;; bubble-data-update: This is start point 2 of 2 of the bubble data logic. This one is for the bubble note editing process.
        ;; this is called whenever a dialog auto-text button is clicked.
-       (HCNM_EB:GET_TEXT ENAME_BUBBLE DONE_CODE TAG) 
+       (HCNM_EB:GET_TEXT ENAME_BUBBLE DONE_CODE TAG)
        (SETQ DONE_CODE 2)
       )
     )
   )
   ;; Change its arrowhead if needed.
   (HCNM_LDRBLK_CHANGE_ARROWHEAD ENAME_LEADER)
-  ;; Show any pending tip (couldn't show during dialog)
-  (HCNM_LDRBLK_SHOW_PENDING_TIP)
   (HAWS-CORE-RESTORE)
   (PRINC)
 )
@@ -7685,6 +7636,8 @@ ImportLayerSettings=No
          )
        )
      )
+     ;; Show paper space warning if coordinate auto-text was just added
+     (HCNM_LDRBLK_WARN_PSPACE_COORDINATES ENAME_BUBBLE AUTO_TYPE)
     )
     ;; Invalid DONE_CODE - just ignore
     (T
@@ -7754,27 +7707,6 @@ ImportLayerSettings=No
   )
 )
 ;; Save auto-text to XDATA for each attribute tag
-;; XDATA format: (1001 "HCNM_AUTO") (1000 "TAG:AUTO_TEXT") ...
-(DEFUN HCNM_EB:SAVE_AUTO_XDATA (ENAME_BUBBLE ATTRIBUTE_LIST / XDATA_LIST PARTS TAG AUTO)
-  (SETQ XDATA_LIST '((1001 . "HCNM_AUTO")))
-  (FOREACH ATTR ATTRIBUTE_LIST
-    (SETQ TAG (CAR ATTR)
-          PARTS (HCNM_EB:SPLIT_ON_NBSP (CADR ATTR))
-          AUTO (NTH 1 PARTS))
-    ;; Only save non-empty auto text
-    (IF (AND AUTO (/= AUTO ""))
-      (SETQ XDATA_LIST 
-        (APPEND XDATA_LIST 
-          (LIST (CONS 1000 (STRCAT TAG ":" AUTO)))
-        )
-      )
-    )
-  )
-  ;; Save XDATA to bubble entity
-  (REGAPP "HCNM_AUTO")
-  (ENTMOD (APPEND (ENTGET ENAME_BUBBLE) (LIST XDATA_LIST)))
-)
-
 (defun HCNM_EB:SAVE (ENAME_BUBBLE)
   ;; Save WITH delimiters (chr 160 non-breaking space is invisible in AutoCAD)
   ;; This preserves prefix/auto/postfix structure for next edit
@@ -7919,8 +7851,8 @@ ImportLayerSettings=No
   (COND
     ((NOT VALUE) '("" "" ""))
     ((NOT (VL-STRING-SEARCH NBSP VALUE))
-     ;; No separator - treat entire value as auto text
-     (LIST "" VALUE ""))
+     ;; No separator - treat entire value as PREFIX (preserves user manual text)
+     (LIST VALUE "" ""))
     (T
      ;; Split on NBSP
      (SETQ PARTS (HCNM_EB:SPLIT_STRING VALUE NBSP))
