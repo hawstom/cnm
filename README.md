@@ -2,6 +2,14 @@
 # WELCOME TO CONSTRUCTION NOTES MANAGER
 Welcome to the Construction Notes Manager suite of AutoCAD productivity tools started by Thomas Gail Haws in 1994 and released as Free Libre Open Source Software on July 26, 2020. These tools are AutoCAD commands ready for AutoCAD and Civil 3D users who have no knowledge of AutoLISP. Please contact me if you need any help using or modifying these tools.
 
+# NEWS
+With the help of the Claude Sonnet 4.5 AI model of Copilot AI agent in VS Code, this week I added 
+
+- reactive auto text for quantities and Civil 3D information to CNM bubble notes
+- a quick "pipe" labeler for utility research that reads text and style based on layer from a file you edit
+
+Thanks to my AI assistant, I can now implement your ideas fast. Try me!
+
 # INSTALLATION
 - Windows installer: Choose, download and run a Windows installer from the [download page](https://constructionnotesmanager.com/download.htm).
 - From github: Put all the files from devsource into a folder of your choice and follow the Installation Help instructions at the [download page](https://constructionnotesmanager.com/download.htm).
