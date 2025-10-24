@@ -2,50 +2,55 @@
 ;;; See HAWS-CODE-STYLE-GUIDELINES.md for conventions
 
 ;; Opt-out list file (LISP list of tip IDs)
-(setq *HAWS_TIP_HIDE_FILE* "haws-tip-hide.lsp")
+(SETQ *HAWS_TIP_HIDE_FILE* "haws-tip-hide.lsp")
 
-(defun HAWS_TIP_HIDE_LIST ()
-  (if (findfile *HAWS_TIP_HIDE_FILE*)
-    (read (open *HAWS_TIP_HIDE_FILE* "r"))
-    '()
+(DEFUN HAWS_TIP_HIDE_LIST (/ FNAME RESULT) 
+  (AND
+    (SETQ FNAME  (FINDFILE *HAWS_TIP_HIDE_FILE*))
+    (SETQ F1     (OPEN FNAME "r"))
+    (SETQ RESULT (READ-LINE F1))
+    (SETQ RESULT (READ RESULT))
+    (SETQ F1     (CLOSE F1))
   )
+  RESULT
 )
-
-(defun HAWS_TIP_SAVE_HIDE_LIST (lst)
-  (with-open-file (f *HAWS_TIP_HIDE_FILE* :direction :output :if-exists :supersede)
-    (vl-prin1-to-string lst f)
+(DEFUN HAWS_TIP_SAVE_HIDE_LIST (LST / FNAME) 
+  (AND
+    (SETQ FNAME  (FINDFILE *HAWS_TIP_HIDE_FILE*))
+    (SETQ F2     (OPEN FNAME "w"))
+    (PRIN1 LST F2)
+    (SETQ F2     (CLOSE F2))
   )
-  lst
+  LST
 )
-
 ;; Show a tip if not opted out. TIP_ID is a unique integer, MSG is the tip string.
-(defun HAWS_TIP_SHOW (TIP_ID MSG)
-  (if (not (member TIP_ID (HAWS_TIP_HIDE_LIST)))
-    (progn
+(DEFUN HAWS_TIP_SHOW (TIP_ID MSG) 
+  (IF (NOT (MEMBER TIP_ID (HAWS_TIP_HIDE_LIST))) 
+    (PROGN 
       (HAWS_TIP_DIALOG TIP_ID MSG)
     )
   )
 )
-
-;; Placeholder for dialog call
-
 ;; Show tip dialog with opt-out checkbox using DCL
-(defun HAWS_TIP_DIALOG (TIP_ID MSG)
-  (setq dcl_id (load_dialog "haws-tip.dcl"))
-  (if (not (new_dialog "haws_tip" dcl_id))
-    (progn (unload_dialog dcl_id) (alert MSG))
-    (progn
-      (set_tile "tip_msg" MSG)
-      (set_tile "opt_out" "0")
-      (action_tile "opt_out" 
-        (strcat "(if (= $value \"1\") (HAWS_TIP_HIDE " (itoa TIP_ID) "))"))
-      (start_dialog)
-      (unload_dialog dcl_id)
+(DEFUN HAWS_TIP_DIALOG (TIP_ID MSG) 
+  (SETQ DCL_ID (LOAD_DIALOG "haws-tip.dcl"))
+  (IF (NOT (NEW_DIALOG "haws_tip" DCL_ID)) 
+    (PROGN (UNLOAD_DIALOG DCL_ID) (ALERT MSG))
+    (PROGN 
+      (SET_TILE "tip_msg" MSG)
+      (SET_TILE "opt_in" "1")
+      (ACTION_TILE "opt_in" 
+                   (STRCAT "(if (= $value \"0\") (HAWS_TIP_HIDE " 
+                           (ITOA TIP_ID)
+                           "))"
+                   )
+      )
+      (START_DIALOG)
+      (UNLOAD_DIALOG DCL_ID)
     )
   )
 )
-
-(defun HAWS_TIP_HIDE (TIP_ID)
-  (HAWS_TIP_SAVE_HIDE_LIST (cons TIP_ID (remove TIP_ID (HAWS_TIP_HIDE_LIST))))
-  (princ (strcat "\nTip " (itoa TIP_ID) " will no longer be shown."))
+(DEFUN HAWS_TIP_HIDE (TIP_ID) 
+  (HAWS_TIP_SAVE_HIDE_LIST (CONS TIP_ID (VL-REMOVE TIP_ID (HAWS_TIP_HIDE_LIST))))
+  (PRINC (STRCAT "\nTip " (ITOA TIP_ID) " will no longer be shown."))
 )

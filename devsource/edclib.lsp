@@ -1,37 +1,4 @@
 ;#region HEAD
-(PROMPT "\nHawsEDC library functions...")
-(LOAD "haws-tip")
-
-;; Returns a random CNM evangelism message for tips/prompts
-
-;; Returns a random CNM evangelism message for tips/prompts (sharing-focused)
-(DEFUN HAWS_EVANGEL_MSG (/ BIG_DATE MSGS IDX)
-  (SETQ MSGS (LIST
-    "\nCNM is open source! Share it far and wide. Contribute and report issues at https://github.com/hawstom/cnm ."
-    "\nShare CNM with your colleagues and help it grow! https://github.com/hawstom/cnm ."
-    "\nSpread the word: CNM is open source and welcomes contributions."
-    "\nShare, discuss, and contribute at https://github.com/hawstom/cnm ."
-    "\nGet involved with CNM at https://github.com/hawstom/cnm ."
-    "\nShare CNM all over town and help it grow!"
-  ))
-  (SETQ BIG_DATE (* (GETVAR "DATE") 100000000))
-  (SETQ IDX  (REM (FIX (* 100000 (- BIG_DATE (FIX BIG_DATE)))) (LENGTH MSGS)))
-  (NTH IDX MSGS)
-)
-
-;;;This is the current version of HawsEDC and CNM
-(DEFUN HAWS-UNIFIED-VERSION ()
-  "5.5.17"
-)
-(DEFUN HAWS-COPYRIGHT ()
-  "Copyright 2025 Thomas Gail Haws"
-)
-;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
-(SETQ *HAWS-DEBUGLEVEL* 0)
-;;This function returns the current setting of nagmode.
-;;Elizabeth asked me to give her a version with no nag mode (direct to fail).
-(DEFUN HAWS-NAGMODE-P () T)
-
 ;;;
 ;;; ICAD compatibility issues:
 ;;;
@@ -62,6 +29,36 @@
 ;;; 20050831 1.05   TGH Changed CNM to version 4.2.00.  Recompiled
 ;;; (legacy)
 ;;; lisputil.lsp
+(PROMPT "\nHawsEDC library functions...")
+(LOAD "haws-tip")
+;;;This is the current version of HawsEDC and CNM
+(DEFUN HAWS-UNIFIED-VERSION ()
+  "5.5.17.04"
+)
+(DEFUN HAWS-COPYRIGHT ()
+  "Copyright 2025 Thomas Gail Haws"
+)
+;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
+(SETQ *HAWS-DEBUGLEVEL* 0)
+;;This function returns the current setting of nagmode.
+;;Elizabeth asked me to give her a version with no nag mode (direct to fail).
+(DEFUN HAWS-NAGMODE-P () T)
+;; Returns a random CNM evangelism message for tips/prompts (sharing-focused)
+(DEFUN HAWS_EVANGEL_MSG (/ BIG_DATE MSGS IDX)
+  (SETQ MSGS (LIST
+    "\nCNM is open source! Share it far and wide."
+    "\nShare CNM with your colleagues and help it grow! https://github.com/hawstom/cnm ."
+    "\nSpread the word: CNM is open source."
+    "\nShare CNM, discuss CNM, and contribute to CNM at https://github.com/hawstom/cnm ."
+    "\nGet involved with CNM at https://github.com/hawstom/cnm ."
+    "\nTake CNM with you wherever you work. Share it, share your ideas, and help it grow!"
+    "\nCNM is a community project! Make a difference by sharing it and making it better."
+    "\nContribute to CNM and report issues at https://github.com/hawstom/cnm ."
+  ))
+  (SETQ BIG_DATE (* (GETVAR "DATE") 100000000))
+  (SETQ IDX  (REM (FIX (* 100000 (- BIG_DATE (FIX BIG_DATE)))) (LENGTH MSGS)))
+  (NTH IDX MSGS)
+)
 (DEFUN C:HCNM-ABOUT ()
 (haws-core-init 216) (C:HAWS-ABOUT))
 (DEFUN C:HAWS-ABOUT (/ LICENSEREPORT)

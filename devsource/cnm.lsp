@@ -5216,6 +5216,9 @@ ImportLayerSettings=No
   ;; system can be uninitialized, causing crashes at GETKWORD prompts (specifically
   ;; the dimension scale prompt). Issuing any command first initializes the system.
   ;; Must use (COMMAND) not (VL-CMDF) - synchronous execution is required.
+  (princ "\nCNM version: ")
+  (princ (HAWS-UNIFIED-VERSION))
+  (princ "\nCNM bubble insertion often crashes the first time in a drawing session, possibly when it's the first command or the first block insertion. Please let us know if you can confirm a pattern.")
   (COMMAND "._REDRAW")
   (HAWS-VSAVE '("attreq" "aunits" "clayer" "cmdecho"))
   (COND
@@ -6205,6 +6208,15 @@ ImportLayerSettings=No
     BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "ENAME_BUBBLE" ENAME_BUBBLE)
     BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
   )
+  ;; Ensure ENAME_LEADER is in BUBBLE_DATA (needed for reactor attachment)
+  (COND
+    ((NOT (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_LEADER"))
+     (SETQ BUBBLE_DATA (HCNM_LDRBLK_BD_SET 
+                         BUBBLE_DATA 
+                         "ENAME_LEADER" 
+                         (HCNM_LDRBLK_BUBBLE_LEADER ENAME_BUBBLE)))
+    )
+  )
   ;; Only calculate P1_WORLD for auto-types that require coordinates
   ;; BUT: For alignment auto-text, only calculate P1_WORLD when we have INPUT (reactor update)
   ;; When INPUT is NIL (user selection), AUTO_AL will handle viewport selection AFTER user picks alignment
@@ -6404,17 +6416,34 @@ ImportLayerSettings=No
 ;; Why: Prevents users from changing viewport views which breaks coordinate accuracy
 ;; When: Only shown for coordinate-based auto-text in paper space bubbles
 ;; TODO: Replace with dismissable tip system when implemented
-(DEFUN HCNM_LDRBLK_WARN_PSPACE_COORDINATES (ENAME_BUBBLE AUTO_TYPE)
+;; Queue a paper space coordinate warning tip to be shown after any modal dialogs close
+;; This is necessary because you can't show a modal dialog from inside another modal dialog
+(DEFUN HCNM_LDRBLK_QUEUE_PSPACE_TIP (ENAME_BUBBLE AUTO_TYPE)
   (COND
     ((AND ENAME_BUBBLE 
           (NOT (HCNM_LDRBLK_IS_ON_MODEL_TAB ENAME_BUBBLE))
           (HCNM_LDRBLK_AUTO_TYPE_IS_COORDINATE_P AUTO_TYPE))
-     ;; Bubble is in paper space and auto-type is coordinate-based - show warning (tip system)
-     (HAWS_TIP_SHOW
-       1001 ; Unique tip ID for paper space warning
-       "IMPORTANT: Paper space bubble notes don't react to viewport changes.\n\nTo avoid causing chaos when changing viewport views, auto text for coordinates\ndoes not react to viewport view changes.\n\nYou must use the ____ command if you want to refresh the world coordinates of all bubble notes on a viewport.")
+     ;; Bubble is in paper space and auto-type is coordinate-based - queue warning
+     (SETQ *HCNM_PENDING_TIP* (LIST 1001 ; Unique tip ID for paper space warning
+       "IMPORTANT: Paper space bubble notes don't react to viewport changes.\n\nTo avoid causing chaos when changing viewport views, auto text for coordinates\ndoes not react to viewport view changes.\n\nYou must use the ____ command if you want to refresh the world coordinates of selected bubble notes on a viewport."))
     )
   )
+)
+
+;; Show any pending tip (called after modal dialogs close)
+(DEFUN HCNM_LDRBLK_SHOW_PENDING_TIP ()
+  (COND
+    (*HCNM_PENDING_TIP*
+     (HAWS_TIP_SHOW (CAR *HCNM_PENDING_TIP*) (CADR *HCNM_PENDING_TIP*))
+     (SETQ *HCNM_PENDING_TIP* NIL)
+    )
+  )
+)
+
+;; Legacy function - now just queues the tip
+(DEFUN HCNM_LDRBLK_WARN_PSPACE_COORDINATES (ENAME_BUBBLE AUTO_TYPE)
+  (HCNM_LDRBLK_QUEUE_PSPACE_TIP ENAME_BUBBLE AUTO_TYPE)
+  (HCNM_LDRBLK_SHOW_PENDING_TIP)
 )
 
 ;;==============================================================================
@@ -6988,6 +7017,14 @@ ImportLayerSettings=No
      )
      (SETQ OBJALIGN (VLAX-ENAME->VLA-OBJECT (CAR ESALIGN)))
      (C:HCNM-CONFIG-SETVAR "BubbleCurrentAlignment" OBJALIGN)
+     ;; Queue paper space warning if bubble is in paper space and auto-type requires coordinates
+     ;; Can't show modal tip dialog from inside modal edit dialog (if called from there), so queue it
+     (COND
+       ((AND ENAME_BUBBLE (NOT (HCNM_LDRBLK_IS_ON_MODEL_TAB ENAME_BUBBLE))
+             (HCNM_LDRBLK_AUTO_TYPE_IS_COORDINATE_P AUTO_TYPE))
+        (HCNM_LDRBLK_QUEUE_PSPACE_TIP ENAME_BUBBLE AUTO_TYPE)
+       )
+     )
     )
     (ESALIGN 
       (alert (princ "\nSelected object is not an alignment. Keeping previous alignment."))
@@ -7003,8 +7040,8 @@ ImportLayerSettings=No
          ;; Only prompt for viewport if transformation data doesn't already exist
          (COND
            ((NOT (HCNM_LDRBLK_GET_VIEWPORT_TRANSFORM_XDATA ENAME_BUBBLE))
-            ;; No XDATA exists - show warning and prompt for viewport
-            (HCNM_LDRBLK_WARN_PSPACE_COORDINATES ENAME_BUBBLE AUTO_TYPE)
+            ;; No XDATA exists - queue warning and prompt for viewport
+            (HCNM_LDRBLK_QUEUE_PSPACE_TIP ENAME_BUBBLE AUTO_TYPE)
             (SETQ AVPORT (HCNM_LDRBLK_GET_TARGET_VPORT))
             ;; Capture viewport transformation data now while in MSPACE with selected viewport
             (SETQ CVPORT AVPORT)
@@ -7047,10 +7084,11 @@ ImportLayerSettings=No
     ;; INPUT = VLA-OBJECT means reactor update with reference object (not used for N/E/NE)
     REACTOR_UPDATE_P (AND INPUT (OR (= INPUT T) (= (TYPE INPUT) 'VLA-OBJECT)))
   )
-  ;; Show paper space warning only during initial insertion, not reactor updates
+  ;; Queue paper space warning only during initial insertion, not reactor updates
+  ;; Can't show modal tip dialog from inside modal edit dialog, so queue it
   (COND
     ((NOT REACTOR_UPDATE_P)
-     (HCNM_LDRBLK_WARN_PSPACE_COORDINATES ENAME_BUBBLE AUTO_TYPE)
+     (HCNM_LDRBLK_QUEUE_PSPACE_TIP ENAME_BUBBLE AUTO_TYPE)
     )
   )
   ;; Calculate or get P1_WORLD
@@ -7430,6 +7468,9 @@ ImportLayerSettings=No
 )
 (DEFUN C:HCNM-EDIT-BUBBLES ()
   (haws-core-init 337)
+  (princ "\nCNM version: ")
+  (princ (HAWS-UNIFIED-VERSION))
+
   (if (not haws-editall)(load "editall"))
   (haws-editall T)
   (haws-core-restore)
@@ -7600,6 +7641,8 @@ ImportLayerSettings=No
   )
   ;; Change its arrowhead if needed.
   (HCNM_LDRBLK_CHANGE_ARROWHEAD ENAME_LEADER)
+  ;; Show any pending tip (couldn't show during dialog)
+  (HCNM_LDRBLK_SHOW_PENDING_TIP)
   (HAWS-CORE-RESTORE)
   (PRINC)
 )
@@ -7804,17 +7847,17 @@ ImportLayerSettings=No
   ;; Check if bubble is in paper space
   (SETQ ON_MODEL_TAB_P (OR (NOT ENAME_BUBBLE) (HCNM_LDRBLK_IS_ON_MODEL_TAB ENAME_BUBBLE)))
   ;; Show/hide paper space disclaimer and Chg View button
-  (DEFUN HCNM_EB:GET_EVANGEL_MSG ()
-    (SETQ MSGS (LIST
-      "CNM is open source! Help spread it everywhere! Take it wherever you go and share it far and wide. Contribute to development using AI. See the source code and report issues at https://github.com/hawstom/cnm"
-      "Share, contribute, discuss, and report at https://github.com/hawstom/cnm"
-      "Love CNM? It's open source! Spread the word and help improve it at https://github.com/hawstom/cnm"
-      "Contribute to CNM using your ideas plus AI. Help build the future of civil drafting!"
-    ))
-    (NTH (REM (GETVAR "DATE") (LENGTH MSGS)) MSGS)
-  )
   ;; Always show paper space warning above OKCancel
-  (SET_TILE "PaperSpaceDisclaimer" (STRCAT "Note: Paper space bubbles don't react to viewport changes.\n" (HCNM_EB:GET_EVANGEL_MSG)))
+  ;; EXECUTIVE: The general disclaimer in the edit dialog is sufficient.
+  ;; When user actually adds coordinate auto-text (Sta/Off/etc), they get
+  ;; the detailed dismissable tip via HCNM_LDRBLK_WARN_PSPACE_COORDINATES.
+  (SET_TILE 
+    "Message"         
+    (STRCAT 
+      "Note: Paper space bubbles don't react to viewport changes."
+     (HAWS_EVANGEL_MSG)
+    )
+  )  
   (MODE_TILE "ChgView" 0)  ; Always enable
   ;; Note attribute edit boxes - split into prefix/auto/postfix
   ;; Migration already happened in EXPAND_VALUE during ADD_DELIMITERS
@@ -8083,6 +8126,7 @@ ImportLayerSettings=No
 ;; VALUE = AUTO_TYPE (just the string)
 (DEFUN HCNM_LDRBLK_ASSURE_AUTO_TEXT_HAS_REACTOR (OBJREF ENAME_BUBBLE ENAME_LEADER TAG AUTO_TYPE / CALLBACKS DATA DATA_OLD REACTOR 
                                                  HANDLE_BUBBLE HANDLE_REFERENCE KEYS KEY_APP REACTOR_OLD REACTORS_OLD OWNER OWNERS OBJECT_LEADER
+                                                 HCNM_REACTORS REACTOR_COUNT
                                                 ) 
   (SETQ CALLBACKS       '((:vlr-modified . HCNM_LDRBLK_REACTOR_CALLBACK)
                           ;; vlr-trace-reaction IS A CANNED CALLBACK PROVIDED BY AUTODESK FOR TESTING. IT PRINTS A MESSAGE. IT CAN BE REMOVED.
@@ -8100,25 +8144,55 @@ ImportLayerSettings=No
         HANDLE_REFERENCE (COND (OBJREF (VLA-GET-HANDLE OBJREF)) (T ""))
         HANDLE_BUBBLE   (CDR (ASSOC 5 (ENTGET ENAME_BUBBLE)))
         KEYS            (LIST KEY_APP HANDLE_REFERENCE HANDLE_BUBBLE TAG)
+        REACTOR_OLD     NIL  ; Initialize to nil
   )
-  (FOREACH REACTOR REACTORS_OLD 
-    (COND 
-      ;; THERE IS ONLY ONE REACTOR FOR THIS APP BECAUSE THIS SEARCH ENSURES THAT WE DON'T CREATE MORE
-      ((AND (LISTP (SETQ DATA_OLD (VLR-DATA REACTOR))) (ASSOC KEY_APP DATA_OLD))
-       (SETQ REACTOR_OLD REACTOR)
-      )
+  ;; Check for reactor proliferation (FATAL CONDITION)
+  (SETQ HCNM_REACTORS
+    (VL-REMOVE-IF-NOT
+      '(LAMBDA (R)
+         (AND (LISTP (VLR-DATA R))
+              (ASSOC KEY_APP (VLR-DATA R)))
+       )
+      REACTORS_OLD
+    )
+    REACTOR_COUNT (LENGTH HCNM_REACTORS)
+  )
+  ;; Handle reactor proliferation
+  (COND
+    ((> REACTOR_COUNT 1)
+     ;; FATAL: Multiple HCNM-BUBBLE reactors found - this is a programming error
+     (VLR-REMOVE-ALL :VLR-OBJECT-REACTOR)
+     (alert (princ (STRCAT
+       "\n*** PROGRAMMING ERROR DETECTED ***\n\n"
+       "Found " (ITOA REACTOR_COUNT) " HCNM-BUBBLE reactors.\n"
+       "There should be exactly ONE reactor for all bubbles.\n\n"
+       "All reactors have been removed to prevent data corruption.\n"
+       "The current bubble will get a new reactor and should be reactive.\n"
+       "All later bubbles should also be reactive to leader or reference object changes.\n\n"
+       "Please report this bug with details about what operations\n"
+       "you performed before this error occurred.\n\n"
+       "GitHub: https://github.com/hawstom/cnm/issues"
+     )))
+     (PRINC "\n*** REACTOR PROLIFERATION ERROR - All reactors removed, creating new reactor for current bubble ***")
+     ;; Set REACTOR_OLD to NIL so we create a fresh reactor below
+     (SETQ REACTOR_OLD NIL)
+    )
+    (T
+     ;; Normal operation - 0 or 1 reactor
+     (SETQ REACTOR_OLD (CAR HCNM_REACTORS))
     )
   )
+  ;; Now handle reactor attachment/creation based on REACTOR_OLD
   (COND 
     (REACTOR_OLD
      ;; ATTACH THIS OWNER NOTIFIER IF NOT ALREADY ATTACHED.
-      (FOREACH OWNER OWNERS
-        (COND
-          ((NOT (MEMBER OWNER (VLR-OWNERS REACTOR_OLD)))
-           (VLR-OWNER-ADD REACTOR_OLD OWNER)
-          )
-        )
-      )
+     (FOREACH OWNER OWNERS
+       (COND
+         ((NOT (MEMBER OWNER (VLR-OWNERS REACTOR_OLD)))
+          (VLR-OWNER-ADD REACTOR_OLD OWNER)
+         )
+       )
+     )
      ;; UPDATE THE DATA
      (VLR-DATA-SET REACTOR_OLD 
                    (SETQ DATA (HAWS_NESTED_LIST_UPDATE 
@@ -8577,32 +8651,47 @@ ImportLayerSettings=No
   (HCNM_DEBUG_SHOW_BUBBLE_REACTOR_XDATA)
   (princ)
 )
-(defun HCNM_DEBUG_SHOW_BUBBLE_REACTOR_XDATA ()
+(defun HCNM_DEBUG_SHOW_BUBBLE_REACTOR_XDATA (/ EN REACTORS REACTOR DATA HANDLE_BUBBLE REACTOR_COUNT HCNM_REACTOR)
   (vl-load-com)
   (princ "\nSelect a bubble note: ")
-  (setq en (car (entsel)))
-  (if en
+  (setq EN (car (entsel)))
+  (if EN
     (progn
-      (setq reactors (vlr-reactors :vlr-object-reactor))
-      (setq found nil)
-      (foreach reactor (cdar reactors)
+      (setq HANDLE_BUBBLE (CDR (ASSOC 5 (ENTGET EN)))
+            REACTORS (CDAR (VLR-REACTORS :VLR-OBJECT-REACTOR))
+            REACTOR_COUNT 0
+            HCNM_REACTOR NIL)
+      ;; Find THE ONE HCNM reactor (there should be only one)
+      (foreach reactor REACTORS
         (setq data (vlr-data reactor))
         (if (and (listp data) (assoc "HCNM-BUBBLE" data))
           (progn
-            (setq found reactor)
-            (alert (strcat
-              "Reactor: " (vl-prin1-to-string reactor) "\n\n"
-              "Data: " (vl-prin1-to-string data) "\n\n"
-              "XDATA: " (vl-prin1-to-string (assoc -3 (entget en '("HCNM-BUBBLE"))))
-            ))
+            (setq REACTOR_COUNT (1+ REACTOR_COUNT)
+                  HCNM_REACTOR reactor)
           )
         )
       )
-      (if (not found)
-        (alert "No CNM bubble reactor found.")
+      (alert 
+        (princ
+          (cond
+            ((= REACTOR_COUNT 0)
+             "ERROR: No HCNM-BUBBLE reactor found!")
+            ((> REACTOR_COUNT 1)
+             (strcat "ERROR: Reactor proliferation! Found " (itoa REACTOR_COUNT) " reactors.\nThere should be only ONE reactor for all bubbles."))
+            (T
+             (strcat
+               "ONE HCNM-BUBBLE Reactor (correct)\n\n"
+               "Reactor object:\n" (vl-prin1-to-string HCNM_REACTOR) "\n\n"
+               "Reactor data (nested list for all bubbles):\n" (vl-prin1-to-string (vlr-data HCNM_REACTOR)) "\n\n"
+               "Reactor owners count: " (itoa (length (vlr-owners HCNM_REACTOR))) "\n\n"
+               "Selected bubble handle: " HANDLE_BUBBLE "\n\n"
+               "Selected bubble XDATA:\n" (vl-prin1-to-string (assoc -3 (entget EN '("HCNM-BUBBLE"))))
+             ))
+          )
+        )
       )
     )
-    (alert "No entity selected.")
+    (alert (princ "No entity selected."))
   )
   (princ)
 )

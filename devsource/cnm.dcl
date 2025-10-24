@@ -679,13 +679,13 @@ HCNMEditBubble : dialog {
 		: button {label = "_"; key = "ClearAuto"; width = 3;}
 	}
 	: row {
-		: button {label = "Chg View"; key = "ChgView";}
+		: button {label = "Associate with a different viewport"; key = "ChgView";}
 	}
 	: row {
-		alignment = centered;
 		: text {
-			key = "PaperSpaceDisclaimer";
+			key = "Message";
 			label = "";
+      height = 2;
 		}
 	}
 	ok_cancel;	
