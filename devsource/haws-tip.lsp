@@ -1,9 +1,6 @@
 ;;; haws-tip.lsp - Tip/evangelism opt-out system for HAWS/EDC/CNM
-;;; See HAWS-CODE-STYLE-GUIDELINES.md for conventions
-
-;;; haws-tip.lsp - Tip/evangelism opt-out system for HAWS/EDC/CNM
-;;; See HAWS-CODE-STYLE-GUIDELINES.md for conventions
-
+;;; See devtools/docs/standards_03_names_and_symbols.md for naming conventions
+;;; See devtools/docs/standards_05_architecture.md S05.6 for tip system architecture
 ;; Get list of hidden tip IDs from AutoCAD config storage
 (DEFUN HAWS_TIP_HIDE_LIST (/ HIDE_LIST_STR HIDE_LIST)
   (SETQ HIDE_LIST_STR (HAWS-READCFG (LIST "HawsEDC" "TipsHidden")))
