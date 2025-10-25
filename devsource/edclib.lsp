@@ -47,21 +47,23 @@
 (DEFUN HAWS_EVANGEL_MSG (/ BIG_DATE MSGS IDX)
   (SETQ MSGS (LIST
     "\nCNM is open source! Share it far and wide."
-    "\nShare CNM with your colleagues and help it grow! https://github.com/hawstom/cnm ."
+    "\nShare CNM with your colleagues and help it grow! https://github.com/hawstom/cnm"
     "\nSpread the word: CNM is open source."
     "\nIf you can describe it, we can make it happen."
     "\nLeverage modern AI plus 30 years of human experience to make AutoCAD work for you!"
-    "\nShare CNM, discuss CNM, and contribute to CNM at https://github.com/hawstom/cnm ."
+    "\nShare CNM, discuss CNM, and contribute to CNM at https://github.com/hawstom/cnm"
     "\nCNM Bubble notes now offer auto text that reacts to leader and reference object changes."
+    "\nDid you see LABEL (HAWS_LABEL), our new utility research pipe labeler? Edit haws-label-settings.lsp."
     "\nYou can open a suggestion or bug issue at at https://github.com/hawstom/cnm by registering at Github."
-    "\nThe latest upgrades to CNM were made possible by the VS Code IDE > Copilot AI agent > Claude Sonnet 4.5 model."
-    "\nGet involved with CNM at https://github.com/hawstom/cnm ."
+    "\nThe latest upgrades to CNM were made possible by AI! (VS Code IDE > Copilot AI agent > Claude Sonnet 4.5 model)"
+    "\nGive back to CNM. Contact Tom to learn how you can be an AI-supported programmer."
+    "\nGet involved with CNM at https://github.com/hawstom/cnm"
     "\nTake CNM with you wherever you work. Share it, share your ideas, and help it grow!"
     "\nCNM is a community project! Make a difference by sharing it and making it better."
-    "\nContribute to CNM and report issues at https://github.com/hawstom/cnm ."
+    "\nContribute to CNM and report issues at https://github.com/hawstom/cnm"
   ))
   (SETQ BIG_DATE (* (GETVAR "DATE") 100000000))
-  (SETQ IDX  (REM (FIX (* 100000 (- BIG_DATE (FIX BIG_DATE)))) (LENGTH MSGS)))
+  (SETQ IDX  (REM (FIX (* 10000 (- BIG_DATE (FIX BIG_DATE)))) (LENGTH MSGS)))
   (NTH IDX MSGS)
 )
 (DEFUN C:HCNM-ABOUT ()

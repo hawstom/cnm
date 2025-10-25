@@ -611,20 +611,17 @@ HCNMEditBubble : dialog {
 		: radio_column {
 			key = "NoteTextRadioColumn";
 			fixed_width = true;
-			: radio_button {
-				key = "RadioNOTENUM";
-				label = "Note number";
-				is_enabled = false;
+			: text {
+				label = "-";
+				height = 1.55;
  			}
-			: radio_button {
-				key = "RadioNOTEPHASE";
-				label = "Note phase";
-				is_enabled = false;
+			: text {
+				label = "-";
+				height = 1.55;
  			}
-			: radio_button {
-				key = "RadioNOTEGAP";
-				label = "Gap text";
-				is_enabled = false;
+			: text {
+				label = "-";
+				height = 1.55;
 			}
 			: radio_button {
 				key = "RadioNOTETXT1";
