@@ -1,4 +1,4 @@
-;#region Header comments
+﻿;#region Header comments
 ;;; CONSTRUCTION NOTES MANAGER
 ;;;
 ;;; PHASING
@@ -67,8 +67,8 @@
 ;;; 1999     v3.20  Improved performance by rewriting code.
 ;#endregion
 ;#region Table from search
-(DEFUN HCNM_GETPHASELISTFROMTBLQTY (/ EL EN I DSCTAG NOTEQTYONDISK OLDTAGS
-                                PHASEALIAS PHASELIST
+(defun hcnm_getphaselistfromtblqty (/ el en i dsctag noteqtyondisk oldtags
+                                phasealias phaselist
                                )
   ;;Check for phasing in qty table block.  Phasing is controlled by presence of TBLQTY? attributes.
   ;;Construct phaselist as '((phase1 1 alias1)(phase2 2 alias2)(phasei i aliasi)).
@@ -76,103 +76,103 @@
   ;;Phases are numbered in order they appear in block. (This number could be very unstable, but it is the key to phase order on this sheet.)
   ;;
   ;;Insert table line NOTEQTY block if not exist
-  (SETQ
-    J (IF (= (c:hcnm-config-getvar "InsertTablePhases") "No")
+  (setq
+    j (if (= (c:hcnm-config-getvar "InsertTablePhases") "No")
         ""
         (c:hcnm-config-getvar "InsertTablePhases")
       )
   )
-  (COND
-    ((NOT (TBLSEARCH "BLOCK" "NOTEQTY"))
+  (cond
+    ((not (tblsearch "BLOCK" "NOTEQTY"))
      (setvar "attreq" 0)
-     (VL-CMDF "._insert" (STRCAT "NOTEQTY=NOTEQTY" J) "_Scale" "1" "_Rotate" "0" "0,0")
+     (vl-cmdf "._insert" (strcat "NOTEQTY=NOTEQTY" j) "_Scale" "1" "_Rotate" "0" "0,0")
      (setvar "attreq" 1)
      (entdel (entlast))
     )
   )
   ;;Check how many phases are in current block.
-  (SETQ
-    EN (CDR (ASSOC -2 (TBLSEARCH "BLOCK" "NOTEQTY")))
-    I  0
+  (setq
+    en (cdr (assoc -2 (tblsearch "BLOCK" "NOTEQTY")))
+    i  0
   )
-  (WHILE EN
-    (SETQ EL (ENTGET EN))
-    (IF (AND
-          (= "ATTDEF" (CDR (ASSOC 0 EL)))
-          (WCMATCH (CDR (ASSOC 2 EL)) "TBLQTY?")
+  (while en
+    (setq el (entget en))
+    (if (and
+          (= "ATTDEF" (cdr (assoc 0 el)))
+          (wcmatch (cdr (assoc 2 el)) "TBLQTY?")
         )
-      (SETQ I (1+ I))
+      (setq i (1+ i))
     )
-    (SETQ EN (ENTNEXT EN))
+    (setq en (entnext en))
   )
   ;;Redefine it if wrong number of phases
-  (COND
-    ((AND
-       (/= J "")                        ;Inserting phases requested
-       (SETQ J (ATOI J))
-       (/= J I)                         ;Wrong number of phases currently inserted
+  (cond
+    ((and
+       (/= j "")                        ;Inserting phases requested
+       (setq j (atoi j))
+       (/= j i)                         ;Wrong number of phases currently inserted
      )
-     (VL-CMDF "._insert" (STRCAT "noteqty=noteqty" (ITOA J)))
-     (VL-CMDF)
+     (vl-cmdf "._insert" (strcat "noteqty=noteqty" (itoa j)))
+     (vl-cmdf)
     )
   )
-  (SETQ
-    EN (CDR (ASSOC -2 (TBLSEARCH "BLOCK" "NOTEQTY")))
-    I  1
+  (setq
+    en (cdr (assoc -2 (tblsearch "BLOCK" "NOTEQTY")))
+    i  1
   )
-  (WHILE EN
-    (SETQ EL (ENTGET EN))
-    (COND
-      ((AND
-         (= "ATTDEF" (CDR (ASSOC 0 EL)))
-         (WCMATCH (CDR (ASSOC 2 EL)) "TBLQTY?")
+  (while en
+    (setq el (entget en))
+    (cond
+      ((and
+         (= "ATTDEF" (cdr (assoc 0 el)))
+         (wcmatch (cdr (assoc 2 el)) "TBLQTY?")
        )
-       (SETQ
-         PHASELIST
-          (CONS
-            (LIST
-              (SUBSTR (CDR (ASSOC 2 EL)) 7 1)
-              I
-              (SUBSTR (CDR (ASSOC 2 EL)) 7 1)
+       (setq
+         phaselist
+          (cons
+            (list
+              (substr (cdr (assoc 2 el)) 7 1)
+              i
+              (substr (cdr (assoc 2 el)) 7 1)
             )
-            PHASELIST
+            phaselist
           )
-         I (1+ I)
+         i (1+ i)
        )
       )
-      ((AND
-         (= "ATTDEF" (CDR (ASSOC 0 EL)))
-         (= "NOTETYPE" (CDR (ASSOC 2 EL)))
+      ((and
+         (= "ATTDEF" (cdr (assoc 0 el)))
+         (= "NOTETYPE" (cdr (assoc 2 el)))
        )
-       (SETQ OLDTAGS T)
+       (setq oldtags t)
       )
-      ((AND
-         (= "ATTDEF" (CDR (ASSOC 0 EL)))
-         (= "TBLDSC" (CDR (ASSOC 2 EL)))
+      ((and
+         (= "ATTDEF" (cdr (assoc 0 el)))
+         (= "TBLDSC" (cdr (assoc 2 el)))
        )
-       (SETQ DSCTAG T)
+       (setq dsctag t)
       )
     )
-    (SETQ EN (ENTNEXT EN))
+    (setq en (entnext en))
   )
-  (SETQ PHASELIST (REVERSE PHASELIST))
-  (IF (NOT PHASELIST)
-    (SETQ PHASELIST '(("" 1 "")))
+  (setq phaselist (reverse phaselist))
+  (if (not phaselist)
+    (setq phaselist '(("" 1 "")))
   )
   ;;Add phasealias configs to the phaselist.
-  (MAPCAR
-    '(LAMBDA (PHASE)
-       (SETQ
-         PHASELIST
-          (SUBST
-            (REVERSE
-              (CONS
-                (c:hcnm-config-getvar (CADR PHASE))
-                (CDR (ASSOC (ITOA (CAR PHASE)) PHASELIST))
+  (mapcar
+    '(lambda (phase)
+       (setq
+         phaselist
+          (subst
+            (reverse
+              (cons
+                (c:hcnm-config-getvar (cadr phase))
+                (cdr (assoc (itoa (car phase)) phaselist))
               )
             )
-            (ASSOC (ITOA (CAR PHASE)) PHASELIST)
-            PHASELIST
+            (assoc (itoa (car phase)) phaselist)
+            phaselist
           )
        )
      )
@@ -187,20 +187,20 @@
       (9 "PhaseAlias9")
      )
   )
-  (COND
-    ((OR OLDTAGS (NOT DSCTAG))
-     (VL-CMDF
+  (cond
+    ((or oldtags (not dsctag))
+     (vl-cmdf
        "._insert"
-       (STRCAT
+       (strcat
          "noteqty="
-         (SETQ
-           NOTEQTYONDISK
-            (FINDFILE
-              (STRCAT
+         (setq
+           noteqtyondisk
+            (findfile
+              (strcat
                 "noteqty"
-                (IF (= (CAAR PHASELIST) "")
+                (if (= (caar phaselist) "")
                   "0"
-                  (ITOA (LENGTH PHASELIST))
+                  (itoa (length phaselist))
                 )
                 ".dwg"
               )
@@ -208,16 +208,16 @@
          )
        )
      )
-     (VL-CMDF)
-     (ALERT
-       (PRINC
-         (STRCAT
+     (vl-cmdf)
+     (alert
+       (princ
+         (strcat
            "The NOTEQTY block in this drawing had the wrong attributes for this version of Construction Notes Manager."
            "\nor it was missing the description text attribute, TBLDSC."
            "\n\nConstruction Notes Manager tried to fix the problem by inserting\n"
-           NOTEQTYONDISK " from disk."
+           noteqtyondisk " from disk."
            "\n\nIf results are still not satisfactory, please edit the drawing\n"
-           NOTEQTYONDISK
+           noteqtyondisk
            "\nto meet your needs and include the following attributes (in order):"
            "\n\nTBLTYPE\nTBLNUM\nTBLDSC\nTBLQTY\nTBLUNT"
           )
@@ -225,7 +225,7 @@
      )
     )
   )
-  PHASELIST
+  phaselist
 )
 ;;; SEARCHANDSAVE reads through CONSTNOT.TXT and lists all notes and counting instructions.
 ;;; Also checks NOTEQTY block for version and phases
@@ -250,238 +250,238 @@
 ;;; Then saves all the notes and quantities for drawing in file nfname.
 ;;;
 ;;;Set up list from CONSTNOT.TXT and NOTEQTY block.
-(DEFUN HCNM_KEY_TABLE_SEARCHANDSAVE (DN PROJNOTES / ALIASLIST AT ATTRIBUTES AV BLKI
-                                   BLKSS COUNT CTABONLY EL EN ET I J
-                                   MVPORT MVSSET N NFNAME NOTEFND NOTEI
-                                   NOTELINES NOTELIST NOTENUM NOTEPHASE
-                                   NOTEQTY NOTETXT NOTETYPE NOTNUM
-                                   NOTTYP PHASE PHASELIST QTYOPT
-                                   SKIPPEDPHASES USRVAR VPLAYERS X
+(defun hcnm_key_table_searchandsave (dn projnotes / aliaslist at attributes av blki
+                                   blkss count ctabonly el en et i j
+                                   mvport mvsset n nfname notefnd notei
+                                   notelines notelist notenum notephase
+                                   noteqty notetxt notetype notnum
+                                   nottyp phase phaselist qtyopt
+                                   skippedphases usrvar vplayers x
                                   )
   ;;
   ;; Section 1.  Make an empty NOTELIST from tblqty and constnot.txt.  TGHI can use this section for Tally, except there is a conflict in the way they do PHASELIST.
   ;;
-  (SETQ
-    PHASELIST
-     (HCNM_GETPHASELISTFROMTBLQTY)
-    CTABONLY
+  (setq
+    phaselist
+     (hcnm_getphaselistfromtblqty)
+    ctabonly
      (= "1" (c:hcnm-config-getvar "DoCurrentTabOnly"))
-    NOTTYP ""
+    nottyp ""
   )
-  (FOREACH
-     ENTRY *HCNM_CNMPROJECTNOTES*
-    (COND
+  (foreach
+     entry *hcnm_cnmprojectnotes*
+    (cond
       ;;If it's a note
-      ((= 3 (CAR ENTRY))
+      ((= 3 (car entry))
        ;;make a new type entry if necessary
-       (COND
-         ((/= NOTTYP (SETQ NOTTYP (CADR ENTRY)))
-          (SETQ NOTELIST (CONS (LIST NOTTYP) NOTELIST))
+       (cond
+         ((/= nottyp (setq nottyp (cadr entry)))
+          (setq notelist (cons (list nottyp) notelist))
          )
        )
        ;;and add the note to the list.
-       (SETQ
-         NOTNUM
-          (CADDR ENTRY)
-         QTYOPT
-          (NTH 4 ENTRY)
-         I 0
-         NOTELINES
-          (LENGTH (NTH 6 ENTRY))
+       (setq
+         notnum
+          (caddr entry)
+         qtyopt
+          (nth 4 entry)
+         i 0
+         notelines
+          (length (nth 6 entry))
        )
-       (SETQ
-         NOTELIST
-          (SUBST
-            (REVERSE
-              (CONS
-                (APPEND
-                  (LIST NOTNUM NOTELINES QTYOPT)
-                  (MAPCAR '(LAMBDA (PHASE) NIL) PHASELIST)
+       (setq
+         notelist
+          (subst
+            (reverse
+              (cons
+                (append
+                  (list notnum notelines qtyopt)
+                  (mapcar '(lambda (phase) nil) phaselist)
                                         ;Add a nil for each phase
                 )
-                (REVERSE (ASSOC NOTTYP NOTELIST))
+                (reverse (assoc nottyp notelist))
               )
             )
-            (ASSOC NOTTYP NOTELIST)
-            NOTELIST
+            (assoc nottyp notelist)
+            notelist
           )
        )
       )
     )
   )
-  (SETQ NOTELIST (APPEND (LIST PHASELIST) (LIST NOTELIST)))
+  (setq notelist (append (list phaselist) (list notelist)))
   ;;
   ;; Section 2.  Get quantities from bubble notes and save to file
   ;;
   ;; Make a list of all layers frozen in current viewport.
-  (SETQ
-    COUNT 0
-    MVSSET
-     (SSGET "X" (LIST (CONS 0 "VIEWPORT")))
+  (setq
+    count 0
+    mvsset
+     (ssget "X" (list (cons 0 "VIEWPORT")))
   )
-  (IF MVSSET
-    (WHILE (SETQ MVPORT (SSNAME MVSSET COUNT))
-      (SETQ MVPORT (ENTGET MVPORT '("ACAD")))
-      (COND
-        ((AND
-           (= (GETVAR "CTAB") (CDR (ASSOC 410 MVPORT)))
+  (if mvsset
+    (while (setq mvport (ssname mvsset count))
+      (setq mvport (entget mvport '("ACAD")))
+      (cond
+        ((and
+           (= (getvar "CTAB") (cdr (assoc 410 mvport)))
                                         ;Viewport is on current tab
-           (= (GETVAR "Cvport") (CDR (ASSOC 69 MVPORT)))
+           (= (getvar "Cvport") (cdr (assoc 69 mvport)))
                                         ;Viewport has current viewport number
-           (ASSOC 1003 (CDADR (ASSOC -3 MVPORT)))
+           (assoc 1003 (cdadr (assoc -3 mvport)))
                                         ;Viewport has vp frozen layers
          )
-         (FOREACH
-            DXFGROUP (CDADR (ASSOC -3 MVPORT))
-           (COND
-             ((= 1003 (CAR DXFGROUP))
-              (SETQ VPLAYERS (CONS (CDR DXFGROUP) VPLAYERS))
+         (foreach
+            dxfgroup (cdadr (assoc -3 mvport))
+           (cond
+             ((= 1003 (car dxfgroup))
+              (setq vplayers (cons (cdr dxfgroup) vplayers))
              )
            )
          )
         )
       )
-      (SETQ COUNT (1+ COUNT))
+      (setq count (1+ count))
     )
   )
   ;;Get bubbles selection set
-  (SETQ
-    BLKSS
-     (SSGET "X" (LIST (CONS 0 "INSERT")))
-    I -1
+  (setq
+    blkss
+     (ssget "X" (list (cons 0 "INSERT")))
+    i -1
   )
   ;;Remove frozen and off blocks, frozen in current viewport,
   ;;xrefs, and xref dependent blocks from the set
   ;;Remove all blocks not in current space if CTABONLY = 1.
-  (WHILE (AND BLKSS (SETQ BLKI (SSNAME BLKSS (SETQ I (1+ I)))))
-    (IF
-      (OR
+  (while (and blkss (setq blki (ssname blkss (setq i (1+ i)))))
+    (if
+      (or
         (= 1
-           (LOGAND
+           (logand
              1
-             (CDR
-               (ASSOC
+             (cdr
+               (assoc
                  70
-                 (TBLSEARCH "LAYER" (CDR (ASSOC 8 (ENTGET BLKI))))
+                 (tblsearch "LAYER" (cdr (assoc 8 (entget blki))))
                )
              )
            )
         )
-        (MINUSP
-          (CDR
-            (ASSOC 62 (TBLSEARCH "LAYER" (CDR (ASSOC 8 (ENTGET BLKI)))))
+        (minusp
+          (cdr
+            (assoc 62 (tblsearch "LAYER" (cdr (assoc 8 (entget blki)))))
           )
         )
         (= 4
-           (LOGAND
+           (logand
              4
-             (CDR
-               (ASSOC
+             (cdr
+               (assoc
                  70
-                 (TBLSEARCH "BLOCK" (CDR (ASSOC 2 (ENTGET BLKI))))
+                 (tblsearch "BLOCK" (cdr (assoc 2 (entget blki))))
                )
              )
            )
         )
         (= 16
-           (LOGAND
+           (logand
              16
-             (CDR
-               (ASSOC
+             (cdr
+               (assoc
                  70
-                 (TBLSEARCH "BLOCK" (CDR (ASSOC 2 (ENTGET BLKI))))
+                 (tblsearch "BLOCK" (cdr (assoc 2 (entget blki))))
                )
              )
            )
         )
         ;;On a layer frozen in the current viewport
-        (MEMBER (CDR (ASSOC 8 (ENTGET BLKI))) VPLAYERS)
+        (member (cdr (assoc 8 (entget blki))) vplayers)
         ;;Not in space of current tab if only doing ctab
-        (AND
-          CTABONLY
-          (/= (CDR (ASSOC 410 (ENTGET BLKI))) (GETVAR "CTAB"))
+        (and
+          ctabonly
+          (/= (cdr (assoc 410 (entget blki))) (getvar "CTAB"))
         )
       )
-       (SETQ
-         BLKSS
-          (SSDEL BLKI BLKSS)
-         I (1- I)
+       (setq
+         blkss
+          (ssdel blki blkss)
+         i (1- i)
        )
     )
   )
   ;;Search through bubble notes and add their quantities to NOTELIST
-  (SETQ
-    I -1
-    ALIASLIST
-     (MAPCAR '(LAMBDA (PHASE) (REVERSE PHASE)) (CAR NOTELIST))
+  (setq
+    i -1
+    aliaslist
+     (mapcar '(lambda (phase) (reverse phase)) (car notelist))
   )
-  (WHILE (AND BLKSS (SETQ BLKI (SSNAME BLKSS (SETQ I (1+ I)))))
-    (SETQ
-      EN BLKI
-      NOTETYPE
-       (COND
-         ((LM:GETDYNPROPVALUE
-            (VLAX-ENAME->VLA-OBJECT EN)
+  (while (and blkss (setq blki (ssname blkss (setq i (1+ i)))))
+    (setq
+      en blki
+      notetype
+       (cond
+         ((lm:getdynpropvalue
+            (vlax-ename->vla-object en)
             "Shape"
           )
          )
-         (T NIL)
+         (t nil)
        )
-      NOTENUM NIL
-      NOTETXT
+      notenum nil
+      notetxt
        '(0 1 2 3 4 5 6 7 8 9)
-      NOTEPHASE ""
-      ATTRIBUTES (HCNM_GET_ATTRIBUTES EN NIL)
+      notephase ""
+      attributes (hcnm_get_attributes en nil)
     )
     ;;Substitute the value of each NOTETXT attribute for its respective member of the pre-filled NOTETXT list.
-    (SETQ
-      NOTENUM
-       (CADR (ASSOC "NOTENUM" ATTRIBUTES))
-      NOTETXT
-       (MAPCAR
-         '(LAMBDA (I)
-            (CADR (ASSOC (STRCAT "NOTETXT" (ITOA I)) ATTRIBUTES))
+    (setq
+      notenum
+       (cadr (assoc "NOTENUM" attributes))
+      notetxt
+       (mapcar
+         '(lambda (i)
+            (cadr (assoc (strcat "NOTETXT" (itoa i)) attributes))
           )
          '(0 1 2 3 4 5 6 7 8 9)
        )
-      NOTEPHASE
-       (CADR (ASSOC "NOTEPHASE" ATTRIBUTES))
-      NOTEI
-       (ASSOC NOTENUM (CDR (ASSOC NOTETYPE (CADR NOTELIST))))
+      notephase
+       (cadr (assoc "NOTEPHASE" attributes))
+      notei
+       (assoc notenum (cdr (assoc notetype (cadr notelist))))
     )
-    (COND
+    (cond
       ;;If there is such a note and phase, or no phasing is being used.
-      ((AND
-         NOTEI
-         (SETQ
-           N (IF (= (CAAR ALIASLIST) "") ;If no phasing
+      ((and
+         notei
+         (setq
+           n (if (= (caar aliaslist) "") ;If no phasing
                1                        ;the quantity will be 4th atom in list '(notei txtlines qtyopt qty1) (N=3)
-               (CADR (ASSOC NOTEPHASE ALIASLIST))
+               (cadr (assoc notephase aliaslist))
              )
          )
        )
        ;;get the quantity as instructed
-       (SETQ
-         N (+ N 2)
-         QTYOPT
-          (CADDR NOTEI)
-         NOTEQTY
-          (COND
-            ((NTH N NOTEI))             ;If there's already a quantity growing, use it.
+       (setq
+         n (+ n 2)
+         qtyopt
+          (caddr notei)
+         noteqty
+          (cond
+            ((nth n notei))             ;If there's already a quantity growing, use it.
             (0.0)                       ;Otherwise add a real zero.
           )
        )
-       (COND
-         ((= QTYOPT "COUNT") (SETQ NOTEQTY (1+ NOTEQTY)))
-         ((WCMATCH QTYOPT "LINE#")
-          (SETQ
-            NOTEQTY
-             (+ NOTEQTY
-                (ATOF
-                  (CADR
-                    (HAWS-EXTRACT
-                      (COND
-                        ((NTH (ATOI (SUBSTR QTYOPT 5 1)) NOTETXT)
+       (cond
+         ((= qtyopt "COUNT") (setq noteqty (1+ noteqty)))
+         ((wcmatch qtyopt "LINE#")
+          (setq
+            noteqty
+             (+ noteqty
+                (atof
+                  (cadr
+                    (haws-extract
+                      (cond
+                        ((nth (atoi (substr qtyopt 5 1)) notetxt)
                         )
                         ("0")
                       )
@@ -491,60 +491,60 @@
              )
           )
          )
-         ((= QTYOPT "") (SETQ NOTEQTY ""))
+         ((= qtyopt "") (setq noteqty ""))
        )
        ;;Add quantity to notelist
-       (SETQ J -1)
-       (SETQ
-         NOTELIST
-          (LIST
-            (CAR NOTELIST)
-            (SUBST
-              (SUBST
-                (MAPCAR                 ;Substitute NOTEQTY for the Nth of NOTEI
-                  '(LAMBDA (X)
-                     (IF (= (SETQ J (1+ J)) N)
-                       NOTEQTY
-                       X
+       (setq j -1)
+       (setq
+         notelist
+          (list
+            (car notelist)
+            (subst
+              (subst
+                (mapcar                 ;Substitute NOTEQTY for the Nth of NOTEI
+                  '(lambda (x)
+                     (if (= (setq j (1+ j)) n)
+                       noteqty
+                       x
                      )
                    )
-                  NOTEI
+                  notei
                 )
-                NOTEI
-                (ASSOC NOTETYPE (CADR NOTELIST))
+                notei
+                (assoc notetype (cadr notelist))
               )
-              (ASSOC NOTETYPE (CADR NOTELIST))
-              (CADR NOTELIST)
+              (assoc notetype (cadr notelist))
+              (cadr notelist)
             )
           )
        )
       )
       ;;If there isn't such a phase, note it in SKIPPEDPHASES
-      (NOTEI
-       (IF (OR (NOT NOTEPHASE) (= NOTEPHASE ""))
-         (SETQ NOTEPHASE "<none>")
+      (notei
+       (if (or (not notephase) (= notephase ""))
+         (setq notephase "<none>")
        )
-       (IF (NOT SKIPPEDPHASES)
-         (SETQ SKIPPEDPHASES '(0 ""))
+       (if (not skippedphases)
+         (setq skippedphases '(0 ""))
        )
-       (SETQ
-         SKIPPEDPHASES
-          (LIST
-            (1+ (CAR SKIPPEDPHASES))
-            (IF (NOT
-                  (WCMATCH NOTEPHASE (CADR SKIPPEDPHASES))
+       (setq
+         skippedphases
+          (list
+            (1+ (car skippedphases))
+            (if (not
+                  (wcmatch notephase (cadr skippedphases))
                 )
-              (COND
-                ((= "" (CADR SKIPPEDPHASES)) NOTEPHASE)
-                (T
-                 (STRCAT
-                   (CADR SKIPPEDPHASES)
+              (cond
+                ((= "" (cadr skippedphases)) notephase)
+                (t
+                 (strcat
+                   (cadr skippedphases)
                    ","
-                   NOTEPHASE
+                   notephase
                  )
                 )
               )
-              (CADR SKIPPEDPHASES)
+              (cadr skippedphases)
             )
           )
        )
@@ -553,102 +553,102 @@
   )
   ;;After searching bubbles for presence and quantities,
   ;;get quantities from qty table if no counting instructions
-  (SETQ
-    BLKSS
-     (SSGET "X" (LIST (CONS 2 "NOTEQTY")))
-    I -1
+  (setq
+    blkss
+     (ssget "X" (list (cons 2 "NOTEQTY")))
+    i -1
   )
-  (WHILE (AND BLKSS (SETQ BLKI (SSNAME BLKSS (SETQ I (1+ I)))))
-    (COND
+  (while (and blkss (setq blki (ssname blkss (setq i (1+ i)))))
+    (cond
       (;;If only doing ctab and table block is not in current tab, do nothing
-       (AND
-         CTABONLY
-         (/= (CDR (ASSOC 410 (ENTGET BLKI))) (GETVAR "CTAB"))
+       (and
+         ctabonly
+         (/= (cdr (assoc 410 (entget blki))) (getvar "CTAB"))
        )
       )
-      (T
-       (SETQ EN BLKI)
+      (t
+       (setq en blki)
        ;;Get the table quantities from each tblqty attribute,
        ;;and put them into the NOTEQTY variable
        ;;as '(("phase" "qty")...)
-       (SETQ NOTEQTY NIL)
-       (WHILE
-         (AND
-           (SETQ EN (ENTNEXT EN))
-           (= "ATTRIB" (SETQ ET (CDR (ASSOC 0 (SETQ EL (ENTGET EN))))))
+       (setq noteqty nil)
+       (while
+         (and
+           (setq en (entnext en))
+           (= "ATTRIB" (setq et (cdr (assoc 0 (setq el (entget en))))))
          )
-          (SETQ
-            AT (CDR (ASSOC 2 EL))
-            AV (CDR (ASSOC 1 EL))
+          (setq
+            at (cdr (assoc 2 el))
+            av (cdr (assoc 1 el))
           )
-          (COND
-            ((= AT "TBLTYPE") (SETQ NOTETYPE AV))
-            ((= AT "TBLNUM") (SETQ NOTENUM AV))
-            ((WCMATCH AT "TBLQTY*")
-             (SETQ NOTEQTY (CONS (LIST (SUBSTR AT 7 1) AV) NOTEQTY))
+          (cond
+            ((= at "TBLTYPE") (setq notetype av))
+            ((= at "TBLNUM") (setq notenum av))
+            ((wcmatch at "TBLQTY*")
+             (setq noteqty (cons (list (substr at 7 1) av) noteqty))
             )
           )
        )
-       (SETQ
-         NOTEI
-          (ASSOC NOTENUM (CDR (ASSOC NOTETYPE (CADR NOTELIST))))
+       (setq
+         notei
+          (assoc notenum (cdr (assoc notetype (cadr notelist))))
        )
        ;;If there aren't any counting instructions given for note, check if it was found
        ;;then put its quantities for all phases in NOTELIST.
-       (COND
-         ((AND
+       (cond
+         ((and
             ;;No counting instructions for note
-            (= "" (CADDR NOTEI))
+            (= "" (caddr notei))
             ;;and note found at least once in allowed phases
-            (PROGN
-              (FOREACH
-                 PHASE ALIASLIST
-                (IF (NTH (+ 2 (CADR PHASE)) NOTEI)
-                  (SETQ NOTEFND T)
+            (progn
+              (foreach
+                 phase aliaslist
+                (if (nth (+ 2 (cadr phase)) notei)
+                  (setq notefnd t)
                 )
               )
-              NOTEFND
+              notefnd
             )
           )
           ;;Reset the found flag
-          (SETQ NOTEFND NIL)
+          (setq notefnd nil)
           ;;Insert the quantities from NOTEQTY into NOTELIST
-          (SETQ
-            NOTELIST
-             (LIST
-               (CAR NOTELIST)           ;Phaselist
-               (SUBST
-                 (SUBST
-                   (CONS
-                     (CAR NOTEI)
-                     (CONS
-                       (CADR NOTEI)
-                       (CONS
-                         (CADDR NOTEI)
+          (setq
+            notelist
+             (list
+               (car notelist)           ;Phaselist
+               (subst
+                 (subst
+                   (cons
+                     (car notei)
+                     (cons
+                       (cadr notei)
+                       (cons
+                         (caddr notei)
                          ;;Get the table quantities stored in NOTEQTY
-                         (MAPCAR
-                           '(LAMBDA (X)
-                              (COND
-                                ((CADR
-                                   (ASSOC (CADDR X) NOTEQTY)
+                         (mapcar
+                           '(lambda (x)
+                              (cond
+                                ((cadr
+                                   (assoc (caddr x) noteqty)
                                  )
                                 )
                                 (0.0)
                               )
                             )
-                           (CAR NOTELIST)
+                           (car notelist)
                          )
                        )
                      )
                    )
-                   (ASSOC
-                     NOTENUM
-                     (CDR (ASSOC NOTETYPE (CADR NOTELIST)))
+                   (assoc
+                     notenum
+                     (cdr (assoc notetype (cadr notelist)))
                    )
-                   (ASSOC NOTETYPE (CADR NOTELIST))
+                   (assoc notetype (cadr notelist))
                  )
-                 (ASSOC NOTETYPE (CADR NOTELIST))
-                 (CADR NOTELIST)
+                 (assoc notetype (cadr notelist))
+                 (cadr notelist)
                )
              )
           )
@@ -658,68 +658,68 @@
     )
   )
   ;;Now that NOTELIST is filled, alert user if any phases in bubbles were skipped.
-  (IF SKIPPEDPHASES
-    (ALERT
-      (PRINC
-        (STRCAT
+  (if skippedphases
+    (alert
+      (princ
+        (strcat
           "\nThese unexpected phase names: \""
-          (CADR SKIPPEDPHASES)
+          (cadr skippedphases)
           "\" were found and skipped.\n"
-          (ITOA (CAR SKIPPEDPHASES))
+          (itoa (car skippedphases))
           " blocks in total were not counted.\n\nClick OK to continue."
         )
       )
     )
   )
   ;;Save notelist to file
-  (SETQ
-    NFNAME
-     (STRCAT
-       DN
-       (IF CTABONLY
-         (STRCAT "-" (GETVAR "CTAB"))
+  (setq
+    nfname
+     (strcat
+       dn
+       (if ctabonly
+         (strcat "-" (getvar "CTAB"))
          ""
        )
        ".not"
      )
-    F2 (OPEN NFNAME "w")
+    f2 (open nfname "w")
   )
   ;;Write NOTELIST to the work file
-  (PRINC "(" F2)
-  (PRIN1 (CAR NOTELIST) F2)
-  (PRINC "(" F2)
-  (FOREACH
-     NOTTYP (CADR NOTELIST)
-    (PRINC "(" F2)
-    (PRIN1 (CAR NOTTYP) F2)
-    (FOREACH
-       NOTNUM (CDR NOTTYP)
-      (PRINC "(" F2)
-      (PRIN1 (CAR NOTNUM) F2)
-      (PRIN1 (CADR NOTNUM) F2)
-      (PRIN1 (CADDR NOTNUM) F2)
-      (FOREACH
-         NOTEQTY (CDDDR NOTNUM)
-        (COND
-          ((= (TYPE NOTEQTY) 'STR) (PRIN1 NOTEQTY F2))
-          (NOTEQTY (PRIN1 (RTOS NOTEQTY 2 8) F2))
-          ((PRINC "nil " F2))
+  (princ "(" f2)
+  (prin1 (car notelist) f2)
+  (princ "(" f2)
+  (foreach
+     nottyp (cadr notelist)
+    (princ "(" f2)
+    (prin1 (car nottyp) f2)
+    (foreach
+       notnum (cdr nottyp)
+      (princ "(" f2)
+      (prin1 (car notnum) f2)
+      (prin1 (cadr notnum) f2)
+      (prin1 (caddr notnum) f2)
+      (foreach
+         noteqty (cdddr notnum)
+        (cond
+          ((= (type noteqty) 'STR) (prin1 noteqty f2))
+          (noteqty (prin1 (rtos noteqty 2 8) f2))
+          ((princ "nil " f2))
         )
-        F2
+        f2
       )
-      (PRINC ")" F2)                    ;End of notnum
+      (princ ")" f2)                    ;End of notnum
     )
-    (PRINC ")" F2)                      ;End of nottyp
+    (princ ")" f2)                      ;End of nottyp
   )
-  (PRINC "))" F2)                       ;End of (cadr noteqty) and noteqty
-  (SETQ
-    F2 (CLOSE F2)
+  (princ "))" f2)                       ;End of (cadr noteqty) and noteqty
+  (setq
+    f2 (close f2)
        ;;Close notes file for this drawing (program work file)
   )
-  (PRINC
-    (STRCAT
-      "\nUsed Project Notes at " PROJNOTES
-      "\nSaved notes and quantities in " NFNAME "."
+  (princ
+    (strcat
+      "\nUsed Project Notes at " projnotes
+      "\nSaved notes and quantities in " nfname "."
      )
   )
 )
@@ -727,127 +727,127 @@
 ;;Uses the qty block.
 ;;Puts table at qtypt.
 ;; TGH to use this for TALLY, maybe I just need to read NOTELIST as an argument instead of from a file in this function.
-(DEFUN HCNM_KEY_TABLE_MAKE (NFSOURCE QTYPT QTYSET DN TXTHT / CTABONLY ICOL
-                        IPHASE COLUMN_HEIGHT NOTE_FIRST_LINE_P
-                        COLUMN_HEIGHT_PENDING NFNAME NOTDSC NOTELIST
-                        NOTESMAXHEIGHT NOTETITLES NOTNUM NOTQTY NOTTYP
-                        NOTUNT NUMFND PHASELIST PROMPTEACHCOL QTY QTYPT1
-                        RDLIN TXTHTTEMP TYPFND USRVAR
+(defun hcnm_key_table_make (nfsource qtypt qtyset dn txtht / ctabonly icol
+                        iphase column_height note_first_line_p
+                        column_height_pending nfname notdsc notelist
+                        notesmaxheight notetitles notnum notqty nottyp
+                        notunt numfnd phaselist prompteachcol qty qtypt1
+                        rdlin txthttemp typfnd usrvar
                        )
-  (SETQ PHASELIST (HCNM_GETPHASELISTFROMTBLQTY))
-  (SETVAR "osmode" 0)
-  (SETVAR "attreq" 1)
-  (INITGET "Prompt")
-  (SETQ
-    NOTESMAXHEIGHT
-     (HAWS-GETDISTX
-       QTYPT
+  (setq phaselist (hcnm_getphaselistfromtblqty))
+  (setvar "osmode" 0)
+  (setvar "attreq" 1)
+  (initget "Prompt")
+  (setq
+    notesmaxheight
+     (haws-getdistx
+       qtypt
        "Maximum height of each notes column"
                                         ; or [Prompt for each column]"
-       NOTESMAXHEIGHT
+       notesmaxheight
        9999.0
      )
   )
-  (COND
-    ((= NOTESMAXHEIGHT "Prompt")
-     (SETQ
-       PROMPTEACHCOL T
-       NOTESMAXHEIGHT 9999.0
+  (cond
+    ((= notesmaxheight "Prompt")
+     (setq
+       prompteachcol t
+       notesmaxheight 9999.0
      )
-     (ALERT
+     (alert
        "The option to prompt for each column is not yet operational."
      )
     )
   )
-  (SETQ CTABONLY (= (C:HCNM-CONFIG-GETVAR "DoCurrentTabOnly") "1"))
-  (IF (= NFSOURCE "E")
-    (SETQ
-      NFNAME
-       (COND
-         (CTABONLY
-          (FINDFILE (STRCAT DN "-" (GETVAR "CTAB") ".not"))
+  (setq ctabonly (= (c:hcnm-config-getvar "DoCurrentTabOnly") "1"))
+  (if (= nfsource "E")
+    (setq
+      nfname
+       (cond
+         (ctabonly
+          (findfile (strcat dn "-" (getvar "CTAB") ".not"))
          )
-         (T (FINDFILE (STRCAT DN ".not")))
+         (t (findfile (strcat dn ".not")))
        )
     )
-    (SETQ NFNAME (GETFILED "Select Drawing and Layout" "" "NOT" 0))
+    (setq nfname (getfiled "Select Drawing and Layout" "" "NOT" 0))
   )
-  (SETQ
-    F1 (OPEN NFNAME "r")
-    NOTELIST
-     (READ (READ-LINE F1))
-    F1 (CLOSE F1)
+  (setq
+    f1 (open nfname "r")
+    notelist
+     (read (read-line f1))
+    f1 (close f1)
   )
   ;;Check that we got a valid NOTELIST from file.
-  (IF (/= (TYPE NOTELIST) 'LIST)
-    (ALERT
-      (STRCAT
+  (if (/= (type notelist) 'LIST)
+    (alert
+      (strcat
         "\nThe file"
-        NFNAME
+        nfname
         "appears to be out of date.\nIt doesn't have valid information to make a notes table.\n\nPlease search and save notes again."
       )
     )
   )
   ;;All prompts done.  Let's make table!
-  (HCNM_PROJINIT)                       ;Initialize project after user pauses
-  (HCNM_READCF (HCNM_PROJNOTES))
-  (SETQ
-    LINSPC
-     (ATOF (C:HCNM-CONFIG-GETVAR "LineSpacing"))
-    NOTSPC
-     (ATOF (C:HCNM-CONFIG-GETVAR "NoteSpacing"))
-    TBLWID
-     (ATOF (C:HCNM-CONFIG-GETVAR "TableWidth"))
-    PHASEWID
-     (ATOF (C:HCNM-CONFIG-GETVAR "PhaseWidthAdd"))
-    ICOL 1
-    COLUMN_HEIGHT 0
-    IPHASE 1
-    QTYPT1 QTYPT
+  (hcnm_projinit)                       ;Initialize project after user pauses
+  (hcnm_readcf (hcnm_projnotes))
+  (setq
+    linspc
+     (atof (c:hcnm-config-getvar "LineSpacing"))
+    notspc
+     (atof (c:hcnm-config-getvar "NoteSpacing"))
+    tblwid
+     (atof (c:hcnm-config-getvar "TableWidth"))
+    phasewid
+     (atof (c:hcnm-config-getvar "PhaseWidthAdd"))
+    icol 1
+    column_height 0
+    iphase 1
+    qtypt1 qtypt
   )
   ;;Check that the right NOTEQTY block is inserted.
-  (IF (OR (/= (LENGTH PHASELIST) (LENGTH (CAR NOTELIST)))
+  (if (or (/= (length phaselist) (length (car notelist)))
                                         ;Wrong number of current phases
-          (AND                          ;or counted 1 phase, but current block has no phasing
-            (= 1 (LENGTH (CAR NOTELIST)))
-            (= 1 (ATOF (CAAAR NOTELIST)))
-            (/= 1 (ATOF (CAAR PHASELIST)))
+          (and                          ;or counted 1 phase, but current block has no phasing
+            (= 1 (length (car notelist)))
+            (= 1 (atof (caaar notelist)))
+            (/= 1 (atof (caar phaselist)))
           )
-          (AND                          ;or counted no phasing, but current block has it
-            (= 1 (LENGTH (CAR NOTELIST)))
-            (/= 1 (ATOF (CAAAR NOTELIST)))
-            (= 1 (ATOF (CAAR PHASELIST)))
+          (and                          ;or counted no phasing, but current block has it
+            (= 1 (length (car notelist)))
+            (/= 1 (atof (caaar notelist)))
+            (= 1 (atof (caar phaselist)))
           )
       )
-    (PROGN
-      (VL-CMDF
+    (progn
+      (vl-cmdf
         "._insert"
-        (STRCAT
+        (strcat
           "noteqty=noteqty"
-          (CAR (NTH NOTELIST (1- (LENGTH NOTELIST))))
+          (car (nth notelist (1- (length notelist))))
         )
       )
-      (VL-CMDF)
+      (vl-cmdf)
     )
   )
-  (VL-CMDF "._undo" "_group")
-  (IF QTYSET
-    (VL-CMDF "._erase" QTYSET "")
+  (vl-cmdf "._undo" "_group")
+  (if qtyset
+    (vl-cmdf "._erase" qtyset "")
   )
-  (FOREACH
-     ENTRY *HCNM_CNMPROJECTNOTES*
-    (COND
+  (foreach
+     entry *hcnm_cnmprojectnotes*
+    (cond
       ;;If it's a variable config, set it.
-      ((= 1 (CAR ENTRY))
-       (SETQ USRVAR (CADR ENTRY))
-       (COND
-         ((AND (= "TXTHT" USRVAR) (SETQ USRVAR (CADDR ENTRY)))
-          (SETQ
-            TXTHT
-             (* (HAWS-DWGSCALE)
-                (COND
-                  ((DISTOF USRVAR))
-                  ((GETVAR "dimtxt"))
+      ((= 1 (car entry))
+       (setq usrvar (cadr entry))
+       (cond
+         ((and (= "TXTHT" usrvar) (setq usrvar (caddr entry)))
+          (setq
+            txtht
+             (* (haws-dwgscale)
+                (cond
+                  ((distof usrvar))
+                  ((getvar "dimtxt"))
                 )
              )
           )
@@ -859,20 +859,20 @@
       ;;and added a zero to front of NOTETITLES, clear them first.
       ;;Note: Titles are meant to serve for any notes found until the next titles
       ;;If you want to use titles by shape, you can, but CNM doesn't know.
-      ((= 2 (CAR ENTRY))
-       (SETQ
-         NOTETITLES
-          (CONS
-            (LIST TXTHT (CADDR ENTRY))
+      ((= 2 (car entry))
+       (setq
+         notetitles
+          (cons
+            (list txtht (caddr entry))
             ;; If clear titles flag (a note came between this title and the last),
             ;; start titles fresh.
-            (IF (= 0 (CAR NOTETITLES))
-              NIL
-              NOTETITLES
+            (if (= 0 (car notetitles))
+              nil
+              notetitles
             )
           )
-         NOTTYP
-          (CADR ENTRY)
+         nottyp
+          (cadr entry)
        )
       )
       ;;If it's a note number,
@@ -885,89 +885,89 @@
       ;; NOTSPC is the spacing above each note or group of titles.
       ;; (- NOTSPC LINSPC) is the additional space above a note or group of titles.
       ;; Insertion point is vertically (y coordinate) at the middle of each line.
-      ((AND
-         (= 3 (CAR ENTRY))
-         (IF (AND NOTETITLES (/= 0 (CAR NOTETITLES)))
-           (SETQ NOTETITLES (CONS 0 NOTETITLES))
-           T
+      ((and
+         (= 3 (car entry))
+         (if (and notetitles (/= 0 (car notetitles)))
+           (setq notetitles (cons 0 notetitles))
+           t
          )
-         (SETQ
-           NOTNUM
-            (ASSOC
-              (CADDR ENTRY)
-              (CDR
-                (ASSOC (SETQ NOTTYP (CADR ENTRY)) (CADR NOTELIST))
+         (setq
+           notnum
+            (assoc
+              (caddr entry)
+              (cdr
+                (assoc (setq nottyp (cadr entry)) (cadr notelist))
               )
             )
          )
-         (PROGN
-           (SETQ NUMFND NIL)
-           (FOREACH
-              PHASE (CDDDR NOTNUM)
-             (IF PHASE
-               (SETQ NUMFND T)
+         (progn
+           (setq numfnd nil)
+           (foreach
+              phase (cdddr notnum)
+             (if phase
+               (setq numfnd t)
              )
            )
-           NUMFND
+           numfnd
          )
        )
-       (SETQ
-         COLUMN_HEIGHT_PENDING 0
-         NOTUNT
-          (CADDDR ENTRY)
-         NOTQTY
+       (setq
+         column_height_pending 0
+         notunt
+          (cadddr entry)
+         notqty
           ;;Convert quantities to strings, preserving input precision for all quantities
           ;;Trim extra zeros from quantities
-          (MAPCAR
-            '(LAMBDA (QTY)
-               (WHILE (WCMATCH QTY "*.*0,*.")
-                 (SETQ QTY (SUBSTR QTY 1 (1- (STRLEN QTY))))
+          (mapcar
+            '(lambda (qty)
+               (while (wcmatch qty "*.*0,*.")
+                 (setq qty (substr qty 1 (1- (strlen qty))))
                )
-               QTY
+               qty
              )
             ;;Turn quantities into strings
-            (MAPCAR
-              '(LAMBDA (QTY)
-                 (COND
-                   ((= (TYPE QTY) 'STR) QTY)
-                   ((= (TYPE QTY) 'REAL) (RTOS QTY 2 8))
-                   (T "")
+            (mapcar
+              '(lambda (qty)
+                 (cond
+                   ((= (type qty) 'STR) qty)
+                   ((= (type qty) 'REAL) (rtos qty 2 8))
+                   (t "")
                  )
                )
-              (CDDDR NOTNUM)
+              (cdddr notnum)
             )
           )
-         NOTETITLES
-          (CDR NOTETITLES)              ;If note was found, unflag and write titles.
+         notetitles
+          (cdr notetitles)              ;If note was found, unflag and write titles.
        )
        ;; Calculate height of titles plus a paragraph space
-       (COND
-         (NOTETITLES
-          (SETQ
-            TXTHTTEMP TXTHT
-            I_TITLE 0
+       (cond
+         (notetitles
+          (setq
+            txthttemp txtht
+            i_title 0
           )
-          (FOREACH
-             NOTETITLE (REVERSE NOTETITLES)
-            (SETQ TXTHT (CAR NOTETITLE))
-            (COND
-              ((= I_TITLE 0)
-               (COND
+          (foreach
+             notetitle (reverse notetitles)
+            (setq txtht (car notetitle))
+            (cond
+              ((= i_title 0)
+               (cond
                  ;; At top, rewind before first title
-                 ((= COLUMN_HEIGHT 0)
-                  (SETQ
-                    COLUMN_HEIGHT_PENDING
-                     (+ COLUMN_HEIGHT_PENDING
-                        (* -0.5 TXTHT LINSPC)
+                 ((= column_height 0)
+                  (setq
+                    column_height_pending
+                     (+ column_height_pending
+                        (* -0.5 txtht linspc)
                      )
                   )
                  )
                  ;; Else add a paragraph space before first title
-                 (T
-                  (SETQ
-                    COLUMN_HEIGHT_PENDING
-                     (+ COLUMN_HEIGHT_PENDING
-                        (* TXTHT (- NOTSPC LINSPC))
+                 (t
+                  (setq
+                    column_height_pending
+                     (+ column_height_pending
+                        (* txtht (- notspc linspc))
                      )
                   )
                  )
@@ -975,150 +975,150 @@
               )
             )
             ;; Space for each title
-            (SETQ
-              COLUMN_HEIGHT_PENDING
-               (+ COLUMN_HEIGHT_PENDING
-                  (* TXTHT LINSPC)
+            (setq
+              column_height_pending
+               (+ column_height_pending
+                  (* txtht linspc)
                )
-              I_TITLE
-               (1+ I_TITLE)
+              i_title
+               (1+ i_title)
             )
           )
-          (SETQ TXTHT TXTHTTEMP)
+          (setq txtht txthttemp)
          )
        )
        ;; Calculate height of note
-       (COND
+       (cond
          ;; At top, rewind before note
-         ((AND (NOT NOTETITLES) (= COLUMN_HEIGHT 0))
-          (SETQ
-            COLUMN_HEIGHT_PENDING
-             (+ COLUMN_HEIGHT_PENDING
-                (* -0.5 TXTHT LINSPC)
+         ((and (not notetitles) (= column_height 0))
+          (setq
+            column_height_pending
+             (+ column_height_pending
+                (* -0.5 txtht linspc)
              )
           )
          )
          ;; Else add a paragraph space before note
-         (T
-          (SETQ
-            COLUMN_HEIGHT_PENDING
-             (+ COLUMN_HEIGHT_PENDING
-                (* TXTHT (- NOTSPC LINSPC))
+         (t
+          (setq
+            column_height_pending
+             (+ column_height_pending
+                (* txtht (- notspc linspc))
              )
           )
          )
        )
-       (SETQ
-         COLUMN_HEIGHT_PENDING
+       (setq
+         column_height_pending
           ;; Add note height
-          (+ COLUMN_HEIGHT_PENDING
-             (* (CADR NOTNUM) (* TXTHT LINSPC))
+          (+ column_height_pending
+             (* (cadr notnum) (* txtht linspc))
           )
        )
        ;; Add titles and note
        ;; If titles _and note_ won't fit and column isn't empty, advance to new column
-       (COND
-         ((AND
-            (> (+ COLUMN_HEIGHT_PENDING COLUMN_HEIGHT) NOTESMAXHEIGHT)
+       (cond
+         ((and
+            (> (+ column_height_pending column_height) notesmaxheight)
                                         ; Won't fit
-            (/= COLUMN_HEIGHT 0)        ; Not first note in column
+            (/= column_height 0)        ; Not first note in column
           )
-          (HCNM_KEY_TABLE_ADVANCE_COLUMN)
+          (hcnm_key_table_advance_column)
          )
        )
        ;; Add any titles
-       (COND
-         (NOTETITLES
-          (SETQ
-            TXTHTTEMP TXTHT
-            I_TITLE 0
+       (cond
+         (notetitles
+          (setq
+            txthttemp txtht
+            i_title 0
           )
-          (FOREACH
-             NOTETITLE (REVERSE NOTETITLES)
-            (SETQ TXTHT (CAR NOTETITLE))
+          (foreach
+             notetitle (reverse notetitles)
+            (setq txtht (car notetitle))
             ;; If not first note, space appropriately
-            (COND
-              ((/= COLUMN_HEIGHT 0)     ; Not first note in column
-               (COND
+            (cond
+              ((/= column_height 0)     ; Not first note in column
+               (cond
                  ;; Add a paragraph space above first title based on its height
-                 ((= I_TITLE 0)
-                  (HCNM_KEY_TABLE_ADVANCE_DOWN (* 0.5 (- NOTSPC LINSPC)))
+                 ((= i_title 0)
+                  (hcnm_key_table_advance_down (* 0.5 (- notspc linspc)))
                  )
                )
-               (HCNM_KEY_TABLE_ADVANCE_DOWN (* 0.5 LINSPC))
+               (hcnm_key_table_advance_down (* 0.5 linspc))
               )
             )
-            (COND
-              ((= (C:HCNM-CONFIG-GETVAR "ShowKeyTableTitleShapes") "1")
-               (HCNM_KEY_TABLE_INSERT_SHAPE)
+            (cond
+              ((= (c:hcnm-config-getvar "ShowKeyTableTitleShapes") "1")
+               (hcnm_key_table_insert_shape)
               )
             )
-            (SETQ NOTDSC (CADR NOTETITLE))
-            (HCNM_KEY_TABLE_INSERT_TEXT)
-            (HCNM_KEY_TABLE_ADVANCE_DOWN (* 0.5 LINSPC))
+            (setq notdsc (cadr notetitle))
+            (hcnm_key_table_insert_text)
+            (hcnm_key_table_advance_down (* 0.5 linspc))
           )
-          (HCNM_KEY_TABLE_ADVANCE_DOWN (* 0.5 (- NOTSPC LINSPC)))
-          (SETQ TXTHT TXTHTTEMP)
+          (hcnm_key_table_advance_down (* 0.5 (- notspc linspc)))
+          (setq txtht txthttemp)
          )
        )
        ;; If note won't fit in new column with titles, advance column again.
-       (COND
+       (cond
          (;; Titles were added
-          (/= COLUMN_HEIGHT 0)
-          (COND
+          (/= column_height 0)
+          (cond
             (;; Note won't fit after titles.
-             (> (+ COLUMN_HEIGHT_PENDING COLUMN_HEIGHT) NOTESMAXHEIGHT)
-             (HCNM_KEY_TABLE_ADVANCE_COLUMN)
+             (> (+ column_height_pending column_height) notesmaxheight)
+             (hcnm_key_table_advance_column)
             )
             (;; Note will fit after titles.
-             T
+             t
              ;; Paragraph spacing
-             (HCNM_KEY_TABLE_ADVANCE_DOWN (* 0.5 (- NOTSPC LINSPC)))
+             (hcnm_key_table_advance_down (* 0.5 (- notspc linspc)))
              ;; Down to middle of first note
-             (HCNM_KEY_TABLE_ADVANCE_DOWN (* 0.5 LINSPC))
+             (hcnm_key_table_advance_down (* 0.5 linspc))
             )
           )
          )
        )
        ;; Now add note
-       (SETQ NOTE_FIRST_LINE_P T)
-       (HCNM_KEY_TABLE_INSERT_SHAPE)
-       (HCNM_KEY_TABLE_ADVANCE_DOWN (* -0.5 LINSPC))
-       (FOREACH
-          NOTDSC (NTH 6 ENTRY)
-         (HCNM_KEY_TABLE_ADVANCE_DOWN (* 0.5 LINSPC))
-         (HCNM_KEY_TABLE_INSERT_TEXT)
-         (HCNM_KEY_TABLE_ADVANCE_DOWN (* 0.5 LINSPC))
-         (SETQ
-           NOTETITLES NIL
-           NOTE_FIRST_LINE_P NIL
+       (setq note_first_line_p t)
+       (hcnm_key_table_insert_shape)
+       (hcnm_key_table_advance_down (* -0.5 linspc))
+       (foreach
+          notdsc (nth 6 entry)
+         (hcnm_key_table_advance_down (* 0.5 linspc))
+         (hcnm_key_table_insert_text)
+         (hcnm_key_table_advance_down (* 0.5 linspc))
+         (setq
+           notetitles nil
+           note_first_line_p nil
          )
        )
-       (HCNM_KEY_TABLE_ADVANCE_DOWN (* 0.5 (- NOTSPC LINSPC)))
+       (hcnm_key_table_advance_down (* 0.5 (- notspc linspc)))
       )
     )
   )
   ;;Apply table display configs from ini.  If no configs (legacy), show both.
-  (MAPCAR
-    '(LAMBDA (LAYERKEY / LAYERSHOW LAYERLIST)
-       (SETQ LAYERSHOW (/= "0" (C:HCNM-CONFIG-GETVAR (CADR LAYERKEY))))
-       (COND
-         (LAYERSHOW (HAWS-MKLAYR (CAR LAYERKEY)))
-         (T
-          (SETQ
-            LAYERLIST
-             (TBLSEARCH
+  (mapcar
+    '(lambda (layerkey / layershow layerlist)
+       (setq layershow (/= "0" (c:hcnm-config-getvar (cadr layerkey))))
+       (cond
+         (layershow (haws-mklayr (car layerkey)))
+         (t
+          (setq
+            layerlist
+             (tblsearch
                "LAYER"
-               (CAR (HAWS-GETLAYR (CAR LAYERKEY)))
+               (car (haws-getlayr (car layerkey)))
              )
           )
           ;; If thawed and on, freeze
-          (IF (AND
-                (CDR (ASSOC 70 LAYERLIST))
-                (/= 1 (LOGAND 1 (CDR (ASSOC 70 LAYERLIST))))
-                (< 0 (CDR (ASSOC 62 LAYERLIST)))
+          (if (and
+                (cdr (assoc 70 layerlist))
+                (/= 1 (logand 1 (cdr (assoc 70 layerlist))))
+                (< 0 (cdr (assoc 62 layerlist)))
               )
-	            (VL-CMDF "._layer" "_f" (CDR (ASSOC 2 LAYERLIST)) "")
+	            (vl-cmdf "._layer" "_f" (cdr (assoc 2 layerlist)) "")
           )
          )
        )
@@ -1127,55 +1127,55 @@
       ("NOTESKEYQTYS" "ShowKeyTableQuantities")
      )
   )
-  (VL-CMDF "._undo" "_end")
+  (vl-cmdf "._undo" "_end")
 )
 
 
 
 
-(DEFUN HCNM_KEY_TABLE_ADVANCE_COLUMN ()
-  (SETQ
-    COLUMN_HEIGHT 0
-    ICOL
-     (1+ ICOL)
-    QTYPT
-     (POLAR
-       QTYPT1
+(defun hcnm_key_table_advance_column ()
+  (setq
+    column_height 0
+    icol
+     (1+ icol)
+    qtypt
+     (polar
+       qtypt1
        0
-       (* (1- ICOL)
-          (+ (* TXTHT TBLWID)
-             (* TXTHT PHASEWID (1- (LENGTH PHASELIST)))
+       (* (1- icol)
+          (+ (* txtht tblwid)
+             (* txtht phasewid (1- (length phaselist)))
           )
        )
      )
   )
 )
 
-(DEFUN HCNM_KEY_TABLE_ADVANCE_DOWN (SPACE / DOWN_HEIGHT)
-  (SETQ
-    DOWN_HEIGHT (* SPACE TXTHT)
-    QTYPT
-     (POLAR QTYPT (* PI -0.5) DOWN_HEIGHT)
-    COLUMN_HEIGHT
-     (+ COLUMN_HEIGHT DOWN_HEIGHT)
-    COLUMN_HEIGHT_PENDING
-     (- COLUMN_HEIGHT_PENDING DOWN_HEIGHT)
+(defun hcnm_key_table_advance_down (space / down_height)
+  (setq
+    down_height (* space txtht)
+    qtypt
+     (polar qtypt (* pi -0.5) down_height)
+    column_height
+     (+ column_height down_height)
+    column_height_pending
+     (- column_height_pending down_height)
   )
 )
 
-(DEFUN HCNM_KEY_TABLE_INSERT_SHAPE ()
-  (VL-CMDF
+(defun hcnm_key_table_insert_shape ()
+  (vl-cmdf
     "._insert"
-    (STRCAT "cnm" NOTTYP)
+    (strcat "cnm" nottyp)
     "_Scale"
-    TXTHT
+    txtht
     "_Rotate"
     "0"
-    QTYPT
+    qtypt
   )
 )
 
-(DEFUN HCNM_KEY_TABLE_INSERT_TEXT ()
+(defun hcnm_key_table_insert_text ()
 ;;;All this stuff is to make the attribute order insensitive.
 ;;;    (setvar "attreq" 0)
 ;;;       (VL-CMDF
@@ -1219,36 +1219,36 @@
 ;;;    )
 ;;;  )
 ;;;    )
-  (VL-CMDF
+  (vl-cmdf
     "._insert"
     "NOTEQTY"
     "_Scale"
-    TXTHT
+    txtht
     "_Rotate"
     "0"
-    QTYPT
-    (IF NOTE_FIRST_LINE_P
-      NOTTYP
+    qtypt
+    (if note_first_line_p
+      nottyp
       ""
     )
-    (IF NOTE_FIRST_LINE_P
-      (CAR NOTNUM)
+    (if note_first_line_p
+      (car notnum)
       ""
     )
-    NOTDSC
+    notdsc
   )
-  (FOREACH
-     X NOTQTY
-    (VL-CMDF
-      (IF NOTE_FIRST_LINE_P
-        X
+  (foreach
+     x notqty
+    (vl-cmdf
+      (if note_first_line_p
+        x
         ""
       )
     )
   )
-  (VL-CMDF
-    (IF NOTE_FIRST_LINE_P
-      NOTUNT
+  (vl-cmdf
+    (if note_first_line_p
+      notunt
       ""
     )
   )
@@ -1259,36 +1259,36 @@
 ;;Gets project info from CONSTNOT.TXT
 ;;Gets drawing info from bubbles or table.
 ;;Saves all in .NOT file for other two routines
-(DEFUN HCNM_KEY_TABLE_FROM_SEARCH (DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID /
-                           EL EN I NOTELIST QTYPT QTYSET TABLESPACE
+(defun hcnm_key_table_from_search (dn projnotes txtht linspc tblwid phasewid /
+                           el en i notelist qtypt qtyset tablespace
                           )
-  (SETQ
-    QTYSET
-     (SSGET "X" (LIST (CONS 8 (CAR (HAWS-MKLAYR "NOTESEXP")))))
+  (setq
+    qtyset
+     (ssget "X" (list (cons 8 (car (haws-mklayr "NOTESEXP")))))
   )
-  (COND
-    (QTYSET
-     (SETQ
-       I (IF (c:haws-icad-p)
+  (cond
+    (qtyset
+     (setq
+       i (if (c:haws-icad-p)
            1
-           (SSLENGTH QTYSET)
+           (sslength qtyset)
          )
      )
-     (WHILE (SETQ EN (SSNAME QTYSET (SETQ I (1- I))))
-       (SETQ EL (ENTGET EN))
-       (COND
-         ((OR (= (GETVAR "CTAB") (SETQ TABLESPACE (CDR (ASSOC 410 EL))))
-              (AND (= "Model" TABLESPACE) (< 1 (GETVAR "cvport")))
+     (while (setq en (ssname qtyset (setq i (1- i))))
+       (setq el (entget en))
+       (cond
+         ((or (= (getvar "CTAB") (setq tablespace (cdr (assoc 410 el))))
+              (and (= "Model" tablespace) (< 1 (getvar "cvport")))
               (c:haws-icad-p)             ;If we are in intellicad, which doesn't have the tab information in the entget data
           )
-          (IF (NOT QTYPT)
-            (SETQ
-              QTYPT
-               (TRANS
-                 (CDR
-                   (COND
-                     ((ASSOC 11 EL))
-                     ((ASSOC 10 EL))
+          (if (not qtypt)
+            (setq
+              qtypt
+               (trans
+                 (cdr
+                   (cond
+                     ((assoc 11 el))
+                     ((assoc 10 el))
                    )
                  )
                  0
@@ -1297,53 +1297,53 @@
             )
           )
          )
-         (T (SSDEL (CDR (ASSOC -1 EL)) QTYSET))
+         (t (ssdel (cdr (assoc -1 el)) qtyset))
        )
      )
     )
   )
-  (IF (NOT QTYPT)
-    (SETQ QTYPT (GETPOINT "\nStart point for key notes table: "))
+  (if (not qtypt)
+    (setq qtypt (getpoint "\nStart point for key notes table: "))
   )
-  (HCNM_KEY_TABLE_SEARCHANDSAVE DN PROJNOTES)
+  (hcnm_key_table_searchandsave dn projnotes)
   ;;Make a new notes table
-  (HCNM_KEY_TABLE_MAKE "E" QTYPT QTYSET DN TXTHT)
+  (hcnm_key_table_make "E" qtypt qtyset dn txtht)
 )
 ;#endregion
 ;#region Table from import
 ;;HCNM_IMPORT
 ;;In the NOTES strategy, this routine is second of three main routines.
 ;;Reads from .NOT file, created by HCNM_KEY_TABLE_FROM_SEARCH, everything necessary and creates a table. 
-(DEFUN HCNM_IMPORT (DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID / EL EN I QTYPT
-               QTYSET TABLESPACE
+(defun hcnm_import (dn projnotes txtht linspc tblwid phasewid / el en i qtypt
+               qtyset tablespace
               )
-  (SETQ
-    QTYSET
-     (SSGET "X" (LIST (CONS 8 (CAR (HAWS-MKLAYR "NOTESIMP")))))
+  (setq
+    qtyset
+     (ssget "X" (list (cons 8 (car (haws-mklayr "NOTESIMP")))))
   )
-  (COND
-    (QTYSET
-     (SETQ
-       I (IF (c:haws-icad-p)
+  (cond
+    (qtyset
+     (setq
+       i (if (c:haws-icad-p)
            1
-           (SSLENGTH QTYSET)
+           (sslength qtyset)
          )
      )
-     (WHILE (SETQ EN (SSNAME QTYSET (SETQ I (1- I))))
-       (SETQ EL (ENTGET EN))
-       (COND
-         ((OR (= (GETVAR "CTAB") (SETQ TABLESPACE (CDR (ASSOC 410 EL))))
-              (AND (= "Model" TABLESPACE) (< 1 (GETVAR "cvport")))
+     (while (setq en (ssname qtyset (setq i (1- i))))
+       (setq el (entget en))
+       (cond
+         ((or (= (getvar "CTAB") (setq tablespace (cdr (assoc 410 el))))
+              (and (= "Model" tablespace) (< 1 (getvar "cvport")))
               (c:haws-icad-p)             ;If we are in intellicad, which doesn't have the tab information in the entget data
           )
-          (IF (NOT QTYPT)
-            (SETQ
-              QTYPT
-               (TRANS
-                 (CDR
-                   (COND
-                     ((ASSOC 11 EL))
-                     ((ASSOC 10 EL))
+          (if (not qtypt)
+            (setq
+              qtypt
+               (trans
+                 (cdr
+                   (cond
+                     ((assoc 11 el))
+                     ((assoc 10 el))
                    )
                  )
                  0
@@ -1352,19 +1352,19 @@
             )
           )
          )
-         (T (SSDEL (CDR (ASSOC -1 EL)) QTYSET))
+         (t (ssdel (cdr (assoc -1 el)) qtyset))
        )
      )
     )
   )
-  (IF (NOT QTYPT)
-    (SETQ
-      QTYPT
-       (GETPOINT "\nStart point for imported key notes table: ")
+  (if (not qtypt)
+    (setq
+      qtypt
+       (getpoint "\nStart point for imported key notes table: ")
     )
   )
   ;;Make a new notes table after erasing qtyset
-  (HCNM_KEY_TABLE_MAKE "I" QTYPT QTYSET DN TXTHT)
+  (hcnm_key_table_make "I" qtypt qtyset dn txtht)
 )
 ;#endregion
 ;#region Tally
@@ -1383,36 +1383,36 @@
 ;;   for all notes, and using (cadr phaselisti) to know which position in qtylist to
 ;;   put the qtys.  Use "" for any unused phases on a sheet.
 ;;   '((shti (typj (notek qty1 qty2 qtyk))))
-(DEFUN HCNM_TALLY (DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID / ALLNOT
-                  ALL_SHEETS_QUANTITIES COL1X COLUMN DQWID EL
-                  FLSPEC I INPUT NDWID NOTDESC NOTETITLES NOTE_FIRST_LINE_P
-                  NOTNUM NOTPRICE NOTQTY NOTSPC NOTTYP NOTUNT NUMFND
-                  NUMLIST PGP_DEFINES_RUN PGP_FILENAME PGP_FILE_CONTENTS
-                  PGP_FILE_LINE PHASE PHASENUMI PHASES_DEFINITION PT1Z Q
-                  QQWID QTYPT1 QTYSET QUWID ROW1Y SHEET_FILENAME
-                  SHEET_FILENAMES SHEET_FILE_NAME SHEET_HEADINGS SHEET_LIST_FILENAME
-                  SHEET_LIST_LINE SHEET_QUANTITIES TABLESPACE TOTAL
-                  TXTHTTEMP USRVAR WRITELIST X Y Z
+(defun hcnm_tally (dn projnotes txtht linspc tblwid phasewid / allnot
+                  all_sheets_quantities col1x column dqwid el
+                  flspec i input ndwid notdesc notetitles note_first_line_p
+                  notnum notprice notqty notspc nottyp notunt numfnd
+                  numlist pgp_defines_run pgp_filename pgp_file_contents
+                  pgp_file_line phase phasenumi phases_definition pt1z q
+                  qqwid qtypt1 qtyset quwid row1y sheet_filename
+                  sheet_filenames sheet_file_name sheet_headings sheet_list_filename
+                  sheet_list_line sheet_quantities tablespace total
+                  txthttemp usrvar writelist x y z
                  )
 ;;;
 ;;;  Section 1.
 ;;;  Determine list of drawings to tally.
 ;;;
-  (COND
-    ((AND
-       (OR (SETQ SHEET_LIST_FILENAME (FINDFILE (STRCAT DN ".lst")))
-           (SETQ
-             SHEET_LIST_FILENAME
-              (FINDFILE (STRCAT (GETVAR "DWGPREFIX") "tally.lst"))
+  (cond
+    ((and
+       (or (setq sheet_list_filename (findfile (strcat dn ".lst")))
+           (setq
+             sheet_list_filename
+              (findfile (strcat (getvar "DWGPREFIX") "tally.lst"))
            )
        )
        (= "Yes"
-          (PROGN
-            (INITGET 1 "Yes No")
-            (GETKWORD
-              (STRCAT
+          (progn
+            (initget 1 "Yes No")
+            (getkword
+              (strcat
                 "\nKeep and use existing list file, \""
-                SHEET_LIST_FILENAME
+                sheet_list_filename
                 "\"? <Yes/No>: "
               )
             )
@@ -1420,9 +1420,9 @@
        )
      )
     )
-    (T
-     (PROMPT
-       (STRCAT
+    (t
+     (prompt
+       (strcat
          "\n\nHow will you specify drawings to tally?"
          "\nUse a text file you have prepared with a List of drawings, "
          "\n(CNM will automatically use tally.lst if present), "
@@ -1430,146 +1430,146 @@
          "\nor Select drawings one at a time from a dialogue box?"
         )
      )
-     (INITGET 1 "List Wildcards Select")
-     (SETQ
-       INPUT
-        (GETKWORD "\n[List file/Wildcards/Select one at a time]: ")
+     (initget 1 "List Wildcards Select")
+     (setq
+       input
+        (getkword "\n[List file/Wildcards/Select one at a time]: ")
      )
-     (COND
-       ((= INPUT "List")
-        (SETQ SHEET_LIST_FILENAME (GETFILED "Select a List File" DN "LST" 0))
+     (cond
+       ((= input "List")
+        (setq sheet_list_filename (getfiled "Select a List File" dn "LST" 0))
        )
-       ((= INPUT "Wildcards")
+       ((= input "Wildcards")
         ;;Add function to user's ACAD.PGP to shell and wait for attrib command to finish.
-        (SETQ
-          SHEET_LIST_FILENAME
-           (STRCAT DN ".lst")
-          PGP_FILENAME
-           (FINDFILE "acad.pgp")
-          F1 (OPEN PGP_FILENAME "r")
+        (setq
+          sheet_list_filename
+           (strcat dn ".lst")
+          pgp_filename
+           (findfile "acad.pgp")
+          f1 (open pgp_filename "r")
         )
-        (WHILE (SETQ PGP_FILE_LINE (READ-LINE F1))
-          (IF (= "RUN," (SUBSTR PGP_FILE_LINE 1 4))
-            (SETQ PGP_DEFINES_RUN T)
+        (while (setq pgp_file_line (read-line f1))
+          (if (= "RUN," (substr pgp_file_line 1 4))
+            (setq pgp_defines_run t)
           )
-          (IF (= "SH," (SUBSTR PGP_FILE_LINE 1 3))
-            (SETQ
-              PGP_FILE_CONTENTS
-               (CONS
+          (if (= "SH," (substr pgp_file_line 1 3))
+            (setq
+              pgp_file_contents
+               (cons
                  "RUN,       cmd /c,         0,*Batch file to run: ,"
-                 PGP_FILE_CONTENTS
+                 pgp_file_contents
                )
             )
           )
-          (SETQ PGP_FILE_CONTENTS (CONS PGP_FILE_LINE PGP_FILE_CONTENTS))
+          (setq pgp_file_contents (cons pgp_file_line pgp_file_contents))
         )
-        (SETQ F1 (CLOSE F1))
-        (IF (NOT PGP_DEFINES_RUN)
-          (PROGN
-            (SETQ
-              F1     (OPEN PGP_FILENAME "w")
-              PGP_FILE_CONTENTS (REVERSE PGP_FILE_CONTENTS)
+        (setq f1 (close f1))
+        (if (not pgp_defines_run)
+          (progn
+            (setq
+              f1     (open pgp_filename "w")
+              pgp_file_contents (reverse pgp_file_contents)
             )
-            (FOREACH PGP_FILE_LINE PGP_FILE_CONTENTS (WRITE-LINE PGP_FILE_LINE F1))
-            (SETQ F1 (CLOSE F1))
-            (SETVAR "re-init" 16)
+            (foreach pgp_file_line pgp_file_contents (write-line pgp_file_line f1))
+            (setq f1 (close f1))
+            (setvar "re-init" 16)
           )
         )
-        (WHILE (NOT COLUMN)
-          (SETQ
-            FLSPEC
-             (GETSTRING
-               T
+        (while (not column)
+          (setq
+            flspec
+             (getstring
+               t
                "\nFiles to tally using OS wildcards (eg. * or grad\\*): "
              )
           )
-          (VL-CMDF
+          (vl-cmdf
             "run"
-            (STRCAT "attrib \"" FLSPEC ".not\" > \"" SHEET_LIST_FILENAME "\"")
+            (strcat "attrib \"" flspec ".not\" > \"" sheet_list_filename "\"")
           )
-          (SETQ
-            F1 (OPEN SHEET_LIST_FILENAME "r")
-            SHEET_FILENAME
-             (READ-LINE F1)
-            COLUMN
-             (STRLEN SHEET_FILENAME)
+          (setq
+            f1 (open sheet_list_filename "r")
+            sheet_filename
+             (read-line f1)
+            column
+             (strlen sheet_filename)
           )
-          (COND
-            ((WCMATCH SHEET_FILENAME "* not found *")
-             (SETQ
-               COLUMN NIL
-               F1 (CLOSE F1)
+          (cond
+            ((wcmatch sheet_filename "* not found *")
+             (setq
+               column nil
+               f1 (close f1)
              )
-             (ALERT
-               (PRINC
-                 (STRCAT
+             (alert
+               (princ
+                 (strcat
                    "The operating system could not find\nany files found matching the wildcard:\n\n "
-                   FLSPEC
+                   flspec
                    ".not\n\nPlease try again."
                  )
                )
              )
             )
-            (T
-             (WHILE (NOT
-                      (AND
-                        (WCMATCH
-                          (STRCASE (SUBSTR SHEET_FILENAME COLUMN))
-                          (STRCASE (STRCAT FLSPEC "`.NOT"))
+            (t
+             (while (not
+                      (and
+                        (wcmatch
+                          (strcase (substr sheet_filename column))
+                          (strcase (strcat flspec "`.NOT"))
                         )
-                        (OR (= "\\" (SUBSTR SHEET_FILENAME (1- COLUMN) 1))
-                            (= "\\" (SUBSTR SHEET_FILENAME COLUMN 1))
-                            (= ":" (SUBSTR SHEET_FILENAME (1+ COLUMN) 1))
+                        (or (= "\\" (substr sheet_filename (1- column) 1))
+                            (= "\\" (substr sheet_filename column 1))
+                            (= ":" (substr sheet_filename (1+ column) 1))
                         )
                       )
                     )
-               (SETQ COLUMN (1- COLUMN))
+               (setq column (1- column))
              )
-             (SETQ
-               F1     (CLOSE F1)
-               F1     (OPEN SHEET_LIST_FILENAME "r")
-               SHEET_FILENAMES NIL
+             (setq
+               f1     (close f1)
+               f1     (open sheet_list_filename "r")
+               sheet_filenames nil
              )
-             (WHILE (SETQ SHEET_FILENAME (READ-LINE F1))
-               (SETQ
-                 SHEET_FILENAME
-                  (SUBSTR SHEET_FILENAME COLUMN)
-                 SHEET_FILENAMES
-                  (CONS
-                    (SUBSTR SHEET_FILENAME 1 (- (STRLEN SHEET_FILENAME) 4))
-                    SHEET_FILENAMES
+             (while (setq sheet_filename (read-line f1))
+               (setq
+                 sheet_filename
+                  (substr sheet_filename column)
+                 sheet_filenames
+                  (cons
+                    (substr sheet_filename 1 (- (strlen sheet_filename) 4))
+                    sheet_filenames
                   )
                )
              )
-             (SETQ
-               F1 (CLOSE F1)
-               F1 (OPEN SHEET_LIST_FILENAME "w")
+             (setq
+               f1 (close f1)
+               f1 (open sheet_list_filename "w")
              )
-             (SETQ SHEET_FILENAMES (REVERSE SHEET_FILENAMES))
-             (FOREACH SHEET_FILENAME SHEET_FILENAMES (WRITE-LINE SHEET_FILENAME F1))
-             (SETQ F1 (CLOSE F1))
+             (setq sheet_filenames (reverse sheet_filenames))
+             (foreach sheet_filename sheet_filenames (write-line sheet_filename f1))
+             (setq f1 (close f1))
             )
           )
         )
        )
-       ((= INPUT "Select")
-        (SETQ
-          SHEET_LIST_FILENAME
-           (STRCAT DN ".lst")
-          F1 (OPEN SHEET_LIST_FILENAME "w")
+       ((= input "Select")
+        (setq
+          sheet_list_filename
+           (strcat dn ".lst")
+          f1 (open sheet_list_filename "w")
         )
-        (WHILE (SETQ
-                 SHEET_FILENAME
-                  (GETFILED
+        (while (setq
+                 sheet_filename
+                  (getfiled
                     "File to tally (Cancel when Finished)"
                     ""
                     "NOT"
                     6
                   )
                )
-          (WRITE-LINE (SUBSTR SHEET_FILENAME 1 (- (STRLEN SHEET_FILENAME) 4)) F1)
+          (write-line (substr sheet_filename 1 (- (strlen sheet_filename) 4)) f1)
         )
-        (SETQ F1 (CLOSE F1))
+        (setq f1 (close f1))
        )
      ) ;_ end cond
     )
@@ -1578,44 +1578,44 @@
   ;;The reason we do this instead of just adding the
   ;;new phases as they come is to avoid sorting the list when we're done.
   ;;In other words, this list is nothing but a definition of the presentation order for phases.
-  (SETQ
-    PHASES_DEFINITION
-     '(("" 0 NIL)
-       ("1" 1 NIL)
-       ("2" 2 NIL)
-       ("3" 3 NIL)
-       ("4" 4 NIL)
-       ("5" 5 NIL)
-       ("6" 6 NIL)
-       ("7" 7 NIL)
-       ("8" 8 NIL)
-       ("9" 9 NIL)
-       ("A" 10 NIL)
-       ("B" 11 NIL)
-       ("C" 12 NIL)
-       ("D" 13 NIL)
-       ("E" 14 NIL)
-       ("F" 15 NIL)
-       ("G" 16 NIL)
-       ("H" 17 NIL)
-       ("I" 18 NIL)
-       ("J" 19 NIL)
-       ("K" 20 NIL)
-       ("L" 21 NIL)
-       ("M" 22 NIL)
-       ("N" 23 NIL)
-       ("O" 24 NIL)
-       ("P" 25 NIL)
-       ("Q" 26 NIL)
-       ("R" 27 NIL)
-       ("S" 28 NIL)
-       ("T" 29 NIL)
-       ("U" 30 NIL)
-       ("V" 31 NIL)
-       ("W" 32 NIL)
-       ("X" 33 NIL)
-       ("Y" 34 NIL)
-       ("Z" 35 NIL)
+  (setq
+    phases_definition
+     '(("" 0 nil)
+       ("1" 1 nil)
+       ("2" 2 nil)
+       ("3" 3 nil)
+       ("4" 4 nil)
+       ("5" 5 nil)
+       ("6" 6 nil)
+       ("7" 7 nil)
+       ("8" 8 nil)
+       ("9" 9 nil)
+       ("A" 10 nil)
+       ("B" 11 nil)
+       ("C" 12 nil)
+       ("D" 13 nil)
+       ("E" 14 nil)
+       ("F" 15 nil)
+       ("G" 16 nil)
+       ("H" 17 nil)
+       ("I" 18 nil)
+       ("J" 19 nil)
+       ("K" 20 nil)
+       ("L" 21 nil)
+       ("M" 22 nil)
+       ("N" 23 nil)
+       ("O" 24 nil)
+       ("P" 25 nil)
+       ("Q" 26 nil)
+       ("R" 27 nil)
+       ("S" 28 nil)
+       ("T" 29 nil)
+       ("U" 30 nil)
+       ("V" 31 nil)
+       ("W" 32 nil)
+       ("X" 33 nil)
+       ("Y" 34 nil)
+       ("Z" 35 nil)
       )
   )
 ;;;
@@ -1623,86 +1623,86 @@
 ;;;  Read all .NOT's into a master ALL_SHEETS_QUANTITIES
 ;;;  Add phases from all .NOTs to the list if not already there.  And if aliases in conflict, alert user.
 ;;;  
-  (SETQ F1 (OPEN SHEET_LIST_FILENAME "r"))
-  (PRINC "\n")
-  (WHILE (AND (SETQ SHEET_LIST_LINE (READ-LINE F1)) (/= "" SHEET_LIST_LINE))
+  (setq f1 (open sheet_list_filename "r"))
+  (princ "\n")
+  (while (and (setq sheet_list_line (read-line f1)) (/= "" sheet_list_line))
     ;;Read in this sheet's notelist '( ((alias number phase)) ((type1 (notenum txtlines countmethod qty1...))))
     ;;Alert user of possible incompatibility with old-style list.
-    (SETQ
-      SHEET_FILE_NAME
-       (COND
-         ((FINDFILE SHEET_LIST_LINE))
-         ((FINDFILE (STRCAT SHEET_LIST_LINE ".not")))
-         (T
-          (ALERT
-            (PRINC
-              (STRCAT
-                "The file \"" SHEET_LIST_LINE "\" listed in \"" SHEET_LIST_FILENAME
+    (setq
+      sheet_file_name
+       (cond
+         ((findfile sheet_list_line))
+         ((findfile (strcat sheet_list_line ".not")))
+         (t
+          (alert
+            (princ
+              (strcat
+                "The file \"" sheet_list_line "\" listed in \"" sheet_list_filename
                 "\" cannot be found.\nConstruction Notes Manager cannot continue."
                )
             )
           )
          )
        )
-      F2 (OPEN SHEET_FILE_NAME "r")
-      SHEET_QUANTITIES
-       (READ (READ-LINE F2))
-      ALL_SHEETS_QUANTITIES
-       (CONS (CONS SHEET_FILE_NAME SHEET_QUANTITIES) ALL_SHEETS_QUANTITIES)
+      f2 (open sheet_file_name "r")
+      sheet_quantities
+       (read (read-line f2))
+      all_sheets_quantities
+       (cons (cons sheet_file_name sheet_quantities) all_sheets_quantities)
     )
-    (IF (READ-LINE F2)
-      (ALERT
-        (PRINC
-          (STRCAT
+    (if (read-line f2)
+      (alert
+        (princ
+          (strcat
             "Error:  Sheet quantities file for "
-            SHEET_FILE_NAME
+            sheet_file_name
             " is out of date.\nPlease search and save quantities again."
           )
         )
       )
     )
-    (SETQ F2 (CLOSE F2))
+    (setq f2 (close f2))
     ;;Set all phases discovered.
     ;;In .NOT files, phases are ("alias" order "number"), but here they are ("number" order "alias")
-    (FOREACH
-       PHASE (CAR SHEET_QUANTITIES)
-      (COND
+    (foreach
+       phase (car sheet_quantities)
+      (cond
         ;;If its alias is not yet in PHASES_DEFINITION, add the phase.
         ;;The reason we substitute instead of just adding the
         ;;new phases as they come is to avoid sorting the list when we're done.
-        ((NOT (CADDR (ASSOC (CADDR PHASE) PHASES_DEFINITION)))
-         (SETQ
-           PHASES_DEFINITION
-            (SUBST
+        ((not (caddr (assoc (caddr phase) phases_definition)))
+         (setq
+           phases_definition
+            (subst
               ;;Substitute the alias for the nil.
-              (SUBST
-                (CAR PHASE)
-                NIL
-                (ASSOC (CADDR PHASE) PHASES_DEFINITION)
+              (subst
+                (car phase)
+                nil
+                (assoc (caddr phase) phases_definition)
               )
-              (ASSOC (CADDR PHASE) PHASES_DEFINITION)
-              PHASES_DEFINITION
+              (assoc (caddr phase) phases_definition)
+              phases_definition
             )
          )
         )
         ;;If alias in PHASES_DEFINITION isn't same as alias in this sheet, alert user.
-        ((/= (CADDR (ASSOC (CAR PHASE) PHASES_DEFINITION)) (CADDR PHASE))
-         (ALERT
-           (PRINC
-             (STRCAT
-               SHEET_QUANTITIES
+        ((/= (caddr (assoc (car phase) phases_definition)) (caddr phase))
+         (alert
+           (princ
+             (strcat
+               sheet_quantities
                " is trying to assign alias \""
-               (CADDR PHASE)
+               (caddr phase)
                "\" to phase \""
-               (CAR PHASE)
+               (car phase)
                "\", which already has alias \""
-               (CADDR (ASSOC (CAR PHASE) PHASES_DEFINITION))
+               (caddr (assoc (car phase) phases_definition))
                "\".\n\nGrouping alias \""
-               (CADDR PHASE)
+               (caddr phase)
                "\" on this sheet with phase \""
-               (CAR PHASE)
+               (car phase)
                "\", alias \""
-               (CADDR (ASSOC (CAR PHASE) PHASES_DEFINITION))
+               (caddr (assoc (car phase) phases_definition))
                "."
              )
            )
@@ -1711,129 +1711,129 @@
       )
     )
   )
-  (SETQ F1 (CLOSE F1))
+  (setq f1 (close f1))
   ;;Condense list to standard PHASES_DEFINITION format: '((phasej j aliasj)...)
   ;;and renumber for only sheets being tallied.
-  (SETQ I 0)
-  (FOREACH
-     PHASE PHASES_DEFINITION
-    (IF (CADDR PHASE)
-      (SETQ X (CONS (LIST (CAR PHASE) (SETQ I (1+ I)) (CADDR PHASE)) X))
+  (setq i 0)
+  (foreach
+     phase phases_definition
+    (if (caddr phase)
+      (setq x (cons (list (car phase) (setq i (1+ i)) (caddr phase)) x))
     )
   )
-  (SETQ PHASES_DEFINITION (REVERSE X))
+  (setq phases_definition (reverse x))
 ;;;
 ;;;  Section 3.
 ;;;  Write requested totals to drawing and sheet-by-sheet quantities to dwg.csv.
 ;;;
-  (INITGET "All Used")
-  (SETQ
-    ALLNOT
-     (= (GETKWORD
+  (initget "All Used")
+  (setq
+    allnot
+     (= (getkword
           "\nList which notes from CONSTNOT.TXT? All/Used: "
         )
         "All"
      )
-    QTYPT1
-     (COND
-       ((AND
-          (SETQ
-            QTYSET
-             (SSGET
+    qtypt1
+     (cond
+       ((and
+          (setq
+            qtyset
+             (ssget
                "X"
-               (LIST
-                 (CONS 8 (CAR (HAWS-MKLAYR "NOTESTAL")))
+               (list
+                 (cons 8 (car (haws-mklayr "NOTESTAL")))
                )
              )
           )
-          (SETQ
-            EL (ENTGET
-                 (SSNAME
-                   QTYSET
-                   (IF (c:haws-icad-p)
+          (setq
+            el (entget
+                 (ssname
+                   qtyset
+                   (if (c:haws-icad-p)
                      0
-                     (1- (SSLENGTH QTYSET))
+                     (1- (sslength qtyset))
                    )
                  )
                )
           )
-          (OR (= (GETVAR "CTAB")
-                 (SETQ TABLESPACE (CDR (ASSOC 410 EL)))
+          (or (= (getvar "CTAB")
+                 (setq tablespace (cdr (assoc 410 el)))
               )
-              (AND (< 1 (GETVAR "cvport")) (= TABLESPACE "Model"))
+              (and (< 1 (getvar "cvport")) (= tablespace "Model"))
               (c:haws-icad-p)
           )
         )
-        (TRANS
-          (CDR
-            (COND
-              ((ASSOC 11 EL))
-              ((ASSOC 10 EL))
+        (trans
+          (cdr
+            (cond
+              ((assoc 11 el))
+              ((assoc 10 el))
             )
           )
           0
           1
         )
        )
-       (T
-        (GETPOINT "\nStart point for quantity take-off table: ")
+       (t
+        (getpoint "\nStart point for quantity take-off table: ")
        )
      )
   )
-  (HCNM_PROJINIT)                       ;Initialize project after user pauses
-  (HCNM_READCF (HCNM_PROJNOTES))
-  (SETQ
-    LINSPC
-     (ATOF (c:hcnm-config-getvar "LineSpacing"))
-    NOTSPC
-     (ATOF (c:hcnm-config-getvar "NoteSpacing"))
-    TBLWID
-     (ATOF (c:hcnm-config-getvar "TableWidth"))
-    PHASEWID
-     (ATOF (c:hcnm-config-getvar "PhaseWidthAdd"))
-    COL1X
-     (CAR QTYPT1)
-    ROW1Y
-     (CADR QTYPT1)
-    PT1Z
-     (CADDR QTYPT1)
-    X COL1X
-    Y ROW1Y
-    Z PT1Z
+  (hcnm_projinit)                       ;Initialize project after user pauses
+  (hcnm_readcf (hcnm_projnotes))
+  (setq
+    linspc
+     (atof (c:hcnm-config-getvar "LineSpacing"))
+    notspc
+     (atof (c:hcnm-config-getvar "NoteSpacing"))
+    tblwid
+     (atof (c:hcnm-config-getvar "TableWidth"))
+    phasewid
+     (atof (c:hcnm-config-getvar "PhaseWidthAdd"))
+    col1x
+     (car qtypt1)
+    row1y
+     (cadr qtypt1)
+    pt1z
+     (caddr qtypt1)
+    x col1x
+    y row1y
+    z pt1z
     ;;width from middle of number to left point of description text
-    NDWID
-     (ATOF (c:hcnm-config-getvar "NumberToDescriptionWidth"))
+    ndwid
+     (atof (c:hcnm-config-getvar "NumberToDescriptionWidth"))
     ;;width from left point of description text to right point of quantity
-    DQWID
-     (ATOF (c:hcnm-config-getvar "DescriptionToQuantityWidth"))
+    dqwid
+     (atof (c:hcnm-config-getvar "DescriptionToQuantityWidth"))
     ;;width from right point of one quantity phase to right point of next quantity phase
-    QQWID
-     (ATOF (c:hcnm-config-getvar "QuantityToQuantityWidth"))
+    qqwid
+     (atof (c:hcnm-config-getvar "QuantityToQuantityWidth"))
     ;;width from right point of quantity to left point of unit
-    QUWID
-     (ATOF (c:hcnm-config-getvar "QuantityToUnitsWidth"))
+    quwid
+     (atof (c:hcnm-config-getvar "QuantityToUnitsWidth"))
   )
-  (SETVAR "osmode" 0)
+  (setvar "osmode" 0)
   ;;Write column headings to the file
-  (SETQ F2 (HAWS-FILE-OPEN (STRCAT DN ".csv") "w"))
-  (PRINC "TYPE,NO,ITEM,UNIT,PRICE," F2) ;; Price and cost
-  (SETQ SHEET_HEADINGS "")
-  (FOREACH
-     SHEET_QUANTITIES ALL_SHEETS_QUANTITIES
-    (FOREACH
-       PHASE PHASES_DEFINITION
-      (SETQ
-        SHEET_HEADINGS
-         (STRCAT
-           SHEET_HEADINGS
-           (HAWS-MKFLD
-             (STRCAT
-               (STRCASE (CAR SHEET_QUANTITIES))
-               (IF (= (CAR PHASE) "")
+  (setq f2 (haws-file-open (strcat dn ".csv") "w"))
+  (princ "TYPE,NO,ITEM,UNIT,PRICE," f2) ;; Price and cost
+  (setq sheet_headings "")
+  (foreach
+     sheet_quantities all_sheets_quantities
+    (foreach
+       phase phases_definition
+      (setq
+        sheet_headings
+         (strcat
+           sheet_headings
+           (haws-mkfld
+             (strcat
+               (strcase (car sheet_quantities))
+               (if (= (car phase) "")
                  " (SINGLE PHASE)"
                  " PHASE "
                )
-               (CADDR PHASE)
+               (caddr phase)
              )
              ","
            )
@@ -1841,47 +1841,47 @@
       )
     )
   )
-  (PRINC SHEET_HEADINGS F2)
-  (FOREACH
-     PHASE PHASES_DEFINITION
-    (PRINC
-      (STRCAT
+  (princ sheet_headings f2)
+  (foreach
+     phase phases_definition
+    (princ
+      (strcat
         "TOTAL"
-        (IF (= (CAR PHASE) "")
+        (if (= (car phase) "")
           " (SINGLE PHASE)"
           " PHASE "
         )
-        (CADDR PHASE)
+        (caddr phase)
         ",COST"
-         (IF (= (CAR PHASE) "")
+         (if (= (car phase) "")
           " (SINGLE PHASE)"
           " PHASE "
         )
-        (CADDR PHASE)
+        (caddr phase)
         ","
      )
-      F2
+      f2
     )
   )
-  (WRITE-LINE "" F2)
-  (IF QTYSET
-    (VL-CMDF "._erase" QTYSET "")
+  (write-line "" f2)
+  (if qtyset
+    (vl-cmdf "._erase" qtyset "")
   )
   ;;For each line in project file
-  (FOREACH
-     ENTRY *HCNM_CNMPROJECTNOTES*
-    (COND
+  (foreach
+     entry *hcnm_cnmprojectnotes*
+    (cond
       ;;If it's a config setting, set it.
-      ((= 1 (CAR ENTRY))
-       (SETQ USRVAR (CADR ENTRY))
-       (COND
-         ((AND (= "TXTHT" USRVAR) (SETQ USRVAR (CADDR ENTRY)))
-          (SETQ
-            TXTHT
-             (* (HAWS-DWGSCALE)
-                (COND
-                  ((DISTOF USRVAR))
-                  ((GETVAR "dimtxt"))
+      ((= 1 (car entry))
+       (setq usrvar (cadr entry))
+       (cond
+         ((and (= "TXTHT" usrvar) (setq usrvar (caddr entry)))
+          (setq
+            txtht
+             (* (haws-dwgscale)
+                (cond
+                  ((distof usrvar))
+                  ((getvar "dimtxt"))
                 )
              )
           )
@@ -1890,20 +1890,20 @@
       )
       ;;If its a title, save it for future use.
       ;;If a number intervened since last titles, clear them first.
-      ((= 2 (CAR ENTRY))
-       (SETQ
-         NOTETITLES
-          (CONS
-            (LIST TXTHT (CADDR ENTRY))
+      ((= 2 (car entry))
+       (setq
+         notetitles
+          (cons
+            (list txtht (caddr entry))
             ;; If clear titles flag (a note came between this title and the last)
             ;; or nottyp has changed, clear titles.
-            (IF (= 0 (CAR NOTETITLES))
-              NIL
-              NOTETITLES
+            (if (= 0 (car notetitles))
+              nil
+              notetitles
             )
           )
-         NOTTYP
-          (CADR ENTRY)
+         nottyp
+          (cadr entry)
        )
       )
       ;;If it's a note number,
@@ -1911,60 +1911,60 @@
       ;;If it is found in the qty lst,
       ;;get and add the quantities from qty list
       ;;and add the note with quantities to the table.
-      ((AND
-         (= 3 (CAR ENTRY))
-         (IF (AND NOTETITLES (/= 0 (CAR NOTETITLES)))
-           (SETQ NOTETITLES (CONS 0 NOTETITLES))
-           T
+      ((and
+         (= 3 (car entry))
+         (if (and notetitles (/= 0 (car notetitles)))
+           (setq notetitles (cons 0 notetitles))
+           t
          )
-         (SETQ
+         (setq
            ;; Price and cost
-           NOTPRICE
-            (NTH 5 ENTRY)
-           NOTTYP
-            (CADR ENTRY)
-           NOTNUM
-            (CADDR ENTRY)
+           notprice
+            (nth 5 entry)
+           nottyp
+            (cadr entry)
+           notnum
+            (caddr entry)
          )
-         (OR ALLNOT
-             (SETQ
-               NUMFND NIL
-               NUMFND
-                (FOREACH
-                   SHEET_QUANTITIES ALL_SHEETS_QUANTITIES
-                  (FOREACH
-                     PHASEI (CDDDR
-                              (ASSOC
-                                NOTNUM
-                                (CDR (ASSOC NOTTYP (CADDR SHEET_QUANTITIES)))
+         (or allnot
+             (setq
+               numfnd nil
+               numfnd
+                (foreach
+                   sheet_quantities all_sheets_quantities
+                  (foreach
+                     phasei (cdddr
+                              (assoc
+                                notnum
+                                (cdr (assoc nottyp (caddr sheet_quantities)))
                               )
                             )
-                    (IF PHASEI
-                      (SETQ NUMFND NOTNUM)
+                    (if phasei
+                      (setq numfnd notnum)
                     )
                   )
-                  NUMFND
+                  numfnd
                 )
              )
          )
        )
        ;;If note was found, unflag and write titles.
-       (COND
-         (NOTETITLES
-          (SETQ TXTHTTEMP TXTHT)
-          (FOREACH
-             NOTETITLE (REVERSE (CDR NOTETITLES))
-            (SETQ TXTHT (CAR NOTETITLE))
-            (SETQ X COL1X)
-            (IF (/= (CADR NOTETITLE) "")
-              (HAWS-MKTEXT "ML" (LIST X Y Z) TXTHT 0 (CADR NOTETITLE))
+       (cond
+         (notetitles
+          (setq txthttemp txtht)
+          (foreach
+             notetitle (reverse (cdr notetitles))
+            (setq txtht (car notetitle))
+            (setq x col1x)
+            (if (/= (cadr notetitle) "")
+              (haws-mktext "ML" (list x y z) txtht 0 (cadr notetitle))
             )
-            (SETQ Y (- Y (* TXTHT LINSPC)))
-            (WRITE-LINE (CADR NOTETITLE) F2)
+            (setq y (- y (* txtht linspc)))
+            (write-line (cadr notetitle) f2)
           )
-          (SETQ
-            Y     (- Y (* TXTHT (- NOTSPC LINSPC)))
-            TXTHT TXTHTTEMP
+          (setq
+            y     (- y (* txtht (- notspc linspc)))
+            txtht txthttemp
           )
          )
        )
@@ -1972,266 +1972,266 @@
        ;;Print unit to file before quantities (because lots of columns), but wait in drawing 'til after quantities.
        ;;
        ;;Insert shape block
-       (SETQ X COL1X)
-       (SETQ Y (- Y (/ (* TXTHT LINSPC) 2)))
-       (VL-CMDF
+       (setq x col1x)
+       (setq y (- y (/ (* txtht linspc) 2)))
+       (vl-cmdf
          "._insert"
-         (STRCAT "cnm" NOTTYP)
+         (strcat "cnm" nottyp)
          "_Scale"
-         TXTHT
+         txtht
          "_Rotate"
          "0"
-         (LIST X Y Z)
+         (list x y z)
        )
        ;;Make number text
-       (HAWS-MKTEXT "M" (LIST X Y Z) TXTHT 0 NOTNUM)
-       (SETQ
-         NOTETITLES NIL
-         NOTUNT
-          (CADDDR ENTRY)
+       (haws-mktext "M" (list x y z) txtht 0 notnum)
+       (setq
+         notetitles nil
+         notunt
+          (cadddr entry)
        )
        ;;Print the quantity for each phase from each sheet to file, and increment the total.
-       (SETQ
-         X (+ X (* TXTHT (- (+ NDWID DQWID) QQWID)))
-         WRITELIST
-          (LIST NOTTYP NOTNUM (NTH 6 ENTRY) NOTUNT NOTPRICE)
+       (setq
+         x (+ x (* txtht (- (+ ndwid dqwid) qqwid)))
+         writelist
+          (list nottyp notnum (nth 6 entry) notunt notprice)
          ;;Initialize running totals for each phase '(qty price)
-         NOTQTY
-          (MAPCAR '(LAMBDA (X) (LIST 0 0)) PHASES_DEFINITION)
+         notqty
+          (mapcar '(lambda (x) (list 0 0)) phases_definition)
        )
-       (FOREACH
-          SHEET_QUANTITIES ALL_SHEETS_QUANTITIES
-         (SETQ
-           NOTQTY
-            (MAPCAR
-              '(LAMBDA (X)
-                 (SETQ
-                   TOTAL
-                    (CAR (NTH (1- (CADR X)) NOTQTY))
+       (foreach
+          sheet_quantities all_sheets_quantities
+         (setq
+           notqty
+            (mapcar
+              '(lambda (x)
+                 (setq
+                   total
+                    (car (nth (1- (cadr x)) notqty))
                    ;;Get the current total from notqty
-                   Q
-                    (COND
-                      ((AND
+                   q
+                    (cond
+                      ((and
                          ;;If the current sheet has the current phase
-                         (SETQ
-                           PHASENUMI
-                            (CADR
-                              (ASSOC
-                                (CAR X)
-                                (CADR SHEET_QUANTITIES)
+                         (setq
+                           phasenumi
+                            (cadr
+                              (assoc
+                                (car x)
+                                (cadr sheet_quantities)
                               )
                             )
                          )
                          ;;and if the current sheet has the current note
-                         (SETQ
-                           NUMLIST
-                            (ASSOC
-                              NOTNUM
-                              (CDR
-                                (ASSOC
-                                  NOTTYP
-                                  (CADDR SHEET_QUANTITIES)
+                         (setq
+                           numlist
+                            (assoc
+                              notnum
+                              (cdr
+                                (assoc
+                                  nottyp
+                                  (caddr sheet_quantities)
                                 )
                               )
                             )
                          )
                          ;;and if the quantity isn't nil,
-                         (SETQ Q (NTH (+ 2 PHASENUMI) NUMLIST))
+                         (setq q (nth (+ 2 phasenumi) numlist))
                        )
                        ;; use its numeric conversion
-                       (ATOF Q)
+                       (atof q)
                       )
                       (0)
                     )
-                   TOTAL
-                    (+ TOTAL Q)
+                   total
+                    (+ total q)
                  )
-                 (SETQ
-                   WRITELIST
-                    (REVERSE
-                      (CONS
-                        (HAWS-PRIN1-TO-STRING Q)
-                        (REVERSE WRITELIST)
+                 (setq
+                   writelist
+                    (reverse
+                      (cons
+                        (haws-prin1-to-string q)
+                        (reverse writelist)
                       )
                     )
                  )
-                 (LIST TOTAL (* TOTAL (ATOF NOTPRICE))) ;Price and cost 2020-12
+                 (list total (* total (atof notprice))) ;Price and cost 2020-12
                )
-              PHASES_DEFINITION
+              phases_definition
             )
          )
        )
        ;;convert quantities and costs to strings, preserving quantities input precision.
-       (SETQ
-         NOTQTY ; List of qty and price for each phase.
-          (MAPCAR
-            '(LAMBDA (PHASE / QTY_STRING)
-               (SETQ
-                 QTY_STRING
-                  (RTOS (CAR (NTH (1- (CADR PHASE)) NOTQTY)) 2 8) ;Price and cost 2020-12
+       (setq
+         notqty ; List of qty and price for each phase.
+          (mapcar
+            '(lambda (phase / qty_string)
+               (setq
+                 qty_string
+                  (rtos (car (nth (1- (cadr phase)) notqty)) 2 8) ;Price and cost 2020-12
                )
-               (WHILE (WCMATCH QTY_STRING "*.*0,*.")
-                 (SETQ QTY_STRING (SUBSTR QTY_STRING 1 (1- (STRLEN QTY_STRING))))
+               (while (wcmatch qty_string "*.*0,*.")
+                 (setq qty_string (substr qty_string 1 (1- (strlen qty_string))))
                )
-               (LIST QTY_STRING (RTOS (CADR (NTH (1- (CADR PHASE)) NOTQTY)) 2 2)) ;Price and cost 2020-12
+               (list qty_string (rtos (cadr (nth (1- (cadr phase)) notqty)) 2 2)) ;Price and cost 2020-12
              )
-            PHASES_DEFINITION
+            phases_definition
           )
        )
        ;;Print totals to drawing and file.
-       (MAPCAR
-         '(LAMBDA (PHASE)
-            (SETQ X (+ X (* TXTHT QQWID)))
+       (mapcar
+         '(lambda (phase)
+            (setq x (+ x (* txtht qqwid)))
             ;; Quantity total for phase
-            (HAWS-MKTEXT
+            (haws-mktext
               "MR"
-              (LIST X Y Z)
-              TXTHT
+              (list x y z)
+              txtht
               0
-              (CAR (NTH (1- (CADR PHASE)) NOTQTY))
+              (car (nth (1- (cadr phase)) notqty))
             )
-            (SETQ
-              WRITELIST
-               (REVERSE
-                 (CONS
-                   (CAR (NTH (1- (CADR PHASE)) NOTQTY))
-                   (REVERSE WRITELIST)
+            (setq
+              writelist
+               (reverse
+                 (cons
+                   (car (nth (1- (cadr phase)) notqty))
+                   (reverse writelist)
                  )
                )
             )
             ;; Cost total for phase
-            (SETQ
-              WRITELIST
-               (REVERSE
-                 (CONS
-                   (CADR (NTH (1- (CADR PHASE)) NOTQTY))
-                   (REVERSE WRITELIST)
+            (setq
+              writelist
+               (reverse
+                 (cons
+                   (cadr (nth (1- (cadr phase)) notqty))
+                   (reverse writelist)
                  )
                )
             )
           )
-         PHASES_DEFINITION
+         phases_definition
        )
        ;;Write unit to drawing
-       (SETQ X (+ X (* TXTHT QUWID)))
-       (IF (/= NOTUNT "")
-         (HAWS-MKTEXT "ML" (LIST X Y Z) TXTHT 0 NOTUNT)
+       (setq x (+ x (* txtht quwid)))
+       (if (/= notunt "")
+         (haws-mktext "ML" (list x y z) txtht 0 notunt)
        )
-       (SETQ
-         X         (+ COL1X (* TXTHT NDWID))
-         NOTE_FIRST_LINE_P T
+       (setq
+         x         (+ col1x (* txtht ndwid))
+         note_first_line_p t
        )
-       (FOREACH
-          NOTDSC (NTH 6 ENTRY)
-         (IF (/= NOTDSC "")
-           (HAWS-MKTEXT "ML" (LIST X Y Z) TXTHT 0 NOTDSC)
+       (foreach
+          notdsc (nth 6 entry)
+         (if (/= notdsc "")
+           (haws-mktext "ML" (list x y z) txtht 0 notdsc)
          )
-         (SETQ Y (- Y (* TXTHT LINSPC)))
+         (setq y (- y (* txtht linspc)))
        )
-       (SETQ Y (- Y (* TXTHT (- NOTSPC LINSPC))))
+       (setq y (- y (* txtht (- notspc linspc))))
        ;;Write note to file.
-       (FOREACH
-          X WRITELIST
-         (IF (= (TYPE X) 'LIST)
-           (PROGN
-             (SETQ NOTDESC "")
-             (FOREACH Y X (SETQ NOTDESC (STRCAT NOTDESC "\n" Y)))
-             (PRINC (HAWS-MKFLD (SUBSTR NOTDESC 2) ",") F2)
+       (foreach
+          x writelist
+         (if (= (type x) 'LIST)
+           (progn
+             (setq notdesc "")
+             (foreach y x (setq notdesc (strcat notdesc "\n" y)))
+             (princ (haws-mkfld (substr notdesc 2) ",") f2)
            )
-           (PRINC (STRCAT X ",") F2)
+           (princ (strcat x ",") f2)
          )
        )
-       (SETQ WRITELIST NIL)
-       (WRITE-LINE "" F2)
+       (setq writelist nil)
+       (write-line "" f2)
       )
     )
   )
-  (SETQ F2 (CLOSE F2))
-  (PROMPT
-    (STRCAT "\nUsed project notes file found at " PROJNOTES)
+  (setq f2 (close f2))
+  (prompt
+    (strcat "\nUsed project notes file found at " projnotes)
   )
 )
 ;#endregion
 ;#region CNM Main
 ;;CNM main commands
-(DEFUN C:HCNM-CNM ()
-(haws-core-init 179) (HCNM_CNM NIL)(haws-core-restore))
-(DEFUN C:HCNM-CNMKT ()
+(defun c:hcnm-cnm ()
+(haws-core-init 179) (hcnm_cnm nil)(haws-core-restore))
+(defun c:hcnm-cnmkt ()
   (haws-core-init 180)
-  (PROMPT (STRCAT "\n" (HAWS_CNM_EVANGEL_MSG)))
-  (HCNM_CNM "Search")
+  (prompt (strcat "\n" (haws_cnm_evangel_msg)))
+  (hcnm_cnm "Search")
   (haws-core-restore))
-(DEFUN C:HCNM-CNMKTI ()
-(haws-core-init 181) (HCNM_CNM "Import")(haws-core-restore))
-(DEFUN C:HCNM-CNMQT ()
-(haws-core-init 338) (HCNM_CNM "Tally")(haws-core-restore))
+(defun c:hcnm-cnmkti ()
+(haws-core-init 181) (hcnm_cnm "Import")(haws-core-restore))
+(defun c:hcnm-cnmqt ()
+(haws-core-init 338) (hcnm_cnm "Tally")(haws-core-restore))
 ;;CNM main function
-(DEFUN HCNM_CNM (OPT / CFNAME DN LINSPC PHASEWID TBLWID TXTHT)
+(defun hcnm_cnm (opt / cfname dn linspc phasewid tblwid txtht)
   ;;Main function
-  (HAWS-VSAVE
+  (haws-vsave
     '("attdia" "attreq" "clayer" "osmode")
   )
-  (SETVAR "attdia" 0)
-  (COND
-    ((NOT OPT)
-     (PROMPT
+  (setvar "attdia" 0)
+  (cond
+    ((not opt)
+     (prompt
        "\nConstruction Notes Manager searches, saves, and lists notes and quantities from attributed bubble notes."
      )
-     (PROMPT
+     (prompt
        "\nConstruction Notes Manager can also import the notes and quantities list into this or another tab or drawing."
      )
-     (PROMPT
+     (prompt
        "\nConstruction Notes Manager tallies quantities from several drawings previously searched and saved."
      )
-     (PROMPT "\nSee www.ConstructionNotesManager.com")
-     (INITGET "Search Import Tally")
-     (SETQ
-       OPT
-        (GETKWORD
+     (prompt "\nSee www.ConstructionNotesManager.com")
+     (initget "Search Import Tally")
+     (setq
+       opt
+        (getkword
           "\nSearch notes and make table/Import table/Tally drawings: "
         )
      )
     )
   )
-  (HCNM_PROJINIT)                       ;Initialize after pauses
+  (hcnm_projinit)                       ;Initialize after pauses
   ;;Set user's desired dimstyle.
-  (HCNM_SET_DIMSTYLE "NotesKeyTableDimstyle")
-  (SETQ
-    DN (HAWS-GETDNPATH)
-    PROJNOTES
-     (HCNM_PROJNOTES)
-    TXTHT
-     (* (GETVAR "dimtxt") (HAWS-DWGSCALE))
+  (hcnm_set_dimstyle "NotesKeyTableDimstyle")
+  (setq
+    dn (haws-getdnpath)
+    projnotes
+     (hcnm_projnotes)
+    txtht
+     (* (getvar "dimtxt") (haws-dwgscale))
     ;;Column and line spacing widths (half width for middle justified columns)
     ;;line spacing
-    LINSPC
-     (ATOF (c:hcnm-config-getvar "LineSpacing"))
+    linspc
+     (atof (c:hcnm-config-getvar "LineSpacing"))
     ;;width of single sheet table with only one phase
-    TBLWID
-     (ATOF (c:hcnm-config-getvar "TableWidth"))
+    tblwid
+     (atof (c:hcnm-config-getvar "TableWidth"))
     ;;width for each extra phase on single sheet table.
-    PHASEWID
-     (ATOF (c:hcnm-config-getvar "PhaseWidthAdd"))
+    phasewid
+     (atof (c:hcnm-config-getvar "PhaseWidthAdd"))
   )
-  (HCNM_READCF PROJNOTES)
-  (COND
-    ((= OPT "Search")
-     (HCNM_KEY_TABLE_FROM_SEARCH
-       DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID
+  (hcnm_readcf projnotes)
+  (cond
+    ((= opt "Search")
+     (hcnm_key_table_from_search
+       dn projnotes txtht linspc tblwid phasewid
       )
     )
-    ((= OPT "Import")
-     (HCNM_IMPORT DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID)
+    ((= opt "Import")
+     (hcnm_import dn projnotes txtht linspc tblwid phasewid)
     )
-    ((= OPT "Tally")
-     (HCNM_TALLY DN PROJNOTES TXTHT LINSPC TBLWID PHASEWID)
+    ((= opt "Tally")
+     (hcnm_tally dn projnotes txtht linspc tblwid phasewid)
     )
   )
   ;;Restore old dimstyle
-  (HCNM_RESTORE_DIMSTYLE)
-  (HAWS-VRSTOR)
+  (hcnm_restore_dimstyle)
+  (haws-vrstor)
   (haws-core-restore)
-  (PRINC)
+  (princ)
 )
 ;;;
 ;;;End of CNM
@@ -2251,276 +2251,276 @@
 ;;be checked again (a pause for user input or a new user command)
 ;;All the functions assume if they are present they are valid.
 ;;
-(DEFUN HCNM_PROJINIT ()
-  (SETQ
-    *HCNM_CONFIG* NIL
-    *HCNM_CNMPROJECTROOT* NIL
-    *HCNM_CNMPROJECTNOTES* NIL
+(defun hcnm_projinit ()
+  (setq
+    *hcnm_config* nil
+    *hcnm_cnmprojectroot* nil
+    *hcnm_cnmprojectnotes* nil
   )
 )
 
 
 ;;Does nothing but strcat, since the existence of the file
 ;;is validated by (HCNM_PROJ)
-(DEFUN HCNM_INI_NAME (PROJ)
-  (HCNM_PROJECT_FOLDER_TO_INI PROJ)
+(defun hcnm_ini_name (proj)
+  (hcnm_project_folder_to_ini proj)
 )
 
 ;; HCNM_PROJ gets a valid project root folder for this drawing's folder.
 ;; While it returns the folder only, that folder is qualified to have CNM.INI in it.
 ;; It should resolve all errors and user conditions
 ;; and return a "drive:\\...\\projroot" path to other functions.
-(DEFUN HCNM_PROJ (/ DWGDIR LINKED_PROJECT_FOLDER LINKED_PROJECT_MARKER
-              LOCAL_PROJECT_FOLDER LOCAL_PROJECT_MARKER
+(defun hcnm_proj (/ dwgdir linked_project_folder linked_project_marker
+              local_project_folder local_project_marker
              )
-  (SETQ
-    DWGDIR
-     (HAWS-FILENAME-DIRECTORY (GETVAR "dwgprefix"))
-    LOCAL_PROJECT_MARKER
-     (HCNM_LOCAL_PROJECT_MARKER DWGDIR)
-    LINKED_PROJECT_MARKER
-     (HCNM_LINKED_PROJECT_MARKER DWGDIR)
+  (setq
+    dwgdir
+     (haws-filename-directory (getvar "dwgprefix"))
+    local_project_marker
+     (hcnm_local_project_marker dwgdir)
+    linked_project_marker
+     (hcnm_linked_project_marker dwgdir)
   )
-  (COND
-    (LOCAL_PROJECT_MARKER
-     (SETQ
-       LOCAL_PROJECT_FOLDER
-        (HCNM_ASSURE_LOCAL_PROJECT
-          LOCAL_PROJECT_MARKER
+  (cond
+    (local_project_marker
+     (setq
+       local_project_folder
+        (hcnm_assure_local_project
+          local_project_marker
         )
      )
     )
   )
-  (COND
-    (LINKED_PROJECT_MARKER
-     (SETQ
-       LINKED_PROJECT_FOLDER
-        (HCNM_ASSURE_LINKED_PROJECT
-          LINKED_PROJECT_MARKER
+  (cond
+    (linked_project_marker
+     (setq
+       linked_project_folder
+        (hcnm_assure_linked_project
+          linked_project_marker
         )
      )
     )
   )
-  (SETQ
-    *HCNM_CNMPROJECTROOT*
-     (COND
+  (setq
+    *hcnm_cnmprojectroot*
+     (cond
        ;;If project is already defined this session, use it.
        ;;(Assume it's valid.  Calling function should init project if there's been a chance of change or loss by user.)
-       (*HCNM_CNMPROJECTROOT*)
-       ((AND
-          LOCAL_PROJECT_MARKER
-          LINKED_PROJECT_MARKER
+       (*hcnm_cnmprojectroot*)
+       ((and
+          local_project_marker
+          linked_project_marker
         )
-        (HCNM_ERROR_AMBIGUOUS_PROJECT_MARKERS
-          LOCAL_PROJECT_FOLDER
-          LINKED_PROJECT_FOLDER
+        (hcnm_error_ambiguous_project_markers
+          local_project_folder
+          linked_project_folder
         )
        )
        ;;Else well-formed simple (single-folder) projects. CNM.INI is here.
-       (LOCAL_PROJECT_MARKER
-        (HCNM_ASSURE_LOCAL_PROJECT
-          LOCAL_PROJECT_MARKER
+       (local_project_marker
+        (hcnm_assure_local_project
+          local_project_marker
         )
        )
        ;;Well-formed complex (multi-folder) projects.  CNMPROJ.TXT is here and
        ;;we'll make sure it really points to a CNM.INI.
-       (LINKED_PROJECT_MARKER
-        (HCNM_ASSURE_LINKED_PROJECT
-          LINKED_PROJECT_MARKER
+       (linked_project_marker
+        (hcnm_assure_linked_project
+          linked_project_marker
         )
        )
        ;;Make a project in this drawing's folder.
-       (T
-        (ALERT
-          (PRINC
-            (STRCAT
+       (t
+        (alert
+          (princ
+            (strcat
               "This drawing's folder is new to CNM."
             )
           )
         )
-        (HCNM_INITIALIZE_PROJECT DWGDIR)
-        DWGDIR
+        (hcnm_initialize_project dwgdir)
+        dwgdir
        )
      )
   )
 )
 
-(DEFUN HCNM_LOCAL_PROJECT_MARKER (DWGDIR)
-  (FINDFILE (HCNM_PROJECT_FOLDER_TO_INI DWGDIR))
+(defun hcnm_local_project_marker (dwgdir)
+  (findfile (hcnm_project_folder_to_ini dwgdir))
 )
 
-(DEFUN HCNM_LINKED_PROJECT_MARKER (DWGDIR)
-  (FINDFILE (HCNM_PROJECT_FOLDER_TO_LINK DWGDIR))
+(defun hcnm_linked_project_marker (dwgdir)
+  (findfile (hcnm_project_folder_to_link dwgdir))
 )
 
-(DEFUN HCNM_ERROR_NOT_WRITEABLE
+(defun hcnm_error_not_writeable
    ()
-  (ALERT
-    (PRINC
-      (STRCAT
+  (alert
+    (princ
+      (strcat
         "Fatal error:\n\nThis drawing must be saved before CNM can be used."
         "\nCNM cannot continue."
        )
     )
   )
-  (EXIT)
+  (exit)
 )
 
-(DEFUN HCNM_ERROR_AMBIGUOUS_PROJECT_MARKERS
-   (LOCAL_PROJECT_FOLDER LINKED_PROJECT_FOLDER)
-  (ALERT
-    (PRINC
-      (STRCAT
-        "Error:\nThis drawing's folder\n" LOCAL_PROJECT_FOLDER
+(defun hcnm_error_ambiguous_project_markers
+   (local_project_folder linked_project_folder)
+  (alert
+    (princ
+      (strcat
+        "Error:\nThis drawing's folder\n" local_project_folder
         "\nhas both its own project settings (CNM.ini) and a link (in CNMPROJ.TXT) to a project in another folder:\n"
-        LINKED_PROJECT_FOLDER
+        linked_project_folder
         "\n\nCNM cannot continue. File names will be printed to the command history for your use resolving the ambiguity."
        )
     )
   )
-  (PRINC
-    (STRCAT
+  (princ
+    (strcat
       "\nLocal project: "
-      (HCNM_PROJECT_FOLDER_TO_INI LOCAL_PROJECT_FOLDER)
+      (hcnm_project_folder_to_ini local_project_folder)
     )
   )
-  (PRINC
-    (STRCAT
+  (princ
+    (strcat
       "\nLink to another project: "
-      (HCNM_PROJECT_FOLDER_TO_LINK LOCAL_PROJECT_FOLDER)
+      (hcnm_project_folder_to_link local_project_folder)
     )
   )
-  (EXIT)
+  (exit)
 )
 
 
-(DEFUN HCNM_ASSURE_LOCAL_PROJECT (LOCAL_MARKER_FILE)
-  (HCNM_CHECK_MOVED_PROJECT LOCAL_MARKER_FILE)
-  (HAWS-FILENAME-DIRECTORY LOCAL_MARKER_FILE)
+(defun hcnm_assure_local_project (local_marker_file)
+  (hcnm_check_moved_project local_marker_file)
+  (haws-filename-directory local_marker_file)
 )
 
-(DEFUN HCNM_ASSURE_LINKED_PROJECT (LINK_MARKER / PROJROOT RDLIN)
-  (COND
-    ((AND
-       (SETQ F1 (OPEN LINK_MARKER "r"))
-       (PROGN
-         (WHILE (AND (SETQ RDLIN (READ-LINE F1)) (NOT PROJROOT))
-           (COND
-             ((HAWS-VLISP-P)
-              (IF (VL-FILE-DIRECTORY-P RDLIN)
-                (SETQ PROJROOT RDLIN)
+(defun hcnm_assure_linked_project (link_marker / projroot rdlin)
+  (cond
+    ((and
+       (setq f1 (open link_marker "r"))
+       (progn
+         (while (and (setq rdlin (read-line f1)) (not projroot))
+           (cond
+             ((haws-vlisp-p)
+              (if (vl-file-directory-p rdlin)
+                (setq projroot rdlin)
               )
              )
              ;;Bricscad option
-             (T
-              (IF (/= ";" (SUBSTR RDLIN 1 1))
-                (SETQ PROJROOT RDLIN)
+             (t
+              (if (/= ";" (substr rdlin 1 1))
+                (setq projroot rdlin)
               )
              )
            )
          )
-         (SETQ F1 (CLOSE F1))
-         PROJROOT
+         (setq f1 (close f1))
+         projroot
        )
      )
     )
   )
-  (IF (NOT (FINDFILE (HCNM_INI_NAME PROJROOT)))
-    (HCNM_INITIALIZE_PROJECT PROJROOT)
+  (if (not (findfile (hcnm_ini_name projroot)))
+    (hcnm_initialize_project projroot)
   )
-  (HCNM_CHECK_MOVED_PROJECT
-    (HCNM_PROJECT_FOLDER_TO_INI PROJROOT)
+  (hcnm_check_moved_project
+    (hcnm_project_folder_to_ini projroot)
   )
-  (PRINC
-    (STRCAT
+  (princ
+    (strcat
       "\nUsing project settings from another folder as directed by CNMPROJ.TXT in this drawing's folder."
       "Using project settings from another folder located at "
-      PROJROOT
+      projroot
       "\\CNM.INI as directed by CNMPROJ.TXT in this drawing's folder."
     )
   )
-  PROJROOT
+  projroot
 )
 
-(DEFUN HCNM_CHECK_MOVED_PROJECT
-   (PROJECT_FILE_NAME / INPUT1 PNNAME THISFILE_VALUE)
-  (COND
-    ((AND
-       (SETQ
-         THISFILE_VALUE
-          (INI_READENTRY
-            PROJECT_FILE_NAME
+(defun hcnm_check_moved_project
+   (project_file_name / input1 pnname thisfile_value)
+  (cond
+    ((and
+       (setq
+         thisfile_value
+          (ini_readentry
+            project_file_name
             "CNM"
             "ThisFile"
           )
        )
-       (SETQ
-         PNNAME
-          (INI_READENTRY PROJECT_FILE_NAME "CNM" "ProjectNotes")
+       (setq
+         pnname
+          (ini_readentry project_file_name "CNM" "ProjectNotes")
        )
-       (/= THISFILE_VALUE "")
-       (/= THISFILE_VALUE PROJECT_FILE_NAME)
+       (/= thisfile_value "")
+       (/= thisfile_value project_file_name)
      )
-     (ALERT
-       (PRINC
-         (STRCAT
+     (alert
+       (princ
+         (strcat
            "Warning!\nYou are using these project notes:\n\n"
-           PNNAME
+           pnname
            "\n\nand the CNM.ini for this folder says \n\"ThisFile=\""
-           THISFILE_VALUE
+           thisfile_value
            "\n\nIt appears it may have been copied from another project."
            "\nYou may be about to edit the wrong Project Notes file."
          )
        )
      )
-     (INITGET "Yes No")
-     (SETQ INPUT1 (GETKWORD "\nContinue with this file? [Yes/No]: "))
-     (COND
-       ((= INPUT1 "Yes")(INI_WRITEENTRY PROJECT_FILE_NAME "CNM" "ThisFile" ""))
-       (T (EXIT))
+     (initget "Yes No")
+     (setq input1 (getkword "\nContinue with this file? [Yes/No]: "))
+     (cond
+       ((= input1 "Yes")(ini_writeentry project_file_name "CNM" "ThisFile" ""))
+       (t (exit))
      )
     )
   )
 )
 
 
-(DEFUN HCNM_PROJECT_INI_NAME () "cnm.ini")
-(DEFUN HCNM_PROJECT_LINK_NAME () "cnmproj.txt")
+(defun hcnm_project_ini_name () "cnm.ini")
+(defun hcnm_project_link_name () "cnmproj.txt")
 
-(DEFUN HCNM_PROJECT_FOLDER_TO_INI (PROJECT_FOLDER)
-  (STRCAT PROJECT_FOLDER "\\" (HCNM_PROJECT_INI_NAME))
+(defun hcnm_project_folder_to_ini (project_folder)
+  (strcat project_folder "\\" (hcnm_project_ini_name))
 )
-(DEFUN HCNM_PROJECT_FOLDER_TO_LINK (PROJECT_FOLDER)
-  (STRCAT PROJECT_FOLDER "\\" (HCNM_PROJECT_LINK_NAME))
+(defun hcnm_project_folder_to_link (project_folder)
+  (strcat project_folder "\\" (hcnm_project_link_name))
 )
 
 
 ;;as posted the autodesk discussion customization group by Tony Tanzillo
-(DEFUN ALE_BROWSEFORFOLDER
-   (PRMSTR IOPTNS DEFFLD / SHLOBJ FOLDER FLDOBJ OUTVAL)
-  (SETQ
-    SHLOBJ
-     (VLA-GETINTERFACEOBJECT
-       (VLAX-GET-ACAD-OBJECT)
+(defun ale_browseforfolder
+   (prmstr ioptns deffld / shlobj folder fldobj outval)
+  (setq
+    shlobj
+     (vla-getinterfaceobject
+       (vlax-get-acad-object)
        "Shell.Application"
      )
-    FOLDER
-     (VLAX-INVOKE-METHOD
-       SHLOBJ 'BROWSEFORFOLDER 0 PRMSTR IOPTNS DEFFLD
+    folder
+     (vlax-invoke-method
+       shlobj 'BROWSEFORFOLDER 0 prmstr ioptns deffld
       )
   )
-  (VLAX-RELEASE-OBJECT SHLOBJ)
-  (IF FOLDER
-    (PROGN
-      (SETQ
-        FLDOBJ
-         (VLAX-GET-PROPERTY FOLDER 'SELF)
-        OUTVAL
-         (VLAX-GET-PROPERTY FLDOBJ 'PATH)
+  (vlax-release-object shlobj)
+  (if folder
+    (progn
+      (setq
+        fldobj
+         (vlax-get-property folder 'SELF)
+        outval
+         (vlax-get-property fldobj 'PATH)
       )
-      (VLAX-RELEASE-OBJECT FOLDER)
-      (VLAX-RELEASE-OBJECT FLDOBJ)
-      OUTVAL
+      (vlax-release-object folder)
+      (vlax-release-object fldobj)
+      outval
     )
   )
 )
@@ -2528,82 +2528,82 @@
 ;;Prompts user for a Project Root folder and links to it by creating
 ;;or modifying this drawing's folder's cnmproj.txt
 ;;returns project root
-(DEFUN C:HCNM-LINKPROJ ()
-(haws-core-init 183) (HCNM_LINKPROJ NIL) (haws-core-restore)(PRINC))
+(defun c:hcnm-linkproj ()
+(haws-core-init 183) (hcnm_linkproj nil) (haws-core-restore)(princ))
 
 ;; Sets the CNM project to the given folder. Includes wizards, alerts, and error checks.
-(DEFUN HCNM_LINKPROJ (PROJ / DWGDIR LOCALPROJ LOCALPROJBAK OLDLINK)
-  (SETQ
-    DWGDIR
-     (HAWS-FILENAME-DIRECTORY (GETVAR "dwgprefix"))
-    *HCNM_CNMPROJECTROOT*
-     (COND
-       (*HCNM_CNMPROJECTROOT*)
-       (DWGDIR)
+(defun hcnm_linkproj (proj / dwgdir localproj localprojbak oldlink)
+  (setq
+    dwgdir
+     (haws-filename-directory (getvar "dwgprefix"))
+    *hcnm_cnmprojectroot*
+     (cond
+       (*hcnm_cnmprojectroot*)
+       (dwgdir)
      )
   )
-  (COND ((NOT PROJ)(SETQ PROJ (HCNM_BROWSEPROJ *HCNM_CNMPROJECTROOT*))))
-  (COND
-    (PROJ
-     (SETQ *HCNM_CNMPROJECTROOT* PROJ)
-     (COND
-       ((= PROJ DWGDIR)
-        (COND
-          ((SETQ OLDLINK (FINDFILE (HCNM_PROJECT_FOLDER_TO_LINK PROJ)))
-           (ALERT
-             (PRINC
+  (cond ((not proj)(setq proj (hcnm_browseproj *hcnm_cnmprojectroot*))))
+  (cond
+    (proj
+     (setq *hcnm_cnmprojectroot* proj)
+     (cond
+       ((= proj dwgdir)
+        (cond
+          ((setq oldlink (findfile (hcnm_project_folder_to_link proj)))
+           (alert
+             (princ
                "Setting project to this drawing's folder by deleting an existing link to another folder."
              )
            )
-           (VL-FILE-DELETE OLDLINK)
+           (vl-file-delete oldlink)
           )
-          (T
-           (ALERT
-             (STRCAT
+          (t
+           (alert
+             (strcat
                "Project Folder\n"
-               *HCNM_CNMPROJECTROOT*
+               *hcnm_cnmprojectroot*
                "\nnot changed."
              )
            )
           )
         )
        )
-       (PROJ
-        (HCNM_MAKEPROJTXT PROJ DWGDIR)
-        (ALERT
-          (PRINC
-            (STRCAT
+       (proj
+        (hcnm_makeprojtxt proj dwgdir)
+        (alert
+          (princ
+            (strcat
               "Created link in this drawing's folder to CNM project settings in\n"
-              PROJ
+              proj
             )
           )
         )
-        (COND
-          ((SETQ
-             LOCALPROJ
-              (FINDFILE (HCNM_PROJECT_FOLDER_TO_INI DWGDIR))
+        (cond
+          ((setq
+             localproj
+              (findfile (hcnm_project_folder_to_ini dwgdir))
            )
-           (SETQ LOCALPROJBAK (STRCAT LOCALPROJ ".bak"))
-           (ALERT
-             (PRINC
-               (STRCAT
-                 "Note: CNM renamed the existing\n" LOCALPROJ "\nto\n"
-                 LOCALPROJBAK
+           (setq localprojbak (strcat localproj ".bak"))
+           (alert
+             (princ
+               (strcat
+                 "Note: CNM renamed the existing\n" localproj "\nto\n"
+                 localprojbak
                  "\nbecause you linked to a project in another folder."
                 )
              )
            )
-           (VL-FILE-RENAME LOCALPROJ LOCALPROJBAK)
+           (vl-file-rename localproj localprojbak)
           )
         )
        )
      )
     )
-    (*HCNM_CNMPROJECTROOT*
-     (ALERT
-       (STRCAT
+    (*hcnm_cnmprojectroot*
+     (alert
+       (strcat
          "Project Folder\n"
-         *HCNM_CNMPROJECTROOT*
+         *hcnm_cnmprojectroot*
          "\nnot changed."
        )
      )
@@ -2611,31 +2611,31 @@
   )
 )
 
-(DEFUN HCNM_BROWSEPROJ (OLDPROJ)
-  (COND
-    ((HAWS-VLISP-P)
-     (ALE_BROWSEFORFOLDER
-       (HCNM_SHORTEN_PATH OLDPROJ 50)
+(defun hcnm_browseproj (oldproj)
+  (cond
+    ((haws-vlisp-p)
+     (ale_browseforfolder
+       (hcnm_shorten_path oldproj 50)
        48
        ""
      )
     )
-    (T
-     (HAWS-FILENAME-DIRECTORY
-       (GETFILED "Select any file in Project Folder" "" "" 0)
+    (t
+     (haws-filename-directory
+       (getfiled "Select any file in Project Folder" "" "" 0)
      )
     )
   )
 )
 
-(DEFUN HCNM_SHORTEN_PATH (PATH NSHORT)
-  (COND
-    ((< (STRLEN PATH) NSHORT) PATH)
-    ((STRCAT
+(defun hcnm_shorten_path (path nshort)
+  (cond
+    ((< (strlen path) nshort) path)
+    ((strcat
        "Cancel to keep current Project Folder:\n"
-       (SUBSTR PATH 1 3)
+       (substr path 1 3)
        "..."
-       (HAWS-ENDSTR PATH (- NSHORT 3) (- NSHORT 3))
+       (haws-endstr path (- nshort 3) (- nshort 3))
      )
     )
   )
@@ -2644,10 +2644,10 @@
 
 ;;Makes a project root reference file CNMPROJ.TXT in this drawing's folder
 ;;Returns nil.
-(DEFUN HCNM_MAKEPROJTXT (PROJDIR DWGDIR)
-  (SETQ F2 (OPEN (HCNM_PROJECT_FOLDER_TO_LINK DWGDIR) "w"))
-  (PRINC
-    (STRCAT
+(defun hcnm_makeprojtxt (projdir dwgdir)
+  (setq f2 (open (hcnm_project_folder_to_link dwgdir) "w"))
+  (princ
+    (strcat
       ";For simple projects, all project drawings are in one folder, 
 ;and Construction Notes Manager keeps settings (CNM.INI) 
 ;in that folder with the drawings.
@@ -2656,11 +2656,11 @@
 ;multiple folders all using the same Project Notes file and settings), 
 ;CNMPROJ.TXT (this file) points from each folder to 
 ;the Project Root Folder, given below:
-"     PROJDIR
+"     projdir
     )
-    F2
+    f2
   )
-  (SETQ F2 (CLOSE F2))
+  (setq f2 (close f2))
 )
 
 ;#endregion
@@ -2736,17 +2736,17 @@
 ;;;
 
 ;;;Test functions
-(DEFUN C:TESTSET ()
+(defun c:testset ()
 (haws-core-init 184)
-  (hcnm_concept_TESTSETVAR
-    (GETSTRING "\nVariable name: ")
-    (GETSTRING "\nValue: ")
+  (hcnm_concept_testsetvar
+    (getstring "\nVariable name: ")
+    (getstring "\nValue: ")
   )
  (haws-core-restore)
 )
-(DEFUN C:TESTGET ()
+(defun c:testget ()
 (haws-core-init 185)
-  (hcnm_concept_TESTGETVAR (GETSTRING "\nVariable name: "))
+  (hcnm_concept_testgetvar (getstring "\nVariable name: "))
   (haws-core-restore)
 )
 
@@ -2755,73 +2755,73 @@
 ;;==============================================================================
 ;; Removes all reactors and deletes all bubbles with HCNM-BUBBLE XDATA
 ;; Usage: Type PRETEST at command line before testing
-(DEFUN C:PRETEST (/ ENAME ENAME_NEXT ENAME_LEADER XDATA COUNT_MS COUNT_PS COUNT_LDR REACTORS)
-  (PRINC "\n=== PRE-TEST CLEANUP ===")
-  (SETQ COUNT_MS 0 COUNT_PS 0 COUNT_LDR 0)
+(defun c:pretest (/ ename ename_next ename_leader xdata count_ms count_ps count_ldr reactors)
+  (princ "\n=== PRE-TEST CLEANUP ===")
+  (setq count_ms 0 count_ps 0 count_ldr 0)
   
   ;; Step 1: Remove all reactors
-  (PRINC "\nRemoving all object reactors...")
-  (SETQ REACTORS (CDAR (VLR-REACTORS :VLR-OBJECT-REACTOR)))
-  (COND
-    (REACTORS
-     (FOREACH REACTOR REACTORS
-       (VLR-REMOVE REACTOR)
-       (PRINC ".")
+  (princ "\nRemoving all object reactors...")
+  (setq reactors (cdar (vlr-reactors :vlr-object-reactor)))
+  (cond
+    (reactors
+     (foreach reactor reactors
+       (vlr-remove reactor)
+       (princ ".")
      )
-     (PRINC (STRCAT "\nRemoved " (ITOA (LENGTH REACTORS)) " reactor(s)"))
+     (princ (strcat "\nRemoved " (itoa (length reactors)) " reactor(s)"))
     )
-    (T (PRINC "\nNo reactors found"))
+    (t (princ "\nNo reactors found"))
   )
   
   ;; Step 2: Erase all bubbles with HCNM-BUBBLE XDATA and their leaders
-  (PRINC "\nScanning for bubbles with XDATA...")
-  (SETQ ENAME (ENTNEXT))
-  (WHILE ENAME
-    (SETQ ENAME_NEXT (ENTNEXT ENAME))  ; Get next before potential deletion
+  (princ "\nScanning for bubbles with XDATA...")
+  (setq ename (entnext))
+  (while ename
+    (setq ename_next (entnext ename))  ; Get next before potential deletion
     ;; Check if entity has HCNM-BUBBLE XDATA
-    (SETQ XDATA (ASSOC -3 (ENTGET ENAME '("HCNM-BUBBLE"))))
-    (COND
-      (XDATA
+    (setq xdata (assoc -3 (entget ename '("HCNM-BUBBLE"))))
+    (cond
+      (xdata
        ;; Found a bubble - determine if it's in model or paper space
-       (COND
-         ((HCNM_LDRBLK_IS_ON_MODEL_TAB ENAME)
-          (SETQ COUNT_MS (1+ COUNT_MS))
+       (cond
+         ((hcnm_ldrblk_is_on_model_tab ename)
+          (setq count_ms (1+ count_ms))
          )
-         (T
-          (SETQ COUNT_PS (1+ COUNT_PS))
+         (t
+          (setq count_ps (1+ count_ps))
          )
        )
        ;; Find and delete the associated leader first
-       (SETQ ENAME_LEADER (HCNM_LDRBLK_BUBBLE_LEADER ENAME))
-       (COND
-         (ENAME_LEADER
-          (ENTDEL ENAME_LEADER)
-          (SETQ COUNT_LDR (1+ COUNT_LDR))
+       (setq ename_leader (hcnm_ldrblk_bubble_leader ename))
+       (cond
+         (ename_leader
+          (entdel ename_leader)
+          (setq count_ldr (1+ count_ldr))
          )
        )
        ;; Erase the bubble
-       (ENTDEL ENAME)
-       (PRINC ".")
+       (entdel ename)
+       (princ ".")
       )
     )
-    (SETQ ENAME ENAME_NEXT)
+    (setq ename ename_next)
   )
   
   ;; Step 3: Report results
-  (PRINC (STRCAT "\n\nDeleted " (ITOA COUNT_MS) " bubble(s) from Model Space"))
-  (PRINC (STRCAT "\nDeleted " (ITOA COUNT_PS) " bubble(s) from Paper Space"))
-  (PRINC (STRCAT "\nDeleted " (ITOA COUNT_LDR) " leader(s)"))
-  (PRINC (STRCAT "\nTotal: " (ITOA (+ COUNT_MS COUNT_PS)) " bubble(s) deleted"))
-  (PRINC "\n\n=== CLEANUP COMPLETE ===")
-  (PRINC)
+  (princ (strcat "\n\nDeleted " (itoa count_ms) " bubble(s) from Model Space"))
+  (princ (strcat "\nDeleted " (itoa count_ps) " bubble(s) from Paper Space"))
+  (princ (strcat "\nDeleted " (itoa count_ldr) " leader(s)"))
+  (princ (strcat "\nTotal: " (itoa (+ count_ms count_ps)) " bubble(s) deleted"))
+  (princ "\n\n=== CLEANUP COMPLETE ===")
+  (princ)
 )
 
-(DEFUN hcnm_concept_TESTSETVAR (VAR VAL)
-  (hcnm_concept_SETVAR
+(defun hcnm_concept_testsetvar (var val)
+  (hcnm_concept_setvar
     ;; variable
-    VAR
+    var
     ;;value
-    VAL
+    val
     ;; application name for its section in *hcnm_concept_SETTINGS*
     "test"
     ;; indicator file name for default location of ini or vanilla ini
@@ -2835,10 +2835,10 @@
 )
 ;;This is a sample wrapper function that an application would use
 ;;to call hcnm_concept_GETVAR.
-(DEFUN hcnm_concept_TESTGETVAR (VAR)
-  (hcnm_concept_GETVAR
+(defun hcnm_concept_testgetvar (var)
+  (hcnm_concept_getvar
     ;;variable
-    VAR
+    var
     ;; application name for its section in *hcnm_concept_SETTINGS*
     "test"
     ;; indicator file name for default location of ini or vanilla ini
@@ -2866,18 +2866,18 @@
 ;;; hcnm_concept_INIFOLDER gets a valid INI folder.
 ;;; This function is wrong because there isn't a single *hcnm_concept_INIFOLDER* that this function
 ;;; can throw around globally.
-(DEFUN hcnm_concept_INIFILE (APP SCOPE TESTFILE / INIFILE ASSUMEDINIFOLDER
-                 ASSUMEDINIFILE
+(defun hcnm_concept_inifile (app scope testfile / inifile assumedinifolder
+                 assumedinifile
                 )
-  (COND ((NOT TESTFILE) (SETQ TESTFILE (STRCAT APP ".cui"))))
-  (COND
+  (cond ((not testfile) (setq testfile (strcat app ".cui"))))
+  (cond
     ;; Project already defined this session
     ;; (Assume it's valid.  Calling function should init project
     ;; if there's been a chance of loss.)
-    ((CDR
-       (ASSOC
+    ((cdr
+       (assoc
          0
-         (CDR (ASSOC APP (CDR (ASSOC SCOPE *hcnm_concept_SETTINGS*))))
+         (cdr (assoc app (cdr (assoc scope *hcnm_concept_settings*))))
        )
      )
     )
@@ -2888,47 +2888,47 @@
     ;;so for project scope, there are two ini path building searches.
     ;;
     ;;Or try to find inifile in folder with testfile
-    ((AND
-       (SETQ ASSUMEDINIFOLDER (FINDFILE TESTFILE))
-       (SETQ
-         ASSUMEDINIFOLDER
-          (hcnm_concept_FILENAME_DIRECTORY ASSUMEDINIFOLDER)
+    ((and
+       (setq assumedinifolder (findfile testfile))
+       (setq
+         assumedinifolder
+          (hcnm_concept_filename_directory assumedinifolder)
        )
-       (SETQ
-         ASSUMEDINIFILE
-          (FINDFILE (STRCAT ASSUMEDINIFOLDER APP ".ini"))
+       (setq
+         assumedinifile
+          (findfile (strcat assumedinifolder app ".ini"))
        )
      )
-     ASSUMEDINIFILE
+     assumedinifile
     )
     ;;Or make an ini file in folder with testfile in it or in proj folder
-    ((hcnm_concept_GETINIDEFAULTS ASSUMEDINIFOLDER) ASSUMEDINIFOLDER)
+    ((hcnm_concept_getinidefaults assumedinifolder) assumedinifolder)
   )
 )
 
 
 ;;Gets all settings from an inifile if it can.
-(DEFUN hcnm_concept_GETSETTINGS (INIFILE TESTFILE APPORPROJ)
-  (SETQ
-    *hcnm_concept_SETTINGS*
-     (INI_READINI
-       (hcnm_concept_INI (hcnm_concept_INIFOLDER INIFILE TESTFILE))
+(defun hcnm_concept_getsettings (inifile testfile apporproj)
+  (setq
+    *hcnm_concept_settings*
+     (ini_readini
+       (hcnm_concept_ini (hcnm_concept_inifolder inifile testfile))
      )
   )
 )
 
 ;;Sets a variable in the global lisp list and in HAWSEDC.INI
-(DEFUN hcnm_concept_SETVAR (INIFILE INISECTION VAR VAL / SETTING)
+(defun hcnm_concept_setvar (inifile inisection var val / setting)
   ;; Call GETVAR before setting var.  Why?  To populate *hcnm_concept_SETTINGS*?
-  (hcnm_concept_GETVAR
-    VAR INISECTION INIFILE TESTFILE APPORPROJ DEFAULTS
+  (hcnm_concept_getvar
+    var inisection inifile testfile apporproj defaults
    )
-  (hcnm_concept_ADDVARTOLIST VAR VAL INISECTION INIFILE)
-  (INI_WRITEENTRY
-    (hcnm_concept_INI (hcnm_concept_INIFOLDER))
-    INISECTION
-    SETTING
-    VAL
+  (hcnm_concept_addvartolist var val inisection inifile)
+  (ini_writeentry
+    (hcnm_concept_ini (hcnm_concept_inifolder))
+    inisection
+    setting
+    val
   )
 )
 
@@ -2959,105 +2959,105 @@
 ;; A flag indicating whether the active settings are to be kept in the
 ;; app folder or the project folder ("app" "prj")
 ;; application defaults for all variables
-(DEFUN hcnm_concept_GETVAR (VAR SECT APP SCOPE TESTFILE DEFAULTS / ADDTOLIST
-                ADDTOINI DIR INI SETTING VAL
+(defun hcnm_concept_getvar (var sect app scope testfile defaults / addtolist
+                addtoini dir ini setting val
                )
-  (SETQ
+  (setq
     ;; Does the variable need to be added to the *hcnm_concept_SETTINGS* list? Assume yes initially.
-    ADDTOLIST
-     T
+    addtolist
+     t
     ;; Does the variable need to be added to the appropriate ini file? Assume yes initially
-    ADDTOINI
-     T
+    addtoini
+     t
   )
   ;;Get var list if no var list
-  (IF (NOT *hcnm_concept_SETTINGS*)
-    (hcnm_concept_GETSETTINGS)
+  (if (not *hcnm_concept_settings*)
+    (hcnm_concept_getsettings)
   )
-  (COND
+  (cond
     ;;Try getting from list
-    ((SETQ
-       VAL
-        (hcnm_concept_VARTOVAL
-          VAR
-          (CADR (ASSOC SECT (CADDR (ASSOC APP *hcnm_concept_SETTINGS*))))
+    ((setq
+       val
+        (hcnm_concept_vartoval
+          var
+          (cadr (assoc sect (caddr (assoc app *hcnm_concept_settings*))))
         )
      )
-     (SETQ
-       ADDTOLIST NIL
-       ADDTOINI NIL
+     (setq
+       addtolist nil
+       addtoini nil
      )
     )
     ;;Try getting from ini.
-    ((SETQ
-       VAL
-        (INI_READENTRY APP SECT SETTING)
-       ADDTOINI NIL
+    ((setq
+       val
+        (ini_readentry app sect setting)
+       addtoini nil
      )
     )
     ;;Get from app ini if not.
-    ((AND
-       (SETQ DIR (FINDFILE TESTFILE))
-       (SETQ
-         INI
-          (FINDFILE (STRCAT (hcnm_concept_FILENAME_DIRECTORY DIR) "\\" APP))
+    ((and
+       (setq dir (findfile testfile))
+       (setq
+         ini
+          (findfile (strcat (hcnm_concept_filename_directory dir) "\\" app))
        )
-       (SETQ VAL (INI_READENTRY INI SECT SETTING))
+       (setq val (ini_readentry ini sect setting))
      )
     )
     ;;Use default if there is one
-    ((SETQ VAL (hcnm_concept_VARTOVAL VAR DEFAULTS)))
+    ((setq val (hcnm_concept_vartoval var defaults)))
     ;;Otherwise fail.
-    (T
-     (ALERT
-       (STRCAT
+    (t
+     (alert
+       (strcat
          "Fatal error in "
-         SECT
+         sect
          ":\nCould not initialize the variable\n"
-         VAR
+         var
        )
      )
-     (SETQ
-       ADDTOLIST NIL
-       ADDTOINI NIL
+     (setq
+       addtolist nil
+       addtoini nil
      )
     )
   )
-  (IF ADDTOLIST
-    (hcnm_concept_ADDVARTOLIST VAR VAL SECT APP)
+  (if addtolist
+    (hcnm_concept_addvartolist var val sect app)
   )
-  (IF ADDTOINI
-    (INI_WRITEENTRY (hcnm_concept_INI (hcnm_concept_INIFOLDER)) APP SETTING VAL)
+  (if addtoini
+    (ini_writeentry (hcnm_concept_ini (hcnm_concept_inifolder)) app setting val)
   )
-  VAL
+  val
 )
 
-(DEFUN hcnm_concept_ADDVARTOLIST (VAR VAL INISECTION INIFILE)
-  (SETQ
-    SETTING
-     (hcnm_concept_VARTOSETTING VAR)
-    *hcnm_concept_SETTINGS*
-     (SUBST
-       (SUBST
-         (SUBST
-           (LIST SETTING VAL)
-           (ASSOC
-             INISETTING
-             (ASSOC
-               INISECTION
-               (ASSOC INIFILE *hcnm_concept_SETTINGS*)
+(defun hcnm_concept_addvartolist (var val inisection inifile)
+  (setq
+    setting
+     (hcnm_concept_vartosetting var)
+    *hcnm_concept_settings*
+     (subst
+       (subst
+         (subst
+           (list setting val)
+           (assoc
+             inisetting
+             (assoc
+               inisection
+               (assoc inifile *hcnm_concept_settings*)
              )
            )
-           (ASSOC
-             INISECTION
-             (ASSOC INIFILE *hcnm_concept_SETTINGS*)
+           (assoc
+             inisection
+             (assoc inifile *hcnm_concept_settings*)
            )
          )
-         (ASSOC INISECTION (ASSOC FILE *hcnm_concept_SETTINGS*))
-         (ASSOC INIFILE *hcnm_concept_SETTINGS*)
+         (assoc inisection (assoc file *hcnm_concept_settings*))
+         (assoc inifile *hcnm_concept_settings*)
        )
-       (ASSOC INIFILE *hcnm_concept_SETTINGS*)
-       *hcnm_concept_SETTINGS*
+       (assoc inifile *hcnm_concept_settings*)
+       *hcnm_concept_settings*
      )
   )
 )
@@ -3067,34 +3067,34 @@
 ;;or else writes defaults to a fresh ini.
 ;;Doesn't add to existing ini.
 ;;Returns ini file name.
-(DEFUN hcnm_concept_GETINIDEFAULTS (PROJ / APP APPINI PROJINI)
-  (ALERT
-    (PRINC
-      (STRCAT
+(defun hcnm_concept_getinidefaults (proj / app appini projini)
+  (alert
+    (princ
+      (strcat
         "Note: Program settings not found in program folder\n"
-        PROJ
+        proj
         "\n\nUsing default settings."
       )
     )
   )
-  (SETQ PROJINI (STRCAT PROJ "\\" "cnm.ini"))
-  (COND
-    ((AND
-       (SETQ APP (C:HCNM-CONFIG-GETVAR "AppFolder"))
-       (SETQ
-         APPINI
-          (FINDFILE
-            (STRCAT (hcnm_concept_FILENAME_DIRECTORY APP) "\\" "cnm.ini")
+  (setq projini (strcat proj "\\" "cnm.ini"))
+  (cond
+    ((and
+       (setq app (c:hcnm-config-getvar "AppFolder"))
+       (setq
+         appini
+          (findfile
+            (strcat (hcnm_concept_filename_directory app) "\\" "cnm.ini")
           )
        )
-       (hcnm_concept_FILE_COPY APPINI PROJINI)
+       (hcnm_concept_file_copy appini projini)
      )
-     (WHILE (NOT (FINDFILE PROJINI)))
-     PROJINI
+     (while (not (findfile projini)))
+     projini
     )
-    (T
-     (SETQ F2 (OPEN PROJINI "w"))
-     (PRINC
+    (t
+     (setq f2 (open projini "w"))
+     (princ
        "[CNM]
 ProjectNotes=constnot.csv
 ProjectNotesEditor=csv
@@ -3124,20 +3124,20 @@ ShowKeyTableGrid=0
 ShowKeyTableQuantities=1
 BubbleHooks=1
 ImportLayerSettings=No
-"      F2
+"      f2
      )
-     (SETQ F2 (CLOSE F2))
-     PROJINI
+     (setq f2 (close f2))
+     projini
     )
   )
 )
 
 ;;Saves *hcnm_concept_SETTINGS* to the requested inifile
-(DEFUN hcnm_concept_SAVESETTINGSTOINI (INIFILE TESTFILE APPORPROJ)
-  (INI_WRITESECTION
-    (hcnm_concept_INI (hcnm_concept_INIFOLDER INIFILE TESTFILE))
-    INIFILE
-    *hcnm_concept_SETTINGS*
+(defun hcnm_concept_savesettingstoini (inifile testfile apporproj)
+  (ini_writesection
+    (hcnm_concept_ini (hcnm_concept_inifolder inifile testfile))
+    inifile
+    *hcnm_concept_settings*
   )
 )
 ;;;================================================================================================================
@@ -3151,419 +3151,419 @@ ImportLayerSettings=No
 ;;; VAR: The string name of a var
 ;;; VAL: The string value of a var
 ;;;
-(DEFUN HCNM_CONFIG_DEFINITIONS (/)
-  (LIST
-    (LIST "Scope"
-     (LIST "Session" 0)
-     (LIST "Drawing" 1) ; Does not work yet?
-     (LIST "Project" 2)
-     (LIST "App" 3) ; Does not work yet?
-     (LIST "User" 4)
+(defun hcnm_config_definitions (/)
+  (list
+    (list "Scope"
+     (list "Session" 0)
+     (list "Drawing" 1) ; Does not work yet?
+     (list "Project" 2)
+     (list "App" 3) ; Does not work yet?
+     (list "User" 4)
     )
-    (LIST "Var"
-     (LIST "ProjectFolder" "" 1)
-     (LIST "AppFolder"  (HAWS-FILENAME-DIRECTORY (findfile "cnm.mnl")) 0)
-     (LIST "LXXListMode" "yes" 4)
-     (LIST "CNMAliasActivation" "0" 4)
-     (LIST "ProjectNotesEditor" (HCNM_CONFIG_DEFAULT_PROJECTNOTESEDITOR) 2) ; text, csv, or cnm
-     (LIST "LayersEditor" "notepad" 4) ; notepad or cnm
-     (LIST "ProjectNotes" "constnot.csv" 2)
-     (LIST "ThisFile" "" 2)
-     (LIST "ImportLayerSettings" "No" 2)
-     (LIST "NoteTypes" "BOX,CIR,DIA,ELL,HEX,OCT,PEN,REC,SST,TRI" 2)
-     (LIST "DoCurrentTabOnly" "0" 2)
-     (LIST "PhaseAlias1" "1" 2)
-     (LIST "PhaseAlias2" "2" 2)
-     (LIST "PhaseAlias3" "3" 2)
-     (LIST "PhaseAlias4" "4" 2)
-     (LIST "PhaseAlias5" "5" 2)
-     (LIST "PhaseAlias6" "6" 2)
-     (LIST "PhaseAlias7" "7" 2)
-     (LIST "PhaseAlias8" "8" 2)
-     (LIST "PhaseAlias9" "9" 2)
-     (LIST "InsertTablePhases" "No" 2)
-     (LIST "TableWidth" "65" 2)
-     (LIST "PhaseWidthAdd" "9" 2)
-     (LIST "DescriptionWrap" "9999" 2)
-     (LIST "LineSpacing" "1.5" 2)
-     (LIST "NoteSpacing" "3" 2)
-     (LIST "NumberToDescriptionWidth" "2.5" 2)
-     (LIST "DescriptionToQuantityWidth" "56" 2)
-     (LIST "QuantityToQuantityWidth" "9" 2)
-     (LIST "QuantityToUnitsWidth" "1" 2)
-     (LIST "ShowKeyTableTitleShapes" "1" 2)
-     (LIST "ShowKeyTableGrid" "0" 2)
-     (LIST "ShowKeyTableQuantities" "1" 2)
-     (LIST "BubbleHooks" "0" 2)
-     (LIST "BubbleMtext" "0" 2)
-     (LIST "BubbleAreaIntegral" "0" 2)
-     (LIST "NotesLeaderDimstyle" "" 2)
-     (LIST "NotesKeyTableDimstyle" "" 2)
-     (LIST "TCGLeaderDimstyle" "TCG Leader" 2)
-     (LIST "BubbleTextLine1PromptP" "1" 4)
-     (LIST "BubbleTextLine2PromptP" "1" 4)
-     (LIST "BubbleTextLine3PromptP" "0" 4)
-     (LIST "BubbleTextLine4PromptP" "0" 4)
-     (LIST "BubbleTextLine5PromptP" "0" 4)
-     (LIST "BubbleTextLine6PromptP" "0" 4)
-     (LIST "BubbleTextLine0PromptP" "0" 4)
-     (LIST "BubbleSkipEntryPrompt" "0" 4)
-     (LIST "BubbleOffsetDropSign" "1" 2)
-     (LIST "BubbleTextPrefixLF" "" 2)
-     (LIST "BubbleTextPrefixSF" "" 2)
-     (LIST "BubbleTextPrefixSY" "" 2)
-     (LIST "BubbleTextPrefixSta" "STA " 2)
-     (LIST "BubbleTextPrefixOff+" "" 2)
-     (LIST "BubbleTextPrefixOff-" "" 2)
-     (LIST "BubbleTextPrefixN" "N " 2)
-     (LIST "BubbleTextPrefixE" "E " 2)
-     (LIST "BubbleTextPrefixZ" "" 2)
-     (LIST "BubbleTextPrefixPipeDia" "" 2)
-     (LIST "BubbleTextPrefixPipeSlope" "" 2)
-     (LIST "BubbleTextPrefixPipeLength" "L=" 2)
-     (LIST "BubbleTextPostfixLF" " LF" 2)
-     (LIST "BubbleTextPostfixSF" " SF" 2)
-     (LIST "BubbleTextPostfixSY" " SY" 2)
-     (LIST "BubbleTextPostfixSta" "" 2)
-     (LIST "BubbleTextPostfixOff+" " RT" 2)
-     (LIST "BubbleTextPostfixOff-" " LT" 2)
-     (LIST "BubbleTextPostfixN" "" 2)
-     (LIST "BubbleTextPostfixE" "" 2)
-     (LIST "BubbleTextPostfixZ" "" 2)
-     (LIST "BubbleTextPostfixPipeDia" "\"" 2)
-     (LIST "BubbleTextPostfixPipeSlope" "%" 2)
-     (LIST "BubbleTextPostfixPipeLength" "'" 2)
-     (LIST "BubbleTextJoinDelSta" ", " 2)
-     (LIST "BubbleTextJoinDelN" ", " 2)
-     (LIST "BubbleTextPrecisionLF" "0" 4)
-     (LIST "BubbleTextPrecisionSF" "0" 4)
-     (LIST "BubbleTextPrecisionSY" "0" 4)
-     (LIST "BubbleTextPrecisionOff+" "2" 4)
-     (LIST "BubbleTextPrecisionN" "2" 4)
-     (LIST "BubbleTextPrecisionE" "2" 4)
-     (LIST "BubbleTextPrecisionZ" "2" 4)
-     (LIST "BubbleTextPrecisionPipeDia" "0" 4)
-     (LIST "BubbleTextPrecisionPipeSlope" "2" 4)
-     (LIST "BubbleTextPrecisionPipeLength" "2" 4)
-     (LIST "BubbleCurrentAlignment" "" 0)
-     (LIST "AllowReactors" "1" 0)
-     (LIST "BubbleArrowIntegralPending" "0" 0)
+    (list "Var"
+     (list "ProjectFolder" "" 1)
+     (list "AppFolder"  (haws-filename-directory (findfile "cnm.mnl")) 0)
+     (list "LXXListMode" "yes" 4)
+     (list "CNMAliasActivation" "0" 4)
+     (list "ProjectNotesEditor" (hcnm_config_default_projectnoteseditor) 2) ; text, csv, or cnm
+     (list "LayersEditor" "notepad" 4) ; notepad or cnm
+     (list "ProjectNotes" "constnot.csv" 2)
+     (list "ThisFile" "" 2)
+     (list "ImportLayerSettings" "No" 2)
+     (list "NoteTypes" "BOX,CIR,DIA,ELL,HEX,OCT,PEN,REC,SST,TRI" 2)
+     (list "DoCurrentTabOnly" "0" 2)
+     (list "PhaseAlias1" "1" 2)
+     (list "PhaseAlias2" "2" 2)
+     (list "PhaseAlias3" "3" 2)
+     (list "PhaseAlias4" "4" 2)
+     (list "PhaseAlias5" "5" 2)
+     (list "PhaseAlias6" "6" 2)
+     (list "PhaseAlias7" "7" 2)
+     (list "PhaseAlias8" "8" 2)
+     (list "PhaseAlias9" "9" 2)
+     (list "InsertTablePhases" "No" 2)
+     (list "TableWidth" "65" 2)
+     (list "PhaseWidthAdd" "9" 2)
+     (list "DescriptionWrap" "9999" 2)
+     (list "LineSpacing" "1.5" 2)
+     (list "NoteSpacing" "3" 2)
+     (list "NumberToDescriptionWidth" "2.5" 2)
+     (list "DescriptionToQuantityWidth" "56" 2)
+     (list "QuantityToQuantityWidth" "9" 2)
+     (list "QuantityToUnitsWidth" "1" 2)
+     (list "ShowKeyTableTitleShapes" "1" 2)
+     (list "ShowKeyTableGrid" "0" 2)
+     (list "ShowKeyTableQuantities" "1" 2)
+     (list "BubbleHooks" "0" 2)
+     (list "BubbleMtext" "0" 2)
+     (list "BubbleAreaIntegral" "0" 2)
+     (list "NotesLeaderDimstyle" "" 2)
+     (list "NotesKeyTableDimstyle" "" 2)
+     (list "TCGLeaderDimstyle" "TCG Leader" 2)
+     (list "BubbleTextLine1PromptP" "1" 4)
+     (list "BubbleTextLine2PromptP" "1" 4)
+     (list "BubbleTextLine3PromptP" "0" 4)
+     (list "BubbleTextLine4PromptP" "0" 4)
+     (list "BubbleTextLine5PromptP" "0" 4)
+     (list "BubbleTextLine6PromptP" "0" 4)
+     (list "BubbleTextLine0PromptP" "0" 4)
+     (list "BubbleSkipEntryPrompt" "0" 4)
+     (list "BubbleOffsetDropSign" "1" 2)
+     (list "BubbleTextPrefixLF" "" 2)
+     (list "BubbleTextPrefixSF" "" 2)
+     (list "BubbleTextPrefixSY" "" 2)
+     (list "BubbleTextPrefixSta" "STA " 2)
+     (list "BubbleTextPrefixOff+" "" 2)
+     (list "BubbleTextPrefixOff-" "" 2)
+     (list "BubbleTextPrefixN" "N " 2)
+     (list "BubbleTextPrefixE" "E " 2)
+     (list "BubbleTextPrefixZ" "" 2)
+     (list "BubbleTextPrefixPipeDia" "" 2)
+     (list "BubbleTextPrefixPipeSlope" "" 2)
+     (list "BubbleTextPrefixPipeLength" "L=" 2)
+     (list "BubbleTextPostfixLF" " LF" 2)
+     (list "BubbleTextPostfixSF" " SF" 2)
+     (list "BubbleTextPostfixSY" " SY" 2)
+     (list "BubbleTextPostfixSta" "" 2)
+     (list "BubbleTextPostfixOff+" " RT" 2)
+     (list "BubbleTextPostfixOff-" " LT" 2)
+     (list "BubbleTextPostfixN" "" 2)
+     (list "BubbleTextPostfixE" "" 2)
+     (list "BubbleTextPostfixZ" "" 2)
+     (list "BubbleTextPostfixPipeDia" "\"" 2)
+     (list "BubbleTextPostfixPipeSlope" "%" 2)
+     (list "BubbleTextPostfixPipeLength" "'" 2)
+     (list "BubbleTextJoinDelSta" ", " 2)
+     (list "BubbleTextJoinDelN" ", " 2)
+     (list "BubbleTextPrecisionLF" "0" 4)
+     (list "BubbleTextPrecisionSF" "0" 4)
+     (list "BubbleTextPrecisionSY" "0" 4)
+     (list "BubbleTextPrecisionOff+" "2" 4)
+     (list "BubbleTextPrecisionN" "2" 4)
+     (list "BubbleTextPrecisionE" "2" 4)
+     (list "BubbleTextPrecisionZ" "2" 4)
+     (list "BubbleTextPrecisionPipeDia" "0" 4)
+     (list "BubbleTextPrecisionPipeSlope" "2" 4)
+     (list "BubbleTextPrecisionPipeLength" "2" 4)
+     (list "BubbleCurrentAlignment" "" 0)
+     (list "AllowReactors" "1" 0)
+     (list "BubbleArrowIntegralPending" "0" 0)
     )
    )
 )
 
-(DEFUN HCNM_CONFIG_DEFAULT_PROJECTNOTESEDITOR (/ REG_VAL)
-  (COND
-    ((AND
-       (HAWS-VLISP-P)
-       (SETQ
-         REG_VAL
-          (VL-REGISTRY-READ
+(defun hcnm_config_default_projectnoteseditor (/ reg_val)
+  (cond
+    ((and
+       (haws-vlisp-p)
+       (setq
+         reg_val
+          (vl-registry-read
             "HKEY_CURRENT_USER\\Software\\HawsEDC\\CNM"
             "ProjectNoteseditor"
           )
        )
-       (WCMATCH (STRCASE REG_VAL) "*CNMEDIT*")
+       (wcmatch (strcase reg_val) "*CNMEDIT*")
      )
      "cnm"
     )
-    (T "csv")
+    (t "csv")
   )
 )
 
 ;; Strips scope stuff and returns just defaults list
-(DEFUN HCNM_CONFIG_DEFAULTS ()
-  (COND
-    (*HCNM_CONFIG_DEFAULTS*)
-    ((MAPCAR
-       '(LAMBDA (VAR) (HCNM_CONFIG_ENTRY_STRIP_SCOPE VAR))
-       (CDR (ASSOC "Var" (HCNM_CONFIG_DEFINITIONS)))
+(defun hcnm_config_defaults ()
+  (cond
+    (*hcnm_config_defaults*)
+    ((mapcar
+       '(lambda (var) (hcnm_config_entry_strip_scope var))
+       (cdr (assoc "Var" (hcnm_config_definitions)))
      )
     )
   )
 )
 
-(DEFUN HCNM_CONFIG_ENTRY_STRIP_SCOPE (ENTRY)
-  (REVERSE (CDR (REVERSE ENTRY)))
+(defun hcnm_config_entry_strip_scope (entry)
+  (reverse (cdr (reverse entry)))
 )
 
-(DEFUN HCNM_CONFIG_DEFAULTS_SINGLE_SCOPE
-   (SCOPE_KEY / SCOPE_CODE SCOPE_LIST)
-  (SETQ SCOPE_CODE (HCNM_CONFIG_SCOPE_CODE SCOPE_KEY))
-  (FOREACH
-     ENTRY (CDR (ASSOC "Var" (HCNM_CONFIG_DEFINITIONS)))
-    (COND
-      ((= (HCNM_CONFIG_ENTRY_SCOPE_CODE ENTRY) SCOPE_CODE)
-       (SETQ
-         SCOPE_LIST
-          (CONS
-            (HCNM_CONFIG_ENTRY_STRIP_SCOPE ENTRY)
-            SCOPE_LIST
+(defun hcnm_config_defaults_single_scope
+   (scope_key / scope_code scope_list)
+  (setq scope_code (hcnm_config_scope_code scope_key))
+  (foreach
+     entry (cdr (assoc "Var" (hcnm_config_definitions)))
+    (cond
+      ((= (hcnm_config_entry_scope_code entry) scope_code)
+       (setq
+         scope_list
+          (cons
+            (hcnm_config_entry_strip_scope entry)
+            scope_list
           )
        )
       )
     )
   )
-  (REVERSE SCOPE_LIST)
+  (reverse scope_list)
 )
 
-(DEFUN HCNM_CONFIG_SCOPE_CODE (SCOPE_KEY)
-  (CADR
-    (ASSOC
-      SCOPE_KEY
-      (CDR (ASSOC "Scope" (HCNM_CONFIG_DEFINITIONS)))
+(defun hcnm_config_scope_code (scope_key)
+  (cadr
+    (assoc
+      scope_key
+      (cdr (assoc "Scope" (hcnm_config_definitions)))
     )
   )
 )
 
-(DEFUN HCNM_CONFIG_SCOPE_EQ (VAR SCOPE_KEY)
-  (= (HCNM_CONFIG_ENTRY_SCOPE_CODE
-       (ASSOC VAR (CDR (ASSOC "Var" (HCNM_CONFIG_DEFINITIONS))))
+(defun hcnm_config_scope_eq (var scope_key)
+  (= (hcnm_config_entry_scope_code
+       (assoc var (cdr (assoc "Var" (hcnm_config_definitions))))
      )
-     (HCNM_CONFIG_SCOPE_CODE SCOPE_KEY)
+     (hcnm_config_scope_code scope_key)
   )
 )
 
-(DEFUN HCNM_CONFIG_ENTRY_VAR (ENTRY) (CAR ENTRY))
+(defun hcnm_config_entry_var (entry) (car entry))
 
-(DEFUN HCNM_CONFIG_ENTRY_VAL (ENTRY) (CADR ENTRY))
+(defun hcnm_config_entry_val (entry) (cadr entry))
 
-(DEFUN HCNM_CONFIG_ENTRY_SCOPE_CODE (ENTRY) (CADDR ENTRY))
+(defun hcnm_config_entry_scope_code (entry) (caddr entry))
 
-(DEFUN HCNM_CONFIG_GET_DEFAULT (VAR)
-  (HCNM_CONFIG_ENTRY_VAL (ASSOC VAR (HCNM_CONFIG_DEFAULTS)))
+(defun hcnm_config_get_default (var)
+  (hcnm_config_entry_val (assoc var (hcnm_config_defaults)))
 )
 
-(DEFUN HCNM_CONFIG_READ_ALL (/ INI_CONFIGS)
-  (APPEND
-    (HCNM_CONFIG_READ_ALL_USER)
-    (HCNM_CONFIG_READ_ALL_PROJECT)
+(defun hcnm_config_read_all (/ ini_configs)
+  (append
+    (hcnm_config_read_all_user)
+    (hcnm_config_read_all_project)
   )
 )
-(DEFUN HCNM_CONFIG_READ_ALL_USER (/ )
+(defun hcnm_config_read_all_user (/ )
   ;; This function doesn't need to setq an ini_configs since it does HCNM_CONFIG_READ_USER var by var.
-  (MAPCAR
-    '(LAMBDA (ENTRY / VAR VAL)
-       (SETQ
-         VAR (HCNM_CONFIG_ENTRY_VAR ENTRY)
-         VAL (HCNM_CONFIG_READ_USER VAR)
+  (mapcar
+    '(lambda (entry / var val)
+       (setq
+         var (hcnm_config_entry_var entry)
+         val (hcnm_config_read_user var)
        )
-       (LIST VAR VAL)
+       (list var val)
      )
-    (HCNM_CONFIG_DEFAULTS_SINGLE_SCOPE "User")
+    (hcnm_config_defaults_single_scope "User")
   )
 )
 
-(DEFUN HCNM_CONFIG_READ_ALL_PROJECT (/ INI_CONFIGS)
-  (SETQ INI_CONFIGS (INI_READSECTION (HCNM_INI_NAME (HCNM_PROJ)) "CNM"))
-  (MAPCAR
-    '(LAMBDA (ENTRY / VAR VAL)
-       (SETQ
-         VAR (HCNM_CONFIG_ENTRY_VAR ENTRY)
-         VAL (HCNM_CONFIG_ENTRY_VAL (ASSOC VAR INI_CONFIGS))
+(defun hcnm_config_read_all_project (/ ini_configs)
+  (setq ini_configs (ini_readsection (hcnm_ini_name (hcnm_proj)) "CNM"))
+  (mapcar
+    '(lambda (entry / var val)
+       (setq
+         var (hcnm_config_entry_var entry)
+         val (hcnm_config_entry_val (assoc var ini_configs))
        )
-       (LIST VAR VAL)
+       (list var val)
      )
-    (HCNM_CONFIG_DEFAULTS_SINGLE_SCOPE "Project")
+    (hcnm_config_defaults_single_scope "Project")
   )
 )
 
-(DEFUN HCNM_CONFIG_READ_ALL_SESSION (/ INI_CONFIGS)
+(defun hcnm_config_read_all_session (/ ini_configs)
   ;; Maybe this function can do what HCNM_CONFIG_READ_ALL_USER does; it doesn't need to setq an ini_configs since it does HCNM_CONFIG_READ_USER var by var.
-  (SETQ INI_CONFIGS *HCNM_CONFIG_SESSION*)
-  (MAPCAR
-    '(LAMBDA (ENTRY / VAR VAL)
-       (SETQ
-         VAR (HCNM_CONFIG_ENTRY_VAR ENTRY)
-         VAL (HCNM_CONFIG_ENTRY_VAL (ASSOC VAR INI_CONFIGS))
+  (setq ini_configs *hcnm_config_session*)
+  (mapcar
+    '(lambda (entry / var val)
+       (setq
+         var (hcnm_config_entry_var entry)
+         val (hcnm_config_entry_val (assoc var ini_configs))
        )
-       (LIST VAR VAL)
+       (list var val)
      )
-    (HCNM_CONFIG_DEFAULTS_SINGLE_SCOPE "Session")
+    (hcnm_config_defaults_single_scope "Session")
   )
 )
 
 ;;;Sets a variable in a temporary global lisp list
-(DEFUN HCNM_CONFIG_TEMP_SETVAR (VAR VAL)
-  (COND
-    ((ASSOC VAR *HCNM_CONFIG_TEMP*)
-     (SETQ
-       *HCNM_CONFIG_TEMP*
-        (SUBST
-          (LIST VAR VAL)
-          (ASSOC VAR *HCNM_CONFIG_TEMP*)
-          *HCNM_CONFIG_TEMP*
+(defun hcnm_config_temp_setvar (var val)
+  (cond
+    ((assoc var *hcnm_config_temp*)
+     (setq
+       *hcnm_config_temp*
+        (subst
+          (list var val)
+          (assoc var *hcnm_config_temp*)
+          *hcnm_config_temp*
         )
      )
     )
-    (T
-     (SETQ *HCNM_CONFIG_TEMP* (CONS (LIST VAR VAL) *HCNM_CONFIG_TEMP*))
+    (t
+     (setq *hcnm_config_temp* (cons (list var val) *hcnm_config_temp*))
     )
   )
 )
 
 ;;;Gets a variable in a temporary global lisp list
 ;;;If it's not present there, gets real value.
-(DEFUN HCNM_CONFIG_TEMP_GETVAR (VAR)
-  (COND
-    ((CADR (ASSOC VAR *HCNM_CONFIG_TEMP*)))
-    (T (C:HCNM-CONFIG-GETVAR VAR))
+(defun hcnm_config_temp_getvar (var)
+  (cond
+    ((cadr (assoc var *hcnm_config_temp*)))
+    (t (c:hcnm-config-getvar var))
   )
 )
 
 
 ;;;Saves the global list of temporary configs in the real global lisp list and in CNM.INI
-(DEFUN HCNM_CONFIG_TEMP_SAVE ()
-  (FOREACH
-     ENTRY *HCNM_CONFIG_TEMP*
+(defun hcnm_config_temp_save ()
+  (foreach
+     entry *hcnm_config_temp*
     (c:hcnm-config-setvar
-      (HCNM_CONFIG_ENTRY_VAR ENTRY)
-      (HCNM_CONFIG_ENTRY_VAL ENTRY)
+      (hcnm_config_entry_var entry)
+      (hcnm_config_entry_val entry)
     )
   )
 )
 
 ;;;Saves the global list of temporary configs in the real global lisp list and in CNM.INI
-(DEFUN HCNM_CONFIG_TEMP_CLEAR ()
-  (SETQ *HCNM_CONFIG_TEMP* NIL)
+(defun hcnm_config_temp_clear ()
+  (setq *hcnm_config_temp* nil)
 )
 
 ;;;Sets a variable in the global lisp list and in CNM.INI
-(DEFUN C:HCNM-CONFIG-SETVAR (VAR VAL)
-  (SETQ
-    *HCNM_CONFIG*
-     (COND
-       ((ASSOC VAR *HCNM_CONFIG*)
-        (SUBST
-          (LIST VAR VAL)
-          (ASSOC VAR *HCNM_CONFIG*)
-          *HCNM_CONFIG*
+(defun c:hcnm-config-setvar (var val)
+  (setq
+    *hcnm_config*
+     (cond
+       ((assoc var *hcnm_config*)
+        (subst
+          (list var val)
+          (assoc var *hcnm_config*)
+          *hcnm_config*
         )
        )
-       (T (CONS (LIST VAR VAL) *HCNM_CONFIG*))
+       (t (cons (list var val) *hcnm_config*))
      )
   )
-  (COND
-    ((HCNM_CONFIG_SCOPE_EQ VAR "User")
-     (HCNM_CONFIG_WRITE_USER VAR VAL)
+  (cond
+    ((hcnm_config_scope_eq var "User")
+     (hcnm_config_write_user var val)
     )
-    ((HCNM_CONFIG_SCOPE_EQ VAR "Project")
-     (INI_WRITEENTRY (HCNM_INI_NAME (HCNM_PROJ)) "CNM" VAR VAL)
+    ((hcnm_config_scope_eq var "Project")
+     (ini_writeentry (hcnm_ini_name (hcnm_proj)) "CNM" var val)
     )
-    ((HCNM_CONFIG_SCOPE_EQ VAR "Session")
-     (HCNM_CONFIG_WRITE_SESSION VAR VAL)
+    ((hcnm_config_scope_eq var "Session")
+     (hcnm_config_write_session var val)
     )
   )
-  VAL
+  val
 )
 
 
 ;;; c:hcnm-config-getvar
 ;;; Var is case sensitive
-(DEFUN C:HCNM-CONFIG-GETVAR
-   (VAR / SETVAR_P DEFINE_CONFIGS DIR INI PROJROOT CONFIG VAL)
-  (SETQ SETVAR_P T)
-  (COND
+(defun c:hcnm-config-getvar
+   (var / setvar_p define_configs dir ini projroot config val)
+  (setq setvar_p t)
+  (cond
     ;; Initialize configs as needed
-    ((NOT (ASSOC VAR *HCNM_CONFIG*))
-     (COND
-       ((HCNM_CONFIG_SCOPE_EQ VAR "Project")
-        (SETQ
-          *HCNM_CONFIG*
-           (APPEND
-             *HCNM_CONFIG*
+    ((not (assoc var *hcnm_config*))
+     (cond
+       ((hcnm_config_scope_eq var "Project")
+        (setq
+          *hcnm_config*
+           (append
+             *hcnm_config*
              ;; If one project var is missing, all project vars are missing
-             (HCNM_CONFIG_READ_ALL_PROJECT)
+             (hcnm_config_read_all_project)
            )
         )
        )
-       ((HCNM_CONFIG_SCOPE_EQ VAR "User")
-        (SETQ
-          *HCNM_CONFIG*
-           (APPEND
-             *HCNM_CONFIG*
+       ((hcnm_config_scope_eq var "User")
+        (setq
+          *hcnm_config*
+           (append
+             *hcnm_config*
              ;; If one user var is missing, all user vars are missing
-             (HCNM_CONFIG_READ_ALL_USER)
+             (hcnm_config_read_all_user)
            )
         )
        )
-       ((HCNM_CONFIG_SCOPE_EQ VAR "Session")
-        (SETQ
-          *HCNM_CONFIG*
-           (APPEND
-             *HCNM_CONFIG*
+       ((hcnm_config_scope_eq var "Session")
+        (setq
+          *hcnm_config*
+           (append
+             *hcnm_config*
              ;; If one session var is missing, all session vars are missing
-             (HCNM_CONFIG_READ_ALL_SESSION)
+             (hcnm_config_read_all_session)
            )
         )
        )       
      )
     )
   )
-  (COND
+  (cond
     ;;Try getting from list
-    ((SETQ VAL (CADR (ASSOC VAR *HCNM_CONFIG*)))
-     (SETQ SETVAR_P NIL)
+    ((setq val (cadr (assoc var *hcnm_config*)))
+     (setq setvar_p nil)
     )
     ;;Use default if there is one
-    ((SETQ VAL (HCNM_CONFIG_GET_DEFAULT VAR)))
+    ((setq val (hcnm_config_get_default var)))
     ;;Otherwise fail.
-    (T
-     (ALERT
-       (STRCAT
+    (t
+     (alert
+       (strcat
          "Fatal error in CNM:\nCould not initialize the variable\n"
-         (HAWS-PRIN1-TO-STRING VAR)
+         (haws-prin1-to-string var)
        )
      )
-     (SETQ SETVAR_P NIL)
+     (setq setvar_p nil)
     )
   )
-  (IF SETVAR_P
-    (C:HCNM-CONFIG-SETVAR VAR VAL)
+  (if setvar_p
+    (c:hcnm-config-setvar var val)
   )
-  VAL
+  val
 )
 
-(DEFUN HCNM_CONFIG_READ_USER (VAR / )
-  (COND
-    ((HAWS-VLISP-P)
-     (VL-REGISTRY-READ
+(defun hcnm_config_read_user (var / )
+  (cond
+    ((haws-vlisp-p)
+     (vl-registry-read
        "HKEY_CURRENT_USER\\Software\\HawsEDC\\CNM"
-       VAR
+       var
      )
     )
-    (T NIL)
+    (t nil)
   )
 )
 
-(DEFUN HCNM_CONFIG_WRITE_USER (VAR VAL)
-  (COND
-    ((HAWS-VLISP-P)
-     (VL-REGISTRY-WRITE
+(defun hcnm_config_write_user (var val)
+  (cond
+    ((haws-vlisp-p)
+     (vl-registry-write
        "HKEY_CURRENT_USER\\Software\\HawsEDC\\CNM"
-       VAR
-       VAL
+       var
+       val
      )
     )
   )
 )
 
-(DEFUN HCNM_CONFIG_READ_SESSION (VAR / )
-    (CADR (ASSOC VAR *HCNM_CONFIG_SESSION*))
+(defun hcnm_config_read_session (var / )
+    (cadr (assoc var *hcnm_config_session*))
 )
 
-(DEFUN HCNM_CONFIG_WRITE_SESSION (VAR VAL)
-  (SETQ
-    *HCNM_CONFIG_SESSION*
-     (COND
-       ((ASSOC VAR *HCNM_CONFIG_SESSION*)
-        (SUBST
-          (LIST VAR VAL)
-          (ASSOC VAR *HCNM_CONFIG_SESSION*)
-          *HCNM_CONFIG_SESSION*
+(defun hcnm_config_write_session (var val)
+  (setq
+    *hcnm_config_session*
+     (cond
+       ((assoc var *hcnm_config_session*)
+        (subst
+          (list var val)
+          (assoc var *hcnm_config_session*)
+          *hcnm_config_session*
         )
        )
-       (T (CONS (LIST VAR VAL) *HCNM_CONFIG_SESSION*))
+       (t (cons (list var val) *hcnm_config_session*))
      )
   )
 )
@@ -3572,92 +3572,92 @@ ImportLayerSettings=No
 ;;or else writes defaults to a fresh ini.
 ;;Doesn't add to existing ini.
 ;;Returns ini file name.
-(DEFUN HCNM_INITIALIZE_PROJECT (PROJ / APP APPINI PROJINI MARK_FILE_P)
-  (SETQ PROJINI (HCNM_PROJECT_FOLDER_TO_INI PROJ))
-  (COND
-    ((AND
-       (SETQ APP (C:HCNM-CONFIG-GETVAR "AppFolder"))
-       (SETQ APPINI (FINDFILE (HCNM_PROJECT_FOLDER_TO_INI APP)))
+(defun hcnm_initialize_project (proj / app appini projini mark_file_p)
+  (setq projini (hcnm_project_folder_to_ini proj))
+  (cond
+    ((and
+       (setq app (c:hcnm-config-getvar "AppFolder"))
+       (setq appini (findfile (hcnm_project_folder_to_ini app)))
      )
-     (IF (NOT (HAWS-FILE-COPY APPINI PROJINI)) (HCNM_ERROR_NOT_WRITEABLE)) 
-     (ALERT
-       (PRINC
-         (STRCAT
-           "CNM is copying settings found in\n" APPINI "\nto\n" PROJINI
+     (if (not (haws-file-copy appini projini)) (hcnm_error_not_writeable)) 
+     (alert
+       (princ
+         (strcat
+           "CNM is copying settings found in\n" appini "\nto\n" projini
            "\nfor this project."
           )
        )
      )
-     (WHILE (NOT (FINDFILE PROJINI)))
-     (SETQ MARK_FILE_P T)
-     PROJINI
+     (while (not (findfile projini)))
+     (setq mark_file_p t)
+     projini
     )
-    (T
-     (ALERT
-       (PRINC
-         (STRCAT
-           "CNM could not find a settings file in\n" APP
-           "\n\nPutting hard-coded defaults in\n" PROJINI
+    (t
+     (alert
+       (princ
+         (strcat
+           "CNM could not find a settings file in\n" app
+           "\n\nPutting hard-coded defaults in\n" projini
            "\nfor this project."
           )
        )
      )
      ;|(SETQ F2 (OPEN PROJINI "w"))
-     (PRINC "[CNM]" F2) ; TODO TEST AND REMOVE
-     (SETQ F2 (CLOSE F2))|;
-     (SETQ *HCNM_CONFIG* (HCNM_CONFIG_DEFAULTS_SINGLE_SCOPE "Project"))
-     (HCNM_CONFIG_WRITE_PROJECT PROJ)
-     (SETQ *HCNM_CONFIG* (HCNM_CONFIG_DEFAULTS))
-     (SETQ MARK_FILE_P T)
-     PROJINI
+     (princ "[CNM]" f2) ; TODO TEST AND REMOVE
+     (setq f2 (close f2))|;
+     (setq *hcnm_config* (hcnm_config_defaults_single_scope "Project"))
+     (hcnm_config_write_project proj)
+     (setq *hcnm_config* (hcnm_config_defaults))
+     (setq mark_file_p t)
+     projini
     )
   )
-  (COND
-    (MARK_FILE_P
-     (INI_WRITEENTRY PROJINI "CNM" "ThisFile" PROJINI)
+  (cond
+    (mark_file_p
+     (ini_writeentry projini "CNM" "ThisFile" projini)
     )
   )
 )
 
 ;;Saves *HCNM_CONFIG* to this project's ini
-(DEFUN HCNM_CONFIG_WRITE_PROJECT (PROJ)
-  (INI_WRITESECTION
-    (HCNM_INI_NAME
-      (COND
-        (PROJ)
-        ((HCNM_PROJ))
+(defun hcnm_config_write_project (proj)
+  (ini_writesection
+    (hcnm_ini_name
+      (cond
+        (proj)
+        ((hcnm_proj))
       )
     )
     "CNM"
-    *HCNM_CONFIG*
+    *hcnm_config*
   )
 )
 
-(DEFUN HCNM_SET_DIMSTYLE (KEY / DSTY)
+(defun hcnm_set_dimstyle (key / dsty)
   ;;Set dimstyle as requested by calling function and set by user
   ;;First, get dimstyle name
-  (SETQ DSTY (c:hcnm-config-getvar KEY))
+  (setq dsty (c:hcnm-config-getvar key))
   ;;Second, if the style is TCGLeader and doesn't already exist, set the _DotSmall ldrblk.
-  (COND
-    ((AND
-       (= KEY "TCGLeaderDimstyle")
-       (NOT (TBLSEARCH "DIMSTYLE" DSTY))
+  (cond
+    ((and
+       (= key "TCGLeaderDimstyle")
+       (not (tblsearch "DIMSTYLE" dsty))
      )
-     (VL-CMDF "._dim1" "_dimldrblk" "_DotSmall")
+     (vl-cmdf "._dim1" "_dimldrblk" "_DotSmall")
     )
   )
   ;;Third, if the desired style exists, save current style for later, then restore the desired style.
-  (COND
-    ((AND (/= KEY "") (TBLSEARCH "DIMSTYLE" DSTY))
-     (SETQ *HCNM_DIMSTYLEOLD* (GETVAR "dimstyle"))
-     (VL-CMDF "._dimstyle" "_restore" DSTY)
+  (cond
+    ((and (/= key "") (tblsearch "DIMSTYLE" dsty))
+     (setq *hcnm_dimstyleold* (getvar "dimstyle"))
+     (vl-cmdf "._dimstyle" "_restore" dsty)
     )
   )
 )
-(DEFUN HCNM_RESTORE_DIMSTYLE ()
-  (COND
-    (*HCNM_DIMSTYLEOLD*
-     (VL-CMDF "._dimstyle" "_restore" *HCNM_DIMSTYLEOLD*)
+(defun hcnm_restore_dimstyle ()
+  (cond
+    (*hcnm_dimstyleold*
+     (vl-cmdf "._dimstyle" "_restore" *hcnm_dimstyleold*)
     )
   )
 )
@@ -3673,62 +3673,62 @@ ImportLayerSettings=No
 ;; HCNM_PROJNOTES gets a valid project notes file
 ;; It should resolve all errors and user conditions.
 ;; and return a "drive:\\...\\projroot\\pnname" filename to other functions.
-(DEFUN HCNM_PROJNOTES (/ APP APPPN format OPT1 PNNAME PROJNOTES)
-  (SETQ PNNAME (c:hcnm-config-getvar "ProjectNotes"))
-  (IF (= PNNAME "")
+(defun hcnm_projnotes (/ app apppn format opt1 pnname projnotes)
+  (setq pnname (c:hcnm-config-getvar "ProjectNotes"))
+  (if (= pnname "")
     (c:hcnm-config-setvar
       "ProjectNotes"
-      (SETQ PNNAME "constnot.txt")
+      (setq pnname "constnot.txt")
     )
   )
-  (HAWS-MILEPOST
-    (STRCAT
+  (haws-milepost
+    (strcat
       "HCNM_PROJNOTES is beginning with ProjectNotes="
-      PNNAME
+      pnname
     )
   )
-  (COND
+  (cond
     ;;First, if there is a directory given, try to find project notes there.
-    ((AND
-       (/= "" (HAWS-FILENAME-DIRECTORY PNNAME))
-       (SETQ PROJNOTES (FINDFILE PNNAME))
+    ((and
+       (/= "" (haws-filename-directory pnname))
+       (setq projnotes (findfile pnname))
      )
-     PROJNOTES
+     projnotes
     )
     ;;Second, try to find the pnname (ProjectNotes=) given in CNM.INI
     ;;in the project folder ignoring any directory in the name.
-    ((FINDFILE
-       (SETQ
-         PROJNOTES
-          (STRCAT
-            (HCNM_PROJ)
+    ((findfile
+       (setq
+         projnotes
+          (strcat
+            (hcnm_proj)
             "\\"
-            (HAWS-FILENAME-BASE PNNAME)
-            (HAWS-FILENAME-EXTENSION PNNAME)
+            (haws-filename-base pnname)
+            (haws-filename-extension pnname)
           )
        )
      )
      ;;Record the find in the INI
-     (c:hcnm-config-setvar "ProjectNotes" PROJNOTES)
+     (c:hcnm-config-setvar "ProjectNotes" projnotes)
     )
     ;;Third choice, we couldn't find the Project Notes specified,
     ;;so try to get the appropriate style Project Notes from the app folder
     ;;and put it in the location tried above.
     ;;The CFREAD functions will later evaluate the necessity of changing the file
     ;;format and name.
-    ((AND
-       (SETQ APP (C:HCNM-CONFIG-GETVAR "AppFolder"))
-       (SETQ
-         format (HCNM_CONFIG_PROJECT_NOTES_FORMAT)
-         APPPN
-          (FINDFILE
-            (STRCAT
-              APP
+    ((and
+       (setq app (c:hcnm-config-getvar "AppFolder"))
+       (setq
+         format (hcnm_config_project_notes_format)
+         apppn
+          (findfile
+            (strcat
+              app
               "\\"
-              (COND
+              (cond
                 ((= format "txt2") "constnot-default.txt")
                 ((= format "csv") "constnot-default.csv")
-                (T (alert(princ "\nUnexpected Project Notes format. CNM cannot continue. Contact developer."))(exit))
+                (t (alert(princ "\nUnexpected Project Notes format. CNM cannot continue. Contact developer."))(exit))
               )
             )
           )
@@ -3736,17 +3736,17 @@ ImportLayerSettings=No
      )
      ;;If CONSTNOT.TXT was found in the app folder,
      ;;try to copy it to this project.
-     (HAWS-FILE-COPY APPPN PROJNOTES)
+     (haws-file-copy apppn projnotes)
      ;;Record the find in the INI
-     (c:hcnm-config-setvar "ProjectNotes" PROJNOTES)
+     (c:hcnm-config-setvar "ProjectNotes" projnotes)
     )
     ;;Third and last choice, fail with alert.
-    (T
-     (ALERT
-       (PRINC
-         (STRCAT
+    (t
+     (alert
+       (princ
+         (strcat
            "Fatal error in CNM:\nCouldn't find or create Project Notes.\n\nPlease create project notes at "
-           PROJNOTES
+           projnotes
            "\nor change the current Project Notes or Project Folder."
          )
        )
@@ -3755,13 +3755,13 @@ ImportLayerSettings=No
   )
 )
 
-(DEFUN HCNM_GETPROJNOTES (/ DPNAME OLDPROJNOTES PROJNOTES)
-  (HCNM_PROJINIT)                       ;Initialize variables in case any files changed.
-  (SETQ OLDPROJNOTES (HCNM_PROJNOTES))
-  (SETQ DPNAME (STRCAT (GETVAR "dwgprefix") "constnot.txt"))
-  (SETQ
-    PROJNOTES
-     (GETFILED
+(defun hcnm_getprojnotes (/ dpname oldprojnotes projnotes)
+  (hcnm_projinit)                       ;Initialize variables in case any files changed.
+  (setq oldprojnotes (hcnm_projnotes))
+  (setq dpname (strcat (getvar "dwgprefix") "constnot.txt"))
+  (setq
+    projnotes
+     (getfiled
        "Select Project Notes Filename"
        (c:hcnm-config-getvar "ProjectNotes")
        ""
@@ -3769,18 +3769,18 @@ ImportLayerSettings=No
      )
   )
   ;;Remove path if project notes is in project folder.
-  (COND
-    ((AND PROJNOTES (= (HAWS-FILENAME-DIRECTORY PROJNOTES) (HCNM_PROJ)))
-     (SETQ
-       PROJNOTES
-        (STRCAT
-          (HAWS-FILENAME-BASE PROJNOTES)
-          (HAWS-FILENAME-EXTENSION PROJNOTES)
+  (cond
+    ((and projnotes (= (haws-filename-directory projnotes) (hcnm_proj)))
+     (setq
+       projnotes
+        (strcat
+          (haws-filename-base projnotes)
+          (haws-filename-extension projnotes)
         )
      )
     )
   )
-  PROJNOTES
+  projnotes
 )
 
 ;; HCNM_READCF
@@ -3791,296 +3791,296 @@ ImportLayerSettings=No
 ;; TXT2 White space delimited ;Comment\n
 ;; Excel CSV
 ;; Doesn't do project management except to write txt2 configs to cnm.ini in the same folder as projnotes.
-(DEFUN HCNM_READCF (PROJNOTES / BAKPROJNOTES PNFORMAT RDLIN REQUESTED_FORMAT)
+(defun hcnm_readcf (projnotes / bakprojnotes pnformat rdlin requested_format)
   ;;Do a file read to figure out what the file format is.
   ;;For now, assume that a file that has any of the shape keys followed by a comma ("BOX,", etc.) is CSV
   ;;any other file is TXT2
-  (HAWS-MILEPOST
-    (STRCAT
+  (haws-milepost
+    (strcat
       "HCNM_READCF is deciphering the format of "
-      PROJNOTES
+      projnotes
       "\nand evaluating the need for format conversion."
     )
   )
-  (SETQ F1 (OPEN PROJNOTES "r"))
-  (WHILE (AND (NOT PNFORMAT) (SETQ RDLIN (READ-LINE F1)))
-    (COND
-      ((WCMATCH
-         (SUBSTR RDLIN 1 4)
+  (setq f1 (open projnotes "r"))
+  (while (and (not pnformat) (setq rdlin (read-line f1)))
+    (cond
+      ((wcmatch
+         (substr rdlin 1 4)
          "BOX`,,CIR`,,DIA`,,ELL`,,HEX`,,OCT`,,PEN`,,REC`,,SST`,,TRI`,"
        )
-       (SETQ PNFORMAT "csv")
+       (setq pnformat "csv")
       )
-      ((WCMATCH
-         (SUBSTR RDLIN 1 3)
+      ((wcmatch
+         (substr rdlin 1 3)
          (c:hcnm-config-getvar "NoteTypes")
        )
-       (SETQ PNFORMAT "txt2")
+       (setq pnformat "txt2")
       )
     )
   )
-  (SETQ F1 (CLOSE F1)
-    REQUESTED_FORMAT (HCNM_CONFIG_PROJECT_NOTES_FORMAT)
+  (setq f1 (close f1)
+    requested_format (hcnm_config_project_notes_format)
   )
-  (COND
-    ((= PNFORMAT "txt2")
-     (HCNM_READCFTXT2 PROJNOTES)
-     (COND
-       ((= REQUESTED_FORMAT "csv")
-        (SETQ BAKPROJNOTES PROJNOTES)
-        (HAWS-FILE-COPY
-          PROJNOTES
-          (PROGN
-            (WHILE (FINDFILE
-                     (SETQ
-                       BAKPROJNOTES
-                        (STRCAT
-                          (HAWS-FILENAME-DIRECTORY BAKPROJNOTES)
+  (cond
+    ((= pnformat "txt2")
+     (hcnm_readcftxt2 projnotes)
+     (cond
+       ((= requested_format "csv")
+        (setq bakprojnotes projnotes)
+        (haws-file-copy
+          projnotes
+          (progn
+            (while (findfile
+                     (setq
+                       bakprojnotes
+                        (strcat
+                          (haws-filename-directory bakprojnotes)
                           "\\"
-                          (HAWS-FILENAME-BASE BAKPROJNOTES)
+                          (haws-filename-base bakprojnotes)
                           "0"
-                          (HAWS-FILENAME-EXTENSION BAKPROJNOTES)
+                          (haws-filename-extension bakprojnotes)
                         )
                      )
                    )
             )
-            BAKPROJNOTES
+            bakprojnotes
           )
         )
-        (ALERT
-          (PRINC
-            (STRCAT
+        (alert
+          (princ
+            (strcat
               "CNM needs to convert\n"
-              PROJNOTES
+              projnotes
               "\nto comma-separated (csv) format.\n\nCurrent version backed up as\n"
-              BAKPROJNOTES
+              bakprojnotes
             )
           )
         )
-        (HCNM_WRITECFCSV PROJNOTES)
+        (hcnm_writecfcsv projnotes)
        )
      )
     )
-    ((= PNFORMAT "csv")
-     (HCNM_READCFCSV PROJNOTES)
-     (COND
-       ((= REQUESTED_FORMAT "txt2")
-        (SETQ BAKPROJNOTES PROJNOTES)
-        (HAWS-FILE-COPY
-          PROJNOTES
-          (PROGN
-            (WHILE (FINDFILE
-                     (SETQ
-                       BAKPROJNOTES
-                        (STRCAT
-                          (HAWS-FILENAME-DIRECTORY BAKPROJNOTES)
+    ((= pnformat "csv")
+     (hcnm_readcfcsv projnotes)
+     (cond
+       ((= requested_format "txt2")
+        (setq bakprojnotes projnotes)
+        (haws-file-copy
+          projnotes
+          (progn
+            (while (findfile
+                     (setq
+                       bakprojnotes
+                        (strcat
+                          (haws-filename-directory bakprojnotes)
                           "\\"
-                          (HAWS-FILENAME-BASE BAKPROJNOTES)
+                          (haws-filename-base bakprojnotes)
                           "0"
-                          (HAWS-FILENAME-EXTENSION BAKPROJNOTES)
+                          (haws-filename-extension bakprojnotes)
                         )
                      )
                    )
             )
-            BAKPROJNOTES
+            bakprojnotes
           )
         )
-        (ALERT
-          (PRINC
-            (STRCAT
+        (alert
+          (princ
+            (strcat
               "CNM needs to convert\n"
-              PROJNOTES
+              projnotes
               "\nto traditional text format.\n\nCurrent version backed up as\n"
-              BAKPROJNOTES
+              bakprojnotes
             )
           )
         )
-        (HCNM_WRITECFTXT2 PROJNOTES)
+        (hcnm_writecftxt2 projnotes)
        )
      )
     )
-    ((NOT PNFORMAT)
-     (ALERT
-       (PRINC
-         (STRCAT
+    ((not pnformat)
+     (alert
+       (princ
+         (strcat
            "Current Project Notes file\n"
-           PROJNOTES
+           projnotes
            "\ndoes not contain recognizable project notes.\n\nPlease correct the file and try again."
          )
        )
      )
-     (EXIT)
+     (exit)
     )
   )
 )
 
-(DEFUN HCNM_READCFTXT2 (PROJNOTES / ALERTNOTE ALERTTITLE CFITEM CFLIST
-                    CFLIST2 COMMENTBEGIN FILEV42 ILINE ININAME NOTTYP
-                    RDLIN VAL1 VAL2 VAR VARLIST N NOTDESC NOTNUM TYPWC
+(defun hcnm_readcftxt2 (projnotes / alertnote alerttitle cfitem cflist
+                    cflist2 commentbegin filev42 iline ininame nottyp
+                    rdlin val1 val2 var varlist n notdesc notnum typwc
                    )
-  (SETQ
-    TYPWC
+  (setq
+    typwc
      (c:hcnm-config-getvar "NoteTypes")   ; Get typwc (which may open f1) before opening f1
-    F1 (OPEN PROJNOTES "r")
+    f1 (open projnotes "r")
   )
-  (WHILE (SETQ RDLIN (READ-LINE F1))
-    (COND
+  (while (setq rdlin (read-line f1))
+    (cond
       ;;Comment
-      ((= ";" (SUBSTR RDLIN 1 1))
-       (SETQ CFLIST (CONS (CONS 0 (SUBSTR RDLIN 2)) CFLIST))
+      ((= ";" (substr rdlin 1 1))
+       (setq cflist (cons (cons 0 (substr rdlin 2)) cflist))
       )
       ;;Config setting
-      ((= "SET" (HAWS-RDFLD 1 RDLIN "W" 1))
-       (SETQ
-         VAR  (HAWS-RDFLD 2 RDLIN "W" 1)
-         VAL1 (HAWS-RDFLD 3 RDLIN "W" 1)
+      ((= "SET" (haws-rdfld 1 rdlin "W" 1))
+       (setq
+         var  (haws-rdfld 2 rdlin "W" 1)
+         val1 (haws-rdfld 3 rdlin "W" 1)
        )
-       (COND
+       (cond
          ;;CNMVERSION greater than 4.1 triggers ignoring SET variables other than TXTHT
-         ((AND (= VAR "CNMVERSION") (< 4.1 (ATOF VAL1)))
-          (SETQ
-            FILEV42 T
-            CFLIST
-             (CONS (LIST 1 VAR VAL1) CFLIST)
+         ((and (= var "CNMVERSION") (< 4.1 (atof val1)))
+          (setq
+            filev42 t
+            cflist
+             (cons (list 1 var val1) cflist)
           )
          )
          ;;TXTHT gets added to CFLIST
-         ((= VAR "TXTHT")
-          (SETQ CFLIST (CONS (LIST 1 VAR VAL1) CFLIST))
+         ((= var "TXTHT")
+          (setq cflist (cons (list 1 var val1) cflist))
          )
          ;;If file hasn't been converted yet (configs put in ini)
          ;;All others (unless deprecated) get put in CNM.INI
          ;;and left in with a note for backward compatibility.
-         ((NOT FILEV42)
-          (SETQ
-            VAR
-             (COND
-               ((= VAR "LINSPC") "LineSpacing")
-               ((= VAR "TBLWID") "TableWidth")
-               ((= VAR "PHASEWID") "PhaseWidthAdd")
-               ((= VAR "NDWID") "NumberToDescriptionWidth")
-               ((= VAR "DQWID") "DescriptionToQuantityWidth")
-               ((= VAR "QQWID") "QuantityToQuantityWidth")
-               ((= VAR "QUWID") "QuantityToUnitsWidth")
-               ((= VAR "PHASES") "InsertTablePhases")
-               ((= VAR "CTABONLY") "DoCurrentTabOnly")
-               ((= VAR "PHASEALIAS") "PhaseAlias")
-               (T NIL)                  ;Don't use unlisted/deprecated variables
+         ((not filev42)
+          (setq
+            var
+             (cond
+               ((= var "LINSPC") "LineSpacing")
+               ((= var "TBLWID") "TableWidth")
+               ((= var "PHASEWID") "PhaseWidthAdd")
+               ((= var "NDWID") "NumberToDescriptionWidth")
+               ((= var "DQWID") "DescriptionToQuantityWidth")
+               ((= var "QQWID") "QuantityToQuantityWidth")
+               ((= var "QUWID") "QuantityToUnitsWidth")
+               ((= var "PHASES") "InsertTablePhases")
+               ((= var "CTABONLY") "DoCurrentTabOnly")
+               ((= var "PHASEALIAS") "PhaseAlias")
+               (t nil)                  ;Don't use unlisted/deprecated variables
              )
           )
-          (COND
-            ((= VAR "PhaseAlias")
-             (SETQ
-               VAL2 (HAWS-RDFLD 4 RDLIN "W" 1)
-               VAR  (STRCAT VAR VAL1)
-               VAL1 VAL2
+          (cond
+            ((= var "PhaseAlias")
+             (setq
+               val2 (haws-rdfld 4 rdlin "W" 1)
+               var  (strcat var val1)
+               val1 val2
              )
             )
           )
-          (IF VAR
-            (SETQ VARLIST (CONS (LIST VAR VAL1) VARLIST))
+          (if var
+            (setq varlist (cons (list var val1) varlist))
           )
-          (IF (= VAR "LineSpacing")
-            (SETQ VARLIST (CONS (LIST "NoteSpacing" VAL1) VARLIST))
+          (if (= var "LineSpacing")
+            (setq varlist (cons (list "NoteSpacing" val1) varlist))
           )
          )
        )
       )
       ;;TXT2 header.  Turn into comment.
-      ((= "NUM" (SUBSTR RDLIN 1 3))
-       (SETQ
-         CFLIST
-          (CONS (CONS 0 (STRCAT "NUM" (SUBSTR RDLIN 5))) CFLIST)
+      ((= "NUM" (substr rdlin 1 3))
+       (setq
+         cflist
+          (cons (cons 0 (strcat "NUM" (substr rdlin 5))) cflist)
        )
       )
       ;;Note type/shape heading.
-      ((WCMATCH (SUBSTR RDLIN 1 3) TYPWC)
-       (SETQ NOTTYP (SUBSTR RDLIN 1 3))
+      ((wcmatch (substr rdlin 1 3) typwc)
+       (setq nottyp (substr rdlin 1 3))
       )
       ;;Title.
-      ((= "TITLE" (SUBSTR RDLIN 1 5))
-       (COND
-         (NOTTYP
-          (SETQ
-            CFLIST
-             (CONS
-               (LIST
+      ((= "TITLE" (substr rdlin 1 5))
+       (cond
+         (nottyp
+          (setq
+            cflist
+             (cons
+               (list
                  2
-                 NOTTYP
-                 (HAWS-RDFLD 1 (SUBSTR RDLIN 6 62) 62 1)
+                 nottyp
+                 (haws-rdfld 1 (substr rdlin 6 62) 62 1)
                )
-               CFLIST
+               cflist
              )
           )
          )
-         (T (SETQ ALERTTITLE T))
+         (t (setq alerttitle t))
        )
       )
       ;;Note number.
-      ((/= "" (SETQ NOTNUM (HAWS-RDFLD 1 RDLIN 5 1)))
-       (COND
-         (NOTTYP
-          (SETQ
-            CFLIST
-             (CONS
-               (LIST
+      ((/= "" (setq notnum (haws-rdfld 1 rdlin 5 1)))
+       (cond
+         (nottyp
+          (setq
+            cflist
+             (cons
+               (list
                  3
-                 NOTTYP
-                 NOTNUM
-                 (HAWS-RDFLD 1 (SUBSTR RDLIN 68 3) 3 1)
-                 (HAWS-RDFLD 15 RDLIN 5 1)
-                 (HAWS-RDFLD 1 (SUBSTR RDLIN 77) 12 3) ;Price
-                 (LIST (HAWS-RDFLD 1 (SUBSTR RDLIN 6 62) 62 1))
+                 nottyp
+                 notnum
+                 (haws-rdfld 1 (substr rdlin 68 3) 3 1)
+                 (haws-rdfld 15 rdlin 5 1)
+                 (haws-rdfld 1 (substr rdlin 77) 12 3) ;Price
+                 (list (haws-rdfld 1 (substr rdlin 6 62) 62 1))
                )
-               CFLIST
+               cflist
              )
           )
          )
-         (T (SETQ ALERTNOTE T))
+         (t (setq alertnote t))
        )
       )
       ;;Additional note description.
-      ((= "" (HAWS-RDFLD 1 RDLIN 5 1))
-       (SETQ N -1)
+      ((= "" (haws-rdfld 1 rdlin 5 1))
+       (setq n -1)
        ;;If there's no CFLIST, educate the user.
-       (COND
-         ((NOT CFLIST)
-          (ALERT
-            (PRINC
-              (STRCAT
+       (cond
+         ((not cflist)
+          (alert
+            (princ
+              (strcat
                 "A note continuation line was found in "
-                PROJNOTES
+                projnotes
                 " before any notes.\nPlease edit the file to correct the problem.\n(Note continuations are empty or begin with five spaces.\nFile comments must begin with a semi-colon \";\".)"
               )
             )
           )
-          (EXIT)
+          (exit)
          )
-         (T
+         (t
           ;;Find first note in list (there may be comments before it, or in other words, after it in the file).
-          (WHILE (AND
-                   (/= 3 (CAR (NTH (SETQ N (1+ N)) CFLIST)))
-                   (< N (LENGTH CFLIST))
+          (while (and
+                   (/= 3 (car (nth (setq n (1+ n)) cflist)))
+                   (< n (length cflist))
                  )
           )
-          (IF (/= N (LENGTH CFLIST))
-            (SETQ
-              NOTDESC   (NTH 6 (NTH N CFLIST))
-              CFLIST (CONS
-                       (SUBST
-                         (REVERSE
-                           (CONS
-                             (HAWS-RDFLD 1 (SUBSTR RDLIN 6 62) 62 1)
-                             (COND
-                               ((= NOTDESC '("")) NIL)
-                               ((REVERSE NOTDESC))
+          (if (/= n (length cflist))
+            (setq
+              notdesc   (nth 6 (nth n cflist))
+              cflist (cons
+                       (subst
+                         (reverse
+                           (cons
+                             (haws-rdfld 1 (substr rdlin 6 62) 62 1)
+                             (cond
+                               ((= notdesc '("")) nil)
+                               ((reverse notdesc))
                              )
                            )
                          )
-                         NOTDESC
-                         (NTH N CFLIST)
+                         notdesc
+                         (nth n cflist)
                        )
-                       (CDR CFLIST)
+                       (cdr cflist)
                      )
             )
           )
@@ -4089,182 +4089,182 @@ ImportLayerSettings=No
       )
     )
   )
-  (SETQ F1 (CLOSE F1))
-  (IF ALERTTITLE
-    (ALERT
-      (PRINC
-        (STRCAT
+  (setq f1 (close f1))
+  (if alerttitle
+    (alert
+      (princ
+        (strcat
           "Title(s) were found in"
-          PROJNOTES
+          projnotes
           "\nthat came before any shape.\n\nThe title(s) will never be printed."
         )
       )
     )
   )
-  (IF ALERTNOTE
-    (ALERT
-      (PRINC
-        (STRCAT
+  (if alertnote
+    (alert
+      (princ
+        (strcat
           "Note(s) were found in "
-          PROJNOTES
+          projnotes
           "\nthat came before any shape.\n\nThe note(s) will never be found or printed."
         )
       )
     )
   )
   ;;Put configs from v4 Project Notes into CNM.INI and alert.
-  (COND
-    ((AND (NOT FILEV42) VARLIST)
-     (ALERT
-       (PRINC
+  (cond
+    ((and (not filev42) varlist)
+     (alert
+       (princ
          "\nCNM is moving project settings from version 4.1 Project Notes to CNM.INI."
        )
      )
-     (FOREACH
-        ENTRY VARLIST
+     (foreach
+        entry varlist
        (c:hcnm-config-setvar
-         (HCNM_CONFIG_ENTRY_VAR ENTRY)
-         (HCNM_CONFIG_ENTRY_VAL ENTRY)
+         (hcnm_config_entry_var entry)
+         (hcnm_config_entry_val entry)
        )
      )
     )
   )
-  (SETQ *HCNM_CNMPROJECTNOTES* (REVERSE CFLIST))
-  (HAWS-MILEPOST
-    (STRCAT
+  (setq *hcnm_cnmprojectnotes* (reverse cflist))
+  (haws-milepost
+    (strcat
       "HCNM_READCFTXT2 read "
-      (ITOA (LENGTH *HCNM_CNMPROJECTNOTES*))
+      (itoa (length *hcnm_cnmprojectnotes*))
       " lines from "
-      PROJNOTES
+      projnotes
       "."
     )
   )
   ;;Add comments and version number to old file.
-  (COND
-    ((NOT FILEV42)
-     (SETQ
-       *HCNM_CNMPROJECTNOTES*
-        (CONS
-          (LIST 1 "CNMVERSION" "4.2")
-          (REVERSE CFLIST)
+  (cond
+    ((not filev42)
+     (setq
+       *hcnm_cnmprojectnotes*
+        (cons
+          (list 1 "CNMVERSION" "4.2")
+          (reverse cflist)
         )
      )
-     (ALERT
-       (PRINC
-         (STRCAT
+     (alert
+       (princ
+         (strcat
            "\nCNM is converting "
-           PROJNOTES
+           projnotes
            " to a version 4.2 file.\n\nNote: The meaning of the TXTHT setting has changed\nfrom \"Text height in AutoCAD units\"\nto \"Plotted text height\"\n\nCNM is using the current value of DIMSCALE to convert text heights."
          )
        )
      )
-     (SETQ
-       F1 (OPEN PROJNOTES "r")
-       CFLIST NIL
-       ILINE 0
+     (setq
+       f1 (open projnotes "r")
+       cflist nil
+       iline 0
      )
-     (WHILE (SETQ RDLIN (READ-LINE F1))
-       (SETQ ILINE (1+ ILINE))
+     (while (setq rdlin (read-line f1))
+       (setq iline (1+ iline))
        ;;If the line is recognizable as a vestige of version 4.1 config settings,
        ;;make a note of it for adding a comment.
-       (IF (OR (AND
-                 (NOT COMMENTBEGIN)
-                 (= (SUBSTR RDLIN 1 3) "SET")
-                 (/= (HAWS-RDFLD 2 RDLIN "W" 1) "TXTHT")
+       (if (or (and
+                 (not commentbegin)
+                 (= (substr rdlin 1 3) "SET")
+                 (/= (haws-rdfld 2 rdlin "W" 1) "TXTHT")
                )
-               (= (SUBSTR RDLIN 1 5) ";SET ")
+               (= (substr rdlin 1 5) ";SET ")
            )
-         (SETQ COMMENTBEGIN (1- ILINE))
+         (setq commentbegin (1- iline))
        )
-       (IF
+       (if
          (=
-           RDLIN
+           rdlin
            ";This section shows how to override program size/scale defaults"
          )
-          (SETQ COMMENTBEGIN (- ILINE 2))
+          (setq commentbegin (- iline 2))
        )
-       (SETQ CFLIST (CONS RDLIN CFLIST))
+       (setq cflist (cons rdlin cflist))
      )
-     (SETQ
-       F1    (CLOSE F1)
-       F2    (OPEN PROJNOTES "w")
-       ILINE 0
+     (setq
+       f1    (close f1)
+       f2    (open projnotes "w")
+       iline 0
      )
-     (WRITE-LINE "SET CNMVERSION 4.2" F2)
-     (FOREACH
-        CFITEM (REVERSE CFLIST)
-       (IF (= ILINE COMMENTBEGIN)
-         (WRITE-LINE
+     (write-line "SET CNMVERSION 4.2" f2)
+     (foreach
+        cfitem (reverse cflist)
+       (if (= iline commentbegin)
+         (write-line
            ";The variable settings section below is not used by CNM 4.2.\n;All variables except TXTHT (optional) and CNMVERSION are in CNM.INI.\n;You can use TXTHT to vary text heights from one line to the next.\n;CNM uses the current DIMTXT for the whole table if TXTHT is omitted,\n;."
-           F2
+           f2
          )
        )
-       (SETQ ILINE (1+ ILINE))
-       (WRITE-LINE CFITEM F2)
+       (setq iline (1+ iline))
+       (write-line cfitem f2)
      )
-     (SETQ F2 (CLOSE F2))
+     (setq f2 (close f2))
     )
   )
 )
 
 
-(DEFUN HCNM_READCFCSV (PROJNOTES / CFLIST NOTDSCSTR NOTTYP RDLIN TYPWC VAL VAR WRAP
+(defun hcnm_readcfcsv (projnotes / cflist notdscstr nottyp rdlin typwc val var wrap
                   )
-  (SETQ
-    WRAP (ATOI (C:HCNM-CONFIG-GETVAR "DescriptionWrap"))
-    TYPWC
+  (setq
+    wrap (atoi (c:hcnm-config-getvar "DescriptionWrap"))
+    typwc
      (c:hcnm-config-getvar "NoteTypes")   ; Get typwc (which may open f1) before opening f1
-    F1 (OPEN PROJNOTES "r")
+    f1 (open projnotes "r")
   )
-  (WHILE (SETQ RDLIN (READ-LINE F1))
-    (COND
+  (while (setq rdlin (read-line f1))
+    (cond
       ;;Comment
-      ((= ";" (SUBSTR RDLIN 1 1))
-       (SETQ CFLIST (CONS (CONS 0 (HAWS-RDFLD 3 RDLIN "," 1)) CFLIST))
+      ((= ";" (substr rdlin 1 1))
+       (setq cflist (cons (cons 0 (haws-rdfld 3 rdlin "," 1)) cflist))
       )
       ;;Variable setting
-      ((= "SET" (HAWS-RDFLD 1 RDLIN "," 1))
-       (SETQ
-         CFLIST
-          (CONS
-            (LIST
+      ((= "SET" (haws-rdfld 1 rdlin "," 1))
+       (setq
+         cflist
+          (cons
+            (list
               1
-              (SETQ VAR (HAWS-RDFLD 2 RDLIN "," 1))
-              (SETQ VAL (HAWS-RDFLD 3 RDLIN "," 1))
+              (setq var (haws-rdfld 2 rdlin "," 1))
+              (setq val (haws-rdfld 3 rdlin "," 1))
             )
-            CFLIST
+            cflist
           )
        )
-       (COND ((= (STRCAT VAR) "WRAP")(SETQ WRAP (ATOI VAL))))
+       (cond ((= (strcat var) "WRAP")(setq wrap (atoi val))))
       )
       ;;Note or title
-      ((WCMATCH (SETQ NOTTYP (SUBSTR RDLIN 1 3)) TYPWC)
-       (COND
-         ((= "TITLE" (HAWS-RDFLD 2 RDLIN "," 1))
-          (SETQ
-            CFLIST
-             (CONS
-               (LIST 2 NOTTYP (HAWS-RDFLD 3 RDLIN "," 1))
-               CFLIST
+      ((wcmatch (setq nottyp (substr rdlin 1 3)) typwc)
+       (cond
+         ((= "TITLE" (haws-rdfld 2 rdlin "," 1))
+          (setq
+            cflist
+             (cons
+               (list 2 nottyp (haws-rdfld 3 rdlin "," 1))
+               cflist
              )
           )
          )
-         (T
-          (SETQ
-            NOTDSCSTR
-             (HAWS-RDFLD 3 RDLIN "," 1)
-            CFLIST 
-             (CONS
-               (LIST
+         (t
+          (setq
+            notdscstr
+             (haws-rdfld 3 rdlin "," 1)
+            cflist 
+             (cons
+               (list
                  3
-                 NOTTYP
-                 (COND ((HAWS-RDFLD 2 RDLIN "," 1)) (""))
-                 (COND ((HAWS-RDFLD 4 RDLIN "," 1)) (""))
-                 (COND ((HAWS-RDFLD 5 RDLIN "," 1)) (""))
-                 (COND ((HAWS-RDFLD 6 RDLIN "," 1)) ("")); Price
-                 (HCNM_WRAP_DESCRIPTION (COND ((HAWS-RDFLD 3 RDLIN "," 1)) ("")) WRAP)
+                 nottyp
+                 (cond ((haws-rdfld 2 rdlin "," 1)) (""))
+                 (cond ((haws-rdfld 4 rdlin "," 1)) (""))
+                 (cond ((haws-rdfld 5 rdlin "," 1)) (""))
+                 (cond ((haws-rdfld 6 rdlin "," 1)) ("")); Price
+                 (hcnm_wrap_description (cond ((haws-rdfld 3 rdlin "," 1)) ("")) wrap)
                )
-               CFLIST
+               cflist
              )
           )
          )
@@ -4272,99 +4272,99 @@ ImportLayerSettings=No
       )
     )
   )
-  (SETQ F1 (CLOSE F1))
-  (SETQ *HCNM_CNMPROJECTNOTES* (REVERSE CFLIST))
+  (setq f1 (close f1))
+  (setq *hcnm_cnmprojectnotes* (reverse cflist))
 )
 
-(DEFUN HCNM_WRAP_DESCRIPTION (NOTDSCSTR WRAP / CHARACTER_I I I_ENDLINE I_NEWLINE_PREV
-                          I_NEWWORD_PREV INWORD_P NEED_WRAP_P NOTDSCLST
-                          WORD_PROVIDED_P WRAP_EXCEEDED_P
+(defun hcnm_wrap_description (notdscstr wrap / character_i i i_endline i_newline_prev
+                          i_newword_prev inword_p need_wrap_p notdsclst
+                          word_provided_p wrap_exceeded_p
                          )
-  (SETQ
-    NOTDSCLST NIL
-    I_NEWLINE_PREV 1
-    I_NEWWORD_PREV 1
-    INWORD_P T
-    I 0
+  (setq
+    notdsclst nil
+    i_newline_prev 1
+    i_newword_prev 1
+    inword_p t
+    i 0
   )
-  (WHILE (<= (SETQ I (1+ I)) (1+ (STRLEN NOTDSCSTR)))
-    (SETQ
-      CHARACTER_I
-       (SUBSTR NOTDSCSTR I 1)
-      WRAP_EXCEEDED_P
-       (>= (- I I_NEWLINE_PREV) WRAP)
-      WORD_PROVIDED_P
-       (> I_NEWWORD_PREV I_NEWLINE_PREV)
+  (while (<= (setq i (1+ i)) (1+ (strlen notdscstr)))
+    (setq
+      character_i
+       (substr notdscstr i 1)
+      wrap_exceeded_p
+       (>= (- i i_newline_prev) wrap)
+      word_provided_p
+       (> i_newword_prev i_newline_prev)
     )
-    (COND ((OR (= CHARACTER_I "") (AND WRAP_EXCEEDED_P WORD_PROVIDED_P)) (SETQ NEED_WRAP_P T)))
-    (COND
-      ((= "\\n" (SUBSTR NOTDSCSTR I 2))
-       (SETQ
-         NOTDSCLST
-          (CONS
-            (LIST I_NEWLINE_PREV (- I I_NEWLINE_PREV))
-            NOTDSCLST
+    (cond ((or (= character_i "") (and wrap_exceeded_p word_provided_p)) (setq need_wrap_p t)))
+    (cond
+      ((= "\\n" (substr notdscstr i 2))
+       (setq
+         notdsclst
+          (cons
+            (list i_newline_prev (- i i_newline_prev))
+            notdsclst
           )
-         I_NEWLINE_PREV
-          (+ I 2)
-         I_NEWWORD_PREV
-          (+ I 2)
-         INWORD_P T
-         NEED_WRAP_P NIL
+         i_newline_prev
+          (+ i 2)
+         i_newword_prev
+          (+ i 2)
+         inword_p t
+         need_wrap_p nil
        )
       )
-      ((WCMATCH CHARACTER_I " ,\t")
-       (SETQ INWORD_P NIL)
+      ((wcmatch character_i " ,\t")
+       (setq inword_p nil)
       )
-      (T
-       (COND
-         ((AND (/= CHARACTER_I "")(NOT INWORD_P))
-          (SETQ
-            I_NEWWORD_PREV I
-            INWORD_P T
+      (t
+       (cond
+         ((and (/= character_i "")(not inword_p))
+          (setq
+            i_newword_prev i
+            inword_p t
           )
          )
        )
-       (COND
-         (NEED_WRAP_P
-          (SETQ
-            I_NEWLINE
-             (COND
-               ((= CHARACTER_I "") I)
-               (T I_NEWWORD_PREV)
+       (cond
+         (need_wrap_p
+          (setq
+            i_newline
+             (cond
+               ((= character_i "") i)
+               (t i_newword_prev)
              )
-            NOTDSCLST
-             (CONS (LIST I_NEWLINE_PREV (- I_NEWLINE I_NEWLINE_PREV)) NOTDSCLST)
-            I_NEWLINE_PREV
-             I_NEWLINE
-            NEED_WRAP_P NIL
+            notdsclst
+             (cons (list i_newline_prev (- i_newline i_newline_prev)) notdsclst)
+            i_newline_prev
+             i_newline
+            need_wrap_p nil
           )
          )
        )
       )
     )
   )
-  (SETQ
-    NOTDSCLST
-     (MAPCAR
-       '(LAMBDA (I) (SUBSTR NOTDSCSTR (CAR I) (CADR I)))
-       NOTDSCLST
+  (setq
+    notdsclst
+     (mapcar
+       '(lambda (i) (substr notdscstr (car i) (cadr i)))
+       notdsclst
      )
   )
-  (REVERSE NOTDSCLST)
+  (reverse notdsclst)
 )
 
 ;|
-(DEFUN HCNM_WRAP_DESCRIPTION_TEST ( / ERRORSTRING NOTDSCSTR WRAP)
-  (SETQ
-    NOTDSCSTR "A23456789 B23456789 C23456789"
-    WRAP 2
-    ERRORSTRING "List of assertions violated:"
-    ERRORSTRING
-     (STRCAT
-       ERRORSTRING
-       (COND
-         ((/= (CAR (HCNM_WRAP_DESCRIPTION NOTDSCSTR WRAP))
+(defun hcnm_wrap_description_test ( / errorstring notdscstr wrap)
+  (setq
+    notdscstr "A23456789 B23456789 C23456789"
+    wrap 2
+    errorstring "List of assertions violated:"
+    errorstring
+     (strcat
+       errorstring
+       (cond
+         ((/= (car (hcnm_wrap_description notdscstr wrap))
               "A23456789 "
           )
           "\nMust leave at least one word on each line"
@@ -4372,12 +4372,12 @@ ImportLayerSettings=No
          ("")
        )
      )
-    WRAP 11
-    ERRORSTRING
-     (STRCAT
-       ERRORSTRING
-       (COND
-         ((/= (CAR (HCNM_WRAP_DESCRIPTION NOTDSCSTR WRAP))
+    wrap 11
+    errorstring
+     (strcat
+       errorstring
+       (cond
+         ((/= (car (hcnm_wrap_description notdscstr wrap))
               "A23456789 "
           )
           "\nMust wrap word 2 to line 3 if it exceeds by many."
@@ -4385,12 +4385,12 @@ ImportLayerSettings=No
          ("")
        )
      )
-    WRAP 28
-    ERRORSTRING
-     (STRCAT
-       ERRORSTRING
-       (COND
-         ((/= (CAR (HCNM_WRAP_DESCRIPTION NOTDSCSTR WRAP))
+    wrap 28
+    errorstring
+     (strcat
+       errorstring
+       (cond
+         ((/= (car (hcnm_wrap_description notdscstr wrap))
               "A23456789 B23456789 "
           )
           "\nMust wrap word 3 to line 3 if it exceeds by one."
@@ -4398,12 +4398,12 @@ ImportLayerSettings=No
          ("")
        )
      )
-    WRAP 21
-    ERRORSTRING
-     (STRCAT
-       ERRORSTRING
-       (COND
-         ((/= (CAR (HCNM_WRAP_DESCRIPTION NOTDSCSTR WRAP))
+    wrap 21
+    errorstring
+     (strcat
+       errorstring
+       (cond
+         ((/= (car (hcnm_wrap_description notdscstr wrap))
               "A23456789 B23456789 "
           )
           "\nMust wrap word 3 to line two if it exceeds by many."
@@ -4411,12 +4411,12 @@ ImportLayerSettings=No
          ("")
        )
      )
-    WRAP 18
-    ERRORSTRING
-     (STRCAT
-       ERRORSTRING
-       (COND
-         ((/= (CAR (HCNM_WRAP_DESCRIPTION NOTDSCSTR WRAP))
+    wrap 18
+    errorstring
+     (strcat
+       errorstring
+       (cond
+         ((/= (car (hcnm_wrap_description notdscstr wrap))
               "A23456789 "
           )
           "\nMust wrap word 2 to line two if it exceeds by one."
@@ -4426,158 +4426,158 @@ ImportLayerSettings=No
      )
   )
   ;;(HCNM_WRAP_DESCRIPTION NOTDSCSTR WRAP)
-  ERRORSTRING
+  errorstring
 )
 |;
 
-(DEFUN HCNM_WRITECFTXT2 (PROJNOTES / I ITEM NOTTYP NOTTXT NOTTXTNEW)
-  (ALERT
-    (PRINC
-      (STRCAT
+(defun hcnm_writecftxt2 (projnotes / i item nottyp nottxt nottxtnew)
+  (alert
+    (princ
+      (strcat
         "CNM is converting\n"
-        PROJNOTES
+        projnotes
         "\nto traditional text format."
       )
     )
   )
-  (SETQ F2 (OPEN PROJNOTES "w"))
-  (FOREACH
-     ITEM *HCNM_CNMPROJECTNOTES*
-    (COND
+  (setq f2 (open projnotes "w"))
+  (foreach
+     item *hcnm_cnmprojectnotes*
+    (cond
       ;;Comment
-      ((= 0 (CAR ITEM)) (WRITE-LINE (STRCAT ";" (CDR ITEM)) F2))
+      ((= 0 (car item)) (write-line (strcat ";" (cdr item)) f2))
       ;;Set variable (TXTHT only at this time)
-      ((= 1 (CAR ITEM))
-       (WRITE-LINE (STRCAT "SET " (CADR ITEM) " " (CADDR ITEM)) F2)
+      ((= 1 (car item))
+       (write-line (strcat "SET " (cadr item) " " (caddr item)) f2)
       )
       ;;Title
-      ((= 2 (CAR ITEM))
-       (IF (/= NOTTYP (SETQ NOTTYP (CADR ITEM)))
-         (WRITE-LINE NOTTYP F2)
+      ((= 2 (car item))
+       (if (/= nottyp (setq nottyp (cadr item)))
+         (write-line nottyp f2)
        )
-       (WRITE-LINE (STRCAT "TITLE " (CADDR ITEM)) F2)
+       (write-line (strcat "TITLE " (caddr item)) f2)
       )
       ;;Note
-      ((= 3 (CAR ITEM))
-       (IF (/= NOTTYP (SETQ NOTTYP (CADR ITEM)))
-         (WRITE-LINE NOTTYP F2)
+      ((= 3 (car item))
+       (if (/= nottyp (setq nottyp (cadr item)))
+         (write-line nottyp f2)
        )
-       (PRINC
-         (STRCAT
-           (HAWS-MKFLD (CADDR ITEM) 5)
-           (HAWS-MKFLD (CAR (NTH 5 ITEM)) 62)
-           (HAWS-MKFLD (CADDDR ITEM) 3)
-           (NTH 4 ITEM)
+       (princ
+         (strcat
+           (haws-mkfld (caddr item) 5)
+           (haws-mkfld (car (nth 5 item)) 62)
+           (haws-mkfld (cadddr item) 3)
+           (nth 4 item)
            "\n"
          )
-         F2
+         f2
        )
-       (FOREACH
-          ITEM (CDR (NTH 5 ITEM))
-         (PRINC (STRCAT "     " ITEM "\n") F2)
+       (foreach
+          item (cdr (nth 5 item))
+         (princ (strcat "     " item "\n") f2)
        )
       )
     )
   )
-  (SETQ F2 (CLOSE F2))
-  *HCNM_CNMPROJECTNOTES*
+  (setq f2 (close f2))
+  *hcnm_cnmprojectnotes*
 )
 
-(DEFUN HCNM_WRITECFCSV (PROJNOTES / DESC DESCLINE ITEM NOTTYP)
-  (ALERT
-    (PRINC
-      (STRCAT
+(defun hcnm_writecfcsv (projnotes / desc descline item nottyp)
+  (alert
+    (princ
+      (strcat
         "CNM is converting\n"
-        PROJNOTES
+        projnotes
         "\nto comma-separated format."
       )
     )
   )
-  (SETQ F2 (OPEN PROJNOTES "w"))
-  (FOREACH
-     ITEM *HCNM_CNMPROJECTNOTES*
-    (COND
-      ((= 0 (CAR ITEM))
-       (WRITE-LINE
-         (STRCAT
+  (setq f2 (open projnotes "w"))
+  (foreach
+     item *hcnm_cnmprojectnotes*
+    (cond
+      ((= 0 (car item))
+       (write-line
+         (strcat
            ";"
-           (COND
-             (NOTTYP)
+           (cond
+             (nottyp)
              ("CIR")
            )
            ",N/A,"
-           (HAWS-MKFLD (CDR ITEM) ",")
+           (haws-mkfld (cdr item) ",")
          )
-         F2
+         f2
        )
       )
-      ((= 1 (CAR ITEM))
-       (WRITE-LINE (STRCAT "SET," (CADR ITEM) "," (CADDR ITEM)) F2)
+      ((= 1 (car item))
+       (write-line (strcat "SET," (cadr item) "," (caddr item)) f2)
       )
-      ((= 2 (CAR ITEM))
-       (SETQ NOTTYP (CADR ITEM))
-       (WRITE-LINE (STRCAT NOTTYP ",TITLE," (CADDR ITEM) ",,") F2)
+      ((= 2 (car item))
+       (setq nottyp (cadr item))
+       (write-line (strcat nottyp ",TITLE," (caddr item) ",,") f2)
       )
-      ((= 3 (CAR ITEM))
-       (SETQ
-         DESC ""
-         NOTTYP
-          (CADR ITEM)
+      ((= 3 (car item))
+       (setq
+         desc ""
+         nottyp
+          (cadr item)
        )
-       (FOREACH
-          DESCLINE (NTH 5 ITEM)
-         (SETQ DESC (STRCAT DESC "\\n" DESCLINE))
+       (foreach
+          descline (nth 5 item)
+         (setq desc (strcat desc "\\n" descline))
        )
-       (SETQ DESC (SUBSTR DESC 3))
-       (WRITE-LINE
-         (STRCAT
-           NOTTYP
+       (setq desc (substr desc 3))
+       (write-line
+         (strcat
+           nottyp
            ","
-           (CADDR ITEM)
+           (caddr item)
            ","
-           (HAWS-MKFLD DESC ",")
-           (CADDDR ITEM)
+           (haws-mkfld desc ",")
+           (cadddr item)
            ","
-           (NTH 4 ITEM)
+           (nth 4 item)
          )
-         F2
+         f2
        )
       )
     )
   )
-  (SETQ F2 (CLOSE F2))
-  *HCNM_CNMPROJECTNOTES*
+  (setq f2 (close f2))
+  *hcnm_cnmprojectnotes*
 )
 
-(DEFUN HCNM_CONFIG_PROJECT_NOTES_FORMAT (/ EDITOR FORMAT VALID_EDITORS)
-  (SETQ
-    VALID_EDITORS
-     (LIST
-       (LIST "text" "txt2")
-       (LIST "csv" "csv")
-       (LIST "cnm" "csv")
+(defun hcnm_config_project_notes_format (/ editor format valid_editors)
+  (setq
+    valid_editors
+     (list
+       (list "text" "txt2")
+       (list "csv" "csv")
+       (list "cnm" "csv")
      )
-    EDITOR
-     (C:HCNM-CONFIG-GETVAR "ProjectNotesEditor")
-    FORMAT
-     (CADR (ASSOC EDITOR VALID_EDITORS))
+    editor
+     (c:hcnm-config-getvar "ProjectNotesEditor")
+    format
+     (cadr (assoc editor valid_editors))
   )
-  (COND
-    ((NOT FORMAT)
-     (ALERT
-       (PRINC
-         (STRCAT
+  (cond
+    ((not format)
+     (alert
+       (princ
+         (strcat
            "\nInvalid ProjectNotesEditor. CNM cannot continue.\nUse HCNM-CNMOptions to select your desired editor.\n\nFound ProjectNotesEditor="
-           EDITOR
+           editor
            "\n\nExpected one of these: "
            (apply 'strcat (mapcar '(lambda (x) (strcat "\n" (car x)))valid_editors))
          )
        )
      )
-     (EXIT)
+     (exit)
     )
   )
-  FORMAT
+  format
 )
 
 ;#endregion
@@ -4587,73 +4587,73 @@ ImportLayerSettings=No
 ;;; Begin Project Notes Editor functions section
 ;;;
 ;;;================================================================================================================
-(DEFUN C:HCNM-NOTESEDIT (/ CNMEDIT_P NOTESEDITOR PNNAME)
-  (SETQ
-    NOTESEDITOR (C:HCNM-CONFIG-GETVAR "ProjectNotesEditor")
+(defun c:hcnm-notesedit (/ cnmedit_p noteseditor pnname)
+  (setq
+    noteseditor (c:hcnm-config-getvar "ProjectNotesEditor")
     ;; wcmatch is legacy hack to be removed when 4.2.29 is deprecated and replaced with translation/conversion on getvar.
-    CNMEDIT_P (wcmatch (strcase NOTESEDITOR) "*CNM*")
+    cnmedit_p (wcmatch (strcase noteseditor) "*CNM*")
   )
-  (IF CNMEDIT_P
+  (if cnmedit_p
     (haws-core-init 335)
     (haws-core-init 188)
   )
   ;; Since this is a user command, possibly after deletion of project root files,
   ;; refresh project root at beginning.
-  (HCNM_PROJINIT)
+  (hcnm_projinit)
   ;; Read to convert project notes if necessary before editing
-  (SETQ PNNAME (HCNM_PROJNOTES))
-  (HCNM_READCF PNNAME)
-  (SETQ PNNAME (HCNM_PROJNOTES_MATCH_EXTENSION PNNAME NOTESEDITOR))
-  (PRINC (STRCAT "\nEditing " (HCNM_PROJNOTES) "."))
-  (COND
-    (CNMEDIT_P
-     (STARTAPP
-       (STRCAT
+  (setq pnname (hcnm_projnotes))
+  (hcnm_readcf pnname)
+  (setq pnname (hcnm_projnotes_match_extension pnname noteseditor))
+  (princ (strcat "\nEditing " (hcnm_projnotes) "."))
+  (cond
+    (cnmedit_p
+     (startapp
+       (strcat
          "\""
-         (C:HCNM-CONFIG-GETVAR "AppFolder")
+         (c:hcnm-config-getvar "AppFolder")
          "\\CNMEdit.exe"
          "\" "
          "\""
-         PNNAME
+         pnname
          "\" "
          "\""
-         (HCNM_PROJ)
+         (hcnm_proj)
          "\\cnm.ini\""
        )
      )
     )
-    (T (VL-CMDF "._SH"  (STRCAT "\"" PNNAME "\"")))
+    (t (vl-cmdf "._SH"  (strcat "\"" pnname "\"")))
   )
   (haws-core-restore)
-  (PRINC)
+  (princ)
 )
 
-(DEFUN HCNM_PROJNOTES_MATCH_EXTENSION (PROJNOTES NOTESEDITOR)
+(defun hcnm_projnotes_match_extension (projnotes noteseditor)
   (cond
-    ((= NOTESEDITOR "text")(HCNM_CHANGE_FILENAME_EXTENSION PROJNOTES "txt"))
-    (T(HCNM_CHANGE_FILENAME_EXTENSION PROJNOTES "csv"))
+    ((= noteseditor "text")(hcnm_change_filename_extension projnotes "txt"))
+    (t(hcnm_change_filename_extension projnotes "csv"))
   )
 )
 
-(DEFUN HCNM_CHANGE_FILENAME_EXTENSION
-   (OLD_FILENAME NEW_EXTENSION / NEW_FILENAME)
-  (COND
-    ((/= (HAWS-FILENAME-EXTENSION OLD_FILENAME) NEW_EXTENSION)
-     (SETQ
-       NEW_FILENAME
-        (STRCAT
-          (HAWS-FILENAME-DIRECTORY OLD_FILENAME)
+(defun hcnm_change_filename_extension
+   (old_filename new_extension / new_filename)
+  (cond
+    ((/= (haws-filename-extension old_filename) new_extension)
+     (setq
+       new_filename
+        (strcat
+          (haws-filename-directory old_filename)
           "\\"
-          (HAWS-FILENAME-BASE OLD_FILENAME)
+          (haws-filename-base old_filename)
           "."
-          NEW_EXTENSION
+          new_extension
         )
      )
-     (VL-FILE-RENAME OLD_FILENAME NEW_FILENAME)
-     (C:HCNM-CONFIG-SETVAR "ProjectNotes" NEW_FILENAME)
+     (vl-file-rename old_filename new_filename)
+     (c:hcnm-config-setvar "ProjectNotes" new_filename)
     )
   )
-  NEW_FILENAME
+  new_filename
 )
 
 ;#endregion
@@ -4664,53 +4664,53 @@ ImportLayerSettings=No
 ;;;
 ;;;================================================================================================================
 ;; Edit layer defaults
-(DEFUN C:HCNM-CNMLAYER (/ LAYERSEDITOR LAYERSFILE WSHSHELL)
+(defun c:hcnm-cnmlayer (/ layerseditor layersfile wshshell)
 (haws-core-init 189)
-  (SETQ
-    *HAWS:LAYERS* NIL
-    LAYERSEDITOR
+  (setq
+    *haws:layers* nil
+    layerseditor
      ;; wcmatch is legacy hack to be removed when 4.2.29 is deprecated and replaced with translation/conversion on getvar.
-     (COND
-       ((WCMATCH
-          (STRCASE (C:HCNM-CONFIG-GETVAR "LayersEditor"))
+     (cond
+       ((wcmatch
+          (strcase (c:hcnm-config-getvar "LayersEditor"))
           "*CNM*"
         )
-        (STRCAT (C:HCNM-CONFIG-GETVAR "AppFolder") "\\CNMLayer.exe")
+        (strcat (c:hcnm-config-getvar "AppFolder") "\\CNMLayer.exe")
        )
-       (T "notepad.exe")
+       (t "notepad.exe")
      )
-    LAYERSFILE
-     (FINDFILE "layers.dat")
+    layersfile
+     (findfile "layers.dat")
   )
-  (STARTAPP
-    (STRCAT "\"" LAYERSEDITOR "\" " "\"" LAYERSFILE "\" ")
+  (startapp
+    (strcat "\"" layerseditor "\" " "\"" layersfile "\" ")
   )
-  (ALERT
-    (STRCAT
+  (alert
+    (strcat
       "Click OK to import layer settings after editing and saving."
     )
   )
   ;;Get a layer to renew *HAWS:LAYERS*  
-  (HAWS-GETLAYR "NOTES-EXPORT")
-  (VL-CMDF "._layer")
-  (FOREACH
-     LAYER *HAWS:LAYERS*
-    (VL-CMDF "_n" (CADR LAYER))
-    (IF (/= (CADDR LAYER) "")
-      (VL-CMDF "_c" (CADDR LAYER) (CADR LAYER))
+  (haws-getlayr "NOTES-EXPORT")
+  (vl-cmdf "._layer")
+  (foreach
+     layer *haws:layers*
+    (vl-cmdf "_n" (cadr layer))
+    (if (/= (caddr layer) "")
+      (vl-cmdf "_c" (caddr layer) (cadr layer))
     )
-    (VL-CMDF
+    (vl-cmdf
       "_lt"
-      (IF (TBLSEARCH "LTYPE" (CADDDR LAYER))
-        (CADDDR LAYER)
+      (if (tblsearch "LTYPE" (cadddr layer))
+        (cadddr layer)
         ""
       )
-      (CADR LAYER)
+      (cadr layer)
     )
   )
-  (VL-CMDF "")
+  (vl-cmdf "")
   (haws-core-restore)
-  (PRINC)
+  (princ)
 )
 
 
@@ -4725,185 +4725,185 @@ ImportLayerSettings=No
 
 ;;SETNOTEPHASES
 ;;Sets the number of phases for this drawing or this folder.
-(DEFUN C:HAWS-SETNOTEPHASES (/ CFLIST OPT1 PHASES RDLIN)
+(defun c:haws-setnotephases (/ cflist opt1 phases rdlin)
 (haws-core-init 194)
-  (INITGET 1 "Drawing Project")
-  (SETQ
-    OPT1
-     (GETKWORD
+  (initget 1 "Drawing Project")
+  (setq
+    opt1
+     (getkword
        "\nSet number of phases for this drawing only or this project <Drawing/Project>: "
      )
   )
-  (INITGET 1 "None")
-  (SETQ
-    PHASES
-     (GETINT
+  (initget 1 "None")
+  (setq
+    phases
+     (getint
        "\nNumber of phases to use (or None to ignore bubble note phases): "
      )
   )
-  (IF (= PHASES "None")
-    (SETQ PHASES "0")
-    (SETQ PHASES (ITOA PHASES))
+  (if (= phases "None")
+    (setq phases "0")
+    (setq phases (itoa phases))
   )
-  (VL-CMDF "._insert" (STRCAT "noteqty=noteqty" PHASES))
-  (VL-CMDF)
-  (COND
-    ((= OPT1 "Drawing")
-     (PROMPT
-       (STRCAT
-         (FINDFILE (STRCAT "noteqty" PHASES ".dwg"))
+  (vl-cmdf "._insert" (strcat "noteqty=noteqty" phases))
+  (vl-cmdf)
+  (cond
+    ((= opt1 "Drawing")
+     (prompt
+       (strcat
+         (findfile (strcat "noteqty" phases ".dwg"))
          " inserted to drawing as noteqty."
        )
      )
     )
-    ((= OPT1 "Project")
-     (SETQ
-       F1     (OPEN (HCNM_PROJNOTES) "r")
-       CFLIST NIL
+    ((= opt1 "Project")
+     (setq
+       f1     (open (hcnm_projnotes) "r")
+       cflist nil
      )
-     (WHILE (SETQ RDLIN (READ-LINE F1))
-       (COND
+     (while (setq rdlin (read-line f1))
+       (cond
          ;;If there is a SET PHASES line already, remove it.
-         ((AND
-            (= (HAWS-RDFLD 1 RDLIN "W" 1) "SET")
-            (= (HAWS-RDFLD 2 RDLIN "W" 1) "PHASES")
+         ((and
+            (= (haws-rdfld 1 rdlin "W" 1) "SET")
+            (= (haws-rdfld 2 rdlin "W" 1) "PHASES")
           )
          )
          ;;Otherwise regurgitate any other line
-         ((SETQ CFLIST (CONS RDLIN CFLIST)))
+         ((setq cflist (cons rdlin cflist)))
        )
      )
-     (SETQ
-       F1 (CLOSE F1)
-       CFLIST
+     (setq
+       f1 (close f1)
+       cflist
         ;;Put the SET PHASES line at the beginning of the file.
-        (CONS (STRCAT "SET PHASES " PHASES) (REVERSE CFLIST))
-       F1 (OPEN (HCNM_PROJNOTES) "W")
+        (cons (strcat "SET PHASES " phases) (reverse cflist))
+       f1 (open (hcnm_projnotes) "W")
      )
-     (FOREACH RDLIN CFLIST (WRITE-LINE RDLIN F1))
-     (SETQ F1 (CLOSE F1))
+     (foreach rdlin cflist (write-line rdlin f1))
+     (setq f1 (close f1))
     )
   )
   (haws-core-restore)
-  (PRINC)
+  (princ)
 )
 
-(DEFUN C:HAWS-CNMMENU ()
+(defun c:haws-cnmmenu ()
 (haws-core-init 195)
-  (VL-CMDF "._menuunload" "cnm" "._menuload" "cnm.mnu")
+  (vl-cmdf "._menuunload" "cnm" "._menuload" "cnm.mnu")
   (haws-core-restore)
 )
 
-(DEFUN C:HAWS-CNMSETUP (/ ACADPATHPREFIX ACADPATHSUFFIX I OLDACADPATH
-                    OLDPROGRAMFOLDER PROGRAMFOLDER MATCHLENGTH
+(defun c:haws-cnmsetup (/ acadpathprefix acadpathsuffix i oldacadpath
+                    oldprogramfolder programfolder matchlength
                    )
 (haws-core-init 196)
-  (SETQ
-    PROGRAMFOLDER
-     (GETVAR "dwgprefix")
-    PROGRAMFOLDER
-     (SUBSTR
-       PROGRAMFOLDER
+  (setq
+    programfolder
+     (getvar "dwgprefix")
+    programfolder
+     (substr
+       programfolder
        10
-       (1- (STRLEN PROGRAMFOLDER (GETVAR "dwgprefix")))
+       (1- (strlen programfolder (getvar "dwgprefix")))
      )
   )
-  (SETQ
-    OLDPROGRAMFOLDER
-     (VL-REGISTRY-READ
+  (setq
+    oldprogramfolder
+     (vl-registry-read
        "HKEY_LOCAL_MACHINE\\Software\\HawsEDC\\CNM"
        "ProgramFolder"
      )
-    OLDACADPATH
-     (GETVAR "acadprefix")
-    ACADPATHPREFIX ""
-    ACADPATHSUFFIX OLDACADPATH
+    oldacadpath
+     (getvar "acadprefix")
+    acadpathprefix ""
+    acadpathsuffix oldacadpath
   )
   ;;If the old program folder is still in the ACAD path, remove it.
-  (IF (AND
-        OLDPROGRAMFOLDER
-        (WCMATCH OLDACADPATH (STRCAT "*" OLDPROGRAMFOLDER "*"))
+  (if (and
+        oldprogramfolder
+        (wcmatch oldacadpath (strcat "*" oldprogramfolder "*"))
       )
-    (PROGN
-      (WHILE (< (SET
-                  MATCHLENGTH
-                  (VL-STRING-MISMATCH
-                    OLDACADPATH
-                    OLDPROGRAMFOLDER
-                    (SETQ
-                      I (IF I
-                          (1+ I)
+    (progn
+      (while (< (set
+                  matchlength
+                  (vl-string-mismatch
+                    oldacadpath
+                    oldprogramfolder
+                    (setq
+                      i (if i
+                          (1+ i)
                           0
                         )
                     )
                   )
                 )
-                (STRLEN OLDPROGRAMFOLDER)
+                (strlen oldprogramfolder)
              )
       )
-      (SETQ
-        ACADPATHPREFIX
-         (SUBSTR OLDACADPATH 1 I)
-        ACADPATHSUFFIX
-         (SUBSTR
-           OLDACADPATH
-           (+ I 1 (STRLEN OLDPROGRAMFOLDER))
+      (setq
+        acadpathprefix
+         (substr oldacadpath 1 i)
+        acadpathsuffix
+         (substr
+           oldacadpath
+           (+ i 1 (strlen oldprogramfolder))
          )
       )
     )
   )
-  (ALERT
-    (STRCAT
+  (alert
+    (strcat
       "Construction Notes Manager Setup will now add\n"
-      PROGRAMFOLDER
+      programfolder
       "\nto the current user profile's\nAutoCAD Support Files Search Path\nand load the CNM menu."
     )
   )
-  (VL-REGISTRY-WRITE
+  (vl-registry-write
     "HKEY_LOCAL_MACHINE\\Software\\HawsEDC\\CNM"
     "ProgramFolder"
-    PROGRAMFOLDER
+    programfolder
   )
-  (VL-REGISTRY-WRITE
-    (STRCAT
+  (vl-registry-write
+    (strcat
       "HKEY_CURRENT_USER\\"
-      (VLAX-PRODUCT-KEY)
+      (vlax-product-key)
       "\\Profiles\\"
-      (GETVAR "CPROFILE")
+      (getvar "CPROFILE")
       "\\General"
     )
     "ACAD"
-    (STRCAT ACADPATHPREFIX PROGRAMFOLDER ";" ACADPATHSUFFIX)
+    (strcat acadpathprefix programfolder ";" acadpathsuffix)
   )
-  (VL-CMDF "._menuunload" "cnm" "._menuload" "cnm")
-  (VL-FILE-DELETE (STRCAT PROGRAMFOLDER "\\acaddoc.lsp"))
-  (ALERT
+  (vl-cmdf "._menuunload" "cnm" "._menuload" "cnm")
+  (vl-file-delete (strcat programfolder "\\acaddoc.lsp"))
+  (alert
     "Construction Notes Manager setup is done.\n\nYou may now explore the CNM menus and toolbar\nafter restarting AutoCAD."
   )
   (haws-core-restore)
 )
-(DEFUN C:HAWS-NTPURGE (/ OL PL PLSS)
+(defun c:haws-ntpurge (/ ol pl plss)
 (haws-core-init 197)
-  (SETQ
-    OL (GETVAR "clayer")
-    PL (CAR (HAWS-GETLAYR "NOTESEXP"))
+  (setq
+    ol (getvar "clayer")
+    pl (car (haws-getlayr "NOTESEXP"))
   )
-  (VL-CMDF "._erase" (SSGET "X" (LIST (CONS 8 PL))) "")
-  (SETVAR "clayer" OL)
-  (VL-CMDF "._purge" "_b" "noteqty*,cnm*" "_n")
-  (IF (SETQ PLSS (SSGET "X" (LIST (CONS 8 PL))))
-    (ALERT
-      (STRCAT
+  (vl-cmdf "._erase" (ssget "X" (list (cons 8 pl))) "")
+  (setvar "clayer" ol)
+  (vl-cmdf "._purge" "_b" "noteqty*,cnm*" "_n")
+  (if (setq plss (ssget "X" (list (cons 8 pl))))
+    (alert
+      (strcat
         "All entities on the "
-        PL
+        pl
         " layer\nhave been erased from the current tab.\n\n"
-        (ITOA (SSLENGTH PLSS))
+        (itoa (sslength plss))
         " objects were not in the current tab\nand must still be erased."
       )
     )
   )
   (haws-core-restore)
-  (PRINC)
+  (princ)
 )
 
 ;#endregion
@@ -4915,125 +4915,125 @@ ImportLayerSettings=No
 ;;;================================================================================================================
 ;;; SETNOTESBUBBLESTYLE
 ;;; Saves the users preferred Notes Bubble Style to the registry
-(DEFUN C:HCNM-SETNOTESBUBBLESTYLE (/ BUBBLEHOOKS)
+(defun c:hcnm-setnotesbubblestyle (/ bubblehooks)
 (haws-core-init 190)
-  (INITGET "Yes No")
-  (SETQ
-    BUBBLEHOOKS
-     (GETKWORD
+  (initget "Yes No")
+  (setq
+    bubblehooks
+     (getkword
        "\nInsert bubble notes with hooks? [Yes/No]: "
      )
   )
-  (IF BUBBLEHOOKS
+  (if bubblehooks
     (c:hcnm-config-setvar
       "BubbleHooks"
-      (COND
-        ((= BUBBLEHOOKS "Yes") "1")
+      (cond
+        ((= bubblehooks "Yes") "1")
         ("0")
       )
     )
   )
   (haws-core-restore)
-  (PRINC)
+  (princ)
 )
 ;;; Global edit of bubble note phases
-(DEFUN C:HAWS-PHASEEDIT (/ NEWPHASE OLDPHASE)
+(defun c:haws-phaseedit (/ newphase oldphase)
 (haws-core-init 191)
-  (SETQ
-    OLDPHASE
-     (GETSTRING "\nEnter phase to change: ")
-    NEWPHASE
-     (GETSTRING "\nEnter new phase: ")
+  (setq
+    oldphase
+     (getstring "\nEnter phase to change: ")
+    newphase
+     (getstring "\nEnter new phase: ")
   )
-  (VL-CMDF
-    "._attedit" "_n" "_n" "note???l,note???r" "notephase" "*" OLDPHASE
-    NEWPHASE
+  (vl-cmdf
+    "._attedit" "_n" "_n" "note???l,note???r" "notephase" "*" oldphase
+    newphase
    )
-  (GRAPHSCR)
+  (graphscr)
   (haws-core-restore)
-  (PRINC)
+  (princ)
 )
 ;;; Put attributes on NOPLOT layer
-(DEFUN C:HCNM-ATTNOPLOT ()
+(defun c:hcnm-attnoplot ()
 (haws-core-init 192)
-  (HCNM_ATTLAYER "NOTESNOPLOT")
-  (VL-CMDF
+  (hcnm_attlayer "NOTESNOPLOT")
+  (vl-cmdf
     "._layer"
     "_Plot"
     "_No"
-    (HAWS-GETLAYR "NOTESNOPLOT")
+    (haws-getlayr "NOTESNOPLOT")
     ""
   )
   (haws-core-restore)
 )
-(DEFUN C:HCNM-ATTPLOT () (HCNM_ATTLAYER "0"))
-(DEFUN HCNM_ATTLAYER (LAYER / AT EL EN ET NPLAYER NPLIST SSET SSLEN)
+(defun c:hcnm-attplot () (hcnm_attlayer "0"))
+(defun hcnm_attlayer (layer / at el en et nplayer nplist sset sslen)
   (haws-core-init 193)
-  (HAWS-VSAVE '("CLAYER"))
-  (VL-CMDF "._undo" "_g")
-  (SETQ NPLAYER (CAR (HAWS-GETLAYR LAYER)))
-  (IF (NOT (TBLSEARCH "LAYER" NPLAYER))
-    (HAWS-MKLAYR LAYER)
+  (haws-vsave '("CLAYER"))
+  (vl-cmdf "._undo" "_g")
+  (setq nplayer (car (haws-getlayr layer)))
+  (if (not (tblsearch "LAYER" nplayer))
+    (haws-mklayr layer)
   )
-  (PROMPT "\nBlocks to change: ")
-  (SETQ SSET (SSGET '((0 . "INSERT"))))
-  (IF (NOT SSET)
-    (PROGN (PROMPT "\nNone found.") (EXIT))
-    (PROGN
-      (WHILE (SETQ
-               EN (CAR
-                    (NENTSEL
-                      (STRCAT
+  (prompt "\nBlocks to change: ")
+  (setq sset (ssget '((0 . "INSERT"))))
+  (if (not sset)
+    (progn (prompt "\nNone found.") (exit))
+    (progn
+      (while (setq
+               en (car
+                    (nentsel
+                      (strcat
                         "\nAttributes to change to layer "
-                        NPLAYER
+                        nplayer
                         " by example/<enter when finished>: "
                       )
                     )
                   )
              )
-        (IF (= "ATTRIB" (CDR (ASSOC 0 (ENTGET EN))))
-          (PROGN
-            (REDRAW EN 3)
-            (SETQ
-              NPLIST
-               (CONS (LIST (CDR (ASSOC 2 (ENTGET EN))) EN) NPLIST)
+        (if (= "ATTRIB" (cdr (assoc 0 (entget en))))
+          (progn
+            (redraw en 3)
+            (setq
+              nplist
+               (cons (list (cdr (assoc 2 (entget en))) en) nplist)
             )
           )
         )
       )
-      (FOREACH EN NPLIST (REDRAW (CADR EN) 4))
+      (foreach en nplist (redraw (cadr en) 4))
       ;; Change all of the entities in the selection set.
-      (PROMPT
-        (STRCAT "\nPutting attributes on " NPLAYER " layer...")
+      (prompt
+        (strcat "\nPutting attributes on " nplayer " layer...")
       )
-      (SETQ SSLEN (SSLENGTH SSET))
-      (WHILE (> SSLEN 0)
-        (SETQ EN (SSNAME SSET (SETQ SSLEN (1- SSLEN))))
-        (WHILE (AND
-                 (SETQ EN (ENTNEXT EN))
+      (setq sslen (sslength sset))
+      (while (> sslen 0)
+        (setq en (ssname sset (setq sslen (1- sslen))))
+        (while (and
+                 (setq en (entnext en))
                  (/= "SEQEND"
-                     (SETQ ET (CDR (ASSOC 0 (SETQ EL (ENTGET EN)))))
+                     (setq et (cdr (assoc 0 (setq el (entget en)))))
                  )
                )
-          (COND
-            ((AND
-               (= ET "ATTRIB")
-               (SETQ AT (CDR (ASSOC 2 EL)))
-               (ASSOC AT NPLIST)
+          (cond
+            ((and
+               (= et "ATTRIB")
+               (setq at (cdr (assoc 2 el)))
+               (assoc at nplist)
              )
-             (ENTMOD (SUBST (CONS 8 NPLAYER) (ASSOC 8 EL) EL))
-             (ENTUPD EN)
+             (entmod (subst (cons 8 nplayer) (assoc 8 el) el))
+             (entupd en)
             )
           )
         )
       )
-      (PROMPT "done.")
+      (prompt "done.")
     )
   )
-  (VL-CMDF "._undo" "_e")
-  (HAWS-VRSTOR)
+  (vl-cmdf "._undo" "_e")
+  (haws-vrstor)
   (haws-core-restore)
-  (PRINC)
+  (princ)
 )
 
 ;#endregion
@@ -5059,119 +5059,119 @@ ImportLayerSettings=No
 ;;; 
 ;;;|COMMAND|LEFT BLK |RIGHT BLK |DRAG BLK |LAYER KEY |DIMSTYLE KEY
 ;;; -------------------------------------------------------------------------
-(DEFUN C:HAWS-TCG ()
+(defun c:haws-tcg ()
 (haws-core-init 208)
-  (HAWS-LDRBLK
+  (haws-ldrblk
     "ldrtcgl" "ldrtcgr" "ldrtcgd" "TCGLDR" "TCGLeader"
    )
   (haws-core-restore)
 )
-(DEFUN C:HAWS-TXTL ()
-  (HAWS-LDRBLK
+(defun c:haws-txtl ()
+  (haws-ldrblk
     "ldrtxtl" "ldrtxtr" "ldrtxtd" "NOTESLDR" "NotesLeader"
    )
 )
 
-(DEFUN HAWS-LDRBLK (BLLEFT BLRGHT BLDRAG BLLAY BLDSTY / APOLD AS ASSOCIATE_P ANG AUOLD
-                BLGF BLLINE BLK DSTY DSTYOLD DTOLD EL EN ENBLK ENDRAG
-                FIXHOOK FIXPHASE FIXTXT3 I P1 P2 P3 P4 P5 P6 P7 P8
-                PFOUND R1 DS TS LEFT NUM TXT1 TXT2 ANG1 ANG2 FIXORDER
-                OSMOLD
+(defun haws-ldrblk (blleft blrght bldrag bllay bldsty / apold as associate_p ang auold
+                blgf blline blk dsty dstyold dtold el en enblk endrag
+                fixhook fixphase fixtxt3 i p1 p2 p3 p4 p5 p6 p7 p8
+                pfound r1 ds ts left num txt1 txt2 ang1 ang2 fixorder
+                osmold
                )
   (haws-core-init 209)
-  (HAWS-VSAVE
+  (haws-vsave
     '("aperture" "attdia" "attreq" "aunits" "clayer" "cmdecho" "osmode"
       "plinegen" "regenmode"
      )
   )
-  (VL-CMDF "._undo" "_g")
+  (vl-cmdf "._undo" "_g")
   ;; Block isn't annotative. Can't associate with annotative leader.
-  (SETQ
-    ASSOCIATE_P
-     (COND
-       ((= (GETVAR "DIMANNO") 1) NIL)
-       (T)
+  (setq
+    associate_p
+     (cond
+       ((= (getvar "DIMANNO") 1) nil)
+       (t)
      )
   )
-  (HCNM_PROJINIT)
-  (HCNM_SET_DIMSTYLE (STRCAT BLDSTY "Dimstyle"))
-  (SETVAR "osmode" 0)
-  (HAWS-MKLAYR BLLAY)
-  (SETQ
-    P1 (GETPOINT "\nStart point for leader:")
+  (hcnm_projinit)
+  (hcnm_set_dimstyle (strcat bldsty "Dimstyle"))
+  (setvar "osmode" 0)
+  (haws-mklayr bllay)
+  (setq
+    p1 (getpoint "\nStart point for leader:")
   )
-  (SETQ
-    DS (HAWS-DWGSCALE)
-    TS (* DS (GETVAR "dimtxt"))
-    AS (* DS (GETVAR "dimasz"))
+  (setq
+    ds (haws-dwgscale)
+    ts (* ds (getvar "dimtxt"))
+    as (* ds (getvar "dimasz"))
   )
-  (VL-CMDF
+  (vl-cmdf
     "._insert"
-    BLDRAG
+    bldrag
     "_Scale"
-    TS
+    ts
     "_Rotate"
-    (ANGTOS (GETVAR "snapang"))
-    P1
+    (angtos (getvar "snapang"))
+    p1
   )
-  (SETQ EN (ENTLAST))
-  (PROMPT "\nEnd point for leader: ")
-  (VL-CMDF "._move" EN "" P1 PAUSE)
-  (SETQ
-    P2     (TRANS (CDR (ASSOC 10 (ENTGET (ENTLAST)))) (ENTLAST) 1)
-    ANG    (ANGLE P1 P2)
-    LEFT   (MINUSP (COS (+ ANG (GETVAR "snapang"))))
-    P3     (POLAR P1 ANG AS)
-    P4     (POLAR
-             P2
-             (IF LEFT
-               PI
+  (setq en (entlast))
+  (prompt "\nEnd point for leader: ")
+  (vl-cmdf "._move" en "" p1 pause)
+  (setq
+    p2     (trans (cdr (assoc 10 (entget (entlast)))) (entlast) 1)
+    ang    (angle p1 p2)
+    left   (minusp (cos (+ ang (getvar "snapang"))))
+    p3     (polar p1 ang as)
+    p4     (polar
+             p2
+             (if left
+               pi
                0
              )
-             AS
+             as
            )
-    P5     (POLAR P4 (/ PI 2) (* TS 3.0))
-    P6     (POLAR
-             (POLAR
-               P5
-               (IF LEFT
-                 PI
+    p5     (polar p4 (/ pi 2) (* ts 3.0))
+    p6     (polar
+             (polar
+               p5
+               (if left
+                 pi
                  0
                )
-               (* TS 10)
+               (* ts 10)
              )
-             (/ PI -2)
-             (* TS 6.0)
+             (/ pi -2)
+             (* ts 6.0)
            )
-    ENDRAG (ENTLAST)
+    endrag (entlast)
   )
-  (SETVAR "attdia" 0)
-  (SETVAR "attreq" 1)
-  (COND
-    ((>= (ATOF (GETVAR "acadver")) 14)
-     (VL-CMDF "._leader" P1 P2 "" "")
-     (COND
-       (ASSOCIATE_P (VL-CMDF "_block"))
-       (T (VL-CMDF "_none" "._INSERT"))
+  (setvar "attdia" 0)
+  (setvar "attreq" 1)
+  (cond
+    ((>= (atof (getvar "acadver")) 14)
+     (vl-cmdf "._leader" p1 p2 "" "")
+     (cond
+       (associate_p (vl-cmdf "_block"))
+       (t (vl-cmdf "_none" "._INSERT"))
      )
     )
   )
-  (SETQ AUOLD (GETVAR "aunits"))
-  (SETVAR "aunits" 3)
-  (VL-CMDF
-    (IF LEFT
-      BLLEFT
-      BLRGHT
+  (setq auold (getvar "aunits"))
+  (setvar "aunits" 3)
+  (vl-cmdf
+    (if left
+      blleft
+      blrght
     )
-    P2
-    TS
-    TS
-    (GETVAR "snapang")
+    p2
+    ts
+    ts
+    (getvar "snapang")
   )
-  (SETVAR "aunits" AUOLD)
-  (VL-CMDF "._erase" ENDRAG "")
-  (IF (NOT (ENTNEXT (ENTLAST)))
-    (VL-CMDF
+  (setvar "aunits" auold)
+  (vl-cmdf "._erase" endrag "")
+  (if (not (entnext (entlast)))
+    (vl-cmdf
       "._explode"
       "_l"
       "._change"
@@ -5179,15 +5179,15 @@ ImportLayerSettings=No
       ""
       "_p"
       "_la"
-      (GETVAR "clayer")
+      (getvar "clayer")
       ""
     )
   )
-  (HCNM_RESTORE_DIMSTYLE)
-  (HAWS-VRSTOR)
-  (VL-CMDF "._undo" "_e")
+  (hcnm_restore_dimstyle)
+  (haws-vrstor)
+  (vl-cmdf "._undo" "_e")
   (haws-core-restore)
-  (PRINC)
+  (princ)
 )
 ;;end of LDRBLK
 
@@ -5195,21 +5195,21 @@ ImportLayerSettings=No
 ;#region Bubble insertion and editing
 
 
-(DEFUN C:HAWS-BOXL () (haws-core-init 198) (HCNM_LDRBLK_DYNAMIC "BOX"))
-(DEFUN C:HAWS-CIRL () (haws-core-init 199) (HCNM_LDRBLK_DYNAMIC "CIR"))
-(DEFUN C:HAWS-DIAL () (haws-core-init 200) (HCNM_LDRBLK_DYNAMIC "DIA"))
-(DEFUN C:HAWS-ELLL () (haws-core-init 201) (HCNM_LDRBLK_DYNAMIC "ELL"))
-(DEFUN C:HAWS-HEXL () (haws-core-init 202) (HCNM_LDRBLK_DYNAMIC "HEX"))
-(DEFUN C:HAWS-OCTL () (haws-core-init 203) (HCNM_LDRBLK_DYNAMIC "OCT"))
-(DEFUN C:HAWS-PENL () (haws-core-init 204) (HCNM_LDRBLK_DYNAMIC "PEN"))
-(DEFUN C:HAWS-RECL () (haws-core-init 205) (HCNM_LDRBLK_DYNAMIC "REC"))
-(DEFUN C:HAWS-SSTL () (haws-core-init 206) (HCNM_LDRBLK_DYNAMIC "SST"))
-(DEFUN C:HAWS-TRIL () (haws-core-init 207) (HCNM_LDRBLK_DYNAMIC "TRI"))
-(DEFUN C:HCNM-REPLACE-BUBBLE () (haws-core-init 338) (HCNM_LDRBLK_DYNAMIC NIL))
+(defun c:haws-boxl () (haws-core-init 198) (hcnm_ldrblk_dynamic "BOX"))
+(defun c:haws-cirl () (haws-core-init 199) (hcnm_ldrblk_dynamic "CIR"))
+(defun c:haws-dial () (haws-core-init 200) (hcnm_ldrblk_dynamic "DIA"))
+(defun c:haws-elll () (haws-core-init 201) (hcnm_ldrblk_dynamic "ELL"))
+(defun c:haws-hexl () (haws-core-init 202) (hcnm_ldrblk_dynamic "HEX"))
+(defun c:haws-octl () (haws-core-init 203) (hcnm_ldrblk_dynamic "OCT"))
+(defun c:haws-penl () (haws-core-init 204) (hcnm_ldrblk_dynamic "PEN"))
+(defun c:haws-recl () (haws-core-init 205) (hcnm_ldrblk_dynamic "REC"))
+(defun c:haws-sstl () (haws-core-init 206) (hcnm_ldrblk_dynamic "SST"))
+(defun c:haws-tril () (haws-core-init 207) (hcnm_ldrblk_dynamic "TRI"))
+(defun c:hcnm-replace-bubble () (haws-core-init 338) (hcnm_ldrblk_dynamic nil))
 
-(DEFUN HCNM_LDRBLK_DYNAMIC (NOTETYPE / BLOCKNAME BUBBLE_DATA BUBBLEHOOKS
-                        ENAME_BUBBLE_OLD REPLACE_BUBBLE_P
-                        TH
+(defun hcnm_ldrblk_dynamic (notetype / blockname bubble_data bubblehooks
+                        ename_bubble_old replace_bubble_p
+                        th
                        )
   ;; Workaround for intermittent first-insertion crash bug:
   ;; On first bubble insertion in a fresh drawing session, AutoCAD's command/input
@@ -5217,114 +5217,114 @@ ImportLayerSettings=No
   ;; the dimension scale prompt). Issuing any command first initializes the system.
   ;; Must use (COMMAND) not (VL-CMDF) - synchronous execution is required.
   (princ "\nCNM version: ")
-  (princ (HAWS-UNIFIED-VERSION))
+  (princ (haws-unified-version))
   (princ "\nCNM bubble insertion often crashes the first time in a drawing session, possibly when it's the first command or the first block insertion. Please let us know if you can confirm a pattern.")
-  (COMMAND "._REDRAW")
-  (HAWS-VSAVE '("attreq" "aunits" "clayer" "cmdecho"))
-  (COND
-    ((AND (GETVAR "wipeoutframe") (/= (GETVAR "wipeoutframe") 2))
-     (ALERT "Setting WIPEOUTFRAME to 2 to show but not plot")
-     (SETVAR "wipeoutframe" 2)
+  (command "._REDRAW")
+  (haws-vsave '("attreq" "aunits" "clayer" "cmdecho"))
+  (cond
+    ((and (getvar "wipeoutframe") (/= (getvar "wipeoutframe") 2))
+     (alert "Setting WIPEOUTFRAME to 2 to show but not plot")
+     (setvar "wipeoutframe" 2)
     )
   )
-  (COND
-    ((= (GETVAR "ANNOALLVISIBLE") 0)
-     (INITGET "Yes No")
-     (COND
+  (cond
+    ((= (getvar "ANNOALLVISIBLE") 0)
+     (initget "Yes No")
+     (cond
        ((/=
-          (GETKWORD
+          (getkword
             "ANNOALLVISIBLE is 0. Set to 1 so that bubble notes appear at all scales? [Yes/No] <Yes>: "
           )
           "No"
         )
-        (SETVAR "ANNOALLVISIBLE" 1)
+        (setvar "ANNOALLVISIBLE" 1)
        )
      )
     )
   )
-  (VL-CMDF "._undo" "_g")
-  (HCNM_PROJINIT)
-  (HCNM_SET_DIMSTYLE "NotesLeaderDimstyle")
-  (SETQ
-    BUBBLEHOOKS
-     (C:HCNM-CONFIG-GETVAR "BubbleHooks")
-    BLOCKNAME
-     (STRCAT
+  (vl-cmdf "._undo" "_g")
+  (hcnm_projinit)
+  (hcnm_set_dimstyle "NotesLeaderDimstyle")
+  (setq
+    bubblehooks
+     (c:hcnm-config-getvar "BubbleHooks")
+    blockname
+     (strcat
        "cnm-bubble-"
-       (HCNM_LDRBLK_GET_MTEXT_STRING)
-       (COND
-         ((= (STRCASE BUBBLEHOOKS) "YES") "1")
-         ((= (STRCASE BUBBLEHOOKS) "NO") "0")
-         (T BUBBLEHOOKS)
+       (hcnm_ldrblk_get_mtext_string)
+       (cond
+         ((= (strcase bubblehooks) "YES") "1")
+         ((= (strcase bubblehooks) "NO") "0")
+         (t bubblehooks)
        )
      )
-    TH (* (GETVAR "dimtxt")
-          (IF (GETVAR "DIMANNO")
+    th (* (getvar "dimtxt")
+          (if (getvar "DIMANNO")
             1
-            (GETVAR "DIMTXT")
+            (getvar "DIMTXT")
           )
        )
   )
-  (HAWS-MKLAYR "NOTESLDR")
-  (SETVAR "attreq" 0)
-  (SETQ BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "TH" TH)
-        BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "BLOCKNAME" BLOCKNAME)
-        BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "NOTETYPE" NOTETYPE)
-        BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "REPLACE_BUBBLE_P" (NOT NOTETYPE))
-        BUBBLE_DATA (HCNM_LDRBLK_GET_ENAME_BUBBLE_OLD BUBBLE_DATA)
-        BUBBLE_DATA (COND 
-                      ((HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_BUBBLE_OLD")
-                       (HCNM_LDRBLK_BD_ENSURE_P1_WORLD BUBBLE_DATA) ;  WE REALLY ONLY NEED ENAME_LEADER_OLD AND P1_OCS, BUT THIS ISN'T A BAD WAY TO GET IT.
+  (haws-mklayr "NOTESLDR")
+  (setvar "attreq" 0)
+  (setq bubble_data (hcnm_ldrblk_bd_set bubble_data "TH" th)
+        bubble_data (hcnm_ldrblk_bd_set bubble_data "BLOCKNAME" blockname)
+        bubble_data (hcnm_ldrblk_bd_set bubble_data "NOTETYPE" notetype)
+        bubble_data (hcnm_ldrblk_bd_set bubble_data "REPLACE_BUBBLE_P" (not notetype))
+        bubble_data (hcnm_ldrblk_get_ename_bubble_old bubble_data)
+        bubble_data (cond 
+                      ((hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE_OLD")
+                       (hcnm_ldrblk_bd_ensure_p1_world bubble_data) ;  WE REALLY ONLY NEED ENAME_LEADER_OLD AND P1_OCS, BUT THIS ISN'T A BAD WAY TO GET IT.
                       )
-                      (T
-                       (HCNM_LDRBLK_GET_USER_START_POINT BUBBLE_DATA)
+                      (t
+                       (hcnm_ldrblk_get_user_start_point bubble_data)
                       )
                     )
-        NOTETYPE    (COND 
-                      (NOTETYPE)
-                      ((HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_BUBBLE")
-                       (LM:GETDYNPROPVALUE 
-                         (VLAX-ENAME->VLA-OBJECT 
-                           (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_BUBBLE")
+        notetype    (cond 
+                      (notetype)
+                      ((hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE")
+                       (lm:getdynpropvalue 
+                         (vlax-ename->vla-object 
+                           (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE")
                          )
                          "Shape"
                        )
                       )
-                      (T NOTETYPE)
+                      (t notetype)
                     )
-        BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "NOTETYPE" NOTETYPE)
+        bubble_data (hcnm_ldrblk_bd_set bubble_data "NOTETYPE" notetype)
   )
   ;; Draw bubble, update BUBBLE_DATA with P2 and new entities
-  (SETQ BUBBLE_DATA (HCNM_LDRBLK_GET_P2_DATA BUBBLE_DATA))
-  (SETQ BUBBLE_DATA (HCNM_LDRBLK_DRAW_BUBBLE BUBBLE_DATA))
-  (SETQ BUBBLE_DATA (HCNM_LDRBLK_GET_BUBBLE_DATA BUBBLE_DATA))
-  (HCNM_LDRBLK_FINISH_BUBBLE BUBBLE_DATA)
-  (HCNM_RESTORE_DIMSTYLE)
-  (HAWS-VRSTOR)
-  (VL-CMDF "._undo" "_e")
-  (HAWS-CORE-RESTORE)
-  (PRINC)
+  (setq bubble_data (hcnm_ldrblk_get_p2_data bubble_data))
+  (setq bubble_data (hcnm_ldrblk_draw_bubble bubble_data))
+  (setq bubble_data (hcnm_ldrblk_get_bubble_data bubble_data))
+  (hcnm_ldrblk_finish_bubble bubble_data)
+  (hcnm_restore_dimstyle)
+  (haws-vrstor)
+  (vl-cmdf "._undo" "_e")
+  (haws-core-restore)
+  (princ)
 )
 ;; Create a bubble data structure (alist) for passing state
 ;; All parameters optional - pass nil for unset fields
-(DEFUN HCNM_LDRBLK_BD_DEF ()
-  (LIST
-    (CONS "ATTRIBUTES" NIL)
-    (CONS "AVPORT" NIL)
-    (CONS "BLOCKNAME" NIL)
-    (CONS "ENAME_BUBBLE" NIL)
-    (CONS "ENAME_BUBBLE_OLD" NIL)
-    (CONS "ENAME_LAST" NIL)
-    (CONS "ENAME_LEADER" NIL)
-    (CONS "ENAME_LEADER_OLD" NIL)
-    (CONS "NOTETYPE" NIL)
-    (CONS "P1_OCS" NIL)
-    (CONS "P1_UCS" NIL)
-    (CONS "P1_WORLD" NIL)
-    (CONS "P2" NIL)
-    (CONS "PSPACE_BUBBLE_P" NIL)
-    (CONS "REPLACE_BUBBLE_P" NIL)
-    (CONS "TH" NIL)  )
+(defun hcnm_ldrblk_bd_def ()
+  (list
+    (cons "ATTRIBUTES" nil)
+    (cons "AVPORT" nil)
+    (cons "BLOCKNAME" nil)
+    (cons "ENAME_BUBBLE" nil)
+    (cons "ENAME_BUBBLE_OLD" nil)
+    (cons "ENAME_LAST" nil)
+    (cons "ENAME_LEADER" nil)
+    (cons "ENAME_LEADER_OLD" nil)
+    (cons "NOTETYPE" nil)
+    (cons "P1_OCS" nil)
+    (cons "P1_UCS" nil)
+    (cons "P1_WORLD" nil)
+    (cons "P2" nil)
+    (cons "PSPACE_BUBBLE_P" nil)
+    (cons "REPLACE_BUBBLE_P" nil)
+    (cons "TH" nil)  )
 )
 
 ;;==============================================================================
@@ -5336,73 +5336,73 @@ ImportLayerSettings=No
 ;;==============================================================================
 
 ;; Get a value from bubble data using HAWS_NESTED_LIST_GET
-(DEFUN HCNM_LDRBLK_BD_GET (bd key)
-  (HAWS_NESTED_LIST_GET bd (list key))
+(defun hcnm_ldrblk_bd_get (bd key)
+  (haws_nested_list_get bd (list key))
 )
 
 ;; Set a value in bubble data using HAWS_NESTED_LIST_UPDATE
 ;; Validates key against known schema
-(DEFUN HCNM_LDRBLK_BD_SET (bd key val )
-   (if (not (assoc key (HCNM_LDRBLK_BD_DEF)))
+(defun hcnm_ldrblk_bd_set (bd key val )
+   (if (not (assoc key (hcnm_ldrblk_bd_def)))
     (progn
       (princ (strcat "\nError: Invalid BUBBLE_DATA key: " key))
       bd
     )
-    (HAWS_NESTED_LIST_UPDATE bd (list key) val)
+    (haws_nested_list_update bd (list key) val)
   )
 )
 
 ;; Ensure P1_WORLD is present in bubble data (computes if missing)
-(DEFUN HCNM_LDRBLK_BD_ENSURE_P1_WORLD (BUBBLE_DATA / ENAME_BUBBLE ENAME_LEADER P1_OCS P1_WORLD)
-  (AND
-    (SETQ ENAME_BUBBLE (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_BUBBLE"))
-    (OR
-      (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_LEADER")
-      (SETQ BUBBLE_DATA (HCNM_LDRBLK_BD_SET
-                          BUBBLE_DATA
+(defun hcnm_ldrblk_bd_ensure_p1_world (bubble_data / ename_bubble ename_leader p1_ocs p1_world)
+  (and
+    (setq ename_bubble (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE"))
+    (or
+      (hcnm_ldrblk_bd_get bubble_data "ENAME_LEADER")
+      (setq bubble_data (hcnm_ldrblk_bd_set
+                          bubble_data
                           "ENAME_LEADER"
-                          (HCNM_LDRBLK_BUBBLE_LEADER ENAME_BUBBLE)
+                          (hcnm_ldrblk_bubble_leader ename_bubble)
                         )
       )
-      (PRINC "\nError in HCNM_LDRBLK_BD_ENSURE_P1_WORLD: Could not find leader associated with bubble note.")
+      (princ "\nError in HCNM_LDRBLK_BD_ENSURE_P1_WORLD: Could not find leader associated with bubble note.")
     )
-    (SETQ ENAME_LEADER (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_LEADER"))
-    (OR
-      (HCNM_LDRBLK_BD_GET BUBBLE_DATA "P1_OCS")
-      (SETQ BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "P1_OCS" (HCNM_LDRBLK_P1_OCS ENAME_LEADER)))
-      (PRINC "\nError in HCNM_LDRBLK_BD_ENSURE_P1_WORLD: Could not determine P1_OCS from leader.")
+    (setq ename_leader (hcnm_ldrblk_bd_get bubble_data "ENAME_LEADER"))
+    (or
+      (hcnm_ldrblk_bd_get bubble_data "P1_OCS")
+      (setq bubble_data (hcnm_ldrblk_bd_set bubble_data "P1_OCS" (hcnm_ldrblk_p1_ocs ename_leader)))
+      (princ "\nError in HCNM_LDRBLK_BD_ENSURE_P1_WORLD: Could not determine P1_OCS from leader.")
     )
-    (SETQ P1_OCS (HCNM_LDRBLK_BD_GET BUBBLE_DATA "P1_OCS"))
-    (OR
-      (HCNM_LDRBLK_BD_GET BUBBLE_DATA "P1_WORLD")
-      (SETQ BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "P1_WORLD" (HCNM_LDRBLK_P1_WORLD ENAME_LEADER P1_OCS ENAME_BUBBLE)))
-      (PRINC "\nError in HCNM_LDRBLK_BD_ENSURE_P1_WORLD: Could not compute P1_WORLD from P1_OCS.")
+    (setq p1_ocs (hcnm_ldrblk_bd_get bubble_data "P1_OCS"))
+    (or
+      (hcnm_ldrblk_bd_get bubble_data "P1_WORLD")
+      (setq bubble_data (hcnm_ldrblk_bd_set bubble_data "P1_WORLD" (hcnm_ldrblk_p1_world ename_leader p1_ocs ename_bubble)))
+      (princ "\nError in HCNM_LDRBLK_BD_ENSURE_P1_WORLD: Could not compute P1_WORLD from P1_OCS.")
     )
-    (SETQ P1_WORLD (HCNM_LDRBLK_BD_GET BUBBLE_DATA "P1_WORLD"))
-    (PRINC (STRCAT "\nDebug P1_OCS: " (vl-princ-to-string P1_OCS) " P1_WORLD: " (vl-princ-to-string P1_WORLD)))
+    (setq p1_world (hcnm_ldrblk_bd_get bubble_data "P1_WORLD"))
+    (princ (strcat "\nDebug P1_OCS: " (vl-princ-to-string p1_ocs) " P1_WORLD: " (vl-princ-to-string p1_world)))
   )
-  BUBBLE_DATA
+  bubble_data
 )
 
-(DEFUN HCNM_LDRBLK_GET_ENAME_BUBBLE_OLD (BUBBLE_DATA / ELIST_BLOCK_OLD ENAME_BUBBLE_OLD REPLACE_BUBBLE_P)
-  (SETQ REPLACE_BUBBLE_P (HCNM_LDRBLK_BD_GET BUBBLE_DATA "REPLACE_BUBBLE_P"))
-  (COND
-    (REPLACE_BUBBLE_P
+(defun hcnm_ldrblk_get_ename_bubble_old (bubble_data / elist_block_old ename_bubble_old replace_bubble_p)
+  (setq replace_bubble_p (hcnm_ldrblk_bd_get bubble_data "REPLACE_BUBBLE_P"))
+  (cond
+    (replace_bubble_p
      ;; Prompt and check for old block.
-     (WHILE (OR (NOT
-                  (SETQ
-                    ENAME_BUBBLE_OLD
-                     (CAR (ENTSEL "\nSelect bubble note: "))
+     (while (or (not
+                  (setq
+                    ename_bubble_old
+                     (car (entsel "\nSelect bubble note: "))
                   )
                 )
-                (NOT (SETQ ELIST_BLOCK_OLD (ENTGET ENAME_BUBBLE_OLD)))
-                (NOT
-                  (AND
-                    (= (CDR (ASSOC 0 ELIST_BLOCK_OLD)) "INSERT")
-                    (WCMATCH
-                      (STRCASE
-                        (VLA-GET-EFFECTIVENAME
-                          (VLAX-ENAME->VLA-OBJECT ENAME_BUBBLE_OLD)
+                (not (setq elist_block_old (entget ename_bubble_old)))
+                (not
+                  (and
+                    (= (cdr (assoc 0 elist_block_old)) "INSERT")
+                    (wcmatch
+                      (strcase
+                        (vla-get-effectivename
+                          (vlax-ename->vla-object ename_bubble_old)
                         )
                       )
                       "CNM-BUBBLE-*"
@@ -5410,244 +5410,244 @@ ImportLayerSettings=No
                   )
                 )
             )
-       (PRINC "\nSelected entity is not a CNM bubble note.")
+       (princ "\nSelected entity is not a CNM bubble note.")
      )
-     (SETQ BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "ENAME_BUBBLE_OLD" ENAME_BUBBLE_OLD))
+     (setq bubble_data (hcnm_ldrblk_bd_set bubble_data "ENAME_BUBBLE_OLD" ename_bubble_old))
     )
-    (T NIL)
+    (t nil)
   )
-  BUBBLE_DATA
+  bubble_data
 )
-(DEFUN HCNM_LDRBLK_GET_USER_START_POINT (BUBBLE_DATA) 
-    (HCNM_LDRBLK_BD_SET BUBBLE_DATA "P1_UCS" (GETPOINT "\nStart point for leader:"))
+(defun hcnm_ldrblk_get_user_start_point (bubble_data) 
+    (hcnm_ldrblk_bd_set bubble_data "P1_UCS" (getpoint "\nStart point for leader:"))
 )
-(DEFUN HCNM_LDRBLK_BUBBLE_LEADER (ENAME_BUBBLE / ELIST_BUBBLE ENAME_330 ENAME_LEADER) 
-  (SETQ ELIST_BUBBLE (ENTGET ENAME_BUBBLE))
+(defun hcnm_ldrblk_bubble_leader (ename_bubble / elist_bubble ename_330 ename_leader) 
+  (setq elist_bubble (entget ename_bubble))
   ;; Get start point
   ;; Find associated leader.
-  (WHILE  ;; Check all 330 groups
-    (AND 
-      (NOT ENAME_LEADER)
-      (SETQ ENAME_330 (CDR (ASSOC 330 ELIST_BUBBLE)))
+  (while  ;; Check all 330 groups
+    (and 
+      (not ename_leader)
+      (setq ename_330 (cdr (assoc 330 elist_bubble)))
     )
     ;; Use the one that refers back to this block. Or move to the next one.
-    (COND 
-      ((EQ (CDR (ASSOC 340 (ENTGET ENAME_330))) ENAME_BUBBLE)
-       (SETQ ENAME_LEADER ENAME_330)
+    (cond 
+      ((eq (cdr (assoc 340 (entget ename_330))) ename_bubble)
+       (setq ename_leader ename_330)
       )
-      (T
-       (SETQ ELIST_BUBBLE (CDR 
-                            (MEMBER 
-                              (ASSOC 330 
-                                     ELIST_BUBBLE
+      (t
+       (setq elist_bubble (cdr 
+                            (member 
+                              (assoc 330 
+                                     elist_bubble
                               )
-                              ELIST_BUBBLE
+                              elist_bubble
                             )
                           )
-             ENAME_LEADER NIL
+             ename_leader nil
        )
       )
     )
   )
-  ENAME_LEADER
+  ename_leader
 )
-(DEFUN HCNM_LDRBLK_P1_OCS (ENAME_LEADER)
-  (COND 
-    (ENAME_LEADER
-     (CDR (ASSOC 10 (ENTGET ENAME_LEADER)))
+(defun hcnm_ldrblk_p1_ocs (ename_leader)
+  (cond 
+    (ename_leader
+     (cdr (assoc 10 (entget ename_leader)))
     )
-    (T
-     NIL
+    (t
+     nil
     )
   )
 )
 ;; Gets insertion point of bubble in UCS coordinates
 ;; Bubble still doesn't exist. Draws temp bubbles only.
-(DEFUN HCNM_LDRBLK_GET_P2_DATA (BUBBLE_DATA / ENAME_BUBBLE_TEMP P1_UCS P2 SS1 OBJ_BUBBLE_TEMP TH BLOCKNAME NOTETYPE)
-  (SETQ
-    P1_UCS (HCNM_LDRBLK_BD_GET BUBBLE_DATA "P1_UCS")
-    TH (HCNM_LDRBLK_BD_GET BUBBLE_DATA "TH")
-    BLOCKNAME (HCNM_LDRBLK_BD_GET BUBBLE_DATA "BLOCKNAME")
-    NOTETYPE (HCNM_LDRBLK_BD_GET BUBBLE_DATA "NOTETYPE")
-    SS1 (SSADD)
+(defun hcnm_ldrblk_get_p2_data (bubble_data / ename_bubble_temp p1_ucs p2 ss1 obj_bubble_temp th blockname notetype)
+  (setq
+    p1_ucs (hcnm_ldrblk_bd_get bubble_data "P1_UCS")
+    th (hcnm_ldrblk_bd_get bubble_data "TH")
+    blockname (hcnm_ldrblk_bd_get bubble_data "BLOCKNAME")
+    notetype (hcnm_ldrblk_bd_get bubble_data "NOTETYPE")
+    ss1 (ssadd)
   )
-  (FOREACH FLIPSTATE '("right" "left")
-    (VL-CMDF
+  (foreach flipstate '("right" "left")
+    (vl-cmdf
       "._insert"
-      (STRCAT BLOCKNAME "-" FLIPSTATE)
+      (strcat blockname "-" flipstate)
       "_Scale"
-      TH
+      th
       "_Rotate"
-      (ANGTOS (GETVAR "snapang"))
-      P1_UCS
+      (angtos (getvar "snapang"))
+      p1_ucs
     )
-    (SETQ
-      ENAME_BUBBLE_TEMP (ENTLAST)
-      OBJ_BUBBLE_TEMP (VLAX-ENAME->VLA-OBJECT ENAME_BUBBLE_TEMP)
+    (setq
+      ename_bubble_temp (entlast)
+      obj_bubble_temp (vlax-ename->vla-object ename_bubble_temp)
     )
-    (LM:SETDYNPROPVALUE OBJ_BUBBLE_TEMP "Shape" NOTETYPE)
-    (SSADD ENAME_BUBBLE_TEMP SS1)
+    (lm:setdynpropvalue obj_bubble_temp "Shape" notetype)
+    (ssadd ename_bubble_temp ss1)
   )
-  (PROMPT "\nLocation for bubble: ")
-  (VL-CMDF "._MOVE" SS1 "" P1_UCS PAUSE)
-  (SETQ
-    P2 (TRANS (CDR (ASSOC 10 (ENTGET ENAME_BUBBLE_TEMP))) ENAME_BUBBLE_TEMP 1)
-    BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "P2" P2)
+  (prompt "\nLocation for bubble: ")
+  (vl-cmdf "._MOVE" ss1 "" p1_ucs pause)
+  (setq
+    p2 (trans (cdr (assoc 10 (entget ename_bubble_temp))) ename_bubble_temp 1)
+    bubble_data (hcnm_ldrblk_bd_set bubble_data "P2" p2)
   )
-  (VL-CMDF "._erase" SS1 "")
-  BUBBLE_DATA
+  (vl-cmdf "._erase" ss1 "")
+  bubble_data
 )
 ;; Draw bubble and update BUBBLE_DATA with new leader/block info
-(DEFUN HCNM_LDRBLK_DRAW_BUBBLE (BUBBLE_DATA / P1_UCS ENAME_BUBBLE ENAME_BUBBLE_OLD 
-                                ENAME_LEADER P2 ANG1 FLIPSTATE ASSOCIATE_P AUOLD TH 
-                                BLOCKNAME NOTETYPE INPUT1 ELIST_LEADER_OLD
+(defun hcnm_ldrblk_draw_bubble (bubble_data / p1_ucs ename_bubble ename_bubble_old 
+                                ename_leader p2 ang1 flipstate associate_p auold th 
+                                blockname notetype input1 elist_leader_old
                                ) 
-  (SETQ P1_UCS           (HCNM_LDRBLK_BD_GET BUBBLE_DATA "P1_UCS")
-        ENAME_BUBBLE_OLD (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_BUBBLE_OLD")
-        ENAME_LEADER_OLD (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_LEADER_OLD")
-        P2               (HCNM_LDRBLK_BD_GET BUBBLE_DATA "P2")
-        TH               (HCNM_LDRBLK_BD_GET BUBBLE_DATA "TH")
-        BLOCKNAME        (HCNM_LDRBLK_BD_GET BUBBLE_DATA "BLOCKNAME")
-        NOTETYPE         (HCNM_LDRBLK_BD_GET BUBBLE_DATA "NOTETYPE")
-        ANG1             (- (ANGLE P1_UCS P2) (GETVAR "snapang"))
-        FLIPSTATE        (COND ((MINUSP (COS ANG1)) "left") (T "right"))
+  (setq p1_ucs           (hcnm_ldrblk_bd_get bubble_data "P1_UCS")
+        ename_bubble_old (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE_OLD")
+        ename_leader_old (hcnm_ldrblk_bd_get bubble_data "ENAME_LEADER_OLD")
+        p2               (hcnm_ldrblk_bd_get bubble_data "P2")
+        th               (hcnm_ldrblk_bd_get bubble_data "TH")
+        blockname        (hcnm_ldrblk_bd_get bubble_data "BLOCKNAME")
+        notetype         (hcnm_ldrblk_bd_get bubble_data "NOTETYPE")
+        ang1             (- (angle p1_ucs p2) (getvar "snapang"))
+        flipstate        (cond ((minusp (cos ang1)) "left") (t "right"))
   )
-  (COND 
+  (cond 
     ;; If it's not a new insertion, don't draw a leader.
-    (ENAME_BUBBLE_OLD
-     (SETQ AUOLD (GETVAR "aunits"))
-     (SETVAR "aunits" 3)
-     (VL-CMDF 
+    (ename_bubble_old
+     (setq auold (getvar "aunits"))
+     (setvar "aunits" 3)
+     (vl-cmdf 
        "._insert"
-       (STRCAT BLOCKNAME "-" FLIPSTATE)
+       (strcat blockname "-" flipstate)
        "_Scale"
-       TH
+       th
        "_Rotate"
-       (GETVAR "snapang")
-       P2
+       (getvar "snapang")
+       p2
      )
-     (SETVAR "aunits" AUOLD)
-     (SETQ ENAME_BUBBLE (ENTLAST))
+     (setvar "aunits" auold)
+     (setq ename_bubble (entlast))
      ;; If there is an old leader, stretch it and associate it.
-     (COND 
-       (ENAME_LEADER_OLD
-        (SETQ ELIST_LEADER_OLD (ENTGET ENAME_LEADER_OLD))
+     (cond 
+       (ename_leader_old
+        (setq elist_leader_old (entget ename_leader_old))
         ;; Change its arrowhead if needed.
-        (HCNM_LDRBLK_CHANGE_ARROWHEAD ENAME_LEADER_OLD)
+        (hcnm_ldrblk_change_arrowhead ename_leader_old)
         ;; Stretch it.
-        (ENTMOD 
-          (SUBST 
-            (CONS 10 P2)
-            (ASSOC 
+        (entmod 
+          (subst 
+            (cons 10 p2)
+            (assoc 
               10
-              (CDR 
-                (MEMBER (ASSOC 10 ELIST_LEADER_OLD) ELIST_LEADER_OLD)
+              (cdr 
+                (member (assoc 10 elist_leader_old) elist_leader_old)
               )
             )
-            ELIST_LEADER_OLD
+            elist_leader_old
           )
         )
-        (VL-CMDF 
+        (vl-cmdf 
           "._qldetachset"
-          ENAME_LEADER_OLD
+          ename_leader_old
           ""
           "._qlattach"
-          ENAME_LEADER_OLD
-          (ENTLAST)
+          ename_leader_old
+          (entlast)
           "._draworder"
-          (ENTLAST)
+          (entlast)
           ""
           "_front"
         )
        )
      )
     )
-    (T
-     (SETQ ASSOCIATE_P (COND ((= (GETVAR "DIMANNO") 1) T) (NIL)))
-     (COND 
-       ((AND (NOT ASSOCIATE_P) 
-             (GETVAR "CANNOSCALEVALUE")
-             (/= (GETVAR "DIMSCALE") (/ 1.0 (GETVAR "CANNOSCALEVALUE")))
+    (t
+     (setq associate_p (cond ((= (getvar "DIMANNO") 1) t) (nil)))
+     (cond 
+       ((and (not associate_p) 
+             (getvar "CANNOSCALEVALUE")
+             (/= (getvar "DIMSCALE") (/ 1.0 (getvar "CANNOSCALEVALUE")))
         )
-        (ALERT 
-          (PRINC 
-            (STRCAT 
+        (alert 
+          (princ 
+            (strcat 
               "\nDimension scale ("
-              (RTOS (GETVAR "DIMSCALE") 2 2)
+              (rtos (getvar "DIMSCALE") 2 2)
               ") and\nAnnotation scale ("
-              (RTOS (/ 1.0 (GETVAR "CANNOSCALEVALUE")) 2 2)
+              (rtos (/ 1.0 (getvar "CANNOSCALEVALUE")) 2 2)
               ")\nare not equal.\nCNM recommends setting dimension scale to match annotation scale."
             )
           )
         )
         ;; Workaround: Initialize command/input system before GETKWORD
-        (COMMAND "._REDRAW")
-        (INITGET 1 "Yes No")
-        (SETQ INPUT1 (GETKWORD "\nSet dimension scale to match annotation scale? [Yes/No]: "))
-        (COND 
-          ((= INPUT1 "Yes") (SETVAR "DIMSCALE" (/ 1.0 (GETVAR "CANNOSCALEVALUE"))))
+        (command "._REDRAW")
+        (initget 1 "Yes No")
+        (setq input1 (getkword "\nSet dimension scale to match annotation scale? [Yes/No]: "))
+        (cond 
+          ((= input1 "Yes") (setvar "DIMSCALE" (/ 1.0 (getvar "CANNOSCALEVALUE"))))
         )
        )
      )
-     (SETQ ANG1      (- (ANGLE P1_UCS P2) (GETVAR "snapang"))
-           FLIPSTATE (COND ((MINUSP (COS ANG1)) "left") (T "right"))
+     (setq ang1      (- (angle p1_ucs p2) (getvar "snapang"))
+           flipstate (cond ((minusp (cos ang1)) "left") (t "right"))
      )
       ;; SAVE LAST ENTITY FOR ENTNEXT USAGE.
-     (SETQ BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "ENAME_LAST" (ENTLAST)))
+     (setq bubble_data (hcnm_ldrblk_bd_set bubble_data "ENAME_LAST" (entlast)))
      ;;Start insertion
-     (COND 
-       ((>= (ATOF (GETVAR "acadver")) 14)
-        (VL-CMDF "._leader" P1_UCS P2 "_Annotation" "")
-        (COND (ASSOCIATE_P (VL-CMDF "_block")) (T (VL-CMDF "_none" "._INSERT")))
+     (cond 
+       ((>= (atof (getvar "acadver")) 14)
+        (vl-cmdf "._leader" p1_ucs p2 "_Annotation" "")
+        (cond (associate_p (vl-cmdf "_block")) (t (vl-cmdf "_none" "._INSERT")))
        )
-       (T
-        (ALERT (PRINC "\nThe bubble notes inserter in CNM 4.2.3 and higher is not compatible with AutoCAD pre-R14."))
+       (t
+        (alert (princ "\nThe bubble notes inserter in CNM 4.2.3 and higher is not compatible with AutoCAD pre-R14."))
        )
      )
-     (SETQ AUOLD (GETVAR "aunits"))
-     (SETVAR "aunits" 3)
-     (VL-CMDF (STRCAT BLOCKNAME "-" FLIPSTATE) "_Scale" TH P2 (GETVAR "snapang"))
-     (SETVAR "aunits" AUOLD)
-     (SETQ ENAME_BUBBLE (ENTLAST)
-           BUBBLE_DATA  (HCNM_LDRBLK_BD_SET BUBBLE_DATA "ENAME_BUBBLE" ENAME_BUBBLE)
+     (setq auold (getvar "aunits"))
+     (setvar "aunits" 3)
+     (vl-cmdf (strcat blockname "-" flipstate) "_Scale" th p2 (getvar "snapang"))
+     (setvar "aunits" auold)
+     (setq ename_bubble (entlast)
+           bubble_data  (hcnm_ldrblk_bd_set bubble_data "ENAME_BUBBLE" ename_bubble)
      )
     )
   )
-  BUBBLE_DATA
+  bubble_data
 )
-(DEFUN HCNM_LDRBLK_GET_BUBBLE_DATA (BUBBLE_DATA / ATTRIBUTE_LIST ENAME_BUBBLE P1_UCS NUM)
-  (SETQ
-    REPLACE_BUBBLE_P (HCNM_LDRBLK_BD_GET BUBBLE_DATA "REPLACE_BUBBLE_P")
-    ENAME_BUBBLE (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_BUBBLE")
-    P1_UCS (HCNM_LDRBLK_BD_GET BUBBLE_DATA "P1_UCS")
+(defun hcnm_ldrblk_get_bubble_data (bubble_data / attribute_list ename_bubble p1_ucs num)
+  (setq
+    replace_bubble_p (hcnm_ldrblk_bd_get bubble_data "REPLACE_BUBBLE_P")
+    ename_bubble (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE")
+    p1_ucs (hcnm_ldrblk_bd_get bubble_data "P1_UCS")
   )
-  (COND
-    (ENAME_REPLACE_BUBBLE_P
-     (SETQ ATTRIBUTE_LIST (HCNM_GET_ATTRIBUTES ENAME_BUBBLE T))
+  (cond
+    (ename_replace_bubble_p
+     (setq attribute_list (hcnm_get_attributes ename_bubble t))
     )
-    (T
-     (INITGET 128 "Copy")
-     (SETQ NUM (GETKWORD "\nNote number or [Copy note]: "))
-     (COND
-       ((= NUM "Copy")
-        (SETQ
-          ATTRIBUTE_LIST
-           (HCNM_GET_ATTRIBUTES
-             (SETQ ENAME_BUBBLE (CAR (ENTSEL)))
-             T
+    (t
+     (initget 128 "Copy")
+     (setq num (getkword "\nNote number or [Copy note]: "))
+     (cond
+       ((= num "Copy")
+        (setq
+          attribute_list
+           (hcnm_get_attributes
+             (setq ename_bubble (car (entsel)))
+             t
            )
         )
        )
-       (T
-        (SETQ ATTRIBUTE_LIST (HCNM_LDRBLK_INITIALIZE_ATTRIBUTE_LIST))
-        (MAPCAR
-          '(LAMBDA (INDEX)
-             (SETQ
-               ATTRIBUTE_LIST
-                (HCNM_LDRBLK_GET_TEXT_ENTRY
-                  ENAME_BUBBLE
-                  INDEX
-                  ATTRIBUTE_LIST
+       (t
+        (setq attribute_list (hcnm_ldrblk_initialize_attribute_list))
+        (mapcar
+          '(lambda (index)
+             (setq
+               attribute_list
+                (hcnm_ldrblk_get_text_entry
+                  ename_bubble
+                  index
+                  attribute_list
                 )
              )
            )
@@ -5657,231 +5657,231 @@ ImportLayerSettings=No
      )
     )
   )
-  (HCNM_LDRBLK_BD_SET BUBBLE_DATA "ATTRIBUTES" (HCNM_LDRBLK_ADJUST_FORMATS ATTRIBUTE_LIST))
+  (hcnm_ldrblk_bd_set bubble_data "ATTRIBUTES" (hcnm_ldrblk_adjust_formats attribute_list))
 )
-(DEFUN HCNM_LDRBLK_FINISH_BUBBLE (BUBBLE_DATA / ENAME_BUBBLE ENAME_BUBBLE_OLD ENAME_LAST ENAME_LEADER ENAME_TEMP REPLACE_BUBBLE_P ATTRIBUTES NOTETYPE)
-  (SETQ
-    ENAME_LAST (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_LAST")
-    ENAME_TEMP ENAME_LAST
-    ENAME_BUBBLE (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_BUBBLE")
-    ENAME_BUBBLE_OLD (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_BUBBLE_OLD")
-    REPLACE_BUBBLE_P (HCNM_LDRBLK_BD_GET BUBBLE_DATA "REPLACE_BUBBLE_P")
-    ATTRIBUTES (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ATTRIBUTES")
-    NOTETYPE (HCNM_LDRBLK_BD_GET BUBBLE_DATA "NOTETYPE")
+(defun hcnm_ldrblk_finish_bubble (bubble_data / ename_bubble ename_bubble_old ename_last ename_leader ename_temp replace_bubble_p attributes notetype)
+  (setq
+    ename_last (hcnm_ldrblk_bd_get bubble_data "ENAME_LAST")
+    ename_temp ename_last
+    ename_bubble (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE")
+    ename_bubble_old (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE_OLD")
+    replace_bubble_p (hcnm_ldrblk_bd_get bubble_data "REPLACE_BUBBLE_P")
+    attributes (hcnm_ldrblk_bd_get bubble_data "ATTRIBUTES")
+    notetype (hcnm_ldrblk_bd_get bubble_data "NOTETYPE")
   )
-  (HCNM_LDRBLK_SET_DYNPROPS ENAME_BUBBLE ENAME_BUBBLE_OLD NOTETYPE REPLACE_BUBBLE_P)
-  (IF REPLACE_BUBBLE_P (ENTDEL ENAME_BUBBLE_OLD))
-  (HCNM_SET_ATTRIBUTES ENAME_BUBBLE ATTRIBUTES)
+  (hcnm_ldrblk_set_dynprops ename_bubble ename_bubble_old notetype replace_bubble_p)
+  (if replace_bubble_p (entdel ename_bubble_old))
+  (hcnm_set_attributes ename_bubble attributes)
   ;; Use entnext to look for a leader starting from the last entity before this bubble.
-  (WHILE
-    (AND
-      (/= "LEADER" (CDR (ASSOC 0 (ENTGET (SETQ ENAME_TEMP (ENTNEXT ENAME_TEMP))))))
+  (while
+    (and
+      (/= "LEADER" (cdr (assoc 0 (entget (setq ename_temp (entnext ename_temp))))))
     )
   )
-  (SETQ ENAME_LEADER ENAME_TEMP)
+  (setq ename_leader ename_temp)
   ;; Change leader arrowhead if needed.
-  (HCNM_LDRBLK_CHANGE_ARROWHEAD ENAME_LEADER)
+  (hcnm_ldrblk_change_arrowhead ename_leader)
 )
-(DEFUN HCNM_LDRBLK_GET_MTEXT_STRING ()
-  (COND
-    ((= (C:HCNM-CONFIG-GETVAR "BubbleMtext") "1") "m-")
-    (T "")
+(defun hcnm_ldrblk_get_mtext_string ()
+  (cond
+    ((= (c:hcnm-config-getvar "BubbleMtext") "1") "m-")
+    (t "")
   )
 )
-(DEFUN HCNM_LDRBLK_CHANGE_ARROWHEAD (ENAME_LEADER)
-  (COND
-    ((= (C:HCNM-CONFIG-GETVAR "BubbleArrowIntegralPending") "1")
+(defun hcnm_ldrblk_change_arrowhead (ename_leader)
+  (cond
+    ((= (c:hcnm-config-getvar "BubbleArrowIntegralPending") "1")
      ;; 18 is "Integral" arrowhead type.
-     (VLA-PUT-ARROWHEADTYPE
-       (VLAX-ENAME->VLA-OBJECT ENAME_LEADER)
+     (vla-put-arrowheadtype
+       (vlax-ename->vla-object ename_leader)
        18
      )
-     (C:HCNM-CONFIG-SETVAR "BubbleArrowIntegralPending" "0")
+     (c:hcnm-config-setvar "BubbleArrowIntegralPending" "0")
     )
   )
 )
-(DEFUN HCNM_LDRBLK_SET_DYNPROPS (ENAME_BUBBLE_NEW ENAME_BUBBLE_OLD NOTETYPE REPLACE_BUBBLE_P /  DYN_PROPS_OLD DYN_PROPS_OLD_I VLAOBJ_BLOCK_NEW VLAOBJ_BLOCK_OLD)
-  (SETQ
-    VLAOBJ_BLOCK_NEW
-     (VLAX-ENAME->VLA-OBJECT ENAME_BUBBLE_NEW)
+(defun hcnm_ldrblk_set_dynprops (ename_bubble_new ename_bubble_old notetype replace_bubble_p /  dyn_props_old dyn_props_old_i vlaobj_block_new vlaobj_block_old)
+  (setq
+    vlaobj_block_new
+     (vlax-ename->vla-object ename_bubble_new)
   )
-  (COND
-    (ENAME_BUBBLE_OLD
-     (SETQ
-       VLAOBJ_BLOCK_OLD
-        (VLAX-ENAME->VLA-OBJECT ENAME_BUBBLE_OLD)
-       DYN_PROPS_OLD
-        (MAPCAR
-          '(LAMBDA (X)
-             (LIST
-               (VLAX-GET-PROPERTY X 'PROPERTYNAME)
-               (VLAX-GET-PROPERTY X 'VALUE)
-               X
+  (cond
+    (ename_bubble_old
+     (setq
+       vlaobj_block_old
+        (vlax-ename->vla-object ename_bubble_old)
+       dyn_props_old
+        (mapcar
+          '(lambda (x)
+             (list
+               (vlax-get-property x 'PROPERTYNAME)
+               (vlax-get-property x 'VALUE)
+               x
              )
            )
-          (VLAX-INVOKE
-            VLAOBJ_BLOCK_OLD
+          (vlax-invoke
+            vlaobj_block_old
             'GETDYNAMICBLOCKPROPERTIES
           )
         )
      )
-     (FOREACH
-        VLAOBJ_PROPERTY_NEW
-        (VLAX-INVOKE VLAOBJ_BLOCK_NEW 'GETDYNAMICBLOCKPROPERTIES)
-       (IF (AND
-             (SETQ
-               DYN_PROPS_OLD_I
-                (ASSOC
-                  (VLAX-GET-PROPERTY
-                    VLAOBJ_PROPERTY_NEW
+     (foreach
+        vlaobj_property_new
+        (vlax-invoke vlaobj_block_new 'GETDYNAMICBLOCKPROPERTIES)
+       (if (and
+             (setq
+               dyn_props_old_i
+                (assoc
+                  (vlax-get-property
+                    vlaobj_property_new
                     'PROPERTYNAME
                   )
-                  DYN_PROPS_OLD
+                  dyn_props_old
                 )
              )
-             (/= (VLAX-GET-PROPERTY VLAOBJ_PROPERTY_NEW 'READONLY)
-                 :VLAX-TRUE
+             (/= (vlax-get-property vlaobj_property_new 'READONLY)
+                 :vlax-true
              )
            )
-         (VLAX-PUT-PROPERTY
-           VLAOBJ_PROPERTY_NEW
+         (vlax-put-property
+           vlaobj_property_new
            'VALUE
-           (CADR DYN_PROPS_OLD_I)
+           (cadr dyn_props_old_i)
          )
        )
      )
     )
-    (T (LM:SETDYNPROPVALUE VLAOBJ_BLOCK_NEW "Shape" NOTETYPE))
+    (t (lm:setdynpropvalue vlaobj_block_new "Shape" notetype))
   )
 )
-(DEFUN HCNM_LDRBLK_INITIALIZE_ATTRIBUTE_LIST (/ ATTRIBUTE_LIST)
-  (SETQ
-    ATTRIBUTE_LIST
-     (MAPCAR
-       '(LAMBDA (INDEX)
-          (LIST
-            (STRCAT "NOTETXT" (ITOA INDEX))
+(defun hcnm_ldrblk_initialize_attribute_list (/ attribute_list)
+  (setq
+    attribute_list
+     (mapcar
+       '(lambda (index)
+          (list
+            (strcat "NOTETXT" (itoa index))
             ""
           )
         )
        '(1 2 3 4 5 6 0)
      )
-    ATTRIBUTE_LIST
-     (CONS (LIST "NOTEDATA" "") ATTRIBUTE_LIST)
-    ATTRIBUTE_LIST
-     (CONS (LIST "NOTEGAP" "") ATTRIBUTE_LIST)
-    ATTRIBUTE_LIST
-     (CONS (LIST "NOTENUM" NUM) ATTRIBUTE_LIST)
+    attribute_list
+     (cons (list "NOTEDATA" "") attribute_list)
+    attribute_list
+     (cons (list "NOTEGAP" "") attribute_list)
+    attribute_list
+     (cons (list "NOTENUM" num) attribute_list)
   )
-  ATTRIBUTE_LIST
+  attribute_list
 )
 ;;; Save attribute value to attribute list (replaces entire value)
-(DEFUN HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST (TAG VALUE ATTRIBUTE_LIST / ATTR)
-  (SETQ ATTR (ASSOC TAG ATTRIBUTE_LIST))
-  (SUBST (LIST TAG VALUE) ATTR ATTRIBUTE_LIST)
+(defun hcnm_ldrblk_save_attribute_to_list (tag value attribute_list / attr)
+  (setq attr (assoc tag attribute_list))
+  (subst (list tag value) attr attribute_list)
 )
 ;;; Save auto-generated text using search-and-replace in delimiter structure
 ;;; - Gets old auto-text from "auto" field (between delimiters)
 ;;; - Replaces it with new auto-text
 ;;; - Preserves prefix and postfix from user edits
 ;;; This allows users to add prefix/postfix text while still enabling auto-updates
-(DEFUN HCNM_LDRBLK_SAVE_AUTO_TO_LIST (TAG AUTO_NEW ATTRIBUTE_LIST / ATTR VALUE PARTS PREFIX POSTFIX VALUE_NEW)
-  (SETQ ATTR (ASSOC TAG ATTRIBUTE_LIST)
-        VALUE (CADR ATTR)
-        PARTS (HCNM_EB:SPLIT_ON_NBSP VALUE)
-        PREFIX (NTH 0 PARTS)
-        POSTFIX (NTH 2 PARTS)
-        VALUE_NEW (HCNM_EB:CONCAT_PARTS PREFIX AUTO_NEW POSTFIX))
-  (SUBST (LIST TAG VALUE_NEW) ATTR ATTRIBUTE_LIST)
+(defun hcnm_ldrblk_save_auto_to_list (tag auto_new attribute_list / attr value parts prefix postfix value_new)
+  (setq attr (assoc tag attribute_list)
+        value (cadr attr)
+        parts (hcnm_eb:split_on_nbsp value)
+        prefix (nth 0 parts)
+        postfix (nth 2 parts)
+        value_new (hcnm_eb:concat_parts prefix auto_new postfix))
+  (subst (list tag value_new) attr attribute_list)
 )
-(DEFUN HCNM_LDRBLK_ADJUST_FORMATS (ATTRIBUTE_LIST / BUBBLEMTEXT TXT1 TXT2 TXT1_RAW TXT2_RAW
-                               GAP OVERLINE UNDERLINE
+(defun hcnm_ldrblk_adjust_formats (attribute_list / bubblemtext txt1 txt2 txt1_raw txt2_raw
+                               gap overline underline
                               )
   ;; Adjust underlining and overlining
   ;; Only add underline to line 1 and overline to line 2 if they have any content
-  (SETQ
-    BUBBLEMTEXT
-     (HCNM_LDRBLK_GET_MTEXT_STRING)
-    UNDERLINE
-     (COND
-       ((= BUBBLEMTEXT "") "%%u")
-       (T "\\L")
+  (setq
+    bubblemtext
+     (hcnm_ldrblk_get_mtext_string)
+    underline
+     (cond
+       ((= bubblemtext "") "%%u")
+       (t "\\L")
      )
-    OVERLINE
-     (COND
-       ((= BUBBLEMTEXT "") "%%o")
-       (T "\\O")
+    overline
+     (cond
+       ((= bubblemtext "") "%%o")
+       (t "\\O")
      )
-    TXT1_RAW (CADR (ASSOC "NOTETXT1" ATTRIBUTE_LIST))
-    TXT2_RAW (CADR (ASSOC "NOTETXT2" ATTRIBUTE_LIST))
+    txt1_raw (cadr (assoc "NOTETXT1" attribute_list))
+    txt2_raw (cadr (assoc "NOTETXT2" attribute_list))
     ;; Only apply formatting if line has actual content
-    TXT1
-     (COND
-       ((HCNM_LDRBLK_ATTR_HAS_CONTENT_P TXT1_RAW)
-        (HCNM_LDRBLK_ADJUST_FORMAT TXT1_RAW UNDERLINE)
+    txt1
+     (cond
+       ((hcnm_ldrblk_attr_has_content_p txt1_raw)
+        (hcnm_ldrblk_adjust_format txt1_raw underline)
        )
-       (T TXT1_RAW)  ; No content, return as-is (could be "" or "§§")
+       (t txt1_raw)  ; No content, return as-is (could be "" or "§§")
      )
-    TXT2
-     (COND
-       ((HCNM_LDRBLK_ATTR_HAS_CONTENT_P TXT2_RAW)
-        (HCNM_LDRBLK_ADJUST_FORMAT TXT2_RAW OVERLINE)
+    txt2
+     (cond
+       ((hcnm_ldrblk_attr_has_content_p txt2_raw)
+        (hcnm_ldrblk_adjust_format txt2_raw overline)
        )
-       (T TXT2_RAW)  ; No content, return as-is (could be "" or "§§")
+       (t txt2_raw)  ; No content, return as-is (could be "" or "§§")
      )
     ;; GAP gets underline + two spaces if either line has content
     ;; NOTEGAP is system-controlled and goes in prefix field with delimiters
-    GAP
-     (COND
+    gap
+     (cond
        ;; If both lines empty, gap is empty (with empty delimiter structure)
-       ((AND (NOT (HCNM_LDRBLK_ATTR_HAS_CONTENT_P TXT1_RAW))
-             (NOT (HCNM_LDRBLK_ATTR_HAS_CONTENT_P TXT2_RAW))
+       ((and (not (hcnm_ldrblk_attr_has_content_p txt1_raw))
+             (not (hcnm_ldrblk_attr_has_content_p txt2_raw))
         )
-        (HCNM_EB:CONCAT_PARTS "" "" "")
+        (hcnm_eb:concat_parts "" "" "")
        )
        ;; Otherwise, gap is "%%u  " (underline + 2 spaces) in prefix field
-       (T 
-        (HCNM_EB:CONCAT_PARTS "%%u  " "" "")
+       (t 
+        (hcnm_eb:concat_parts "%%u  " "" "")
        )
      )
-    ATTRIBUTE_LIST
-     (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST
+    attribute_list
+     (hcnm_ldrblk_save_attribute_to_list
        "NOTETXT1"
-       TXT1
-       ATTRIBUTE_LIST
+       txt1
+       attribute_list
      )
-    ATTRIBUTE_LIST
-     (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST
+    attribute_list
+     (hcnm_ldrblk_save_attribute_to_list
        "NOTETXT2"
-       TXT2
-       ATTRIBUTE_LIST
+       txt2
+       attribute_list
      )
-    ATTRIBUTE_LIST
-     (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST
+    attribute_list
+     (hcnm_ldrblk_save_attribute_to_list
        "NOTEGAP"
-       GAP
-       ATTRIBUTE_LIST
+       gap
+       attribute_list
      )
   )
   ;; Strip mtext codes if not using mtext
   ;; Disabled because LM:Unformat breaks field codes
   ;|(COND
-    ((= BUBBLEMTEXT "")
-     (SETQ
-       ATTRIBUTE_LIST
-        (MAPCAR
-          '(LAMBDA (ATTRIBUTE)
-             (COND
-               ((WCMATCH (CADR ATTRIBUTE) "*\\*")
-                (LIST
-                  (CAR ATTRIBUTE)
-                  (LM:UNFORMAT (CADR ATTRIBUTE) NIL)
+    ((= bubblemtext "")
+     (setq
+       attribute_list
+        (mapcar
+          '(lambda (attribute)
+             (cond
+               ((wcmatch (cadr attribute) "*\\*")
+                (list
+                  (car attribute)
+                  (lm:unformat (cadr attribute) nil)
                 )
                )
-               (ATTRIBUTE)
+               (attribute)
              )
            )
-          ATTRIBUTE_LIST
+          attribute_list
         )
      )
     )
@@ -5890,153 +5890,153 @@ ImportLayerSettings=No
 )
 ;;; Check if attribute has actual content (not just empty or delimiters).
 ;;; Returns T if there's text content, NIL otherwise.
-(DEFUN HCNM_LDRBLK_ATTR_HAS_CONTENT_P (STRING / SEP POS PREFIX AUTO POSTFIX)
-  (COND
+(defun hcnm_ldrblk_attr_has_content_p (string / sep pos prefix auto postfix)
+  (cond
     ;; Empty string has no content
-    ((= STRING "") NIL)
+    ((= string "") nil)
     ;; Check if string has delimiters
-    ((VL-STRING-SEARCH (SETQ SEP (CHR 160)) STRING)
+    ((vl-string-search (setq sep (chr 160)) string)
      ;; Parse into parts
-     (SETQ POS (VL-STRING-SEARCH SEP STRING))
-     (SETQ PREFIX (SUBSTR STRING 1 POS))
-     (SETQ STRING (SUBSTR STRING (+ POS 2)))
-     (SETQ POS (VL-STRING-SEARCH SEP STRING))
-     (IF POS
-       (PROGN
-         (SETQ AUTO (SUBSTR STRING 1 POS))
-         (SETQ POSTFIX (SUBSTR STRING (+ POS 2)))
+     (setq pos (vl-string-search sep string))
+     (setq prefix (substr string 1 pos))
+     (setq string (substr string (+ pos 2)))
+     (setq pos (vl-string-search sep string))
+     (if pos
+       (progn
+         (setq auto (substr string 1 pos))
+         (setq postfix (substr string (+ pos 2)))
        )
-       (PROGN
-         (SETQ AUTO STRING)
-         (SETQ POSTFIX "")
+       (progn
+         (setq auto string)
+         (setq postfix "")
        )
      )
      ;; Has content if any part is non-empty
-     (OR (/= PREFIX "") (/= AUTO "") (/= POSTFIX ""))
+     (or (/= prefix "") (/= auto "") (/= postfix ""))
     )
     ;; No delimiters, has content if non-empty
-    (T T)
+    (t t)
   )
 )
 ;;; Underline or overline string unless it's empty.
 ;;; With prefix/auto/postfix split using chr(160) as delimiter,
 ;;; the format code goes in the prefix, not the auto text.
 ;;; If format codes are found in the auto text, move them to prefix.
-(DEFUN HCNM_LDRBLK_ADJUST_FORMAT (STRING CODE / SEP POS PREFIX AUTO POSTFIX AUTO_HAS_FORMAT)
-  (COND
+(defun hcnm_ldrblk_adjust_format (string code / sep pos prefix auto postfix auto_has_format)
+  (cond
     ;; If empty, do nothing
-    ((= STRING "") STRING)
+    ((= string "") string)
     ;; Otherwise, split by chr(160) delimiter and add format code to prefix
-    (T
-     (SETQ SEP (CHR 160))
-     (SETQ POS (VL-STRING-SEARCH SEP STRING))
-     (COND
+    (t
+     (setq sep (chr 160))
+     (setq pos (vl-string-search sep string))
+     (cond
        ;; If no delimiter, treat entire string as prefix (old-style attribute)
-       ((NOT POS)
-        (COND
+       ((not pos)
+        (cond
           ;; If already underlined or overlined, strip that. Assumes that's the first code.
-          ((WCMATCH STRING "\\*") (STRCAT CODE (SUBSTR STRING 3)))
-          ((WCMATCH STRING "%%*") (STRCAT CODE (SUBSTR STRING 4)))
+          ((wcmatch string "\\*") (strcat code (substr string 3)))
+          ((wcmatch string "%%*") (strcat code (substr string 4)))
           ;; Otherwise just underline or overline.
-          (T (STRCAT CODE STRING))
+          (t (strcat code string))
         )
        )
        ;; If delimiter exists, extract prefix/auto/postfix and format the prefix
-       (T
-        (SETQ PREFIX (SUBSTR STRING 1 POS))
-        (SETQ STRING (SUBSTR STRING (+ POS 2)))  ; Skip separator
-        (SETQ POS (VL-STRING-SEARCH SEP STRING))
-        (COND
+       (t
+        (setq prefix (substr string 1 pos))
+        (setq string (substr string (+ pos 2)))  ; Skip separator
+        (setq pos (vl-string-search sep string))
+        (cond
           ;; Extract auto and postfix
-          (POS
-           (SETQ AUTO (SUBSTR STRING 1 POS))
-           (SETQ POSTFIX (SUBSTR STRING (+ POS 2)))
+          (pos
+           (setq auto (substr string 1 pos))
+           (setq postfix (substr string (+ pos 2)))
           )
           ;; No second delimiter, rest is auto
-          (T
-           (SETQ AUTO STRING)
-           (SETQ POSTFIX "")
+          (t
+           (setq auto string)
+           (setq postfix "")
           )
         )
         ;; Check if auto text has format codes and move them to prefix
-        (SETQ AUTO_HAS_FORMAT NIL)
-        (COND
+        (setq auto_has_format nil)
+        (cond
           ;; If auto has mtext format codes, strip them and flag
-          ((WCMATCH AUTO "\\L*")
-           (SETQ AUTO (SUBSTR AUTO 3))
-           (SETQ AUTO_HAS_FORMAT "\\L")
+          ((wcmatch auto "\\L*")
+           (setq auto (substr auto 3))
+           (setq auto_has_format "\\L")
           )
-          ((WCMATCH AUTO "\\O*")
-           (SETQ AUTO (SUBSTR AUTO 3))
-           (SETQ AUTO_HAS_FORMAT "\\O")
+          ((wcmatch auto "\\O*")
+           (setq auto (substr auto 3))
+           (setq auto_has_format "\\O")
           )
           ;; If auto has dtext format codes, strip them and flag
-          ((WCMATCH AUTO "%%u*")
-           (SETQ AUTO (SUBSTR AUTO 4))
-           (SETQ AUTO_HAS_FORMAT "%%u")
+          ((wcmatch auto "%%u*")
+           (setq auto (substr auto 4))
+           (setq auto_has_format "%%u")
           )
-          ((WCMATCH AUTO "%%o*")
-           (SETQ AUTO (SUBSTR AUTO 4))
-           (SETQ AUTO_HAS_FORMAT "%%o")
+          ((wcmatch auto "%%o*")
+           (setq auto (substr auto 4))
+           (setq auto_has_format "%%o")
           )
         )
         ;; Add format code to prefix (use code from auto if found, else use CODE parameter)
-        (SETQ PREFIX
-          (COND
+        (setq prefix
+          (cond
             ;; If auto had format, use that instead of CODE
-            (AUTO_HAS_FORMAT
-             (COND
-               ((= PREFIX "") AUTO_HAS_FORMAT)
-               ((WCMATCH PREFIX "\\*") (STRCAT AUTO_HAS_FORMAT (SUBSTR PREFIX 3)))
-               ((WCMATCH PREFIX "%%*") (STRCAT AUTO_HAS_FORMAT (SUBSTR PREFIX 4)))
-               (T (STRCAT AUTO_HAS_FORMAT PREFIX))
+            (auto_has_format
+             (cond
+               ((= prefix "") auto_has_format)
+               ((wcmatch prefix "\\*") (strcat auto_has_format (substr prefix 3)))
+               ((wcmatch prefix "%%*") (strcat auto_has_format (substr prefix 4)))
+               (t (strcat auto_has_format prefix))
              )
             )
             ;; Otherwise use CODE parameter
-            (T
-             (COND
-               ((= PREFIX "") CODE)  ; Empty prefix gets just the code
-               ((WCMATCH PREFIX "\\*") (STRCAT CODE (SUBSTR PREFIX 3)))
-               ((WCMATCH PREFIX "%%*") (STRCAT CODE (SUBSTR PREFIX 4)))
-               (T (STRCAT CODE PREFIX))
+            (t
+             (cond
+               ((= prefix "") code)  ; Empty prefix gets just the code
+               ((wcmatch prefix "\\*") (strcat code (substr prefix 3)))
+               ((wcmatch prefix "%%*") (strcat code (substr prefix 4)))
+               (t (strcat code prefix))
              )
             )
           )
         )
         ;; Reassemble with delimiters
-        (STRCAT PREFIX SEP AUTO SEP POSTFIX)
+        (strcat prefix sep auto sep postfix)
        )
      )
     )
   )
 )
-(DEFUN HCNM_LDRBLK_GET_TEXT_ENTRY (ENAME_BUBBLE LINE_NUMBER ATTRIBUTE_LIST /
-                               INPUT SKIP_ENTRY_P INPUT LOOP-P PROMPT-P STRING TAG
+(defun hcnm_ldrblk_get_text_entry (ename_bubble line_number attribute_list /
+                               input skip_entry_p input loop-p prompt-p string tag
                               )
-  (SETQ
-    LOOP-P T
-    PROMPT-P
-     (= (C:HCNM-CONFIG-GETVAR
-          (STRCAT "BubbleTextLine" (ITOA LINE_NUMBER) "PromptP")
+  (setq
+    loop-p t
+    prompt-p
+     (= (c:hcnm-config-getvar
+          (strcat "BubbleTextLine" (itoa line_number) "PromptP")
         )
         "1"
      )
-    SKIP_ENTRY_P
-     (= (C:HCNM-CONFIG-GETVAR "BubbleSkipEntryPrompt") "1")
-    STRING ""
-    TAG
-     (STRCAT "NOTETXT" (ITOA LINE_NUMBER))
+    skip_entry_p
+     (= (c:hcnm-config-getvar "BubbleSkipEntryPrompt") "1")
+    string ""
+    tag
+     (strcat "NOTETXT" (itoa line_number))
   )
-  (WHILE (AND PROMPT-P LOOP-P)
-    (COND
-      ((OR SKIP_ENTRY_P
-           (= (SETQ
-                INPUT
-                 (GETSTRING
+  (while (and prompt-p loop-p)
+    (cond
+      ((or skip_entry_p
+           (= (setq
+                input
+                 (getstring
                    1
-                   (STRCAT
+                   (strcat
                      "\nLine "
-                     (ITOA LINE_NUMBER)
+                     (itoa line_number)
                      " text or . for automatic text: "
                    )
                  )
@@ -6044,41 +6044,41 @@ ImportLayerSettings=No
               "."
            )
        )
-       (SETQ
-         ATTRIBUTE_LIST
-          (HCNM_LDRBLK_GET_AUTO_TYPE
-            ENAME_BUBBLE
-            LINE_NUMBER
-            TAG
-            ATTRIBUTE_LIST
+       (setq
+         attribute_list
+          (hcnm_ldrblk_get_auto_type
+            ename_bubble
+            line_number
+            tag
+            attribute_list
           )
-         STRING
-          (CADR (ASSOC TAG ATTRIBUTE_LIST))
+         string
+          (cadr (assoc tag attribute_list))
        )
       )
-      (T
-       (SETQ
-         STRING INPUT
-         ATTRIBUTE_LIST
-          (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST
-            TAG
-            STRING
-            ATTRIBUTE_LIST
+      (t
+       (setq
+         string input
+         attribute_list
+          (hcnm_ldrblk_save_attribute_to_list
+            tag
+            string
+            attribute_list
           )
        )
       )
     )
-    (SETQ
-      SKIP_ENTRY_P
-       (AND SKIP_ENTRY_P (/= STRING "ENtry"))
-      LOOP-P
-       (OR (NOT STRING) (= STRING "ENtry"))
+    (setq
+      skip_entry_p
+       (and skip_entry_p (/= string "ENtry"))
+      loop-p
+       (or (not string) (= string "ENtry"))
     )
   )
-  ATTRIBUTE_LIST
+  attribute_list
 )
 ;;; bubble-data-update: I believe that this needs to also define any data reference types.
-(DEFUN HCNM_LDRBLK_GET_AUTO_TYPE_KEYS ()
+(defun hcnm_ldrblk_get_auto_type_keys ()
   ;; Returns list of auto-text type definitions
   ;; Structure: (Input_Key Display_Type Reference_Type Requires_Coordinates)
   ;; - Input_Key: Keyword entered by user (initget format)
@@ -6089,15 +6089,15 @@ ImportLayerSettings=No
     ("LF" "LF" nil nil)        ; Length (QTY) - user picks objects
     ("SF" "SF" nil nil)        ; Square Feet (QTY) - user picks objects
     ("SY" "SY" nil nil)        ; Square Yards (QTY) - user picks objects
-    ("STa" "Sta" "AL" T)       ; Station - needs P1_WORLD for alignment query
-    ("Off" "Off" "AL" T)       ; Offset - needs P1_WORLD for alignment query
-    ("stAoff" "StaOff" "AL" T) ; Station+Offset - needs P1_WORLD for alignment query
+    ("STa" "Sta" "AL" t)       ; Station - needs P1_WORLD for alignment query
+    ("Off" "Off" "AL" t)       ; Offset - needs P1_WORLD for alignment query
+    ("stAoff" "StaOff" "AL" t) ; Station+Offset - needs P1_WORLD for alignment query
     ("Name" "AlName" "AL" nil)     ; Alignment Name - no coordinates needed
-    ("STAName" "StaName" "AL" T)     ; Station + Alignment Name - needs P1_WORLD
-    ("N" "N" nil T)            ; Northing - needs P1_WORLD for coordinate
-    ("E" "E" nil T)            ; Easting - needs P1_WORLD for coordinate
-    ("NE" "NE" nil T)          ; Northing+Easting - needs P1_WORLD for coordinate
-    ("Z" "Z" "SU" T)           ; Elevation - needs P1_WORLD for surface query (unimplemented)
+    ("STAName" "StaName" "AL" t)     ; Station + Alignment Name - needs P1_WORLD
+    ("N" "N" nil t)            ; Northing - needs P1_WORLD for coordinate
+    ("E" "E" nil t)            ; Easting - needs P1_WORLD for coordinate
+    ("NE" "NE" nil t)          ; Northing+Easting - needs P1_WORLD for coordinate
+    ("Z" "Z" "SU" t)           ; Elevation - needs P1_WORLD for surface query (unimplemented)
     ("Dia" "Dia" "PIPE" nil)   ; Pipe Diameter - user selects pipe object
     ("SLope" "Slope" "PIPE" nil) ; Pipe Slope - user selects pipe object
     ("L" "L" "PIPE" nil)       ; Pipe Length - user selects pipe object
@@ -6105,73 +6105,73 @@ ImportLayerSettings=No
     ("ENtry" "ENtry" nil nil)  ; Entry number - static text
   )
 )
-(DEFUN HCNM_LDRBLK_GET_AUTO_TYPE (ENAME_BUBBLE LINE_NUMBER TAG ATTRIBUTE_LIST /
-                              CVPORT_OLD HAWS-QT-NEW INPUT SPACE STRING
+(defun hcnm_ldrblk_get_auto_type (ename_bubble line_number tag attribute_list /
+                              cvport_old haws-qt-new input space string
                              )
-  (INITGET
-    (SUBSTR
-      (APPLY
+  (initget
+    (substr
+      (apply
         'STRCAT
-        (MAPCAR
-          '(LAMBDA (X) (STRCAT " " (CAR X)))
-          (HCNM_LDRBLK_GET_AUTO_TYPE_KEYS)
+        (mapcar
+          '(lambda (x) (strcat " " (car x)))
+          (hcnm_ldrblk_get_auto_type_keys)
         )
       )
       2
     )
   )
-  (SETQ
-    INPUT
-     (GETKWORD
-       (STRCAT
+  (setq
+    input
+     (getkword
+       (strcat
          "\nLine "
-         (ITOA LINE_NUMBER)
+         (itoa line_number)
          " automatic text. Enter an option ["
-         (SUBSTR
-           (APPLY
+         (substr
+           (apply
              'STRCAT
-             (MAPCAR
-               '(LAMBDA (X) (STRCAT "/" (CAR X)))
-               (HCNM_LDRBLK_GET_AUTO_TYPE_KEYS)
+             (mapcar
+               '(lambda (x) (strcat "/" (car x)))
+               (hcnm_ldrblk_get_auto_type_keys)
              )
            )
            2
          )
          "] <"
-         (CAR (LAST (HCNM_LDRBLK_GET_AUTO_TYPE_KEYS)))
+         (car (last (hcnm_ldrblk_get_auto_type_keys)))
          ">: "
        )
      )
   )
-  (COND
-    ((OR (NOT INPUT) (= INPUT "ENtry"))
-      (SETQ
-        ATTRIBUTE_LIST
-         (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST
-           TAG
+  (cond
+    ((or (not input) (= input "ENtry"))
+      (setq
+        attribute_list
+         (hcnm_ldrblk_save_attribute_to_list
+           tag
            "ENtry"
-           ATTRIBUTE_LIST
+           attribute_list
          )
       )
     )
-    (T
-     (SETQ
-       ATTRIBUTE_LIST
-        (HCNM_LDRBLK_AUTO_DISPATCH
-          ENAME_BUBBLE
-          ATTRIBUTE_LIST
-          (STRCAT "NOTETXT" (ITOA LINE_NUMBER))
-          (CADR
-            (ASSOC INPUT (HCNM_LDRBLK_GET_AUTO_TYPE_KEYS))
+    (t
+     (setq
+       attribute_list
+        (hcnm_ldrblk_auto_dispatch
+          ename_bubble
+          attribute_list
+          (strcat "NOTETXT" (itoa line_number))
+          (cadr
+            (assoc input (hcnm_ldrblk_get_auto_type_keys))
           )
-          NIL
+          nil
         )
      )
     )
   )
   ;; bubble-data-update: This is broken because the calling function expects "ENtry" to be returned sometimes.
   ;; I feel like I really should find a way to abstract the interface from this other business logic. There may be a good example in my recent subdivision tools.
-  ATTRIBUTE_LIST
+  attribute_list
 )
 ;; bubble-data-update: HCNM_LDRBLK_AUTO_DISPATCH is called from command line (insertion) and from edit box (editing) to get string as requested by user. It needs to get not only string, but also data (reference object and reference type).
 ;; 
@@ -6202,190 +6202,190 @@ ImportLayerSettings=No
 ;; We return the modified attribute_list.
 ;; INPUT IS THE OBJECT (ENAME OR VLA-OBJECT; COULD BE STANDARDIZED) OR STRING WE NEED TO EXAMINE IF WE AREN'T ASKING THE USER FOR IT OR NIL IF WE NEED TO GET IT.
 ;; Returns ATTRIBUTE_LIST with the requested auto data added.
-(DEFUN HCNM_LDRBLK_AUTO_DISPATCH (ENAME_BUBBLE ATTRIBUTE_LIST TAG AUTO_TYPE INPUT / BUBBLE_DATA)
+(defun hcnm_ldrblk_auto_dispatch (ename_bubble attribute_list tag auto_type input / bubble_data)
     ;; bubble-data-update: Build BUBBLE_DATA and pass to subfunctions
-  (SETQ 
-    BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "ENAME_BUBBLE" ENAME_BUBBLE)
-    BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
+  (setq 
+    bubble_data (hcnm_ldrblk_bd_set bubble_data "ENAME_BUBBLE" ename_bubble)
+    bubble_data (hcnm_ldrblk_bd_set bubble_data "ATTRIBUTES" attribute_list)
   )
   ;; Ensure ENAME_LEADER is in BUBBLE_DATA (needed for reactor attachment)
-  (COND
-    ((NOT (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_LEADER"))
-     (SETQ BUBBLE_DATA (HCNM_LDRBLK_BD_SET 
-                         BUBBLE_DATA 
+  (cond
+    ((not (hcnm_ldrblk_bd_get bubble_data "ENAME_LEADER"))
+     (setq bubble_data (hcnm_ldrblk_bd_set 
+                         bubble_data 
                          "ENAME_LEADER" 
-                         (HCNM_LDRBLK_BUBBLE_LEADER ENAME_BUBBLE)))
+                         (hcnm_ldrblk_bubble_leader ename_bubble)))
     )
   )
   ;; Only calculate P1_WORLD for auto-types that require coordinates
   ;; BUT: For alignment auto-text, only calculate P1_WORLD when we have INPUT (reactor update)
   ;; When INPUT is NIL (user selection), AUTO_AL will handle viewport selection AFTER user picks alignment
-  (COND
-    ((AND (HCNM_LDRBLK_AUTO_TYPE_IS_COORDINATE_P AUTO_TYPE)
-          (OR INPUT  ; Reactor update - have alignment already
-              (NOT (MEMBER AUTO_TYPE '("Sta" "Off" "StaOff" "AlName" "StaName")))))  ; Not alignment-based
-     (SETQ BUBBLE_DATA (HCNM_LDRBLK_BD_ENSURE_P1_WORLD BUBBLE_DATA))
+  (cond
+    ((and (hcnm_ldrblk_auto_type_is_coordinate_p auto_type)
+          (or input  ; Reactor update - have alignment already
+              (not (member auto_type '("Sta" "Off" "StaOff" "AlName" "StaName")))))  ; Not alignment-based
+     (setq bubble_data (hcnm_ldrblk_bd_ensure_p1_world bubble_data))
     )
   )
-  (SETQ
-    BUBBLE_DATA
-     (COND
-       ((= AUTO_TYPE "Text") (HCNM_LDRBLK_AUTO_ES BUBBLE_DATA TAG AUTO_TYPE INPUT))
-       ((= AUTO_TYPE "LF") (HCNM_LDRBLK_AUTO_QTY BUBBLE_DATA TAG AUTO_TYPE "Length" "1" INPUT))
-       ((= AUTO_TYPE "SF") (HCNM_LDRBLK_AUTO_QTY BUBBLE_DATA TAG AUTO_TYPE "Area" "1" INPUT))
-       ((= AUTO_TYPE "SY")
-        (HCNM_LDRBLK_AUTO_QTY BUBBLE_DATA TAG AUTO_TYPE "Area" "0.11111111" INPUT)
+  (setq
+    bubble_data
+     (cond
+       ((= auto_type "Text") (hcnm_ldrblk_auto_es bubble_data tag auto_type input))
+       ((= auto_type "LF") (hcnm_ldrblk_auto_qty bubble_data tag auto_type "Length" "1" input))
+       ((= auto_type "SF") (hcnm_ldrblk_auto_qty bubble_data tag auto_type "Area" "1" input))
+       ((= auto_type "SY")
+        (hcnm_ldrblk_auto_qty bubble_data tag auto_type "Area" "0.11111111" input)
        )
-       ((= AUTO_TYPE "Sta") (HCNM_LDRBLK_AUTO_AL BUBBLE_DATA TAG AUTO_TYPE INPUT))
-       ((= AUTO_TYPE "Off") (HCNM_LDRBLK_AUTO_AL BUBBLE_DATA TAG AUTO_TYPE INPUT))
-       ((= AUTO_TYPE "StaOff")
-        (HCNM_LDRBLK_AUTO_AL BUBBLE_DATA TAG AUTO_TYPE INPUT)
+       ((= auto_type "Sta") (hcnm_ldrblk_auto_al bubble_data tag auto_type input))
+       ((= auto_type "Off") (hcnm_ldrblk_auto_al bubble_data tag auto_type input))
+       ((= auto_type "StaOff")
+        (hcnm_ldrblk_auto_al bubble_data tag auto_type input)
        )
-       ((= AUTO_TYPE "AlName") (HCNM_LDRBLK_AUTO_AL BUBBLE_DATA TAG AUTO_TYPE INPUT))
-       ((= AUTO_TYPE "StaName") (HCNM_LDRBLK_AUTO_AL BUBBLE_DATA TAG AUTO_TYPE INPUT))
-       ((= AUTO_TYPE "N") (HCNM_LDRBLK_AUTO_NE BUBBLE_DATA TAG AUTO_TYPE INPUT))
-       ((= AUTO_TYPE "E") (HCNM_LDRBLK_AUTO_NE BUBBLE_DATA TAG AUTO_TYPE INPUT))
-       ((= AUTO_TYPE "NE") (HCNM_LDRBLK_AUTO_NE BUBBLE_DATA TAG AUTO_TYPE INPUT))
-       ((= AUTO_TYPE "Z") (HCNM_LDRBLK_AUTO_SU BUBBLE_DATA TAG AUTO_TYPE INPUT))
-       ((= AUTO_TYPE "Dia") (HCNM_LDRBLK_AUTO_PIPE BUBBLE_DATA TAG AUTO_TYPE INPUT))
-       ((= AUTO_TYPE "Slope") (HCNM_LDRBLK_AUTO_PIPE BUBBLE_DATA TAG AUTO_TYPE INPUT))
-       ((= AUTO_TYPE "L") (HCNM_LDRBLK_AUTO_PIPE BUBBLE_DATA TAG AUTO_TYPE INPUT))
+       ((= auto_type "AlName") (hcnm_ldrblk_auto_al bubble_data tag auto_type input))
+       ((= auto_type "StaName") (hcnm_ldrblk_auto_al bubble_data tag auto_type input))
+       ((= auto_type "N") (hcnm_ldrblk_auto_ne bubble_data tag auto_type input))
+       ((= auto_type "E") (hcnm_ldrblk_auto_ne bubble_data tag auto_type input))
+       ((= auto_type "NE") (hcnm_ldrblk_auto_ne bubble_data tag auto_type input))
+       ((= auto_type "Z") (hcnm_ldrblk_auto_su bubble_data tag auto_type input))
+       ((= auto_type "Dia") (hcnm_ldrblk_auto_pipe bubble_data tag auto_type input))
+       ((= auto_type "Slope") (hcnm_ldrblk_auto_pipe bubble_data tag auto_type input))
+       ((= auto_type "L") (hcnm_ldrblk_auto_pipe bubble_data tag auto_type input))
      )
-    ATTRIBUTE_LIST (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ATTRIBUTES")
+    attribute_list (hcnm_ldrblk_bd_get bubble_data "ATTRIBUTES")
   )
-  ATTRIBUTE_LIST
+  attribute_list
 )
 
-(DEFUN HCNM_LDRBLK_AUTO_ES (BUBBLE_DATA TAG AUTO_TYPE INPUT / ENAME ATTRIBUTE_LIST) 
-  (SETQ
-    ATTRIBUTE_LIST (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ATTRIBUTES")
-    ENAME
-    (COND
-      (INPUT)
-      (T (CAR (NENTSEL (STRCAT "\nSelect object with " AUTO_TYPE ": "))))
+(defun hcnm_ldrblk_auto_es (bubble_data tag auto_type input / ename attribute_list) 
+  (setq
+    attribute_list (hcnm_ldrblk_bd_get bubble_data "ATTRIBUTES")
+    ename
+    (cond
+      (input)
+      (t (car (nentsel (strcat "\nSelect object with " auto_type ": "))))
     )     
   )
   ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
   ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
-  (SETQ  
-    ATTRIBUTE_LIST 
-     (HCNM_LDRBLK_SAVE_AUTO_TO_LIST 
-       TAG
-       (COND 
-         (ENAME (CDR (ASSOC 1 (ENTGET ENAME))))
-         (T "")
+  (setq  
+    attribute_list 
+     (hcnm_ldrblk_save_auto_to_list 
+       tag
+       (cond 
+         (ename (cdr (assoc 1 (entget ename))))
+         (t "")
        )
-       ATTRIBUTE_LIST
+       attribute_list
      )
-    BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
+    bubble_data (hcnm_ldrblk_bd_set bubble_data "ATTRIBUTES" attribute_list)
   )
-  BUBBLE_DATA
+  bubble_data
 )
-(DEFUN HCNM_LDRBLK_AUTO_QTY (BUBBLE_DATA TAG AUTO_TYPE QT_TYPE FACTOR INPUT / ATTRIBUTE_LIST STR_BACKSLASH INPUT1 PSPACE_BUBBLE_P
-                         SS-P STRING)
-  (SETQ ATTRIBUTE_LIST (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ATTRIBUTES"))
-  (COND
-    ((SETQ STRING INPUT))
-    (T  
-      (COND
-        ((AND
-          (= QT_TYPE "Area")
-          (= (C:HCNM-CONFIG-GETVAR "BubbleAreaIntegral") "1")
+(defun hcnm_ldrblk_auto_qty (bubble_data tag auto_type qt_type factor input / attribute_list str_backslash input1 pspace_bubble_p
+                         ss-p string)
+  (setq attribute_list (hcnm_ldrblk_bd_get bubble_data "ATTRIBUTES"))
+  (cond
+    ((setq string input))
+    (t  
+      (cond
+        ((and
+          (= qt_type "Area")
+          (= (c:hcnm-config-getvar "BubbleAreaIntegral") "1")
           )
-        (C:HCNM-CONFIG-SETVAR "BubbleArrowIntegralPending" "1")
+        (c:hcnm-config-setvar "BubbleArrowIntegralPending" "1")
         )
       )
-      (SETQ PSPACE_BUBBLE_P (HCNM_LDRBLK_SPACE_SET_MODEL))
-      (INITGET "Selection")
-      (SETQ
-        INPUT1
-        (NENTSEL
-          (STRCAT
+      (setq pspace_bubble_p (hcnm_ldrblk_space_set_model))
+      (initget "Selection")
+      (setq
+        input1
+        (nentsel
+          (strcat
             "\nSelect object to link dynamically or [Selection set (not dynamic) including AECC_PIPEs] <Selection set>: "
           )
         )
-        SS-P
-        (OR (NOT INPUT1) (= INPUT1 "Selection"))
-        STRING
-        (COND
-          (SS-P
-            (IF (NOT HAWS-QT-NEW)
-              (LOAD "HAWS-QT")
+        ss-p
+        (or (not input1) (= input1 "Selection"))
+        string
+        (cond
+          (ss-p
+            (if (not haws-qt-new)
+              (load "HAWS-QT")
             )
-            (HAWS-QT-NEW "ldrblk")
-            (HAWS-QT-SET-PROPERTY "ldrblk" "type" (STRCASE QT_TYPE T))
-            (HAWS-QT-SET-PROPERTY "ldrblk" "factor" (READ FACTOR))
-            (HAWS-QT-SET-PROPERTY
+            (haws-qt-new "ldrblk")
+            (haws-qt-set-property "ldrblk" "type" (strcase qt_type t))
+            (haws-qt-set-property "ldrblk" "factor" (read factor))
+            (haws-qt-set-property
               "ldrblk"
               "postfix"
-              (C:HCNM-CONFIG-GETVAR
-                (STRCAT "BubbleTextPostfix" AUTO_TYPE)
+              (c:hcnm-config-getvar
+                (strcat "BubbleTextPostfix" auto_type)
               )
             )
-            (HAWS-QT-STRING "ldrblk")
-            (HAWS-QT-GET-PROPERTY "ldrblk" "string")
+            (haws-qt-string "ldrblk")
+            (haws-qt-get-property "ldrblk" "string")
           )
-          (T
-            (STRCAT
-              (C:HCNM-CONFIG-GETVAR
-                (STRCAT "BubbleTextPrefix" AUTO_TYPE)
+          (t
+            (strcat
+              (c:hcnm-config-getvar
+                (strcat "BubbleTextPrefix" auto_type)
               )
               "%<\\AcObjProp Object(%<\\_ObjId "
-              (VLA-GETOBJECTIDSTRING
-                (VLA-GET-UTILITY
-                  (VLA-GET-ACTIVEDOCUMENT (VLAX-GET-ACAD-OBJECT))
+              (vla-getobjectidstring
+                (vla-get-utility
+                  (vla-get-activedocument (vlax-get-acad-object))
                 )
-                (VLAX-ENAME->VLA-OBJECT (CAR INPUT1))
-                :VLAX-FALSE
+                (vlax-ename->vla-object (car input1))
+                :vlax-false
               )
               ">%)."
-              QT_TYPE
+              qt_type
               " \\f \"%lu2%pr"
-              (C:HCNM-CONFIG-GETVAR
-                (STRCAT "BubbleTextPrecision" AUTO_TYPE)
+              (c:hcnm-config-getvar
+                (strcat "BubbleTextPrecision" auto_type)
               )
               "%ct8["
-              FACTOR
+              factor
               "]\">%"
-              (C:HCNM-CONFIG-GETVAR
-                (STRCAT "BubbleTextPostfix" AUTO_TYPE)
+              (c:hcnm-config-getvar
+                (strcat "BubbleTextPostfix" auto_type)
               )
             )
           )
         )
       )
-      (HCNM_LDRBLK_SPACE_RESTORE PSPACE_BUBBLE_P)
+      (hcnm_ldrblk_space_restore pspace_bubble_p)
       
     )
   )
   ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
   ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
-  (SETQ
-    ATTRIBUTE_LIST
-    (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST 
-      TAG
-      STRING
-      ATTRIBUTE_LIST
+  (setq
+    attribute_list
+    (hcnm_ldrblk_save_attribute_to_list 
+      tag
+      string
+      attribute_list
     )
-    BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
+    bubble_data (hcnm_ldrblk_bd_set bubble_data "ATTRIBUTES" attribute_list)
   )
-  BUBBLE_DATA
+  bubble_data
 )
 ;; NOT USED
-(DEFUN HCNM_LDRBLK_MTEXTATRIBUTE_P (EN)
-  (SETQ OBJ (VLAX-ENAME->VLA-OBJECT EN))
-  (AND
-    (VLAX-PROPERTY-AVAILABLE-P OBJ 'MTEXTATTRIBUTE)
-    (VLA-GET-MTEXTATTRIBUTE OBJ)
+(defun hcnm_ldrblk_mtextatribute_p (en)
+  (setq obj (vlax-ename->vla-object en))
+  (and
+    (vlax-property-available-p obj 'MTEXTATTRIBUTE)
+    (vla-get-mtextattribute obj)
   )
 )
-(DEFUN HCNM_LDRBLK_SPACE_SET_MODEL ()
-  (C:HCNM-CONFIG-SETVAR "AllowReactors" "0")
-  (COND ((= (GETVAR "CVPORT") 1) (VL-CMDF "._MSPACE") T))
+(defun hcnm_ldrblk_space_set_model ()
+  (c:hcnm-config-setvar "AllowReactors" "0")
+  (cond ((= (getvar "CVPORT") 1) (vl-cmdf "._MSPACE") t))
 )
-(DEFUN HCNM_LDRBLK_SPACE_RESTORE (PSPACE_BUBBLE_P)
-  (COND (PSPACE_BUBBLE_P (VL-CMDF "._PSPACE")))
-  (C:HCNM-CONFIG-SETVAR "AllowReactors" "1")
+(defun hcnm_ldrblk_space_restore (pspace_bubble_p)
+  (cond (pspace_bubble_p (vl-cmdf "._PSPACE")))
+  (c:hcnm-config-setvar "AllowReactors" "1")
 )
 
 ;;==============================================================================
@@ -6397,18 +6397,18 @@ ImportLayerSettings=No
 ;; Check if AUTO_TYPE is coordinate-based using GET_AUTO_TYPE_KEYS
 ;; Returns: T if auto-type requires coordinates (Sta/Off/N/E/Z), NIL otherwise
 ;; Usage: Determines if paper space warning should be shown
-(DEFUN HCNM_LDRBLK_AUTO_TYPE_IS_COORDINATE_P (AUTO_TYPE / TYPE_DEF)
-  (SETQ TYPE_DEF 
-    (CAR 
-      (VL-REMOVE-IF-NOT 
-        '(LAMBDA (X) (= (CADR X) AUTO_TYPE))
-        (HCNM_LDRBLK_GET_AUTO_TYPE_KEYS)
+(defun hcnm_ldrblk_auto_type_is_coordinate_p (auto_type / type_def)
+  (setq type_def 
+    (car 
+      (vl-remove-if-not 
+        '(lambda (x) (= (cadr x) auto_type))
+        (hcnm_ldrblk_get_auto_type_keys)
       )
     )
   )
-  (COND
-    (TYPE_DEF (CADDDR TYPE_DEF))  ; Return 4th element (Requires_Coordinates)
-    (T nil)
+  (cond
+    (type_def (cadddr type_def))  ; Return 4th element (Requires_Coordinates)
+    (t nil)
   )
 )
 
@@ -6419,25 +6419,25 @@ ImportLayerSettings=No
 ;; Capture and store viewport transformation matrix for paper space bubble
 ;; This captures 3 reference points to calculate rotation, scale, and translation
 ;; Returns T if successful, NIL if failed
-(DEFUN HCNM_LDRBLK_CAPTURE_VIEWPORT_TRANSFORM (ENAME_BUBBLE CVPORT / REF_OCS_1 REF_OCS_2 REF_OCS_3 REF_WCS_1 REF_WCS_2 REF_WCS_3)
-  (COND
-    ((AND CVPORT (> CVPORT 1))
+(defun hcnm_ldrblk_capture_viewport_transform (ename_bubble cvport / ref_ocs_1 ref_ocs_2 ref_ocs_3 ref_wcs_1 ref_wcs_2 ref_wcs_3)
+  (cond
+    ((and cvport (> cvport 1))
      ;; We're in a viewport - capture transformation matrix
      ;; Use 3 reference points: origin, X-axis unit vector, Y-axis unit vector
-     (SETQ REF_OCS_1 '(0.0 0.0 0.0)    ; Origin
-           REF_OCS_2 '(1.0 0.0 0.0)    ; X-axis unit vector
-           REF_OCS_3 '(0.0 1.0 0.0)    ; Y-axis unit vector
-           REF_WCS_1 (TRANS (TRANS REF_OCS_1 3 2) 2 0)
-           REF_WCS_2 (TRANS (TRANS REF_OCS_2 3 2) 2 0)
-           REF_WCS_3 (TRANS (TRANS REF_OCS_3 3 2) 2 0))
-     (HCNM_LDRBLK_SET_VIEWPORT_TRANSFORM_XDATA ENAME_BUBBLE CVPORT 
-                                                 REF_OCS_1 REF_WCS_1
-                                                 REF_OCS_2 REF_WCS_2
-                                                 REF_OCS_3 REF_WCS_3)
-     (PRINC (STRCAT "\nStored viewport " (ITOA CVPORT) " transformation matrix"))
-     T  ; Success
+     (setq ref_ocs_1 '(0.0 0.0 0.0)    ; Origin
+           ref_ocs_2 '(1.0 0.0 0.0)    ; X-axis unit vector
+           ref_ocs_3 '(0.0 1.0 0.0)    ; Y-axis unit vector
+           ref_wcs_1 (trans (trans ref_ocs_1 3 2) 2 0)
+           ref_wcs_2 (trans (trans ref_ocs_2 3 2) 2 0)
+           ref_wcs_3 (trans (trans ref_ocs_3 3 2) 2 0))
+     (hcnm_ldrblk_set_viewport_transform_xdata ename_bubble cvport 
+                                                 ref_ocs_1 ref_wcs_1
+                                                 ref_ocs_2 ref_wcs_2
+                                                 ref_ocs_3 ref_wcs_3)
+     (princ (strcat "\nStored viewport " (itoa cvport) " transformation matrix"))
+     t  ; Success
     )
-    (T NIL)  ; Failed - not in a viewport
+    (t nil)  ; Failed - not in a viewport
   )
 )
 
@@ -6445,13 +6445,13 @@ ImportLayerSettings=No
 ;; This is necessary because you can't show a modal dialog from inside another modal dialog
 ;; Show paper space coordinate warning tip
 ;; Can be called from anywhere - shows tip immediately
-(DEFUN HCNM_LDRBLK_WARN_PSPACE_COORDINATES (ENAME_BUBBLE AUTO_TYPE)
-  (COND
-    ((AND ENAME_BUBBLE 
-          (NOT (HCNM_LDRBLK_IS_ON_MODEL_TAB ENAME_BUBBLE))
-          (HCNM_LDRBLK_AUTO_TYPE_IS_COORDINATE_P AUTO_TYPE))
+(defun hcnm_ldrblk_warn_pspace_coordinates (ename_bubble auto_type)
+  (cond
+    ((and ename_bubble 
+          (not (hcnm_ldrblk_is_on_model_tab ename_bubble))
+          (hcnm_ldrblk_auto_type_is_coordinate_p auto_type))
      ;; Bubble is in paper space and auto-type is coordinate-based - show warning
-     (HAWS_TIP_SHOW 1001 ; Unique tip ID for paper space warning
+     (haws_tip_show 1001 ; Unique tip ID for paper space warning
        "IMPORTANT: Paper space bubble notes don't react to viewport changes.\n\nTo avoid causing chaos when changing viewport views, auto text for coordinates\ndoes not react to viewport view changes.\n\nYou must use the ____ command if you want to refresh the world coordinates of selected bubble notes on a viewport.")
     )
   )
@@ -6477,23 +6477,23 @@ ImportLayerSettings=No
 ;; Returns:
 ;;   (DRAWSTATION . OFFSET) on success
 ;;   NIL on failure
-(DEFUN HCNM_LDRBLK_AUTO_ALIGNMENT_CALCULATE (ALIGNMENT_OBJECT P1_WORLD / DRAWSTATION OFFSET)
-  (COND
-    ((AND (= (TYPE ALIGNMENT_OBJECT) 'VLA-OBJECT) P1_WORLD)
+(defun hcnm_ldrblk_auto_alignment_calculate (alignment_object p1_world / drawstation offset)
+  (cond
+    ((and (= (type alignment_object) 'VLA-OBJECT) p1_world)
      ;; Call Civil 3D alignment method to get station/offset
      ;; http://docs.autodesk.com/CIV3D/2012/ENU/API_Reference_Guide/com/AeccXLandLib__IAeccAlignment__StationOffset
-     (VLAX-INVOKE-METHOD 
-       ALIGNMENT_OBJECT
+     (vlax-invoke-method 
+       alignment_object
        'STATIONOFFSET
-       (VLAX-MAKE-VARIANT (CAR P1_WORLD) VLAX-VBDOUBLE)
-       (VLAX-MAKE-VARIANT (CADR P1_WORLD) VLAX-VBDOUBLE)
+       (vlax-make-variant (car p1_world) vlax-vbdouble)
+       (vlax-make-variant (cadr p1_world) vlax-vbdouble)
        'DRAWSTATION
        'OFFSET
      )
      ;; Return as dotted pair
-     (CONS DRAWSTATION OFFSET)
+     (cons drawstation offset)
     )
-    (T NIL)  ; Invalid inputs
+    (t nil)  ; Invalid inputs
   )
 )
 
@@ -6502,15 +6502,15 @@ ImportLayerSettings=No
 ;;   ALIGNMENT_OBJECT - VLA-OBJECT to get station string with equations
 ;;   DRAWSTATION - Raw station value from StationOffset method
 ;; Returns: Formatted station string (e.g., "STA 10+50.00")
-(DEFUN HCNM_LDRBLK_AUTO_ALIGNMENT_FORMAT_STATION (ALIGNMENT_OBJECT DRAWSTATION)
-  (STRCAT 
-    (C:HCNM-CONFIG-GETVAR "BubbleTextPrefixSta")
-    (VLAX-INVOKE-METHOD 
-      ALIGNMENT_OBJECT
+(defun hcnm_ldrblk_auto_alignment_format_station (alignment_object drawstation)
+  (strcat 
+    (c:hcnm-config-getvar "BubbleTextPrefixSta")
+    (vlax-invoke-method 
+      alignment_object
       'GETSTATIONSTRINGWITHEQUATIONS
-      DRAWSTATION
+      drawstation
     )
-    (C:HCNM-CONFIG-GETVAR "BubbleTextPostfixSta")
+    (c:hcnm-config-getvar "BubbleTextPostfixSta")
   )
 )
 
@@ -6518,37 +6518,37 @@ ImportLayerSettings=No
 ;; Arguments:
 ;;   OFFSET - Raw offset value (positive = right, negative = left)
 ;; Returns: Formatted offset string (e.g., "25.00 RT" or "LT 10.50")
-(DEFUN HCNM_LDRBLK_AUTO_ALIGNMENT_FORMAT_OFFSET (OFFSET / OFFSET_VALUE)
+(defun hcnm_ldrblk_auto_alignment_format_offset (offset / offset_value)
   ;; Determine offset value (absolute or with sign)
-  (SETQ OFFSET_VALUE
-    (COND 
-      ((= (C:HCNM-CONFIG-GETVAR "BubbleOffsetDropSign") "1")
-       (ABS OFFSET)  ; Drop sign, show absolute value
+  (setq offset_value
+    (cond 
+      ((= (c:hcnm-config-getvar "BubbleOffsetDropSign") "1")
+       (abs offset)  ; Drop sign, show absolute value
       )
-      (T OFFSET)  ; Keep sign
+      (t offset)  ; Keep sign
     )
   )
   ;; Build offset string with appropriate prefix/postfix
-  (STRCAT 
+  (strcat 
     ;; Prefix depends on offset direction
-    (COND 
-      ((MINUSP OFFSET)
-       (C:HCNM-CONFIG-GETVAR "BubbleTextPrefixOff-")
+    (cond 
+      ((minusp offset)
+       (c:hcnm-config-getvar "BubbleTextPrefixOff-")
       )
-      (T (C:HCNM-CONFIG-GETVAR "BubbleTextPrefixOff+"))
+      (t (c:hcnm-config-getvar "BubbleTextPrefixOff+"))
     )
     ;; Format number with configured precision
-    (RTOS 
-      OFFSET_VALUE
+    (rtos 
+      offset_value
       2
-      (ATOI (C:HCNM-CONFIG-GETVAR "BubbleTextPrecisionOff+"))
+      (atoi (c:hcnm-config-getvar "BubbleTextPrecisionOff+"))
     )
     ;; Postfix depends on offset direction
-    (COND 
-      ((MINUSP OFFSET)
-       (C:HCNM-CONFIG-GETVAR "BubbleTextPostfixOff-")
+    (cond 
+      ((minusp offset)
+       (c:hcnm-config-getvar "BubbleTextPostfixOff-")
       )
-      (T (C:HCNM-CONFIG-GETVAR "BubbleTextPostfixOff+"))
+      (t (c:hcnm-config-getvar "BubbleTextPostfixOff+"))
     )
   )
 )
@@ -6580,38 +6580,38 @@ ImportLayerSettings=No
 ;; Example:
 ;;   (SETQ OBJ_PIPE (HCNM_LDRBLK_AUTO_PIPE_GET_OBJECT ENAME_BUBBLE "NOTETXT1" "Dia"))
 ;;==============================================================================
-(DEFUN HCNM_LDRBLK_AUTO_PIPE_GET_OBJECT (ENAME_BUBBLE TAG AUTO_TYPE / ESAPIPE OBJ_PIPE)
-  (SETQ ESAPIPE
-    (NENTSEL 
-      (STRCAT 
+(defun hcnm_ldrblk_auto_pipe_get_object (ename_bubble tag auto_type / esapipe obj_pipe)
+  (setq esapipe
+    (nentsel 
+      (strcat 
         "\nSelect Civil 3D pipe for "
-        (COND
-          ((= AUTO_TYPE "Dia") "diameter")
-          ((= AUTO_TYPE "Slope") "slope")
-          ((= AUTO_TYPE "L") "length")
-          (T "property")
+        (cond
+          ((= auto_type "Dia") "diameter")
+          ((= auto_type "Slope") "slope")
+          ((= auto_type "L") "length")
+          (t "property")
         )
         ": "
       )
     )
   )
-  (COND
-    (ESAPIPE
-     (SETQ OBJ_PIPE
-       (VL-CATCH-ALL-APPLY 
-         'VLAX-ENAME->VLA-OBJECT
-         (LIST (CAR ESAPIPE))
+  (cond
+    (esapipe
+     (setq obj_pipe
+       (vl-catch-all-apply 
+         'VLAX-ENAME->vla-object
+         (list (car esapipe))
        )
      )
-     (COND
-       ((VL-CATCH-ALL-ERROR-P OBJ_PIPE)
-        (PRINC "\nError: Could not get pipe object.")
-        NIL
+     (cond
+       ((vl-catch-all-error-p obj_pipe)
+        (princ "\nError: Could not get pipe object.")
+        nil
        )
-       (T OBJ_PIPE)
+       (t obj_pipe)
      )
     )
-    (T NIL)
+    (t nil)
   )
 )
 
@@ -6638,27 +6638,27 @@ ImportLayerSettings=No
 ;; Example:
 ;;   (SETQ TEXT (HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER OBJ_PIPE))
 ;;==============================================================================
-(DEFUN HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER (OBJ_PIPE / DIA_VALUE DIA_INCHES)
-  (SETQ 
-    DIA_VALUE (VL-CATCH-ALL-APPLY 'VLAX-GET-PROPERTY (LIST OBJ_PIPE 'InnerDiameterOrWidth))
+(defun hcnm_ldrblk_auto_pipe_format_diameter (obj_pipe / dia_value dia_inches)
+  (setq 
+    dia_value (vl-catch-all-apply 'VLAX-GET-PROPERTY (list obj_pipe 'InnerDiameterOrWidth))
   )
-  (COND
-    ((VL-CATCH-ALL-ERROR-P DIA_VALUE)
-     (PRINC (STRCAT "\nError getting diameter: " (VL-PRINC-TO-STRING DIA_VALUE)))
+  (cond
+    ((vl-catch-all-error-p dia_value)
+     (princ (strcat "\nError getting diameter: " (vl-princ-to-string dia_value)))
      "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
     )
-    (T
+    (t
      ;; Civil 3D returns diameter in drawing units (typically feet for US)
      ;; Convert to inches for display
-     (SETQ DIA_INCHES (* DIA_VALUE 12.0))
-     (STRCAT 
-       (C:HCNM-CONFIG-GETVAR "BubbleTextPrefixPipeDia")
-       (RTOS 
-         DIA_INCHES
+     (setq dia_inches (* dia_value 12.0))
+     (strcat 
+       (c:hcnm-config-getvar "BubbleTextPrefixPipeDia")
+       (rtos 
+         dia_inches
          2
-         (ATOI (C:HCNM-CONFIG-GETVAR "BubbleTextPrecisionPipeDia"))
+         (atoi (c:hcnm-config-getvar "BubbleTextPrecisionPipeDia"))
        )
-       (C:HCNM-CONFIG-GETVAR "BubbleTextPostfixPipeDia")
+       (c:hcnm-config-getvar "BubbleTextPostfixPipeDia")
      )
     )
   )
@@ -6687,27 +6687,27 @@ ImportLayerSettings=No
 ;; Example:
 ;;   (SETQ TEXT (HCNM_LDRBLK_AUTO_PIPE_FORMAT_SLOPE OBJ_PIPE))
 ;;==============================================================================
-(DEFUN HCNM_LDRBLK_AUTO_PIPE_FORMAT_SLOPE (OBJ_PIPE / SLOPE_VALUE SLOPE_PERCENT)
-  (SETQ 
-    SLOPE_VALUE (VL-CATCH-ALL-APPLY 'VLAX-GET-PROPERTY (LIST OBJ_PIPE 'Slope))
+(defun hcnm_ldrblk_auto_pipe_format_slope (obj_pipe / slope_value slope_percent)
+  (setq 
+    slope_value (vl-catch-all-apply 'VLAX-GET-PROPERTY (list obj_pipe 'Slope))
   )
-  (COND
-    ((VL-CATCH-ALL-ERROR-P SLOPE_VALUE)
-     (PRINC (STRCAT "\nError getting slope: " (VL-PRINC-TO-STRING SLOPE_VALUE)))
+  (cond
+    ((vl-catch-all-error-p slope_value)
+     (princ (strcat "\nError getting slope: " (vl-princ-to-string slope_value)))
      "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
     )
-    (T
+    (t
      ;; Civil 3D returns slope as decimal (e.g., 0.02 for 2%)
      ;; Convert to percentage for display (take absolute value)
-     (SETQ SLOPE_PERCENT (* (ABS SLOPE_VALUE) 100.0))
-     (STRCAT 
-       (C:HCNM-CONFIG-GETVAR "BubbleTextPrefixPipeSlope")
-       (RTOS 
-         SLOPE_PERCENT
+     (setq slope_percent (* (abs slope_value) 100.0))
+     (strcat 
+       (c:hcnm-config-getvar "BubbleTextPrefixPipeSlope")
+       (rtos 
+         slope_percent
          2
-         (ATOI (C:HCNM-CONFIG-GETVAR "BubbleTextPrecisionPipeSlope"))
+         (atoi (c:hcnm-config-getvar "BubbleTextPrecisionPipeSlope"))
        )
-       (C:HCNM-CONFIG-GETVAR "BubbleTextPostfixPipeSlope")
+       (c:hcnm-config-getvar "BubbleTextPostfixPipeSlope")
      )
     )
   )
@@ -6736,24 +6736,24 @@ ImportLayerSettings=No
 ;; Example:
 ;;   (SETQ TEXT (HCNM_LDRBLK_AUTO_PIPE_FORMAT_LENGTH OBJ_PIPE))
 ;;==============================================================================
-(DEFUN HCNM_LDRBLK_AUTO_PIPE_FORMAT_LENGTH (OBJ_PIPE / LENGTH_VALUE)
-  (SETQ 
-    LENGTH_VALUE (VL-CATCH-ALL-APPLY 'VLAX-GET-PROPERTY (LIST OBJ_PIPE 'Length2D))
+(defun hcnm_ldrblk_auto_pipe_format_length (obj_pipe / length_value)
+  (setq 
+    length_value (vl-catch-all-apply 'VLAX-GET-PROPERTY (list obj_pipe 'Length2D))
   )
-  (COND
-    ((VL-CATCH-ALL-ERROR-P LENGTH_VALUE)
-     (PRINC (STRCAT "\nError getting length: " (VL-PRINC-TO-STRING LENGTH_VALUE)))
+  (cond
+    ((vl-catch-all-error-p length_value)
+     (princ (strcat "\nError getting length: " (vl-princ-to-string length_value)))
      "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
     )
-    (T
-     (STRCAT 
-       (C:HCNM-CONFIG-GETVAR "BubbleTextPrefixPipeLength")
-       (RTOS 
-         LENGTH_VALUE
+    (t
+     (strcat 
+       (c:hcnm-config-getvar "BubbleTextPrefixPipeLength")
+       (rtos 
+         length_value
          2
-         (ATOI (C:HCNM-CONFIG-GETVAR "BubbleTextPrecisionPipeLength"))
+         (atoi (c:hcnm-config-getvar "BubbleTextPrecisionPipeLength"))
        )
-       (C:HCNM-CONFIG-GETVAR "BubbleTextPostfixPipeLength")
+       (c:hcnm-config-getvar "BubbleTextPostfixPipeLength")
      )
     )
   )
@@ -6794,64 +6794,64 @@ ImportLayerSettings=No
 ;;     (HCNM_LDRBLK_AUTO_PIPE BUBBLE_DATA "NOTETXT1" "Dia" NIL)
 ;;   )
 ;;==============================================================================
-(DEFUN HCNM_LDRBLK_AUTO_PIPE (BUBBLE_DATA TAG AUTO_TYPE INPUT / ATTRIBUTE_LIST ENAME_BUBBLE ENAME_LEADER OBJ_PIPE PSPACE_BUBBLE_P STRING)
-  (SETQ 
-    ATTRIBUTE_LIST (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ATTRIBUTES")
-    ENAME_BUBBLE (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_BUBBLE")
-    ENAME_LEADER (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_LEADER")
+(defun hcnm_ldrblk_auto_pipe (bubble_data tag auto_type input / attribute_list ename_bubble ename_leader obj_pipe pspace_bubble_p string)
+  (setq 
+    attribute_list (hcnm_ldrblk_bd_get bubble_data "ATTRIBUTES")
+    ename_bubble (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE")
+    ename_leader (hcnm_ldrblk_bd_get bubble_data "ENAME_LEADER")
   )
   
   ;; STEP 1: Get pipe object (user selection or provided input)
-  (COND 
-    ((SETQ OBJ_PIPE INPUT)
+  (cond 
+    ((setq obj_pipe input)
      ;; Pipe provided (reactor update or programmatic call)
     )
-    (T
+    (t
      ;; Get pipe from user
-     (SETQ PSPACE_BUBBLE_P (HCNM_LDRBLK_SPACE_SET_MODEL)
-           OBJ_PIPE         (HCNM_LDRBLK_AUTO_PIPE_GET_OBJECT ENAME_BUBBLE TAG AUTO_TYPE)
+     (setq pspace_bubble_p (hcnm_ldrblk_space_set_model)
+           obj_pipe         (hcnm_ldrblk_auto_pipe_get_object ename_bubble tag auto_type)
      )
      ;; Attach reactor to watch for pipe changes (no leader needed since not coordinate-based)
-     (COND
-       (OBJ_PIPE
-        (HCNM_LDRBLK_ASSURE_AUTO_TEXT_HAS_REACTOR OBJ_PIPE ENAME_BUBBLE NIL TAG AUTO_TYPE)
+     (cond
+       (obj_pipe
+        (hcnm_ldrblk_assure_auto_text_has_reactor obj_pipe ename_bubble nil tag auto_type)
        )
      )
      ;; Restore space after selection
-     (HCNM_LDRBLK_SPACE_RESTORE PSPACE_BUBBLE_P)
+     (hcnm_ldrblk_space_restore pspace_bubble_p)
     )
   )
   
   ;; STEP 2: Extract and format the property based on AUTO_TYPE
-  (SETQ STRING
-    (COND 
-      ((NOT OBJ_PIPE)
+  (setq string
+    (cond 
+      ((not obj_pipe)
        "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
       )
-      ((= AUTO_TYPE "Dia")
-       (HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER OBJ_PIPE)
+      ((= auto_type "Dia")
+       (hcnm_ldrblk_auto_pipe_format_diameter obj_pipe)
       )
-      ((= AUTO_TYPE "Slope")
-       (HCNM_LDRBLK_AUTO_PIPE_FORMAT_SLOPE OBJ_PIPE)
+      ((= auto_type "Slope")
+       (hcnm_ldrblk_auto_pipe_format_slope obj_pipe)
       )
-      ((= AUTO_TYPE "L")
-       (HCNM_LDRBLK_AUTO_PIPE_FORMAT_LENGTH OBJ_PIPE)
+      ((= auto_type "L")
+       (hcnm_ldrblk_auto_pipe_format_length obj_pipe)
       )
-      (T "!!!!!!!!!!!!!!!!!INVALID TYPE!!!!!!!!!!!!!!!!!!!!!!!")
+      (t "!!!!!!!!!!!!!!!!!INVALID TYPE!!!!!!!!!!!!!!!!!!!!!!!")
     )
   )
   
   ;; STEP 3: Save the formatted string to the attribute list and update BUBBLE_DATA
-  (SETQ
-    ATTRIBUTE_LIST
-    (HCNM_LDRBLK_SAVE_AUTO_TO_LIST 
-      TAG
-      STRING
-      ATTRIBUTE_LIST
+  (setq
+    attribute_list
+    (hcnm_ldrblk_save_auto_to_list 
+      tag
+      string
+      attribute_list
     )
-    BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
+    bubble_data (hcnm_ldrblk_bd_set bubble_data "ATTRIBUTES" attribute_list)
   )
-  BUBBLE_DATA
+  bubble_data
 )
 
 ;; Main alignment auto-text function (backward compatible)
@@ -6862,390 +6862,390 @@ ImportLayerSettings=No
 ;;   AUTO_TYPE - "Sta", "Off", "StaOff", "AlName", or "StaName"
 ;;   INPUT - Optional: Pre-selected alignment object (used by reactor updates)
 ;; Returns: Updated BUBBLE_DATA with new attribute value
-(DEFUN HCNM_LDRBLK_AUTO_AL (BUBBLE_DATA TAG AUTO_TYPE INPUT / ALIGNMENT_NAME ATTRIBUTE_LIST ENAME_BUBBLE ENAME_LEADER STA_OFF_PAIR DRAWSTATION OFFSET OBJALIGN P1_WORLD PSPACE_BUBBLE_P STA_STRING OFF_STRING STRING CVPORT REF_OCS_1 REF_OCS_2 REF_OCS_3 REF_WCS_1 REF_WCS_2 REF_WCS_3)
-  (SETQ 
-    ATTRIBUTE_LIST (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ATTRIBUTES")
-    ENAME_BUBBLE (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_BUBBLE")
-    ENAME_LEADER (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_LEADER")
-    P1_WORLD (HCNM_LDRBLK_BD_GET BUBBLE_DATA "P1_WORLD")
+(defun hcnm_ldrblk_auto_al (bubble_data tag auto_type input / alignment_name attribute_list ename_bubble ename_leader sta_off_pair drawstation offset objalign p1_world pspace_bubble_p sta_string off_string string cvport ref_ocs_1 ref_ocs_2 ref_ocs_3 ref_wcs_1 ref_wcs_2 ref_wcs_3)
+  (setq 
+    attribute_list (hcnm_ldrblk_bd_get bubble_data "ATTRIBUTES")
+    ename_bubble (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE")
+    ename_leader (hcnm_ldrblk_bd_get bubble_data "ENAME_LEADER")
+    p1_world (hcnm_ldrblk_bd_get bubble_data "P1_WORLD")
   )
   
   ;; STEP 1: Get alignment object (user selection or provided input)
-  (COND 
-    ((SETQ OBJALIGN INPUT)
+  (cond 
+    ((setq objalign input)
      ;; Alignment provided (reactor update or programmatic call)
     )
-    (T
+    (t
      ;; Get alignment from user
-     (SETQ PSPACE_BUBBLE_P (HCNM_LDRBLK_SPACE_SET_MODEL)
-           OBJALIGN        (HCNM_LDRBLK_AUTO_AL_GET_ALIGNMENT ENAME_BUBBLE TAG AUTO_TYPE)
+     (setq pspace_bubble_p (hcnm_ldrblk_space_set_model)
+           objalign        (hcnm_ldrblk_auto_al_get_alignment ename_bubble tag auto_type)
      )
      ;; NOTE: Still in MSPACE at this point - capture viewport transformation if needed
      ;; Capture viewport transformation data if bubble is in paper space
-     (COND
-       ((AND OBJALIGN ENAME_BUBBLE (NOT (HCNM_LDRBLK_IS_ON_MODEL_TAB ENAME_BUBBLE)))
+     (cond
+       ((and objalign ename_bubble (not (hcnm_ldrblk_is_on_model_tab ename_bubble)))
         ;; Bubble is in paper space - capture transformation matrix
-        (SETQ CVPORT (GETVAR "CVPORT"))
-        (COND
-          ((AND CVPORT (> CVPORT 1))
+        (setq cvport (getvar "CVPORT"))
+        (cond
+          ((and cvport (> cvport 1))
            ;; We're in a viewport - capture transformation matrix
            ;; Use 3 reference points to capture rotation, scale, and translation
-           (SETQ REF_OCS_1 '(0.0 0.0 0.0)    ; Origin
-                 REF_OCS_2 '(1.0 0.0 0.0)    ; X-axis unit vector
-                 REF_OCS_3 '(0.0 1.0 0.0)    ; Y-axis unit vector
-                 REF_WCS_1 (TRANS (TRANS REF_OCS_1 3 2) 2 0)
-                 REF_WCS_2 (TRANS (TRANS REF_OCS_2 3 2) 2 0)
-                 REF_WCS_3 (TRANS (TRANS REF_OCS_3 3 2) 2 0))
-           (HCNM_LDRBLK_SET_VIEWPORT_TRANSFORM_XDATA ENAME_BUBBLE CVPORT 
-                                                       REF_OCS_1 REF_WCS_1
-                                                       REF_OCS_2 REF_WCS_2
-                                                       REF_OCS_3 REF_WCS_3)
-           (PRINC (STRCAT "\nStored viewport " (ITOA CVPORT) " transformation matrix"))
+           (setq ref_ocs_1 '(0.0 0.0 0.0)    ; Origin
+                 ref_ocs_2 '(1.0 0.0 0.0)    ; X-axis unit vector
+                 ref_ocs_3 '(0.0 1.0 0.0)    ; Y-axis unit vector
+                 ref_wcs_1 (trans (trans ref_ocs_1 3 2) 2 0)
+                 ref_wcs_2 (trans (trans ref_ocs_2 3 2) 2 0)
+                 ref_wcs_3 (trans (trans ref_ocs_3 3 2) 2 0))
+           (hcnm_ldrblk_set_viewport_transform_xdata ename_bubble cvport 
+                                                       ref_ocs_1 ref_wcs_1
+                                                       ref_ocs_2 ref_wcs_2
+                                                       ref_ocs_3 ref_wcs_3)
+           (princ (strcat "\nStored viewport " (itoa cvport) " transformation matrix"))
           )
         )
        )
      )
      ;; Now calculate P1_WORLD if needed for coordinate-based types and not already in BUBBLE_DATA
-     (COND
-       ((AND (NOT P1_WORLD)
-             (OR (= AUTO_TYPE "Sta") (= AUTO_TYPE "Off") (= AUTO_TYPE "StaOff") (= AUTO_TYPE "StaName")))
-        (SETQ BUBBLE_DATA (HCNM_LDRBLK_BD_ENSURE_P1_WORLD BUBBLE_DATA)
-              P1_WORLD (HCNM_LDRBLK_BD_GET BUBBLE_DATA "P1_WORLD"))
+     (cond
+       ((and (not p1_world)
+             (or (= auto_type "Sta") (= auto_type "Off") (= auto_type "StaOff") (= auto_type "StaName")))
+        (setq bubble_data (hcnm_ldrblk_bd_ensure_p1_world bubble_data)
+              p1_world (hcnm_ldrblk_bd_get bubble_data "P1_WORLD"))
        )
      )
      ;; Attach reactor to watch for alignment/leader changes
-     (HCNM_LDRBLK_ASSURE_AUTO_TEXT_HAS_REACTOR OBJALIGN ENAME_BUBBLE ENAME_LEADER TAG AUTO_TYPE)
+     (hcnm_ldrblk_assure_auto_text_has_reactor objalign ename_bubble ename_leader tag auto_type)
      ;; Now restore space after everything is done
-     (HCNM_LDRBLK_SPACE_RESTORE PSPACE_BUBBLE_P)
+     (hcnm_ldrblk_space_restore pspace_bubble_p)
     )
   )
   
   ;; STEP 2: Calculate station and offset (only needed for coordinate-based types)
-  (COND
-    ((OR (= AUTO_TYPE "Sta") (= AUTO_TYPE "Off") (= AUTO_TYPE "StaOff") (= AUTO_TYPE "StaName"))
-     (SETQ STA_OFF_PAIR (HCNM_LDRBLK_AUTO_ALIGNMENT_CALCULATE OBJALIGN P1_WORLD))
+  (cond
+    ((or (= auto_type "Sta") (= auto_type "Off") (= auto_type "StaOff") (= auto_type "StaName"))
+     (setq sta_off_pair (hcnm_ldrblk_auto_alignment_calculate objalign p1_world))
     )
   )
   
   ;; STEP 3: Format the result based on AUTO_TYPE
-  (COND 
-    ((= AUTO_TYPE "AlName")
+  (cond 
+    ((= auto_type "AlName")
      ;; Alignment name only - no coordinates needed
-     (COND
-       (OBJALIGN
-        (SETQ STRING (VL-CATCH-ALL-APPLY 'VLAX-GET-PROPERTY (LIST OBJALIGN 'NAME)))
-        (COND
-          ((VL-CATCH-ALL-ERROR-P STRING)
-           (SETQ STRING "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
+     (cond
+       (objalign
+        (setq string (vl-catch-all-apply 'VLAX-GET-PROPERTY (list objalign 'NAME)))
+        (cond
+          ((vl-catch-all-error-p string)
+           (setq string "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
           )
         )
        )
-       (T
-        (SETQ STRING "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
+       (t
+        (setq string "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
        )
      )
     )
-    (STA_OFF_PAIR
+    (sta_off_pair
      ;; Calculation succeeded - extract and format
-     (SETQ DRAWSTATION (CAR STA_OFF_PAIR)
-           OFFSET      (CDR STA_OFF_PAIR)
-           STA_STRING  (HCNM_LDRBLK_AUTO_ALIGNMENT_FORMAT_STATION OBJALIGN DRAWSTATION)
-           OFF_STRING  (HCNM_LDRBLK_AUTO_ALIGNMENT_FORMAT_OFFSET OFFSET)
-           STRING
-           (COND 
-             ((= AUTO_TYPE "Sta") STA_STRING)
-             ((= AUTO_TYPE "Off") OFF_STRING)
-             ((= AUTO_TYPE "StaOff")
-              (STRCAT 
-                STA_STRING
-                (C:HCNM-CONFIG-GETVAR "BubbleTextJoinDelSta")
-                OFF_STRING
+     (setq drawstation (car sta_off_pair)
+           offset      (cdr sta_off_pair)
+           sta_string  (hcnm_ldrblk_auto_alignment_format_station objalign drawstation)
+           off_string  (hcnm_ldrblk_auto_alignment_format_offset offset)
+           string
+           (cond 
+             ((= auto_type "Sta") sta_string)
+             ((= auto_type "Off") off_string)
+             ((= auto_type "StaOff")
+              (strcat 
+                sta_string
+                (c:hcnm-config-getvar "BubbleTextJoinDelSta")
+                off_string
               )
              )
-             ((= AUTO_TYPE "StaName")
+             ((= auto_type "StaName")
               ;; Station + alignment name
-              (SETQ STRING (VL-CATCH-ALL-APPLY 'VLAX-GET-PROPERTY (LIST OBJALIGN 'NAME)))
-              (COND
-                ((VL-CATCH-ALL-ERROR-P STRING)
-                 (SETQ STRING STA_STRING)  ; If name fails, just use station
+              (setq string (vl-catch-all-apply 'VLAX-GET-PROPERTY (list objalign 'NAME)))
+              (cond
+                ((vl-catch-all-error-p string)
+                 (setq string sta_string)  ; If name fails, just use station
                 )
-                (T
-                 (SETQ STRING (STRCAT STA_STRING " " STRING))
+                (t
+                 (setq string (strcat sta_string " " string))
                 )
               )
-              STRING
+              string
              )
            )  ; End inner COND for STRING
      )  ; End SETQ
     )  ; End first branch of outer COND
-    (T 
+    (t 
      ;; Calculation failed - couldn't get coordinates or invalid alignment
-     (SETQ STRING "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
+     (setq string "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
     )
   )  ; End outer COND
   
   ;; Step 4: Save the formatted string to the attribute list and update BUBBLE_DATA
-  (SETQ
-    ATTRIBUTE_LIST
-    (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST 
-      TAG
-      STRING
-      ATTRIBUTE_LIST
+  (setq
+    attribute_list
+    (hcnm_ldrblk_save_attribute_to_list 
+      tag
+      string
+      attribute_list
     )
-    BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
+    bubble_data (hcnm_ldrblk_bd_set bubble_data "ATTRIBUTES" attribute_list)
   )
-  BUBBLE_DATA
+  bubble_data
 )
-(DEFUN HCNM_LDRBLK_AUTO_AL_GET_ALIGNMENT
-   (ENAME_BUBBLE TAG AUTO_TYPE / AVPORT CVPORT ESALIGN NAME OBJALIGN OBJALIGN_OLD 
-    REF_OCS_1 REF_OCS_2 REF_OCS_3 REF_WCS_1 REF_WCS_2 REF_WCS_3 )
-  (SETQ
-    OBJALIGN_OLD
-     (C:HCNM-CONFIG-GETVAR "BubbleCurrentAlignment")
-    NAME
-     (COND
-       ((AND (= (TYPE OBJALIGN_OLD) 'VLA-OBJECT) 
-             (NOT (VL-CATCH-ALL-ERROR-P (VL-CATCH-ALL-APPLY 'VLAX-GET-PROPERTY (LIST OBJALIGN_OLD 'NAME)))))
-        (VL-CATCH-ALL-APPLY 'VLAX-GET-PROPERTY (LIST OBJALIGN_OLD 'NAME))
+(defun hcnm_ldrblk_auto_al_get_alignment
+   (ename_bubble tag auto_type / avport cvport esalign name objalign objalign_old 
+    ref_ocs_1 ref_ocs_2 ref_ocs_3 ref_wcs_1 ref_wcs_2 ref_wcs_3 )
+  (setq
+    objalign_old
+     (c:hcnm-config-getvar "BubbleCurrentAlignment")
+    name
+     (cond
+       ((and (= (type objalign_old) 'VLA-OBJECT) 
+             (not (vl-catch-all-error-p (vl-catch-all-apply 'VLAX-GET-PROPERTY (list objalign_old 'NAME)))))
+        (vl-catch-all-apply 'VLAX-GET-PROPERTY (list objalign_old 'NAME))
        )
-       (T (SETQ OBJALIGN_OLD NIL) "")
+       (t (setq objalign_old nil) "")
      )
-    ESALIGN
-     (NENTSEL
-       (STRCAT
+    esalign
+     (nentsel
+       (strcat
          "\nSelect alignment"
-         (COND
-           ((= NAME "") ": ")
-           (T (STRCAT " or <" NAME ">: "))
+         (cond
+           ((= name "") ": ")
+           (t (strcat " or <" name ">: "))
          )
        )
      )
   )
-  (COND
-    ((AND
-       ESALIGN
-       (= (CDR (ASSOC 0 (ENTGET (CAR ESALIGN)))) "AECC_ALIGNMENT")
+  (cond
+    ((and
+       esalign
+       (= (cdr (assoc 0 (entget (car esalign)))) "AECC_ALIGNMENT")
      )
-     (SETQ OBJALIGN (VLAX-ENAME->VLA-OBJECT (CAR ESALIGN)))
-     (C:HCNM-CONFIG-SETVAR "BubbleCurrentAlignment" OBJALIGN)
+     (setq objalign (vlax-ename->vla-object (car esalign)))
+     (c:hcnm-config-setvar "BubbleCurrentAlignment" objalign)
      ;; Show paper space warning if bubble is in paper space and auto-type requires coordinates
-     (COND
-       ((AND ENAME_BUBBLE (NOT (HCNM_LDRBLK_IS_ON_MODEL_TAB ENAME_BUBBLE))
-             (HCNM_LDRBLK_AUTO_TYPE_IS_COORDINATE_P AUTO_TYPE))
-        (HCNM_LDRBLK_WARN_PSPACE_COORDINATES ENAME_BUBBLE AUTO_TYPE)
+     (cond
+       ((and ename_bubble (not (hcnm_ldrblk_is_on_model_tab ename_bubble))
+             (hcnm_ldrblk_auto_type_is_coordinate_p auto_type))
+        (hcnm_ldrblk_warn_pspace_coordinates ename_bubble auto_type)
        )
      )
     )
-    (ESALIGN 
+    (esalign 
       (alert (princ "\nSelected object is not an alignment. Keeping previous alignment."))
-      (SETQ OBJALIGN OBJALIGN_OLD)
+      (setq objalign objalign_old)
     )
-    (T 
+    (t 
       (princ "\nNo object selected. Keeping previous alignment.")
-      (SETQ OBJALIGN OBJALIGN_OLD)
+      (setq objalign objalign_old)
       ;; If using previous alignment and bubble is in paper space, check if we need viewport selection
-      (COND
-        ((AND OBJALIGN ENAME_BUBBLE (NOT (HCNM_LDRBLK_IS_ON_MODEL_TAB ENAME_BUBBLE)))
+      (cond
+        ((and objalign ename_bubble (not (hcnm_ldrblk_is_on_model_tab ename_bubble)))
          ;; Bubble is in paper space with previous alignment
          ;; Only prompt for viewport if transformation data doesn't already exist
-         (COND
-           ((NOT (HCNM_LDRBLK_GET_VIEWPORT_TRANSFORM_XDATA ENAME_BUBBLE))
+         (cond
+           ((not (hcnm_ldrblk_get_viewport_transform_xdata ename_bubble))
             ;; No XDATA exists - show warning and prompt for viewport
-            (HCNM_LDRBLK_WARN_PSPACE_COORDINATES ENAME_BUBBLE AUTO_TYPE)
-            (SETQ AVPORT (HCNM_LDRBLK_GET_TARGET_VPORT))
+            (hcnm_ldrblk_warn_pspace_coordinates ename_bubble auto_type)
+            (setq avport (hcnm_ldrblk_get_target_vport))
             ;; Capture viewport transformation data now while in MSPACE with selected viewport
-            (SETQ CVPORT AVPORT)
-            (COND
-              ((AND CVPORT (> CVPORT 1))
+            (setq cvport avport)
+            (cond
+              ((and cvport (> cvport 1))
                ;; We're in a viewport - capture transformation matrix
                ;; Use 3 reference points to capture rotation, scale, and translation
-               (SETQ REF_OCS_1 '(0.0 0.0 0.0)    ; Origin
-                     REF_OCS_2 '(1.0 0.0 0.0)    ; X-axis unit vector
-                     REF_OCS_3 '(0.0 1.0 0.0)    ; Y-axis unit vector
-                     REF_WCS_1 (TRANS (TRANS REF_OCS_1 3 2) 2 0)
-                     REF_WCS_2 (TRANS (TRANS REF_OCS_2 3 2) 2 0)
-                     REF_WCS_3 (TRANS (TRANS REF_OCS_3 3 2) 2 0))
-               (HCNM_LDRBLK_SET_VIEWPORT_TRANSFORM_XDATA ENAME_BUBBLE CVPORT 
-                                                           REF_OCS_1 REF_WCS_1
-                                                           REF_OCS_2 REF_WCS_2
-                                                           REF_OCS_3 REF_WCS_3)
-               (PRINC (STRCAT "\nStored viewport " (ITOA CVPORT) " transformation matrix"))
+               (setq ref_ocs_1 '(0.0 0.0 0.0)    ; Origin
+                     ref_ocs_2 '(1.0 0.0 0.0)    ; X-axis unit vector
+                     ref_ocs_3 '(0.0 1.0 0.0)    ; Y-axis unit vector
+                     ref_wcs_1 (trans (trans ref_ocs_1 3 2) 2 0)
+                     ref_wcs_2 (trans (trans ref_ocs_2 3 2) 2 0)
+                     ref_wcs_3 (trans (trans ref_ocs_3 3 2) 2 0))
+               (hcnm_ldrblk_set_viewport_transform_xdata ename_bubble cvport 
+                                                           ref_ocs_1 ref_wcs_1
+                                                           ref_ocs_2 ref_wcs_2
+                                                           ref_ocs_3 ref_wcs_3)
+               (princ (strcat "\nStored viewport " (itoa cvport) " transformation matrix"))
               )
             )
            )
-           (T
+           (t
             ;; XDATA already exists - no need to prompt, will use stored transformation
-            (PRINC "\nUsing existing viewport transformation from XDATA")
+            (princ "\nUsing existing viewport transformation from XDATA")
            )
          )
         )
       )
     )
   )
-  OBJALIGN  ; Return the alignment object
+  objalign  ; Return the alignment object
 )
-(DEFUN HCNM_LDRBLK_AUTO_NE (BUBBLE_DATA TAG AUTO_TYPE INPUT / ATTRIBUTE_LIST E ENAME_BUBBLE ENAME_LEADER N NE P1_OCS P1_WORLD REACTOR_UPDATE_P STRING)
-  (SETQ 
-    ATTRIBUTE_LIST (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ATTRIBUTES")
-    ENAME_BUBBLE (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_BUBBLE")
-    ENAME_LEADER (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_LEADER")
+(defun hcnm_ldrblk_auto_ne (bubble_data tag auto_type input / attribute_list e ename_bubble ename_leader n ne p1_ocs p1_world reactor_update_p string)
+  (setq 
+    attribute_list (hcnm_ldrblk_bd_get bubble_data "ATTRIBUTES")
+    ename_bubble (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE")
+    ename_leader (hcnm_ldrblk_bd_get bubble_data "ENAME_LEADER")
     ;; INPUT = NIL means initial creation
     ;; INPUT = T means reactor update for coordinate types (sentinel value)
     ;; INPUT = VLA-OBJECT means reactor update with reference object (not used for N/E/NE)
-    REACTOR_UPDATE_P (AND INPUT (OR (= INPUT T) (= (TYPE INPUT) 'VLA-OBJECT)))
+    reactor_update_p (and input (or (= input t) (= (type input) 'VLA-OBJECT)))
   )
   ;; Show paper space warning only during initial insertion, not reactor updates
-  (COND
-    ((NOT REACTOR_UPDATE_P)
-     (HCNM_LDRBLK_WARN_PSPACE_COORDINATES ENAME_BUBBLE AUTO_TYPE)
+  (cond
+    ((not reactor_update_p)
+     (hcnm_ldrblk_warn_pspace_coordinates ename_bubble auto_type)
     )
   )
   ;; Calculate or get P1_WORLD
-  (COND
-    (REACTOR_UPDATE_P
+  (cond
+    (reactor_update_p
      ;; Reactor update - recalculate P1_WORLD from current leader position using stored transformation
-     (SETQ P1_OCS (HCNM_LDRBLK_P1_OCS ENAME_LEADER))
-     (SETQ P1_WORLD (HCNM_LDRBLK_P1_WORLD ENAME_LEADER P1_OCS ENAME_BUBBLE))
+     (setq p1_ocs (hcnm_ldrblk_p1_ocs ename_leader))
+     (setq p1_world (hcnm_ldrblk_p1_world ename_leader p1_ocs ename_bubble))
     )
-    (T
+    (t
      ;; Initial creation - get from BUBBLE_DATA (already calculated by BD_ENSURE_P1_WORLD which prompts for viewport)
-     (SETQ P1_WORLD (HCNM_LDRBLK_BD_GET BUBBLE_DATA "P1_WORLD"))
+     (setq p1_world (hcnm_ldrblk_bd_get bubble_data "P1_WORLD"))
     )
   )
   ;; Calculate coordinates from P1_WORLD
-  (COND
-    (P1_WORLD
-      (SETQ
-        N  (HCNM_LDRBLK_AUTO_RTOS (CADR P1_WORLD) "N")
-        E  (HCNM_LDRBLK_AUTO_RTOS (CAR P1_WORLD) "E")
-        NE (STRCAT
-            N
-            (C:HCNM-CONFIG-GETVAR (STRCAT "BubbleTextJoinDel" "N"))
-            E
+  (cond
+    (p1_world
+      (setq
+        n  (hcnm_ldrblk_auto_rtos (cadr p1_world) "N")
+        e  (hcnm_ldrblk_auto_rtos (car p1_world) "E")
+        ne (strcat
+            n
+            (c:hcnm-config-getvar (strcat "BubbleTextJoinDel" "N"))
+            e
           )
       )
-      (SETQ STRING
-        (COND
-          ((= AUTO_TYPE "N") N)
-          ((= AUTO_TYPE "E") E)
-          ((= AUTO_TYPE "NE") NE)
+      (setq string
+        (cond
+          ((= auto_type "N") n)
+          ((= auto_type "E") e)
+          ((= auto_type "NE") ne)
         )
       )
     )
-    (T
+    (t
       ;; P1_WORLD is NIL - couldn't get world coordinates
-      (SETQ STRING "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
+      (setq string "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
     )
   )
   ;; Attach reactor to leader for coordinate updates (only on initial creation, not reactor updates)
-  (COND
-    ((NOT REACTOR_UPDATE_P)
-     (HCNM_LDRBLK_ASSURE_AUTO_TEXT_HAS_REACTOR NIL ENAME_BUBBLE ENAME_LEADER TAG AUTO_TYPE)
+  (cond
+    ((not reactor_update_p)
+     (hcnm_ldrblk_assure_auto_text_has_reactor nil ename_bubble ename_leader tag auto_type)
     )
   )
   ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
   ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
-  (SETQ
-    ATTRIBUTE_LIST
-    (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST 
-      TAG
-      STRING
-      ATTRIBUTE_LIST
+  (setq
+    attribute_list
+    (hcnm_ldrblk_save_attribute_to_list 
+      tag
+      string
+      attribute_list
     )
-    BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
+    bubble_data (hcnm_ldrblk_bd_set bubble_data "ATTRIBUTES" attribute_list)
   )
-  BUBBLE_DATA
+  bubble_data
 )
-(DEFUN HCNM_LDRBLK_AUTO_RTOS (NUMBER KEY)
-  (STRCAT
-    (C:HCNM-CONFIG-GETVAR (STRCAT "BubbleTextPrefix" KEY))
-    (RTOS
-      NUMBER
+(defun hcnm_ldrblk_auto_rtos (number key)
+  (strcat
+    (c:hcnm-config-getvar (strcat "BubbleTextPrefix" key))
+    (rtos
+      number
       2
-      (atoi(C:HCNM-CONFIG-GETVAR (STRCAT "BubbleTextPrecision" KEY)))
+      (atoi(c:hcnm-config-getvar (strcat "BubbleTextPrecision" key)))
     )
-    (C:HCNM-CONFIG-GETVAR (STRCAT "BubbleTextPostfix" KEY))
+    (c:hcnm-config-getvar (strcat "BubbleTextPostfix" key))
   )
 )
 ;; Civil 3D Surface query auto-text (Z elevation)
 ;; Currently unimplemented - returns apology message
-(DEFUN HCNM_LDRBLK_AUTO_SU (BUBBLE_DATA TAG AUTO_TYPE INPUT / ATTRIBUTE_LIST ENAME_BUBBLE)
-  (SETQ 
-    ATTRIBUTE_LIST (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ATTRIBUTES")
-    ENAME_BUBBLE (HCNM_LDRBLK_BD_GET BUBBLE_DATA "ENAME_BUBBLE")
+(defun hcnm_ldrblk_auto_su (bubble_data tag auto_type input / attribute_list ename_bubble)
+  (setq 
+    attribute_list (hcnm_ldrblk_bd_get bubble_data "ATTRIBUTES")
+    ename_bubble (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE")
   )
   ;; Show paper space warning if applicable
-  (HCNM_LDRBLK_WARN_PSPACE_COORDINATES ENAME_BUBBLE AUTO_TYPE)
+  (hcnm_ldrblk_warn_pspace_coordinates ename_bubble auto_type)
   ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
   ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
-  (SETQ
-    ATTRIBUTE_LIST
-    (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST 
-      TAG
-      (HCNM_LDRBLK_AUTO_APOLOGY AUTO_TYPE)
-      ATTRIBUTE_LIST
+  (setq
+    attribute_list
+    (hcnm_ldrblk_save_attribute_to_list 
+      tag
+      (hcnm_ldrblk_auto_apology auto_type)
+      attribute_list
     )
-    BUBBLE_DATA (HCNM_LDRBLK_BD_SET BUBBLE_DATA "ATTRIBUTES" ATTRIBUTE_LIST)
+    bubble_data (hcnm_ldrblk_bd_set bubble_data "ATTRIBUTES" attribute_list)
   )
-  BUBBLE_DATA
+  bubble_data
 )
 ;; Gets the target viewport from user. This would only be called because we needed it before we could determine it automatically or when user clicks the button to change association.
 ;; NOTE: Warning should be shown BEFORE calling this function (via HCNM_LDRBLK_WARN_PSPACE_COORDINATES)
 ;; NOTE: This function does NOT restore space - caller must handle that after capturing transformation matrix
-(DEFUN HCNM_LDRBLK_GET_TARGET_VPORT ( / INPUT)
+(defun hcnm_ldrblk_get_target_vport ( / input)
   ;; Ensure user is in model space so they can activate a viewport (caller should have already done this)
-  (COND
-    ((= (GETVAR "CVPORT") 1)
-     (PRINC "\nWARNING: Not in model space - switching to MSPACE first")
-     (VL-CMDF "._MSPACE")
+  (cond
+    ((= (getvar "CVPORT") 1)
+     (princ "\nWARNING: Not in model space - switching to MSPACE first")
+     (vl-cmdf "._MSPACE")
     )
   )
-  (WHILE 
-    (NOT 
-      (PROGN 
-        (PRINC "\nSet the TARGET viewport active and press ENTER to continue: ")
-        (EQUAL (SETQ INPUT (GRREAD NIL 10)) '(2 13)) ; WAIT FOR ENTER (ASCII 13)
+  (while 
+    (not 
+      (progn 
+        (princ "\nSet the TARGET viewport active and press ENTER to continue: ")
+        (equal (setq input (grread nil 10)) '(2 13)) ; WAIT FOR ENTER (ASCII 13)
       )
     )
   )
-  (SETQ INPUT (GETVAR "CVPORT")) ; Capture the viewport ID
+  (setq input (getvar "CVPORT")) ; Capture the viewport ID
   ;; DO NOT restore space here - caller needs to capture transformation matrix first!
-  INPUT ; Return the viewport ID
+  input ; Return the viewport ID
 )
 ;; Apply affine transformation using 3-point correspondence
 ;; Given 3 OCS points and their corresponding 3 WCS points, transform any OCS point to WCS
 ;; Uses barycentric coordinates to interpolate the transformation
-(DEFUN HCNM_LDRBLK_APPLY_TRANSFORM_MATRIX (P_OCS 
-                                            OCS1 WCS1 
-                                            OCS2 WCS2 
-                                            OCS3 WCS3
-                                            / DX DY D11 D12 D21 D22 DET U V W PX PY)
+(defun hcnm_ldrblk_apply_transform_matrix (p_ocs 
+                                            ocs1 wcs1 
+                                            ocs2 wcs2 
+                                            ocs3 wcs3
+                                            / dx dy d11 d12 d21 d22 det u v w px py)
   ;; Calculate barycentric coordinates of P_OCS relative to the OCS triangle
   ;; First, express P_OCS in terms of the basis vectors (OCS2-OCS1) and (OCS3-OCS1)
-  (SETQ DX  (- (CAR P_OCS) (CAR OCS1))
-        DY  (- (CADR P_OCS) (CADR OCS1))
-        D11 (- (CAR OCS2) (CAR OCS1))
-        D12 (- (CADR OCS2) (CADR OCS1))
-        D21 (- (CAR OCS3) (CAR OCS1))
-        D22 (- (CADR OCS3) (CADR OCS1))
-        DET (- (* D11 D22) (* D12 D21)))
+  (setq dx  (- (car p_ocs) (car ocs1))
+        dy  (- (cadr p_ocs) (cadr ocs1))
+        d11 (- (car ocs2) (car ocs1))
+        d12 (- (cadr ocs2) (cadr ocs1))
+        d21 (- (car ocs3) (car ocs1))
+        d22 (- (cadr ocs3) (cadr ocs1))
+        det (- (* d11 d22) (* d12 d21)))
   
-  (COND
-    ((NOT (EQUAL DET 0.0 1e-10))
+  (cond
+    ((not (equal det 0.0 1e-10))
       ;; Calculate barycentric coordinates
-      (SETQ U (/ (- (* DX D22) (* DY D21)) DET)
-            V (/ (- (* D11 DY) (* D12 DX)) DET)
-            W (- 1.0 U V))
+      (setq u (/ (- (* dx d22) (* dy d21)) det)
+            v (/ (- (* d11 dy) (* d12 dx)) det)
+            w (- 1.0 u v))
       ;; Apply same barycentric coordinates to WCS points
-      (SETQ PX (+ (* W (CAR WCS1)) (* U (CAR WCS2)) (* V (CAR WCS3)))
-            PY (+ (* W (CADR WCS1)) (* U (CADR WCS2)) (* V (CADR WCS3))))
-      (LIST PX PY 0.0)
+      (setq px (+ (* w (car wcs1)) (* u (car wcs2)) (* v (car wcs3)))
+            py (+ (* w (cadr wcs1)) (* u (cadr wcs2)) (* v (cadr wcs3))))
+      (list px py 0.0)
     )
-    (T
+    (t
       ;; Degenerate case - matrix not invertible, fall back to simple translation
-      (PRINC "\nWarning: Degenerate transformation matrix, using translation only")
-      (LIST (+ (CAR P_OCS) (- (CAR WCS1) (CAR OCS1)))
-            (+ (CADR P_OCS) (- (CADR WCS1) (CADR OCS1)))
+      (princ "\nWarning: Degenerate transformation matrix, using translation only")
+      (list (+ (car p_ocs) (- (car wcs1) (car ocs1)))
+            (+ (cadr p_ocs) (- (cadr wcs1) (cadr ocs1)))
             0.0)
     )
   )
@@ -7253,77 +7253,77 @@ ImportLayerSettings=No
 
 ;; Get viewport transformation matrix from bubble's XDATA
 ;; Returns list: (CVPORT REF_OCS_1 REF_WCS_1 REF_OCS_2 REF_WCS_2 REF_OCS_3 REF_WCS_3) or NIL
-(DEFUN HCNM_LDRBLK_GET_VIEWPORT_TRANSFORM_XDATA (ENAME_BUBBLE / XDATA APPNAME CVPORT POINTS)
-  (SETQ APPNAME "HCNM-BUBBLE")
-  (COND
-    ((SETQ XDATA (ASSOC -3 (ENTGET ENAME_BUBBLE '("HCNM-BUBBLE"))))
-      (SETQ XDATA (CDR (ASSOC APPNAME (CDR XDATA))))
-      (PRINC (STRCAT "\nDebug XDATA found: " (VL-PRINC-TO-STRING XDATA)))
+(defun hcnm_ldrblk_get_viewport_transform_xdata (ename_bubble / xdata appname cvport points)
+  (setq appname "HCNM-BUBBLE")
+  (cond
+    ((setq xdata (assoc -3 (entget ename_bubble '("HCNM-BUBBLE"))))
+      (setq xdata (cdr (assoc appname (cdr xdata))))
+      (princ (strcat "\nDebug XDATA found: " (vl-princ-to-string xdata)))
       ;; Check if this is new format (VPTRANS) or old format (AVPORT)
-      (COND
-        ((= (CDR (ASSOC 1000 XDATA)) "VPTRANS")
+      (cond
+        ((= (cdr (assoc 1000 xdata)) "VPTRANS")
           ;; New format - extract transformation matrix
-          (SETQ POINTS '())
+          (setq points '())
           ;; Collect all 1010 (3D point) entries
-          (FOREACH PAIR XDATA
-            (COND
-              ((= (CAR PAIR) 1070) (SETQ CVPORT (CDR PAIR)))
-              ((= (CAR PAIR) 1010) (SETQ POINTS (APPEND POINTS (LIST (CDR PAIR)))))
+          (foreach pair xdata
+            (cond
+              ((= (car pair) 1070) (setq cvport (cdr pair)))
+              ((= (car pair) 1010) (setq points (append points (list (cdr pair)))))
             )
           )
-          (COND
-            ((AND CVPORT (= (LENGTH POINTS) 6))
+          (cond
+            ((and cvport (= (length points) 6))
               ;; We have CVPORT and 6 points (3 OCS + 3 WCS)
-              (PRINC (STRCAT "\nDebug transform matrix: CVPORT=" (ITOA CVPORT) 
-                            " " (ITOA (LENGTH POINTS)) " points"))
-              (CONS CVPORT POINTS)  ; Return (CVPORT pt1 pt2 pt3 pt4 pt5 pt6)
+              (princ (strcat "\nDebug transform matrix: CVPORT=" (itoa cvport) 
+                            " " (itoa (length points)) " points"))
+              (cons cvport points)  ; Return (CVPORT pt1 pt2 pt3 pt4 pt5 pt6)
             )
-            (T
-              (PRINC "\nDebug: Incomplete VPTRANS data")
-              NIL
+            (t
+              (princ "\nDebug: Incomplete VPTRANS data")
+              nil
             )
           )
         )
-        (T
+        (t
           ;; Old format - just AVPORT integer, no transformation data
-          (PRINC "\nDebug: Old AVPORT format (no transform data)")
-          NIL
+          (princ "\nDebug: Old AVPORT format (no transform data)")
+          nil
         )
       )
     )
-    (T
-      (PRINC "\nDebug: No XDATA found on bubble")
-      NIL
+    (t
+      (princ "\nDebug: No XDATA found on bubble")
+      nil
     )
   )
 )
 
 ;; DEPRECATED: Old function - use HCNM_LDRBLK_GET_VIEWPORT_TRANSFORM_XDATA instead
-(DEFUN HCNM_LDRBLK_GET_AVPORT_XDATA (ENAME_BUBBLE / XDATA APPNAME RESULT)
-  (SETQ APPNAME "HCNM-BUBBLE")
-  (SETQ RESULT
-    (COND
-      ((SETQ XDATA (ASSOC -3 (ENTGET ENAME_BUBBLE '("HCNM-BUBBLE"))))
-        (SETQ XDATA (CDR (ASSOC APPNAME (CDR XDATA))))
-        (CDR (ASSOC 1070 XDATA)) ; Return integer value
+(defun hcnm_ldrblk_get_avport_xdata (ename_bubble / xdata appname result)
+  (setq appname "HCNM-BUBBLE")
+  (setq result
+    (cond
+      ((setq xdata (assoc -3 (entget ename_bubble '("HCNM-BUBBLE"))))
+        (setq xdata (cdr (assoc appname (cdr xdata))))
+        (cdr (assoc 1070 xdata)) ; Return integer value
       )
     )
   )
-  RESULT
+  result
 )
 ;; Set viewport transformation matrix in bubble's XDATA
 ;; Stores CVPORT and 3 pairs of reference points (OCS and WCS)
 ;; These 3 points define the full transformation including rotation and scale
-(DEFUN HCNM_LDRBLK_SET_VIEWPORT_TRANSFORM_XDATA (ENAME_BUBBLE CVPORT 
-                                                   REF_OCS_1 REF_WCS_1
-                                                   REF_OCS_2 REF_WCS_2
-                                                   REF_OCS_3 REF_WCS_3
-                                                   / APPNAME XDATA_NEW)
-  (SETQ APPNAME "HCNM-BUBBLE")
+(defun hcnm_ldrblk_set_viewport_transform_xdata (ename_bubble cvport 
+                                                   ref_ocs_1 ref_wcs_1
+                                                   ref_ocs_2 ref_wcs_2
+                                                   ref_ocs_3 ref_wcs_3
+                                                   / appname xdata_new)
+  (setq appname "HCNM-BUBBLE")
   ;; Register application if not already registered
-  (COND
-    ((NOT (TBLSEARCH "APPID" APPNAME))
-      (REGAPP APPNAME)
+  (cond
+    ((not (tblsearch "APPID" appname))
+      (regapp appname)
     )
   )
   ;; Create XDATA structure with transformation matrix data
@@ -7331,132 +7331,132 @@ ImportLayerSettings=No
   ;;         (1010 REF_OCS_1) (1010 REF_WCS_1)
   ;;         (1010 REF_OCS_2) (1010 REF_WCS_2)
   ;;         (1010 REF_OCS_3) (1010 REF_WCS_3)
-  (SETQ XDATA_NEW (LIST (CONS -3 
-                          (LIST (CONS APPNAME 
-                                  (LIST (CONS 1000 "VPTRANS")
-                                        (CONS 1070 CVPORT)
-                                        (CONS 1010 REF_OCS_1)
-                                        (CONS 1010 REF_WCS_1)
-                                        (CONS 1010 REF_OCS_2)
-                                        (CONS 1010 REF_WCS_2)
-                                        (CONS 1010 REF_OCS_3)
-                                        (CONS 1010 REF_WCS_3)))))))
+  (setq xdata_new (list (cons -3 
+                          (list (cons appname 
+                                  (list (cons 1000 "VPTRANS")
+                                        (cons 1070 cvport)
+                                        (cons 1010 ref_ocs_1)
+                                        (cons 1010 ref_wcs_1)
+                                        (cons 1010 ref_ocs_2)
+                                        (cons 1010 ref_wcs_2)
+                                        (cons 1010 ref_ocs_3)
+                                        (cons 1010 ref_wcs_3)))))))
   ;; Apply XDATA to entity
-  (ENTMOD (APPEND (ENTGET ENAME_BUBBLE) XDATA_NEW))
+  (entmod (append (entget ename_bubble) xdata_new))
 )
 
 ;; Clear viewport transformation XDATA from bubble
 ;; Used when user wants to change viewport association via "Chg View" button
-(DEFUN HCNM_LDRBLK_CLEAR_VIEWPORT_TRANSFORM_XDATA (ENAME_BUBBLE / APPNAME ELIST ELIST_NO_XDATA)
-  (SETQ APPNAME "HCNM-BUBBLE")
+(defun hcnm_ldrblk_clear_viewport_transform_xdata (ename_bubble / appname elist elist_no_xdata)
+  (setq appname "HCNM-BUBBLE")
   ;; Get entity list without XDATA
-  (SETQ ELIST (ENTGET ENAME_BUBBLE)
-        ELIST_NO_XDATA (VL-REMOVE-IF '(LAMBDA (X) (= (CAR X) -3)) ELIST))
+  (setq elist (entget ename_bubble)
+        elist_no_xdata (vl-remove-if '(lambda (x) (= (car x) -3)) elist))
   ;; Update entity without XDATA
-  (ENTMOD ELIST_NO_XDATA)
+  (entmod elist_no_xdata)
 )
 
 ;; DEPRECATED: Old function that only stored AVPORT integer
 ;; Kept for reference - now replaced by HCNM_LDRBLK_SET_VIEWPORT_TRANSFORM_XDATA
-(DEFUN HCNM_LDRBLK_SET_AVPORT_XDATA (ENAME_BUBBLE AVPORT / APPNAME XDATA_NEW)
-  (SETQ APPNAME "HCNM-BUBBLE")
-  (COND
-    ((NOT (TBLSEARCH "APPID" APPNAME))
-      (REGAPP APPNAME)
+(defun hcnm_ldrblk_set_avport_xdata (ename_bubble avport / appname xdata_new)
+  (setq appname "HCNM-BUBBLE")
+  (cond
+    ((not (tblsearch "APPID" appname))
+      (regapp appname)
     )
   )
-  (SETQ XDATA_NEW (LIST (CONS -3 
-                          (LIST (CONS APPNAME 
-                                  (LIST (CONS 1000 "AVPORT")
-                                        (CONS 1070 AVPORT)))))))
-  (ENTMOD (APPEND (ENTGET ENAME_BUBBLE) XDATA_NEW))
+  (setq xdata_new (list (cons -3 
+                          (list (cons appname 
+                                  (list (cons 1000 "AVPORT")
+                                        (cons 1070 avport)))))))
+  (entmod (append (entget ename_bubble) xdata_new))
 )
 ;; RETURNS P1_WORLD GIVEN P1_OCS
 ;; Uses viewport transformation data from bubble's XDATA if available
 ;; This allows coordinate transformation without switching viewports
 ;; If bubble is on Model tab, no viewport processing needed
-(DEFUN HCNM_LDRBLK_P1_WORLD (ENAME_LEADER P1_OCS ENAME_BUBBLE / ELIST_LEADER LAYOUT_NAME
-                             PSPACE_CURRENT_P ON_MODEL_TAB_P TRANSFORM_DATA
-                             CVPORT_STORED REF_OCS_1 REF_WCS_1 REF_OCS_2 REF_WCS_2 REF_OCS_3 REF_WCS_3
+(defun hcnm_ldrblk_p1_world (ename_leader p1_ocs ename_bubble / elist_leader layout_name
+                             pspace_current_p on_model_tab_p transform_data
+                             cvport_stored ref_ocs_1 ref_wcs_1 ref_ocs_2 ref_wcs_2 ref_ocs_3 ref_wcs_3
                             ) 
-  (SETQ ELIST_LEADER   (ENTGET ENAME_LEADER)
-        LAYOUT_NAME    (CDR (ASSOC 410 ELIST_LEADER))
-        ON_MODEL_TAB_P (OR 
-                         (= LAYOUT_NAME "Model")
-                         (= LAYOUT_NAME "MODEL")
-                         (NOT LAYOUT_NAME)  ;; Older drawings without layout
+  (setq elist_leader   (entget ename_leader)
+        layout_name    (cdr (assoc 410 elist_leader))
+        on_model_tab_p (or 
+                         (= layout_name "Model")
+                         (= layout_name "MODEL")
+                         (not layout_name)  ;; Older drawings without layout
                        )
   )
-  (COND 
-    ((NOT ON_MODEL_TAB_P)
+  (cond 
+    ((not on_model_tab_p)
      ;; Bubble is on a layout tab - need viewport processing
      ;; Try to get viewport transformation data from XDATA
-     (SETQ TRANSFORM_DATA (COND 
-                            (ENAME_BUBBLE (HCNM_LDRBLK_GET_VIEWPORT_TRANSFORM_XDATA ENAME_BUBBLE))
-                            (T NIL)))
-     (COND
-       (TRANSFORM_DATA
+     (setq transform_data (cond 
+                            (ename_bubble (hcnm_ldrblk_get_viewport_transform_xdata ename_bubble))
+                            (t nil)))
+     (cond
+       (transform_data
          ;; We have transformation matrix - use it to transform without switching viewports
-         (SETQ CVPORT_STORED (CAR TRANSFORM_DATA)
-               REF_OCS_1 (NTH 1 TRANSFORM_DATA)
-               REF_WCS_1 (NTH 2 TRANSFORM_DATA)
-               REF_OCS_2 (NTH 3 TRANSFORM_DATA)
-               REF_WCS_2 (NTH 4 TRANSFORM_DATA)
-               REF_OCS_3 (NTH 5 TRANSFORM_DATA)
-               REF_WCS_3 (NTH 6 TRANSFORM_DATA))
-         (PRINC (STRCAT "\nUsing stored viewport " (ITOA CVPORT_STORED) " transformation matrix"))
+         (setq cvport_stored (car transform_data)
+               ref_ocs_1 (nth 1 transform_data)
+               ref_wcs_1 (nth 2 transform_data)
+               ref_ocs_2 (nth 3 transform_data)
+               ref_wcs_2 (nth 4 transform_data)
+               ref_ocs_3 (nth 5 transform_data)
+               ref_wcs_3 (nth 6 transform_data))
+         (princ (strcat "\nUsing stored viewport " (itoa cvport_stored) " transformation matrix"))
          ;; Apply affine transformation using the 3-point matrix
          ;; Calculate the transformation: P1_WORLD = f(P1_OCS)
-         (SETQ P1_WORLD (HCNM_LDRBLK_APPLY_TRANSFORM_MATRIX 
-                          P1_OCS
-                          REF_OCS_1 REF_WCS_1
-                          REF_OCS_2 REF_WCS_2
-                          REF_OCS_3 REF_WCS_3))
-         (PRINC (STRCAT "\nTransformed P1_WORLD: " (VL-PRINC-TO-STRING P1_WORLD)))
+         (setq p1_world (hcnm_ldrblk_apply_transform_matrix 
+                          p1_ocs
+                          ref_ocs_1 ref_wcs_1
+                          ref_ocs_2 ref_wcs_2
+                          ref_ocs_3 ref_wcs_3))
+         (princ (strcat "\nTransformed P1_WORLD: " (vl-princ-to-string p1_world)))
        )
-       (T
+       (t
          ;; No transformation data stored - user must select viewport
-         (PRINC "\nDebug: No transformation data - prompting for viewport selection")
-         (SETQ PSPACE_CURRENT_P (HCNM_LDRBLK_SPACE_SET_MODEL))
+         (princ "\nDebug: No transformation data - prompting for viewport selection")
+         (setq pspace_current_p (hcnm_ldrblk_space_set_model))
          ;; Prompt user to select target viewport
-         (SETQ CVPORT_STORED (HCNM_LDRBLK_GET_TARGET_VPORT))
-         (COND
-           ((AND CVPORT_STORED (> CVPORT_STORED 1) ENAME_BUBBLE)
+         (setq cvport_stored (hcnm_ldrblk_get_target_vport))
+         (cond
+           ((and cvport_stored (> cvport_stored 1) ename_bubble)
             ;; User selected a viewport - capture transformation matrix and store in XDATA
-            (SETQ REF_OCS_1 '(0.0 0.0 0.0)    ; Origin
-                  REF_OCS_2 '(1.0 0.0 0.0)    ; X-axis unit vector
-                  REF_OCS_3 '(0.0 1.0 0.0)    ; Y-axis unit vector
-                  REF_WCS_1 (TRANS (TRANS REF_OCS_1 3 2) 2 0)
-                  REF_WCS_2 (TRANS (TRANS REF_OCS_2 3 2) 2 0)
-                  REF_WCS_3 (TRANS (TRANS REF_OCS_3 3 2) 2 0))
+            (setq ref_ocs_1 '(0.0 0.0 0.0)    ; Origin
+                  ref_ocs_2 '(1.0 0.0 0.0)    ; X-axis unit vector
+                  ref_ocs_3 '(0.0 1.0 0.0)    ; Y-axis unit vector
+                  ref_wcs_1 (trans (trans ref_ocs_1 3 2) 2 0)
+                  ref_wcs_2 (trans (trans ref_ocs_2 3 2) 2 0)
+                  ref_wcs_3 (trans (trans ref_ocs_3 3 2) 2 0))
             ;; Calculate P1_WORLD using TRANS
-            (SETQ P1_WORLD (TRANS (TRANS P1_OCS 3 2) 2 0))
+            (setq p1_world (trans (trans p1_ocs 3 2) 2 0))
             ;; Store transformation matrix in XDATA for future use
-            (HCNM_LDRBLK_SET_VIEWPORT_TRANSFORM_XDATA ENAME_BUBBLE CVPORT_STORED 
-                                                        REF_OCS_1 REF_WCS_1
-                                                        REF_OCS_2 REF_WCS_2
-                                                        REF_OCS_3 REF_WCS_3)
-            (PRINC (STRCAT "\nCaptured and stored viewport " (ITOA CVPORT_STORED) " transformation matrix"))
+            (hcnm_ldrblk_set_viewport_transform_xdata ename_bubble cvport_stored 
+                                                        ref_ocs_1 ref_wcs_1
+                                                        ref_ocs_2 ref_wcs_2
+                                                        ref_ocs_3 ref_wcs_3)
+            (princ (strcat "\nCaptured and stored viewport " (itoa cvport_stored) " transformation matrix"))
            )
-           (T
+           (t
             ;; Not in a viewport or no bubble entity - just calculate P1_WORLD
-            (SETQ P1_WORLD (TRANS (TRANS P1_OCS 3 2) 2 0))
+            (setq p1_world (trans (trans p1_ocs 3 2) 2 0))
            )
          )
-         (HCNM_LDRBLK_SPACE_RESTORE PSPACE_CURRENT_P)
-         (PRINC (STRCAT "\nDebug P1_WORLD: " (VL-PRINC-TO-STRING P1_WORLD)))
+         (hcnm_ldrblk_space_restore pspace_current_p)
+         (princ (strcat "\nDebug P1_WORLD: " (vl-princ-to-string p1_world)))
        )
      )
-     P1_WORLD
+     p1_world
     )
-    (T
+    (t
      ;; Bubble is on Model tab - simple transformation, no viewport processing
-     (TRANS P1_OCS 1 0)
+     (trans p1_ocs 1 0)
     )
   )
 )
-(DEFUN HCNM_LDRBLK_AUTO_APOLOGY (AUTO_TYPE)
-  (ALERT (PRINC (STRCAT "Sorry. Selection of " AUTO_TYPE " is not fully programmed yet and is not anticipated to be dynamic once programmed.\n\nPlease let Tom Haws <tom.haws@gmail.com> know if you are eager for this as static text.")))
+(defun hcnm_ldrblk_auto_apology (auto_type)
+  (alert (princ (strcat "Sorry. Selection of " auto_type " is not fully programmed yet and is not anticipated to be dynamic once programmed.\n\nPlease let Tom Haws <tom.haws@gmail.com> know if you are eager for this as static text.")))
   "N/A"
 )
 ;; bubble-data-update: 2025-10-15 update: I think NOTEDATA (new attribute for this reactor project) may be repurposed to hold information about whether each bubble line is auto text (and what kind) or manual.
@@ -7468,37 +7468,37 @@ ImportLayerSettings=No
 ;; 4. Add reference to reference list.
 ;; 5. Update string in appropriate attribute of list.
 ;; Returns update attribute list.
-(DEFUN HCNM_LDRBLK_ADJUST_NOTEDATA (DATA ATTRIBUTE_LIST / TAG VALUE)
-  (SETQ
-    TAG   (CAR DATA)
-    VALUE (CADDDR DATA)
+(defun hcnm_ldrblk_adjust_notedata (data attribute_list / tag value)
+  (setq
+    tag   (car data)
+    value (cadddr data)
   )
-  (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST TAG VALUE ATTRIBUTE_LIST)
+  (hcnm_ldrblk_save_attribute_to_list tag value attribute_list)
 )
-(DEFUN C:HCNM-EDIT-BUBBLES ()
+(defun c:hcnm-edit-bubbles ()
   (haws-core-init 337)
   (princ "\nCNM version: ")
-  (princ (HAWS-UNIFIED-VERSION))
+  (princ (haws-unified-version))
   (if (not haws-editall)(load "editall"))
-  (haws-editall T)
+  (haws-editall t)
   (haws-core-restore)
 )
 ;;; Add delimiter structure to plain text attributes for editing
-(DEFUN HCNM_EB:ADD_DELIMITERS (ATTRIBUTE_LIST ENAME_BUBBLE / RESULT)
-  (SETQ RESULT '())
-  (FOREACH ATTR ATTRIBUTE_LIST
-    (SETQ RESULT 
-      (APPEND RESULT 
-        (LIST 
-          (LIST 
-            (CAR ATTR)  ; TAG
-            (HCNM_EB:EXPAND_VALUE_TO_DELIMITED (CAR ATTR) (CADR ATTR))
+(defun hcnm_eb:add_delimiters (attribute_list ename_bubble / result)
+  (setq result '())
+  (foreach attr attribute_list
+    (setq result 
+      (append result 
+        (list 
+          (list 
+            (car attr)  ; TAG
+            (hcnm_eb:expand_value_to_delimited (car attr) (cadr attr))
           )
         )
       )
     )
   )
-  RESULT
+  result
 )
 ;;; Expand plain text value to delimiter structure using XDATA if available
 ;;; If value doesn't have chr(160) delimiters, try to parse using XDATA auto-text
@@ -7509,228 +7509,228 @@ ImportLayerSettings=No
 ;; System-controlled tags (NOTENUM, NOTEPHASE, NOTEGAP) go entirely to prefix.
 ;; Legacy format codes (%%u, %%o, \L, \O) are migrated to prefix field.
 ;; User manual text is preserved in prefix field.
-(DEFUN HCNM_EB:EXPAND_VALUE_TO_DELIMITED (TAG VALUE / MIGRATED DELIM_POS)
-  (COND
-    ((NOT VALUE) (HCNM_EB:CONCAT_PARTS "" "" ""))  ; NIL -> empty structure
-    ((VL-STRING-SEARCH (CHR 160) VALUE) VALUE)  ; Already has delimiters
-    ((= VALUE "") (HCNM_EB:CONCAT_PARTS "" "" ""))  ; Empty -> empty structure
+(defun hcnm_eb:expand_value_to_delimited (tag value / migrated delim_pos)
+  (cond
+    ((not value) (hcnm_eb:concat_parts "" "" ""))  ; NIL -> empty structure
+    ((vl-string-search (chr 160) value) value)  ; Already has delimiters
+    ((= value "") (hcnm_eb:concat_parts "" "" ""))  ; Empty -> empty structure
     ;; NOTENUM, NOTEPHASE, NOTEGAP are system-controlled - put in prefix, not auto
-    ((MEMBER TAG '("NOTENUM" "NOTEPHASE" "NOTEGAP"))
-     (HCNM_EB:CONCAT_PARTS VALUE "" "")
+    ((member tag '("NOTENUM" "NOTEPHASE" "NOTEGAP"))
+     (hcnm_eb:concat_parts value "" "")
     )
-    (T 
+    (t 
      ;; Try legacy format code migration
-     (SETQ MIGRATED (HCNM_EB:MIGRATE_LEGACY_FORMAT VALUE))
-     (IF (SETQ DELIM_POS (VL-STRING-SEARCH (CHR 160) MIGRATED))
+     (setq migrated (hcnm_eb:migrate_legacy_format value))
+     (if (setq delim_pos (vl-string-search (chr 160) migrated))
        ;; Migration created delimiter structure: prefix§auto - split it properly
        ;; VL-STRING-SEARCH returns 0-based position, SUBSTR uses 1-based
-       (HCNM_EB:CONCAT_PARTS 
-         (SUBSTR MIGRATED 1 DELIM_POS)  ; prefix: chars 1 through DELIM_POS
-         (SUBSTR MIGRATED (+ DELIM_POS 2))  ; auto: skip delimiter (position is 0-based, add 2 for 1-based + skip char)
+       (hcnm_eb:concat_parts 
+         (substr migrated 1 delim_pos)  ; prefix: chars 1 through DELIM_POS
+         (substr migrated (+ delim_pos 2))  ; auto: skip delimiter (position is 0-based, add 2 for 1-based + skip char)
          ""  ; empty postfix
        )
        ;; No format codes, put entire value in PREFIX to preserve user's manual text
        ;; (Auto field gets replaced by auto-text buttons, prefix/postfix are preserved)
-       (HCNM_EB:CONCAT_PARTS VALUE "" "")
+       (hcnm_eb:concat_parts value "" "")
      )
     )
   )
 )
 
-(DEFUN HCNM_EDIT_BUBBLE (ENAME_BUBBLE / BUBBLE_DATA DCLFILE
-                     ENAME_LEADER HCNM_EB:ATTRIBUTE_LIST
-                     NOTETEXTRADIOCOLUMN RETURN_LIST TAG DONE_CODE
+(defun hcnm_edit_bubble (ename_bubble / bubble_data dclfile
+                     ename_leader hcnm_eb:attribute_list
+                     notetextradiocolumn return_list tag done_code
                     )
-  (SETQ
-    ENAME_LEADER
-      (HCNM_LDRBLK_BUBBLE_LEADER ENAME_BUBBLE)
+  (setq
+    ename_leader
+      (hcnm_ldrblk_bubble_leader ename_bubble)
     ;; Semi-global variable. Global to the HCNM-EB: functions called from here.
     ;; Add delimiter structure for editing
-    HCNM_EB:ATTRIBUTE_LIST
-      (HCNM_EB:ADD_DELIMITERS (HCNM_GET_ATTRIBUTES ENAME_BUBBLE T) ENAME_BUBBLE)
-    NOTETEXTRADIOCOLUMN "RadioNOTETXT1"
-    DCLFILE
-      (LOAD_DIALOG "cnm.dcl")
-    DONE_CODE 2
+    hcnm_eb:attribute_list
+      (hcnm_eb:add_delimiters (hcnm_get_attributes ename_bubble t) ename_bubble)
+    notetextradiocolumn "RadioNOTETXT1"
+    dclfile
+      (load_dialog "cnm.dcl")
+    done_code 2
   )
   ;; Show delimiter tip to help users understand the internal structure
-  (HAWS_TIP_SHOW 1002  ; Unique tip ID for delimiter explanation
+  (haws_tip_show 1002  ; Unique tip ID for delimiter explanation
     "CNM uses a non-breaking space (ASCII code 160 or Alt+0160) to separate your text from auto text.\n\nKeep this in mind in the event you edit bubble notes without this editor.")
-  (WHILE (> DONE_CODE -1)
-    (COND
-      ((= DONE_CODE 0) (SETQ DONE_CODE (HCNM_EDIT_BUBBLE_CANCEL)))
-      ((= DONE_CODE 1)
-       (SETQ DONE_CODE (HCNM_EB:SAVE ENAME_BUBBLE))
+  (while (> done_code -1)
+    (cond
+      ((= done_code 0) (setq done_code (hcnm_edit_bubble_cancel)))
+      ((= done_code 1)
+       (setq done_code (hcnm_eb:save ename_bubble))
       )
-      ((= DONE_CODE 2)
+      ((= done_code 2)
        ;; Show the CNM Bubble Note Editor dialog with the requested text line's radio button selected.
-       (SETQ
-         RETURN_LIST
-          (HCNM_EB:SHOW DCLFILE NOTETEXTRADIOCOLUMN ENAME_BUBBLE)
-         DONE_CODE
-          (CAR RETURN_LIST)
-         NOTETEXTRADIOCOLUMN
-          (CADR RETURN_LIST)
-         TAG
-          (SUBSTR NOTETEXTRADIOCOLUMN 6)
+       (setq
+         return_list
+          (hcnm_eb:show dclfile notetextradiocolumn ename_bubble)
+         done_code
+          (car return_list)
+         notetextradiocolumn
+          (cadr return_list)
+         tag
+          (substr notetextradiocolumn 6)
        )
       )
-      ((= DONE_CODE 29)
+      ((= done_code 29)
          ;; Change View button - clear viewport transformation data and immediately prompt for new association
-         (HCNM_LDRBLK_CLEAR_VIEWPORT_TRANSFORM_XDATA ENAME_BUBBLE)
-         (PRINC "\nViewport association cleared. Please select the new target viewport.")
-         (HCNM_LDRBLK_WARN_PSPACE_COORDINATES ENAME_BUBBLE "Sta")
-         (HCNM_LDRBLK_CAPTURE_VIEWPORT_TRANSFORM ENAME_BUBBLE (HCNM_LDRBLK_GET_TARGET_VPORT))
-         (SETQ DONE_CODE 2)  ; Return to dialog
+         (hcnm_ldrblk_clear_viewport_transform_xdata ename_bubble)
+         (princ "\nViewport association cleared. Please select the new target viewport.")
+         (hcnm_ldrblk_warn_pspace_coordinates ename_bubble "Sta")
+         (hcnm_ldrblk_capture_viewport_transform ename_bubble (hcnm_ldrblk_get_target_vport))
+         (setq done_code 2)  ; Return to dialog
       )
-      (T
+      (t
        ;; Process clicked action tile (button) other than cancel or save.
        ;; bubble-data-update: This is start point 2 of 2 of the bubble data logic. This one is for the bubble note editing process.
        ;; this is called whenever a dialog auto-text button is clicked.
-       (HCNM_EB:GET_TEXT ENAME_BUBBLE DONE_CODE TAG)
-       (SETQ DONE_CODE 2)
+       (hcnm_eb:get_text ename_bubble done_code tag)
+       (setq done_code 2)
       )
     )
   )
   ;; Change its arrowhead if needed.
-  (HCNM_LDRBLK_CHANGE_ARROWHEAD ENAME_LEADER)
-  (HAWS-CORE-RESTORE)
-  (PRINC)
+  (hcnm_ldrblk_change_arrowhead ename_leader)
+  (haws-core-restore)
+  (princ)
 )
 ;;; bubble-data-update: this or something below it needs to populate the NOTEDATA attribute.
-(DEFUN HCNM_EB:GET_TEXT (ENAME_BUBBLE DONE_CODE TAG / AUTO_STRING AUTO_TYPE PARTS PREFIX AUTO POSTFIX VALUE)
-  (SETQ
-    AUTO_TYPE
-     (CADR (ASSOC DONE_CODE (HCNM_EDIT_BUBBLE_DONE_CODES)))
+(defun hcnm_eb:get_text (ename_bubble done_code tag / auto_string auto_type parts prefix auto postfix value)
+  (setq
+    auto_type
+     (cadr (assoc done_code (hcnm_edit_bubble_done_codes)))
   )
-  (COND
+  (cond
     ;; Handle ClearAuto button (code 28)
-    ((= DONE_CODE 28)
+    ((= done_code 28)
      ;; Get current value, split it, clear the auto part, and save
-     (SETQ VALUE (CADR (ASSOC TAG HCNM_EB:ATTRIBUTE_LIST))
-           PARTS (HCNM_EB:SPLIT_ON_NBSP VALUE)
-           PREFIX (NTH 0 PARTS)
-           POSTFIX (NTH 2 PARTS))
+     (setq value (cadr (assoc tag hcnm_eb:attribute_list))
+           parts (hcnm_eb:split_on_nbsp value)
+           prefix (nth 0 parts)
+           postfix (nth 2 parts))
      ;; Save with empty auto field
-     (SETQ HCNM_EB:ATTRIBUTE_LIST
-       (HCNM_LDRBLK_ADJUST_FORMATS
-         (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST
-           TAG
-           (HCNM_EB:CONCAT_PARTS PREFIX "" POSTFIX)
-           HCNM_EB:ATTRIBUTE_LIST
+     (setq hcnm_eb:attribute_list
+       (hcnm_ldrblk_adjust_formats
+         (hcnm_ldrblk_save_attribute_to_list
+           tag
+           (hcnm_eb:concat_parts prefix "" postfix)
+           hcnm_eb:attribute_list
          )
        )
      )
     )
     ;; Handle auto-text generation buttons (only if AUTO_TYPE is valid)
-    ((AND AUTO_TYPE (NOT (= AUTO_TYPE "")))
+    ((and auto_type (not (= auto_type "")))
      ;; bubble-data-update: this is called from command line and from edit box to get string as requested by user.
-     (SETQ HCNM_EB:ATTRIBUTE_LIST
-       (HCNM_LDRBLK_ADJUST_FORMATS
-         (HCNM_LDRBLK_AUTO_DISPATCH
-           ENAME_BUBBLE
-           HCNM_EB:ATTRIBUTE_LIST
-           TAG
-           AUTO_TYPE
-           NIL  ; NIL = prompt user to select/confirm alignment
+     (setq hcnm_eb:attribute_list
+       (hcnm_ldrblk_adjust_formats
+         (hcnm_ldrblk_auto_dispatch
+           ename_bubble
+           hcnm_eb:attribute_list
+           tag
+           auto_type
+           nil  ; NIL = prompt user to select/confirm alignment
          )
        )
      )
      ;; Show paper space warning if coordinate auto-text was just added
-     (HCNM_LDRBLK_WARN_PSPACE_COORDINATES ENAME_BUBBLE AUTO_TYPE)
+     (hcnm_ldrblk_warn_pspace_coordinates ename_bubble auto_type)
     )
     ;; Invalid DONE_CODE - just ignore
-    (T
-     (PRINC (STRCAT "\nWarning: Invalid button code " (ITOA DONE_CODE)))
+    (t
+     (princ (strcat "\nWarning: Invalid button code " (itoa done_code)))
     )
   )
 )
 
-(defun HCNM_EDIT_BUBBLE_CANCEL ()
+(defun hcnm_edit_bubble_cancel ()
  -1
 )
 ;;; Remove delimiters from ATTRIBUTE_LIST before saving
 ;;; Concatenates prefix+auto+postfix into plain text
-(DEFUN HCNM_EB:REMOVE_DELIMITERS (ATTRIBUTE_LIST / RESULT)
-  (SETQ RESULT '())
-  (FOREACH ATTR ATTRIBUTE_LIST
-    (SETQ RESULT 
-      (APPEND RESULT 
-        (LIST 
-          (LIST 
-            (CAR ATTR)  ; TAG
-            (HCNM_EB:FLATTEN_VALUE (CADR ATTR))  ; Remove delimiters from VALUE
+(defun hcnm_eb:remove_delimiters (attribute_list / result)
+  (setq result '())
+  (foreach attr attribute_list
+    (setq result 
+      (append result 
+        (list 
+          (list 
+            (car attr)  ; TAG
+            (hcnm_eb:flatten_value (cadr attr))  ; Remove delimiters from VALUE
           )
         )
       )
     )
   )
-  RESULT
+  result
 )
 ;;; Flatten a delimited value to plain text
 ;;; If value contains chr(160) delimiters, concatenate parts with spaces between non-empty parts
 ;;; Otherwise return as-is
-(DEFUN HCNM_EB:FLATTEN_VALUE (VALUE / PARTS PREFIX AUTO POSTFIX RESULT)
-  (COND
-    ((NOT VALUE) "")
-    ((VL-STRING-SEARCH (CHR 160) VALUE)
-     (SETQ PARTS (HCNM_EB:SPLIT_ON_NBSP VALUE)
-           PREFIX (NTH 0 PARTS)
-           AUTO (NTH 1 PARTS)
-           POSTFIX (NTH 2 PARTS)
-           RESULT "")
+(defun hcnm_eb:flatten_value (value / parts prefix auto postfix result)
+  (cond
+    ((not value) "")
+    ((vl-string-search (chr 160) value)
+     (setq parts (hcnm_eb:split_on_nbsp value)
+           prefix (nth 0 parts)
+           auto (nth 1 parts)
+           postfix (nth 2 parts)
+           result "")
      ;; Add prefix
-     (IF (AND PREFIX (/= PREFIX ""))
-       (SETQ RESULT PREFIX)
+     (if (and prefix (/= prefix ""))
+       (setq result prefix)
      )
      ;; Add auto with space if needed
-     (IF (AND AUTO (/= AUTO ""))
-       (SETQ RESULT 
-         (IF (= RESULT "")
-           AUTO
-           (STRCAT RESULT " " AUTO)
+     (if (and auto (/= auto ""))
+       (setq result 
+         (if (= result "")
+           auto
+           (strcat result " " auto)
          )
        )
      )
      ;; Add postfix with space if needed
-     (IF (AND POSTFIX (/= POSTFIX ""))
-       (SETQ RESULT 
-         (IF (= RESULT "")
-           POSTFIX
-           (STRCAT RESULT " " POSTFIX)
+     (if (and postfix (/= postfix ""))
+       (setq result 
+         (if (= result "")
+           postfix
+           (strcat result " " postfix)
          )
        )
      )
-     RESULT
+     result
     )
-    (T VALUE)
+    (t value)
   )
 )
 ;; Save auto-text to XDATA for each attribute tag
-(defun HCNM_EB:SAVE (ENAME_BUBBLE)
+(defun hcnm_eb:save (ename_bubble)
   ;; Save WITH delimiters (chr 160 non-breaking space is invisible in AutoCAD)
   ;; This preserves prefix/auto/postfix structure for next edit
-  (HCNM_SET_ATTRIBUTES ENAME_BUBBLE HCNM_EB:ATTRIBUTE_LIST)
+  (hcnm_set_attributes ename_bubble hcnm_eb:attribute_list)
  -1
 ) 
-(DEFUN HCNM_EDIT_BUBBLE_DONE_CODES ( / EB_DONE)
-  (SETQ EB_DONE T)
-  '((11 "LF" EB_DONE)
-    (12 "SF" EB_DONE)
-    (13 "SY" EB_DONE)
-    (14 "Sta" EB_DONE)
-    (15 "Off" EB_DONE)
-    (16 "StaOff" EB_DONE)
-    (17 "AlName" EB_DONE)
-    (18 "StaName" EB_DONE)
-    (19 "N" EB_DONE)
-    (20 "E" EB_DONE)
-    (21 "NE" EB_DONE)
-    (22 "Z" EB_DONE)
-    (23 "Text" EB_DONE)
-    (25 "Dia" EB_DONE)
-    (26 "Slope" EB_DONE)
-    (27 "L" EB_DONE)
+(defun hcnm_edit_bubble_done_codes ( / eb_done)
+  (setq eb_done t)
+  '((11 "LF" eb_done)
+    (12 "SF" eb_done)
+    (13 "SY" eb_done)
+    (14 "Sta" eb_done)
+    (15 "Off" eb_done)
+    (16 "StaOff" eb_done)
+    (17 "AlName" eb_done)
+    (18 "StaName" eb_done)
+    (19 "N" eb_done)
+    (20 "E" eb_done)
+    (21 "NE" eb_done)
+    (22 "Z" eb_done)
+    (23 "Text" eb_done)
+    (25 "Dia" eb_done)
+    (26 "Slope" eb_done)
+    (27 "L" eb_done)
    )
 )
 ;;; Migrate legacy format codes from auto field to prefix field.
@@ -7738,236 +7738,236 @@ ImportLayerSettings=No
 ;;; move the codes to a new prefix field and create delimiter structure.
 ;;; Returns migrated value with prefix§auto§postfix structure if codes found,
 ;;; otherwise returns VALUE unchanged.
-(DEFUN HCNM_EB:MIGRATE_LEGACY_FORMAT (VALUE / SEP FORMAT_CODE TEXT)
-  (COND
+(defun hcnm_eb:migrate_legacy_format (value / sep format_code text)
+  (cond
     ;; Empty or nil - return as-is
-    ((OR (NOT VALUE) (= VALUE "")) VALUE)
+    ((or (not value) (= value "")) value)
     ;; Already has delimiters - no migration needed
-    ((VL-STRING-SEARCH (CHR 160) VALUE) VALUE)
+    ((vl-string-search (chr 160) value) value)
     ;; Check for mtext underline
-    ((WCMATCH VALUE "\\L*")
-     (SETQ FORMAT_CODE "\\L"
-           TEXT (SUBSTR VALUE 3))
-     (STRCAT FORMAT_CODE (CHR 160) TEXT)
+    ((wcmatch value "\\L*")
+     (setq format_code "\\L"
+           text (substr value 3))
+     (strcat format_code (chr 160) text)
     )
     ;; Check for mtext overline
-    ((WCMATCH VALUE "\\O*")
-     (SETQ FORMAT_CODE "\\O"
-           TEXT (SUBSTR VALUE 3))
-     (STRCAT FORMAT_CODE (CHR 160) TEXT)
+    ((wcmatch value "\\O*")
+     (setq format_code "\\O"
+           text (substr value 3))
+     (strcat format_code (chr 160) text)
     )
     ;; Check for dtext underline
-    ((WCMATCH VALUE "%%u*")
-     (SETQ FORMAT_CODE "%%u"
-           TEXT (SUBSTR VALUE 4))
-     (STRCAT FORMAT_CODE (CHR 160) TEXT)
+    ((wcmatch value "%%u*")
+     (setq format_code "%%u"
+           text (substr value 4))
+     (strcat format_code (chr 160) text)
     )
     ;; Check for dtext overline
-    ((WCMATCH VALUE "%%o*")
-     (SETQ FORMAT_CODE "%%o"
-           TEXT (SUBSTR VALUE 4))
-     (STRCAT FORMAT_CODE (CHR 160) TEXT)
+    ((wcmatch value "%%o*")
+     (setq format_code "%%o"
+           text (substr value 4))
+     (strcat format_code (chr 160) text)
     )
     ;; No format codes - return as-is
-    (T VALUE)
+    (t value)
   )
 )
-(DEFUN HCNM_EB:SHOW
-   (DCLFILE NOTETEXTRADIOCOLUMN ENAME_BUBBLE / TAG VALUE PARTS PREFIX AUTO POSTFIX ON_MODEL_TAB_P)
-  (NEW_DIALOG "HCNMEditBubble" DCLFILE)
-  (SET_TILE "Title" "Edit CNM Bubble Note")
+(defun hcnm_eb:show
+   (dclfile notetextradiocolumn ename_bubble / tag value parts prefix auto postfix on_model_tab_p)
+  (new_dialog "HCNMEditBubble" dclfile)
+  (set_tile "Title" "Edit CNM Bubble Note")
   ;; Check if bubble is in paper space
-  (SETQ ON_MODEL_TAB_P (OR (NOT ENAME_BUBBLE) (HCNM_LDRBLK_IS_ON_MODEL_TAB ENAME_BUBBLE)))
+  (setq on_model_tab_p (or (not ename_bubble) (hcnm_ldrblk_is_on_model_tab ename_bubble)))
   ;; Show/hide paper space disclaimer and Chg View button
   ;; Always show paper space warning above OKCancel
   ;; EXECUTIVE: The general disclaimer in the edit dialog is sufficient.
   ;; When user actually adds coordinate auto-text (Sta/Off/etc), they get
   ;; the detailed dismissable tip via HCNM_LDRBLK_WARN_PSPACE_COORDINATES.
-  (SET_TILE 
+  (set_tile 
     "Message"         
-    (STRCAT 
+    (strcat 
       "Note: Paper space bubbles don't react to viewport changes."
-     (HAWS_EVANGEL_MSG)
+     (haws_evangel_msg)
     )
   )  
-  (MODE_TILE "ChgView" 0)  ; Always enable
+  (mode_tile "ChgView" 0)  ; Always enable
   ;; Note attribute edit boxes - split into prefix/auto/postfix
   ;; Migration already happened in EXPAND_VALUE during ADD_DELIMITERS
-  (FOREACH
-     ATTRIBUTE HCNM_EB:ATTRIBUTE_LIST
-    (SETQ TAG (CAR ATTRIBUTE)
-          VALUE (CADR ATTRIBUTE)
+  (foreach
+     attribute hcnm_eb:attribute_list
+    (setq tag (car attribute)
+          value (cadr attribute)
           ;; Split by chr(1) delimiter
-          PARTS (HCNM_EB:SPLIT_ON_NBSP VALUE)
-          PREFIX (NTH 0 PARTS)
-          AUTO (NTH 1 PARTS)
-          POSTFIX (NTH 2 PARTS))
+          parts (hcnm_eb:split_on_nbsp value)
+          prefix (nth 0 parts)
+          auto (nth 1 parts)
+          postfix (nth 2 parts))
     ;; Set prefix field
-    (SET_TILE (STRCAT "Prefix" TAG) PREFIX)
-    (ACTION_TILE
-      (STRCAT "Prefix" TAG)
-      (STRCAT "(HCNM_EB:SAVE_PREFIX \"" TAG "\" $value)")
+    (set_tile (strcat "Prefix" tag) prefix)
+    (action_tile
+      (strcat "Prefix" tag)
+      (strcat "(HCNM_EB:SAVE_PREFIX \"" tag "\" $value)")
     )
     ;; Set auto field (disabled, for display only)
-    (SET_TILE (STRCAT "Edit" TAG) AUTO)
+    (set_tile (strcat "Edit" tag) auto)
     ;; Set postfix field
-    (SET_TILE (STRCAT "Postfix" TAG) POSTFIX)
-    (ACTION_TILE
-      (STRCAT "Postfix" TAG)
-      (STRCAT "(HCNM_EB:SAVE_POSTFIX \"" TAG "\" $value)")
+    (set_tile (strcat "Postfix" tag) postfix)
+    (action_tile
+      (strcat "Postfix" tag)
+      (strcat "(HCNM_EB:SAVE_POSTFIX \"" tag "\" $value)")
     )
   )
   ;;Radio buttons
-  (SET_TILE
+  (set_tile
     "NoteTextRadioColumn"
-    NOTETEXTRADIOCOLUMN
+    notetextradiocolumn
   )
-  (ACTION_TILE
+  (action_tile
     "NoteTextRadioColumn"
     "(SETQ NoteTextRadioColumn $value)"
   )
   ;;Auto text buttons
-  (MAPCAR
-    '(LAMBDA (CODE)
-       (ACTION_TILE
-         (CADR CODE)
-         (STRCAT "(DONE_DIALOG " (ITOA (CAR CODE)) ")")
+  (mapcar
+    '(lambda (code)
+       (action_tile
+         (cadr code)
+         (strcat "(DONE_DIALOG " (itoa (car code)) ")")
        )
      )
-    (HCNM_EDIT_BUBBLE_DONE_CODES)
+    (hcnm_edit_bubble_done_codes)
   )
   ;; Clear Auto Text button
-  (ACTION_TILE "ClearAuto" "(DONE_DIALOG 28)")
+  (action_tile "ClearAuto" "(DONE_DIALOG 28)")
   ;; Change View button (paper space only)
-  (ACTION_TILE "ChgView" "(DONE_DIALOG 29)")
-  (ACTION_TILE "accept" "(DONE_DIALOG 1)")
-  (ACTION_TILE "cancel" "(DONE_DIALOG 0)")
-  (LIST (START_DIALOG) NOTETEXTRADIOCOLUMN)
+  (action_tile "ChgView" "(DONE_DIALOG 29)")
+  (action_tile "accept" "(DONE_DIALOG 1)")
+  (action_tile "cancel" "(DONE_DIALOG 0)")
+  (list (start_dialog) notetextradiocolumn)
 )
 ;; Split value on chr(1) delimiter into (prefix auto postfix)
 ;; Returns list of three strings, using "" for missing parts
-(DEFUN HCNM_EB:SPLIT_ON_NBSP (VALUE / NBSP PARTS)
-  (SETQ NBSP (CHR 160))  ; Non-breaking space - invisible delimiter
-  (COND
-    ((NOT VALUE) '("" "" ""))
-    ((NOT (VL-STRING-SEARCH NBSP VALUE))
+(defun hcnm_eb:split_on_nbsp (value / nbsp parts)
+  (setq nbsp (chr 160))  ; Non-breaking space - invisible delimiter
+  (cond
+    ((not value) '("" "" ""))
+    ((not (vl-string-search nbsp value))
      ;; No separator - treat entire value as PREFIX (preserves user manual text)
-     (LIST VALUE "" ""))
-    (T
+     (list value "" ""))
+    (t
      ;; Split on NBSP
-     (SETQ PARTS (HCNM_EB:SPLIT_STRING VALUE NBSP))
-     (COND
-       ((= (LENGTH PARTS) 3) PARTS)
-       ((= (LENGTH PARTS) 2) (APPEND PARTS '("")))
-       ((= (LENGTH PARTS) 1) (APPEND '("") PARTS '("")))
-       (T '("" "" ""))
+     (setq parts (hcnm_eb:split_string value nbsp))
+     (cond
+       ((= (length parts) 3) parts)
+       ((= (length parts) 2) (append parts '("")))
+       ((= (length parts) 1) (append '("") parts '("")))
+       (t '("" "" ""))
      )
     )
   )
 )
 
 ;; Split string on delimiter
-(DEFUN HCNM_EB:SPLIT_STRING (STR DELIM / POS RESULT)
-  (SETQ RESULT '())
-  (WHILE (SETQ POS (VL-STRING-SEARCH DELIM STR))
-    (SETQ RESULT (APPEND RESULT (LIST (SUBSTR STR 1 POS)))
-          STR (SUBSTR STR (+ POS 2)))
+(defun hcnm_eb:split_string (str delim / pos result)
+  (setq result '())
+  (while (setq pos (vl-string-search delim str))
+    (setq result (append result (list (substr str 1 pos)))
+          str (substr str (+ pos 2)))
   )
-  (APPEND RESULT (LIST STR))
+  (append result (list str))
 )
 
 ;; Concatenate prefix/auto/postfix with chr(1) delimiter
-(DEFUN HCNM_EB:CONCAT_PARTS (PREFIX AUTO POSTFIX / NBSP)
-  (SETQ NBSP (CHR 160))  ; Non-breaking space - invisible delimiter
-  (STRCAT 
-    (IF PREFIX PREFIX "")
-    (IF (AND PREFIX AUTO (> (STRLEN PREFIX) 0) (> (STRLEN AUTO) 0)) NBSP "")
-    (IF AUTO AUTO "")
-    (IF (AND AUTO POSTFIX (> (STRLEN AUTO) 0) (> (STRLEN POSTFIX) 0)) NBSP "")
-    (IF POSTFIX POSTFIX "")
+(defun hcnm_eb:concat_parts (prefix auto postfix / nbsp)
+  (setq nbsp (chr 160))  ; Non-breaking space - invisible delimiter
+  (strcat 
+    (if prefix prefix "")
+    (if (and prefix auto (> (strlen prefix) 0) (> (strlen auto) 0)) nbsp "")
+    (if auto auto "")
+    (if (and auto postfix (> (strlen auto) 0) (> (strlen postfix) 0)) nbsp "")
+    (if postfix postfix "")
   )
 )
 
 ;; Save prefix - get current auto and postfix, then concatenate
-(DEFUN HCNM_EB:SAVE_PREFIX (TAG PREFIX_NEW / ATTR PARTS AUTO POSTFIX VALUE_NEW UPDATED_PARTS)
-  (SETQ ATTR (ASSOC TAG HCNM_EB:ATTRIBUTE_LIST)
-        PARTS (HCNM_EB:SPLIT_ON_NBSP (CADR ATTR))
-        AUTO (NTH 1 PARTS)
-        POSTFIX (NTH 2 PARTS)
-        VALUE_NEW (HCNM_EB:CONCAT_PARTS PREFIX_NEW AUTO POSTFIX))
-  (SETQ HCNM_EB:ATTRIBUTE_LIST
-    (HCNM_LDRBLK_ADJUST_FORMATS
-      (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST TAG VALUE_NEW HCNM_EB:ATTRIBUTE_LIST)
+(defun hcnm_eb:save_prefix (tag prefix_new / attr parts auto postfix value_new updated_parts)
+  (setq attr (assoc tag hcnm_eb:attribute_list)
+        parts (hcnm_eb:split_on_nbsp (cadr attr))
+        auto (nth 1 parts)
+        postfix (nth 2 parts)
+        value_new (hcnm_eb:concat_parts prefix_new auto postfix))
+  (setq hcnm_eb:attribute_list
+    (hcnm_ldrblk_adjust_formats
+      (hcnm_ldrblk_save_attribute_to_list tag value_new hcnm_eb:attribute_list)
     )
   )
   ;; Update dialog display to reflect any changes from ADJUST_FORMATS
-  (SETQ UPDATED_PARTS (HCNM_EB:SPLIT_ON_NBSP (CADR (ASSOC TAG HCNM_EB:ATTRIBUTE_LIST))))
-  (SET_TILE (STRCAT "Prefix" TAG) (NTH 0 UPDATED_PARTS))
-  (SET_TILE (STRCAT "Edit" TAG) (NTH 1 UPDATED_PARTS))
-  (SET_TILE (STRCAT "Postfix" TAG) (NTH 2 UPDATED_PARTS))
+  (setq updated_parts (hcnm_eb:split_on_nbsp (cadr (assoc tag hcnm_eb:attribute_list))))
+  (set_tile (strcat "Prefix" tag) (nth 0 updated_parts))
+  (set_tile (strcat "Edit" tag) (nth 1 updated_parts))
+  (set_tile (strcat "Postfix" tag) (nth 2 updated_parts))
 )
 
 ;; Save postfix - get current prefix and auto, then concatenate
-(DEFUN HCNM_EB:SAVE_POSTFIX (TAG POSTFIX_NEW / ATTR PARTS PREFIX AUTO VALUE_NEW UPDATED_PARTS)
-  (SETQ ATTR (ASSOC TAG HCNM_EB:ATTRIBUTE_LIST)
-        PARTS (HCNM_EB:SPLIT_ON_NBSP (CADR ATTR))
-        PREFIX (NTH 0 PARTS)
-        AUTO (NTH 1 PARTS)
-        VALUE_NEW (HCNM_EB:CONCAT_PARTS PREFIX AUTO POSTFIX_NEW))
-  (SETQ HCNM_EB:ATTRIBUTE_LIST
-    (HCNM_LDRBLK_ADJUST_FORMATS
-      (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST TAG VALUE_NEW HCNM_EB:ATTRIBUTE_LIST)
+(defun hcnm_eb:save_postfix (tag postfix_new / attr parts prefix auto value_new updated_parts)
+  (setq attr (assoc tag hcnm_eb:attribute_list)
+        parts (hcnm_eb:split_on_nbsp (cadr attr))
+        prefix (nth 0 parts)
+        auto (nth 1 parts)
+        value_new (hcnm_eb:concat_parts prefix auto postfix_new))
+  (setq hcnm_eb:attribute_list
+    (hcnm_ldrblk_adjust_formats
+      (hcnm_ldrblk_save_attribute_to_list tag value_new hcnm_eb:attribute_list)
     )
   )
   ;; Update dialog display to reflect any changes from ADJUST_FORMATS
-  (SETQ UPDATED_PARTS (HCNM_EB:SPLIT_ON_NBSP (CADR (ASSOC TAG HCNM_EB:ATTRIBUTE_LIST))))
-  (SET_TILE (STRCAT "Prefix" TAG) (NTH 0 UPDATED_PARTS))
-  (SET_TILE (STRCAT "Edit" TAG) (NTH 1 UPDATED_PARTS))
-  (SET_TILE (STRCAT "Postfix" TAG) (NTH 2 UPDATED_PARTS))
+  (setq updated_parts (hcnm_eb:split_on_nbsp (cadr (assoc tag hcnm_eb:attribute_list))))
+  (set_tile (strcat "Prefix" tag) (nth 0 updated_parts))
+  (set_tile (strcat "Edit" tag) (nth 1 updated_parts))
+  (set_tile (strcat "Postfix" tag) (nth 2 updated_parts))
 )
 
-(DEFUN HCNM_EB:SAVE_EDIT_BOX (TAG INPUT)
-  (SETQ
-    HCNM_EB:ATTRIBUTE_LIST
-     (HCNM_LDRBLK_ADJUST_FORMATS
-       (HCNM_LDRBLK_SAVE_ATTRIBUTE_TO_LIST
-         TAG
-         INPUT
-         HCNM_EB:ATTRIBUTE_LIST
+(defun hcnm_eb:save_edit_box (tag input)
+  (setq
+    hcnm_eb:attribute_list
+     (hcnm_ldrblk_adjust_formats
+       (hcnm_ldrblk_save_attribute_to_list
+         tag
+         input
+         hcnm_eb:attribute_list
        )
      )
   )
 )
 ;; FIELD_CODE_P NIL SIMPLIFIES PROCESSING WHEN BLOCKS LIKE NOTEQTY ARE KNOWN NOT TO HAVE FIELD CODES IN THEM
-(DEFUN HCNM_GET_ATTRIBUTES (ENAME_BLOCK FIELD_CODE_P / ATTRIBUTE_LIST ELIST ENAME_NEXT ETYPE FIELD_CODE OBJ_NEXT)
-  (SETQ ENAME_NEXT ENAME_BLOCK)
-  (WHILE (AND
-           (SETQ ENAME_NEXT (ENTNEXT ENAME_NEXT))
+(defun hcnm_get_attributes (ename_block field_code_p / attribute_list elist ename_next etype field_code obj_next)
+  (setq ename_next ename_block)
+  (while (and
+           (setq ename_next (entnext ename_next))
            (/= "SEQEND"
-               (SETQ ETYPE (CDR (ASSOC 0 (SETQ ELIST (ENTGET ENAME_NEXT)))))
+               (setq etype (cdr (assoc 0 (setq elist (entget ename_next)))))
            )
          )
-    (COND
-      ((= ETYPE "ATTRIB")
-       (SETQ
-         OBJ_NEXT (VLAX-ENAME->VLA-OBJECT ENAME_NEXT)
-         ATTRIBUTE_LIST
-          (CONS
-            (LIST 
-              (CDR (ASSOC 2 ELIST)) 
-              (COND 
-                ((AND FIELD_CODE_P (SETQ FIELD_CODE (LM:FieldCode ENAME_NEXT))) FIELD_CODE)
-                (T (VLA-GET-TEXTSTRING OBJ_NEXT)))
+    (cond
+      ((= etype "ATTRIB")
+       (setq
+         obj_next (vlax-ename->vla-object ename_next)
+         attribute_list
+          (cons
+            (list 
+              (cdr (assoc 2 elist)) 
+              (cond 
+                ((and field_code_p (setq field_code (lm:fieldcode ename_next))) field_code)
+                (t (vla-get-textstring obj_next)))
             )
-            ATTRIBUTE_LIST
+            attribute_list
           )
        )
       ) ;_ end of and
     )
   )
-  ATTRIBUTE_LIST
+  attribute_list
 )
-(defun LM:FieldCode ( en / fd id )
+(defun lm:fieldcode ( en / fd id )
     (cond
         (   (and
                 (wcmatch (cdr (assoc 0 (setq en (entget en)))) "TEXT,MTEXT,ATTRIB")
@@ -7995,24 +7995,24 @@ ImportLayerSettings=No
     )
 )
 
-(DEFUN HCNM_SET_ATTRIBUTES (ENAME_BLOCK ATTRIBUTE_LIST / ATAG ELIST ENAME_NEXT ETYPE OBJ_NEXT)
-  (SETQ ENAME_NEXT ENAME_BLOCK)
-  (WHILE (AND
-           (SETQ ENAME_NEXT (ENTNEXT ENAME_NEXT))
+(defun hcnm_set_attributes (ename_block attribute_list / atag elist ename_next etype obj_next)
+  (setq ename_next ename_block)
+  (while (and
+           (setq ename_next (entnext ename_next))
            (/= "SEQEND"
-               (SETQ ETYPE (CDR (ASSOC 0 (SETQ ELIST (ENTGET ENAME_NEXT)))))
+               (setq etype (cdr (assoc 0 (setq elist (entget ename_next)))))
            )
          )
-    (COND
-      ((AND
-         (= ETYPE "ATTRIB")
-         (SETQ ATAG (CDR (ASSOC 2 ELIST)))
-         (ASSOC ATAG ATTRIBUTE_LIST)
+    (cond
+      ((and
+         (= etype "ATTRIB")
+         (setq atag (cdr (assoc 2 elist)))
+         (assoc atag attribute_list)
        ) ;_ end of and
-        (SETQ OBJ_NEXT (VLAX-ENAME->VLA-OBJECT ENAME_NEXT))
-        (VLA-PUT-TEXTSTRING
-          OBJ_NEXT
-          (CADR (ASSOC ATAG ATTRIBUTE_LIST))
+        (setq obj_next (vlax-ename->vla-object ename_next))
+        (vla-put-textstring
+          obj_next
+          (cadr (assoc atag attribute_list))
         )
         ;; UPDATEFIELD commented out to avoid "0 field(s) found/updated" messages
         ;; May be necessary for some bubble types - uncomment if needed
@@ -8039,12 +8039,12 @@ ImportLayerSettings=No
 ;;; You can reset the data of a reactor.
 
 ;;Playing with reactors
-(DEFUN HCNM_LDRBLK_LIST_REACTORS ( / REACTORS)
-  (SETQ REACTORS (CDAR(VLR-REACTORS :VLR-OBJECT-REACTOR)))
-  (FOREACH REACTOR REACTORS
+(defun hcnm_ldrblk_list_reactors ( / reactors)
+  (setq reactors (cdar(vlr-reactors :vlr-object-reactor)))
+  (foreach reactor reactors
     ;;(vlax-dump-object REACTOR)
-    (PRINT (VL-PRIN1-TO-STRING (VLR-DATA REACTOR)))
-    (PRINT (VL-PRIN1-TO-STRING (VLR-REACTIONS REACTOR)))
+    (print (vl-prin1-to-string (vlr-data reactor)))
+    (print (vl-prin1-to-string (vlr-reactions reactor)))
     ;; (vlr-remove REACTOR)
   )
 )
@@ -8056,47 +8056,47 @@ ImportLayerSettings=No
 ;; (VLR-OWNERS (CADAR (VLR-REACTORS :VLR-OBJECT-REACTOR))) IF THERE IS ONLY ONE REACTOR
 ;; New structure: KEYS = '("HCNM-BUBBLE" HANDLE_REFERENCE HANDLE_BUBBLE TAG)
 ;; VALUE = AUTO_TYPE (just the string)
-(DEFUN HCNM_LDRBLK_ASSURE_AUTO_TEXT_HAS_REACTOR (OBJREF ENAME_BUBBLE ENAME_LEADER TAG AUTO_TYPE / CALLBACKS DATA DATA_OLD REACTOR 
-                                                 HANDLE_BUBBLE HANDLE_REFERENCE KEYS KEY_APP REACTOR_OLD REACTORS_OLD OWNER OWNERS OBJECT_LEADER
-                                                 HCNM_REACTORS REACTOR_COUNT
+(defun hcnm_ldrblk_assure_auto_text_has_reactor (objref ename_bubble ename_leader tag auto_type / callbacks data data_old reactor 
+                                                 handle_bubble handle_reference keys key_app reactor_old reactors_old owner owners object_leader
+                                                 hcnm_reactors reactor_count
                                                 ) 
-  (SETQ CALLBACKS       '((:vlr-modified . HCNM_LDRBLK_REACTOR_CALLBACK)
+  (setq callbacks       '((:vlr-modified . hcnm_ldrblk_reactor_callback)
                           ;; vlr-trace-reaction IS A CANNED CALLBACK PROVIDED BY AUTODESK FOR TESTING. IT PRINTS A MESSAGE. IT CAN BE REMOVED.
                           ;; (:vlr-modified . vlr-trace-reaction)
                          )
-        REACTORS_OLD    (CDAR (VLR-REACTORS :VLR-OBJECT-REACTOR))
-        OBJECT_LEADER   (COND (ENAME_LEADER (VLAX-ENAME->VLA-OBJECT ENAME_LEADER)))
-        OWNERS          (COND 
+        reactors_old    (cdar (vlr-reactors :vlr-object-reactor))
+        object_leader   (cond (ename_leader (vlax-ename->vla-object ename_leader)))
+        owners          (cond 
                           ;; If OBJREF is NIL (for N/E/NE), only attach to leader
-                          ((AND (NOT OBJREF) OBJECT_LEADER) (LIST OBJECT_LEADER))
-                          (OBJECT_LEADER (LIST OBJREF OBJECT_LEADER))
-                          (T (LIST OBJREF))
+                          ((and (not objref) object_leader) (list object_leader))
+                          (object_leader (list objref object_leader))
+                          (t (list objref))
                         )
-        KEY_APP         "HCNM-BUBBLE"
-        HANDLE_REFERENCE (COND (OBJREF (VLA-GET-HANDLE OBJREF)) (T ""))
-        HANDLE_BUBBLE   (CDR (ASSOC 5 (ENTGET ENAME_BUBBLE)))
-        KEYS            (LIST KEY_APP HANDLE_REFERENCE HANDLE_BUBBLE TAG)
-        REACTOR_OLD     NIL  ; Initialize to nil
+        key_app         "HCNM-BUBBLE"
+        handle_reference (cond (objref (vla-get-handle objref)) (t ""))
+        handle_bubble   (cdr (assoc 5 (entget ename_bubble)))
+        keys            (list key_app handle_reference handle_bubble tag)
+        reactor_old     nil  ; Initialize to nil
   )
   ;; Check for reactor proliferation (FATAL CONDITION)
-  (SETQ HCNM_REACTORS
-    (VL-REMOVE-IF-NOT
-      '(LAMBDA (R)
-         (AND (LISTP (VLR-DATA R))
-              (ASSOC KEY_APP (VLR-DATA R)))
+  (setq hcnm_reactors
+    (vl-remove-if-not
+      '(lambda (r)
+         (and (listp (vlr-data r))
+              (assoc key_app (vlr-data r)))
        )
-      REACTORS_OLD
+      reactors_old
     )
-    REACTOR_COUNT (LENGTH HCNM_REACTORS)
+    reactor_count (length hcnm_reactors)
   )
   ;; Handle reactor proliferation
-  (COND
-    ((> REACTOR_COUNT 1)
+  (cond
+    ((> reactor_count 1)
      ;; FATAL: Multiple HCNM-BUBBLE reactors found - this is a programming error
-     (VLR-REMOVE-ALL :VLR-OBJECT-REACTOR)
-     (alert (princ (STRCAT
+     (vlr-remove-all :vlr-object-reactor)
+     (alert (princ (strcat
        "\n*** PROGRAMMING ERROR DETECTED ***\n\n"
-       "Found " (ITOA REACTOR_COUNT) " HCNM-BUBBLE reactors.\n"
+       "Found " (itoa reactor_count) " HCNM-BUBBLE reactors.\n"
        "There should be exactly ONE reactor for all bubbles.\n\n"
        "All reactors have been removed to prevent data corruption.\n"
        "The current bubble will get a new reactor and should be reactive.\n"
@@ -8105,519 +8105,519 @@ ImportLayerSettings=No
        "you performed before this error occurred.\n\n"
        "GitHub: https://github.com/hawstom/cnm/issues"
      )))
-     (PRINC "\n*** REACTOR PROLIFERATION ERROR - All reactors removed, creating new reactor for current bubble ***")
+     (princ "\n*** REACTOR PROLIFERATION ERROR - All reactors removed, creating new reactor for current bubble ***")
      ;; Set REACTOR_OLD to NIL so we create a fresh reactor below
-     (SETQ REACTOR_OLD NIL)
+     (setq reactor_old nil)
     )
-    (T
+    (t
      ;; Normal operation - 0 or 1 reactor
-     (SETQ REACTOR_OLD (CAR HCNM_REACTORS))
+     (setq reactor_old (car hcnm_reactors))
     )
   )
   ;; Now handle reactor attachment/creation based on REACTOR_OLD
-  (COND 
-    (REACTOR_OLD
+  (cond 
+    (reactor_old
      ;; ATTACH THIS OWNER NOTIFIER IF NOT ALREADY ATTACHED.
-     (FOREACH OWNER OWNERS
-       (COND
-         ((NOT (MEMBER OWNER (VLR-OWNERS REACTOR_OLD)))
-          (VLR-OWNER-ADD REACTOR_OLD OWNER)
+     (foreach owner owners
+       (cond
+         ((not (member owner (vlr-owners reactor_old)))
+          (vlr-owner-add reactor_old owner)
          )
        )
      )
      ;; UPDATE THE DATA
-     (VLR-DATA-SET REACTOR_OLD 
-                   (SETQ DATA (HAWS_NESTED_LIST_UPDATE 
-                                (VLR-DATA REACTOR_OLD)
-                                KEYS
-                                AUTO_TYPE
+     (vlr-data-set reactor_old 
+                   (setq data (haws_nested_list_update 
+                                (vlr-data reactor_old)
+                                keys
+                                auto_type
                               )
                    )
      )
     )
-    (T
+    (t
      ;; ELSE MAKE REACTOR AND MAKE IT PERSISTENT
-     (SETQ DATA    (HAWS_NESTED_LIST_UPDATE 
-                     NIL
-                     KEYS
-                     AUTO_TYPE
+     (setq data    (haws_nested_list_update 
+                     nil
+                     keys
+                     auto_type
                    )
-           REACTOR (VLR-OBJECT-REACTOR 
-                     OWNERS ; ATTACHED OWNERS OF REACTOR
-                     DATA
-                     CALLBACKS
+           reactor (vlr-object-reactor 
+                     owners ; ATTACHED OWNERS OF REACTOR
+                     data
+                     callbacks
                    )
-           REACTOR (VLR-PERS REACTOR)
+           reactor (vlr-pers reactor)
      )
     )
   )
 )
-(DEFUN HCNM_LDRBLK_REACTOR_CALLBACK (OBJ_NOTIFIER OBJ_REACTOR PARAMETER-LIST / KEY_APP DATA_OLD DATA HANDLE_NOTIFIER REFERENCE_LIST FOUND_P HANDLE_REFERENCE BUBBLE_LIST HANDLE_BUBBLE TAG_LIST TAG AUTO_TYPE)
+(defun hcnm_ldrblk_reactor_callback (obj_notifier obj_reactor parameter-list / key_app data_old data handle_notifier reference_list found_p handle_reference bubble_list handle_bubble tag_list tag auto_type)
   ;; Skip reactor processing during space transitions to avoid spurious modification events
-  (COND
-    ((= (C:HCNM-CONFIG-GETVAR "AllowReactors") "0") 
-     NIL  ; Return early if reactors are not allowed
+  (cond
+    ((= (c:hcnm-config-getvar "AllowReactors") "0") 
+     nil  ; Return early if reactors are not allowed
     )
-    (T
+    (t
      ;; Wrap in error handler to catch erased objects
-     (IF (NOT (VL-CATCH-ALL-ERROR-P 
-               (VL-CATCH-ALL-APPLY 'VLA-GET-HANDLE (LIST OBJ_NOTIFIER))))
-       (PROGN
+     (if (not (vl-catch-all-error-p 
+               (vl-catch-all-apply 'VLA-GET-HANDLE (list obj_notifier))))
+       (progn
          ;; Normal reactor processing - object is valid
-         (SETQ KEY_APP         "HCNM-BUBBLE"
-               DATA_OLD        (VLR-DATA OBJ_REACTOR)
-               DATA            DATA_OLD
-               HANDLE_NOTIFIER (VLA-GET-HANDLE OBJ_NOTIFIER)
-               REFERENCE_LIST  (CADR (ASSOC KEY_APP DATA))
-               FOUND_P         NIL
+         (setq key_app         "HCNM-BUBBLE"
+               data_old        (vlr-data obj_reactor)
+               data            data_old
+               handle_notifier (vla-get-handle obj_notifier)
+               reference_list  (cadr (assoc key_app data))
+               found_p         nil
          )
      ;; Iterate through all references in the reactor data
-     (FOREACH REFERENCE REFERENCE_LIST
-    (SETQ HANDLE_REFERENCE (CAR REFERENCE)
-          BUBBLE_LIST      (CADR REFERENCE))
+     (foreach reference reference_list
+    (setq handle_reference (car reference)
+          bubble_list      (cadr reference))
     ;; Check if this is the reference that was modified
-    (COND
-      ((= HANDLE_NOTIFIER HANDLE_REFERENCE)
+    (cond
+      ((= handle_notifier handle_reference)
        ;; Reference object modified - update all bubbles using this reference
-       (SETQ FOUND_P T)
-       (PRINC (STRCAT "\nReference modified: " HANDLE_REFERENCE))
+       (setq found_p t)
+       (princ (strcat "\nReference modified: " handle_reference))
        ;; Temporarily disable reactors to prevent infinite loop during updates
-       (C:HCNM-CONFIG-SETVAR "AllowReactors" "0")
-       (FOREACH BUBBLE BUBBLE_LIST
-         (SETQ HANDLE_BUBBLE (CAR BUBBLE)
-               TAG_LIST      (CADR BUBBLE))
+       (c:hcnm-config-setvar "AllowReactors" "0")
+       (foreach bubble bubble_list
+         (setq handle_bubble (car bubble)
+               tag_list      (cadr bubble))
          ;; Update all tags for this bubble
-         (FOREACH TAG_DATA TAG_LIST
-           (SETQ TAG       (CAR TAG_DATA)
-                 AUTO_TYPE (CADR TAG_DATA))
-           (HCNM_LDRBLK_UPDATE_BUBBLE_TAG HANDLE_BUBBLE TAG AUTO_TYPE HANDLE_REFERENCE)
+         (foreach tag_data tag_list
+           (setq tag       (car tag_data)
+                 auto_type (cadr tag_data))
+           (hcnm_ldrblk_update_bubble_tag handle_bubble tag auto_type handle_reference)
          )
        )
        ;; Re-enable reactors after updates complete
-       (C:HCNM-CONFIG-SETVAR "AllowReactors" "1")
+       (c:hcnm-config-setvar "AllowReactors" "1")
       )
-      (T
+      (t
        ;; Notifier is not this reference, might be a leader - check each bubble
-       (FOREACH BUBBLE BUBBLE_LIST
-         (SETQ HANDLE_BUBBLE (CAR BUBBLE)
-               TAG_LIST      (CADR BUBBLE))
+       (foreach bubble bubble_list
+         (setq handle_bubble (car bubble)
+               tag_list      (cadr bubble))
          ;; Check if this bubble's leader moved by comparing with notifier
          ;; We need to check if the leader for this bubble is the notifier
          ;; Since leaders are associated with bubbles, we check the bubble's leader
-         (COND
-           ((HCNM_LDRBLK_BUBBLE_HAS_LEADER HANDLE_BUBBLE HANDLE_NOTIFIER)
+         (cond
+           ((hcnm_ldrblk_bubble_has_leader handle_bubble handle_notifier)
             ;; This bubble's leader moved - update all its tags with the correct reference
-            (SETQ FOUND_P T)
-            (PRINC (STRCAT "\nLeader modified for bubble: " HANDLE_BUBBLE " using reference: " HANDLE_REFERENCE))
+            (setq found_p t)
+            (princ (strcat "\nLeader modified for bubble: " handle_bubble " using reference: " handle_reference))
             ;; Temporarily disable reactors to prevent infinite loop during updates
-            (C:HCNM-CONFIG-SETVAR "AllowReactors" "0")
-            (FOREACH TAG_DATA TAG_LIST
-              (SETQ TAG       (CAR TAG_DATA)
-                    AUTO_TYPE (CADR TAG_DATA))
-              (HCNM_LDRBLK_UPDATE_BUBBLE_TAG HANDLE_BUBBLE TAG AUTO_TYPE HANDLE_REFERENCE)
+            (c:hcnm-config-setvar "AllowReactors" "0")
+            (foreach tag_data tag_list
+              (setq tag       (car tag_data)
+                    auto_type (cadr tag_data))
+              (hcnm_ldrblk_update_bubble_tag handle_bubble tag auto_type handle_reference)
             )
             ;; Re-enable reactors after updates complete
-            (C:HCNM-CONFIG-SETVAR "AllowReactors" "1")
+            (c:hcnm-config-setvar "AllowReactors" "1")
            )
          )
        )
       )
     )
   )
-  (COND
-    ((NOT FOUND_P)
-      (PRINC (STRCAT "\nWarning: Notifier " HANDLE_NOTIFIER " not found in reactor data"))
+  (cond
+    ((not found_p)
+      (princ (strcat "\nWarning: Notifier " handle_notifier " not found in reactor data"))
     )
   )
-         (COND 
+         (cond 
            ;; DETACH THE NOTIFIER IF USER REMOVED ALL ITS DEPENDENT AUTO-TEXT FROM ALL BUBBLES.
-           ((NOT REFERENCE_LIST)
-            (VLR-OWNER-REMOVE OBJ_REACTOR OBJ_NOTIFIER)
+           ((not reference_list)
+            (vlr-owner-remove obj_reactor obj_notifier)
            )
            ;; UPDATE THE REACTOR DATA IF USER REMOVED SOME OF ITS DEPENDENT AUTO-TEXT
-           ((NOT (EQUAL DATA DATA_OLD))
-            (VLR-DATA-SET OBJ_REACTOR DATA)
+           ((not (equal data data_old))
+            (vlr-data-set obj_reactor data)
            )
          )
        )  ; End of PROGN for valid object
        ;; ELSE: Object was erased, silently ignore
-       (PRINC "\nReactor fired on erased object - ignoring")
+       (princ "\nReactor fired on erased object - ignoring")
      )  ; End of IF checking for valid object
     )  ; End of normal reactor processing (T branch)
   )  ; End of suppression check COND
 )
 ;; Helper function to check if a bubble has a specific leader
-(DEFUN HCNM_LDRBLK_BUBBLE_HAS_LEADER (HANDLE_BUBBLE HANDLE_LEADER / ENAME_BUBBLE ENAME_LEADER)
-  (SETQ ENAME_BUBBLE (HANDENT HANDLE_BUBBLE))
-  (COND
-    (ENAME_BUBBLE
-      (SETQ ENAME_LEADER (HCNM_LDRBLK_BUBBLE_LEADER ENAME_BUBBLE))
-      (COND
-        (ENAME_LEADER
-          (= HANDLE_LEADER (CDR (ASSOC 5 (ENTGET ENAME_LEADER))))
+(defun hcnm_ldrblk_bubble_has_leader (handle_bubble handle_leader / ename_bubble ename_leader)
+  (setq ename_bubble (handent handle_bubble))
+  (cond
+    (ename_bubble
+      (setq ename_leader (hcnm_ldrblk_bubble_leader ename_bubble))
+      (cond
+        (ename_leader
+          (= handle_leader (cdr (assoc 5 (entget ename_leader))))
         )
-        (T NIL)
+        (t nil)
       )
     )
-    (T NIL)
+    (t nil)
   )
 )
 ;; Helper function to check if entity is on the "Model" tab
-(DEFUN HCNM_LDRBLK_IS_ON_MODEL_TAB (ENAME / LAYOUT_NAME)
-  (SETQ LAYOUT_NAME (CDR (ASSOC 410 (ENTGET ENAME))))
-    (= (STRCASE LAYOUT_NAME) "MODEL")
+(defun hcnm_ldrblk_is_on_model_tab (ename / layout_name)
+  (setq layout_name (cdr (assoc 410 (entget ename))))
+    (= (strcase layout_name) "MODEL")
 )
 ;; Updates a specific tag in a bubble based on reactor notification
 ;; Called when either the leader moves or the reference object changes
-(DEFUN HCNM_LDRBLK_UPDATE_BUBBLE_TAG (HANDLE_BUBBLE TAG AUTO_TYPE HANDLE_REFERENCE / ENAME_BUBBLE ENAME_REFERENCE ATTRIBUTE_LIST ATTRIBUTE_LIST_OLD OBJREF)
-  (SETQ ENAME_BUBBLE       (HANDENT HANDLE_BUBBLE)
+(defun hcnm_ldrblk_update_bubble_tag (handle_bubble tag auto_type handle_reference / ename_bubble ename_reference attribute_list attribute_list_old objref)
+  (setq ename_bubble       (handent handle_bubble)
         ;; Handle empty string for N/E/NE which have no reference object
-        ENAME_REFERENCE    (COND 
-                             ((= HANDLE_REFERENCE "") NIL)
-                             (T (HANDENT HANDLE_REFERENCE))
+        ename_reference    (cond 
+                             ((= handle_reference "") nil)
+                             (t (handent handle_reference))
                            )
-        ATTRIBUTE_LIST_OLD (HCNM_GET_ATTRIBUTES ENAME_BUBBLE T)
-        ATTRIBUTE_LIST     ATTRIBUTE_LIST_OLD
+        attribute_list_old (hcnm_get_attributes ename_bubble t)
+        attribute_list     attribute_list_old
   )
-  (COND
-    (ENAME_BUBBLE
+  (cond
+    (ename_bubble
       ;; For reactor updates, use a special marker for coordinate types (no reference object)
       ;; This allows auto-text functions to distinguish between initial creation (NIL) and reactor update (T)
-      (SETQ OBJREF (COND 
-                     (ENAME_REFERENCE (VLAX-ENAME->VLA-OBJECT ENAME_REFERENCE))
-                     (T T)  ; Use T as sentinel value for reactor updates with no reference object
+      (setq objref (cond 
+                     (ename_reference (vlax-ename->vla-object ename_reference))
+                     (t t)  ; Use T as sentinel value for reactor updates with no reference object
                    ))
-      (SETQ ATTRIBUTE_LIST 
-        (HCNM_LDRBLK_AUTO_DISPATCH 
-          ENAME_BUBBLE
-          ATTRIBUTE_LIST
-          TAG
-          AUTO_TYPE
-          OBJREF  ; Pass the reference object as INPUT, or T for coordinate-only reactor updates
+      (setq attribute_list 
+        (hcnm_ldrblk_auto_dispatch 
+          ename_bubble
+          attribute_list
+          tag
+          auto_type
+          objref  ; Pass the reference object as INPUT, or T for coordinate-only reactor updates
         )
       )
-      (COND 
-        ((/= ATTRIBUTE_LIST ATTRIBUTE_LIST_OLD)
+      (cond 
+        ((/= attribute_list attribute_list_old)
          ;; UPDATE BLOCK INSERTION
-         (HCNM_SET_ATTRIBUTES 
-           ENAME_BUBBLE
-           (HCNM_LDRBLK_ADJUST_FORMATS 
-             ATTRIBUTE_LIST
+         (hcnm_set_attributes 
+           ename_bubble
+           (hcnm_ldrblk_adjust_formats 
+             attribute_list
            )
          )
         )
       )
     )
-    (T
-      (PRINC (STRCAT "\nError in HCNM_LDRBLK_UPDATE_BUBBLE_TAG: BUBBLE not found"))
+    (t
+      (princ (strcat "\nError in HCNM_LDRBLK_UPDATE_BUBBLE_TAG: BUBBLE not found"))
     )
   )
 )
 ;; UPDATES A BUBBLE INSERTION. RETURNS BUBBLE WITH ATTRIBUTES REMOVED IF USER REMOVED THEM (SINCE WE DON'T YET HAVE A STRUCTURED INTERFACE THAT WOULD LET THE USER REMOVE IN REAL TIME. MAYBE IT WOULD BE EASIEST TO JUST HAVE A WAY TO DISABLE EDITING AUTO ATTRIBUTES UNLESS USER CLICKS A "MANUAL" BUTTON. I LOVE THAT. EDIT BUBBLE COULD READ THE REACTOR DATA OR EACH BUBBLE COULD HAVE A LIST IN NOTEDATA)
 ;; @returns {list} Testing
 ;; NOTE: This function is now deprecated in favor of HCNM_LDRBLK_UPDATE_BUBBLE_TAG but kept for reference
-(DEFUN HCNM_LDRBLK_UPDATE_BUBBLE (LST_BUBBLE OBJ_NOTIFIER / ATTRIBUTE_LIST ATTRIBUTE_LIST_OLD ENAME_BUBBLE PT_LEADER_START) 
-  (SETQ ENAME_BUBBLE       (HANDENT (CAR LST_BUBBLE))
-        ATTRIBUTE_LIST_OLD (HCNM_GET_ATTRIBUTES ENAME_BUBBLE T)
-        ATTRIBUTE_LIST     ATTRIBUTE_LIST_OLD
+(defun hcnm_ldrblk_update_bubble (lst_bubble obj_notifier / attribute_list attribute_list_old ename_bubble pt_leader_start) 
+  (setq ename_bubble       (handent (car lst_bubble))
+        attribute_list_old (hcnm_get_attributes ename_bubble t)
+        attribute_list     attribute_list_old
   )
-  (FOREACH ATTRIBUTE (CADR LST_BUBBLE) 
-    (COND 
+  (foreach attribute (cadr lst_bubble) 
+    (cond 
       ;; AT THE MOMENT, ONLY TOTAL ATTRIBUTE DELETION CANCELS A REACTOR.
-      ((= (CADR (ASSOC (CAR ATTRIBUTE) ATTRIBUTE_LIST)) "")
+      ((= (cadr (assoc (car attribute) attribute_list)) "")
        ;; I AM CURIOUS WHETHER MODIFYING BUBBLE WITHIN FOREACH WILL CAUSE A BUG. I THINK NOT SINCE IT ITERATES OVER A COPY.
-       (SETQ LST_BUBBLE (VL-REMOVE ATTRIBUTE LST_BUBBLE))
+       (setq lst_bubble (vl-remove attribute lst_bubble))
       )
-      (T
-       (SETQ ATTRIBUTE_LIST (HCNM_LDRBLK_AUTO_DISPATCH 
-                              ENAME_BUBBLE
-                              ATTRIBUTE_LIST
-                              (CAR ATTRIBUTE) ; TAG
-                              (CDR ATTRIBUTE) ; KEY
-                              OBJ_NOTIFIER ; INPUT bubble-data-update: This is not right. We need, not the notifier object (which could be a leader or an alignment or other), but the reference object. So the reactor data has to include handle, tag, ref_type, and ref_object
+      (t
+       (setq attribute_list (hcnm_ldrblk_auto_dispatch 
+                              ename_bubble
+                              attribute_list
+                              (car attribute) ; TAG
+                              (cdr attribute) ; KEY
+                              obj_notifier ; INPUT bubble-data-update: This is not right. We need, not the notifier object (which could be a leader or an alignment or other), but the reference object. So the reactor data has to include handle, tag, ref_type, and ref_object
                             )
        )
       )
     )
   )
-  (COND 
-    ((/= ATTRIBUTE_LIST ATTRIBUTE_LIST_OLD)
+  (cond 
+    ((/= attribute_list attribute_list_old)
      ;; UPDATE BLOCK INSERTION
-     (HCNM_SET_ATTRIBUTES 
-       ENAME_BUBBLE
-       (HCNM_LDRBLK_ADJUST_FORMATS 
-         ATTRIBUTE_LIST
+     (hcnm_set_attributes 
+       ename_bubble
+       (hcnm_ldrblk_adjust_formats 
+         attribute_list
        )
      )
     )
   )
-  LST_BUBBLE
+  lst_bubble
 )
 ;#endregion
 ;#region CNM Options dialog
-(DEFUN C:HCNM-CNMOPTIONS (/ CNMDCL DONE_CODE RETN)
+(defun c:hcnm-cnmoptions (/ cnmdcl done_code retn)
   (haws-core-init 210)
-  (HCNM_PROJINIT)
-  (HCNM_PROJ)
+  (hcnm_projinit)
+  (hcnm_proj)
  ;; Load Dialog
-  (SETQ CNMDCL (LOAD_DIALOG "cnm.dcl"))
-  (setq DONE_CODE 2)
-  (while (> DONE_CODE -1)
-    (setq DONE_CODE
+  (setq cnmdcl (load_dialog "cnm.dcl"))
+  (setq done_code 2)
+  (while (> done_code -1)
+    (setq done_code
       (cond
-        ((= DONE_CODE 0)(HCNM_DCL_OPTIONS_CANCEL))
-        ((= DONE_CODE 1)(HCNM_DCL_OPTIONS_SAVE))
-        ((= DONE_CODE 2)(HCNM_DCL_OPTIONS_SHOW CNMDCL))
-        ((= DONE_CODE 11)(HCNM_DCL_GENERAL_SHOW CNMDCL))
-        ((= DONE_CODE 12)(HCNM_DCL_BUBBLE_SHOW CNMDCL))
-        ((= DONE_CODE 13)(HCNM_DCL_KEY_SHOW CNMDCL))
-        ((= DONE_CODE 14)(HCNM_DCL_QT_SHOW CNMDCL))
+        ((= done_code 0)(hcnm_dcl_options_cancel))
+        ((= done_code 1)(hcnm_dcl_options_save))
+        ((= done_code 2)(hcnm_dcl_options_show cnmdcl))
+        ((= done_code 11)(hcnm_dcl_general_show cnmdcl))
+        ((= done_code 12)(hcnm_dcl_bubble_show cnmdcl))
+        ((= done_code 13)(hcnm_dcl_key_show cnmdcl))
+        ((= done_code 14)(hcnm_dcl_qt_show cnmdcl))
       )
     )
   )
  (haws-core-restore)  
- (PRINC)
+ (princ)
 )
 
-(defun HCNM_DCL_OPTIONS_CANCEL()
- (HCNM_CONFIG_TEMP_CLEAR)
+(defun hcnm_dcl_options_cancel()
+ (hcnm_config_temp_clear)
  -1
 )
 
 ;; Saves, then passes control to temp var clear function.
-(defun HCNM_DCL_OPTIONS_SAVE()
- (HCNM_CONFIG_TEMP_SAVE)
+(defun hcnm_dcl_options_save()
+ (hcnm_config_temp_save)
  0
 )
 
-(DEFUN HCNM_DCL_OPTIONS_SHOW (CNMDCL)
-  (NEW_DIALOG "HCNMOptions" CNMDCL)
-  (SET_TILE "Title" "CNM Options")
-  (ACTION_TILE "General" "(DONE_DIALOG 11)")
-  (ACTION_TILE "Bubble" "(DONE_DIALOG 12)")
-  (ACTION_TILE "Key" "(DONE_DIALOG 13)")
-  (ACTION_TILE "QT" "(DONE_DIALOG 14)")
-  (ACTION_TILE "accept" "(DONE_DIALOG 1)")
-  (ACTION_TILE "cancel" "(DONE_DIALOG 0)")
-  (START_DIALOG)
+(defun hcnm_dcl_options_show (cnmdcl)
+  (new_dialog "HCNMOptions" cnmdcl)
+  (set_tile "Title" "CNM Options")
+  (action_tile "General" "(DONE_DIALOG 11)")
+  (action_tile "Bubble" "(DONE_DIALOG 12)")
+  (action_tile "Key" "(DONE_DIALOG 13)")
+  (action_tile "QT" "(DONE_DIALOG 14)")
+  (action_tile "accept" "(DONE_DIALOG 1)")
+  (action_tile "cancel" "(DONE_DIALOG 0)")
+  (start_dialog)
 )
 
-(DEFUN HCNM_DCL_GENERAL_SHOW (CNMDCL)
-  (NEW_DIALOG "HCNMGeneral" CNMDCL)
+(defun hcnm_dcl_general_show (cnmdcl)
+  (new_dialog "HCNMGeneral" cnmdcl)
   ;; Dialog Actions
-  (SET_TILE "Title" "CNM General Options")
-  (HCNM_CONFIG_SET_ACTION_TILE "DoCurrentTabOnly")
-  (HCNM_CONFIG_DCL_LIST "InsertTablePhases")
-  (HCNM_CONFIG_SET_ACTION_TILE "PhaseAlias1")
-  (HCNM_CONFIG_SET_ACTION_TILE "PhaseAlias2")
-  (HCNM_CONFIG_SET_ACTION_TILE "PhaseAlias3")
-  (HCNM_CONFIG_SET_ACTION_TILE "PhaseAlias4")
-  (HCNM_CONFIG_SET_ACTION_TILE "PhaseAlias5")
-  (HCNM_CONFIG_SET_ACTION_TILE "PhaseAlias6")
-  (HCNM_CONFIG_SET_ACTION_TILE "PhaseAlias7")
-  (HCNM_CONFIG_SET_ACTION_TILE "PhaseAlias8")
-  (HCNM_CONFIG_SET_ACTION_TILE "PhaseAlias9")
-  (HCNM_CONFIG_SET_ACTION_TILE "NotesKeyTableDimstyle")
-  (HCNM_CONFIG_SET_ACTION_TILE "NotesLeaderDimstyle")
-  (SET_TILE
+  (set_tile "Title" "CNM General Options")
+  (hcnm_config_set_action_tile "DoCurrentTabOnly")
+  (hcnm_config_dcl_list "InsertTablePhases")
+  (hcnm_config_set_action_tile "PhaseAlias1")
+  (hcnm_config_set_action_tile "PhaseAlias2")
+  (hcnm_config_set_action_tile "PhaseAlias3")
+  (hcnm_config_set_action_tile "PhaseAlias4")
+  (hcnm_config_set_action_tile "PhaseAlias5")
+  (hcnm_config_set_action_tile "PhaseAlias6")
+  (hcnm_config_set_action_tile "PhaseAlias7")
+  (hcnm_config_set_action_tile "PhaseAlias8")
+  (hcnm_config_set_action_tile "PhaseAlias9")
+  (hcnm_config_set_action_tile "NotesKeyTableDimstyle")
+  (hcnm_config_set_action_tile "NotesLeaderDimstyle")
+  (set_tile
     "ProjectFolder"
-    (STRCAT
+    (strcat
       "Project folder "
-      (HCNM_SHORTEN_PATH (HCNM_PROJ) 100)
+      (hcnm_shorten_path (hcnm_proj) 100)
     )
   )
-  (HCNM_CONFIG_SET_ACTION_TILE "ProjectNotes")
-  (ACTION_TILE
+  (hcnm_config_set_action_tile "ProjectNotes")
+  (action_tile
     "ProjectNotesBrowse"
     "(HCNM_CONFIG_TEMP_SETVAR \"ProjectNotes\"(HCNM_GETPROJNOTES))(SET_TILE \"ProjectNotes\" (HCNM_CONFIG_TEMP_GETVAR \"ProjectNotes\"))"
   )
-  (HCNM_CONFIG_DCL_LIST "LayersEditor")
-  (HCNM_CONFIG_DCL_LIST "ProjectNotesEditor")
-  (ACTION_TILE "close" "(DONE_DIALOG 2)")
-  (START_DIALOG)
+  (hcnm_config_dcl_list "LayersEditor")
+  (hcnm_config_dcl_list "ProjectNotesEditor")
+  (action_tile "close" "(DONE_DIALOG 2)")
+  (start_dialog)
 )
 
-(DEFUN HCNM_DCL_BUBBLE_SHOW (CNMDCL)
-  (NEW_DIALOG "HCNMBubble" CNMDCL)
-  (SET_TILE "Title" "CNM Bubble Options")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleHooks")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleMtext")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleAreaIntegral")
-  (HCNM_CONFIG_SET_ACTION_TILE "NoteTypes")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextLine1PromptP")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextLine2PromptP")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextLine3PromptP")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextLine4PromptP")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextLine5PromptP")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextLine6PromptP")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextLine0PromptP")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleSkipEntryPrompt")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleOffsetDropSign")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrefixLF")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrefixSF")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrefixSY")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrefixSta")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrefixOff+")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrefixOff-")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrefixN")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrefixE")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrefixZ")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPostfixLF")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPostfixSF")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPostfixSY")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPostfixSta")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPostfixOff+")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPostfixOff-")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPostfixN")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPostfixE")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPostfixZ")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextJoinDelSta")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextJoinDelN")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrecisionLF")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrecisionSF")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrecisionSY")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrecisionOff+")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrecisionN")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrecisionE")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrecisionZ")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrefixPipeDia")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPostfixPipeDia")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrecisionPipeDia")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrefixPipeSlope")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPostfixPipeSlope")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrecisionPipeSlope")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrefixPipeLength")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPostfixPipeLength")
-  (HCNM_CONFIG_SET_ACTION_TILE "BubbleTextPrecisionPipeLength")
-  (ACTION_TILE "close" "(DONE_DIALOG 2)")
-  (START_DIALOG)
+(defun hcnm_dcl_bubble_show (cnmdcl)
+  (new_dialog "HCNMBubble" cnmdcl)
+  (set_tile "Title" "CNM Bubble Options")
+  (hcnm_config_set_action_tile "BubbleHooks")
+  (hcnm_config_set_action_tile "BubbleMtext")
+  (hcnm_config_set_action_tile "BubbleAreaIntegral")
+  (hcnm_config_set_action_tile "NoteTypes")
+  (hcnm_config_set_action_tile "BubbleTextLine1PromptP")
+  (hcnm_config_set_action_tile "BubbleTextLine2PromptP")
+  (hcnm_config_set_action_tile "BubbleTextLine3PromptP")
+  (hcnm_config_set_action_tile "BubbleTextLine4PromptP")
+  (hcnm_config_set_action_tile "BubbleTextLine5PromptP")
+  (hcnm_config_set_action_tile "BubbleTextLine6PromptP")
+  (hcnm_config_set_action_tile "BubbleTextLine0PromptP")
+  (hcnm_config_set_action_tile "BubbleSkipEntryPrompt")
+  (hcnm_config_set_action_tile "BubbleOffsetDropSign")
+  (hcnm_config_set_action_tile "BubbleTextPrefixLF")
+  (hcnm_config_set_action_tile "BubbleTextPrefixSF")
+  (hcnm_config_set_action_tile "BubbleTextPrefixSY")
+  (hcnm_config_set_action_tile "BubbleTextPrefixSta")
+  (hcnm_config_set_action_tile "BubbleTextPrefixOff+")
+  (hcnm_config_set_action_tile "BubbleTextPrefixOff-")
+  (hcnm_config_set_action_tile "BubbleTextPrefixN")
+  (hcnm_config_set_action_tile "BubbleTextPrefixE")
+  (hcnm_config_set_action_tile "BubbleTextPrefixZ")
+  (hcnm_config_set_action_tile "BubbleTextPostfixLF")
+  (hcnm_config_set_action_tile "BubbleTextPostfixSF")
+  (hcnm_config_set_action_tile "BubbleTextPostfixSY")
+  (hcnm_config_set_action_tile "BubbleTextPostfixSta")
+  (hcnm_config_set_action_tile "BubbleTextPostfixOff+")
+  (hcnm_config_set_action_tile "BubbleTextPostfixOff-")
+  (hcnm_config_set_action_tile "BubbleTextPostfixN")
+  (hcnm_config_set_action_tile "BubbleTextPostfixE")
+  (hcnm_config_set_action_tile "BubbleTextPostfixZ")
+  (hcnm_config_set_action_tile "BubbleTextJoinDelSta")
+  (hcnm_config_set_action_tile "BubbleTextJoinDelN")
+  (hcnm_config_set_action_tile "BubbleTextPrecisionLF")
+  (hcnm_config_set_action_tile "BubbleTextPrecisionSF")
+  (hcnm_config_set_action_tile "BubbleTextPrecisionSY")
+  (hcnm_config_set_action_tile "BubbleTextPrecisionOff+")
+  (hcnm_config_set_action_tile "BubbleTextPrecisionN")
+  (hcnm_config_set_action_tile "BubbleTextPrecisionE")
+  (hcnm_config_set_action_tile "BubbleTextPrecisionZ")
+  (hcnm_config_set_action_tile "BubbleTextPrefixPipeDia")
+  (hcnm_config_set_action_tile "BubbleTextPostfixPipeDia")
+  (hcnm_config_set_action_tile "BubbleTextPrecisionPipeDia")
+  (hcnm_config_set_action_tile "BubbleTextPrefixPipeSlope")
+  (hcnm_config_set_action_tile "BubbleTextPostfixPipeSlope")
+  (hcnm_config_set_action_tile "BubbleTextPrecisionPipeSlope")
+  (hcnm_config_set_action_tile "BubbleTextPrefixPipeLength")
+  (hcnm_config_set_action_tile "BubbleTextPostfixPipeLength")
+  (hcnm_config_set_action_tile "BubbleTextPrecisionPipeLength")
+  (action_tile "close" "(DONE_DIALOG 2)")
+  (start_dialog)
 )
 
-(defun HCNM_DCL_KEY_SHOW(CNMDCL)
-  (NEW_DIALOG "HCNMKey" CNMDCL)
+(defun hcnm_dcl_key_show(cnmdcl)
+  (new_dialog "HCNMKey" cnmdcl)
   ;; Dialog Actions
-  (SET_TILE "Title" "CNM Key Notes Table Options")
-  (HCNM_CONFIG_SET_ACTION_TILE "DescriptionWrap")
-  (HCNM_CONFIG_SET_ACTION_TILE "LineSpacing")
-  (HCNM_CONFIG_SET_ACTION_TILE "NoteSpacing")
-  (HCNM_CONFIG_SET_ACTION_TILE "ShowKeyTableTitleShapes")
-  (HCNM_CONFIG_SET_ACTION_TILE "ShowKeyTableQuantities")
-  (HCNM_CONFIG_SET_ACTION_TILE "ShowKeyTableGrid")
-  (HCNM_CONFIG_SET_ACTION_TILE "TableWidth")
-  (HCNM_CONFIG_SET_ACTION_TILE "PhaseWidthAdd")
-  (ACTION_TILE "close" "(DONE_DIALOG 2)")
-  (START_DIALOG)
+  (set_tile "Title" "CNM Key Notes Table Options")
+  (hcnm_config_set_action_tile "DescriptionWrap")
+  (hcnm_config_set_action_tile "LineSpacing")
+  (hcnm_config_set_action_tile "NoteSpacing")
+  (hcnm_config_set_action_tile "ShowKeyTableTitleShapes")
+  (hcnm_config_set_action_tile "ShowKeyTableQuantities")
+  (hcnm_config_set_action_tile "ShowKeyTableGrid")
+  (hcnm_config_set_action_tile "TableWidth")
+  (hcnm_config_set_action_tile "PhaseWidthAdd")
+  (action_tile "close" "(DONE_DIALOG 2)")
+  (start_dialog)
 )
 
-(defun HCNM_DCL_QT_SHOW(CNMDCL)
-  (NEW_DIALOG "HCNMQT" CNMDCL)
+(defun hcnm_dcl_qt_show(cnmdcl)
+  (new_dialog "HCNMQT" cnmdcl)
   ;; Dialog Actions
-  (SET_TILE "Title" "CNM Quantity Take-off Table Options")
-  (HCNM_CONFIG_SET_ACTION_TILE "NumberToDescriptionWidth")
-  (HCNM_CONFIG_SET_ACTION_TILE "DescriptionToQuantityWidth")
-  (HCNM_CONFIG_SET_ACTION_TILE "QuantityToQuantityWidth")
-  (HCNM_CONFIG_SET_ACTION_TILE "QuantityToUnitsWidth")
-  (ACTION_TILE "close" "(DONE_DIALOG 2)")
-  (START_DIALOG)
+  (set_tile "Title" "CNM Quantity Take-off Table Options")
+  (hcnm_config_set_action_tile "NumberToDescriptionWidth")
+  (hcnm_config_set_action_tile "DescriptionToQuantityWidth")
+  (hcnm_config_set_action_tile "QuantityToQuantityWidth")
+  (hcnm_config_set_action_tile "QuantityToUnitsWidth")
+  (action_tile "close" "(DONE_DIALOG 2)")
+  (start_dialog)
 )
 
-(DEFUN HCNM_OPTIONS_LIST_DATA ()
+(defun hcnm_options_list_data ()
   '(
     ("ProjectNotesEditor" (("text" "System Text Editor") ("csv" "System CSV (spreadsheet)") ("cnm" "CNM Pro Editor")))
     ("LayersEditor" (("notepad" "Notepad") ("cnm" "CNM Pro Editor")))
     ("InsertTablePhases" (("No" "No")("1" "1")("2" "2")("3" "3")("4" "4")("5" "5")("6" "6")("7" "7")("8" "8")("9" "9")("10" "10")))
   )
 )
-(DEFUN HCNM_CONFIG_SET_ACTION_TILE (VAR)
-  (SET_TILE VAR (HCNM_CONFIG_TEMP_GETVAR VAR))
-  (ACTION_TILE
-    VAR
-    (STRCAT "(HCNM_CONFIG_TEMP_SETVAR \"" VAR "\" $value)")
+(defun hcnm_config_set_action_tile (var)
+  (set_tile var (hcnm_config_temp_getvar var))
+  (action_tile
+    var
+    (strcat "(HCNM_CONFIG_TEMP_SETVAR \"" var "\" $value)")
   )
 )
-(DEFUN HCNM_CONFIG_DCL_LIST (KEY /)
-  (HCNM_SET_TILE_LIST
-    KEY
-    (MAPCAR
-      '(LAMBDA (X) (CADR X))
-      (CADR (ASSOC KEY (HCNM_OPTIONS_LIST_DATA)))
+(defun hcnm_config_dcl_list (key /)
+  (hcnm_set_tile_list
+    key
+    (mapcar
+      '(lambda (x) (cadr x))
+      (cadr (assoc key (hcnm_options_list_data)))
     )
-    (CADR
-      (ASSOC
-        (C:HCNM-CONFIG-GETVAR KEY)
-        (CADR (ASSOC KEY (HCNM_OPTIONS_LIST_DATA)))
+    (cadr
+      (assoc
+        (c:hcnm-config-getvar key)
+        (cadr (assoc key (hcnm_options_list_data)))
       )
     )
   )
-  (ACTION_TILE
-    KEY
+  (action_tile
+    key
     "(HCNM_CONFIG_DCL_LIST_CALLBACK $key $value)"
   )
 )
-(DEFUN HCNM_SET_TILE_LIST (KEY OPTIONS SELECTED / ITEM)
-  (START_LIST KEY 3)
-  (MAPCAR 'ADD_LIST OPTIONS)
-  (END_LIST)
-  (FOREACH
-     ITEM (IF (LISTP SELECTED)
-            SELECTED
-            (LIST SELECTED)
+(defun hcnm_set_tile_list (key options selected / item)
+  (start_list key 3)
+  (mapcar 'ADD_LIST options)
+  (end_list)
+  (foreach
+     item (if (listp selected)
+            selected
+            (list selected)
           )
-    (IF (MEMBER ITEM OPTIONS)
-      (SET_TILE
-        KEY
-        (ITOA (- (LENGTH OPTIONS) (LENGTH (MEMBER ITEM OPTIONS))))
+    (if (member item options)
+      (set_tile
+        key
+        (itoa (- (length options) (length (member item options))))
       )
     )
   )
 )
-(DEFUN HCNM_CONFIG_DCL_LIST_CALLBACK (KEY VALUE /)
-  (HCNM_CONFIG_TEMP_SETVAR
-    KEY
-    (CAR (NTH (READ VALUE) (CADR (ASSOC KEY (HCNM_OPTIONS_LIST_DATA)))))
+(defun hcnm_config_dcl_list_callback (key value /)
+  (hcnm_config_temp_setvar
+    key
+    (car (nth (read value) (cadr (assoc key (hcnm_options_list_data)))))
   )
 )
 
 ;; Shows reactor, its data, and XDATA of a selected bubble note
-(defun HCNM_DSBR ()
-  (HCNM_DEBUG_SHOW_BUBBLE_REACTOR_XDATA)
+(defun hcnm_dsbr ()
+  (hcnm_debug_show_bubble_reactor_xdata)
   (princ)
 )
-(defun HCNM_DEBUG_SHOW_BUBBLE_REACTOR_XDATA (/ EN REACTORS REACTOR DATA HANDLE_BUBBLE REACTOR_COUNT HCNM_REACTOR)
+(defun hcnm_debug_show_bubble_reactor_xdata (/ en reactors reactor data handle_bubble reactor_count hcnm_reactor)
   (vl-load-com)
   (princ "\nSelect a bubble note: ")
-  (setq EN (car (entsel)))
-  (if EN
+  (setq en (car (entsel)))
+  (if en
     (progn
-      (setq HANDLE_BUBBLE (CDR (ASSOC 5 (ENTGET EN)))
-            REACTORS (CDAR (VLR-REACTORS :VLR-OBJECT-REACTOR))
-            REACTOR_COUNT 0
-            HCNM_REACTOR NIL)
+      (setq handle_bubble (cdr (assoc 5 (entget en)))
+            reactors (cdar (vlr-reactors :vlr-object-reactor))
+            reactor_count 0
+            hcnm_reactor nil)
       ;; Find THE ONE HCNM reactor (there should be only one)
-      (foreach reactor REACTORS
+      (foreach reactor reactors
         (setq data (vlr-data reactor))
         (if (and (listp data) (assoc "HCNM-BUBBLE" data))
           (progn
-            (setq REACTOR_COUNT (1+ REACTOR_COUNT)
-                  HCNM_REACTOR reactor)
+            (setq reactor_count (1+ reactor_count)
+                  hcnm_reactor reactor)
           )
         )
       )
       (alert 
         (princ
           (cond
-            ((= REACTOR_COUNT 0)
+            ((= reactor_count 0)
              "ERROR: No HCNM-BUBBLE reactor found!")
-            ((> REACTOR_COUNT 1)
-             (strcat "ERROR: Reactor proliferation! Found " (itoa REACTOR_COUNT) " reactors.\nThere should be only ONE reactor for all bubbles."))
-            (T
+            ((> reactor_count 1)
+             (strcat "ERROR: Reactor proliferation! Found " (itoa reactor_count) " reactors.\nThere should be only ONE reactor for all bubbles."))
+            (t
              (strcat
                "ONE HCNM-BUBBLE Reactor (correct)\n\n"
-               "Reactor object:\n" (vl-prin1-to-string HCNM_REACTOR) "\n\n"
-               "Reactor data (nested list for all bubbles):\n" (vl-prin1-to-string (vlr-data HCNM_REACTOR)) "\n\n"
-               "Reactor owners count: " (itoa (length (vlr-owners HCNM_REACTOR))) "\n\n"
-               "Selected bubble handle: " HANDLE_BUBBLE "\n\n"
-               "Selected bubble XDATA:\n" (vl-prin1-to-string (assoc -3 (entget EN '("HCNM-BUBBLE"))))
+               "Reactor object:\n" (vl-prin1-to-string hcnm_reactor) "\n\n"
+               "Reactor data (nested list for all bubbles):\n" (vl-prin1-to-string (vlr-data hcnm_reactor)) "\n\n"
+               "Reactor owners count: " (itoa (length (vlr-owners hcnm_reactor))) "\n\n"
+               "Selected bubble handle: " handle_bubble "\n\n"
+               "Selected bubble XDATA:\n" (vl-prin1-to-string (assoc -3 (entget en '("HCNM-BUBBLE"))))
              ))
           )
         )
@@ -8630,7 +8630,7 @@ ImportLayerSettings=No
 
 ;#endregion
 
-(LOAD "ini-edit")
+(load "ini-edit")
 ;|�Visual LISP� Format Options�
-(72 2 40 2 nil "end of " 100 2 2 2 1 nil nil nil T)
+(72 2 40 2 nil "end of " 100 2 2 2 1 nil nil nil t)
 ;*** DO NOT add text below the comment! ***|;

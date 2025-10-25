@@ -1,223 +1,223 @@
-;;;(C) Copyright 2017 by Thomas Gail Haws
+ï»¿;;;(C) Copyright 2017 by Thomas Gail Haws
 ;;; This AutoLISP program lists a nested entity inside a XREF, BLOCK, or PLINE
 (if (not c:hcnm-config-getvar)(c:haws-load-from-app-dir "cnm"))
 
-(DEFUN C:HAWS-LX ()
+(defun c:haws-lx ()
 (haws-core-init 255)
-(prompt (strcat "\n" (HAWS_EVANGEL_MSG)))
-(HAWS-XLIST 0))
-(DEFUN C:HAWS-LXX ()
-(haws-core-init 256) (HAWS-XLIST-MULTI))
+(prompt (strcat "\n" (haws_evangel_msg)))
+(haws-xlist 0))
+(defun c:haws-lxx ()
+(haws-core-init 256) (haws-xlist-multi))
 
-(DEFUN HAWS-XLIST (EDIT-MODE / NENTSEL-RESULTS)
-  (SETQ NENTSEL-RESULTS (HAWS-XLIST-NENTSEL (NENTSEL)))
-  (HAWS-XLIST-LIST)
-  (COND
-    ((> EDIT-MODE 0)
-     (HAWS-XLIST-SHOW-LAYERS
-       (HAWS-XLIST-LIST-TO-STRING (CADR NENTSEL-RESULTS) EDIT-MODE)
+(defun haws-xlist (edit-mode / nentsel-results)
+  (setq nentsel-results (haws-xlist-nentsel (nentsel)))
+  (haws-xlist-list)
+  (cond
+    ((> edit-mode 0)
+     (haws-xlist-show-layers
+       (haws-xlist-list-to-string (cadr nentsel-results) edit-mode)
      )
     )
   )
-  (PRINC)
+  (princ)
 )
 
-(DEFUN HAWS-XLIST-MULTI (/ CONTINUE-P ENAMELIST INPUT-RESULTS LAYERLIST SS-P)
-  (SETQ ENAMELIST '())
-  (WHILE (NOT CONTINUE-P)
-    (SETQ
-      INPUT-RESULTS
-       (COND
-         (SS-P (HAWS-XLIST-MULTI-SSGET))
-         (T (HAWS-XLIST-MULTI-NENTSEL))
+(defun haws-xlist-multi (/ continue-p enamelist input-results layerlist ss-p)
+  (setq enamelist '())
+  (while (not continue-p)
+    (setq
+      input-results
+       (cond
+         (ss-p (haws-xlist-multi-ssget))
+         (t (haws-xlist-multi-nentsel))
        )
-       ENAMELIST
-       (APPEND ENAMELIST (CAR INPUT-RESULTS))
-      SS-P
-       (CADR INPUT-RESULTS)
-      CONTINUE-P
-       (CADDR INPUT-RESULTS)
+       enamelist
+       (append enamelist (car input-results))
+      ss-p
+       (cadr input-results)
+      continue-p
+       (caddr input-results)
     )
   )
-  (HAWS-XLIST-SHOW-LAYERS
-    (HAWS-XLIST-LIST-TO-STRING ENAMELIST 2)
+  (haws-xlist-show-layers
+    (haws-xlist-list-to-string enamelist 2)
   )
 )
 
-(DEFUN HAWS-XLIST-MULTI-NENTSEL (/ CONTINUE-P ENAMELIST INPUT1 SS-P NENTSEL-RESULTS)
-  (INITGET "Selection List Continue")
-  (SETQ
-    INPUT1
-     (NENTSEL
-       (STRCAT
+(defun haws-xlist-multi-nentsel (/ continue-p enamelist input1 ss-p nentsel-results)
+  (initget "Selection List Continue")
+  (setq
+    input1
+     (nentsel
+       (strcat
          "\nSelect object or [Selection set/List mode ("
          (c:hcnm-config-getvar "LXXListMode")
          ")/Continue] <Continue>: "
        )
      )
-    CONTINUE-P
-     (NOT INPUT1)
-    SS-P
-     (= INPUT1 "Selection")
-    NENTSEL-RESULTS
-     (HAWS-XLIST-NENTSEL INPUT1)
-    ENAMELIST
-     (CADR NENTSEL-RESULTS)
+    continue-p
+     (not input1)
+    ss-p
+     (= input1 "Selection")
+    nentsel-results
+     (haws-xlist-nentsel input1)
+    enamelist
+     (cadr nentsel-results)
   )
-  (COND ((= INPUT1 "List") (HAWS-XLIST-TOGGLE-LIST-MODE)))
-  (COND ((= (c:hcnm-config-getvar "LXXListMode") "yes") (HAWS-XLIST-LIST)))
-  (LIST ENAMELIST SS-P CONTINUE-P)
+  (cond ((= input1 "List") (haws-xlist-toggle-list-mode)))
+  (cond ((= (c:hcnm-config-getvar "LXXListMode") "yes") (haws-xlist-list)))
+  (list enamelist ss-p continue-p)
 )
 
-(DEFUN HAWS-XLIST-LIST ()
-   (COND ((/= (CAR NENTSEL-RESULTS) "") (ALERT (PRINC (CAR NENTSEL-RESULTS)))))
+(defun haws-xlist-list ()
+   (cond ((/= (car nentsel-results) "") (alert (princ (car nentsel-results)))))
 )
 
-(DEFUN HAWS-XLIST-TOGGLE-LIST-MODE ()
+(defun haws-xlist-toggle-list-mode ()
   (c:hcnm-config-setvar
     "LXXListMode"
-    (COND
+    (cond
       ((= (c:hcnm-config-getvar "LXXListMode") "yes") "no")
-      (T "yes")
+      (t "yes")
     )
   )
 )
 
-(DEFUN HAWS-XLIST-MULTI-SSGET (/ CONTINUE-P ENAMELIST INPUT1 SS-P)
-  (SETQ
-    INPUT1
-     (SSGET)
-    CONTINUE-P
-     (NOT INPUT1)
-    SS-P
-     NIL
-    ENAMELIST
-    (CADR (HAWS-XLIST-SS-TO-LIST INPUT1))
+(defun haws-xlist-multi-ssget (/ continue-p enamelist input1 ss-p)
+  (setq
+    input1
+     (ssget)
+    continue-p
+     (not input1)
+    ss-p
+     nil
+    enamelist
+    (cadr (haws-xlist-ss-to-list input1))
   )
-  (LIST ENAMELIST SS-P CONTINUE-P)
+  (list enamelist ss-p continue-p)
 )
 
-(DEFUN HAWS-XLIST-SS-TO-LIST (INPUT1 / EN I SS1 SSLIST)
-  (COND
-    ((AND INPUT1 (= (TYPE INPUT1) 'PICKSET))
-     (SETQ
-       SS1 INPUT1
-       I   -1
+(defun haws-xlist-ss-to-list (input1 / en i ss1 sslist)
+  (cond
+    ((and input1 (= (type input1) 'PICKSET))
+     (setq
+       ss1 input1
+       i   -1
      )
-     (WHILE (SETQ EN (SSNAME SS1 (SETQ I (1+ I))))
-       (SETQ SSLIST (CONS EN SSLIST))
+     (while (setq en (ssname ss1 (setq i (1+ i))))
+       (setq sslist (cons en sslist))
      )
      ;; Used only for editing, not reporting, so return empty string
-     (LIST "" SSLIST)
+     (list "" sslist)
     )
   )
 )
 
-(DEFUN HAWS-XLIST-NENTSEL (INPUT1 / ALRTSTR ALRTSTRI EL ES ECLR I LACLR LAI
-                       SHELLS ETYPE SHELLI SHELLL PREVI TEMP
+(defun haws-xlist-nentsel (input1 / alrtstr alrtstri el es eclr i laclr lai
+                       shells etype shelli shelll previ temp
                       )
-  (COND
-    ((AND INPUT1 (= (TYPE INPUT1) 'LIST))
-     (SETQ
-       ES INPUT1
-       SHELLS
-        (CADDDR ES)
-       EL (ENTGET (CAR ES))
-       ETYPE
-        (HAWS-DXF 0 EL)
-       ECLR
-        (IF (HAWS-DXF 62 EL)
-          (COND
-            ((= (SETQ ECLR (RTOS (ABS (HAWS-DXF 62 EL)) 2 0)) "0")
+  (cond
+    ((and input1 (= (type input1) 'LIST))
+     (setq
+       es input1
+       shells
+        (cadddr es)
+       el (entget (car es))
+       etype
+        (haws-dxf 0 el)
+       eclr
+        (if (haws-dxf 62 el)
+          (cond
+            ((= (setq eclr (rtos (abs (haws-dxf 62 el)) 2 0)) "0")
              "BYBLOCK"
             )
-            ((= ECLR "256") "BYLAYER")
-            (T ECLR)
+            ((= eclr "256") "BYLAYER")
+            (t eclr)
           )
           "BYLAYER"
         )
-       LACLR
-        (RTOS
-          (ABS
-            (HAWS-DXF
+       laclr
+        (rtos
+          (abs
+            (haws-dxf
               62
-              (TBLSEARCH "LAYER" (SETQ LAI (HAWS-DXF 8 EL)))
+              (tblsearch "LAYER" (setq lai (haws-dxf 8 el)))
             )
           )
           2
           0
         )
-       ALRTSTR
-        (STRCAT
-          "\n" ETYPE " on layer " LAI " selected.\nIts color is " ECLR
-          ".  The color of its layer is " LACLR ".\nIt is "
+       alrtstr
+        (strcat
+          "\n" etype " on layer " lai " selected.\nIts color is " eclr
+          ".  The color of its layer is " laclr ".\nIt is "
          )
-       I -1
+       i -1
      )
-     (IF SHELLS
-       (WHILE (SETQ SHELLI (NTH (SETQ I (1+ I)) SHELLS))
-         (SETQ
-           SHELLL
-            (ENTGET SHELLI)
-           ALRTSTRI
-            (STRCAT
+     (if shells
+       (while (setq shelli (nth (setq i (1+ i)) shells))
+         (setq
+           shelll
+            (entget shelli)
+           alrtstri
+            (strcat
               "in a block (or xref) called "
-              (SETQ
-                TEMP
-                 (CDR
-                   (ASSOC
-                     (IF
-                       (= "INSERT" (CDR (ASSOC 0 SHELLL)))
+              (setq
+                temp
+                 (cdr
+                   (assoc
+                     (if
+                       (= "INSERT" (cdr (assoc 0 shelll)))
                         2
                         0
                      )
-                     SHELLL
+                     shelll
                    )
                  )
               )
               " which is on layer "
-              (CDR (ASSOC 8 SHELLL))
+              (cdr (assoc 8 shelll))
               "\n"
             )
          )
-         (IF (/= PREVI ALRTSTRI)
-           (SETQ ALRTSTR (STRCAT ALRTSTR ALRTSTRI))
+         (if (/= previ alrtstri)
+           (setq alrtstr (strcat alrtstr alrtstri))
          )
-         (SETQ PREVI ALRTSTRI)
+         (setq previ alrtstri)
        )
      )
-     (SETQ ALRTSTR (STRCAT ALRTSTR "of the current drawing."))
-     (LIST ALRTSTR (CONS (CAR ES) SHELLS))
+     (setq alrtstr (strcat alrtstr "of the current drawing."))
+     (list alrtstr (cons (car es) shells))
     )
-    (T (LIST "" NIL))
+    (t (list "" nil))
   )
 )
 
 ;;; Returns list with a leading comma
-(DEFUN HAWS-XLIST-LIST-TO-STRING
-   (ENAMELIST EDIT-MODE / DONELIST  ENAME  LAYERLISTSTRING)
-  (SETQ LAYERLISTSTRING "")
-  (COND ((/= EDIT-MODE 2) (SETQ ENAMELIST (CADR ENAMELIST))))
-  (WHILE (SETQ ENAME (CAR ENAMELIST))
-    (SETQ ENAMELIST (CDR ENAMELIST))
-    (COND
-      ((NOT (MEMBER ENAME DONELIST))
-       (SETQ DONELIST (CONS ENAME DONELIST))
-       (SETQ
-         LAYERLISTSTRING
-          (STRCAT
-            LAYERLISTSTRING
+(defun haws-xlist-list-to-string
+   (enamelist edit-mode / donelist  ename  layerliststring)
+  (setq layerliststring "")
+  (cond ((/= edit-mode 2) (setq enamelist (cadr enamelist))))
+  (while (setq ename (car enamelist))
+    (setq enamelist (cdr enamelist))
+    (cond
+      ((not (member ename donelist))
+       (setq donelist (cons ename donelist))
+       (setq
+         layerliststring
+          (strcat
+            layerliststring
             ","
-            (CDR (ASSOC 8 (ENTGET ENAME)))
+            (cdr (assoc 8 (entget ename)))
           )
        )
       )
     )
   )
-  LAYERLISTSTRING
+  layerliststring
 )
 
-(DEFUN HAWS-XLIST-SHOW-LAYERS (LAYERLISTSTRING)
+(defun haws-xlist-show-layers (layerliststring)
   (vl-cmdf
     "._LAYER"
     "_FILTER"
@@ -229,7 +229,7 @@
     "_NEW"
     "_GROUP"
     ""
-    (SUBSTR LAYERLISTSTRING 2)
+    (substr layerliststring 2)
     "HAWS-XLIST"
     "_EXIT"
     ""
@@ -237,6 +237,6 @@
   )
 )
 
- ;|«Visual LISP© Format Options»
-(72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)
+ ;|ï¿½Visual LISPï¿½ Format Optionsï¿½
+(72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil t)
 ;*** DO NOT add text below the comment! ***|

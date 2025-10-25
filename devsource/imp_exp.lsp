@@ -1,20 +1,20 @@
-;imp_exp
+﻿;imp_exp
 ;import or export ASCII text files.
 
 (defun import (/ xx x efpnt p1)
   (if (= just nil) (setq tsize 0.156 lspace 0.375 just "L"))
   (if (= efnam nil) (setq efnam ""))
-  (setq efnam (GETFILed "Select ASCII Import File" "" "" 4))
+  (setq efnam (getfiled "Select ASCII Import File" "" "" 4))
   (setq efpnt (open efnam "r"))
   (if (= efnam nil)
     (princ (strcat "\n"(chr 34) efnam (chr 34) ": Can't open file"))
     (progn
       (initget 6)
-      (setq X (getreal
+      (setq x (getreal
         (strcat "\nEnter the text height <" (rtos tsize 2 3) ">: ")))
       (if (/= x nil) (setq tsize x))
       (initget 2)
-      (setq X (getreal
+      (setq x (getreal
         (strcat "\nEnter the line spacing <" (rtos lspace 2 3) ">: ")))
       (if (/= x nil) (setq lspace x))
       (graphscr)
@@ -30,7 +30,7 @@
           (setq p1 (getpoint "\nCenter point: "))
         )
         ((= x "M")
-          (setq JUST X)
+          (setq just x)
           (initget 1)
           (setq p1 (getpoint "\nMiddle point: "))
         )
@@ -41,10 +41,10 @@
         )
       )
       (setq crntl (read-line efpnt))
-      (while crntl (If (= just "L")
+      (while crntl (if (= just "L")
         (vl-cmdf "text" p1 tsize 0 crntl)
         (vl-cmdf "text" just p1 tsize 0 crntl))
-        (setq p1 (list (car P1) (- (cadr P1) lspace)))
+        (setq p1 (list (car p1) (- (cadr p1) lspace)))
         (setq crntl (read-line efpnt))
       )
       (close efpnt)
@@ -63,7 +63,7 @@
       (princ "\nFile already exists.")
       (close b)
       (initget "Y N")
-      (setq X (getkword "\nWould you like to over-write? <N> "))
+      (setq x (getkword "\nWould you like to over-write? <N> "))
       (if (= x "Y") (write-it))
     )
     (write-it)

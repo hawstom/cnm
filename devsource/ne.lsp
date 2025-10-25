@@ -1,6 +1,6 @@
-;N,E Coordinates on Leader Lines
+﻿;N,E Coordinates on Leader Lines
 ;Written by Thomas Gail Haws
-(defun c:haws-NE (/ dg txht pnt1 p1e p1n ang1 left ptxt)
+(defun c:haws-ne (/ dg txht pnt1 p1e p1n ang1 left ptxt)
   (haws-core-init 266)
   (setq
     txht (haws-text-height-model)
@@ -14,13 +14,13 @@
     ( (>= (atof(getvar "acadver"))14)
       (vl-cmdf "._leader" pnt1 ptxt "" "" "_None")
     )
-    ( T
+    ( t
       (vl-cmdf "._dim" "_leader" pnt1 ptxt)(vl-cmdf)
     )
   )
   (setq ptxt (polar ptxt (if left pi 0) (* txht 0.5)))
-  (HAWS-MKTEXT (if left "mr" "ml") ptxt nil 0 p1n)
+  (haws-mktext (if left "mr" "ml") ptxt nil 0 p1n)
   (setq ptxt (polar ptxt(/ pi -2)(* 1.667 txht)))
-  (HAWS-MKTEXT (if left "mr" "ml") ptxt nil 0 p1e)
+  (haws-mktext (if left "mr" "ml") ptxt nil 0 p1e)
   (haws-core-restore)(princ)
 ) ;end

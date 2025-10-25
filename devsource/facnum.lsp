@@ -1,4 +1,4 @@
-(defun c:haws-FACNUM ( / ss off e d s s1 i j fltr dec)
+﻿(defun c:haws-facnum ( / ss off e d s s1 i j fltr dec)
 (haws-core-init 41)
   (setvar "dimzin" 0)
   (setq fltr (list(cons 0"TEXT") (cons 1"*#*")))
@@ -14,7 +14,7 @@
           (setq e (ssname ss (setq i (1- i)))   ; 3
                 d (entget e)
                 s (cdr (assoc 1 d)))            ; 3
-          (if (/= "" (cadr (setq s (HAWS-EXTRACT s))))              ; 3
+          (if (/= "" (cadr (setq s (haws-extract s))))              ; 3
             (progn
               (setq dec 0 j 0)
               (cond

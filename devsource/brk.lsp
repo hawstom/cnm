@@ -1,34 +1,34 @@
-;BREAKS LINES, ARCS, POLYLINES WITH THE SAME INTERSECTION
+﻿;BREAKS LINES, ARCS, POLYLINES WITH THE SAME INTERSECTION
 ;BY SELECTING AT INTERSECTION WHERE OBJECTS MEET.
 ;
-(DEFUN c:haws-BRK (/ OS CMD a brk be ls less no)
+(defun c:haws-brk (/ os cmd a brk be ls less no)
 (haws-core-init 7)
-  (SETQ CMD (GETVAR "CMDECHO"))
-  (SETVAR "CMDECHO" 0)
-  (SETQ OS (GETVAR "OSmoDE"))
+  (setq cmd (getvar "CMDECHO"))
+  (setvar "CMDECHO" 0)
+  (setq os (getvar "OSmoDE"))
   (vl-cmdf "OSNAP" "INT")
-  (PROMPT "SELECT INTERSECTION OF OBJECTS TO BREAK. . .")
-  (SETQ A (GETPOINT))
-  (SETQ BRK (LIST (CAR A) (CADR A)))
-  (SETQ BE (SSGET "C" BRK BRK))
-  (SETQ
-    LS (SSLENGTH BE)
-    LESS (SSLENGTH BE)
-    NO 0
+  (prompt "SELECT INTERSECTION OF OBJECTS TO BREAK. . .")
+  (setq a (getpoint))
+  (setq brk (list (car a) (cadr a)))
+  (setq be (ssget "C" brk brk))
+  (setq
+    ls (sslength be)
+    less (sslength be)
+    no 0
   );SETQ
-  (IF (= 1 LESS)
-    (PROGN
-      (PROMPT "\nInvalid point")
+  (if (= 1 less)
+    (progn
+      (prompt "\nInvalid point")
     );PROGN
-    (PROGN
-      (REPEAT LS
-        (vl-cmdf "BREAK" (SSNAME BE NO) BRK BRK)
-        (SETQ NO (1+ NO))
+    (progn
+      (repeat ls
+        (vl-cmdf "BREAK" (ssname be no) brk brk)
+        (setq no (1+ no))
       );REPEAT
     );PROGN
   );IF
-  (SETVAR "OSmoDE" OS)
-  (SETVAR "CMDECHO" CMD)
-  (PRINC)
-  (PRIN1)
+  (setvar "OSmoDE" os)
+  (setvar "CMDECHO" cmd)
+  (princ)
+  (prin1)
 );DEFUN

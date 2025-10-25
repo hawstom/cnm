@@ -1,6 +1,6 @@
-;CONSECUTIVE NUMBERING LISP
+﻿;CONSECUTIVE NUMBERING LISP
 ;MODIFIED 8/21/95 TO ADD JUSTIFICATION OPTION. Thomas Gail Haws
-(defun c:haws-num (/ i just rot PT1 TH)
+(defun c:haws-num (/ i just rot pt1 th)
 (haws-core-init 269)
   (setq
     i (getint "\nFirst number of series: ")
@@ -14,10 +14,10 @@
     (setq rot 0)
   )
   (setq pt1 (getpoint "\nFirst insertion point: "))
-  (HAWS-MKTEXT just pt1 nil rot (itoa i))
+  (haws-mktext just pt1 nil rot (itoa i))
   (while (setq pt1 (getpoint pt1 "\nNext insertion point: "))
     (setq i (+ i 1))
-    (HAWS-MKTEXT just pt1 nil rot (itoa i))
+    (haws-mktext just pt1 nil rot (itoa i))
   )
-  (HAWS-CORE-RESTORE)
+  (haws-core-restore)
 )

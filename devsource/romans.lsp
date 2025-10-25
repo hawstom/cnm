@@ -1,7 +1,7 @@
-;(C) Copyright 1997 by Thomas Gail Haws
-(DEFUN c:haws-ROMANS ( / st sn sf)
+﻿;(C) Copyright 1997 by Thomas Gail Haws
+(defun c:haws-romans ( / st sn sf)
   (haws-core-init 305)
-  (HAWS-VSAVE '("cmddia" "filedia" "regenmode"))
+  (haws-vsave '("cmddia" "filedia" "regenmode"))
   (vl-cmdf "._style" "romans" "romans" "0" ".95" "0" "" "" "")
   (vl-cmdf "._dim1" "_style" "romans");For R13 compatibility
   (setvar "dimtxsty" "romans")
@@ -32,5 +32,5 @@
         (vl-cmdf "._style" sn "ROMANS" "" "0.95" "" "" "" "")
   ) ) )
   (setvar "textstyle" "ROMANS")
-  (HAWS-VRSTOR)(haws-core-restore)(princ)
+  (haws-vrstor)(haws-core-restore)(princ)
 )

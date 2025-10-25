@@ -1,130 +1,130 @@
-;;; UTILITY LINES
+ï»¿;;; UTILITY LINES
 ;;; (C) Copyright 2017 by Thomas Gail Haws
-(DEFUN C:HAWS-UT (/ PT1)
+(defun c:haws-ut (/ pt1)
   (haws-core-init 326)
-  (HAWS-VSAVE
+  (haws-vsave
     '("ucsfollow" "clayer" "filedia" "cmdecho" "expert"  "osmode")
   )
-  (HAWS-VSET
+  (haws-vset
     '(("ucsfollow" 0) ("plinegen" 1) ("cmdecho" 0) ("expert" 5))
   )
-  (IF (NOT *HAWS-UT-SETTINGS*)
-    (HAWS-UT-GETUTL)
+  (if (not *haws-ut-settings*)
+    (haws-ut-getutl)
   )
-  (WHILE (PROGN
-           (INITGET "Setup")
-           (= (SETQ PT1 (GETPOINT "\n<Start point>/Setup:")) "Setup")
+  (while (progn
+           (initget "Setup")
+           (= (setq pt1 (getpoint "\n<Start point>/Setup:")) "Setup")
          )
-    (HAWS-UT-GETUTL)
+    (haws-ut-getutl)
   )
-  (HAWS-UT-MAIN PT1)
+  (haws-ut-main pt1)
 )
 
-(DEFUN HAWS-UT-MAIN (PT1 / E1 E2 ELNEXT ENEXT ENTSEL-OD-DOWN ENTSEL-OD-UP
-                 PT2 PT3 TEMP UTLEN UTPL
+(defun haws-ut-main (pt1 / e1 e2 elnext enext entsel-od-down entsel-od-up
+                 pt2 pt3 temp utlen utpl
                 )
   ;; Draw centerline using PLINE command
-  (HAWS-MKLAYR (STRCAT "UT" (HAWS-UT-GETVAR "Key") "SNG"))
-  (vl-cmdf "pline" PT1 "_w" 0 "")
-  (SETVAR "cmdecho" 1)
-  (WHILE (= 1 (LOGAND 1 (GETVAR "cmdactive")))
-    (IF PT3
-      (vl-cmdf PAUSE) ; If not the first point, just follow command
-      (PROGN ; If first point, save for offset.
-        (INITGET
+  (haws-mklayr (strcat "UT" (haws-ut-getvar "Key") "SNG"))
+  (vl-cmdf "pline" pt1 "_w" 0 "")
+  (setvar "cmdecho" 1)
+  (while (= 1 (logand 1 (getvar "cmdactive")))
+    (if pt3
+      (vl-cmdf pause) ; If not the first point, just follow command
+      (progn ; If first point, save for offset.
+        (initget
           "Line Undo Arc CEnter Angle Direction Line Radius Second DRag"
         )
-        (SETQ PT2 (GETPOINT PT1))
-        (IF (= (TYPE PT2) 'LIST)
-          (SETQ PT3 PT2)
+        (setq pt2 (getpoint pt1))
+        (if (= (type pt2) 'LIST)
+          (setq pt3 pt2)
         )
-        (IF (= PT2 "CEnter")
-          (PROMPT "\nCEnter not allowed.")
-          (vl-cmdf PT2)
+        (if (= pt2 "CEnter")
+          (prompt "\nCEnter not allowed.")
+          (vl-cmdf pt2)
         )
       )
     )
   )
-  (SETVAR "cmdecho" 0)
+  (setvar "cmdecho" 0)
   ;; Offset OD polylines
-  (COND
-    ((/= (HAWS-UT-GETVAR "HalfWidth") 0)
-     (SETQ UTPL (ENTLAST))
-     (vl-cmdf "._line" PT1 PT3 "")
-     (SETQ
-       E1   (ENTLAST)
-       UCSP T
+  (cond
+    ((/= (haws-ut-getvar "HalfWidth") 0)
+     (setq utpl (entlast))
+     (vl-cmdf "._line" pt1 pt3 "")
+     (setq
+       e1   (entlast)
+       ucsp t
      )
-     (SETVAR "osmode" 0)
-     (vl-cmdf "._ucs" "_e" E1 "._erase" E1 "")
-     (SETQ ENTSEL-OD-UP (HAWS-UT-MAKE-OD UTPL 1))
-     (SETQ ENTSEL-OD-DOWN (HAWS-UT-MAKE-OD UTPL -1))
+     (setvar "osmode" 0)
+     (vl-cmdf "._ucs" "_e" e1 "._erase" e1 "")
+     (setq entsel-od-up (haws-ut-make-od utpl 1))
+     (setq entsel-od-down (haws-ut-make-od utpl -1))
      (vl-cmdf
        "._pedit"
-       UTPL
+       utpl
        "_w"
-       (* 2 (HAWS-UT-GETVAR "HalfWidth"))
+       (* 2 (haws-ut-getvar "HalfWidth"))
        ""
        "._change"
-       UTPL
+       utpl
        ""
        "_p"
        "_la"
-       (HAWS-UT-GETVAR "Layer.PL")
+       (haws-ut-getvar "Layer.PL")
        ""
      )
     )
   )
   ;; Create labels
-  (COND
-    ((AND (HAWS-UT-GETVAR "IsExisting") (HAWS-UT-GETVAR "Label"))
-     (vl-cmdf "._area" "_e" (CAR ENTSEL-OD-UP))
-     (SETQ UTLEN (GETVAR "perimeter"))
-     (SETQ
-       E1    (ENTLAST)
-       ENEXT E1
+  (cond
+    ((and (haws-ut-getvar "IsExisting") (haws-ut-getvar "Label"))
+     (vl-cmdf "._area" "_e" (car entsel-od-up))
+     (setq utlen (getvar "perimeter"))
+     (setq
+       e1    (entlast)
+       enext e1
      )
-     (IF (= (HAWS-UT-GETVAR "HalfWidth") 0)
-       (HAWS-UT-ASSURE-LABEL-BLOCK "uttxtjm" "m" PT1)
-       (HAWS-UT-ASSURE-LABEL-BLOCK "uttxtjbc" "bc" PT1)
+     (if (= (haws-ut-getvar "HalfWidth") 0)
+       (haws-ut-assure-label-block "uttxtjm" "m" pt1)
+       (haws-ut-assure-label-block "uttxtjbc" "bc" pt1)
      )
      (vl-cmdf
        "._divide"
-       ENTSEL-OD-UP
+       entsel-od-up
        "b"
-       (IF (= (HAWS-UT-GETVAR "HalfWidth") 0)
+       (if (= (haws-ut-getvar "HalfWidth") 0)
          "uttxtjm"
          "uttxtjbc"
        )
        "y"
-       (MAX 2 (ATOI (RTOS (/ UTLEN 200) 2 0)))
+       (max 2 (atoi (rtos (/ utlen 200) 2 0)))
      )
-     (HAWS-UT-RESTORE-UCS)
-     (WHILE (SETQ ENEXT (ENTNEXT ENEXT))
-       (IF (= (CDR (ASSOC 0 (ENTGET ENEXT))) "INSERT")
-         (vl-cmdf "._explode" ENEXT)
+     (haws-ut-restore-ucs)
+     (while (setq enext (entnext enext))
+       (if (= (cdr (assoc 0 (entget enext))) "INSERT")
+         (vl-cmdf "._explode" enext)
        )
      )
-     (SETQ ENEXT E1)
-     (WHILE (SETQ ENEXT (ENTNEXT ENEXT))
-       (COND
-         ((= (CDR (ASSOC 0 (SETQ ELNEXT (ENTGET ENEXT)))) "TEXT")
-          (SUBST
-            (CONS 1 (HAWS-UT-GETVAR "Label"))
-            (ASSOC 1 ELNEXT)
-            ELNEXT
+     (setq enext e1)
+     (while (setq enext (entnext enext))
+       (cond
+         ((= (cdr (assoc 0 (setq elnext (entget enext)))) "TEXT")
+          (subst
+            (cons 1 (haws-ut-getvar "Label"))
+            (assoc 1 elnext)
+            elnext
           )
-          (ENTMOD
-            (SUBST
-              (CONS 40 (* (HAWS-DWGSCALE) (GETVAR "dimtxt")))
-              (ASSOC 40 ELNEXT)
-              (SUBST
-                (CONS 8 (GETVAR "clayer"))
-                (ASSOC 8 ELNEXT)
-                (SUBST
-                  (CONS 1 (HAWS-UT-GETVAR "Label"))
-                  (ASSOC 1 ELNEXT)
-                  ELNEXT
+          (entmod
+            (subst
+              (cons 40 (* (haws-dwgscale) (getvar "dimtxt")))
+              (assoc 40 elnext)
+              (subst
+                (cons 8 (getvar "clayer"))
+                (assoc 8 elnext)
+                (subst
+                  (cons 1 (haws-ut-getvar "Label"))
+                  (assoc 1 elnext)
+                  elnext
                 )
               )
             )
@@ -133,178 +133,178 @@
        )
      )
     )
-    (T (HAWS-UT-RESTORE-UCS))
+    (t (haws-ut-restore-ucs))
   )
-  (REDRAW)
-  (HAWS-VRSTOR)
+  (redraw)
+  (haws-vrstor)
   (haws-core-restore)
-  (PRINC)
+  (princ)
 )
 
-(DEFUN HAWS-UT-GETUTL (/ TEMP LABEL-MATERIAL LABEL LABEL-SIZE LABEL-TYPE)
-  (INITGET 1 "Exist Prop")
-  (HAWS-UT-SETVAR
+(defun haws-ut-getutl (/ temp label-material label label-size label-type)
+  (initget 1 "Exist Prop")
+  (haws-ut-setvar
     "IsExisting"
-    (= (GETKWORD "\nExist/Prop:") "Exist")
+    (= (getkword "\nExist/Prop:") "Exist")
   )
-  (INITGET 1 "Wat Sew SD Irr Gas Elec Tel Catv")
-  (HAWS-UT-SETVAR
+  (initget 1 "Wat Sew SD Irr Gas Elec Tel Catv")
+  (haws-ut-setvar
     "Key"
-    (STRCASE (GETKWORD "\nWat/Sew/SD/Irr/Gas/Elec/Tel/Catv:"))
+    (strcase (getkword "\nWat/Sew/SD/Irr/Gas/Elec/Tel/Catv:"))
   )
-  (SETQ LABEL-SIZE "")
-  (COND
-    ((HAWS-UT-GETVAR "IsExisting")
-     (SETQ LABEL-SIZE (GETSTRING (STRCAT "\nSize for label <none>: ")))
+  (setq label-size "")
+  (cond
+    ((haws-ut-getvar "IsExisting")
+     (setq label-size (getstring (strcat "\nSize for label <none>: ")))
     )
   )
-  (HAWS-UT-SETVAR
+  (haws-ut-setvar
     "HalfWidth"
-    (COND
-      ((HAWS-UT-GETVAR "IsExisting") (/ (ATOF LABEL-SIZE) 24))
-      ((HAWS-UT-GETVAR "HalfWidth"))
+    (cond
+      ((haws-ut-getvar "IsExisting") (/ (atof label-size) 24))
+      ((haws-ut-getvar "HalfWidth"))
       (0)
     )
   )
-  (SETQ
-    LABEL-SIZE
-     (IF (= LABEL-SIZE "")
+  (setq
+    label-size
+     (if (= label-size "")
        ""
-       (STRCAT LABEL-SIZE "\" ")
+       (strcat label-size "\" ")
      )
   )
-  (SETVAR "filedia" 0)
+  (setvar "filedia" 0)
   (vl-cmdf "._vslide" "pipetabl")
-  (SETVAR "filedia" 1)
-  (IF (SETQ
-        TEMP
-         (GETREAL
-           (STRCAT
+  (setvar "filedia" 1)
+  (if (setq
+        temp
+         (getreal
+           (strcat
              "\nSize for graphic width (0 for small)<"
-             (RTOS (* 24 (HAWS-UT-GETVAR "HalfWidth")) 5 2)
+             (rtos (* 24 (haws-ut-getvar "HalfWidth")) 5 2)
              ">:"
            )
          )
       )
-    (HAWS-UT-SETVAR "HalfWidth" (/ TEMP 24))
+    (haws-ut-setvar "HalfWidth" (/ temp 24))
   )
-  (REDRAW)
-  (COND
-    ((HAWS-UT-GETVAR "IsExisting")
-     (SETQ
-       LABEL-TYPE
-        (COND
-          ((= (HAWS-UT-GETVAR "Key") "WAT") "W")
-          ((= (HAWS-UT-GETVAR "Key") "SEW") "S")
-          ((= (HAWS-UT-GETVAR "Key") "SD") "SD")
-          ((= (HAWS-UT-GETVAR "Key") "IRR") "IRR")
-          ((= (HAWS-UT-GETVAR "Key") "GAS") "G")
-          ((= (HAWS-UT-GETVAR "Key") "ELEC") "E")
-          ((= (HAWS-UT-GETVAR "Key") "TEL") "T")
-          ((= (HAWS-UT-GETVAR "Key") "CATV") "TV")
+  (redraw)
+  (cond
+    ((haws-ut-getvar "IsExisting")
+     (setq
+       label-type
+        (cond
+          ((= (haws-ut-getvar "Key") "WAT") "W")
+          ((= (haws-ut-getvar "Key") "SEW") "S")
+          ((= (haws-ut-getvar "Key") "SD") "SD")
+          ((= (haws-ut-getvar "Key") "IRR") "IRR")
+          ((= (haws-ut-getvar "Key") "GAS") "G")
+          ((= (haws-ut-getvar "Key") "ELEC") "E")
+          ((= (haws-ut-getvar "Key") "TEL") "T")
+          ((= (haws-ut-getvar "Key") "CATV") "TV")
         )
-       TEMP
-        (GETSTRING "\nMaterial for label <none>: ")
-       LABEL-MATERIAL
-        (IF (= TEMP "")
-          TEMP
-          (STRCAT " (" TEMP ")")
+       temp
+        (getstring "\nMaterial for label <none>: ")
+       label-material
+        (if (= temp "")
+          temp
+          (strcat " (" temp ")")
         )
-       LABEL
-        (STRCAT LABEL-SIZE LABEL-TYPE LABEL-MATERIAL)
-       TEMP
-        (GETSTRING
+       label
+        (strcat label-size label-type label-material)
+       temp
+        (getstring
           1
-          (STRCAT "\nFull label or . for none <" LABEL ">: ")
+          (strcat "\nFull label or . for none <" label ">: ")
         )
      )
-     (HAWS-UT-SETVAR
+     (haws-ut-setvar
        "Label"
-       (COND
-         ((= TEMP "") LABEL)
-         ((= TEMP ".") NIL)
-         (TEMP)
+       (cond
+         ((= temp "") label)
+         ((= temp ".") nil)
+         (temp)
        )
      )
     )
   )
-  (IF (HAWS-UT-GETVAR "IsExisting")
-    (HAWS-UT-SETVAR "Key" (STRCAT "X" (HAWS-UT-GETVAR "Key")))
+  (if (haws-ut-getvar "IsExisting")
+    (haws-ut-setvar "Key" (strcat "X" (haws-ut-getvar "Key")))
   )
-  (HAWS-UT-SETVAR
+  (haws-ut-setvar
     "Layer.PL"
-    (CAR
-      (HAWS-MKLAYR (STRCAT "UT" (HAWS-UT-GETVAR "Key") "PL"))
+    (car
+      (haws-mklayr (strcat "UT" (haws-ut-getvar "Key") "PL"))
     )
   )
-  (HAWS-UT-SETVAR
+  (haws-ut-setvar
     "Layer.OD"
-    (CAR
-      (HAWS-MKLAYR (STRCAT "UT" (HAWS-UT-GETVAR "Key") "OD"))
+    (car
+      (haws-mklayr (strcat "UT" (haws-ut-getvar "Key") "OD"))
     )
   )
 )
 
-(DEFUN HAWS-UT-GETVAR (VAR)
-  (SETQ VAR (STRCASE VAR))
-  (CADR (ASSOC VAR *HAWS-UT-SETTINGS*))
+(defun haws-ut-getvar (var)
+  (setq var (strcase var))
+  (cadr (assoc var *haws-ut-settings*))
 )
 
-(DEFUN HAWS-UT-SETVAR (VAR VAL)
-  (SETQ
-    VAR                (STRCASE VAR)
-    *HAWS-UT-SETTINGS* (COND
-                         ((ASSOC VAR *HAWS-UT-SETTINGS*)
-                          (SUBST
-                            (LIST VAR VAL)
-                            (ASSOC VAR *HAWS-UT-SETTINGS*)
-                            *HAWS-UT-SETTINGS*
+(defun haws-ut-setvar (var val)
+  (setq
+    var                (strcase var)
+    *haws-ut-settings* (cond
+                         ((assoc var *haws-ut-settings*)
+                          (subst
+                            (list var val)
+                            (assoc var *haws-ut-settings*)
+                            *haws-ut-settings*
                           )
                          )
-                         (T (CONS (LIST VAR VAL) *HAWS-UT-SETTINGS*))
+                         (t (cons (list var val) *haws-ut-settings*))
                        )
   )
-  VAL
+  val
 )
 
-(DEFUN HAWS-UT-ASSURE-LABEL-BLOCK (BLOCK-NAME JUSTIFICATION INSERTION)
-  (COND
-    ((AND
-       (HAWS-UT-GETVAR "IsExisting")
-       (HAWS-UT-GETVAR "Label")
-       (NOT (TBLSEARCH "BLOCK" BLOCK-NAME))
+(defun haws-ut-assure-label-block (block-name justification insertion)
+  (cond
+    ((and
+       (haws-ut-getvar "IsExisting")
+       (haws-ut-getvar "Label")
+       (not (tblsearch "BLOCK" block-name))
      )
-     (HAWS-MKTEXT JUSTIFICATION INSERTION 1.0 0 "X")
-     (vl-cmdf "._block" BLOCK-NAME INSERTION (ENTLAST) "")
+     (haws-mktext justification insertion 1.0 0 "X")
+     (vl-cmdf "._block" block-name insertion (entlast) "")
     )
   )
 )
 
-(DEFUN HAWS-UT-MAKE-OD (ENAME-PLINE DIRECTION / ENAME-OD OFFSET-POINT)
+(defun haws-ut-make-od (ename-pline direction / ename-od offset-point)
   (vl-cmdf
     "._offset"
-    (HAWS-UT-GETVAR "HalfWidth")
-    (LIST ENAME-PLINE '(0 0))
+    (haws-ut-getvar "HalfWidth")
+    (list ename-pline '(0 0))
     "_non"
-    (SETQ
-      OFFSET-POINT
-       (LIST 0 (* DIRECTION (HAWS-UT-GETVAR "HalfWidth")) 0)
+    (setq
+      offset-point
+       (list 0 (* direction (haws-ut-getvar "HalfWidth")) 0)
     )
     ""
   )
-  (SETQ ENAME-OD (ENTLAST))
-  (ENTMOD
-    (SUBST
-      (CONS 8 (HAWS-UT-GETVAR "Layer.OD"))
-      (ASSOC 8 (ENTGET ENAME-OD))
-      (ENTGET ENAME-OD)
+  (setq ename-od (entlast))
+  (entmod
+    (subst
+      (cons 8 (haws-ut-getvar "Layer.OD"))
+      (assoc 8 (entget ename-od))
+      (entget ename-od)
     )
   )
-  (LIST ENAME-OD OFFSET-POINT)
+  (list ename-od offset-point)
 )
-(DEFUN HAWS-UT-RESTORE-UCS ()
-  (COND (UCSP (SETQ UCSP NIL) (vl-cmdf "._ucs" "_p")))
+(defun haws-ut-restore-ucs ()
+  (cond (ucsp (setq ucsp nil) (vl-cmdf "._ucs" "_p")))
 )
- ;|«Visual LISP© Format Options»
-(72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)
+ ;|ï¿½Visual LISPï¿½ Format Optionsï¿½
+(72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil t)
 ;*** DO NOT add text below the comment! ***|;

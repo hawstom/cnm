@@ -1,6 +1,6 @@
-;(C) Copyright 1997 by Thomas Gail Haws
-(DEFUN c:haws-ROUND
-  ( / ss1 i enamei r ELISTI NUM)
+﻿;(C) Copyright 1997 by Thomas Gail Haws
+(defun c:haws-round
+  ( / ss1 i enamei r elisti num)
 (haws-core-init 307)
   (setq
     ss1

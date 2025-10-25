@@ -1,51 +1,51 @@
-;;; Written by Thomas Gail Haws
+ï»¿;;; Written by Thomas Gail Haws
 ;;; AET section
-(DEFUN C:HAWS-ACRES ()
-  (HAWS-CORE-INIT 156)
-  (HAWS-AET (/ 1.0 43560) " AC")
+(defun c:haws-acres ()
+  (haws-core-init 156)
+  (haws-aet (/ 1.0 43560) " AC")
 )
-(DEFUN C:HAWS-SF () (HAWS-CORE-INIT 157) (HAWS-AET 1 " SF"))
-(DEFUN HAWS_EVANGEL_MSG_PROMPT ()
-  (PROMPT (STRCAT "\n" (HAWS_EVANGEL_MSG)))
+(defun c:haws-sf () (haws-core-init 157) (haws-aet 1 " SF"))
+(defun haws_evangel_msg_prompt ()
+  (prompt (strcat "\n" (haws_evangel_msg)))
 )
 
-(DEFUN C:HAWS-AET () (HAWS-CORE-INIT 158) (HAWS_EVANGEL_MSG_PROMPT) (HAWS-AET 1 ""))
-(DEFUN C:HAWS-SM ()
-  (HAWS-CORE-INIT 159)
-  (HAWS-AET (/ 1.0 27878400) " SQ. MI.")
+(defun c:haws-aet () (haws-core-init 158) (haws_evangel_msg_prompt) (haws-aet 1 ""))
+(defun c:haws-sm ()
+  (haws-core-init 159)
+  (haws-aet (/ 1.0 27878400) " SQ. MI.")
 )
-(DEFUN C:HAWS-SY ()
-  (HAWS-CORE-INIT 160)
-  (HAWS-AET (/ 1.0 9) " SY")
+(defun c:haws-sy ()
+  (haws-core-init 160)
+  (haws-aet (/ 1.0 9) " SY")
 )
-(DEFUN HAWS-AET (FACTOR LABEL / AREA TS TXPT)
-  (SETQ HAWS-QT-INSTANCE (HAWS-QT-NEW "haws-aet"))
-  (HAWS-QT-SET-PROPERTY HAWS-QT-INSTANCE "type" "area")
-  (HAWS-QT-SET-PROPERTY HAWS-QT-INSTANCE "factor" FACTOR)
-  (HAWS-QT-SET-PROPERTY HAWS-QT-INSTANCE "postfix" LABEL)
-  (HAWS-QT-SET-PROPERTY
-    HAWS-QT-INSTANCE
+(defun haws-aet (factor label / area ts txpt)
+  (setq haws-qt-instance (haws-qt-new "haws-aet"))
+  (haws-qt-set-property haws-qt-instance "type" "area")
+  (haws-qt-set-property haws-qt-instance "factor" factor)
+  (haws-qt-set-property haws-qt-instance "postfix" label)
+  (haws-qt-set-property
+    haws-qt-instance
     "precision"
-    (GETVAR "luprec")
+    (getvar "luprec")
   )
-  (HAWS-QT-STRING HAWS-QT-INSTANCE)
-  (HAWS-QT-ADD-DRAWING-TEXT HAWS-QT-INSTANCE)
-  (PRINC)
+  (haws-qt-string haws-qt-instance)
+  (haws-qt-add-drawing-text haws-qt-instance)
+  (princ)
 )
 ;;; ADL section
-(DEFUN C:HAWS-ADL () (HAWS-ADL 1 "LF"))
-(DEFUN HAWS-ADL (FACTOR LABEL / E SS LEN I HAWS-QT-INSTANCE)
-  (HAWS-CORE-INIT 0)
-  (SETQ HAWS-QT-INSTANCE (HAWS-QT-NEW "haws-adl"))
-  (HAWS-QT-SET-PROPERTY HAWS-QT-INSTANCE "type" "length")
-  (HAWS-QT-SET-PROPERTY
-    HAWS-QT-INSTANCE
+(defun c:haws-adl () (haws-adl 1 "LF"))
+(defun haws-adl (factor label / e ss len i haws-qt-instance)
+  (haws-core-init 0)
+  (setq haws-qt-instance (haws-qt-new "haws-adl"))
+  (haws-qt-set-property haws-qt-instance "type" "length")
+  (haws-qt-set-property
+    haws-qt-instance
     "precision"
-    (GETVAR "luprec")
+    (getvar "luprec")
   )
-  (HAWS-QT-STRING HAWS-QT-INSTANCE)
-  (HAWS-QT-ADD-DRAWING-TEXT HAWS-QT-INSTANCE)
-  (PRINC)
+  (haws-qt-string haws-qt-instance)
+  (haws-qt-add-drawing-text haws-qt-instance)
+  (princ)
 )
 ;;; HAWS-QT "Class" library section
 
@@ -56,264 +56,264 @@
 ;; destination can be "return", "prompt", "drawing", "text", "attribute"
 ;; action can be "replace", "prepend", "append"
 ;; space can be "mspace" or "pspace"
-(DEFUN HAWS-QT-NEW (NAME / INSTANCE)
-  (SETQ
-    INSTANCE
-     (LIST
-       NAME
-       (CONS "name" NAME)
-       (CONS "mode" "ss")
-       (CONS "type" "area")
-       (CONS "factor" 1)
-       (CONS "underline_string" "%%u")
-       (CONS "underline_p" NIL)
-       (CONS "overline_string" "%%o")
-       (CONS "overline_p" NIL)
-       (CONS "prefix" "")
-       (CONS "postfix" "")
-       (CONS "precision" 0)
-       (CONS "destination" "prompt")
-       (CONS "position" "replace")
-       (CONS "string" "")
-       (CONS "space" NIL)
+(defun haws-qt-new (name / instance)
+  (setq
+    instance
+     (list
+       name
+       (cons "name" name)
+       (cons "mode" "ss")
+       (cons "type" "area")
+       (cons "factor" 1)
+       (cons "underline_string" "%%u")
+       (cons "underline_p" nil)
+       (cons "overline_string" "%%o")
+       (cons "overline_p" nil)
+       (cons "prefix" "")
+       (cons "postfix" "")
+       (cons "precision" 0)
+       (cons "destination" "prompt")
+       (cons "position" "replace")
+       (cons "string" "")
+       (cons "space" nil)
      )
   )
-  (COND
-    ((NOT (ASSOC NAME *HAWS-QT-INSTANCES*))
-     (SETQ *HAWS-QT-INSTANCES* (CONS INSTANCE *HAWS-QT-INSTANCES*))
+  (cond
+    ((not (assoc name *haws-qt-instances*))
+     (setq *haws-qt-instances* (cons instance *haws-qt-instances*))
     )
   )
-  NAME
+  name
 )
 
-(DEFUN HAWS-QT-SET-PROPERTY (INSTANCE PROPERTY VALUE)
-  (SETQ
-    *HAWS-QT-INSTANCES*
-     (SUBST
-       (COND
-         ((ASSOC
-            PROPERTY
-            (CDR
-              (ASSOC INSTANCE *HAWS-QT-INSTANCES*)
+(defun haws-qt-set-property (instance property value)
+  (setq
+    *haws-qt-instances*
+     (subst
+       (cond
+         ((assoc
+            property
+            (cdr
+              (assoc instance *haws-qt-instances*)
             )
           )
           ;; Update it if it exists
-          (SUBST
-            (CONS PROPERTY VALUE)
-            (ASSOC
-              PROPERTY
-              (CDR
-                (ASSOC INSTANCE *HAWS-QT-INSTANCES*)
+          (subst
+            (cons property value)
+            (assoc
+              property
+              (cdr
+                (assoc instance *haws-qt-instances*)
               )
             )
-            (ASSOC INSTANCE *HAWS-QT-INSTANCES*)
+            (assoc instance *haws-qt-instances*)
           )
          )
-         (T
+         (t
           ;; Add it if it doesn't exist
-          (REVERSE
-            (CONS
-              (CONS PROPERTY VALUE)
-              (REVERSE
-                (ASSOC INSTANCE *HAWS-QT-INSTANCES*)
+          (reverse
+            (cons
+              (cons property value)
+              (reverse
+                (assoc instance *haws-qt-instances*)
               )
             )
           )
          )
        )
-       (ASSOC INSTANCE *HAWS-QT-INSTANCES*)
-       *HAWS-QT-INSTANCES*
+       (assoc instance *haws-qt-instances*)
+       *haws-qt-instances*
      )
   )
-  VALUE
+  value
 )
 
-(DEFUN HAWS-QT-GET-PROPERTY (INSTANCE PROPERTY)
-  (CDR
-    (ASSOC PROPERTY (CDR (ASSOC INSTANCE *HAWS-QT-INSTANCES*)))
+(defun haws-qt-get-property (instance property)
+  (cdr
+    (assoc property (cdr (assoc instance *haws-qt-instances*)))
   )
 )
 
 ;; Gives user custom prompt for selection.
 ;; Follows HAWS-QT instance properties for formatting: factor, underline, overline, prefix, postfix, precision
 ;; Sets HAWS-QT instance string property
-(DEFUN HAWS-QT-STRING (INSTANCE / SS TOTAL)
-  (SETQ TOTAL (HAWS-QT-SS-TOTAL INSTANCE))
-  (HAWS-QT-SET-PROPERTY
-    INSTANCE
+(defun haws-qt-string (instance / ss total)
+  (setq total (haws-qt-ss-total instance))
+  (haws-qt-set-property
+    instance
     "string"
-    (STRCAT
-      (COND
-        ((HAWS-QT-GET-PROPERTY INSTANCE "underline_p")
-         (HAWS-QT-GET-PROPERTY INSTANCE "underline_string")
+    (strcat
+      (cond
+        ((haws-qt-get-property instance "underline_p")
+         (haws-qt-get-property instance "underline_string")
         )
-        ((HAWS-QT-GET-PROPERTY INSTANCE "overline_p")
-         (HAWS-QT-GET-PROPERTY INSTANCE "overline_string")
+        ((haws-qt-get-property instance "overline_p")
+         (haws-qt-get-property instance "overline_string")
         )
         ("")
       )
-      (HAWS-QT-GET-PROPERTY INSTANCE "prefix")
-      (RTOS
-        (* TOTAL (HAWS-QT-GET-PROPERTY INSTANCE "factor"))
+      (haws-qt-get-property instance "prefix")
+      (rtos
+        (* total (haws-qt-get-property instance "factor"))
         2
-        (HAWS-QT-GET-PROPERTY INSTANCE "precision")
+        (haws-qt-get-property instance "precision")
       )
-      (HAWS-QT-GET-PROPERTY INSTANCE "postfix")
+      (haws-qt-get-property instance "postfix")
     )
   )
 )
 ;; Returns a real number in native units.
 ;; Valid types: "length", "area"
-(DEFUN HAWS-QT-SS-TOTAL (INSTANCE / E ENAMELIST I Q QI QTYPE SMODE)
-  (SETQ
-    Q 0.0
-    QTYPE
-     (HAWS-QT-GET-PROPERTY INSTANCE "type")
-    ENAMELIST
-     (HAWS-QT-SELECT)
+(defun haws-qt-ss-total (instance / e enamelist i q qi qtype smode)
+  (setq
+    q 0.0
+    qtype
+     (haws-qt-get-property instance "type")
+    enamelist
+     (haws-qt-select)
   )
-  (COND
-    (ENAMELIST
-     (FOREACH E ENAMELIST (SETQ Q (HAWS-QT-ADD-ENT E Q QTYPE)))
+  (cond
+    (enamelist
+     (foreach e enamelist (setq q (haws-qt-add-ent e q qtype)))
     )
   )
-  Q
+  q
 )
-(DEFUN HAWS-QT-SELECT (/ CONTINUE-P ENAMELIST INPUT-RESULTS LAYERLIST SS-P)
-  (SETQ ENAMELIST '())
-  (WHILE (NOT CONTINUE-P)
-    (SETQ
-      INPUT-RESULTS
-       (COND
-         (SS-P (HAWS-QT-SELECT-SSGET))
-         (T (HAWS-QT-SELECT-MULTI-NENTSEL))
+(defun haws-qt-select (/ continue-p enamelist input-results layerlist ss-p)
+  (setq enamelist '())
+  (while (not continue-p)
+    (setq
+      input-results
+       (cond
+         (ss-p (haws-qt-select-ssget))
+         (t (haws-qt-select-multi-nentsel))
        )
-      SS-P
-       (CADR INPUT-RESULTS)
-      CONTINUE-P
-       (CADDR INPUT-RESULTS)
+      ss-p
+       (cadr input-results)
+      continue-p
+       (caddr input-results)
     )
-    (COND
-      ((CAR INPUT-RESULTS)
-       (SETQ ENAMELIST (APPEND ENAMELIST (CAR INPUT-RESULTS)))
+    (cond
+      ((car input-results)
+       (setq enamelist (append enamelist (car input-results)))
       )
     )
   )
-  ENAMELIST
+  enamelist
 )
-(DEFUN HAWS-QT-SELECT-SSGET (/ CONTINUE-P ENAMELIST INPUT1 SS-P)
-  (SETQ
-    INPUT1
-     (SSGET)
-    CONTINUE-P
-     (NOT INPUT1)
-    SS-P NIL
-    ENAMELIST
-     (HAWS-QT-SELECT-SS-TO-LIST INPUT1)
+(defun haws-qt-select-ssget (/ continue-p enamelist input1 ss-p)
+  (setq
+    input1
+     (ssget)
+    continue-p
+     (not input1)
+    ss-p nil
+    enamelist
+     (haws-qt-select-ss-to-list input1)
   )
-  (LIST ENAMELIST SS-P CONTINUE-P)
+  (list enamelist ss-p continue-p)
 )
-(DEFUN HAWS-QT-SELECT-SS-TO-LIST (INPUT1 / EN I SS1 SSLIST)
-  (COND
-    ((AND INPUT1 (= (TYPE INPUT1) 'PICKSET))
-     (SETQ
-       SS1 INPUT1
-       I   -1
+(defun haws-qt-select-ss-to-list (input1 / en i ss1 sslist)
+  (cond
+    ((and input1 (= (type input1) 'PICKSET))
+     (setq
+       ss1 input1
+       i   -1
      )
-     (WHILE (SETQ EN (SSNAME SS1 (SETQ I (1+ I))))
-       (SETQ SSLIST (CONS EN SSLIST))
+     (while (setq en (ssname ss1 (setq i (1+ i))))
+       (setq sslist (cons en sslist))
      )
-     SSLIST
+     sslist
     )
   )
 )
-(DEFUN HAWS-QT-SELECT-MULTI-NENTSEL
-   (/ CONTINUE-P ENAMELIST INPUT1 SS-P NENTSEL-RESULTS)
-  (INITGET "Selection Continue")
-  (SETQ
-    INPUT1
-     (NENTSEL
-       (STRCAT
+(defun haws-qt-select-multi-nentsel
+   (/ continue-p enamelist input1 ss-p nentsel-results)
+  (initget "Selection Continue")
+  (setq
+    input1
+     (nentsel
+       (strcat
          "\nSelect nested object or [Selection set/Continue] <Continue>: "
        )
      )
-    CONTINUE-P
-     (NOT INPUT1)
-    SS-P
-     (= INPUT1 "Selection")
-    ENAMELIST
-     (COND
-       ((AND INPUT1 (= (TYPE INPUT1) 'LIST))
-        (PRINC (STRCAT "\n" (CDR(ASSOC 0 (ENTGET (CAR INPUT1)))) " was selected."))
-        (LIST (CAR INPUT1))
+    continue-p
+     (not input1)
+    ss-p
+     (= input1 "Selection")
+    enamelist
+     (cond
+       ((and input1 (= (type input1) 'LIST))
+        (princ (strcat "\n" (cdr(assoc 0 (entget (car input1)))) " was selected."))
+        (list (car input1))
        )
-       (T NIL)
+       (t nil)
      )
   )
-  (LIST ENAMELIST SS-P CONTINUE-P)
+  (list enamelist ss-p continue-p)
 )
-(DEFUN HAWS-QT-ADD-ENT (E Q QTYPE / OBJ QI)
-  (IF (AND
-        (= (CDR (ASSOC 0 (ENTGET E))) "VERTEX")
-        (ASSOC 330 (ENTGET E))
+(defun haws-qt-add-ent (e q qtype / obj qi)
+  (if (and
+        (= (cdr (assoc 0 (entget e))) "VERTEX")
+        (assoc 330 (entget e))
       )
-    (SETQ E (CDR (ASSOC 330 (ENTGET E))))
+    (setq e (cdr (assoc 330 (entget e))))
   )
-  (SETQ
-    OBJ
-     (VLAX-ENAME->VLA-OBJECT E)
-    ERROBJ
-     (VL-CATCH-ALL-APPLY 'VLAX-CURVE-GETSTARTPOINT (list OBJ))
-    QI (COND
-         ((VL-CATCH-ALL-ERROR-P ERROBJ)
-          (PRINC
-            (STRCAT
+  (setq
+    obj
+     (vlax-ename->vla-object e)
+    errobj
+     (vl-catch-all-apply 'VLAX-CURVE-GETSTARTPOINT (list obj))
+    qi (cond
+         ((vl-catch-all-error-p errobj)
+          (princ
+            (strcat
               "\nCan't get quantity from a "
-              (CDR (ASSOC 0 (ENTGET E)))
+              (cdr (assoc 0 (entget e)))
               "."
             )
           )
           0
          )
-         ((= QTYPE "length")
-          (COND
-            ((= (CDR (ASSOC 0 (ENTGET E))) "AECC_PIPE")
-             (PRINC "\nGetting 3D length of AECC_PIPE object.")
-             (VLAX-GET-PROPERTY OBJ 'LENGTH3D)
+         ((= qtype "length")
+          (cond
+            ((= (cdr (assoc 0 (entget e))) "AECC_PIPE")
+             (princ "\nGetting 3D length of AECC_PIPE object.")
+             (vlax-get-property obj 'LENGTH3D)
             )
-            (T
-             (VLAX-CURVE-GETDISTATPARAM
-               OBJ
-               (VLAX-CURVE-GETENDPARAM OBJ)
+            (t
+             (vlax-curve-getdistatparam
+               obj
+               (vlax-curve-getendparam obj)
              )
             )
           )
          )
-         ((= QTYPE "area") (VLAX-CURVE-GETAREA OBJ))
+         ((= qtype "area") (vlax-curve-getarea obj))
        )
-    Q (COND
-        (QI (+ Q QI))
-        (Q)
+    q (cond
+        (qi (+ q qi))
+        (q)
       )
   )
-  Q
+  q
 )
-(DEFUN HAWS-QT-ADD-DRAWING-TEXT (INSTANCE / QT-STRING TS TXPT)
-  (PRINC (STRCAT "\n"))
-  (SETQ
-    TXPT (GETPOINT
-           (STRCAT
+(defun haws-qt-add-drawing-text (instance / qt-string ts txpt)
+  (princ (strcat "\n"))
+  (setq
+    txpt (getpoint
+           (strcat
              "\nMiddle point for text \""
-             (SETQ QT-STRING (HAWS-QT-GET-PROPERTY INSTANCE "string"))
+             (setq qt-string (haws-qt-get-property instance "string"))
              "\": "
            )
          )
-    TS   (* (GETVAR "dimscale") (GETVAR "dimtxt"))
+    ts   (* (getvar "dimscale") (getvar "dimtxt"))
   )
-  (IF TXPT
-    (HAWS-MKTEXT "m" TXPT NIL 0 QT-STRING)
+  (if txpt
+    (haws-mktext "m" txpt nil 0 qt-string)
   )
 )
- ;|«Visual LISP© Format Options»
-(72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)
+ ;|ï¿½Visual LISPï¿½ Format Optionsï¿½
+(72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil t)
 ;*** DO NOT add text below the comment! ***|

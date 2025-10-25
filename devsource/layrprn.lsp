@@ -1,6 +1,6 @@
-; TIP964.LSP: LP.LSP   Layer List to File   (c)1994, Michael L. Jenkins
+﻿; TIP964.LSP: LP.LSP   Layer List to File   (c)1994, Michael L. Jenkins
 
-(defun c:haws-LAPRN (/ status lyr file lyr_list)
+(defun c:haws-laprn (/ status lyr file lyr_list)
 (haws-core-init 79)
 
   (defun _today ()
@@ -31,7 +31,7 @@
   )
 
   (setq
-    lyr (tblnext "LAYER" T)
+    lyr (tblnext "LAYER" t)
     lyr_list nil
   )
   (while lyr
@@ -42,11 +42,11 @@
   )
   (setq lyr_list (acad_strlsort lyr_list))
   (prompt "\nGenerating report...")
-  (setq file (open (strcat (HAWS-GETDNPATH) ".TXT") "w"))
+  (setq file (open (strcat (haws-getdnpath) ".TXT") "w"))
   (write-line (strcat "Current Date: "(_today)) file)
   (write-line (strcat "Current Time: "(_time)) file)
   (write-line (strcat "Current User: "(strcase(getvar"loginname"))) file)
-  (write-line (strcat "Drawing Name: "(HAWS-GETDNPATH)) file)
+  (write-line (strcat "Drawing Name: "(haws-getdnpath)) file)
   (write-line (strcat "Total Layers: " (itoa (length lyr_list))) file)
   (write-line "Layer Name                                     Of Fr Lk Color Linetype         " file)
   (write-line "-----------------------------------------------------------------------------" file)

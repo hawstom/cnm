@@ -1,4 +1,4 @@
-;Written by Thomas Gail Haws
+﻿;Written by Thomas Gail Haws
 (defun c:haws-chnum ( / starti i inc txset en el)
 (haws-core-init 173)
   (setq

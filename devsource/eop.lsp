@@ -1,47 +1,47 @@
-(DEFUN C:HAWS-EOP (/ P1 P2 P3 S1 S2 S3 C1 C2 WT W1 A1 A2 A3)
-  (HAWS-CORE-INIT 221)
-  (SETQ
-    P1 (GETPOINT "\nPick outside end of pipe (either side): ")
-    P2 (GETPOINT P1 "\nPick end of other side: ")
-    WT (GETREAL "\nEnter wall thickness: ")
-    P3 (LIST
-         (/ (+ (CAR P1) (CAR P2)) 2)
-         (/ (+ (CADR P1) (CADR P2)) 2)
+ï»¿(defun c:haws-eop (/ p1 p2 p3 s1 s2 s3 c1 c2 wt w1 a1 a2 a3)
+  (haws-core-init 221)
+  (setq
+    p1 (getpoint "\nPick outside end of pipe (either side): ")
+    p2 (getpoint p1 "\nPick end of other side: ")
+    wt (getreal "\nEnter wall thickness: ")
+    p3 (list
+         (/ (+ (car p1) (car p2)) 2)
+         (/ (+ (cadr p1) (cadr p2)) 2)
        )
-    W1 (/ (DISTANCE P1 P2) 8.0)
-    C1 (LIST
-         (/ (+ (CAR P1) (CAR P3)) 2)
-         (/ (+ (CADR P1) (CADR P3)) 2)
+    w1 (/ (distance p1 p2) 8.0)
+    c1 (list
+         (/ (+ (car p1) (car p3)) 2)
+         (/ (+ (cadr p1) (cadr p3)) 2)
        )
-    C2 (LIST
-         (/ (+ (CAR P2) (CAR P3)) 2)
-         (/ (+ (CADR P2) (CADR P3)) 2)
+    c2 (list
+         (/ (+ (car p2) (car p3)) 2)
+         (/ (+ (cadr p2) (cadr p3)) 2)
        )
-    A1 (ANGLE P1 P2)
-    A2 (+ A1 (/ PI 2))
-    A3 (+ A2 PI)
-    S1 (POLAR C1 A2 W1)
-    S2 (POLAR C2 A2 W1)
-    S3 (POLAR C2 A3 W1)
+    a1 (angle p1 p2)
+    a2 (+ a1 (/ pi 2))
+    a3 (+ a2 pi)
+    s1 (polar c1 a2 w1)
+    s2 (polar c2 a2 w1)
+    s3 (polar c2 a3 w1)
   ) ;_ end of SETQ
-  (vl-cmdf "._arc" P1 S1 P3 "._arc" P3 S2 P2 "._arc" P3 S3 P2)
-  (COND
-    ((/= WT 0)
-     (SETQ
-       P2 (POLAR P2 (+ A1 PI) WT)
-       C1 (POLAR C1 A1 (/ WT 2))
-       C2 (POLAR C2 (+ A1 PI) (/ WT 2))
-       S1 (POLAR C1 A2 (- W1 (/ WT 2)))
-       S2 (POLAR C2 A2 (- W1 (/ WT 2)))
-       S3 (POLAR C2 A3 (- W1 (/ WT 2)))
+  (vl-cmdf "._arc" p1 s1 p3 "._arc" p3 s2 p2 "._arc" p3 s3 p2)
+  (cond
+    ((/= wt 0)
+     (setq
+       p2 (polar p2 (+ a1 pi) wt)
+       c1 (polar c1 a1 (/ wt 2))
+       c2 (polar c2 (+ a1 pi) (/ wt 2))
+       s1 (polar c1 a2 (- w1 (/ wt 2)))
+       s2 (polar c2 a2 (- w1 (/ wt 2)))
+       s3 (polar c2 a3 (- w1 (/ wt 2)))
      ) ;_ end of SETQ
-     (vl-cmdf "._arc" P2 S2 P3 "._arc" P2 S3 P3)
+     (vl-cmdf "._arc" p2 s2 p3 "._arc" p2 s3 p3)
     )
   ) ;_ end of COND
-  (HAWS-VRSTOR)
-  (HAWS-CORE-RESTORE)
-  (PRINC)
+  (haws-vrstor)
+  (haws-core-restore)
+  (princ)
 ) ;_ end of DEFUN
-;|«Visual LISP© Format Options»
-(72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)
+;|ï¿½Visual LISPï¿½ Format Optionsï¿½
+(72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil t)
 ;*** DO NOT add text below the comment! ***|;

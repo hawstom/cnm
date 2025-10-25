@@ -1,10 +1,10 @@
-;(C) Copyright 1997 by Thomas Gail Haws
+﻿;(C) Copyright 1997 by Thomas Gail Haws
 ;MOFFSET.LSP--Multiple offsets to different layers.
 ;Thomas Gail Haws, Feb. 1996
 (defun c:haws-mof ()
 (haws-core-init 259)(c:haws-moffset))
-(defun c:haws-moffset ( / HAWS-moset)
-  (defun HAWS-moset ( / i offi toti p1)
+(defun c:haws-moffset ( / haws-moset)
+  (defun haws-moset ( / i offi toti p1)
     (setq i 1 oflist nil
       toti (getint "\nNumber of offsets <return to read list from saved drawing text>:")
     )
@@ -18,12 +18,12 @@
           (setq i (1+ i))
         )
       )
-      ( T (setq oflist (read(cdr(assoc 1(entget(car(entsel"\nSelect text:"))))))))
+      ( t (setq oflist (read(cdr(assoc 1(entget(car(entsel"\nSelect text:"))))))))
     )
     (princ "\nList of offsets:  ")(prin1 oflist)
-    (HAWS-mo)
+    (haws-mo)
   )
-  (defun HAWS-mo ( / p1 p2 offi disti layi)
+  (defun haws-mo ( / p1 p2 offi disti layi)
     (cond
       ( (progn
           (initget "Setup")
@@ -41,13 +41,13 @@
           (vl-cmdf "._offset" disti p1 p2 "" "._change" "_last" "" "_p" "_la" layi "")
           (setq offi (cdr offi))
         )
-        T
+        t
       )
-      ((or (not oflist)(= "Setup" p1))(HAWS-moset))
-      (T nil)
+      ((or (not oflist)(= "Setup" p1))(haws-moset))
+      (t nil)
     )
   )
   (haws-core-init 260)
-  (while(HAWS-mo))
+  (while(haws-mo))
   (haws-core-restore)
 )

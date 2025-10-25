@@ -1,4 +1,4 @@
-;(C) Copyright 1998 by Thomas Gail Haws
+﻿;(C) Copyright 1998 by Thomas Gail Haws
 ;   ssxpro.lsp
 (defun c:haws-ssxpro ( / dxfi fltr ss1 vtype)
 (haws-core-init 308)

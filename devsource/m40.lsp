@@ -1,4 +1,4 @@
-;(C) Copyright 1997 by Thomas Gail Haws
+﻿;(C) Copyright 1997 by Thomas Gail Haws
 ;                          |<------------dwlen->|
 ;                          |                    |
 ;              7-6-----------------------------------------1415
@@ -18,7 +18,7 @@
   dwmid dwwid incang left osmold pt1 pt2 pt3 pt4 pt5 pt6 pt7 pt8
   pt9 pt10 pt11 pt12 pt13 pt14 pt15 pt16 ts rad wngang)
 (haws-core-init 85)
-  (defun HAWS-drawm40 ()
+  (defun haws-drawm40 ()
     (setvar "osmode" 0)
     (vl-cmdf "._line" pt1  pt4  "")
     (vl-cmdf "._line" pt2  pt4  "")
@@ -30,26 +30,26 @@
     (vl-cmdf "._line" pt10 pt14 "")
     (vl-cmdf "._line" pt11 pt16 "")
     (vl-cmdf "._line" pt16 pt15 "")
-    (HAWS-MKLAYR "DRIVEWAYTX")
+    (haws-mklayr "DRIVEWAYTX")
     (vl-cmdf "._line" cl1  cl2 "")
-    (HAWS-MKTEXT
+    (haws-mktext
       (if left "MR" "ML")
       cl3
       ts
       (if left (+ ang1 pi) ang1)
       "DW"
     )
-    (HAWS-MKLAYR "DRIVEWAY")
+    (haws-mklayr "DRIVEWAY")
   )
-  (HAWS-VSAVE '("clayer"))
+  (haws-vsave '("clayer"))
   (setq
     osmold (getvar "osmode")
     hcwid (if hcwid hcwid 4.0)
     dwlen(if dwlen dwlen 20.0)
     swwid (if swwid swwid 4.0)
-    ts (* (HAWS-DWGSCALE)(getvar"dimtxt"))
+    ts (* (haws-dwgscale)(getvar"dimtxt"))
   )
-  (HAWS-MKLAYR "DRIVEWAY")
+  (haws-mklayr "DRIVEWAY")
   (while
     (progn
       (initget "Hc Dw Sw")
@@ -101,13 +101,13 @@
           pt15 (polar bccen ang8 (+ rad dwwid hcwid))
           pt16 (polar bccen ang9 (+ rad swwid))
         )
-        (HAWS-drawm40)
+        (haws-drawm40)
         (vl-cmdf "._arc" pt13 "e" pt5 "r" (+ rad dwwid))
         (vl-cmdf "._arc" pt15 "e" pt7 "r" (+ rad dwwid hcwid))
         (setvar "osmode" osmold)
         (vl-cmdf "._undo" "e")
       )
-      ( T
+      ( t
         (vl-cmdf "._undo" "g")
         (setvar "osmode" 128)
         (setq
@@ -138,12 +138,12 @@
           pt16 (polar pt11  ang1 swwid)
           dwlen (* dwlen 2)
         )
-        (HAWS-drawm40)
+        (haws-drawm40)
         (vl-cmdf "._line" pt5 pt13 "")
         (vl-cmdf "._line" pt7 pt15 "")
         (setvar "osmode" osmold)
         (vl-cmdf "._undo" "e")
       )
   ) )
-  (HAWS-VRSTOR)(haws-core-restore)
+  (haws-vrstor)(haws-core-restore)
 )

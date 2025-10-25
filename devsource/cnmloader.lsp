@@ -1,4 +1,4 @@
-
+﻿
 ;;; ============================================================================
 ;;; HOW TO ADD A NEW CNM/HAWSEDC COMMAND
 ;;; ============================================================================
@@ -26,24 +26,24 @@
 ;;; Instead, it simply loads command autoloaders for the CNM Plus tools submenu,
 ;;; which contains all the old HawsEDC commands.
 
-(DEFUN HAWS-autoload (FILENAME COMMANDS / QFN)
-  (SETQ
-    QFN    (STRCAT "\"" FILENAME "\"")
+(defun haws-autoload (filename commands / qfn)
+  (setq
+    qfn    (strcat "\"" filename "\"")
   )
-  (IF COMMANDS
-    (MAPCAR
-      '(LAMBDA (CMD / CMD FUNCTION-NAME)
-         (SETQ FUNCTION-NAME (STRCAT "C:" CMD))
-         (EVAL
-           (READ
-             (STRCAT "(defun " FUNCTION-NAME "() (PRINC \"" (STRCAT "\nAutoloading CNM command: " CMD ) "\") (c:HAWS-LOAD-FROM-APP-DIR " QFN ") (" FUNCTION-NAME "))")
+  (if commands
+    (mapcar
+      '(lambda (cmd / cmd function-name)
+         (setq function-name (strcat "C:" cmd))
+         (eval
+           (read
+             (strcat "(defun " function-name "() (PRINC \"" (strcat "\nAutoloading CNM command: " cmd ) "\") (c:HAWS-LOAD-FROM-APP-DIR " qfn ") (" function-name "))")
            )
          )
        )
-    COMMANDS
+    commands
     )
-    (EVAL
-      (READ (STRCAT "(defun c:" (READ QFN) "()(haws-load" QFN "))"))
+    (eval
+      (read (strcat "(defun c:" (read qfn) "()(haws-load" qfn "))"))
     )
   )
 )
@@ -243,15 +243,15 @@
 (setq c:hcnm-cnm nil)
 (load "edclib")
 (if (not c:hcnm-cnm) (load "cnm"))
-(if (not LM:ISANNOTATIVE) (load "lee-mac"))
+(if (not lm:isannotative) (load "lee-mac"))
 
 ;;;Load aliases
 ;;;CNMALIAS.LSP has short names for all the commands.
-(COND
-  ((not *HCNM-CNMALIASLOADED*)
-   (IF(= (LOAD "cnmalias.lsp" "failed") "failed")(ALERT "Couldn't find cnmalias.lsp command aliases."))
+(cond
+  ((not *hcnm-cnmaliasloaded*)
+   (if(= (load "cnmalias.lsp" "failed") "failed")(alert "Couldn't find cnmalias.lsp command aliases."))
   )
-  (T (PRINC "\nSkipping cnmalias.lsp command aliases.  Already loaded."))
+  (t (princ "\nSkipping cnmalias.lsp command aliases.  Already loaded."))
 )
 ;;;The following line loads user.lsp if found.
 (if (setq temp(findfile "user.lsp"))(load temp))
@@ -263,23 +263,23 @@
 ;;; Place the CNM pulldown to the left of the last pulldown already loaded
 ;;;     Created 2/21/97 by Dominic Panholzer
 
-(defun hcnm-PlaceCNMMenu (/ CNT)
-  (setq CNT 1)
-  (while (< CNT 24)
-    (if (menucmd (strcat "P" (itoa CNT) ".1=?"))
-      (setq CNT (1+ CNT))
+(defun hcnm-placecnmmenu (/ cnt)
+  (setq cnt 1)
+  (while (< cnt 24)
+    (if (menucmd (strcat "P" (itoa cnt) ".1=?"))
+      (setq cnt (1+ cnt))
       (progn
-        (if (> CNT 2)
-          (setq CNT (1- CNT))
-          (setq CNT 2)
+        (if (> cnt 2)
+          (setq cnt (1- cnt))
+          (setq cnt 2)
         )
-        (menucmd (strcat "p" (itoa CNT) "=+CNM.pop1"))
-        (setq CNT 25)
+        (menucmd (strcat "p" (itoa cnt) "=+CNM.pop1"))
+        (setq cnt 25)
       )
     )
   )
 )
 
-(if (not(c:haws-icad-p))(hcnm-PlaceCNMMenu)) ;Do it if not in icad
+(if (not(c:haws-icad-p))(hcnm-placecnmmenu)) ;Do it if not in icad
 (princ "\nConstruction Notes Manager menu utilities loaded.")
 (princ)

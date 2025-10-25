@@ -1,9 +1,9 @@
-;BLOCK WALLS
+﻿;BLOCK WALLS
 ;(C) Copyright 1997 by Thomas Gail Haws
-(defun c:haws-WALL
-  ( / wexist rtemp  WALLPL wlt wltpl wlaclr wlayer wlaypl pt1 pt2 pt3 pt4 r e1)
+(defun c:haws-wall
+  ( / wexist rtemp  wallpl wlt wltpl wlaclr wlayer wlaypl pt1 pt2 pt3 pt4 r e1)
   (haws-core-init 327)
-  (HAWS-VSAVE '("ucsfollow" "clayer"))
+  (haws-vsave '("ucsfollow" "clayer"))
   (setvar "ucsfollow" 0)
   (if(not (tblsearch "LTYPE" "utilpl"))
     (vl-cmdf "._linetype" "_l" "*" "ut" "")
@@ -14,8 +14,8 @@
     (setq rtemp(getreal(strcat"\nWidth (0 for narrow)<"(rtos(* 24 r))">:")))
     (setq r (/ rtemp 24))
   )
-  (setq wlaypl (car(HAWS-MKLAYR (if wexist "WALLXPL" "WALLPL"))))
-  (setq wlayer (car(HAWS-MKLAYR (if wexist "WALLXEDGE" "WALLEDGE"))))
+  (setq wlaypl (car(haws-mklayr (if wexist "WALLXPL" "WALLPL"))))
+  (setq wlayer (car(haws-mklayr (if wexist "WALLXEDGE" "WALLEDGE"))))
   (setq pt1 (getpoint "\nStart point:") pt2 pt1 pt3 nil pt4 nil)
   (vl-cmdf "._pline" pt1 "_w" 0)
   (initget "Line Undo Arc CEnter Angle Direction Line Radius Second DRag")
@@ -38,7 +38,7 @@
   (setq wallpl (entlast))
   (cond
     ((= r 0)(vl-cmdf "._change" wallpl "" "_p" "_la" wlayer ""))
-    ( T
+    ( t
       (vl-cmdf "._line" pt1 pt4 "")
       (setq e1 (entlast))
       (vl-cmdf "._ucs" "_e" e1 "._erase" e1 ""
@@ -58,5 +58,5 @@
       (assoc 70 wallpl)
       wallpl
   ) )
-  (redraw)(HAWS-VRSTOR)(haws-core-restore)(princ)
+  (redraw)(haws-vrstor)(haws-core-restore)(princ)
 )

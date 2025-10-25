@@ -1,4 +1,4 @@
-;;;
+﻿;;;
 ;;; SIDEEL (SEL and SER)
 ;;; Adds civil engineering profile side elevations by picking.
 ;;;
@@ -25,30 +25,30 @@
 ;;;    
 ;;;    
 ;;;
-(DEFUN 	 se_getel	(/ en)
+(defun 	 se_getel	(/ en)
 	(setq en (car (nentsel "\nSelect elevation text on profile: ")))
 	(if	en
-		(HAWS-ATOFX (cdr (assoc 1 (entget en))) "*" 1)
+		(haws-atofx (cdr (assoc 1 (entget en))) "*" 1)
 	) ;_ end of if
 ) ;_ end of defun
-(DEFUN 	 se_mktxt	(side el1 y1 pt1 / eli pti)
-	(HAWS-MKLAYR '("p-elev" "m" ""))
+(defun 	 se_mktxt	(side el1 y1 pt1 / eli pti)
+	(haws-mklayr '("p-elev" "m" ""))
 	(setq
 		eli	(+ el1 (/ (- (cadr pt1) (* ds vs) y1) hvexag));Elevation for first text
 		pti	(polar pt1 (/ pi -2) (* ds vs));Insertion point for first text.
 	) ;_ end of setq
 	(repeat	3
-		(HAWS-MKTEXT "BC" pti (* ds ts) 0 (rtos eli 2 0))
+		(haws-mktext "BC" pti (* ds ts) 0 (rtos eli 2 0))
 		(setq
 			eli	(+ eli (/ (* vs ds) hvexag))
 			pti	(polar pti (/ pi 2) (* vs ds))
 		) ;_ end of setq
 	) ;_ end of repeat
 ) ;_ end of defun
-(DEFUN 	 sideel	(side / ds el1 ho hvexag pt1 ts vs y1)
+(defun 	 sideel	(side / ds el1 ho hvexag pt1 ts vs y1)
 	(setq
 	  hvexag 10                          ;Vertical exaggeration
-	  ds (HAWS-DWGSCALE)             ;Dimscale
+	  ds (haws-dwgscale)             ;Dimscale
 	  vs 0.5                             ;Vertical text spacing in plotted inches
 	  ho 0.5                             ;Horizontal text offset from selected point in plotted inches
 	  ts 0.2                             ;Text height in plotted inches 

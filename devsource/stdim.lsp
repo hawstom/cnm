@@ -1,8 +1,8 @@
-;(C) Copyright 1997 by Thomas Gail Haws
+﻿;(C) Copyright 1997 by Thomas Gail Haws
 (defun c:haws-dm ( / addtxt dimstr pt1 pt2)
   (haws-core-init 310)
-  (HAWS-VSAVE '("osmode" "clayer"))
-  (HAWS-VSET'(("osmode" 512)))
+  (haws-vsave '("osmode" "clayer"))
+  (haws-vset'(("osmode" 512)))
   (while
     (=
       (progn
@@ -12,12 +12,12 @@
       "Set"
     )
     (initget "Stdim Dim Xdim Current")
-    (setq *HAWS-dimlay* (getkword "Stdim layer/Dim/Xdim/Current layer: "))
+    (setq *haws-dimlay* (getkword "Stdim layer/Dim/Xdim/Current layer: "))
   )
   (cond
-    ( (= *HAWS-dimlay* "Stdim")(HAWS-MKLAYR "ST-DIM"))
-    ( (= *HAWS-dimlay* "Dim")(HAWS-MKLAYR "DIM"))
-    ( (= *HAWS-dimlay* "Xdim")(HAWS-MKLAYR "XDIM"))
+    ( (= *haws-dimlay* "Stdim")(haws-mklayr "ST-DIM"))
+    ( (= *haws-dimlay* "Dim")(haws-mklayr "DIM"))
+    ( (= *haws-dimlay* "Xdim")(haws-mklayr "XDIM"))
   )
   (setvar "osmode" 128)
   (prompt"\nTip: Type DIMSTY to load dimension styles, then select STREET style before using DM.")
@@ -29,9 +29,9 @@
     (cond
       ( (= dimstr "")(setq dimstr (strcat "<>\\X" addtxt)))
       ( (not (wcmatch dimstr "*\\X*")) (setq dimstr (strcat dimstr "\\X" addtxt)))
-      ( T (setq dimstr (strcat dimstr "\\P" addtxt)))
+      ( t (setq dimstr (strcat dimstr "\\P" addtxt)))
     )
   )
   (vl-cmdf "._dim1" "_al" pt1 pt2 pt1 dimstr)
-  (HAWS-VRSTOR)(haws-core-restore)(princ)
+  (haws-vrstor)(haws-core-restore)(princ)
 )

@@ -1,13 +1,13 @@
-;; EE.LSP
+ï»¿;; EE.LSP
 ;; combined dialogue editor for
 ;; blocks, attdefs, text, and dimensions.
 
-(DEFUN c:haws-ee ()
+(defun c:haws-ee ()
   (haws-core-init 27)
   (haws-editall nil)
   (haws-core-restore)
 )
-(DEFUN haws-editall (cnm-p / e etype set1 obj1)
+(defun haws-editall (cnm-p / e etype set1 obj1)
   (vl-cmdf "._undo" "_group")
   (prompt "\nText Editor:")
   (setq set1 (ssget))
@@ -41,6 +41,6 @@
   )
   (vl-cmdf "._undo" "_end")
 )
-;|«Visual LISP© Format Options»
-(72 2 40 2 nil "end of " 60 2 1 1 1 nil nil nil T)
+;|ï¿½Visual LISPï¿½ Format Optionsï¿½
+(72 2 40 2 nil "end of " 60 2 1 1 1 nil nil nil t)
 ;*** DO NOT add text below the comment! ***|;

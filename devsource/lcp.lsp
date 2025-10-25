@@ -1,85 +1,85 @@
-;;; Written by Thomas Gail Haws
+﻿;;; Written by Thomas Gail Haws
 ;;; Change layer colors by picking.
-(DEFUN C:HAWS-LCP
-             (/ SS CC I EC LC)
+(defun c:haws-lcp
+             (/ ss cc i ec lc)
 (haws-core-init 240)
-  (COND
-    ((/= (SETQ CC (GETSTRING "\nNew layer color (return to pick):"))
+  (cond
+    ((/= (setq cc (getstring "\nNew layer color (return to pick):"))
          ""
      )
-     CC
+     cc
     )
-    ((SETQ CC (CDR (ASSOC 62 (SETQ EC (ENTGET (CAR (ENTSEL)))))))
-     CC
+    ((setq cc (cdr (assoc 62 (setq ec (entget (car (entsel)))))))
+     cc
     )
-    (T
-     (SETQ
-       CC (ABS
-            (CDR (ASSOC 62 (TBLSEARCH "layer" (CDR (ASSOC 8 EC)))))
+    (t
+     (setq
+       cc (abs
+            (cdr (assoc 62 (tblsearch "layer" (cdr (assoc 8 ec)))))
           )
      )
     )
   )
-  (PROMPT
+  (prompt
     "\nLayers to change by picking (Colors by entity won't change):"
   )
-  (SETQ
-    SS (SSGET)
-    I  0
+  (setq
+    ss (ssget)
+    i  0
   )
   (vl-cmdf "._layer")
-  (WHILE (SETQ EC (SSNAME SS I))
-    (SETQ LC (CDR (ASSOC 8 (ENTGET EC))))
-    (vl-cmdf "_c" CC LC)
-    (SETQ I (1+ I))
+  (while (setq ec (ssname ss i))
+    (setq lc (cdr (assoc 8 (entget ec))))
+    (vl-cmdf "_c" cc lc)
+    (setq i (1+ i))
   )
   (vl-cmdf "")
-  (PRINC "Color ")
-  CC
+  (princ "Color ")
+  cc
 )
 ;;; (C) Copyright 1997 by Thomas Gail Haws
 ;;; Change layer color by picking nested entities
-(DEFUN C:HAWS-LCPX
-              (/ CC EC LOPERA NESTED)
+(defun c:haws-lcpx
+              (/ cc ec lopera nested)
 (haws-core-init 241)
-(prompt (strcat "\n" (HAWS_EVANGEL_MSG)))
-  (COND
-    ((/= (SETQ CC (GETSTRING "\nNew layer color (return to pick):"))
+(prompt (strcat "\n" (haws_evangel_msg)))
+  (cond
+    ((/= (setq cc (getstring "\nNew layer color (return to pick):"))
          ""
      )
-     CC
+     cc
     )
-    ((SETQ CC (CDR (ASSOC 62 (SETQ EC (ENTGET (CAR (ENTSEL)))))))
-     CC
+    ((setq cc (cdr (assoc 62 (setq ec (entget (car (entsel)))))))
+     cc
     )
-    (T
-     (SETQ
-       CC (ABS
-            (CDR (ASSOC 62 (TBLSEARCH "layer" (CDR (ASSOC 8 EC)))))
+    (t
+     (setq
+       cc (abs
+            (cdr (assoc 62 (tblsearch "layer" (cdr (assoc 8 ec)))))
           )
      )
     )
   )
-  (PROMPT (STRCAT "\nNested layers to change by picking: "))
+  (prompt (strcat "\nNested layers to change by picking: "))
   (vl-cmdf "._layer")
-  (HAWS-LCPICK)
+  (haws-lcpick)
   (vl-cmdf "")
-  (PRINC "Color ")
-  CC
+  (princ "Color ")
+  cc
 )
-(DEFUN HAWS-LCPICK
-              (/ ES EN LA PARNTL VP)
-  (WHILE (SETQ ES (NENTSEL))
-    (SETQ
-      EN     (CAR ES)
-      LA     (CDR (ASSOC 8 (ENTGET EN)))
-      PARNTL (CADDDR ES)
+(defun haws-lcpick
+              (/ es en la parntl vp)
+  (while (setq es (nentsel))
+    (setq
+      en     (car es)
+      la     (cdr (assoc 8 (entget en)))
+      parntl (cadddr es)
     )
-    (WHILE (= LA "0")
-      (SETQ LA (CDR (ASSOC 8 (ENTGET (CAR PARNTL)))))
-      (SETQ PARNTL (CDR PARNTL))
+    (while (= la "0")
+      (setq la (cdr (assoc 8 (entget (car parntl)))))
+      (setq parntl (cdr parntl))
     )
-    (REDRAW EN 3)
-    (vl-cmdf "_c" CC LA)
+    (redraw en 3)
+    (vl-cmdf "_c" cc la)
   )
 )

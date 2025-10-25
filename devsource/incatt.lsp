@@ -1,20 +1,20 @@
-(if (not haws-attfind) (load "attfind"))
-(DEFUN 	 c:haws-incatt	(/ blki blklst ss1)
+﻿(if (not haws-attfind) (load "attfind"))
+(defun 	 c:haws-incatt	(/ blki blklst ss1)
 (haws-core-init 224)
 	(vl-cmdf ".undo" "_g")
 	(setq
 		ss1
 		 (ssget)
 		incatt_attinc
-		 (HAWS-GETSTRINGX "Tag of target attribute to change" incatt_attinc "")
+		 (haws-getstringx "Tag of target attribute to change" incatt_attinc "")
 		incatt_attbas
-		 (HAWS-GETSTRINGX "Tag of base attribute to add from" incatt_attbas "")
+		 (haws-getstringx "Tag of base attribute to add from" incatt_attbas "")
 		incatt_incx
-		 (HAWS-GETREALX "Amount to increment base value" incatt_incx 0.0)
+		 (haws-getrealx "Amount to increment base value" incatt_incx 0.0)
 		incatt_dec
-		 (HAWS-GETINTX "Decimal places to round changed attributes" incatt_dec (getvar "luprec"))
+		 (haws-getintx "Decimal places to round changed attributes" incatt_dec (getvar "luprec"))
 		blklst
-		 (HAWS-attfind "*" nil (list incatt_attinc incatt_attbas) nil)
+		 (haws-attfind "*" nil (list incatt_attinc incatt_attbas) nil)
 	) ;_ end of setq
 	(foreach
 		 blki	blklst
@@ -35,9 +35,9 @@
 					elbasi
 					 (entget enbasi)
 					sinci
-					 (HAWS-EXTRACT (cdr (assoc 1 elinci)))
+					 (haws-extract (cdr (assoc 1 elinci)))
 					sbasi
-					 (HAWS-EXTRACT (cdr (assoc 1 elbasi)))
+					 (haws-extract (cdr (assoc 1 elbasi)))
 				) ;_ end of setq
 				(entmod
 					(subst

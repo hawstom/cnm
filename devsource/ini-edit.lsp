@@ -1,4 +1,4 @@
-;;; INI-EDIT.LSP contains functions to create and edit 
+﻿;;; INI-EDIT.LSP contains functions to create and edit 
 ;;; Windows-Style INI files, and to retrieve data from 
 ;;; this files.
 ;;;
@@ -140,7 +140,7 @@
 					(close ofile)
 				))
 			)
-			(T
+			(t
 				(setq ofile (open ofile "a"))
 				(if ofile
 					(progn
@@ -192,7 +192,7 @@
 				))
 			   
 			)
-			(T
+			(t
 				(setq ofile (open ofile "a"))
 				(if ofile
 					(progn
@@ -216,7 +216,7 @@
 (if (and (= 'STR (type section)) (/= "[" (substr section 1 1))) (setq section (strcat "[" section "]")))
 (if (findfile inifile)
 	(cdr (assoc section (ini_readini (findfile inifile))))
-	(alert (princ(STRCAT inifile " not found.")))
+	(alert (princ(strcat inifile " not found.")))
 )
 )
 
@@ -240,7 +240,7 @@
 			(close ofile)
 		))
 	)
-	(alert (princ (STRCAT inifile "\nnot found.")))
+	(alert (princ (strcat inifile "\nnot found.")))
 )
 (reverse result)
 )

@@ -1,71 +1,71 @@
-;;; CS (COPY STRING) CHANGES TEXT STRING TO MATCH A SELECTED TEXT ENTITY.
+ï»¿;;; CS (COPY STRING) CHANGES TEXT STRING TO MATCH A SELECTED TEXT ENTITY.
 ;;; Written by Thomas Gail Haws
-(DEFUN C:HAWS-CS (/ SSET MTEN MTCLR MTLYR MTSTR ENI ENT ENTLST SSLEN)
-  (HAWS-CORE-INIT 213)
-  (PROMPT "\nText/Multileader to change/<RETURN to change an attribute>:")
-  (SETQ SSET (SSGET '((0 . "*TEXT,MULTILEADER"))))
-  (COND
-    ((NOT SSET)
-     (SETQ EN1 (CAR (NENTSEL "\nAttribute to change: ")))
-     (IF EN1
-       (SETQ
-         SSET (SSADD)
-         SSET (SSADD EN1 SSET)
+(defun c:haws-cs (/ sset mten mtclr mtlyr mtstr eni ent entlst sslen)
+  (haws-core-init 213)
+  (prompt "\nText/Multileader to change/<RETURN to change an attribute>:")
+  (setq sset (ssget '((0 . "*TEXT,MULTILEADER"))))
+  (cond
+    ((not sset)
+     (setq en1 (car (nentsel "\nAttribute to change: ")))
+     (if en1
+       (setq
+         sset (ssadd)
+         sset (ssadd en1 sset)
        )
      )
     )
   )
-  (IF (NOT SSET)
-    (PROGN (PROMPT "\nNone found.") (EXIT))
-    (PROGN
-      (SETQ
-        MTEN  (CAR (NENTSEL "Text/Multileader to match:"))
-        MTSTR (HAWS-CS-STRING-GET MTEN)
+  (if (not sset)
+    (progn (prompt "\nNone found.") (exit))
+    (progn
+      (setq
+        mten  (car (nentsel "Text/Multileader to match:"))
+        mtstr (haws-cs-string-get mten)
       )
       ;; Change all of the entities in the selection set.
-      (PROMPT "\nChanging text to match selection...")
+      (prompt "\nChanging text to match selection...")
       (vl-cmdf "._undo" "_g")
-      (SETQ SSLEN (SSLENGTH SSET))
-      (WHILE (> SSLEN 0)
-        (SETQ ENI (SSNAME SSET (SETQ SSLEN (1- SSLEN))))
-        (HAWS-CS-STRING-PUT ENI MTSTR)
+      (setq sslen (sslength sset))
+      (while (> sslen 0)
+        (setq eni (ssname sset (setq sslen (1- sslen))))
+        (haws-cs-string-put eni mtstr)
       )
       (vl-cmdf "._undo" "_e")
-      (PROMPT "done.")
+      (prompt "done.")
     )
   )
-  (HAWS-CORE-RESTORE)
-  (PRINC)
+  (haws-core-restore)
+  (princ)
 )
 
-(DEFUN HAWS-CS-STRING-GET (EN1 / ET)
-  (SETQ ET (CDR (ASSOC 0 (ENTGET EN1))))
-  (COND
-    ((OR (= ET "TEXT")(= ET "MTEXT"))
-     (CDR (ASSOC 1 (ENTGET EN1)))
+(defun haws-cs-string-get (en1 / et)
+  (setq et (cdr (assoc 0 (entget en1))))
+  (cond
+    ((or (= et "TEXT")(= et "MTEXT"))
+     (cdr (assoc 1 (entget en1)))
     )
-    ((= ET "MULTILEADER")
-     (CDR (ASSOC 304 (ENTGET EN1)))
+    ((= et "MULTILEADER")
+     (cdr (assoc 304 (entget en1)))
     )
   )
 )
 
-(DEFUN HAWS-CS-STRING-PUT (EN1 MTSTR / ENTLST ET GROUP)
-  (SETQ
-    ENTLST
-     (ENTGET EN1)
-    ET (CDR (ASSOC 0 ENTLST))
-    GROUP
-     (COND
-       ((OR (= ET "TEXT") (= ET "MTEXT"))
+(defun haws-cs-string-put (en1 mtstr / entlst et group)
+  (setq
+    entlst
+     (entget en1)
+    et (cdr (assoc 0 entlst))
+    group
+     (cond
+       ((or (= et "TEXT") (= et "MTEXT"))
         1
        )
-       ((= ET "MULTILEADER") 304)
+       ((= et "MULTILEADER") 304)
      )
   )
-  (ENTMOD (SUBST (CONS GROUP MTSTR) (ASSOC GROUP ENTLST) ENTLST))
-  (ENTUPD EN1)
+  (entmod (subst (cons group mtstr) (assoc group entlst) entlst))
+  (entupd en1)
 )
- ;|«Visual LISP© Format Options»
-(72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)
+ ;|ï¿½Visual LISPï¿½ Format Optionsï¿½
+(72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil t)
 ;*** DO NOT add text below the comment! ***|;

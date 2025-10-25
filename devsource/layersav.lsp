@@ -1,4 +1,4 @@
-;;;LAYERSAV.LSP version 5.0
+﻿;;;LAYERSAV.LSP version 5.0
 ;;;(C) Copyright 1997 by Thomas Gail Haws
 ;;;Revisions: 7/12/95 Added error trapping
 ;;;           7/21/95 Added automatic file extension to be consistent with Acad
@@ -10,12 +10,12 @@
 ;;;                   Added wildcard (* and ?) option to LAR.
 ;;;           5/22/00 Added linetype loading in LAR from default .lin file.
 ;;Function to save layer settings to a file
-(DEFUN 	 c:haws-las (/ fname layer count mvsset mvlist layers)
+(defun 	 c:haws-las (/ fname layer count mvsset mvlist layers)
 	(haws-core-init 238) ;_ end of if
 	(setq
 		f1 (if (= (getvar "filedia") 1)
-				 (open (GETFILED "Layer settings file" (HAWS-GETDNPATH) "lyr" 1) "w")
-				 (car (HAWS-GETFIL "Layer settings file" (HAWS-GETDNPATH) "w" "lyr"))
+				 (open (getfiled "Layer settings file" (haws-getdnpath) "lyr" 1) "w")
+				 (car (haws-getfil "Layer settings file" (haws-getdnpath) "w" "lyr"))
 			 ) ;_ end of if
 		count	0
 		mvsset
@@ -48,27 +48,27 @@
 )																				;end defun LAS
 
 ;;Dialogue box function to restore layer settings saved by previous function.
-(DEFUN 	 c:haws-lar (/ mvsset laline)
+(defun 	 c:haws-lar (/ mvsset laline)
 	(haws-core-init 239) ;_ end of if
-	(HAWS-resfun)
-	(HAWS-VSAVE '("clayer" "cmdecho" "regenmode" "tilemode"))
+	(haws-resfun)
+	(haws-vsave '("clayer" "cmdecho" "regenmode" "tilemode"))
 	(vl-cmdf "._undo" "_group")
 	(setvar "cmdecho" 0)
 	(setvar "regenmode" 0)
 	(setq
 		f1 (if (= (getvar "filedia") 1)
-				 (open (GETFILED "Layer settings file" (HAWS-GETDNPATH) "lyr" 0) "r")
-				 (car (HAWS-GETFIL "Layer settings file" (HAWS-GETDNPATH) "r" "lyr"))
+				 (open (getfiled "Layer settings file" (haws-getdnpath) "lyr" 0) "r")
+				 (car (haws-getfil "Layer settings file" (haws-getdnpath) "r" "lyr"))
 			 ) ;_ end of if
 	) ;_ end of setq
 	(prompt "\nNow getting layer settings from file.  Please wait.  ")
 	(vl-cmdf "._layer" "_un" "0,defpoints" "_t" "0,defpoints" "_on" "0,defpoints" "_s" "0")
 	(while (and (setq laline (read-line f1)) (= "LAYER" (cdr (assoc 0 (setq laline (read laline))))))
-		(HAWS-restla laline)
+		(haws-restla laline)
 	) ;_ end of while
 	(vl-cmdf "")
 	(if	laline
-		(HAWS-restvp)
+		(haws-restvp)
 	) ;_ end of if
 	(setq f1 (close f1))
 	(setvar "regenmode" 1)
@@ -79,13 +79,13 @@
 	) ;_ end of if
 	(prompt "\nDone.  Regen now if desired.")
 	(vl-cmdf "._undo" "_end")
-	(HAWS-VRSTOR)
+	(haws-vrstor)
 	(haws-core-restore) ;_ end of if
 	(princ)
 )																				;end defun LAR
 
-(DEFUN 	 HAWS-resfun	()
-	(DEFUN 		 HAWS-restla	(layer / name color ltype ltfail off frozen locked)
+(defun 	 haws-resfun	()
+	(defun 		 haws-restla	(layer / name color ltype ltfail off frozen locked)
 		(cond
 			((or (wcmatch (setq name (cdr (assoc 2 layer))) "*`**,*`?*") (tblsearch "LAYER" name))
 			 (setq
@@ -138,7 +138,7 @@
 			)
 		) ;_ end of cond
 	) ;_ end of defun
-	(DEFUN 		 HAWS-restvp	(/ mvcen mvwid mvhgt mvpt minx miny maxx maxy lalist)
+	(defun 		 haws-restvp	(/ mvcen mvwid mvhgt mvpt minx miny maxx maxy lalist)
 		(cond
 			((or (= (getvar "tilemode") 0)
 					 (progn

@@ -1,4 +1,4 @@
-;(C) Copyright 1997 by Thomas Gail Haws
+﻿;(C) Copyright 1997 by Thomas Gail Haws
 ;MFILLET.LSP--Multiple concentric fillet
 ;Thomas Gail Haws, Feb. 1996
 (defun c:haws-mf ()
@@ -46,5 +46,5 @@
     (vl-cmdf "._fillet" "r" frad "._fillet" es1 p2)
   )
   (setvar "filletrad" frad1)
-  (haws-core-restore)(HAWS-VRSTOR)(princ)
+  (haws-core-restore)(haws-vrstor)(princ)
 )

@@ -1,27 +1,27 @@
-;TIP567.LSP    Cumulative Distance    (c)1990, Bob Thomas
+﻿;TIP567.LSP    Cumulative Distance    (c)1990, Bob Thomas
 ;modified to work as claimed, additions noted. Kent M. Taylor 9/90
 ;
-(defun MD (/ PT1 NPT M_DIST L_DIST)    ;kmt add last dist variable
-  (setq M_DIST 0)
+(defun md (/ pt1 npt m_dist l_dist)    ;kmt add last dist variable
+  (setq m_dist 0)
   (if
-    (setq PT1 (getpoint "First point: "))
+    (setq pt1 (getpoint "First point: "))
     (progn
-      (while (setq NPT (getpoint PT1"\nNext pt: "))                                 ;kmt setq
+      (while (setq npt (getpoint pt1"\nNext pt: "))                                 ;kmt setq
         (setq
-          M_DIST (+ M_DIST (setq L_DIST (distance PT1 NPT)))
-          PT1 NPT
+          m_dist (+ m_dist (setq l_dist (distance pt1 npt)))
+          pt1 npt
         )
-        (princ (strcat "\nDist from last pt: " (rtos L_DIST) ))
-        (princ (strcat "  Cumulative dist: "   (rtos M_DIST) ))
+        (princ (strcat "\nDist from last pt: " (rtos l_dist) ))
+        (princ (strcat "  Cumulative dist: "   (rtos m_dist) ))
       );while
-      (if (/= M_DIST 0)(eval M_DIST)(princ))
+      (if (/= m_dist 0)(eval m_dist)(princ))
     )
     (princ)
   )
 )
-(defun c:haws-MD ()
+(defun c:haws-md ()
 (haws-core-init 13) ;main routine
-  (MD)
+  (md)
   (princ)
 )
 ;end CUMDIST

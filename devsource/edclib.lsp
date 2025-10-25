@@ -1,4 +1,4 @@
-;#region HEAD
+﻿;#region HEAD
 ;;;
 ;;; ICAD compatibility issues:
 ;;;
@@ -29,23 +29,23 @@
 ;;; 20050831 1.05   TGH Changed CNM to version 4.2.00.  Recompiled
 ;;; (legacy)
 ;;; lisputil.lsp
-(PROMPT "\nHawsEDC library functions...")
-(LOAD "haws-tip")
+(prompt "\nHawsEDC library functions...")
+(load "haws-tip")
 ;;;This is the current version of HawsEDC and CNM
-(DEFUN HAWS-UNIFIED-VERSION ()
+(defun haws-unified-version ()
   "5.5.18"
 )
-(DEFUN HAWS-COPYRIGHT ()
+(defun haws-copyright ()
   "Copyright 2025 Thomas Gail Haws"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
-(SETQ *HAWS-DEBUGLEVEL* 0)
+(setq *haws-debuglevel* 0)
 ;;This function returns the current setting of nagmode.
 ;;Elizabeth asked me to give her a version with no nag mode (direct to fail).
-(DEFUN HAWS-NAGMODE-P () T)
+(defun haws-nagmode-p () t)
 ;; Returns a random CNM evangelism message for tips/prompts (sharing-focused)
-(DEFUN HAWS_EVANGEL_MSG (/ BIG_DATE MSGS IDX)
-  (SETQ MSGS (LIST
+(defun haws_evangel_msg (/ big_date msgs idx)
+  (setq msgs (list
     "\nCNM is open source! Share it far and wide."
     "\nShare CNM with your colleagues and help it grow! https://github.com/hawstom/cnm"
     "\nSpread the word: CNM is open source."
@@ -62,46 +62,46 @@
     "\nCNM is a community project! Make a difference by sharing it and making it better."
     "\nContribute to CNM and report issues at https://github.com/hawstom/cnm"
   ))
-  (SETQ BIG_DATE (* (GETVAR "DATE") 100000000))
-  (SETQ IDX  (REM (FIX (* 10000 (- BIG_DATE (FIX BIG_DATE)))) (LENGTH MSGS)))
-  (NTH IDX MSGS)
+  (setq big_date (* (getvar "DATE") 100000000))
+  (setq idx  (rem (fix (* 10000 (- big_date (fix big_date)))) (length msgs)))
+  (nth idx msgs)
 )
-(DEFUN C:HCNM-ABOUT ()
-(haws-core-init 216) (C:HAWS-ABOUT))
-(DEFUN C:HAWS-ABOUT (/ LICENSEREPORT)
+(defun c:hcnm-about ()
+(haws-core-init 216) (c:haws-about))
+(defun c:haws-about (/ licensereport)
 (haws-core-init 217)
-  (ALERT
-    (PRINC
-      (STRCAT
+  (alert
+    (princ
+      (strcat
         "Construction Notes Manager version "
-        (HAWS-UNIFIED-VERSION)
-        "\n\n" (HAWS-COPYRIGHT) "\nhttp://constructionnotesmanager.com\nhttp://hawsedc.com\n"
-        (APPLY
+        (haws-unified-version)
+        "\n\n" (haws-copyright) "\nhttp://constructionnotesmanager.com\nhttp://hawsedc.com\n"
+        (apply
           'STRCAT
-          (MAPCAR
-            '(LAMBDA (PACKAGE)
-               (IF (SETQ
-                     LICENSEREPORT
-                      (HAWS-PACKAGELICENSEREPORT
-                        (CAR PACKAGE)
+          (mapcar
+            '(lambda (package)
+               (if (setq
+                     licensereport
+                      (haws-packagelicensereport
+                        (car package)
                       )
                    )
-                 (STRCAT
+                 (strcat
                    "\n"
-                   (CADR PACKAGE)
+                   (cadr package)
                    " authorized on this computer. Key: "
-                   LICENSEREPORT
+                   licensereport
                  )
                  ""
                )
              )
-            *HAWS-EDCMODULES*
+            *haws-edcmodules*
           )
         )
       )
     )
   )
-  (PRINC)
+  (princ)
 )
 
 ;#endregion;
@@ -132,10 +132,10 @@
 ;; bottom
 ;; of this
 ;; file.
-(SETQ
-  *HAWS-EDCMODULES*
+(setq
+  *haws-edcmodules*
    '((0 "CNM Lite") (3 "CNM Pro"))
-  *HAWS-EDCAPPGROUPS*
+  *haws-edcappgroups*
    '(;; App group -1 is free of protection
      (-1)
      ;; App group 0 is included in package 0 and 3
@@ -148,13 +148,13 @@
      (128 0 1 2 3)
     )
   ;; This sets the sales tracking flag for this executable compilation.
-  *HAWS-ORIGINATOR*
+  *haws-originator*
    "TGH"
-  *HAWS-SALESID*
-   (COND
-     ((= *HAWS-ORIGINATOR* "TGH") 0)
-     ((= *HAWS-ORIGINATOR* "PCW") 1)
-     ((= *HAWS-ORIGINATOR* "DOW") 2)
+  *haws-salesid*
+   (cond
+     ((= *haws-originator* "TGH") 0)
+     ((= *haws-originator* "PCW") 1)
+     ((= *haws-originator* "DOW") 2)
    )
 )
 
@@ -168,110 +168,110 @@
 ;;;To restore previous UCS, set a global symbol 'ucsp to non-nil.
 ;;; To restore another previous UCS, set a global symbol 'ucspp to
 ;;; non-nil.
-(DEFUN haws-core-init (COMMAND-ID / APPGROUP VALIDATED)
-  (setq APPGROUP (cadr (assoc command-id *haws-edccommands*)))
+(defun haws-core-init (command-id / appgroup validated)
+  (setq appgroup (cadr (assoc command-id *haws-edccommands*)))
   ;; If computer already has authorization,
-  (COND
-    ((OR
+  (cond
+    ((or
          ;; No more nag mode.
-         T
+         t
          ;; this computer has authorization
-         (HAWS-VALIDATEAPPGROUP APPGROUP)
+         (haws-validateappgroup appgroup)
          ;; or we successfully get it from the user,
-         (HAWS-AUTHORIZEAPPGROUP APPGROUP)
+         (haws-authorizeappgroup appgroup)
          ;; or we are allowing run after nag,
-         (HAWS-NAGMODE-P)
+         (haws-nagmode-p)
      )
-     (SETQ VALIDATED T)
+     (setq validated t)
     )
-    (T
-     (ALERT
-       (PRINC
+    (t
+     (alert
+       (princ
          "Application must be authorized to run.\n\nClosing application."
        )
      )
-     (EXIT)
+     (exit)
     )
   )
-  (HAWS-USE-LOG-LOCAL COMMAND-ID)
-  (SETQ
-    OLDERR *ERROR*
-    *ERROR* HAWS-CORE-STPERR
+  (haws-use-log-local command-id)
+  (setq
+    olderr *error*
+    *error* haws-core-stperr
   )
   ;;Versional housekeeping
   (if (= 'subr (type *push-error-using-command*)) (*push-error-using-command*))
-  VALIDATED
+  validated
 )
 
 ;;Stperr replaces the standard error function.
 ;;It sets everything back in case of an error.
-(DEFUN HAWS-CORE-STPERR (S)
+(defun haws-core-stperr (s)
   ;; Restore old *error* handler
-  (IF OLDERR
-    (SETQ
-      *ERROR* OLDERR
-      OLDERR NIL
+  (if olderr
+    (setq
+      *error* olderr
+      olderr nil
     )
   )
-  (COND
-    ((/= S "Function cancelled")
-     (PRINC (STRCAT "\nTrapped error: " S))
+  (cond
+    ((/= s "Function cancelled")
+     (princ (strcat "\nTrapped error: " s))
     )
   )
-  (WHILE (< 0 (GETVAR "cmdactive"))
+  (while (< 0 (getvar "cmdactive"))
     (vl-cmdf)
   )
-  (IF (= (TYPE F1) (QUOTE FILE))
-    (SETQ F1 (CLOSE F1))
+  (if (= (type f1) (quote file))
+    (setq f1 (close f1))
   )
   ;; Close files
-  (IF (= (TYPE F2) (QUOTE FILE))
-    (SETQ F2 (CLOSE F2))
+  (if (= (type f2) (quote file))
+    (setq f2 (close f2))
   )
-  (IF (= (TYPE F3) (QUOTE FILE))
-    (SETQ F3 (CLOSE F3))
+  (if (= (type f3) (quote file))
+    (setq f3 (close f3))
   )
   ;;Versional housekeeping
   (if (/= 'subr (type command-s)) (setq command-s command))
-  (IF (= 8 (LOGAND (GETVAR "undoctl") 8))
+  (if (= 8 (logand (getvar "undoctl") 8))
     (vl-cmdf "._undo" "end")
   )
   ;; End undo group
-  (IF VSTR
-    (HAWS-VRSTOR)
+  (if vstr
+    (haws-vrstor)
   )
   ;; Restore variables to previous values
-  (IF UCSP
+  (if ucsp
     (vl-cmdf "._UCS" "_P")
   )
   ;; Restore previous UCS
-  (IF UCSPP
+  (if ucspp
     (vl-cmdf "._UCS" "_P")
   )
   ;; Restore previous UCS
-  (IF ENM
-    (REDRAW ENM)
+  (if enm
+    (redraw enm)
   )
   ;; Redraw work entity
-  (IF ERROSM
-    (SETVAR "osmode" ERROSM)
+  (if errosm
+    (setvar "osmode" errosm)
   )
-  (SETQ
-    UCSP NIL
-    UCSPP NIL
-    ENM NIL
+  (setq
+    ucsp nil
+    ucspp nil
+    enm nil
   )
-  (PRINC)
+  (princ)
 )
-(DEFUN haws-core-restore ()
-  (SETQ
-    UCSP NIL
-    UCSPP NIL
-    ENM NIL
-    F1 NIL
-    F2 NIL
-    *ERROR* OLDERR
-    OLDERR NIL
+(defun haws-core-restore ()
+  (setq
+    ucsp nil
+    ucspp nil
+    enm nil
+    f1 nil
+    f2 nil
+    *error* olderr
+    olderr nil
   )
 )
 ;;END ERROR HANDLER
@@ -285,77 +285,77 @@
 ;; network
 ;; license,
 ;;takes an appgroup token from the network server.
-(DEFUN HAWS-VALIDATEAPPGROUP (APPGROUP / AUTHDATEDAYSAHEAD
-                          USERSTRINGDATEDIFF AUTHORIZEDPERMANENT
-                          AUTHSTRING ORDERSTRING PACKAGE TRIALDAYSLEFT
+(defun haws-validateappgroup (appgroup / authdatedaysahead
+                          userstringdatediff authorizedpermanent
+                          authstring orderstring package trialdaysleft
                          )
   ;;To begin with, assume there is no free trial left.
-  (SETQ TRIALDAYSLEFT -1)
+  (setq trialdaysleft -1)
   ;;Check whether any of the packages that include the requested appgroup
   ;;are authorized to run.
-  (FOREACH
-     PACKAGE (CDR (ASSOC APPGROUP *HAWS-EDCAPPGROUPS*))
-    (HAWS-MILEPOST
-      (STRCAT
+  (foreach
+     package (cdr (assoc appgroup *haws-edcappgroups*))
+    (haws-milepost
+      (strcat
         ";;Package "
-        (ITOA PACKAGE)
+        (itoa package)
         " listed as including this appgroup."
       )
     )
     ;;If
-    (COND
-      ((AND
+    (cond
+      ((and
          ;;Permanent authorization hasn't already been found in some package
-         (NOT AUTHORIZEDPERMANENT)
+         (not authorizedpermanent)
          ;;There is an orderstring found for this package,
-         (SETQ ORDERSTRING (HAWS-READORDERCODE PACKAGE))
+         (setq orderstring (haws-readordercode package))
          ;;and there is an authstring found for this package,
-         (SETQ AUTHSTRING (HAWS-READAUTHCODE PACKAGE))
+         (setq authstring (haws-readauthcode package))
          ;;And the order and authorization strings match (return a date difference)
          ;;(machine matching should have already been checked by HAWS-CHECKSTOREDSTRINGS on loadup)
-         (SETQ
-           USERSTRINGDATEDIFF
-            (HAWS-USERSTRINGDATEDIFF
-              ORDERSTRING
-              AUTHSTRING
+         (setq
+           userstringdatediff
+            (haws-userstringdatediff
+              orderstring
+              authstring
             )
          )
        )
-       (HAWS-MILEPOST
-         (STRCAT
+       (haws-milepost
+         (strcat
            "Auth match found. P:"
-           (ITOA PACKAGE)
+           (itoa package)
            " O:"
-           ORDERSTRING
+           orderstring
            ", A:"
-           AUTHSTRING
+           authstring
            ", Diff:"
-           (ITOA USERSTRINGDATEDIFF)
+           (itoa userstringdatediff)
          )
        )
        ;;Then
        ;;Decide whether this package is authorized.
-       (HAWS-MILEPOST
-         (STRCAT
+       (haws-milepost
+         (strcat
            "Current trial stands at:"
-           (ITOA (FIX TRIALDAYSLEFT))
+           (itoa (fix trialdaysleft))
          )
        )
-       (COND
+       (cond
          ;; If unlimited stand-alone auth is found for this appgroup
          ;; (auth code date is at least 1000000 days before order code date)
          ;; in this package, authorize immediately.
-         ((<= USERSTRINGDATEDIFF -1000000)
-          (SETQ AUTHORIZEDPERMANENT T)
+         ((<= userstringdatediff -1000000)
+          (setq authorizedpermanent t)
          )
          ;;Else if this authdate extends the current trial length, let it.
-         (T
-          (SETQ
-            TRIALDAYSLEFT
-             (MAX
-               TRIALDAYSLEFT
-               (- (CAR (HAWS-AUTHTOLIST AUTHSTRING))
-                  (FIX (GETVAR "date"))
+         (t
+          (setq
+            trialdaysleft
+             (max
+               trialdaysleft
+               (- (car (haws-authtolist authstring))
+                  (fix (getvar "date"))
                )
              )
           )
@@ -364,19 +364,19 @@
       )
     )
   )
-  (COND
+  (cond
     ;;If authorized permanently, return T
-    ((OR AUTHORIZEDPERMANENT (= APPGROUP -1)) T)
+    ((or authorizedpermanent (= appgroup -1)) t)
     ;;Else if there are positive days left in a trial, print a note and return T
-    ((NOT (MINUSP TRIALDAYSLEFT))
-     (PRINC
-       (STRCAT
+    ((not (minusp trialdaysleft))
+     (princ
+       (strcat
          "\nYou have "
-         (ITOA TRIALDAYSLEFT)
+         (itoa trialdaysleft)
          " days left in your trial period."
        )
      )
-     T
+     t
     )
   )
 )
@@ -387,97 +387,97 @@
 ;;; and records authorization for future reference.
 ;;;
 ;;; This is the nag routine.
-(DEFUN HAWS-AUTHORIZEAPPGROUP (APPGROUP)
+(defun haws-authorizeappgroup (appgroup)
   ;;Choose nag mode or expire mode prompt.
-  (COND
+  (cond
     ;;If nag mode is active
-    ((HAWS-NAGMODE-P)
+    ((haws-nagmode-p)
      ;;Then
-     (COND
+     (cond
        ;;If it's about 1/100th of the time.
        ;;(This expression holds true everytime (getvar "date") rolls around to a 00 in the 1/100,000,000 of a day place.)
        ((=
-          (SUBSTR (RTOS (REM (GETVAR "date") 1) 2 8) 9)
+          (substr (rtos (rem (getvar "date") 1) 2 8) 9)
           "00"
         )
-        (ALERT
-          (PRINC
-            (STRCAT
+        (alert
+          (princ
+            (strcat
               "\nThis application is running in unlicensed mode."
               "\n\nLicense it or extend the expired trial mode"
               "\nby emailing the order code generated at the following command line prompts."
             )
           )
         )
-        (HAWS-ORDERPACKAGE APPGROUP)
+        (haws-orderpackage appgroup)
        )
-       (T (PRINC "\nContinuing in evaluation mode.") T)
+       (t (princ "\nContinuing in evaluation mode.") t)
      )
     )
     ;;Else expire mode is active
-    (T
-     (ALERT
-       (PRINC
-         (STRCAT
+    (t
+     (alert
+       (princ
+         (strcat
            "\nThis application has not been authorized."
            "\n\nYou must order trial or paid authorization"
            "\nby emailing the order code generated at the following command line prompts."
          )
        )
      )
-     (HAWS-ORDERPACKAGE APPGROUP)
+     (haws-orderpackage appgroup)
     )
   )
 )
 
-(DEFUN HAWS-PACKAGELICENSEREPORT (PACKAGE / DATEDIFF)
-  (SETQ
-    AUTHSTRING
-     (HAWS-READAUTHCODE PACKAGE)
-    DATEDIFF
-     (HAWS-PACKAGEUSERSTRINGDATEDIFF PACKAGE)
+(defun haws-packagelicensereport (package / datediff)
+  (setq
+    authstring
+     (haws-readauthcode package)
+    datediff
+     (haws-packageuserstringdatediff package)
   )
-  (COND
-    ((NOT (AND DATEDIFF AUTHSTRING)) NIL)
-    ((<= DATEDIFF -1000000) (STRCAT AUTHSTRING " (unlimited)"))
-    ((>= DATEDIFF 31)
-     (STRCAT AUTHSTRING " (" (ITOA DATEDIFF) " day trial)")
+  (cond
+    ((not (and datediff authstring)) nil)
+    ((<= datediff -1000000) (strcat authstring " (unlimited)"))
+    ((>= datediff 31)
+     (strcat authstring " (" (itoa datediff) " day trial)")
     )
-    (T NIL)
+    (t nil)
   )
 )
 
-(DEFUN HAWS-PACKAGEUSERSTRINGDATEDIFF
-   (PACKAGE / AUTHSTRING ORDERSTRING USERSTRINGDATEDIFF)
-  (COND
-    ((AND
+(defun haws-packageuserstringdatediff
+   (package / authstring orderstring userstringdatediff)
+  (cond
+    ((and
        ;;There is an orderstring found for this package,
-       (SETQ ORDERSTRING (HAWS-READORDERCODE PACKAGE))
+       (setq orderstring (haws-readordercode package))
        ;;and there is an authstring found for this package,
-       (SETQ AUTHSTRING (HAWS-READAUTHCODE PACKAGE))
+       (setq authstring (haws-readauthcode package))
        ;;And the order and authorization strings match (return a date difference)
        ;;(machine matching should have already been checked by HAWS-CHECKSTOREDSTRINGS on loadup)
-       (SETQ
-         USERSTRINGDATEDIFF
-          (HAWS-USERSTRINGDATEDIFF
-            ORDERSTRING
-            AUTHSTRING
+       (setq
+         userstringdatediff
+          (haws-userstringdatediff
+            orderstring
+            authstring
           )
        )
      )
-     (HAWS-MILEPOST
-       (STRCAT
+     (haws-milepost
+       (strcat
          "Auth match found. P:"
-         (ITOA PACKAGE)
+         (itoa package)
          " O:"
-         ORDERSTRING
+         orderstring
          ", A:"
-         AUTHSTRING
+         authstring
          ", Diff:"
-         (ITOA USERSTRINGDATEDIFF)
+         (itoa userstringdatediff)
        )
      )
-     (HAWS-USERSTRINGDATEDIFF ORDERSTRING AUTHSTRING)
+     (haws-userstringdatediff orderstring authstring)
     )
   )
 )
@@ -486,33 +486,33 @@
 ;;; string.
 ;;; Returns a date difference if the strings match.
 ;;; Returns nil if strings don't match.
-(DEFUN HAWS-USERSTRINGDATEDIFF
-   (ORDERSTRING AUTHSTRING / ACADDATE AUTHLIST ORDERLIST)
-  (COND
+(defun haws-userstringdatediff
+   (orderstring authstring / acaddate authlist orderlist)
+  (cond
     ;; If AUTHSTRING isn't the same length as ORDERSTRING,
     ;; comparison fails.  Return nil.
-    ((/= (STRLEN AUTHSTRING) (STRLEN ORDERSTRING)) NIL)
+    ((/= (strlen authstring) (strlen orderstring)) nil)
     ;; If any mismatches besides date, comparison fails.
     ;; Return nil.
-    ((NOT
-       (EQUAL
-         (CDR (SETQ ORDERLIST (HAWS-ORDERTOLIST ORDERSTRING)))
-         (CDR (SETQ AUTHLIST (HAWS-AUTHTOLIST AUTHSTRING)))
+    ((not
+       (equal
+         (cdr (setq orderlist (haws-ordertolist orderstring)))
+         (cdr (setq authlist (haws-authtolist authstring)))
        )
      )
-     NIL
+     nil
     )
     ;;Else return the difference.
-    (T (- (CAR AUTHLIST) (CAR ORDERLIST)))
+    (t (- (car authlist) (car orderlist)))
   )
 )
 
-(DEFUN HAWS-READORDERCODE (PACKAGE)
-  (HAWS-READPACKAGECODE PACKAGE "OrderString")
+(defun haws-readordercode (package)
+  (haws-readpackagecode package "OrderString")
 )
 
-(DEFUN HAWS-READAUTHCODE (PACKAGE)
-  (HAWS-READPACKAGECODE PACKAGE "AuthString")
+(defun haws-readauthcode (package)
+  (haws-readpackagecode package "AuthString")
 )
 
 ;;;(HAWS-READPACKAGECODE 0 "AuthString")
@@ -523,81 +523,81 @@
 ;;; (getcfg) returns nil if the section doesn't exist.  Returns "" if the param doesn't exist.
 ;;; Since this is executed by (HAWS-CHECKSTOREDSTRINGS) on load, we can use this function to transfer stored info from the registry
 ;;; to the new storage location, and we can depend on (getcfg) returning nil the first time.
-(DEFUN HAWS-READPACKAGECODE (PACKAGE STRINGNAME / STOREDSTRING)
-  (HAWS-MILEPOST
-    (STRCAT
+(defun haws-readpackagecode (package stringname / storedstring)
+  (haws-milepost
+    (strcat
       "Beginning READPACKAGECODE for package "
-      (ITOA PACKAGE)
+      (itoa package)
       " "
-      STRINGNAME
+      stringname
     )
   )
-  (HAWS-READCFG
-    (LIST "HawsEDC" "Modules" (ITOA PACKAGE) STRINGNAME)
+  (haws-readcfg
+    (list "HawsEDC" "Modules" (itoa package) stringname)
   )
 )
 
 ;;; HAWS-READCFG gets the value of a setting from the favorite HAWS-location.
 ;;; (getcfg) returns nil if the section doesn't exist.  Returns "" if the param doesn't exist.
-(DEFUN HAWS-READCFG (LOCATIONLIST / MOVEREQUIRED RETURNVALUE STOREDSTRING)
-  (COND
+(defun haws-readcfg (locationlist / moverequired returnvalue storedstring)
+  (cond
     ;;If the requested value is in (getcfg), use it.
     ;;Intentionally here, we are using "".
     ;;This means we will only try the registry on a virgin install of this logic.
-    ((SETQ
-       STOREDSTRING
-        (GETCFG
+    ((setq
+       storedstring
+        (getcfg
           ;;CFG section
-          (HAWS-LOCATIONTOCFGSECTION LOCATIONLIST)
+          (haws-locationtocfgsection locationlist)
         )
      )
     )
     ;;Else if the value is set in the HKCU registry section, use it and write to (setcfg).
     (;;Read from the HKCU registry section
-     (SETQ
-       STOREDSTRING
-        (HAWS-REGISTRY-READ
+     (setq
+       storedstring
+        (haws-registry-read
           ;;Registry path
-          (HAWS-LOCATIONTOREGISTRYPATH
-            LOCATIONLIST
+          (haws-locationtoregistrypath
+            locationlist
             "HKEY_CURRENT_USER"
           )
           ;;Registry key
-          (CAR (REVERSE LOCATIONLIST))
+          (car (reverse locationlist))
         )
      )
      ;;Flag to move value
-     (SETQ MOVEREQUIRED T)
+     (setq moverequired t)
     )
     ;;Else try reading it from the HKLM section
-    ((SETQ
-       STOREDSTRING
-        (HAWS-REGISTRY-READ
+    ((setq
+       storedstring
+        (haws-registry-read
           ;;Registry path
-          (HAWS-LOCATIONTOREGISTRYPATH
-            LOCATIONLIST
+          (haws-locationtoregistrypath
+            locationlist
             "HKEY_LOCAL_MACHINE"
           )
           ;;Registry key
-          (CAR (REVERSE LOCATIONLIST))
+          (car (reverse locationlist))
         )
      )
      ;;Flag to move value
-     (SETQ MOVEREQUIRED T)
+     (setq moverequired t)
     )
   )
-  (COND
+  (cond
     ;;Write to preferred location if flagged and return stored string
-    ((AND STOREDSTRING MOVEREQUIRED)
-     (SETCFG
+    ((and storedstring moverequired)
+     (setcfg
        ;;CFG section
-       (HAWS-LOCATIONTOCFGSECTION LOCATIONLIST)
+       (haws-locationtocfgsection locationlist)
        ;;Value
-       STOREDSTRING
+       storedstring
      )
     )
   )
-  STOREDSTRING
+  storedstring
 )
 
 
@@ -607,53 +607,53 @@
 
 ;;; Stores string and returns stored string or nil.
 ;;; (getcfg) returns nil if the section doesn't exist.  Returns "" if the param doesn't exist.
-(DEFUN HAWS-WRITEPACKAGECODE
-   (PACKAGE STRINGNAME STRINGVALUE / STOREDSTRING)
-  (HAWS-MILEPOST
-    (STRCAT
+(defun haws-writepackagecode
+   (package stringname stringvalue / storedstring)
+  (haws-milepost
+    (strcat
       "Beginning WRITEPACKAGECODE for package "
-      (ITOA PACKAGE)
+      (itoa package)
       " "
-      STRINGNAME
+      stringname
     )
   )
-  (HAWS-WRITECFG
-    (LIST "HawsEDC" "Modules" (ITOA PACKAGE) STRINGNAME)
-    STRINGVALUE
+  (haws-writecfg
+    (list "HawsEDC" "Modules" (itoa package) stringname)
+    stringvalue
   )
 )
 
 
 ;;; HAWS-WRITECFG sets the value of a setting in the favorite HAWS- location.
-(DEFUN HAWS-WRITECFG (LOCATIONLIST INPUTSTRING / STOREDSTRING)
-  (SETQ
-    STOREDSTRING
-    (SETCFG
+(defun haws-writecfg (locationlist inputstring / storedstring)
+  (setq
+    storedstring
+    (setcfg
       ;;CFG section
-      (HAWS-LOCATIONTOCFGSECTION LOCATIONLIST)
+      (haws-locationtocfgsection locationlist)
       ;;Value
-      INPUTSTRING
+      inputstring
    )
   )
 )
 
-(DEFUN HAWS-LOCATIONTOCFGSECTION (LOCATIONLIST)
-  (STRCAT
+(defun haws-locationtocfgsection (locationlist)
+  (strcat
     ;;Start path with the AppData/ prefix per AutoCAD help.
     "AppData/"
     ;;Add the rest of the location provided.
-    (HAWS-LSTTOSTR LOCATIONLIST "/" "\"")
+    (haws-lsttostr locationlist "/" "\"")
   )
 )
 
-(DEFUN HAWS-LOCATIONTOREGISTRYPATH (LOCATIONLIST ROOT)
-  (STRCAT
+(defun haws-locationtoregistrypath (locationlist root)
+  (strcat
     ;;Start with the prefix to get into the software area
-    ROOT
+    root
     "\\Software\\"
     ;;Add all but the last element of the location provided 
-    (HAWS-LSTTOSTR
-      (REVERSE (CDR (REVERSE LOCATIONLIST)))
+    (haws-lsttostr
+      (reverse (cdr (reverse locationlist)))
       "\\"
       "\""
     )
@@ -665,28 +665,28 @@
 ;;; If authorization is provided correctly, it writes both to the storage location.,
 ;;; Returns T if successful, nil if not successful.
 
-(DEFUN HAWS-ORDERPACKAGE (APPGROUP / AUTHMATCHSUCCESS AUTHSTRING
-                      AUTHWRITESUCCESS NAGMATCHSUCCESS NAGSTRINGS
-                      ORDERLIST ORDERSTRING PACKAGE WRITESTRINGS
+(defun haws-orderpackage (appgroup / authmatchsuccess authstring
+                      authwritesuccess nagmatchsuccess nagstrings
+                      orderlist orderstring package writestrings
                      )
-  (SETQ
-    ORDERLIST
-     (APPEND
-       (LIST (FIX (GETVAR "date")) *HAWS-SALESID*)
-       (SETQ PACKAGE (HAWS-GETPACKAGE APPGROUP))
-       (LIST (HAWS-GETSHORTCOMPUTERNAME))
-       (HAWS-GETBIOSDATE)
+  (setq
+    orderlist
+     (append
+       (list (fix (getvar "date")) *haws-salesid*)
+       (setq package (haws-getpackage appgroup))
+       (list (haws-getshortcomputername))
+       (haws-getbiosdate)
      )
-    ORDERSTRING
-     (HAWS-BINARYTOUSER
-       (HAWS-ENCRYPTORDERSTRING
-         (HAWS-LISTTOBINARY ORDERLIST)
+    orderstring
+     (haws-binarytouser
+       (haws-encryptorderstring
+         (haws-listtobinary orderlist)
        )
      )
   )
-  (ALERT
-    (PRINC
-      (STRCAT
+  (alert
+    (princ
+      (strcat
         "\n\nThe order code for the package you ordered will be shown below."
         "\n\nIf you already ordered an authorization key, please enter it at the following prompt."
         "\nTo order an authorization key, please close this message,"
@@ -694,69 +694,69 @@
       )
     )
   )
-  (SETQ
-    AUTHSTRING
-     (GETSTRING
-       (STRCAT
+  (setq
+    authstring
+     (getstring
+       (strcat
          "\nOrder code is: "
-         ORDERSTRING
+         orderstring
          "\nEnter authorization key or <continue>: "
        )
      )
   )
   ;;Act on input
-  (COND
+  (cond
     ;; If a matching authorization was supplied,
     ;; flag to write the authorization and flag success,
-    ((HAWS-USERSTRINGDATEDIFF ORDERSTRING AUTHSTRING)
-     (SETQ WRITESTRINGS T)
-     (SETQ AUTHMATCHSUCCESS T)
+    ((haws-userstringdatediff orderstring authstring)
+     (setq writestrings t)
+     (setq authmatchsuccess t)
     )
   )
-  (COND
+  (cond
     ;; If flagged, write both strings to storage and flag success.
-    (WRITESTRINGS
-     (HAWS-WRITECFG
-       (LIST
+    (writestrings
+     (haws-writecfg
+       (list
          "HawsEDC"
          "Modules"
-         (ITOA (CAR PACKAGE))
+         (itoa (car package))
          "OrderString"
        )
-       ORDERSTRING
+       orderstring
      )
-     (HAWS-WRITECFG
-       (LIST "HawsEDC" "Modules" (ITOA (CAR PACKAGE)) "AuthString")
-       AUTHSTRING
+     (haws-writecfg
+       (list "HawsEDC" "Modules" (itoa (car package)) "AuthString")
+       authstring
      )
-     (IF (AND
-           (= (HAWS-READPACKAGECODE (CAR PACKAGE) "AuthString")
-              AUTHSTRING
+     (if (and
+           (= (haws-readpackagecode (car package) "AuthString")
+              authstring
            )
-           (= (HAWS-READPACKAGECODE (CAR PACKAGE) "OrderString")
-              ORDERSTRING
+           (= (haws-readpackagecode (car package) "OrderString")
+              orderstring
            )
          )
-       (SETQ AUTHWRITESUCCESS T)
+       (setq authwritesuccess t)
      )
     )
   )
   ;;Report to user
-  (COND
-    ((AND AUTHMATCHSUCCESS AUTHWRITESUCCESS)
-     (ALERT (PRINC "Authorization was successful."))
-     T
+  (cond
+    ((and authmatchsuccess authwritesuccess)
+     (alert (princ "Authorization was successful."))
+     t
     )
-    (NAGMATCHSUCCESS T)
-    (T
-     (ALERT
-       (PRINC
-         (STRCAT
+    (nagmatchsuccess t)
+    (t
+     (alert
+       (princ
+         (strcat
            "Authorization was not successful."
-           (IF (NOT AUTHMATCHSUCCESS)
-             (STRCAT
-               "\nOrder code\n\"" ORDERSTRING
-               "\"\nand authorization key\n\"" AUTHSTRING
+           (if (not authmatchsuccess)
+             (strcat
+               "\nOrder code\n\"" orderstring
+               "\"\nand authorization key\n\"" authstring
                "\"\ndon't match."
               )
              ""
@@ -764,31 +764,31 @@
          )
        )
      )
-     NIL
+     nil
     )
   )
 )
 
 
 ;;; HAWS-ORDERLICENSES gets an order code from the command line
-(DEFUN C:HAWS-ORDERLICENSES ()
+(defun c:haws-orderlicenses ()
 (haws-core-init 218)
-  (HAWS-ORDERPACKAGE 128)
-  (PRINC)
+  (haws-orderpackage 128)
+  (princ)
 )
 ;;GETPACKAGE displays a user form to get an order for the package
 ;;to authorize.
 ;;Returns a list of package number and number of authorizations.
 ;; 0 authorizations means authorization is for single user unlimited
 ;; use.
-(DEFUN HAWS-GETPACKAGE (APPGROUP / PACKAGES STRING)
+(defun haws-getpackage (appgroup / packages string)
 ;;;Begin user choice section
-  (TEXTPAGE)
-  (PROMPT
-    (STRCAT
+  (textpage)
+  (prompt
+    (strcat
       "\n\n==========================================================================="
-      (COND
-        ((= APPGROUP 128)
+      (cond
+        ((= appgroup 128)
          "\n\nAuthorization is available for the following packages:\n"
         )
         ("\n\nThe tool you want to use is included in the following packages:\n"
@@ -796,21 +796,21 @@
       )
     )
   )
-  (SETQ PACKAGES (CDR (ASSOC APPGROUP *HAWS-EDCAPPGROUPS*)))
-  (COND
-    ((MEMBER 0 PACKAGES)
-     (PROMPT "\nCNM Lite (no custom Project Notes editor) .......1")
+  (setq packages (cdr (assoc appgroup *haws-edcappgroups*)))
+  (cond
+    ((member 0 packages)
+     (prompt "\nCNM Lite (no custom Project Notes editor) .......1")
     )
   )
-  (COND
-    ((MEMBER 3 PACKAGES)
-     (PROMPT "\nCNM Pro (includes custom Project Notes editor) ..2")
+  (cond
+    ((member 3 packages)
+     (prompt "\nCNM Pro (includes custom Project Notes editor) ..2")
     )
   )
-  (INITGET "1 2")
-  (SETQ
-    STRING
-     (GETKWORD "\n\nSelect a package
+  (initget "1 2")
+  (setq
+    string
+     (getkword "\n\nSelect a package
    [1/2]
    <1>:
    ")
@@ -819,12 +819,12 @@
   ;;  "2" NOTES package standard
   ;;  "3" NOTES package with CNMEdit.exe
   ;;  "4" Full HawsEDC with CNMEdit.exe (CNM Pro plus HawsEDC tools)
-  (SETQ
-    STRING
-     (COND
-       ((= STRING "1") "1")
-       ((= STRING "2") "4")
-       (T "1")
+  (setq
+    string
+     (cond
+       ((= string "1") "1")
+       ((= string "2") "4")
+       (t "1")
      )
   )
 ;;;End user choice section
@@ -833,61 +833,61 @@
 ;;;  (PROMPT "\nGetting single seat authorization for Construction Notes Manager Pro.") ; prompt
 ;;;  (SETQ STRING "2")
 ;;;End Construction Notes Manager only section
-  (LIST (1- (ATOI STRING)) 0)
+  (list (1- (atoi string)) 0)
 )
 
 ;;GetBiosDate uses BIOSDATE.EXE to return system bios date as a
 ;;list in the form '(mm dd yy).
-(DEFUN HAWS-GETBIOSDATE (/ BIOSDATEFULL X)
-  (SETQ
-    BIOSDATEFULL
-     (COND
-       (*HAWS-BIOSDATEFULL*)
+(defun haws-getbiosdate (/ biosdatefull x)
+  (setq
+    biosdatefull
+     (cond
+       (*haws-biosdatefull*)
        ;; Win 10
-       ((HAWS-REGISTRY-READ
+       ((haws-registry-read
           "HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System\\BIOS"
           "BIOSReleaseDate"
         )
        )
        ;; Win NT 4.0 and Win 10
-       ((HAWS-REGISTRY-READ
+       ((haws-registry-read
           "HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System"
           "SystemBiosDate"
         )
        )
        ;; Win 2000 and XP
-       ((HAWS-REGISTRY-READ
+       ((haws-registry-read
           "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Biosinfo"
           "SystemBiosDate"
         )
        )
        ;; Win 95/98/Me
-       ((HAWS-REGISTRY-READ
+       ((haws-registry-read
           "HKEY_LOCAL_MACHINE\\Enum\\Root\\*PNP0C01\\0000"
           "BIOSDate"
         )
        )
-       (T "01\\01\\01")
+       (t "01\\01\\01")
      )
   )
-  (SETQ *HAWS-BIOSDATEFULL* BIOSDATEFULL)
-  (LIST
-    (ATOI (SUBSTR BIOSDATEFULL 1 2))
-    (ATOI (SUBSTR BIOSDATEFULL 4 2))
-    (ATOI (SUBSTR BIOSDATEFULL 7 2))
+  (setq *haws-biosdatefull* biosdatefull)
+  (list
+    (atoi (substr biosdatefull 1 2))
+    (atoi (substr biosdatefull 4 2))
+    (atoi (substr biosdatefull 7 2))
   )
 )
 
 ;;; GetComputerName gets the computer name from the registry if
 ;;; possible.
 ;;; If not, returns "".
-(DEFUN HAWS-GETCOMPUTERNAME ()
-  (SETQ
-    *HAWS-COMPUTERNAME*
-     (COND
-       (*HAWS-COMPUTERNAME*)
-       ((HAWS-REGISTRY-READ
-          (STRCAT
+(defun haws-getcomputername ()
+  (setq
+    *haws-computername*
+     (cond
+       (*haws-computername*)
+       ((haws-registry-read
+          (strcat
             "HKEY_LOCAL_MACHINE\\System\\CurrentControlSet"
             "\\Control\\ComputerName\\ComputerName"
           )
@@ -905,11 +905,11 @@
 ;;; GETSHORTCOMPUTERNAME gets the first and last characters of the computer name
 ;;; if possible.
 ;;; If not, returns "".
-(DEFUN HAWS-GETSHORTCOMPUTERNAME (/ COMPUTERNAME)
-  (SETQ COMPUTERNAME (HAWS-GETCOMPUTERNAME))
-  (STRCAT
-    (SUBSTR COMPUTERNAME 1 1)
-    (HAWS-ENDSTR COMPUTERNAME 1 1)
+(defun haws-getshortcomputername (/ computername)
+  (setq computername (haws-getcomputername))
+  (strcat
+    (substr computername 1 1)
+    (haws-endstr computername 1 1)
   )
 )
 
@@ -926,54 +926,54 @@
 ;;; Bits 61-65 5-bit binary number of the BIOS date day
 ;;; Bits 66-72 7-bit binary number of the BIOS date year
 ;;; to an order list
-(DEFUN HAWS-LISTTOBINARY
-   (ORDERLIST / BINARYDATE BINARYSALES BINARYSTRING I)
+(defun haws-listtobinary
+   (orderlist / binarydate binarysales binarystring i)
   ;;Pad BINARYSTRING from 68 to 72 bits to make 12 6-bit bytes.
-  (SETQ
-    BINARYDATE
+  (setq
+    binarydate
      ;;Get the binary value of the AutoCAD date
-     (HAWS-ENDSTR
-       (STRCAT
+     (haws-endstr
+       (strcat
          "0000000"
-         (HAWS-CONVERTDECIMALTO (CAR ORDERLIST) 2)
+         (haws-convertdecimalto (car orderlist) 2)
        )
        22
        22
      )
-    BINARYSALES
+    binarysales
      ;;Get the binary value of the sales ID
-     (HAWS-ENDSTR
-       (STRCAT
+     (haws-endstr
+       (strcat
          "0000000"
-         (HAWS-CONVERTDECIMALTO (CADR ORDERLIST) 2)
+         (haws-convertdecimalto (cadr orderlist) 2)
        )
        4
        4
      )
-    BINARYSTRING
-     (STRCAT
-       (SUBSTR BINARYSALES 1 1)
-       (SUBSTR BINARYDATE 1 3)
-       (SUBSTR BINARYSALES 2 1)
-       (SUBSTR BINARYDATE 4 3)
-       (SUBSTR BINARYSALES 3 1)
-       (SUBSTR BINARYDATE 7 3)
-       (SUBSTR BINARYSALES 4 1)
-       (SUBSTR BINARYDATE 10)
+    binarystring
+     (strcat
+       (substr binarysales 1 1)
+       (substr binarydate 1 3)
+       (substr binarysales 2 1)
+       (substr binarydate 4 3)
+       (substr binarysales 3 1)
+       (substr binarydate 7 3)
+       (substr binarysales 4 1)
+       (substr binarydate 10)
        ;;Get the binary value of the package id #.
-       (HAWS-ENDSTR
-         (STRCAT
+       (haws-endstr
+         (strcat
            "0000"
-           (HAWS-CONVERTDECIMALTO (CADDR ORDERLIST) 2)
+           (haws-convertdecimalto (caddr orderlist) 2)
          )
          4
          4
        )
        ;;Get the binary value of the number of authorizations.
-       (HAWS-ENDSTR
-         (STRCAT
+       (haws-endstr
+         (strcat
            "0000000000"
-           (HAWS-CONVERTDECIMALTO (CADDDR ORDERLIST) 2)
+           (haws-convertdecimalto (cadddr orderlist) 2)
          )
          10
          10
@@ -981,17 +981,17 @@
      )
   )
   ;;Get the binary value of the computer name fragment
-  (SETQ I 1)
-  (REPEAT 2
-    (SETQ
-      BINARYSTRING
-       (STRCAT
-         BINARYSTRING
-         (HAWS-ENDSTR
-           (STRCAT
+  (setq i 1)
+  (repeat 2
+    (setq
+      binarystring
+       (strcat
+         binarystring
+         (haws-endstr
+           (strcat
              "00000000"
-             (HAWS-CONVERTDECIMALTO
-               (ASCII (SUBSTR (NTH 4 ORDERLIST) I 1))
+             (haws-convertdecimalto
+               (ascii (substr (nth 4 orderlist) i 1))
                2
              )
            )
@@ -1000,33 +1000,33 @@
          )
        )
     )
-    (SETQ I (1+ I))
+    (setq i (1+ i))
   )
   ;;Get the binary value of the bios date.
-  (SETQ
-    BINARYSTRING
-     (STRCAT
-       BINARYSTRING
-       (HAWS-ENDSTR
-         (STRCAT
+  (setq
+    binarystring
+     (strcat
+       binarystring
+       (haws-endstr
+         (strcat
            "0000"
-           (HAWS-CONVERTDECIMALTO (NTH 5 ORDERLIST) 2)
+           (haws-convertdecimalto (nth 5 orderlist) 2)
          )
          4
          4
        )
-       (HAWS-ENDSTR
-         (STRCAT
+       (haws-endstr
+         (strcat
            "00000"
-           (HAWS-CONVERTDECIMALTO (NTH 6 ORDERLIST) 2)
+           (haws-convertdecimalto (nth 6 orderlist) 2)
          )
          5
          5
        )
-       (HAWS-ENDSTR
-         (STRCAT
+       (haws-endstr
+         (strcat
            "0000000"
-           (HAWS-CONVERTDECIMALTO (NTH 7 ORDERLIST) 2)
+           (haws-convertdecimalto (nth 7 orderlist) 2)
          )
          7
          7
@@ -1048,142 +1048,142 @@
 ;;; to an order list
 ;;; Orderlist    '(pkgid numauths compname biosmonth biosday biosyear
 ;;; startdate)
-(DEFUN HAWS-BINARYTOLIST (BINARYSTRING / DEC I)
-  (LIST
+(defun haws-binarytolist (binarystring / dec i)
+  (list
     ;;Get the AutoCAD date
-    (HAWS-CONVERTTODECIMAL
-      (STRCAT
-        (SUBSTR BINARYSTRING 2 3)
-        (SUBSTR BINARYSTRING 6 3)
-        (SUBSTR BINARYSTRING 10 3)
-        (SUBSTR BINARYSTRING 14 13)
+    (haws-converttodecimal
+      (strcat
+        (substr binarystring 2 3)
+        (substr binarystring 6 3)
+        (substr binarystring 10 3)
+        (substr binarystring 14 13)
       )
       2
     )
     ;;Get the sales id #.
-    (HAWS-CONVERTTODECIMAL
-      (STRCAT
-        (SUBSTR BINARYSTRING 1 1)
-        (SUBSTR BINARYSTRING 5 1)
-        (SUBSTR BINARYSTRING 9 1)
-        (SUBSTR BINARYSTRING 13 1)
+    (haws-converttodecimal
+      (strcat
+        (substr binarystring 1 1)
+        (substr binarystring 5 1)
+        (substr binarystring 9 1)
+        (substr binarystring 13 1)
       )
       2
     )
     ;;Get the package id #.
-    (HAWS-CONVERTTODECIMAL (SUBSTR BINARYSTRING 27 4) 2)
+    (haws-converttodecimal (substr binarystring 27 4) 2)
     ;;Get the number of authorizations.
-    (HAWS-CONVERTTODECIMAL (SUBSTR BINARYSTRING 31 10) 2)
+    (haws-converttodecimal (substr binarystring 31 10) 2)
     ;;Get the computer name fragment
-    (STRCAT
-      (CHR (HAWS-CONVERTTODECIMAL (SUBSTR BINARYSTRING 41 8) 2))
-      (CHR (HAWS-CONVERTTODECIMAL (SUBSTR BINARYSTRING 49 8) 2))
+    (strcat
+      (chr (haws-converttodecimal (substr binarystring 41 8) 2))
+      (chr (haws-converttodecimal (substr binarystring 49 8) 2))
     )
     ;;Get the bios month.
-    (HAWS-CONVERTTODECIMAL (SUBSTR BINARYSTRING 57 4) 2)
+    (haws-converttodecimal (substr binarystring 57 4) 2)
     ;;Get the bios day.
-    (HAWS-CONVERTTODECIMAL (SUBSTR BINARYSTRING 61 5) 2)
+    (haws-converttodecimal (substr binarystring 61 5) 2)
     ;;Get the bios year.
-    (HAWS-CONVERTTODECIMAL (SUBSTR BINARYSTRING 66 7) 2)
+    (haws-converttodecimal (substr binarystring 66 7) 2)
   )
 )
 
 ;;; ENCRYPTAUTHSTRING encrypts a padded binarystring
 ;;; for translation to a user authorization string
-(DEFUN HAWS-ENCRYPTAUTHSTRING (S / SI SJ X)
+(defun haws-encryptauthstring (s / si sj x)
   ;;Make list 8x9 of characters
-  (REPEAT 8
-    (REPEAT 9
-      (SETQ
-        SI (CONS (SUBSTR S 1 1) SI)
-        S  (SUBSTR S 2)
+  (repeat 8
+    (repeat 9
+      (setq
+        si (cons (substr s 1 1) si)
+        s  (substr s 2)
       )
     )
-    (SETQ
-      SJ (CONS SI SJ)
-      SI NIL
+    (setq
+      sj (cons si sj)
+      si nil
     )
   )
-  (APPLY
+  (apply
     'STRCAT
-    (MAPCAR
-      '(LAMBDA (X) (APPLY 'STRCAT X))
-      (APPLY 'MAPCAR (CONS 'LIST SJ))
+    (mapcar
+      '(lambda (x) (apply 'STRCAT x))
+      (apply 'MAPCAR (cons 'LIST sj))
     )
   )
 )
 
 ;;; DECRYPTAUTHSTRING decrypts a padded authorization binarystring
 ;;; for translation to an order list
-(DEFUN HAWS-DECRYPTAUTHSTRING (S / SI SJ)
+(defun haws-decryptauthstring (s / si sj)
   ;;Make list 9x8 of characters
-  (REPEAT 9
-    (REPEAT 8
-      (SETQ
-        SI (CONS (SUBSTR S 1 1) SI)
-        S  (SUBSTR S 2)
+  (repeat 9
+    (repeat 8
+      (setq
+        si (cons (substr s 1 1) si)
+        s  (substr s 2)
       )
     )
-    (SETQ
-      SJ (CONS SI SJ)
-      SI NIL
+    (setq
+      sj (cons si sj)
+      si nil
     )
   )
-  (APPLY
+  (apply
     'STRCAT
-    (MAPCAR
-      '(LAMBDA (X) (APPLY 'STRCAT X))
-      (APPLY 'MAPCAR (CONS 'LIST SJ))
+    (mapcar
+      '(lambda (x) (apply 'STRCAT x))
+      (apply 'MAPCAR (cons 'LIST sj))
     )
   )
 )
 
 ;;; ENCRYPTORDERSTRING encrypts a padded binarystring
 ;;; for translation to a user order string
-(DEFUN HAWS-ENCRYPTORDERSTRING (S / SI SJ)
+(defun haws-encryptorderstring (s / si sj)
   ;;Make list 12x6 of characters
-  (REPEAT 12
-    (REPEAT 6
-      (SETQ
-        SI (CONS (SUBSTR S 1 1) SI)
-        S  (SUBSTR S 2)
+  (repeat 12
+    (repeat 6
+      (setq
+        si (cons (substr s 1 1) si)
+        s  (substr s 2)
       )
     )
-    (SETQ
-      SJ (CONS SI SJ)
-      SI NIL
+    (setq
+      sj (cons si sj)
+      si nil
     )
   )
-  (APPLY
+  (apply
     'STRCAT
-    (MAPCAR
-      '(LAMBDA (X) (APPLY 'STRCAT X))
-      (APPLY 'MAPCAR (CONS 'LIST SJ))
+    (mapcar
+      '(lambda (x) (apply 'STRCAT x))
+      (apply 'MAPCAR (cons 'LIST sj))
     )
   )
 )
 
 ;;; DECRYPTORDERSTRING decrypts a padded order binarystring
 ;;; for translation to an order list
-(DEFUN HAWS-DECRYPTORDERSTRING (S / SI SJ)
+(defun haws-decryptorderstring (s / si sj)
   ;;Make list 6x12 of characters
-  (REPEAT 6
-    (REPEAT 12
-      (SETQ
-        SI (CONS (SUBSTR S 1 1) SI)
-        S  (SUBSTR S 2)
+  (repeat 6
+    (repeat 12
+      (setq
+        si (cons (substr s 1 1) si)
+        s  (substr s 2)
       )
     )
-    (SETQ
-      SJ (CONS SI SJ)
-      SI NIL
+    (setq
+      sj (cons si sj)
+      si nil
     )
   )
-  (APPLY
+  (apply
     'STRCAT
-    (MAPCAR
-      '(LAMBDA (X) (APPLY 'STRCAT X))
-      (APPLY 'MAPCAR (CONS 'LIST SJ))
+    (mapcar
+      '(lambda (x) (apply 'STRCAT x))
+      (apply 'MAPCAR (cons 'LIST sj))
     )
   )
 )
@@ -1193,59 +1193,59 @@
 ;; 12 character user string for e-mailing from or to user.
 ;; The user string consists only of upper and lower case letters plus
 ;; @ and &. Eg.  aR3YjMmhi@57
-(DEFUN HAWS-BINARYTOUSER (BINARYSTRING / DEC I USERSTRING)
-  (SETQ
-    USERSTRING ""
-    I 0
+(defun haws-binarytouser (binarystring / dec i userstring)
+  (setq
+    userstring ""
+    i 0
   )
-  (REPEAT 12
-    (SETQ
-      DEC
-       (HAWS-CONVERTTODECIMAL
-         (SUBSTR BINARYSTRING (1+ (* I 6)) 6)
+  (repeat 12
+    (setq
+      dec
+       (haws-converttodecimal
+         (substr binarystring (1+ (* i 6)) 6)
          2
        )                                ; _
-      USERSTRING
-       (STRCAT
-         USERSTRING
-         (CHR
-           (COND
-             ((<= 0 DEC 25) (+ DEC 65))
-             ((<= 26 DEC 51) (+ DEC 71))
-             ((<= 52 DEC 61) (- DEC 4))
-             ((= DEC 62) 38)
-             ((= DEC 63) 64)
+      userstring
+       (strcat
+         userstring
+         (chr
+           (cond
+             ((<= 0 dec 25) (+ dec 65))
+             ((<= 26 dec 51) (+ dec 71))
+             ((<= 52 dec 61) (- dec 4))
+             ((= dec 62) 38)
+             ((= dec 63) 64)
            )
          )
        )
-      I (1+ I)
+      i (1+ i)
     )
   )
-  USERSTRING
+  userstring
 )
 
 ;; USERTOBINARY translates the 12-character user string generated by
 ;; BINARYTOUSER
 ;;into a 68 character (still encrypted) binary string as follows:
-(DEFUN HAWS-USERTOBINARY (USERSTRING / BINARYSTRING DEC I TEMP)
-  (SETQ
-    BINARYSTRING ""
-    I 0
+(defun haws-usertobinary (userstring / binarystring dec i temp)
+  (setq
+    binarystring ""
+    i 0
   )
-  (REPEAT 12
-    (SETQ
-      DEC          (ASCII (SUBSTR USERSTRING (SETQ I (1+ I)) 1))
-      DEC          (COND
-                     ((<= 65 DEC 90) (- DEC 65))
-                     ((<= 97 DEC 122) (- DEC 71))
-                     ((<= 48 DEC 57) (+ DEC 4))
-                     ((= DEC 38) 62)
-                     ((= DEC 64) 63)
+  (repeat 12
+    (setq
+      dec          (ascii (substr userstring (setq i (1+ i)) 1))
+      dec          (cond
+                     ((<= 65 dec 90) (- dec 65))
+                     ((<= 97 dec 122) (- dec 71))
+                     ((<= 48 dec 57) (+ dec 4))
+                     ((= dec 38) 62)
+                     ((= dec 64) 63)
                    )
-      BINARYSTRING (STRCAT
-                     BINARYSTRING
-                     (HAWS-ENDSTR
-                       (STRCAT "000000" (HAWS-CONVERTDECIMALTO DEC 2))
+      binarystring (strcat
+                     binarystring
+                     (haws-endstr
+                       (strcat "000000" (haws-convertdecimalto dec 2))
                        6
                        6
                      )
@@ -1257,57 +1257,57 @@
 
 ;;ConvertDecimalTo converts a decimal number to another integer base.
 ;;Returns a string
-(DEFUN HAWS-CONVERTDECIMALTO (NUM NEWBASE / ATOMI DONE RETURNSTRING)
-  (SETQ
-    RETURNSTRING ""
-    ATOMI 0
+(defun haws-convertdecimalto (num newbase / atomi done returnstring)
+  (setq
+    returnstring ""
+    atomi 0
   )
-  (WHILE (NOT DONE)
-    (SETQ
-      ATOMI
-       (REM NUM NEWBASE)
-      RETURNSTRING
-       (STRCAT
-         (IF (< ATOMI 10)
-           (ITOA ATOMI)
-           (CHR (+ ATOMI 87))
+  (while (not done)
+    (setq
+      atomi
+       (rem num newbase)
+      returnstring
+       (strcat
+         (if (< atomi 10)
+           (itoa atomi)
+           (chr (+ atomi 87))
          )
-         RETURNSTRING
+         returnstring
        )
-      NUM
-       (/ NUM NEWBASE)
-      DONE
-       (= NUM 0)
+      num
+       (/ num newbase)
+      done
+       (= num 0)
     ) ;_ end of setq
   ) ;_ end of while
-  RETURNSTRING
+  returnstring
 )
 ;;ConvertToDecimal converts a string representing a number in another base
 ;;to a decimal integer
-(DEFUN HAWS-CONVERTTODECIMAL (STRING BASE / CHARI DECIMAL M)
-  (SETQ
-    DECIMAL 0
-    M 1
+(defun haws-converttodecimal (string base / chari decimal m)
+  (setq
+    decimal 0
+    m 1
   ) ;_ end of setq
-  (WHILE (> (STRLEN STRING) 0)
-    (SETQ
-      CHARI
-       (HAWS-ENDSTR STRING 1 1)
-      DECIMAL
-       (+ DECIMAL
-          (* M
-             (IF (< (ASCII CHARI) 58)
-               (ATOI CHARI)
-               (- (ASCII (STRCASE CHARI)) 55)
+  (while (> (strlen string) 0)
+    (setq
+      chari
+       (haws-endstr string 1 1)
+      decimal
+       (+ decimal
+          (* m
+             (if (< (ascii chari) 58)
+               (atoi chari)
+               (- (ascii (strcase chari)) 55)
              )
           )
        )
-      STRING
-       (SUBSTR STRING 1 (1- (STRLEN STRING)))
-      M (* M BASE)
+      string
+       (substr string 1 (1- (strlen string)))
+      m (* m base)
     ) ;_ end of setq
   ) ;_ end of while
-  DECIMAL
+  decimal
 ) ;_ end of defun
 
 ;;; Misc functions for developer and sales use.
@@ -1316,19 +1316,19 @@
 ;; translates a user order string and a number of trial days
 ;; into a user authorization string
 ;; TRIALDAYS = -1000000 for unlimited authorization
-(DEFUN HAWS-ORDERTOAUTH (ORDERSTRING TRIALDAYS / ORDERLIST)
-  (SETQ
-    ORDERLIST
-     (HAWS-BINARYTOLIST
-       (HAWS-DECRYPTORDERSTRING
-         (HAWS-USERTOBINARY ORDERSTRING)
+(defun haws-ordertoauth (orderstring trialdays / orderlist)
+  (setq
+    orderlist
+     (haws-binarytolist
+       (haws-decryptorderstring
+         (haws-usertobinary orderstring)
        )
      )
   )
-  (HAWS-BINARYTOUSER
-    (HAWS-ENCRYPTAUTHSTRING
-      (HAWS-LISTTOBINARY
-        (CONS (+ (CAR ORDERLIST) TRIALDAYS) (CDR ORDERLIST))
+  (haws-binarytouser
+    (haws-encryptauthstring
+      (haws-listtobinary
+        (cons (+ (car orderlist) trialdays) (cdr orderlist))
       )
     )
   )
@@ -1336,40 +1336,40 @@
 ;; ORDERTOTRIAL
 ;; translates a user order string into a timed trial
 ;; authorization
-(DEFUN HAWS-ORDERTOTRIAL (ORDERSTRING TRIALDAYS / ORDERLIST)
-  (HAWS-ORDERTOAUTH ORDERSTRING TRIALDAYS)
+(defun haws-ordertotrial (orderstring trialdays / orderlist)
+  (haws-ordertoauth orderstring trialdays)
 )
 ;; ORDERTOUNLIMITED
 ;; translates a user order string into an unlimited
 ;; authorization
-(DEFUN HAWS-ORDERTOUNLIMITED (ORDERSTRING / ORDERLIST)
-  (HAWS-ORDERTOAUTH ORDERSTRING -1000000)
+(defun haws-ordertounlimited (orderstring / orderlist)
+  (haws-ordertoauth orderstring -1000000)
 )
 
 ;;ORDERTOLIST translates a user order string into an order list.
-(DEFUN HAWS-ORDERTOLIST (ORDERSTRING)
-  (HAWS-BINARYTOLIST
-    (HAWS-DECRYPTORDERSTRING (HAWS-USERTOBINARY ORDERSTRING))
+(defun haws-ordertolist (orderstring)
+  (haws-binarytolist
+    (haws-decryptorderstring (haws-usertobinary orderstring))
   )
 )
 ;; AUTHTOLIST translates a user authorization string into an order
 ;; list.
-(DEFUN HAWS-AUTHTOLIST (AUTHSTRING)
-  (HAWS-BINARYTOLIST
-    (HAWS-DECRYPTAUTHSTRING (HAWS-USERTOBINARY AUTHSTRING))
+(defun haws-authtolist (authstring)
+  (haws-binarytolist
+    (haws-decryptauthstring (haws-usertobinary authstring))
   )
 )
 ;;LISTTOORDER translates a an order list into a user order string.
-(DEFUN HAWS-LISTTOORDER (ORDERLIST)
-  (HAWS-BINARYTOUSER
-    (HAWS-ENCRYPTORDERSTRING (HAWS-LISTTOBINARY ORDERLIST))
+(defun haws-listtoorder (orderlist)
+  (haws-binarytouser
+    (haws-encryptorderstring (haws-listtobinary orderlist))
   )
 )
 ;; LISTTOAUTH translates a an order list into a user authorization
 ;; string.
-(DEFUN HAWS-LISTTOAUTH (AUTHLIST)
-  (HAWS-BINARYTOUSER
-    (HAWS-ENCRYPTAUTHSTRING (HAWS-LISTTOBINARY AUTHLIST))
+(defun haws-listtoauth (authlist)
+  (haws-binarytouser
+    (haws-encryptauthstring (haws-listtobinary authlist))
   )
 )
 ;#endregion
@@ -1383,7 +1383,7 @@
 ;;; Stored locally somewhere. Maybe a LSP file.
 ;;; id appgroup name
 (setq
-  *HAWS-EDCCOMMANDS*
+  *haws-edccommands*
    '((0 -1 "haws-adl")
      (1 -1 "haws-aar")
      (2 -1 "haws-attredef")
@@ -1715,172 +1715,172 @@
    )
 )
 
-(DEFUN HAWS-USE-LOCAL-LOCATION ()
+(defun haws-use-local-location ()
   (list "HawsEDC" "UseLog" "UseString")
 )
 
-(DEFUN HAWS-USE-GET-LOCAL-LOG-STRING ()
-  (COND
-    ((HAWS-READCFG (HAWS-USE-LOCAL-LOCATION)))
+(defun haws-use-get-local-log-string ()
+  (cond
+    ((haws-readcfg (haws-use-local-location)))
     ("")
   )
 )
 
-(DEFUN HAWS-USE-LOG-LOCAL (COMMAND-ID / LOG-STRING)
-  (HAWS-WRITECFG
-    (HAWS-USE-LOCAL-LOCATION)
-    (HAWS-USE-COMMAND-ID-TO-LOG-STRING COMMAND-ID (HAWS-USE-GET-LOCAL-LOG-STRING))
+(defun haws-use-log-local (command-id / log-string)
+  (haws-writecfg
+    (haws-use-local-location)
+    (haws-use-command-id-to-log-string command-id (haws-use-get-local-log-string))
   )
 )
 
 ;;; The ASCII code of each character of the log string (one for each command) represents the number of times the command has been used this session. This implies that we count only up to 255 uses per session.
-(DEFUN HAWS-USE-INITIALIZE-LOG-STRING ( / I MAX-ID)
-  (SETQ I -1 LOG-STRING "" MAX-ID (CAAR (REVERSE *HAWS-EDCCOMMANDS*))) (WHILE (< (SETQ I (1+ I)) MAX-ID) (SETQ LOG-STRING (STRCAT LOG-STRING (CHR 1))))
-  LOG-STRING
+(defun haws-use-initialize-log-string ( / i max-id)
+  (setq i -1 log-string "" max-id (caar (reverse *haws-edccommands*))) (while (< (setq i (1+ i)) max-id) (setq log-string (strcat log-string (chr 1))))
+  log-string
 )
 
-(DEFUN HAWS-USE-COMMAND-ID-TO-LOG-STRING (COMMAND-ID LOG-STRING / MAX-ID)
-  (COND
-    ((OR (NOT LOG-STRING) (= LOG-STRING ""))
-     (HAWS-USE-INITIALIZE-LOG-STRING)
+(defun haws-use-command-id-to-log-string (command-id log-string / max-id)
+  (cond
+    ((or (not log-string) (= log-string ""))
+     (haws-use-initialize-log-string)
     )
   )
-  (SETQ LOG-STRING (STRCAT (SUBSTR LOG-STRING 1 COMMAND-ID) (CHR (1+ (ASCII (SUBSTR LOG-STRING (1+ COMMAND-ID) 1)))) (SUBSTR LOG-STRING (+ COMMAND-ID 2))))
+  (setq log-string (strcat (substr log-string 1 command-id) (chr (1+ (ascii (substr log-string (1+ command-id) 1)))) (substr log-string (+ command-id 2))))
 )
 
-(DEFUN HAWS-USE-LOG-REMOTE (/ URL HTTP BIOS-DATE LOG-DATA)
-  (SETQ
-    URL  "http://www.constructionnotesmanager.com/cnm_log.php"
-    HTTP (VLAX-CREATE-OBJECT "MSXML2.XMLHTTP")
-    BIOS-DATE (HAWS-GETBIOSDATE)
-    LOG-DATA
-     (STRCAT
+(defun haws-use-log-remote (/ url http bios-date log-data)
+  (setq
+    url  "http://www.constructionnotesmanager.com/cnm_log.php"
+    http (vlax-create-object "MSXML2.XMLHTTP")
+    bios-date (haws-getbiosdate)
+    log-data
+     (strcat
        "computer_name="
-       (HAWS-GETCOMPUTERNAME)
+       (haws-getcomputername)
        "&loginname="
        (getvar "loginname")
        "&cnm_version="
-       (HAWS-UNIFIED-VERSION)
+       (haws-unified-version)
        "&command_log="
-       (HAWS-USE-GET-LOCAL-LOG-STRING)
+       (haws-use-get-local-log-string)
      )
   )
-  (VLAX-INVOKE-METHOD HTTP 'OPEN "post" URL :VLAX-TRUE)
-  (VLAX-INVOKE-METHOD HTTP 'setRequestHeader "Content-type" "application/x-www-form-urlencoded")
-  (COND
-    ((VL-CATCH-ALL-ERROR-P
-       (VL-CATCH-ALL-APPLY 'VLAX-INVOKE (LIST HTTP 'SEND LOG-DATA))
+  (vlax-invoke-method http 'OPEN "post" url :vlax-true)
+  (vlax-invoke-method http 'setRequestHeader "Content-type" "application/x-www-form-urlencoded")
+  (cond
+    ((vl-catch-all-error-p
+       (vl-catch-all-apply 'VLAX-INVOKE (list http 'SEND log-data))
      )
-     (PRINC (STRCAT "\nInvalid request: " URL))
+     (princ (strcat "\nInvalid request: " url))
     )
-    (T (HAWS-WRITECFG (HAWS-USE-LOCAL-LOCATION) (HAWS-USE-INITIALIZE-LOG-STRING)))
+    (t (haws-writecfg (haws-use-local-location) (haws-use-initialize-log-string)))
   )
-  (VLAX-RELEASE-OBJECT HTTP)
+  (vlax-release-object http)
   (princ)
 )
 
 ;#endregion
 ;#region GETTERS
-(DEFUN HAWS-GETANGLEX (GX-STARTINGPOINT GX-PROMPT GX-DEFAULTVALUE
-                   GX-INITIALVALUE / GX-INPUT
+(defun haws-getanglex (gx-startingpoint gx-prompt gx-defaultvalue
+                   gx-initialvalue / gx-input
                   )
-  (SETQ
-    GX-DEFAULTVALUE
-     (COND
-       (GX-DEFAULTVALUE)
-       (GX-INITIALVALUE)
+  (setq
+    gx-defaultvalue
+     (cond
+       (gx-defaultvalue)
+       (gx-initialvalue)
        (0.0)
      )
   )
-  (COND
-    ((AND
-       GX-STARTINGPOINT
-       (SETQ
-         GX-INPUT
-          (GETANGLE
-            GX-STARTINGPOINT
-            (STRCAT
+  (cond
+    ((and
+       gx-startingpoint
+       (setq
+         gx-input
+          (getangle
+            gx-startingpoint
+            (strcat
               "\n"
-              GX-PROMPT
+              gx-prompt
               " <"
-              (ANGTOS GX-DEFAULTVALUE)
+              (angtos gx-defaultvalue)
               ">: "
             )
           )
        )
      )
-     GX-INPUT
+     gx-input
     )
-    ((AND
-       (NOT GX-STARTINGPOINT)
-       (SETQ
-         GX-INPUT
-          (GETANGLE
-            (STRCAT
+    ((and
+       (not gx-startingpoint)
+       (setq
+         gx-input
+          (getangle
+            (strcat
               "\n"
-              GX-PROMPT
+              gx-prompt
               " <"
-              (ANGTOS GX-DEFAULTVALUE)
+              (angtos gx-defaultvalue)
               ">: "
             )
           )
        )
      )
-     GX-INPUT
+     gx-input
     )
-    (GX-DEFAULTVALUE)
+    (gx-defaultvalue)
   )
 )
 
 ;;;HAWS-GETDISTX
 ;;;Returns a distance
-(VL-ACAD-DEFUN 'HAWS-GETDISTX)
-(DEFUN HAWS-GETDISTX (GX-POINT1 GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE / GX-ARCMODE)
-  (CAR
-    (HAWS-GETDISTPOINT
-      GX-POINT1
-      GX-PROMPT
-      GX-DEFAULTVALUE
-      GX-INITIALVALUE
-      (SETQ GX-ARCMODE-P NIL)
+(vl-acad-defun 'HAWS-GETDISTX)
+(defun haws-getdistx (gx-point1 gx-prompt gx-defaultvalue gx-initialvalue / gx-arcmode)
+  (car
+    (haws-getdistpoint
+      gx-point1
+      gx-prompt
+      gx-defaultvalue
+      gx-initialvalue
+      (setq gx-arcmode-p nil)
     )
   )
 )
 ;;;HAWS-GETDISTPOINT
 ;;;Returns a distance, the endpoint of the distance, and the bulge used for the distance.
 ;;;'(distance endpoint bulge)
-(VL-ACAD-DEFUN 'HAWS-GETDISTPOINT)
-(DEFUN HAWS-GETDISTPOINT (GX-POINT1 GX-PROMPT GX-DEFAULTVALUE
-                      GX-INITIALVALUE GX-ARCMODE-P / GX-POINT2 GX-POINT3 GX-BULGE
-                      GX-DISTANCE
+(vl-acad-defun 'HAWS-GETDISTPOINT)
+(defun haws-getdistpoint (gx-point1 gx-prompt gx-defaultvalue
+                      gx-initialvalue gx-arcmode-p / gx-point2 gx-point3 gx-bulge
+                      gx-distance
                      )
-  (SETQ
-    GX-DEFAULTVALUE
-     (COND
-       (GX-DEFAULTVALUE)
-       (GX-INITIALVALUE)
+  (setq
+    gx-defaultvalue
+     (cond
+       (gx-defaultvalue)
+       (gx-initialvalue)
      )
   )
   ;;If starting point wasn't provided, get it.
-  (COND
-    ((NOT GX-POINT1)
-     (SETQ GX-POINT1 (GETPOINT "\nSpecify first point: "))
+  (cond
+    ((not gx-point1)
+     (setq gx-point1 (getpoint "\nSpecify first point: "))
     )
   )
   ;;If there is now a starting point, get the second point or Arc keyword.
-  (COND
-    (GX-POINT1
-     (INITGET "Arc")
-     (SETQ
-       GX-POINT2
-        (GETPOINT
-          GX-POINT1
-          (STRCAT
+  (cond
+    (gx-point1
+     (initget "Arc")
+     (setq
+       gx-point2
+        (getpoint
+          gx-point1
+          (strcat
             "\n"
-            GX-PROMPT
-            (COND (ARCMODE-P " [Arc]") (T ""))
-            (IF GX-DEFAULTVALUE
-              (STRCAT " <" (RTOS GX-DEFAULTVALUE) ">")
+            gx-prompt
+            (cond (arcmode-p " [Arc]") (t ""))
+            (if gx-defaultvalue
+              (strcat " <" (rtos gx-defaultvalue) ">")
               ""
             )
             ": "
@@ -1889,46 +1889,46 @@
      )
     )
   )
-  (SETQ
-    GX-DISTANCE
-     (COND
+  (setq
+    gx-distance
+     (cond
        ;;If
        (;;point2 was not entered
-        (NOT GX-POINT2)
+        (not gx-point2)
         ;;then return the default value.
-        GX-DEFAULTVALUE
+        gx-defaultvalue
        )
        ;;Else if point2 isn't "Arc"
-       ((OR (NOT ARCMODE-P) (/= "Arc" GX-POINT2))
+       ((or (not arcmode-p) (/= "Arc" gx-point2))
         ;;then return the distance between point1 and point2
-        (DISTANCE GX-POINT1 GX-POINT2)
+        (distance gx-point1 gx-point2)
        )
        ;;Else enter arc mode.
-       (T
+       (t
         ;;Prompt for the second and third arc points
-        (SETQ
-          GX-POINT2
-           (GETPOINT
-             (STRCAT "\nSpecify point on arc: ")
+        (setq
+          gx-point2
+           (getpoint
+             (strcat "\nSpecify point on arc: ")
            )
-          GX-POINT3
-           (GETPOINT
-             (STRCAT "\nSpecify end point of arc: ")
+          gx-point3
+           (getpoint
+             (strcat "\nSpecify end point of arc: ")
            )
         )
-        (COND
+        (cond
           ;;If the second and third arc point were provided, then
-          ((AND GX-POINT2 GX-POINT3)
+          ((and gx-point2 gx-point3)
            ;;Return the length of the arc.
-           (HAWS-SEGMENT-LENGTH
-             GX-POINT1
-             GX-POINT3
-             (SETQ
-               GX-BULGE
-                (HAWS-3PTTOBULGE
-                  (HAWS-FLATTEN GX-POINT1)
-                  (HAWS-FLATTEN GX-POINT2)
-                  (HAWS-FLATTEN GX-POINT3)
+           (haws-segment-length
+             gx-point1
+             gx-point3
+             (setq
+               gx-bulge
+                (haws-3pttobulge
+                  (haws-flatten gx-point1)
+                  (haws-flatten gx-point2)
+                  (haws-flatten gx-point3)
                 )
              )
            )
@@ -1937,75 +1937,75 @@
        )
      )
   )
-  (LIST
-    GX-DISTANCE
-    (COND
-      (GX-POINT3)
-      (GX-POINT2)
+  (list
+    gx-distance
+    (cond
+      (gx-point3)
+      (gx-point2)
     )
-    GX-BULGE
+    gx-bulge
   )
 )
 
-(VL-ACAD-DEFUN 'HAWS-GETDN)
-(DEFUN HAWS-GETDN (/ DN)
-  (SETQ DN (GETVAR "dwgname"))
-  (IF (WCMATCH (STRCASE DN) "*`.DWG")
-    (SETQ DN (SUBSTR DN 1 (- (STRLEN DN) 4)))
-    (IF (WCMATCH DN "*\\*")
-      (SETQ DN (SUBSTR DN (1+ (STRLEN (GETVAR "dwgprefix")))))
+(vl-acad-defun 'HAWS-GETDN)
+(defun haws-getdn (/ dn)
+  (setq dn (getvar "dwgname"))
+  (if (wcmatch (strcase dn) "*`.DWG")
+    (setq dn (substr dn 1 (- (strlen dn) 4)))
+    (if (wcmatch dn "*\\*")
+      (setq dn (substr dn (1+ (strlen (getvar "dwgprefix")))))
     )
   )
-  DN
+  dn
 )
 
-(VL-ACAD-DEFUN 'HAWS-GETDNPATH)
-(DEFUN HAWS-GETDNPATH (/ DNPATH)
-  (SETQ DNPATH (GETVAR "dwgname"))
-  (IF (WCMATCH (STRCASE DNPATH) "*`.DWG")
-    (SETQ
-      DNPATH
-       (STRCAT (GETVAR "dwgprefix") DNPATH)
-      DNPATH
-       (SUBSTR DNPATH 1 (- (STRLEN DNPATH) 4))
+(vl-acad-defun 'HAWS-GETDNPATH)
+(defun haws-getdnpath (/ dnpath)
+  (setq dnpath (getvar "dwgname"))
+  (if (wcmatch (strcase dnpath) "*`.DWG")
+    (setq
+      dnpath
+       (strcat (getvar "dwgprefix") dnpath)
+      dnpath
+       (substr dnpath 1 (- (strlen dnpath) 4))
     )
   )
-  DNPATH
+  dnpath
 )
 
-(DEFUN HAWS-GETFIL (FPRMPT FDFLT FTYPE FEXT / FNAME FNINP)
-  (WHILE (NOT F1)
-    (SETQ
-      FNINP
-       (HAWS-GETSTRINGX FPRMPT FNINP FDFLT)
-      FNAME
-       (STRCAT FNINP "." FEXT)
+(defun haws-getfil (fprmpt fdflt ftype fext / fname fninp)
+  (while (not f1)
+    (setq
+      fninp
+       (haws-getstringx fprmpt fninp fdflt)
+      fname
+       (strcat fninp "." fext)
     )
-    (COND
-      ((AND (= (STRCASE FTYPE) "W") (FINDFILE FNAME))
-       (INITGET "Yes No")
-       (IF (= (GETKWORD "File already exists.  Overwrite? [Y/N]:")
+    (cond
+      ((and (= (strcase ftype) "W") (findfile fname))
+       (initget "Yes No")
+       (if (= (getkword "File already exists.  Overwrite? [Y/N]:")
               "Yes"
            )
-         (SETQ F1 (OPEN FNAME FTYPE))
+         (setq f1 (open fname ftype))
        )
       )
-      (T (SETQ F1 (OPEN FNAME FTYPE)))
+      (t (setq f1 (open fname ftype)))
     )
-    (IF (NOT F1)
-      (PROMPT
-        (STRCAT "Invalid path or filename.  Please try again.\n")
+    (if (not f1)
+      (prompt
+        (strcat "Invalid path or filename.  Please try again.\n")
       )
     )
   )
-  (LIST F1 FNAME)
+  (list f1 fname)
 )
 
 ;;HAWS-GETINTX
 ;;Provided for legacy compatability and user experience.
-(VL-ACAD-DEFUN 'HAWS-GETINTX)
-(DEFUN HAWS-GETINTX (GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE)
-  (HAWS-GETINTXX GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE 0)
+(vl-acad-defun 'HAWS-GETINTX)
+(defun haws-getintx (gx-prompt gx-defaultvalue gx-initialvalue)
+  (haws-getintxx gx-prompt gx-defaultvalue gx-initialvalue 0)
 )
 ;;;HAWS-GETINTXX
 ;;;Extended (getint) with default value and drawing text selection
@@ -2014,73 +2014,73 @@
 ;;;2. If no default is supplied and MODE is 0, the first prompt is for standard input, with fallback to selecting value from drawing text.
 ;;;3. If no default is supplied and MODE is 1, the first prompt is for drawing text selection, with fallback to standard input.
 ;;;Returns an INT or nil if nothing provided.
-(VL-ACAD-DEFUN 'HAWS-GETINTXX)
-(DEFUN HAWS-GETINTXX (GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE
-                  GX-PROMPTMODE / GX-RESPONSE
+(vl-acad-defun 'HAWS-GETINTXX)
+(defun haws-getintxx (gx-prompt gx-defaultvalue gx-initialvalue
+                  gx-promptmode / gx-response
                  )
   ;;Log all calls to this function.
-  (HAWS-LOG
-    (STRCAT
+  (haws-log
+    (strcat
       "HAWS-GETINTX GX-PROMPT="
-      GX-PROMPT
+      gx-prompt
       " GX-DEFAULT="
-      (IF GX-DEFAULTVALUE
-        (ITOA GX-DEFAULTVALUE)
+      (if gx-defaultvalue
+        (itoa gx-defaultvalue)
         "nil"
       )
       " GX-INITIALVALUE="
-      (IF GX-INITIALVALUE
-        (ITOA GX-INITIALVALUE)
+      (if gx-initialvalue
+        (itoa gx-initialvalue)
         "nil"
       )
     )
   )
-  (SETQ
-    GX-DEFAULTVALUE
-     (COND
-       (GX-DEFAULTVALUE)
-       (GX-INITIALVALUE)
+  (setq
+    gx-defaultvalue
+     (cond
+       (gx-defaultvalue)
+       (gx-initialvalue)
      )
   )
   ;;First prompt
-  (COND
+  (cond
     ;;If a default value was supplied, prompt with it and allow user to enter Select from drawing text mode.
-    (GX-DEFAULTVALUE
-     (INITGET "Select")
-     (SETQ
-       GX-RESPONSE
-        (GETINT
-          (STRCAT
+    (gx-defaultvalue
+     (initget "Select")
+     (setq
+       gx-response
+        (getint
+          (strcat
             "\n"
-            GX-PROMPT
+            gx-prompt
             " or [Select from drawing] <"
-            (ITOA GX-DEFAULTVALUE)
+            (itoa gx-defaultvalue)
             ">: "
           )
         )
      )
     )
     ;;Else if mode is 0, prompt for standard input
-    ((= GX-PROMPTMODE 0)
-     (SETQ
-       GX-RESPONSE
-        (GETINT
-          (STRCAT
+    ((= gx-promptmode 0)
+     (setq
+       gx-response
+        (getint
+          (strcat
             "\n"
-            GX-PROMPT
+            gx-prompt
             " or <Select from drawing>: "
           )
         )
      )
     )
     ;;Else if mode is 1, prompt for object select
-    ((= GX-PROMPTMODE 1)
-     (SETQ
-       GX-RESPONSE
-        (NENTSEL
-          (STRCAT
+    ((= gx-promptmode 1)
+     (setq
+       gx-response
+        (nentsel
+          (strcat
             "\nSelect object with "
-            GX-PROMPT
+            gx-prompt
             " or <enter manually>: "
           )
         )
@@ -2088,86 +2088,86 @@
     )
   )
   ;;Second prompt if necessary
-  (COND
+  (cond
     ;;If
-    ((AND
+    ((and
        ;;no response
-       (NOT GX-RESPONSE)
+       (not gx-response)
        ;;and there's a default value,
-       GX-DEFAULTVALUE
+       gx-defaultvalue
      )
      ;;No second prompt
-     NIL
+     nil
     )
     ;;Else if
-    ((OR (AND
+    ((or (and
            ;;no response
-           (NOT GX-RESPONSE)
+           (not gx-response)
            ;;and mode is 0,
-           (= GX-PROMPTMODE 0)
+           (= gx-promptmode 0)
          )
          ;;or response was Select
-         (= GX-RESPONSE "Select")
+         (= gx-response "Select")
      )
      ;;Prompt for object select
-     (SETQ
-       GX-RESPONSE
-        (NENTSEL
-          (STRCAT "\nSelect object with " GX-PROMPT ": ")
+     (setq
+       gx-response
+        (nentsel
+          (strcat "\nSelect object with " gx-prompt ": ")
         )
      )
     )
     ;;Else if
-    ((AND
+    ((and
        ;; no response
-       (NOT GX-RESPONSE)
+       (not gx-response)
        ;;and mode is 1,
-       (= GX-PROMPTMODE 1)
+       (= gx-promptmode 1)
      )
      ;;Prompt for standard input
-     (SETQ GX-RESPONSE (GETINT (STRCAT "\n" GX-PROMPT ": ")))
+     (setq gx-response (getint (strcat "\n" gx-prompt ": ")))
     )
   )
   ;;Return the integer if provided
-  (COND
+  (cond
     ;;If
-    ((AND
+    ((and
        ;;there's a response
-       GX-RESPONSE
+       gx-response
        ;;and it's an integer,
-       (= (TYPE GX-RESPONSE) 'INT)
+       (= (type gx-response) 'INT)
      )
      ;;Then return it
-     GX-RESPONSE
+     gx-response
     )
     ;;Else if
-    ((AND
+    ((and
        ;;there's a response
-       GX-RESPONSE
+       gx-response
        ;;and it's an entsel,
-       (= (TYPE GX-RESPONSE) 'LIST)
+       (= (type gx-response) 'LIST)
      )
      ;;Then return it
      ;;Then convert it to an integer
-     (ATOI
-       (CADR
-         (HAWS-EXTRACT (CDR (ASSOC 1 (ENTGET (CAR GX-RESPONSE)))))
+     (atoi
+       (cadr
+         (haws-extract (cdr (assoc 1 (entget (car gx-response)))))
        )
      )
     )
     ;;Else
-    (T
+    (t
      ;;Return the default
-     GX-DEFAULTVALUE
+     gx-defaultvalue
     )
   )
 )
 
 ;;HAWS-GETREALX
 ;;Provided for legacy compatability and user experience.
-(VL-ACAD-DEFUN 'HAWS-GETREALX)
-(DEFUN HAWS-GETREALX (GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE)
-  (HAWS-GETREALXX GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE 0)
+(vl-acad-defun 'HAWS-GETREALX)
+(defun haws-getrealx (gx-prompt gx-defaultvalue gx-initialvalue)
+  (haws-getrealxx gx-prompt gx-defaultvalue gx-initialvalue 0)
 )
 ;;;HAWS-GETREALXX
 ;;;Extended (getreal) with default value and drawing text selection
@@ -2176,73 +2176,73 @@
 ;;;2. If no default is supplied and MODE is 0, the first prompt is for standard input, with fallback to selecting value from drawing text.
 ;;;3. If no default is supplied and MODE is 1, the first prompt is for drawing text selection, with fallback to standard input.
 ;;;Returns an REAL or nil if nothing provided.
-(VL-ACAD-DEFUN 'HAWS-GETREALXX)
-(DEFUN HAWS-GETREALXX (GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE
-                   GX-PROMPTMODE / GX-RESPONSE
+(vl-acad-defun 'HAWS-GETREALXX)
+(defun haws-getrealxx (gx-prompt gx-defaultvalue gx-initialvalue
+                   gx-promptmode / gx-response
                   )
   ;;Log all calls to this function.
-  (HAWS-LOG
-    (STRCAT
+  (haws-log
+    (strcat
       "HAWS-GETREALX GX-PROMPT="
-      GX-PROMPT
+      gx-prompt
       " GX-DEFAULT="
-      (IF GX-DEFAULTVALUE
-        (RTOS GX-DEFAULTVALUE 2)
+      (if gx-defaultvalue
+        (rtos gx-defaultvalue 2)
         "nil"
       )
       " GX-INITIALVALUE="
-      (IF GX-INITIALVALUE
-        (RTOS GX-INITIALVALUE 2)
+      (if gx-initialvalue
+        (rtos gx-initialvalue 2)
         "nil"
       )
     )
   )
-  (SETQ
-    GX-DEFAULTVALUE
-     (COND
-       (GX-DEFAULTVALUE)
-       (GX-INITIALVALUE)
+  (setq
+    gx-defaultvalue
+     (cond
+       (gx-defaultvalue)
+       (gx-initialvalue)
      )
   )
   ;;First prompt
-  (COND
+  (cond
     ;;If a default value was supplied, prompt with it and allow user to enter Select from drawing text mode.
-    (GX-DEFAULTVALUE
-     (INITGET "Select")
-     (SETQ
-       GX-RESPONSE
-        (GETREAL
-          (STRCAT
+    (gx-defaultvalue
+     (initget "Select")
+     (setq
+       gx-response
+        (getreal
+          (strcat
             "\n"
-            GX-PROMPT
+            gx-prompt
             " or [Select from drawing] <"
-            (RTOS GX-DEFAULTVALUE 2)
+            (rtos gx-defaultvalue 2)
             ">: "
           )
         )
      )
     )
     ;;Else if mode is 0, prompt for standard input
-    ((= GX-PROMPTMODE 0)
-     (SETQ
-       GX-RESPONSE
-        (GETREAL
-          (STRCAT
+    ((= gx-promptmode 0)
+     (setq
+       gx-response
+        (getreal
+          (strcat
             "\n"
-            GX-PROMPT
+            gx-prompt
             " or <Select from drawing>: "
           )
         )
      )
     )
     ;;Else if mode is 1, prompt for object select
-    ((= GX-PROMPTMODE 1)
-     (SETQ
-       GX-RESPONSE
-        (NENTSEL
-          (STRCAT
+    ((= gx-promptmode 1)
+     (setq
+       gx-response
+        (nentsel
+          (strcat
             "\nSelect object with "
-            GX-PROMPT
+            gx-prompt
             " or <enter manually>: "
           )
         )
@@ -2250,143 +2250,143 @@
     )
   )
   ;;Second prompt if necessary
-  (COND
+  (cond
     ;;If
-    ((AND
+    ((and
        ;;no response
-       (NOT GX-RESPONSE)
+       (not gx-response)
        ;;and there's a default value,
-       GX-DEFAULTVALUE
+       gx-defaultvalue
      )
      ;;No second prompt
-     NIL
+     nil
     )
     ;;Else if
-    ((OR (AND
+    ((or (and
            ;;no response
-           (NOT GX-RESPONSE)
+           (not gx-response)
            ;;and mode is 0,
-           (= GX-PROMPTMODE 0)
+           (= gx-promptmode 0)
          )
          ;;or response was Select
-         (= GX-RESPONSE "Select")
+         (= gx-response "Select")
      )
      ;;Prompt for object select
-     (SETQ
-       GX-RESPONSE
-        (NENTSEL
-          (STRCAT "\nSelect object with " GX-PROMPT ": ")
+     (setq
+       gx-response
+        (nentsel
+          (strcat "\nSelect object with " gx-prompt ": ")
         )
      )
     )
     ;;Else if
-    ((AND
+    ((and
        ;; no response
-       (NOT GX-RESPONSE)
+       (not gx-response)
        ;;and mode is 1,
-       (= GX-PROMPTMODE 1)
+       (= gx-promptmode 1)
      )
      ;;Prompt for standard input
-     (SETQ GX-RESPONSE (GETREAL (STRCAT "\n" GX-PROMPT ": ")))
+     (setq gx-response (getreal (strcat "\n" gx-prompt ": ")))
     )
   )
   ;;Return the real number if provided
-  (COND
+  (cond
     ;;If
-    ((AND
+    ((and
        ;;there's a response
-       GX-RESPONSE
+       gx-response
        ;;and it's an integer,
-       (= (TYPE GX-RESPONSE) 'REAL)
+       (= (type gx-response) 'REAL)
      )
      ;;Then return it
-     GX-RESPONSE
+     gx-response
     )
     ;;Else if
-    ((AND
+    ((and
        ;;there's a response
-       GX-RESPONSE
+       gx-response
        ;;and it's an entsel,
-       (= (TYPE GX-RESPONSE) 'LIST)
+       (= (type gx-response) 'LIST)
      )
      ;;Then return it
      ;;Then convert it to an real
-     (ATOF
-       (CADR
-         (HAWS-EXTRACT (CDR (ASSOC 1 (ENTGET (CAR GX-RESPONSE)))))
+     (atof
+       (cadr
+         (haws-extract (cdr (assoc 1 (entget (car gx-response)))))
        )
      )
     )
     ;;Else
-    (T
+    (t
      ;;Return the default
-     GX-DEFAULTVALUE
+     gx-defaultvalue
     )
   )
 )
 
 ;;;HAWSGETPOINTX
-(VL-ACAD-DEFUN 'HAWS-GETPOINTX)
-(DEFUN HAWS-GETPOINTX (GX-STARTINGPOINT GX-PROMPT GX-DEFAULTVALUE
-                   GX-INITIALVALUE / GX-INPUT
+(vl-acad-defun 'HAWS-GETPOINTX)
+(defun haws-getpointx (gx-startingpoint gx-prompt gx-defaultvalue
+                   gx-initialvalue / gx-input
                   )
-  (SETQ
-    GX-DEFAULTVALUE
-     (COND
-       (GX-DEFAULTVALUE)
-       (GX-INITIALVALUE)
+  (setq
+    gx-defaultvalue
+     (cond
+       (gx-defaultvalue)
+       (gx-initialvalue)
        ('(0.0 0.0 0.0))
      )
   )
-  (SETQ
-    GX-PROMPT
-     (STRCAT
-       GX-PROMPT
+  (setq
+    gx-prompt
+     (strcat
+       gx-prompt
        " <"
-       (RTOS (CAR GX-DEFAULTVALUE))
+       (rtos (car gx-defaultvalue))
        ","
-       (RTOS (CADR GX-DEFAULTVALUE))
+       (rtos (cadr gx-defaultvalue))
        ","
-       (RTOS (CADDR GX-DEFAULTVALUE))
+       (rtos (caddr gx-defaultvalue))
        ">: "
      )
   )
-  (SETQ
-    GX-INPUT
-     (IF GX-STARTINGPOINT
-       (GETPOINT GX-STARTINGPOINT GX-PROMPT)
-       (GETPOINT GX-PROMPT)
+  (setq
+    gx-input
+     (if gx-startingpoint
+       (getpoint gx-startingpoint gx-prompt)
+       (getpoint gx-prompt)
      )
   )
-  (IF (NOT GX-INPUT)
-    GX-DEFAULTVALUE
-    GX-INPUT
+  (if (not gx-input)
+    gx-defaultvalue
+    gx-input
   )
 )
 
-(VL-ACAD-DEFUN 'HAWS-GETSTRINGX)
-(DEFUN HAWS-GETSTRINGX
-   (GX-PROMPT GX-DEFAULTVALUE GX-INITIALVALUE / GX-INPUT)
-  (SETQ
-    GX-DEFAULTVALUE
-     (COND
-       (GX-DEFAULTVALUE)
-       (GX-INITIALVALUE)
+(vl-acad-defun 'HAWS-GETSTRINGX)
+(defun haws-getstringx
+   (gx-prompt gx-defaultvalue gx-initialvalue / gx-input)
+  (setq
+    gx-defaultvalue
+     (cond
+       (gx-defaultvalue)
+       (gx-initialvalue)
        ("")
      )
   )
-  (COND
+  (cond
     ((/= ""
-         (SETQ
-           GX-INPUT
-            (GETSTRING
-              (STRCAT "\n" GX-PROMPT " <" GX-DEFAULTVALUE ">: ")
+         (setq
+           gx-input
+            (getstring
+              (strcat "\n" gx-prompt " <" gx-defaultvalue ">: ")
             )
          )
      )
-     GX-INPUT
+     gx-input
     )
-    (GX-DEFAULTVALUE)
+    (gx-defaultvalue)
   )
 )
 
@@ -2399,11 +2399,11 @@
 ;;Type 0 tries to match the wild cards with text preceding a number.
 ;;Type 1 tries to match the wild cards with text following a number
 ;;Returns 0.0 if search unsuccesful
-(VL-ACAD-DEFUN 'HAWS-ATOFX)
-(DEFUN HAWS-ATOFX (S WC OPT / X)
-  (SETQ X (CADR (HAWS-EXTRACTX S WC OPT)))
-  (IF X
-    (ATOF X)
+(vl-acad-defun 'HAWS-ATOFX)
+(defun haws-atofx (s wc opt / x)
+  (setq x (cadr (haws-extractx s wc opt)))
+  (if x
+    (atof x)
     0.0
   )
 )
@@ -2415,166 +2415,166 @@
 ;;Type 0 tries to match the wild cards with text preceding a number.
 ;;Type 1 tries to match the wild cards with text following a number
 ;;Returns nil if search unsuccesful
-(VL-ACAD-DEFUN 'HAWS-DISTOFX)
-(DEFUN HAWS-DISTOFX (S WC OPT / X)
-  (SETQ X (CADR (HAWS-EXTRACTX S WC OPT)))
-  (IF X
-    (DISTOF X)
-    NIL
+(vl-acad-defun 'HAWS-DISTOFX)
+(defun haws-distofx (s wc opt / x)
+  (setq x (cadr (haws-extractx s wc opt)))
+  (if x
+    (distof x)
+    nil
   )
 )
 
-(DEFUN HAWS-DXF (GCODE ENTLST) (CDR (ASSOC GCODE ENTLST)))
+(defun haws-dxf (gcode entlst) (cdr (assoc gcode entlst)))
 
 ;; Endstr returns a substring of s starting with the ith to last
 ;; character
 ;;and continuing l characters.
-(VL-ACAD-DEFUN 'HAWS-ENDSTR)
-(DEFUN HAWS-ENDSTR (S I L)
-  (SUBSTR S (1+ (- (MAX (STRLEN S) 1) I)) L)
+(vl-acad-defun 'HAWS-ENDSTR)
+(defun haws-endstr (s i l)
+  (substr s (1+ (- (max (strlen s) 1) i)) l)
 )
 
 ;;Extract used to extract numerical info from a text string.
 ;;Ignores commas in numbers.  Not international compatible.
-(VL-ACAD-DEFUN 'HAWS-EXTRACT)
-(DEFUN HAWS-EXTRACT (S / C I PREFIX NUMBER SUFFIX)
-  (SETQ
-    I 0
-    PREFIX ""
-    NUMBER ""
-    SUFFIX ""
+(vl-acad-defun 'HAWS-EXTRACT)
+(defun haws-extract (s / c i prefix number suffix)
+  (setq
+    i 0
+    prefix ""
+    number ""
+    suffix ""
   )
-  (REPEAT (STRLEN S)
-    (SETQ C (SUBSTR S (SETQ I (1+ I)) 1))
-    (COND
-      ((AND (WCMATCH C "#") (EQ SUFFIX ""))
-       (SETQ NUMBER (STRCAT NUMBER C))
+  (repeat (strlen s)
+    (setq c (substr s (setq i (1+ i)) 1))
+    (cond
+      ((and (wcmatch c "#") (eq suffix ""))
+       (setq number (strcat number c))
       )
-      ((AND
-         (EQ C "-")
-         (= SUFFIX NUMBER "")
-         (WCMATCH (SUBSTR S (1+ I) 1) "#")
+      ((and
+         (eq c "-")
+         (= suffix number "")
+         (wcmatch (substr s (1+ i) 1) "#")
        )
-       (SETQ NUMBER (STRCAT NUMBER C))
+       (setq number (strcat number c))
       )
-      ((AND
-         (EQ C ".")
-         (= SUFFIX "")
-         (WCMATCH (SUBSTR S (1+ I) 1) "#")
+      ((and
+         (eq c ".")
+         (= suffix "")
+         (wcmatch (substr s (1+ i) 1) "#")
        )
-       (SETQ NUMBER (STRCAT NUMBER C))
+       (setq number (strcat number c))
       )
       ;;Swallow commas inside numbers.  Not int'l compatible.
-      ((AND
-         (EQ C ",")
-         (= SUFFIX "")
-         (WCMATCH (SUBSTR S (1+ I) 1) "#")
+      ((and
+         (eq c ",")
+         (= suffix "")
+         (wcmatch (substr s (1+ i) 1) "#")
        )
       )
-      ((EQ NUMBER "") (SETQ PREFIX (STRCAT PREFIX C)))
-      (T (SETQ SUFFIX (STRCAT SUFFIX C)))
+      ((eq number "") (setq prefix (strcat prefix c)))
+      (t (setq suffix (strcat suffix c)))
     )
   )
-  (LIST PREFIX NUMBER SUFFIX)
+  (list prefix number suffix)
 )
 
 ;; Extractx used to extract numerical info from a text string with
 ;; extended
 ;; options.
-(VL-ACAD-DEFUN 'HAWS-EXTRACTX)
-(DEFUN HAWS-EXTRACTX (S WC OPT / C DONE I PRE PREI NUMBER SUF SUFI)
-  (SETQ
-    I (IF (= OPT 0)
+(vl-acad-defun 'HAWS-EXTRACTX)
+(defun haws-extractx (s wc opt / c done i pre prei number suf sufi)
+  (setq
+    i (if (= opt 0)
         0
-        (1+ (STRLEN S))
+        (1+ (strlen s))
       )
-    PRE ""
-    NUMBER ""
-    SUF ""
+    pre ""
+    number ""
+    suf ""
   )
-  (REPEAT (STRLEN S)
-    (SETQ
-      C    (SUBSTR
-             S
-             (SETQ
-               I (IF (= OPT 0)
-                   (1+ I)
-                   (1- I)
+  (repeat (strlen s)
+    (setq
+      c    (substr
+             s
+             (setq
+               i (if (= opt 0)
+                   (1+ i)
+                   (1- i)
                  )
              )
              1
            )
-      PREI (SUBSTR S 1 (1- I))
-      SUFI (SUBSTR S (1+ I))
+      prei (substr s 1 (1- i))
+      sufi (substr s (1+ i))
     )
-    (COND
-      ((NOT
-         (WCMATCH
-           (IF (= OPT 0)
-             PREI
-             SUFI
+    (cond
+      ((not
+         (wcmatch
+           (if (= opt 0)
+             prei
+             sufi
            )
-           WC
+           wc
          )
        )
-       (IF (= OPT 0)
-         (SETQ PRE (STRCAT PRE C))
-         (SETQ SUF (STRCAT C SUF))
+       (if (= opt 0)
+         (setq pre (strcat pre c))
+         (setq suf (strcat c suf))
        )
       )
-      ((AND (WCMATCH C "#") (NOT DONE))
-       (SETQ
-         NUMBER
-          (IF (= OPT 0)
-            (STRCAT NUMBER C)
-            (STRCAT C NUMBER)
+      ((and (wcmatch c "#") (not done))
+       (setq
+         number
+          (if (= opt 0)
+            (strcat number c)
+            (strcat c number)
           )
        )
       )
-      ((AND
-         (EQ C "-")
-         (= NUMBER "")
-         (NOT DONE)
-         (WCMATCH (SUBSTR S (1+ I) 1) "#")
+      ((and
+         (eq c "-")
+         (= number "")
+         (not done)
+         (wcmatch (substr s (1+ i) 1) "#")
        )
-       (SETQ
-         NUMBER
-          (IF (= OPT 0)
-            (STRCAT NUMBER C)
-            (STRCAT C NUMBER)
+       (setq
+         number
+          (if (= opt 0)
+            (strcat number c)
+            (strcat c number)
           )
        )
       )
-      ((AND
-         (EQ C ".")
-         (NOT DONE)
-         (WCMATCH (SUBSTR S (1+ I) 1) "#")
+      ((and
+         (eq c ".")
+         (not done)
+         (wcmatch (substr s (1+ i) 1) "#")
        )
-       (SETQ
-         NUMBER
-          (IF (= OPT 0)
-            (STRCAT NUMBER C)
-            (STRCAT C NUMBER)
+       (setq
+         number
+          (if (= opt 0)
+            (strcat number c)
+            (strcat c number)
           )
        )
       )
-      ((EQ NUMBER "")
-       (IF (= OPT 0)
-         (SETQ PRE (STRCAT PRE C))
-         (SETQ SUF (STRCAT C SUF))
+      ((eq number "")
+       (if (= opt 0)
+         (setq pre (strcat pre c))
+         (setq suf (strcat c suf))
        )
       )
-      (T
-       (SETQ DONE T)
-       (IF (= OPT 0)
-         (SETQ SUF (STRCAT SUF C))
-         (SETQ PRE (STRCAT C PRE))
+      (t
+       (setq done t)
+       (if (= opt 0)
+         (setq suf (strcat suf c))
+         (setq pre (strcat c pre))
        )
       )
     )
   )
-  (IF (NOT (ZEROP (STRLEN NUMBER)))
-    (LIST PRE NUMBER SUF)
+  (if (not (zerop (strlen number)))
+    (list pre number suf)
   )
 )
 
@@ -2585,10 +2585,10 @@
 ;;;
 ;;;Tests whether intellicad behavior is current.
 ;;;Bricscad has advanced to the point we no longer have to use a special mode for it.
-(VL-ACAD-DEFUN 'C:HAWS-ICAD-P)
-(DEFUN C:HAWS-ICAD-P ()
-  (OR *HAWS-ICADMODE*
-      (SETQ *HAWS-ICADMODE* (WCMATCH (GETVAR "acadver") "*i"))
+(vl-acad-defun 'C:haws-icad-p)
+(defun c:haws-icad-p ()
+  (or *haws-icadmode*
+      (setq *haws-icadmode* (wcmatch (getvar "acadver") "*i"))
   )
 )
 
@@ -2599,30 +2599,30 @@
 ;;
 ;; CAUTION: May not return the same value as vl-file-copy.
 ;;
-(VL-ACAD-DEFUN 'HAWS-FILE-COPY)
-(DEFUN HAWS-FILE-COPY (SOURCE DESTINATION / RDLIN RETURN)
-  (SETQ RETURN T)
-  (COND
-    ((AND (= (SUBSTR (GETVAR "DWGNAME") 1 7) "Drawing") (WCMATCH DESTINATION (STRCAT (GETVAR "DWGPREFIX") "*")) (WCMATCH (getvar "ACADVER") "*BricsCAD"))
-      (ALERT "BricsCAD may crash if this drawing is not in a writable folder.")
-      (INITGET "Yes No")
-      (IF (/= (GETKWORD "\nBricsCAD may crash. Continue anyway? [Yes/No] <No>: ") "Yes")(exit))
+(vl-acad-defun 'HAWS-FILE-COPY)
+(defun haws-file-copy (source destination / rdlin return)
+  (setq return t)
+  (cond
+    ((and (= (substr (getvar "DWGNAME") 1 7) "Drawing") (wcmatch destination (strcat (getvar "DWGPREFIX") "*")) (wcmatch (getvar "ACADVER") "*BricsCAD"))
+      (alert "BricsCAD may crash if this drawing is not in a writable folder.")
+      (initget "Yes No")
+      (if (/= (getkword "\nBricsCAD may crash. Continue anyway? [Yes/No] <No>: ") "Yes")(exit))
     )
   )
-  (COND
-    ((HAWS-VLISP-P) 
-     (VL-FILE-COPY SOURCE DESTINATION))
-    (T
-     (IF (NOT(SETQ F1 (OPEN SOURCE "r")))
-       (SETQ RETURN nil)
+  (cond
+    ((haws-vlisp-p) 
+     (vl-file-copy source destination))
+    (t
+     (if (not(setq f1 (open source "r")))
+       (setq return nil)
      )
-     (IF (NOT (AND RETURN (SETQ F2 (OPEN DESTINATION "w"))))
-       (SETQ RETURN nil)
+     (if (not (and return (setq f2 (open destination "w"))))
+       (setq return nil)
      )
-     (WHILE (SETQ RDLIN (READ-LINE F1)) (WRITE-LINE RDLIN F2))
-     (SETQ F1 (CLOSE F1))
-     (SETQ F2 (CLOSE F2))
-     RETURN
+     (while (setq rdlin (read-line f1)) (write-line rdlin f2))
+     (setq f1 (close f1))
+     (setq f2 (close f2))
+     return
     )
   )
 )
@@ -2631,34 +2631,34 @@
 ;;
 ;; Intellicad substitute for vl-filename-base.
 ;;
-(VL-ACAD-DEFUN 'HAWS-FILENAME-BASE)
-(DEFUN HAWS-FILENAME-BASE (FILENAME / BASE)
-  (COND
-    ((HAWS-VLISP-P) (VL-FILENAME-BASE FILENAME))
-    (T
+(vl-acad-defun 'HAWS-FILENAME-BASE)
+(defun haws-filename-base (filename / base)
+  (cond
+    ((haws-vlisp-p) (vl-filename-base filename))
+    (t
      ;;Trim off the directory.
-     (SETQ BASE (STRCAT " " FILENAME))  ;Pad with a space
-     (WHILE (WCMATCH
-              (SETQ
-                BASE
-                 (SUBSTR BASE 2)        ;Trim first character.
+     (setq base (strcat " " filename))  ;Pad with a space
+     (while (wcmatch
+              (setq
+                base
+                 (substr base 2)        ;Trim first character.
               )
               "*[\\/]*"                 ; and do again if slashes in name.
             )
      )
      ;;Trim the extension off one character at a time
-     (IF (WCMATCH BASE "*`.*")          ; If there are any dots in remaining name.
-       (PROGN
-         (WHILE (/= (HAWS-ENDSTR BASE 1 1) ".")
+     (if (wcmatch base "*`.*")          ; If there are any dots in remaining name.
+       (progn
+         (while (/= (haws-endstr base 1 1) ".")
                                         ; While the last character isn't a dot.
-           (SETQ
-             BASE
-              (SUBSTR BASE 1 (1- (STRLEN BASE))) ;Trim it.
+           (setq
+             base
+              (substr base 1 (1- (strlen base))) ;Trim it.
            )
          )
-         (SUBSTR BASE 1 (1- (STRLEN BASE)))
+         (substr base 1 (1- (strlen base)))
        )
-       BASE
+       base
      )
     )
   )
@@ -2670,28 +2670,28 @@
 ;;
 ;; Intellicad substitute for vl-filename-directory. 
 ;;
-(VL-ACAD-DEFUN 'HAWS-FILENAME-DIRECTORY)
-(DEFUN HAWS-FILENAME-DIRECTORY (FILENAME / DIRECTORY)
-  (COND
-    ((HAWS-VLISP-P) (VL-FILENAME-DIRECTORY FILENAME))
-    (T
-     (COND
-       ((WCMATCH FILENAME "*[\\/]*")    ;If file has any directories.
-        (SETQ DIRECTORY (STRCAT FILENAME " "))
-        (WHILE (NOT
-                 (WCMATCH
-                   (SETQ
-                     DIRECTORY
-                      (SUBSTR DIRECTORY 1 (1- (STRLEN DIRECTORY)))
+(vl-acad-defun 'HAWS-FILENAME-DIRECTORY)
+(defun haws-filename-directory (filename / directory)
+  (cond
+    ((haws-vlisp-p) (vl-filename-directory filename))
+    (t
+     (cond
+       ((wcmatch filename "*[\\/]*")    ;If file has any directories.
+        (setq directory (strcat filename " "))
+        (while (not
+                 (wcmatch
+                   (setq
+                     directory
+                      (substr directory 1 (1- (strlen directory)))
                                         ;Trim last character
                    )
                    "*[\\/]"             ; and do again if the last character is not a slash.
                  )
                )
         )
-        (SUBSTR DIRECTORY 1 (1- (STRLEN DIRECTORY))) ;Trim slash
+        (substr directory 1 (1- (strlen directory))) ;Trim slash
        )
-       (T "")
+       (t "")
      )
     )
   )
@@ -2704,39 +2704,39 @@
 ;;; Trims everything up to but excluding last dot from file name.
 ;;;
 ;;; Returns extension including dot.
-(VL-ACAD-DEFUN 'HAWS-FILENAME-EXTENSION)
-(DEFUN HAWS-FILENAME-EXTENSION (FILENAME / EXTENSION)
-  (COND
-    ((AND
-       (HAWS-VLISP-P)
-       (SETQ EXTENSION (VL-FILENAME-EXTENSION FILENAME))
+(vl-acad-defun 'HAWS-FILENAME-EXTENSION)
+(defun haws-filename-extension (filename / extension)
+  (cond
+    ((and
+       (haws-vlisp-p)
+       (setq extension (vl-filename-extension filename))
      )
-     EXTENSION
+     extension
     )
     ;;Trim off the directory.
-    (T
-     (SETQ EXTENSION (STRCAT " " FILENAME)) ;Pad with a space
-     (WHILE (WCMATCH
-              (SETQ
-                EXTENSION
-                 (SUBSTR EXTENSION 2)   ;Trim first character.
+    (t
+     (setq extension (strcat " " filename)) ;Pad with a space
+     (while (wcmatch
+              (setq
+                extension
+                 (substr extension 2)   ;Trim first character.
               )
               "*[\\/]*"                 ; and do again if slashes in name.
             )
      )
      ;;Trim off the base name.
-     (IF (WCMATCH EXTENSION "*`.*")     ; If there are any dots in remaining name.
-       (PROGN
-         (SETQ EXTENSION (STRCAT " " EXTENSION))
-         (WHILE (WCMATCH
-                  (SETQ
-                    EXTENSION
-                     (SUBSTR EXTENSION 2) ;Trim first character
+     (if (wcmatch extension "*`.*")     ; If there are any dots in remaining name.
+       (progn
+         (setq extension (strcat " " extension))
+         (while (wcmatch
+                  (setq
+                    extension
+                     (substr extension 2) ;Trim first character
                   )
                   "*`.*"                ; and do again if there is still a dot.
                 )
          )
-         EXTENSION
+         extension
        )
        ""
      )
@@ -2747,7 +2747,7 @@
 ;#region DEVELOP
 ;; HAWS_UNIT_TEST EXAMPLE
 ;|
-(HAWS_UNIT_TEST 
+(haws_unit_test 
   '+ 
   '(
     ((1 0 0) 1)
@@ -2758,7 +2758,7 @@
     ((6 0 0) 6)
   )
 )
-(HAWS_UNIT_TEST
+(haws_unit_test
   'HAWS_NESTED_LIST_UPDATE
   '(
     (((1 . ((11 . "A")(12 . ((121 . "B")(122 . ((1221 . "C")))))))) (1 12 1221 "1")
@@ -2767,69 +2767,69 @@
   )
 )
 |;
-(DEFUN HAWS_UNIT_TEST (F ASSERTIONS / ANSWER ARGS CONTINUE_P I RESULT) 
-  (SETQ I          0
-        CONTINUE_P T
+(defun haws_unit_test (f assertions / answer args continue_p i result) 
+  (setq i          0
+        continue_p t
   )
-  (MAPCAR 
-    '(LAMBDA (ASSERTION) 
-       (AND 
-         CONTINUE_P
-         (SETQ ARGS   (CAR ASSERTION)
-               ANSWER (CADR ASSERTION)
+  (mapcar 
+    '(lambda (assertion) 
+       (and 
+         continue_p
+         (setq args   (car assertion)
+               answer (cadr assertion)
          )
-         (SETQ CONTINUE_P (EQUAL 
-                            (SETQ RESULT (APPLY F ARGS))
-                            ANSWER
+         (setq continue_p (equal 
+                            (setq result (apply f args))
+                            answer
                           )
          )
-         (SETQ I (1+ I))
-         (PRINC (STRCAT "\nSuccess on test " (ITOA I)))
+         (setq i (1+ i))
+         (princ (strcat "\nSuccess on test " (itoa i)))
        )
-       (AND
-         (NOT CONTINUE_P)
-         (PRINT RESULT)
+       (and
+         (not continue_p)
+         (print result)
        )
      )
-    ASSERTIONS
+    assertions
   )
-  I
+  i
 )
 ;;; HAWS-LOG
 ;;; Writes a message to a log file including the username and timestamp
-(VL-ACAD-DEFUN 'HAWS-LOG)
-(DEFUN HAWS-LOG (MESSAGE)
+(vl-acad-defun 'HAWS-LOG)
+(defun haws-log (message)
             ;|
-  (SETQ
-    F1 (OPEN
-         (STRCAT
-           (HAWS-FILENAME-DIRECTORY (FINDFILE "hawsedc.mnu"))
+  (setq
+    f1 (open
+         (strcat
+           (haws-filename-directory (findfile "hawsedc.mnu"))
            "\\haws-log.txt"
          )
          "a"
        )
   )
-  (WRITE-LINE
-    (STRCAT
-      (HAWS-GETCOMPUTERNAME)
+  (write-line
+    (strcat
+      (haws-getcomputername)
       " - "
-      (RTOS (GETVAR "cdate") 2 6)
+      (rtos (getvar "cdate") 2 6)
       " - "
-      MESSAGE
+      message
     )
-    F1
+    f1
   )
-  (SETQ F1 (CLOSE F1))
+  (setq f1 (close f1))
   |;
-  (PRINC)
+  (princ)
 )
 ;;; HAWS-MILEPOST
 ;;; Echos a progress message depending on debug level.
-(VL-ACAD-DEFUN 'HAWS-MILEPOST)
-(DEFUN HAWS-MILEPOST (MESSAGESTRING)
-  (IF (> *HAWS-DEBUGLEVEL* 0)
-    (PRINC (STRCAT "\nHawsEDC debug message: " MESSAGESTRING))
-    MESSAGESTRING
+(vl-acad-defun 'HAWS-MILEPOST)
+(defun haws-milepost (messagestring)
+  (if (> *haws-debuglevel* 0)
+    (princ (strcat "\nHawsEDC debug message: " messagestring))
+    messagestring
   )
 )
 
@@ -2844,25 +2844,25 @@
 ;; Function to read a value at a nested path (returns nil if not found)
 ;; Usage: (HAWS_NESTED_LIST_GET DATA '(1 13 132 1323))
 ;; Credit to Grok AI 2025-10-17
-(DEFUN HAWS_NESTED_LIST_GET (ALIST KEYS / KEY REST PAIR VAL)
-  (COND
-    ((NULL KEYS) NIL)  ; Invalid empty path
-    (T
-      (SETQ KEY (CAR KEYS)
-            REST (CDR KEYS)
-            PAIR (ASSOC KEY ALIST))
-      (COND
-        ((NULL PAIR) NIL)
-        (T
-          (SETQ VAL (CADR PAIR))  ; Changed from (CDR PAIR) to (CADR PAIR) for uniform LIST structure
-          (COND
-            ((NULL REST)
-             VAL  ; Return value directly - no need to check if it's a branch
+(defun haws_nested_list_get (alist keys / key rest pair val)
+  (cond
+    ((null keys) nil)  ; Invalid empty path
+    (t
+      (setq key (car keys)
+            rest (cdr keys)
+            pair (assoc key alist))
+      (cond
+        ((null pair) nil)
+        (t
+          (setq val (cadr pair))  ; Changed from (CDR PAIR) to (CADR PAIR) for uniform LIST structure
+          (cond
+            ((null rest)
+             val  ; Return value directly - no need to check if it's a branch
             )
-            (T
-              (COND
-                ((LISTP VAL) (HAWS_NESTED_LIST_GET VAL REST))  ; Recurse into sub-alist - removed (CAR VAL)
-                (T NIL)  ; Cannot go deeper
+            (t
+              (cond
+                ((listp val) (haws_nested_list_get val rest))  ; Recurse into sub-alist - removed (CAR VAL)
+                (t nil)  ; Cannot go deeper
               )
             )
           )
@@ -2876,28 +2876,28 @@
 ;; Uses subst to preserve original list order, returns modified list
 ;; Usage: (HAWS_NESTED_LIST_UPDATE DATA '(1 13 132 1323) "2")
 ;; Credit to Grok AI 2025-10-17
-(DEFUN HAWS_NESTED_LIST_UPDATE (ALIST KEYS VAL / KEY REST PAIR SUB NEW_SUB_ALIST NEW_PAIR)
-  (COND
-    ((NULL KEYS) ALIST)  ; Nothing to do for empty path
-    (T
-      (SETQ KEY (CAR KEYS)
-            REST (CDR KEYS))
-      (SETQ PAIR (ASSOC KEY ALIST))
-      (COND
-        ((NULL REST)
-          (SETQ NEW_PAIR (LIST KEY VAL))  ; Changed from (CONS KEY VAL) to (LIST KEY VAL) for uniform structure
-          (COND
-            (PAIR (SUBST NEW_PAIR PAIR ALIST))
-            (T (APPEND ALIST (LIST NEW_PAIR)))
+(defun haws_nested_list_update (alist keys val / key rest pair sub new_sub_alist new_pair)
+  (cond
+    ((null keys) alist)  ; Nothing to do for empty path
+    (t
+      (setq key (car keys)
+            rest (cdr keys))
+      (setq pair (assoc key alist))
+      (cond
+        ((null rest)
+          (setq new_pair (list key val))  ; Changed from (CONS KEY VAL) to (LIST KEY VAL) for uniform structure
+          (cond
+            (pair (subst new_pair pair alist))
+            (t (append alist (list new_pair)))
           )
         )
-        (T
-          (SETQ SUB (CADR PAIR))  ; Changed from (CDR PAIR) then (CAR SUB) to just (CADR PAIR)
-          (SETQ NEW_SUB_ALIST (HAWS_NESTED_LIST_UPDATE SUB REST VAL))
-          (SETQ NEW_PAIR (LIST KEY NEW_SUB_ALIST))  ; Changed from (CONS KEY (LIST ...)) to (LIST KEY ...)
-          (COND
-            (PAIR (SUBST NEW_PAIR PAIR ALIST))
-            (T (APPEND ALIST (LIST NEW_PAIR)))
+        (t
+          (setq sub (cadr pair))  ; Changed from (CDR PAIR) then (CAR SUB) to just (CADR PAIR)
+          (setq new_sub_alist (haws_nested_list_update sub rest val))
+          (setq new_pair (list key new_sub_alist))  ; Changed from (CONS KEY (LIST ...)) to (LIST KEY ...)
+          (cond
+            (pair (subst new_pair pair alist))
+            (t (append alist (list new_pair)))
           )
         )
       )
@@ -2909,27 +2909,27 @@
 ;; Uses subst to preserve original list order, prunes empty branches, returns modified list
 ;; Usage: (HAWS_NESTED_LIST_DELETE DATA '(1 13 132 1323))
 ;; Credit to Grok AI 2025-10-17
-(DEFUN HAWS_NESTED_LIST_DELETE (ALIST KEYS / KEY REST PAIR SUB NEW_SUB_ALIST NEW_PAIR)
-  (COND
-    ((NULL KEYS) ALIST)  ; Nothing to do
-    (T
-      (SETQ KEY (CAR KEYS)
-            REST (CDR KEYS))
-      (SETQ PAIR (ASSOC KEY ALIST))
-      (COND
-        ((NULL PAIR) ALIST)  ; Nothing to delete
-        ((NULL REST) (VL-REMOVE PAIR ALIST))  ; Remove leaf or branch
-        (T
-          (SETQ SUB (CADR PAIR))  ; Changed from (CDR PAIR) then (CAR SUB) to just (CADR PAIR)
-          (COND
-            ((NOT (LISTP SUB)) ALIST)  ; Cannot delete deeper into leaf
-            (T
-              (SETQ NEW_SUB_ALIST (HAWS_NESTED_LIST_DELETE SUB REST))
-              (COND
-                ((NULL NEW_SUB_ALIST) (VL-REMOVE PAIR ALIST))  ; Prune empty branch
-                (T
-                  (SETQ NEW_PAIR (LIST KEY NEW_SUB_ALIST))  ; Changed from (CONS KEY (LIST ...))
-                  (SUBST NEW_PAIR PAIR ALIST)
+(defun haws_nested_list_delete (alist keys / key rest pair sub new_sub_alist new_pair)
+  (cond
+    ((null keys) alist)  ; Nothing to do
+    (t
+      (setq key (car keys)
+            rest (cdr keys))
+      (setq pair (assoc key alist))
+      (cond
+        ((null pair) alist)  ; Nothing to delete
+        ((null rest) (vl-remove pair alist))  ; Remove leaf or branch
+        (t
+          (setq sub (cadr pair))  ; Changed from (CDR PAIR) then (CAR SUB) to just (CADR PAIR)
+          (cond
+            ((not (listp sub)) alist)  ; Cannot delete deeper into leaf
+            (t
+              (setq new_sub_alist (haws_nested_list_delete sub rest))
+              (cond
+                ((null new_sub_alist) (vl-remove pair alist))  ; Prune empty branch
+                (t
+                  (setq new_pair (list key new_sub_alist))  ; Changed from (CONS KEY (LIST ...))
+                  (subst new_pair pair alist)
                 )
               )
             )
@@ -2943,75 +2943,75 @@
 ;; Function to test nested list operations
 ;; Usage: (HAWS_NESTED_LIST_TEST)
 ;; Credit to Grok AI 2025-10-17, updated 2025-10-20 for uniform LIST structure
-(DEFUN HAWS_NESTED_LIST_TEST (/ DATA)
-  (SETQ DATA NIL)
+(defun haws_nested_list_test (/ data)
+  (setq data nil)
   ;; Test long path creation
-  (SETQ DATA (HAWS_NESTED_LIST_UPDATE DATA '(1 12 121) "121A"))
-  (PRINC "\nExpecting ((1 ((12 ((121 \"121A\")))))) we get ")
-  (PRINT DATA)
-  (PRINC "\nExpecting \"121A\" we get ")
-  (PRINT (HAWS_NESTED_LIST_GET DATA '(1 12 121)))
+  (setq data (haws_nested_list_update data '(1 12 121) "121A"))
+  (princ "\nExpecting ((1 ((12 ((121 \"121A\")))))) we get ")
+  (print data)
+  (princ "\nExpecting \"121A\" we get ")
+  (print (haws_nested_list_get data '(1 12 121)))
   ;; Test NIL value creation
-  (SETQ DATA (HAWS_NESTED_LIST_UPDATE DATA '(1 11 111) NIL))
-  (PRINC "\nExpecting nil we get ")
-  (PRINT (HAWS_NESTED_LIST_GET DATA '(1 11 111)))
-  (PRINC "\nExpecting ((1 ((12 ((121 \"121A\"))) (11 ((111 nil)))))) we get ")
-  (PRINT DATA)
+  (setq data (haws_nested_list_update data '(1 11 111) nil))
+  (princ "\nExpecting nil we get ")
+  (print (haws_nested_list_get data '(1 11 111)))
+  (princ "\nExpecting ((1 ((12 ((121 \"121A\"))) (11 ((111 nil)))))) we get ")
+  (print data)
   ;; Test deletion
-  (SETQ DATA (HAWS_NESTED_LIST_UPDATE DATA '(1 13 131) "131A"))
-  (PRINC "\nAfter adding (1 13 131) \"131A\", expecting ((1 ((12 ((121 \"121A\"))) (11 ((111 nil))) (13 ((131 \"131A\")))))) we get ")
-  (PRINT DATA)
-  (SETQ DATA (HAWS_NESTED_LIST_DELETE DATA '(1 13 131)))
-  (PRINC "\nAfter deleting (1 13 131), expecting ((1 ((12 ((121 \"121A\"))) (11 ((111 nil)))))) we get ")
-  (PRINT DATA)
+  (setq data (haws_nested_list_update data '(1 13 131) "131A"))
+  (princ "\nAfter adding (1 13 131) \"131A\", expecting ((1 ((12 ((121 \"121A\"))) (11 ((111 nil))) (13 ((131 \"131A\")))))) we get ")
+  (print data)
+  (setq data (haws_nested_list_delete data '(1 13 131)))
+  (princ "\nAfter deleting (1 13 131), expecting ((1 ((12 ((121 \"121A\"))) (11 ((111 nil)))))) we get ")
+  (print data)
   ;; Test list value storage (like ATTRIBUTE_LIST)
-  (SETQ DATA (HAWS_NESTED_LIST_UPDATE DATA '("ATTRIBUTES") '(("TAG1" "value1") ("TAG2" "value2"))))
-  (PRINC "\nAfter adding ATTRIBUTES list, we get ")
-  (PRINT DATA)
-  (PRINC "\nExpecting ((\"TAG1\" \"value1\") (\"TAG2\" \"value2\")) we get ")
-  (PRINT (HAWS_NESTED_LIST_GET DATA '("ATTRIBUTES")))
-  (PRINC)
+  (setq data (haws_nested_list_update data '("ATTRIBUTES") '(("TAG1" "value1") ("TAG2" "value2"))))
+  (princ "\nAfter adding ATTRIBUTES list, we get ")
+  (print data)
+  (princ "\nExpecting ((\"TAG1\" \"value1\") (\"TAG2\" \"value2\")) we get ")
+  (print (haws_nested_list_get data '("ATTRIBUTES")))
+  (princ)
 );; HAWS-FILE-OPEN
 ;;
 ;; If a write directive file is locked, allows user to provide an alternate filename to open.
 ;;
 ;;
-(DEFUN HAWS-FILE-OPEN (FILENAME MODE / ERROBJ FP INPUT)
-  (SETQ ERROBJ (VL-CATCH-ALL-APPLY 'OPEN (LIST FILENAME MODE)))
-  (COND
-    ((VL-CATCH-ALL-ERROR-P ERROBJ)
-     (ALERT
-       (PRINC
-         (STRCAT
+(defun haws-file-open (filename mode / errobj fp input)
+  (setq errobj (vl-catch-all-apply 'OPEN (list filename mode)))
+  (cond
+    ((vl-catch-all-error-p errobj)
+     (alert
+       (princ
+         (strcat
            "Couldn't write to "
-           FILENAME
+           filename
            "\nPlease close if possible and follow command prompts."
          )
        )
      )
-     (INITGET "Continue Specify")
-     (SETQ
-       INPUT
-        (GETKWORD
+     (initget "Continue Specify")
+     (setq
+       input
+        (getkword
           "\n[Continue with file closed/Specify another filename] <Continue>: "
         )
      )
-     (COND
-       ((= INPUT "Continue"))
-       ((= INPUT "Specify")
-        (SETQ FILENAME (GETFILED "Specify filename" FILENAME "" 1))
-        (SETQ FP (HAWS-FILE-OPEN FILENAME MODE))
+     (cond
+       ((= input "Continue"))
+       ((= input "Specify")
+        (setq filename (getfiled "Specify filename" filename "" 1))
+        (setq fp (haws-file-open filename mode))
        )
      )
     )
-    (T (SETQ FP ERROBJ))
+    (t (setq fp errobj))
   )
 )
 ;;;  HAWS-FLATTEN
-(VL-ACAD-DEFUN 'HAWS-FLATTEN)
-(DEFUN HAWS-FLATTEN (PNT)
+(vl-acad-defun 'HAWS-FLATTEN)
+(defun haws-flatten (pnt)
 ;;;Returns flattened coordinates of a 3d point
-  (LIST (CAR PNT) (CADR PNT) 0.0)
+  (list (car pnt) (cadr pnt) 0.0)
 )
 ;;; HAWS-LSTTOSTR
 ;;;Assembles a list of fields into a delimited string.
@@ -3028,39 +3028,39 @@
 ;;;Tests
 ;;;(HAWS-LSTTOSTR '("1" "2" "3") "," "\"")
 ;;;(HAWS-LSTTOSTR '("1" "2\""" "3") "," "\"")
-(VL-ACAD-DEFUN 'HAWS-LSTTOSTR)
+(vl-acad-defun 'HAWS-LSTTOSTR)
 
-(DEFUN HAWS-LSTTOSTR (INPUTLIST FIELDSEPARATOR TEXTDELIMITER / CURRENTFIELD
-                  OUTPUTSTRING
+(defun haws-lsttostr (inputlist fieldseparator textdelimiter / currentfield
+                  outputstring
                  )
   ;;Initialize values of variables
-  (SETQ OUTPUTSTRING "")
+  (setq outputstring "")
   ;;Step through list making each element into a string field
-  (WHILE (SETQ CURRENTFIELD (CAR INPUTLIST))
-    (COND
-      ((= (TYPE CURRENTFIELD) 'STR)
+  (while (setq currentfield (car inputlist))
+    (cond
+      ((= (type currentfield) 'STR)
        ;;Alert that text delimiter isn't working yet.
-       (IF (WCMATCH CURRENTFIELD (STRCAT "*" TEXTDELIMITER "*"))
-         (ALERT
+       (if (wcmatch currentfield (strcat "*" textdelimiter "*"))
+         (alert
            "Text delimiter processing in HAWS-LstToStr isn't implemented yet."
          )
        )
-       (SETQ
-         OUTPUTSTRING
-          (STRCAT OUTPUTSTRING FIELDSEPARATOR CURRENTFIELD)
+       (setq
+         outputstring
+          (strcat outputstring fieldseparator currentfield)
        )
       )
     )
-    (SETQ INPUTLIST (CDR INPUTLIST))
+    (setq inputlist (cdr inputlist))
   )
   ;;Remove gratuitous first delimiter
-  (IF (/= OUTPUTSTRING "")
-    (SETQ
-      OUTPUTSTRING
-       (SUBSTR OUTPUTSTRING (1+ (STRLEN FIELDSEPARATOR)))
+  (if (/= outputstring "")
+    (setq
+      outputstring
+       (substr outputstring (1+ (strlen fieldseparator)))
     )
   )
-  OUTPUTSTRING
+  outputstring
 )
 
 ;;; HAWS-LOAD-FROM-APP-DIR
@@ -3068,22 +3068,22 @@
 ;;; default),
 ;;; from the folder that contains cnm.mnl
 ;;;
-(DEFUN C:HAWS-LOAD-FROM-APP-DIR (FILENAME / FILE-PATH)
-  (PRINC "\nLoading ")
-  (COND
-    ((VL-CATCH-ALL-ERROR-P
-       (VL-CATCH-ALL-APPLY
+(defun c:haws-load-from-app-dir (filename / file-path)
+  (princ "\nLoading ")
+  (cond
+    ((vl-catch-all-error-p
+       (vl-catch-all-apply
          'LOAD
-         (LIST (PRINC (STRCAT (C:HCNM-CONFIG-GETVAR "AppFolder") "\\" FILENAME)))
+         (list (princ (strcat (c:hcnm-config-getvar "AppFolder") "\\" filename)))
        )
      )
-     (PRINC
+     (princ
        " ... not found in app folder. Searching in support files search path."
      )
-     (LOAD FILENAME)
+     (load filename)
     )
   )
-  (PRINC)
+  (princ)
 )
 
 ;;MKFLD sub-function makes a field string out of a string.
@@ -3092,154 +3092,154 @@
 ;;         [string to place into a field]
 ;;         [uniform field width or field delimiter character]
 ;;       )
-(VL-ACAD-DEFUN 'HAWS-MKFLD)
-(DEFUN HAWS-MKFLD (STRING FORMAT / CHAR I MKFLD_FIELD MKFLD_LITERAL)
-  (COND
-    ((= (TYPE FORMAT) 'STR)
-     (SETQ
-       I 0
-       MKFLD_FIELD ""
+(vl-acad-defun 'HAWS-MKFLD)
+(defun haws-mkfld (string format / char i mkfld_field mkfld_literal)
+  (cond
+    ((= (type format) 'STR)
+     (setq
+       i 0
+       mkfld_field ""
      )
-     (COND
-       ((WCMATCH STRING (STRCAT "*`" FORMAT "*,*\"*,*\n*"))
-        (SETQ
-          MKFLD_LITERAL T
-          MKFLD_FIELD "\""
+     (cond
+       ((wcmatch string (strcat "*`" format "*,*\"*,*\n*"))
+        (setq
+          mkfld_literal t
+          mkfld_field "\""
         )
        )
      )
-     (WHILE (<= (SETQ I (1+ I)) (STRLEN STRING))
-       (SETQ
-         MKFLD_FIELD
-          (STRCAT
-            MKFLD_FIELD
-            (COND
-              ((= (SETQ CHAR (SUBSTR STRING I 1)) "\"")
+     (while (<= (setq i (1+ i)) (strlen string))
+       (setq
+         mkfld_field
+          (strcat
+            mkfld_field
+            (cond
+              ((= (setq char (substr string i 1)) "\"")
                "\"\""
               )
-              (T CHAR)
+              (t char)
             )
           )
        )
      )
-     (IF MKFLD_LITERAL
-       (SETQ MKFLD_FIELD (STRCAT MKFLD_FIELD "\""))
+     (if mkfld_literal
+       (setq mkfld_field (strcat mkfld_field "\""))
      )
-     (SETQ MKFLD_FIELD (STRCAT MKFLD_FIELD FORMAT))
+     (setq mkfld_field (strcat mkfld_field format))
     )
-    (T
-     (SETQ MKFLD_FIELD STRING)
-     (WHILE
-       (< (STRLEN (SETQ MKFLD_FIELD (SUBSTR MKFLD_FIELD 1 FORMAT)))
-          FORMAT
+    (t
+     (setq mkfld_field string)
+     (while
+       (< (strlen (setq mkfld_field (substr mkfld_field 1 format)))
+          format
        )
-        (SETQ MKFLD_FIELD (STRCAT MKFLD_FIELD " "))
+        (setq mkfld_field (strcat mkfld_field " "))
      )
     )
   )
-  MKFLD_FIELD
+  mkfld_field
 )
 ;; MKLAYR sub-function defines and makes current a layer for another routine.
 ;; Usage: (haws-mklayr (list "laname" "lacolr" "laltyp"))
 ;; Use empty quotes for default color and linetype (eg. (mklay (list "AZ" "" ""))
-(DEFUN HAWS-GETUSL (/ I RDLIN TEMP)
-  (SETQ TEMP (FINDFILE "layers.dat"))
-  (COND
-    (TEMP
-     (PROMPT "\nReading layer settings from ")
-     (PRINC TEMP)
-     (PRINC "\n)")
+(defun haws-getusl (/ i rdlin temp)
+  (setq temp (findfile "layers.dat"))
+  (cond
+    (temp
+     (prompt "\nReading layer settings from ")
+     (princ temp)
+     (princ "\n)")
     )
-    ((PROMPT "\nLayer settings file not found.") (EXIT))
+    ((prompt "\nLayer settings file not found.") (exit))
   )
-  (SETQ
-    F3 (OPEN TEMP "r")
-    I  0
+  (setq
+    f3 (open temp "r")
+    i  0
   )
-  (WHILE (SETQ RDLIN (READ-LINE F3))
-    (PRINC "\rReading line ")
-    (PRINC (SETQ I (1+ I)))
-    (IF (= 'LIST (TYPE (SETQ TEMP (READ RDLIN))))
-      (SETQ *HAWS:LAYERS* (CONS TEMP *HAWS:LAYERS*))
+  (while (setq rdlin (read-line f3))
+    (princ "\rReading line ")
+    (princ (setq i (1+ i)))
+    (if (= 'LIST (type (setq temp (read rdlin))))
+      (setq *haws:layers* (cons temp *haws:layers*))
     )
   )
-  (SETQ F3 (CLOSE F3))
+  (setq f3 (close f3))
 )
-(VL-ACAD-DEFUN 'HAWS-GETLAYR)
-(DEFUN HAWS-GETLAYR (KEY / TEMP)
-  (IF (OR (NOT *HAWS:LAYERS*)
-          (COND
-            ((= (C:HCNM-CONFIG-GETVAR "ImportLayerSettings") "Yes")
-             (C:HCNM-CONFIG-SETVAR "ImportLayerSettings" "No")
-             T
+(vl-acad-defun 'HAWS-GETLAYR)
+(defun haws-getlayr (key / temp)
+  (if (or (not *haws:layers*)
+          (cond
+            ((= (c:hcnm-config-getvar "ImportLayerSettings") "Yes")
+             (c:hcnm-config-setvar "ImportLayerSettings" "No")
+             t
             )
           )
       )
-    (HAWS-GETUSL)
+    (haws-getusl)
   )
-  (COND
-    ((CDR (ASSOC KEY *HAWS:LAYERS*)))
-    (T
-     (PROMPT
-       (STRCAT
+  (cond
+    ((cdr (assoc key *haws:layers*)))
+    (t
+     (prompt
+       (strcat
          "\nSettings for \""
-         KEY
+         key
          "\" not found in LAYERS.DAT.  Using current layer."
        )
      )
-     (LIST (GETVAR "clayer") "" "")
+     (list (getvar "clayer") "" "")
     )
   )
 )
-(VL-ACAD-DEFUN 'HAWS-MKLAYR)
-(DEFUN HAWS-MKLAYR (LAOPT / LANAME LACOLR LALTYP LTFILE LTFILES TEMP)
+(vl-acad-defun 'HAWS-MKLAYR)
+(defun haws-mklayr (laopt / laname lacolr laltyp ltfile ltfiles temp)
   ;;(princ "\nHAWS-MKLAYR in edclib")
-  (IF (= 'STR (TYPE LAOPT))
-    (SETQ
-      LAOPT
-       (COND
-         ((HAWS-GETLAYR LAOPT))
+  (if (= 'STR (type laopt))
+    (setq
+      laopt
+       (cond
+         ((haws-getlayr laopt))
          ('("" "" ""))
        )
     )
   )
-  (SETQ
-    LANAME
-     (CAR LAOPT)
-    LACOLR
-     (CADR LAOPT)
-    LALTYP
-     (CADDR LAOPT)
+  (setq
+    laname
+     (car laopt)
+    lacolr
+     (cadr laopt)
+    laltyp
+     (caddr laopt)
   )
-  (HAWS-LOAD-LINETYPE LALTYP)
-  (WHILE (AND (/= LALTYP "") (NOT (TBLSEARCH "LTYPE" LALTYP)))
-    (ALERT
-      (STRCAT
+  (haws-load-linetype laltyp)
+  (while (and (/= laltyp "") (not (tblsearch "LTYPE" laltyp)))
+    (alert
+      (strcat
         "\nLinetype "
-        LALTYP
+        laltyp
         " is still not loaded.\nPlease follow prompts to try a different linetype or file."
       )
     )
-    (SETQ
-      TEMP
-       (HAWS-GETSTRINGX
+    (setq
+      temp
+       (haws-getstringx
          "\nEnter substitute linetype name or <try another file>"
-         LALTYP
-         LALTYP
+         laltyp
+         laltyp
        )
     )
-    (COND
-      ((/= TEMP LALTYP)
-       (SETQ LALTYP TEMP)
-       (HAWS-LOAD-LINETYPE LALTYP)
+    (cond
+      ((/= temp laltyp)
+       (setq laltyp temp)
+       (haws-load-linetype laltyp)
       )
     )
-    (COND
-      ((NOT (TBLSEARCH "LTYPE" LALTYP))
-       (SETQ
-         LTFILE
-          (GETFILED
-            (STRCAT "File for " LALTYP " Linetype")
+    (cond
+      ((not (tblsearch "LTYPE" laltyp))
+       (setq
+         ltfile
+          (getfiled
+            (strcat "File for " laltyp " Linetype")
             ""
             "LIN"
             6
@@ -3247,46 +3247,46 @@
        )
       )
     )
-    (vl-cmdf "._linetype" "_l" LALTYP LTFILE "")
+    (vl-cmdf "._linetype" "_l" laltyp ltfile "")
   )
-  (HAWS-MILEPOST "Finished assuring linetype.")
-  (IF (NOT (TBLSEARCH "LAYER" LANAME))
-    (vl-cmdf "._layer" "_m" LANAME "")
-    (vl-cmdf "._layer" "_t" LANAME "_on" LANAME "_u" LANAME "_s" LANAME "")
+  (haws-milepost "Finished assuring linetype.")
+  (if (not (tblsearch "LAYER" laname))
+    (vl-cmdf "._layer" "_m" laname "")
+    (vl-cmdf "._layer" "_t" laname "_on" laname "_u" laname "_s" laname "")
   )
-  (IF (/= LACOLR "")
-    (vl-cmdf "._layer" "_c" LACOLR "" "")
+  (if (/= lacolr "")
+    (vl-cmdf "._layer" "_c" lacolr "" "")
   )
-  (IF (/= LALTYP "")
-    (vl-cmdf "._layer" "_lt" LALTYP "" "")
+  (if (/= laltyp "")
+    (vl-cmdf "._layer" "_lt" laltyp "" "")
   )
-  (HAWS-MILEPOST "Finished making layer.")
-  LAOPT
+  (haws-milepost "Finished making layer.")
+  laopt
 )
 
-(DEFUN HAWS-LOAD-LINETYPE (LTYPE / I LTFILES)
-  (SETQ
-    LTFILES
-     (LIST "acad" "hawsedc" "default")
-    I -1
+(defun haws-load-linetype (ltype / i ltfiles)
+  (setq
+    ltfiles
+     (list "acad" "hawsedc" "default")
+    i -1
   )
-  (WHILE (AND
-           (/= LALTYP "")
-           (NOT (TBLSEARCH "LTYPE" LTYPE))
-           (SETQ LTFILE (NTH (SETQ I (1+ I)) LTFILES))
+  (while (and
+           (/= laltyp "")
+           (not (tblsearch "LTYPE" ltype))
+           (setq ltfile (nth (setq i (1+ i)) ltfiles))
          )
-    (PRINC
-      (STRCAT
-        "\nLinetype " LTYPE " is not loaded. Attempting to load from "
-        LTFILE ".lin..."
+    (princ
+      (strcat
+        "\nLinetype " ltype " is not loaded. Attempting to load from "
+        ltfile ".lin..."
        )
     )
-    (vl-cmdf "._linetype" "_l" LTYPE LTFILE "")
+    (vl-cmdf "._linetype" "_l" ltype ltfile "")
   )
-  (HAWS-MILEPOST
-    (STRCAT
+  (haws-milepost
+    (strcat
       "Finished trying to load linetype "
-      LTYPE
+      ltype
       " from acad.lin, default.lin (Bricscad), and hawsedc.lin."
     )
   )
@@ -3300,109 +3300,109 @@
 ;;; ======================================================================
 
 
-(VL-ACAD-DEFUN 'HAWS-DWGSCALE)
-(DEFUN HAWS-DWGSCALE ()
-  (COND
-    ((OR (= (GETVAR "DIMANNO") 1) (= (GETVAR "DIMSCALE") 0))
-     (/ 1 (GETVAR "CANNOSCALEVALUE"))
+(vl-acad-defun 'HAWS-DWGSCALE)
+(defun haws-dwgscale ()
+  (cond
+    ((or (= (getvar "DIMANNO") 1) (= (getvar "DIMSCALE") 0))
+     (/ 1 (getvar "CANNOSCALEVALUE"))
     )
-    ((GETVAR "DIMSCALE"))
+    ((getvar "DIMSCALE"))
   )
 )
 
-(DEFUN HAWS-TEXT-HEIGHT-PAPER ()
-  (GETVAR "DIMTXT")
+(defun haws-text-height-paper ()
+  (getvar "DIMTXT")
 )
 
-(DEFUN HAWS-TEXT-HEIGHT-MODEL ()
-  (* (GETVAR "DIMTXT") (HAWS-DWGSCALE))
+(defun haws-text-height-model ()
+  (* (getvar "DIMTXT") (haws-dwgscale))
 )
 
-(VL-ACAD-DEFUN 'HAWS-MKTEXT)
-(DEFUN HAWS-MKTEXT (J I H R S / ENT JX JY)
-  (SETQ
-    I  (TRANS
-         (IF (= 2 (LENGTH I))
-           (APPEND I '(0.0))
-           I
+(vl-acad-defun 'HAWS-MKTEXT)
+(defun haws-mktext (j i h r s / ent jx jy)
+  (setq
+    i  (trans
+         (if (= 2 (length i))
+           (append i '(0.0))
+           i
          )
          1
          0
        )
-    J  (IF (= J NIL)
+    j  (if (= j nil)
          "L"
-         (STRCASE J)
+         (strcase j)
        )
-    JX (COND
-         ((WCMATCH J "L,BL*,ML*,TL*") 0)
-         ((WCMATCH J "C*,?C*") 1)
-         ((WCMATCH J "R*,?R*") 2)
-         ((WCMATCH J "A*") 3)
-         ((WCMATCH J "M*") 4)
-         ((WCMATCH J "F*") 5)
+    jx (cond
+         ((wcmatch j "L,BL*,ML*,TL*") 0)
+         ((wcmatch j "C*,?C*") 1)
+         ((wcmatch j "R*,?R*") 2)
+         ((wcmatch j "A*") 3)
+         ((wcmatch j "M*") 4)
+         ((wcmatch j "F*") 5)
        )
-    JY (COND
-         ((WCMATCH J "L,C*,R*,A*,F*") 0)
-         ((WCMATCH J "B*") 1)
-         ((WCMATCH J "M*") 2)
-         ((WCMATCH J "T*") 3)
+    jy (cond
+         ((wcmatch j "L,C*,R*,A*,F*") 0)
+         ((wcmatch j "B*") 1)
+         ((wcmatch j "M*") 2)
+         ((wcmatch j "T*") 3)
        )
   )
-  (ENTMAKE
-    (LIST
-      (CONS 0 "TEXT")
-      (CONS
+  (entmake
+    (list
+      (cons 0 "TEXT")
+      (cons
         1
-        (COND
-          (S)
+        (cond
+          (s)
           ("This text created by HAWS-MKTEXT")
         )
       )
-      (CONS 7 (GETVAR "textstyle"))
-      (APPEND '(10) I)
+      (cons 7 (getvar "textstyle"))
+      (append '(10) i)
       ;; Simple entmake doesn't create annotative text.
-      (CONS
+      (cons
         40
-        (COND
-          (H)
-          (T
+        (cond
+          (h)
+          (t
             (haws-text-height-model)
           )
         )
       )
-      (ASSOC 41 (TBLSEARCH "STYLE" (GETVAR "textstyle")))
-      (CONS 50 (+ R (ANGLE '(0.0 0.0 0.0) (GETVAR "ucsxdir"))))
-      (CONS
+      (assoc 41 (tblsearch "STYLE" (getvar "textstyle")))
+      (cons 50 (+ r (angle '(0.0 0.0 0.0) (getvar "ucsxdir"))))
+      (cons
         51
-        (CDR (ASSOC 50 (TBLSEARCH "STYLE" (GETVAR "textstyle"))))
+        (cdr (assoc 50 (tblsearch "STYLE" (getvar "textstyle"))))
       )
-      (CONS 72 JX)
-      (CONS 73 JY)
+      (cons 72 jx)
+      (cons 73 jy)
     )
   )
-  (SETQ
-    ENT (ENTGET (ENTLAST))
-    ENT (SUBST (CONS 11 I) (ASSOC 11 ENT) ENT)
+  (setq
+    ent (entget (entlast))
+    ent (subst (cons 11 i) (assoc 11 ent) ent)
   )
-  (ENTMOD ENT)
+  (entmod ent)
 )
 
-(DEFUN haws-make-mtext (i j h w s masked-p / ename-mtext)
+(defun haws-make-mtext (i j h w s masked-p / ename-mtext)
   ;; creates annotative text if style is annotative.
   (setq h
     (cond
       (h)
-      ((LM:isAnnotative (getvar "textstyle"))(haws-text-height-paper))
-      (T (haws-text-height-model))
+      ((lm:isannotative (getvar "textstyle"))(haws-text-height-paper))
+      (t (haws-text-height-model))
     )
   )
   (vl-cmdf "._mtext" i "_j" (strcat "_" j) "_h" h "_w" w s "")
-  (COND
-    (MASKED-P
-     (SETQ ENAME-MTEXT (ENTLAST))
-     (ENTMOD
-       (APPEND
-         (ENTGET ENAME-MTEXT)
+  (cond
+    (masked-p
+     (setq ename-mtext (entlast))
+     (entmod
+       (append
+         (entget ename-mtext)
          '((90 . 3) (63 . 256) (45 . 1.1) (441 . 0))
        )
      )
@@ -3410,23 +3410,23 @@
   )
 )
 
-(VL-ACAD-DEFUN 'HAWS-MKLINE)
-(DEFUN HAWS-MKLINE (PT1 PT2)
-  (SETQ
-    PT1 (IF (= 2 (LENGTH PT1))
-          (APPEND PT1 '(0.0))
-          PT1
+(vl-acad-defun 'HAWS-MKLINE)
+(defun haws-mkline (pt1 pt2)
+  (setq
+    pt1 (if (= 2 (length pt1))
+          (append pt1 '(0.0))
+          pt1
         )
-    PT2 (IF (= 2 (LENGTH PT2))
-          (APPEND PT2 '(0.0))
-          PT2
+    pt2 (if (= 2 (length pt2))
+          (append pt2 '(0.0))
+          pt2
         )
   )
-  (ENTMAKE
-    (LIST
-      (CONS 0 "LINE")
-      (APPEND '(10) (TRANS PT1 1 0))
-      (APPEND '(11) (TRANS PT2 1 0))
+  (entmake
+    (list
+      (cons 0 "LINE")
+      (append '(10) (trans pt1 1 0))
+      (append '(11) (trans pt2 1 0))
     )
   )
 )
@@ -3437,39 +3437,39 @@
 ;; leaving only the unique branches.
 ;; Useful for relating paths.
 ;;
-(VL-ACAD-DEFUN 'HAWS-PATH-CHOP-TRUNK)
-(DEFUN HAWS-PATH-CHOP-TRUNK (TREES CASE-SENSITIVE-P / LENGTH-COMMON)
-  (SETQ
-    TREE-COMMON
-     (CAR TREES)
-    LENGTH-COMMON
-     (LENGTH TREE-COMMON)
+(vl-acad-defun 'HAWS-PATH-CHOP-TRUNK)
+(defun haws-path-chop-trunk (trees case-sensitive-p / length-common)
+  (setq
+    tree-common
+     (car trees)
+    length-common
+     (length tree-common)
   )
   ;; Find common trunk length
-  (MAPCAR
-    '(LAMBDA (TREE / I)
-       (SETQ I -1)
-       (WHILE (AND
-                (NTH (SETQ I (1+ I)) TREE)
-                (IF CASE-SENSITIVE-P (= (NTH I TREE) (NTH I TREE-COMMON)) (= (STRCASE (NTH I TREE)) (STRCASE (NTH I TREE-COMMON))))
+  (mapcar
+    '(lambda (tree / i)
+       (setq i -1)
+       (while (and
+                (nth (setq i (1+ i)) tree)
+                (if case-sensitive-p (= (nth i tree) (nth i tree-common)) (= (strcase (nth i tree)) (strcase (nth i tree-common))))
               )
        )
-       (IF (< I LENGTH-COMMON)
-         (SETQ LENGTH-COMMON I)
+       (if (< i length-common)
+         (setq length-common i)
        )
      )
-    TREES
+    trees
   )
   ;; Chop off common trunk from each tree.
-  (MAPCAR
-    '(LAMBDA (TREE / I)
-       (SETQ I -1)
-       (WHILE (< (SETQ I (1+ I)) LENGTH-COMMON)
-         (SETQ TREE (CDR TREE))
+  (mapcar
+    '(lambda (tree / i)
+       (setq i -1)
+       (while (< (setq i (1+ i)) length-common)
+         (setq tree (cdr tree))
        )
-       TREE
+       tree
      )
-    TREES
+    trees
   )
 )
 
@@ -3479,42 +3479,42 @@
 ;; Converts an absolute path to a relative path if possible
 ;; given path and comparison path, both including filename.
 ;;
-(VL-ACAD-DEFUN 'HAWS-PATH-RELATE)
-(DEFUN HAWS-PATH-RELATE (PATH-ABSOLUTE PATH-COMPARE CASE-SENSITIVE-P / BRANCH-ABSOLUTE BRANCH-COMPARE BRANCHES LIST-ABSOLUTE LIST-COMPARE RELATIVE-PATH)
-  (SETQ
+(vl-acad-defun 'HAWS-PATH-RELATE)
+(defun haws-path-relate (path-absolute path-compare case-sensitive-p / branch-absolute branch-compare branches list-absolute list-compare relative-path)
+  (setq
     ;; Parse to lists.
-    LIST-ABSOLUTE
-     (HAWS-STRTOLST PATH-ABSOLUTE "\\" "\"" T)
-    LIST-COMPARE
-     (HAWS-STRTOLST PATH-COMPARE "\\" "\"" T)
-    BRANCHES
-     (HAWS-PATH-CHOP-TRUNK
-       (LIST
+    list-absolute
+     (haws-strtolst path-absolute "\\" "\"" t)
+    list-compare
+     (haws-strtolst path-compare "\\" "\"" t)
+    branches
+     (haws-path-chop-trunk
+       (list
          ;; remove filenames.
-         (REVERSE (CDR (REVERSE LIST-ABSOLUTE)))
-         (REVERSE (CDR (REVERSE LIST-COMPARE)))
+         (reverse (cdr (reverse list-absolute)))
+         (reverse (cdr (reverse list-compare)))
        )
-       CASE-SENSITIVE-P
+       case-sensitive-p
      )
-    BRANCH-ABSOLUTE
-     (CAR BRANCHES)
-    BRANCH-COMPARE
-     (CADR BRANCHES)
+    branch-absolute
+     (car branches)
+    branch-compare
+     (cadr branches)
   )
-  (SETQ
-    RELATIVE-PATH
-     (STRCAT
-       (COND
-         ((= (LENGTH BRANCH-COMPARE) 0) ".\\")
-         ((/= (SUBSTR (CAR BRANCH-COMPARE) 2 1) ":")
-          (APPLY
+  (setq
+    relative-path
+     (strcat
+       (cond
+         ((= (length branch-compare) 0) ".\\")
+         ((/= (substr (car branch-compare) 2 1) ":")
+          (apply
             'STRCAT
-            (MAPCAR '(LAMBDA (X) "..\\") BRANCH-COMPARE)
+            (mapcar '(lambda (x) "..\\") branch-compare)
           )
          )
-         (T "")
+         (t "")
        )
-       (HAWS-LSTTOSTR (REVERSE (CONS (CAR (REVERSE LIST-ABSOLUTE)) (REVERSE BRANCH-ABSOLUTE))) "\\" "\"")
+       (haws-lsttostr (reverse (cons (car (reverse list-absolute)) (reverse branch-absolute))) "\\" "\"")
      )
   )
 )
@@ -3525,35 +3525,35 @@
 ;; Converts a relative path to an absolute path
 ;; given path and comparison path, both including filename.
 ;;
-(VL-ACAD-DEFUN 'HAWS-PATH-UNRELATE)
-(DEFUN HAWS-PATH-UNRELATE
-   (PATH-RELATIVE PATH-COMPARE / LIST-COMPARE LIST-RELATIVE)
-  (SETQ
+(vl-acad-defun 'HAWS-PATH-UNRELATE)
+(defun haws-path-unrelate
+   (path-relative path-compare / list-compare list-relative)
+  (setq
     ;; Parse to lists.
-    LIST-RELATIVE
-     (HAWS-STRTOLST PATH-RELATIVE "\\" "\"" T)
+    list-relative
+     (haws-strtolst path-relative "\\" "\"" t)
     ;; Reverse and remove filename
-    LIST-COMPARE
-     (CDR
-       (REVERSE (HAWS-STRTOLST PATH-COMPARE "\\" "\"" T))
+    list-compare
+     (cdr
+       (reverse (haws-strtolst path-compare "\\" "\"" t))
      )
   )
-  (COND
+  (cond
     ;; If really relative, process.
-    ((= (SUBSTR (CAR LIST-RELATIVE) 1 1) ".")
-      (FOREACH
-         NODE LIST-RELATIVE
-        (COND
-          ((= (SUBSTR NODE 1 1) ".")
-           (SETQ LIST-RELATIVE (CDR LIST-RELATIVE))
+    ((= (substr (car list-relative) 1 1) ".")
+      (foreach
+         node list-relative
+        (cond
+          ((= (substr node 1 1) ".")
+           (setq list-relative (cdr list-relative))
           )
         )
-        (COND ((= NODE "..\\") (SETQ LIST-COMPARE (CDR LIST-COMPARE))))
+        (cond ((= node "..\\") (setq list-compare (cdr list-compare))))
       )
-      (HAWS-LSTTOSTR (APPEND (REVERSE LIST-COMPARE) LIST-RELATIVE) "\\" "\"")
+      (haws-lsttostr (append (reverse list-compare) list-relative) "\\" "\"")
     )
     ;; If not really relative, return provided path.
-    (T PATH-RELATIVE)
+    (t path-relative)
   )
 )
 
@@ -3564,18 +3564,18 @@
 ;; VL-PRIN1-TO-STRING
 ;; substitute
 ;;
-(VL-ACAD-DEFUN 'HAWS-PRIN1-TO-STRING)
-(DEFUN HAWS-PRIN1-TO-STRING (ATOMX / F1 F2 STRING)
-  (COND
-    ((HAWS-VLISP-P) (VL-PRIN1-TO-STRING ATOMX))
-    (T
-     (SETQ F2 (OPEN "hawsprin1.tmp" "w"))
-     (PRIN1 ATOMX F2)
-     (SETQ F2 (CLOSE F2))
-     (SETQ F1 (OPEN "hawsprin1.tmp" "r"))
-     (SETQ STRING (READ-LINE F1))
-     (SETQ F1 (CLOSE F1))
-     STRING
+(vl-acad-defun 'HAWS-PRIN1-TO-STRING)
+(defun haws-prin1-to-string (atomx / f1 f2 string)
+  (cond
+    ((haws-vlisp-p) (vl-prin1-to-string atomx))
+    (t
+     (setq f2 (open "hawsprin1.tmp" "w"))
+     (prin1 atomx f2)
+     (setq f2 (close f2))
+     (setq f1 (open "hawsprin1.tmp" "r"))
+     (setq string (read-line f1))
+     (setq f1 (close f1))
+     string
     )
   )
 )
@@ -3610,55 +3610,55 @@
 ;;;
 ;;;
 ;;;
-(VL-ACAD-DEFUN 'HAWS-3PTTOBULGE)
-(DEFUN HAWS-3PTTOBULGE
-   (PNT1 PNT2 PNT3 / ANG1 ANG2 ANG3 BULGE CHORD DELTA DELTA1 R)
+(vl-acad-defun 'HAWS-3PTTOBULGE)
+(defun haws-3pttobulge
+   (pnt1 pnt2 pnt3 / ang1 ang2 ang3 bulge chord delta delta1 r)
 ;;;Returns the bulge of an arc defined by three points, PNT1, PNT2, and PNT3
 ;;;If point 2 nil, returns 0.
 ;;;In geometry triangle terms, R=a/(2*sin(A)) for any of the three points
 ;;;The sum of angles 1 and 3 is delta
-  (COND
-    ((NOT PNT2) 0)
-    (T
-     (SETQ
-       CHORD
-        (DISTANCE PNT1 PNT3)
-       ANG2
-        (- (ANGLE PNT2 PNT1) (ANGLE PNT2 PNT3))
+  (cond
+    ((not pnt2) 0)
+    (t
+     (setq
+       chord
+        (distance pnt1 pnt3)
+       ang2
+        (- (angle pnt2 pnt1) (angle pnt2 pnt3))
        ;;CHORD / SIN(ANG2) is 
-       R
-        (/ CHORD (* 2 (SIN ANG2)))
-       DELTA1
-        (* 2 (HAWS-ASIN (/ CHORD (* 2 R))))
+       r
+        (/ chord (* 2 (sin ang2)))
+       delta1
+        (* 2 (haws-asin (/ chord (* 2 r))))
        ;;If sin(ang1) is negative, bulge is negative.
        ;;Since AutoCAD always returns a positive angle,
        ;;if the quadrant of the second
-       ANG1
-        (ABS (- (ANGLE PNT1 PNT3) (ANGLE PNT1 PNT2)))
-       ANG1
-        (ABS
-          (IF (> ANG1 PI)
-            (- ANG1 (* 2 PI))
-            ANG1
+       ang1
+        (abs (- (angle pnt1 pnt3) (angle pnt1 pnt2)))
+       ang1
+        (abs
+          (if (> ang1 pi)
+            (- ang1 (* 2 pi))
+            ang1
           )
         )
-       ANG3
-        (ABS (- (ANGLE PNT3 PNT1) (ANGLE PNT3 PNT2)))
-       ANG3
-        (ABS
-          (IF (> ANG3 PI)
-            (- ANG3 (* 2 PI))
-            ANG3
+       ang3
+        (abs (- (angle pnt3 pnt1) (angle pnt3 pnt2)))
+       ang3
+        (abs
+          (if (> ang3 pi)
+            (- ang3 (* 2 pi))
+            ang3
           )
         )
-       DELTA
-        (* 2 (+ ANG1 ANG3))
-       BULGE
-        (* (IF (MINUSP R)
+       delta
+        (* 2 (+ ang1 ang3))
+       bulge
+        (* (if (minusp r)
              -1
              1
            )
-           (HAWS-TAN (/ DELTA 4.0))
+           (haws-tan (/ delta 4.0))
         )
      )
     )
@@ -3667,30 +3667,30 @@
 
 
 ;;;  HAWS-SEGMENT-LENGTH
-(VL-ACAD-DEFUN 'HAWS-SEGMENT-LENGTH)
-(DEFUN HAWS-SEGMENT-LENGTH
+(vl-acad-defun 'HAWS-SEGMENT-LENGTH)
+(defun haws-segment-length
 ;;;  Returns curve or straight length of a segment.
-                       (2DPNT1 2DPNT2 BULGE / D DELTA DOVER2 L R)
-  (SETQ
+                       (2dpnt1 2dpnt2 bulge / d delta dover2 l r)
+  (setq
     ;;Make sure points are truly 2d
-    2DPNT1
-     (HAWS-FLATTEN 2DPNT1)
-    2DPNT2
-     (HAWS-FLATTEN 2DPNT2)
-    D (/ (DISTANCE 2DPNT1 2DPNT2) 2)
+    2dpnt1
+     (haws-flatten 2dpnt1)
+    2dpnt2
+     (haws-flatten 2dpnt2)
+    d (/ (distance 2dpnt1 2dpnt2) 2)
   ) ;_ end of setq
-  (COND
-    ((/= 0 BULGE)
-     (SETQ
-       DOVER2
-        (ABS (* 2 (ATAN BULGE)))
-       DELTA
-        (* 2 DOVER2)
-       R (/ D (SIN DOVER2))
+  (cond
+    ((/= 0 bulge)
+     (setq
+       dover2
+        (abs (* 2 (atan bulge)))
+       delta
+        (* 2 dover2)
+       r (/ d (sin dover2))
      ) ;_ end of setq
-     (* DELTA R)
+     (* delta r)
     )
-    (T (* D 2))
+    (t (* d 2))
   ) ;_ end of cond
 )
 
@@ -3714,144 +3714,144 @@
 ;;;Tests
 ;;;(alert (apply 'strcat (mapcar '(lambda (x) (strcat "\n----\n" x)) (haws-strtolst "1 John,\"2 2\"\" pipe,\nheated\",3 the end,,,,," "," "\"" nil))))
 ;;;(alert (apply 'strcat (mapcar '(lambda (x) (strcat "\n----\n" x)) (haws-strtolst "1 John,\"2 2\"\" pipe,\nheated\",3 the end,,,,," "," "\"" T))))
-(VL-ACAD-DEFUN 'HAWS-STRTOLST)
-(DEFUN HAWS-STRTOLST (INPUTSTRING FIELDSEPARATORWC TEXTDELIMITER
-                  EMPTYFIELDSDOCOUNT / CHARACTERCOUNTER CONVERSIONISDONE
-                  CURRENTCHARACTER CURRENTFIELD CURRENTFIELDISDONE
-                  PREVIOUSCHARACTER RETURNLIST TEXTMODEISON TextPairIsOpen
+(vl-acad-defun 'HAWS-STRTOLST)
+(defun haws-strtolst (inputstring fieldseparatorwc textdelimiter
+                  emptyfieldsdocount / charactercounter conversionisdone
+                  currentcharacter currentfield currentfieldisdone
+                  previouscharacter returnlist textmodeison textpairisopen
                  )
   ;;Initialize the variables for clarity's sake
-  (SETQ
-    CHARACTERCOUNTER 0
-    PREVIOUSCHARACTER ""
-    CURRENTCHARACTER ""
-    CURRENTFIELD ""
-    CURRENTFIELDISDONE NIL
-    TEXTMODEISON NIL
-    CONVERSIONISDONE NIL
-    RETURNLIST NIL
+  (setq
+    charactercounter 0
+    previouscharacter ""
+    currentcharacter ""
+    currentfield ""
+    currentfieldisdone nil
+    textmodeison nil
+    conversionisdone nil
+    returnlist nil
   )
   ;;Make sure that the FieldSeparatorWC is not empty.
-  (COND
+  (cond
     ;;If an empty string matches the FieldSeparatorWC, then
-    ((WCMATCH "" FIELDSEPARATORWC)
+    ((wcmatch "" fieldseparatorwc)
      ;;1. Give an alert about the problem.
-     (ALERT
+     (alert
        ;;Include princ to allow user to see and copy error
        ;;after dismissing alert box.
-       (PRINC
-         (STRCAT
+       (princ
+         (strcat
            "\n\""
-           FIELDSEPARATORWC
+           fieldseparatorwc
            "\" is not a valid field delimiter."
          )
        )
      )
      ;;2. Exit with error.
-     (EXIT)
+     (exit)
     )
   )
   ;;Start the main character-by-character InputString examination loop.
-  (WHILE (NOT CONVERSIONISDONE)
-    (SETQ
+  (while (not conversionisdone)
+    (setq
       ;;Save CurrentCharacter as PreviousCharacter.
-      PREVIOUSCHARACTER
-       CURRENTCHARACTER
+      previouscharacter
+       currentcharacter
       ;;CharacterCounter starts at 0 above.  Increment it.
-      CHARACTERCOUNTER
-       (1+ CHARACTERCOUNTER)
+      charactercounter
+       (1+ charactercounter)
       ;;Get new CurrentCharacter from InputString.
-      CURRENTCHARACTER
-       (SUBSTR INPUTSTRING CHARACTERCOUNTER 1)
+      currentcharacter
+       (substr inputstring charactercounter 1)
     )
     ;;Decide what to do with CurrentCharacter.
-    (COND
+    (cond
       ;;If CurrentCharacter is a TextDelimiter, then
-      ((= CURRENTCHARACTER TEXTDELIMITER)
+      ((= currentcharacter textdelimiter)
        ;;1.  Toggle the TextModeIsOn flag
-       (IF TEXTMODEISON
-         (SETQ TEXTMODEISON nil)
-         (SETQ TEXTMODEISON T)
+       (if textmodeison
+         (setq textmodeison nil)
+         (setq textmodeison t)
        )
        ;;2.  Use and toggle the TextPairIsOpen flag.
-       (COND
-         (TextPairIsOpen
+       (cond
+         (textpairisopen
            ;;Output it to CurrentField.
-           (SETQ CURRENTFIELD (STRCAT CURRENTFIELD CURRENTCHARACTER))
-           (SETQ TextPairIsOpen nil)
+           (setq currentfield (strcat currentfield currentcharacter))
+           (setq textpairisopen nil)
          )
-         (T
-           (SETQ TextPairIsOpen T)
+         (t
+           (setq textpairisopen t)
          )
        )
       )
       ;;Else if CurrentCharacter is a FieldDelimiter wildcard match, then
-      ((WCMATCH CURRENTCHARACTER FIELDSEPARATORWC)
-       (COND
+      ((wcmatch currentcharacter fieldseparatorwc)
+       (cond
          ;;If TextModeIsOn = True, then 
-         ((= TEXTMODEISON T)
+         ((= textmodeison t)
           ;;Output CurrentCharacter to CurrentField.
-          (SETQ CURRENTFIELD (STRCAT CURRENTFIELD CURRENTCHARACTER))
+          (setq currentfield (strcat currentfield currentcharacter))
          )
          ;;Else if
-         ((OR ;;EmptyFieldsDoCount, or
-              (= EMPTYFIELDSDOCOUNT T)
+         ((or ;;EmptyFieldsDoCount, or
+              (= emptyfieldsdocount t)
               ;;the CurrentField isn't empty,
-              (/= "" CURRENTFIELD)
+              (/= "" currentfield)
           )
           ;;Then
           ;;Set the CurrentFieldIsDone flag to true.
-          (SETQ CURRENTFIELDISDONE T)
+          (setq currentfieldisdone t)
          )
-         (T
+         (t
           ;;Else do nothing
           ;;Do not flag the CurrentFieldDone,
           ;;nor output the CurrentCharacter.
-          NIL
+          nil
          )
        )
       )
       ;;Else if CurrentCharacter is empty, then
-      ((= CURRENTCHARACTER "")
+      ((= currentcharacter "")
        ;;We are at the end of the string.
        ;;1.  Flag ConversionIsDone.
-       (SETQ CONVERSIONISDONE T)
+       (setq conversionisdone t)
        ;;2.  If
-       (IF (OR ;;EmptyFieldsDoCount, or
-               EMPTYFIELDSDOCOUNT
+       (if (or ;;EmptyFieldsDoCount, or
+               emptyfieldsdocount
                ;;the PreviousCharacter wasn't a FieldSeparatorWC, or
-               (NOT (WCMATCH PREVIOUSCHARACTER FIELDSEPARATORWC))
+               (not (wcmatch previouscharacter fieldseparatorwc))
                ;;the ReturnList is still nil due to only empty non-counting fields in string,
                ;;(This check is a bug fix added 2008-02-18 TGH)
-               (= RETURNLIST NIL)
+               (= returnlist nil)
            )
          ;;Then flag the CurrentFieldIsDone to wrap up the last field.
-         (SETQ CURRENTFIELDISDONE T)
+         (setq currentfieldisdone t)
        )
       )
       ;;Else (CurrentCharacter is something else),
-      (T
+      (t
        ;;Output CurrentCharacter to CurrentField.
-       (SETQ CURRENTFIELD (STRCAT CURRENTFIELD CURRENTCHARACTER))
-       (SETQ TextPairIsOpen nil)
+       (setq currentfield (strcat currentfield currentcharacter))
+       (setq textpairisopen nil)
       )
     )
     ;;If CurrentFieldIsDone, then
-    (IF CURRENTFIELDISDONE
+    (if currentfieldisdone
       ;;Output it to the front of ReturnList.
-      (SETQ
-        RETURNLIST
-         (CONS CURRENTFIELD RETURNLIST)
+      (setq
+        returnlist
+         (cons currentfield returnlist)
         ;;Start a new CurrentField.
-        CURRENTFIELD
+        currentfield
          ""
-        CURRENTFIELDISDONE NIL
+        currentfieldisdone nil
       )
     )
     ;;End the main character-by-character InputString examination loop.
   )
   ;;Reverse the backwards return list and we are done.
-  (REVERSE RETURNLIST)
+  (reverse returnlist)
 )
 
 
@@ -3864,255 +3864,255 @@
 ;;;       )
 ;;;Tests
 ;;;(haws-rdfld 3 "1 John,\"2 2\"\" pipe,\nheated\",3 the end,,,,," "," 1))))
-(VL-ACAD-DEFUN 'HAWS-RDFLD)
-(DEFUN HAWS-RDFLD (FIELDNO INPUTSTRING FIELDSEPARATOR OPT / ATOMCOUNTER
-               ATOMY ATOMX EMPTYFIELDSDOCOUNT ISCHRISLONG PARSEDLIST
-               TEXTDELIMITER FIELDSEPARATORWC ISCHR ISLONG
+(vl-acad-defun 'HAWS-RDFLD)
+(defun haws-rdfld (fieldno inputstring fieldseparator opt / atomcounter
+               atomy atomx emptyfieldsdocount ischrislong parsedlist
+               textdelimiter fieldseparatorwc ischr islong
               )
-  (SETQ
-    ISCHR
-     (= 1 (LOGAND 1 OPT))
-    ISLONG
-     (= 2 (LOGAND 2 OPT))
-    TEXTDELIMITER "\""
-    EMPTYFIELDSDOCOUNT T
-    FIELDSEPARATORWC FIELDSEPARATOR
+  (setq
+    ischr
+     (= 1 (logand 1 opt))
+    islong
+     (= 2 (logand 2 opt))
+    textdelimiter "\""
+    emptyfieldsdocount t
+    fieldseparatorwc fieldseparator
   )
-  (COND
+  (cond
     ;;If the field delimiter is a comma ",", then
-    ((= FIELDSEPARATORWC ",")
+    ((= fieldseparatorwc ",")
      ;;Replace it with an AutoCAD escaped comma wildcard.
-     (SETQ FIELDSEPARATORWC "`,")
+     (setq fieldseparatorwc "`,")
     )
     ;;If the field delimiter is "W" (for word or whitespace), then
-    ((= FIELDSEPARATORWC "W")
-     (SETQ
+    ((= fieldseparatorwc "W")
+     (setq
        ;;1. Replace it with a white space wild card.
-       FIELDSEPARATORWC
+       fieldseparatorwc
         " ,\t,\n"
        ;;2.  Set EmptyFieldsDoCount to nil
-       EMPTYFIELDSDOCOUNT
-        NIL
+       emptyfieldsdocount
+        nil
      )
     )
   )
-  (COND
+  (cond
     ;;If fielddelimiter is a number, then do a fixed width field extraction.
-    ((= (TYPE FIELDSEPARATORWC) 'INT)
-     (SETQ
-       ATOMX
-        (SUBSTR
-          INPUTSTRING
-          (1+ (* (1- FIELDNO) FIELDSEPARATORWC))
-          (IF ISLONG
+    ((= (type fieldseparatorwc) 'INT)
+     (setq
+       atomx
+        (substr
+          inputstring
+          (1+ (* (1- fieldno) fieldseparatorwc))
+          (if islong
             1000
-            FIELDSEPARATORWC
+            fieldseparatorwc
           )
         )
      )
-     (IF (AND ISCHR (NOT ISLONG))
-       (SETQ ATOMX (HAWS-RDFLD-UNPAD ATOMX))
+     (if (and ischr (not islong))
+       (setq atomx (haws-rdfld-unpad atomx))
      )
     )
     ;;Else do a character delimiter field extraction.
-    (T
-     (SETQ
-       PARSEDLIST
-        (HAWS-STRTOLST
-          INPUTSTRING
-          FIELDSEPARATORWC
-          TEXTDELIMITER
-          EMPTYFIELDSDOCOUNT
+    (t
+     (setq
+       parsedlist
+        (haws-strtolst
+          inputstring
+          fieldseparatorwc
+          textdelimiter
+          emptyfieldsdocount
         )
      )
-     (SETQ ATOMX (NTH (1- FIELDNO) PARSEDLIST))
+     (setq atomx (nth (1- fieldno) parsedlist))
      ;;If the IsLong flag is set, add any subsequent fields to the output string.
-     (COND
-       (ISLONG
-        (SETQ ATOMCOUNTER (1- FIELDNO))
-        (WHILE (SETQ
-                 ATOMY
-                  (NTH (SETQ ATOMCOUNTER (1+ ATOMCOUNTER)) PARSEDLIST)
+     (cond
+       (islong
+        (setq atomcounter (1- fieldno))
+        (while (setq
+                 atomy
+                  (nth (setq atomcounter (1+ atomcounter)) parsedlist)
                )
-          (SETQ ATOMX (STRCAT ATOMX FIELDSEPARATOR ATOMY))
+          (setq atomx (strcat atomx fieldseparator atomy))
         )
        )
      )
     )
   )
-  (SETQ
-    ATOMX
-     (IF ISCHR
-       ATOMX
-       (DISTOF ATOMX)
+  (setq
+    atomx
+     (if ischr
+       atomx
+       (distof atomx)
      )
   )
 )
 
 ;;Strip white space from beginning and end of a string
-(VL-ACAD-DEFUN 'HAWS-RDFLD-UNPAD)
-(DEFUN HAWS-RDFLD-UNPAD (STR)
-  (WHILE (WCMATCH (SUBSTR STR 1 1) " ,\t")
-    (SETQ STR (SUBSTR STR 2))
+(vl-acad-defun 'HAWS-RDFLD-UNPAD)
+(defun haws-rdfld-unpad (str)
+  (while (wcmatch (substr str 1 1) " ,\t")
+    (setq str (substr str 2))
   )
-  (WHILE (WCMATCH (HAWS-ENDSTR STR 1 1) " ,\t")
-    (SETQ STR (SUBSTR STR 1 (1- (STRLEN STR))))
+  (while (wcmatch (haws-endstr str 1 1) " ,\t")
+    (setq str (substr str 1 (1- (strlen str))))
   )
-  STR
+  str
 )
 
 ;;Returns nil if in ICAD mode
-(VL-ACAD-DEFUN 'HAWS-REGISTRY-READ)
-(DEFUN HAWS-REGISTRY-READ (REG-KEY VAL-NAME)
-  (COND
-    ((C:HAWS-ICAD-P) NIL)
-    ((VL-REGISTRY-READ REG-KEY VAL-NAME))
+(vl-acad-defun 'HAWS-REGISTRY-READ)
+(defun haws-registry-read (reg-key val-name)
+  (cond
+    ((c:haws-icad-p) nil)
+    ((vl-registry-read reg-key val-name))
   )
 )
 
 ;;Returns nil if in ICAD mode
-(VL-ACAD-DEFUN 'HAWS-REGISTRY-WRITE)
-(DEFUN HAWS-REGISTRY-WRITE (REG-KEY VAL-NAME VAL-DATA)
-  (COND
-    ((C:HAWS-ICAD-P) NIL)
-    ((VL-REGISTRY-WRITE REG-KEY VAL-NAME VAL-DATA))
+(vl-acad-defun 'HAWS-REGISTRY-WRITE)
+(defun haws-registry-write (reg-key val-name val-data)
+  (cond
+    ((c:haws-icad-p) nil)
+    ((vl-registry-write reg-key val-name val-data))
   )
 )
 
 
 ;;Remove an element from a list
-(VL-ACAD-DEFUN 'HAWS-REMOVE)
-(DEFUN HAWS-REMOVE (ELEMENT LST)
-  (APPEND
-    (REVERSE (CDR (MEMBER ELEMENT (REVERSE LST))))
-    (CDR (MEMBER ELEMENT LST))
+(vl-acad-defun 'HAWS-REMOVE)
+(defun haws-remove (element lst)
+  (append
+    (reverse (cdr (member element (reverse lst))))
+    (cdr (member element lst))
   )
 )
 
 ;;Convert a radian angle to a presentation quality bearing.
-(VL-ACAD-DEFUN 'HAWS-RTOB)
-(DEFUN HAWS-RTOB (RAD AU / B I)
-  (SETQ B (ANGTOS RAD AU))
-  (IF (WCMATCH B "*d*")
-    (PROGN
-      (SETQ I 0)
-      (WHILE (/= "d" (SUBSTR B (SETQ I (1+ I)) 1)))
-      (SETQ B (STRCAT (SUBSTR B 1 (1- I)) "%%d" (SUBSTR B (1+ I))))
+(vl-acad-defun 'HAWS-RTOB)
+(defun haws-rtob (rad au / b i)
+  (setq b (angtos rad au))
+  (if (wcmatch b "*d*")
+    (progn
+      (setq i 0)
+      (while (/= "d" (substr b (setq i (1+ i)) 1)))
+      (setq b (strcat (substr b 1 (1- i)) "%%d" (substr b (1+ i))))
     )
   )
-  (IF (WCMATCH B "*d#[`.']*")
-    (PROGN
-      (SETQ I 0)
-      (WHILE (/= "d" (SUBSTR B (SETQ I (1+ I)) 1)))
-      (SETQ B (STRCAT (SUBSTR B 1 I) "0" (SUBSTR B (1+ I))))
+  (if (wcmatch b "*d#[`.']*")
+    (progn
+      (setq i 0)
+      (while (/= "d" (substr b (setq i (1+ i)) 1)))
+      (setq b (strcat (substr b 1 i) "0" (substr b (1+ i))))
     )
   )
-  (IF (WCMATCH B "*'#[`.\"]*")
-    (PROGN
-      (SETQ I 0)
-      (WHILE (/= "'" (SUBSTR B (SETQ I (1+ I)) 1)))
-      (SETQ B (STRCAT (SUBSTR B 1 I) "0" (SUBSTR B (1+ I))))
+  (if (wcmatch b "*'#[`.\"]*")
+    (progn
+      (setq i 0)
+      (while (/= "'" (substr b (setq i (1+ i)) 1)))
+      (setq b (strcat (substr b 1 i) "0" (substr b (1+ i))))
     )
   )
-  (SETQ
-    B (COND
-        ((= B "N") "NORTH")
-        ((= B "S") "SOUTH")
-        ((= B "E") "EAST")
-        ((= B "W") "WEST")
-        (B)
+  (setq
+    b (cond
+        ((= b "N") "NORTH")
+        ((= b "S") "SOUTH")
+        ((= b "E") "EAST")
+        ((= b "W") "WEST")
+        (b)
       )
   )
 )
 
 ;; RTOSTA sub-function converts a real number to a base 100 road
 ;; station.
-(VL-ACAD-DEFUN 'HAWS-RTOSTA)
-(DEFUN HAWS-RTOSTA (STA LUP / ISNEG AFTER BEFORE)
-  (SETQ
-    LUP
-     (COND
-       (LUP)
-       ((GETVAR "luprec"))
+(vl-acad-defun 'HAWS-RTOSTA)
+(defun haws-rtosta (sta lup / isneg after before)
+  (setq
+    lup
+     (cond
+       (lup)
+       ((getvar "luprec"))
      )
-    ISNEG
-     (MINUSP STA)
-    STA
-     (RTOS (ABS STA) 2 LUP)
+    isneg
+     (minusp sta)
+    sta
+     (rtos (abs sta) 2 lup)
   )
-  (WHILE (< (STRLEN STA)
-            (IF (= LUP 0)
+  (while (< (strlen sta)
+            (if (= lup 0)
               3
-              (+ LUP 4)
+              (+ lup 4)
             )
          )
-    (SETQ STA (STRCAT "0" STA))
+    (setq sta (strcat "0" sta))
   )
-  (SETQ
-    AFTER
-     (IF (= LUP 0)
-       (- (STRLEN STA) 1)
-       (- (STRLEN STA) LUP 2)
+  (setq
+    after
+     (if (= lup 0)
+       (- (strlen sta) 1)
+       (- (strlen sta) lup 2)
      )
-    BEFORE
-     (SUBSTR STA 1 (1- AFTER))
-    AFTER
-     (SUBSTR STA AFTER)
+    before
+     (substr sta 1 (1- after))
+    after
+     (substr sta after)
   )
-  (IF ISNEG
-    (SETQ
-      BEFORE
-       (STRCAT "-(" BEFORE)
-      AFTER
-       (STRCAT AFTER ")")
+  (if isneg
+    (setq
+      before
+       (strcat "-(" before)
+      after
+       (strcat after ")")
     )
   )
-  (STRCAT BEFORE "+" AFTER)
+  (strcat before "+" after)
 )
 
 ;;;  Trig functions not included with AutoLISP
-(VL-ACAD-DEFUN 'HAWS-ASIN)
-(DEFUN HAWS-ASIN (X) (ATAN X (SQRT (- 1 (* X X)))))
-(VL-ACAD-DEFUN 'HAWS-ACOS)
-(DEFUN HAWS-ACOS (X) (ATAN (SQRT (- 1 (* X X))) X))
-(VL-ACAD-DEFUN 'TAN)
-(DEFUN HAWS-TAN (X) (/ (SIN X) (COS X)))
-(VL-ACAD-DEFUN 'HAWS-VSET)
-(DEFUN HAWS-VSET (VLST)
-  (FOREACH
-     V VLST
-    (IF (GETVAR (CAR V))
-      (SETVAR (CAR V) (CADR V))
+(vl-acad-defun 'HAWS-ASIN)
+(defun haws-asin (x) (atan x (sqrt (- 1 (* x x)))))
+(vl-acad-defun 'HAWS-ACOS)
+(defun haws-acos (x) (atan (sqrt (- 1 (* x x))) x))
+(vl-acad-defun 'TAN)
+(defun haws-tan (x) (/ (sin x) (cos x)))
+(vl-acad-defun 'HAWS-VSET)
+(defun haws-vset (vlst)
+  (foreach
+     v vlst
+    (if (getvar (car v))
+      (setvar (car v) (cadr v))
     )
   )
 )
 
-(VL-ACAD-DEFUN 'HAWS-VTOG)
-(DEFUN HAWS-VTOG (VLST)
-  (FOREACH
-     V VLST
-    (PRINC (STRCAT "\n" V " toggled to "))
-    (SETVAR
-      V
-      (PRINC
-        (IF (= (GETVAR V) 0)
+(vl-acad-defun 'HAWS-VTOG)
+(defun haws-vtog (vlst)
+  (foreach
+     v vlst
+    (princ (strcat "\n" v " toggled to "))
+    (setvar
+      v
+      (princ
+        (if (= (getvar v) 0)
           1
           0
         )
       )
     )
   )
-  (PRINC)
+  (princ)
 )
 
-(VL-ACAD-DEFUN 'HAWS-VSAVE)
-(DEFUN HAWS-VSAVE (VLST)
-  (SETQ *HAWS-VSTR* (MAPCAR '(LAMBDA (V) (LIST V (GETVAR V))) VLST))
+(vl-acad-defun 'HAWS-VSAVE)
+(defun haws-vsave (vlst)
+  (setq *haws-vstr* (mapcar '(lambda (v) (list v (getvar v))) vlst))
 )
 
-(VL-ACAD-DEFUN 'HAWS-VRSTOR)
-(DEFUN HAWS-VRSTOR ()
-  (MAPCAR '(LAMBDA (V) (SETVAR (CAR V) (CADR V))) *HAWS-VSTR*)
+(vl-acad-defun 'HAWS-VRSTOR)
+(defun haws-vrstor ()
+  (mapcar '(lambda (v) (setvar (car v) (cadr v))) *haws-vstr*)
 )
 
 ;; This function does a word wrap on a string by cutting the string
@@ -4124,88 +4124,88 @@
 ;;characters are stripped.
 ;;Example: (wrap "Go home, eat dinner, comb, brush, sleep" 15 ",")
 ;;Returns  ("Go home" "eat dinner" "comb, brush" "sleep")
-(VL-ACAD-DEFUN 'HAWS-WRAP)
-(DEFUN HAWS-WRAP (STRNG1 MAXLEN CHAR / FIRST I LSTRNI STRIPC STRIPS STRNG2
-              STRNGI TEMP WLIST
+(vl-acad-defun 'HAWS-WRAP)
+(defun haws-wrap (strng1 maxlen char / first i lstrni stripc strips strng2
+              strngi temp wlist
              )
-  (SETQ
-    I 1
-    CHAR
-     (STRCAT "`" CHAR)
-    FIRST T
-    WLIST NIL
-    STRNG2 ""
-    STRNGI ""
-    LSTRNI 0
+  (setq
+    i 1
+    char
+     (strcat "`" char)
+    first t
+    wlist nil
+    strng2 ""
+    strngi ""
+    lstrni 0
   )
   ;;Break strng1 at every break point
-  (WHILE (/= "" (SUBSTR STRNG1 I))
-    (COND
+  (while (/= "" (substr strng1 i))
+    (cond
       (;;For every break or at end of string
-       (OR (WCMATCH (SUBSTR STRNG1 1 I) (STRCAT "*" CHAR))
-           (= I (STRLEN STRNG1))
+       (or (wcmatch (substr strng1 1 i) (strcat "*" char))
+           (= i (strlen strng1))
        )
-       (SETQ
-         STRNGI
-          (SUBSTR STRNG1 1 I)
-         STRIPS STRNGI
-         STRIPC STRNGI
-         STRNG1
-          (SUBSTR STRNG1 (1+ I))
-         I 1
+       (setq
+         strngi
+          (substr strng1 1 i)
+         strips strngi
+         stripc strngi
+         strng1
+          (substr strng1 (1+ i))
+         i 1
        )
        ;; Strip leading spaces from all but first piece.  Save as
        ;; strips.
-       (IF (NOT FIRST)
-         (WHILE (= (SUBSTR STRIPS 1 1) " ")
-           (SETQ STRIPS (SUBSTR STRIPS 2))
+       (if (not first)
+         (while (= (substr strips 1 1) " ")
+           (setq strips (substr strips 2))
          )
        )
        ;;Strip break character.  Save as stripc
-       (IF (WCMATCH STRIPC (STRCAT "*" CHAR))
-         (SETQ STRIPC (SUBSTR STRIPC 1 (1- (STRLEN STRIPC))))
+       (if (wcmatch stripc (strcat "*" char))
+         (setq stripc (substr stripc 1 (1- (strlen stripc))))
        )
        ;; Add strngi to strng2 if possible, otherwise, call strng2
        ;; full.
-       (COND
+       (cond
          ;;If strng2 is empty set to strips
-         ((= "" STRNG2) (SETQ STRNG2 STRIPS))
+         ((= "" strng2) (setq strng2 strips))
          ;;else add strngi to strng2 if it fits stripped.
-         ((<= (STRLEN (SETQ TEMP (STRCAT STRNG2 STRIPC))) MAXLEN)
-          (SETQ STRNG2 (STRCAT STRNG2 STRNGI))
+         ((<= (strlen (setq temp (strcat strng2 stripc))) maxlen)
+          (setq strng2 (strcat strng2 strngi))
          )
-         ((IF (WCMATCH STRNG2 (STRCAT "*" CHAR))
-            (SETQ STRNG2 (SUBSTR STRNG2 1 (1- (STRLEN STRNG2))))
+         ((if (wcmatch strng2 (strcat "*" char))
+            (setq strng2 (substr strng2 1 (1- (strlen strng2))))
           )
-          (SETQ
-            WLIST
-             (CONS STRNG2 WLIST)
-            STRNG2 STRIPS
+          (setq
+            wlist
+             (cons strng2 wlist)
+            strng2 strips
           )
          )
        )
-       (SETQ FIRST NIL)
+       (setq first nil)
       )
-      (T (SETQ I (1+ I)))
+      (t (setq i (1+ i)))
     )
   )
-  (REVERSE (CONS STRNG2 WLIST))
+  (reverse (cons strng2 wlist))
 )
 
 ;;Functions for oo, selstyle, and le
 
 ;;Selcerob--Selects a certain type of object. Returns entsel list.
-(VL-ACAD-DEFUN 'HAWS-SELCEROB)
-(DEFUN HAWS-SELCEROB (PRMPT SERCH / E ELST ENM OK)
-  (WHILE (NOT OK)
-    (WHILE (NOT (SETQ E (ENTSEL PRMPT))))
-    (SETQ ELST (ENTGET (SETQ ENM (CAR E))))
-    (IF (/= (CDR (ASSOC 0 ELST)) SERCH)
-      (PRINC (STRCAT "**Not a " SERCH ", try again**"))
-      (SETQ OK T)
+(vl-acad-defun 'HAWS-SELCEROB)
+(defun haws-selcerob (prmpt serch / e elst enm ok)
+  (while (not ok)
+    (while (not (setq e (entsel prmpt))))
+    (setq elst (entget (setq enm (car e))))
+    (if (/= (cdr (assoc 0 elst)) serch)
+      (princ (strcat "**Not a " serch ", try again**"))
+      (setq ok t)
     )
   )
-  E
+  e
 )
 
 ;;
@@ -4213,11 +4213,11 @@
 ;;
 ;; For Intellicad compatibility
 ;;
-(VL-ACAD-DEFUN 'HAWS-TXLEN)
-(DEFUN HAWS-TXLEN (STRING HEIGHT)
-  (IF (C:HAWS-ICAD-P)
-    (* HEIGHT (STRLEN STRING) 0.80)
-    (CAADR (TEXTBOX (LIST (CONS 1 STRING) (CONS 40 HEIGHT))))
+(vl-acad-defun 'HAWS-TXLEN)
+(defun haws-txlen (string height)
+  (if (c:haws-icad-p)
+    (* height (strlen string) 0.80)
+    (caadr (textbox (list (cons 1 string) (cons 40 height))))
   )
 )
 
@@ -4225,9 +4225,9 @@
 ;; HAWS-VLISP-P
 ;;
 ;;Tests whether visual lisp functions are available.
-(VL-ACAD-DEFUN 'HAWS-VLISP-P)
-(DEFUN HAWS-VLISP-P ()
-  (NOT (< (ATOF (GETVAR "acadver")) 15))
+(vl-acad-defun 'HAWS-VLISP-P)
+(defun haws-vlisp-p ()
+  (not (< (atof (getvar "acadver")) 15))
 )
 
 
@@ -4243,80 +4243,80 @@
 ;;; Getting a little more lax.
 ;;; If (HAWS-READCFG "/HawsEDC/Modules/package/OrderString") "",
 ;;; we assume quite trustingly that the application has never yet been tried.
-(DEFUN HAWS-CHECKSTOREDSTRINGS (/ AUTHLIST AUTHSTRING DELETEALL TEMP)
-  (HAWS-MILEPOST "Entering HAWS-CHECKSTOREDSTRINGS")
-  (FOREACH
-     PACKAGE '(0 3)
-    (SETQ AUTHSTRING (HAWS-READAUTHCODE PACKAGE))
-    (COND
+(defun haws-checkstoredstrings (/ authlist authstring deleteall temp)
+  (haws-milepost "Entering HAWS-CHECKSTOREDSTRINGS")
+  (foreach
+     package '(0 3)
+    (setq authstring (haws-readauthcode package))
+    (cond
       (;;If
-       (AND
+       (and
          ;;Authstring is present
-         AUTHSTRING
-         (/= AUTHSTRING "aaaaaaaaaaaa")
-         (HAWS-MILEPOST
+         authstring
+         (/= authstring "aaaaaaaaaaaa")
+         (haws-milepost
            "Authstring is present and isn't the dummy string.  Now checking that it's for the right computer to delete it if not."
          )
          ;;and
-         (OR ;; it either is invalid,
-             (/= (STRLEN AUTHSTRING) 12)
+         (or ;; it either is invalid,
+             (/= (strlen authstring) 12)
              ;;for the wrong computer,
-             (NOT
-               (EQUAL
-                 (CDR
-                   (CDDDR (SETQ AUTHLIST (HAWS-AUTHTOLIST AUTHSTRING)))
+             (not
+               (equal
+                 (cdr
+                   (cdddr (setq authlist (haws-authtolist authstring)))
                  )
-                 (CONS (HAWS-GETSHORTCOMPUTERNAME) (HAWS-GETBIOSDATE))
+                 (cons (haws-getshortcomputername) (haws-getbiosdate))
                )
              )
              ;;or
              ;;it's for the wrong package,
-             (/= PACKAGE (CADDR AUTHLIST))
+             (/= package (caddr authlist))
          )
        )
        ;;Then flag to delete all order strings and auth strings from storage.
-       (HAWS-MILEPOST
-         (STRCAT "Package " (ITOA PACKAGE) "codes are wrong")
+       (haws-milepost
+         (strcat "Package " (itoa package) "codes are wrong")
        )
-       (SETQ DELETEALL T)
+       (setq deleteall t)
       )
-      ((NOT AUTHSTRING)
-       (HAWS-MILEPOST
+      ((not authstring)
+       (haws-milepost
          ";;Else if there is no stored string
        "
        )
        ;|
-      (T
-       (HAWS-MILEPOST ";;Always give a new free trial (for testing only)
+      (t
+       (haws-milepost ";;Always give a new free trial (for testing only)
        ;; by storing order and auth strings for a trial
        ")
       |;
-       (HAWS-MILEPOST
+       (haws-milepost
          ";;Assume it's a virgin installation,
        ;; and give a free trial by storing order and auth strings
        ;; for
        ;; a 30 day trial
        "
        )
-       (HAWS-WRITEPACKAGECODE
-         PACKAGE
+       (haws-writepackagecode
+         package
          "OrderString"
-         (HAWS-BINARYTOUSER
-           (HAWS-ENCRYPTORDERSTRING
-             (HAWS-LISTTOBINARY
-               (SETQ
-                 TEMP
-                  (CONS
-                    (FIX (GETVAR "date"))
-                    (CONS
+         (haws-binarytouser
+           (haws-encryptorderstring
+             (haws-listtobinary
+               (setq
+                 temp
+                  (cons
+                    (fix (getvar "date"))
+                    (cons
                       0
-                      (CONS
-                        PACKAGE
-                        (CONS
+                      (cons
+                        package
+                        (cons
                           0
-                          (CONS
-                            (HAWS-GETSHORTCOMPUTERNAME)
-                            (HAWS-GETBIOSDATE)
+                          (cons
+                            (haws-getshortcomputername)
+                            (haws-getbiosdate)
                           )
                         )
                       )
@@ -4327,34 +4327,34 @@
            )
          )
        )
-       (HAWS-WRITEPACKAGECODE
-         PACKAGE
+       (haws-writepackagecode
+         package
          "AuthString"
-         (HAWS-BINARYTOUSER
-           (HAWS-ENCRYPTAUTHSTRING
+         (haws-binarytouser
+           (haws-encryptauthstring
              ;;Trial length
-             (HAWS-LISTTOBINARY (CONS (+ (CAR TEMP) 30) (CDR TEMP)))
+             (haws-listtobinary (cons (+ (car temp) 30) (cdr temp)))
            )
          )
        )
       )
     )
   )
-  (COND
-    (DELETEALL
-     (FOREACH
-        PACKAGE '(0 3)
-       (HAWS-WRITEPACKAGECODE PACKAGE "OrderString" "aaaaaaaaaaaa")
-       (HAWS-WRITEPACKAGECODE PACKAGE "AuthString" "aaaaaaaaaaaa")
+  (cond
+    (deleteall
+     (foreach
+        package '(0 3)
+       (haws-writepackagecode package "OrderString" "aaaaaaaaaaaa")
+       (haws-writepackagecode package "AuthString" "aaaaaaaaaaaa")
      )
     )
   )
-  (HAWS-MILEPOST "Finished HAWS-CHECKSTOREDSTRINGS")
+  (haws-milepost "Finished HAWS-CHECKSTOREDSTRINGS")
 )
-(HAWS-CHECKSTOREDSTRINGS)
-(IF (/=(HAWS-USE-GET-LOCAL-LOG-STRING)(HAWS-USE-INITIALIZE-LOG-STRING))(HAWS-USE-LOG-REMOTE))
+(haws-checkstoredstrings)
+(if (/=(haws-use-get-local-log-string)(haws-use-initialize-log-string))(haws-use-log-remote))
 
 ;#endregion(PROMPT "loaded.")
  ;|�Visual LISP� Format Options�
-(72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)
+(72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil t)
 ;*** DO NOT add text below the comment! ***|;

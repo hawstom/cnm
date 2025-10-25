@@ -1,4 +1,4 @@
-;; Notes: Layer and key names must be upper case.
+﻿;; Notes: Layer and key names must be upper case.
 ("READ-BIAS-DEGREES" 110)
 ; Table 1: TEXT_STYLE
 ; TEXT_STYLE_KEY    LAYER_NAME   TEXT_STYLE_NAME

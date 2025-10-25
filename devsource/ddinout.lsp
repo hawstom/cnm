@@ -1,28 +1,28 @@
-;;(C) Copyright 1997 by Thomas Gail Haws
+﻿;;(C) Copyright 1997 by Thomas Gail Haws
 ;; Calling Procedure -
 ;;  (ddinout <list> <flag>)
 ;;    <list> of strings.
 ;;    <flag> nil if all un-selected,
 ;;           'T if all selected at start.
 ;;-----------------------------------------------
-(defun DDINOUT (TITLE LST FLG / DH RES X)
+(defun ddinout (title lst flg / dh res x)
   ;;
   ;;find dialog file DCL and load it.
-  (setq DH (load_dialog
+  (setq dh (load_dialog
              (findfile "DDINOUT.DCL")))
   ;;
   ;;did it get loaded ok?
-  (if (and DH (new_dialog "DDINOUT" DH))
+  (if (and dh (new_dialog "DDINOUT" dh))
    (progn
-     (setq LST ;;concat \t (TAB) to strings with
+     (setq lst ;;concat \t (TAB) to strings with
        (mapcar ;;with select or space marks.
-         '(lambda (X)
+         '(lambda (x)
             (strcat
-               (if FLG "\t" " \t")
-               X)) LST))
+               (if flg "\t" " \t")
+               x)) lst))
      ;;
      (start_list "MSL")  ;;put in MSL list box
-     (mapcar 'add_list LST) ;;add to buffer
+     (mapcar 'add_list lst) ;;add to buffer
      (end_list)
      ;;
      (set_tile "TITLE" title)
@@ -37,83 +37,83 @@
                   "(DDINOUT_UNS)")
      ;;
      (if (= (start_dialog) 1) ;;OK pressed?
-         (foreach X LST ;;find which are selected
-            (if (= (substr X 1 1) "")
-               (setq RES ;;result list
+         (foreach x lst ;;find which are selected
+            (if (= (substr x 1 1) "")
+               (setq res ;;result list
                   (cons  ;;add to front, remove
-                     (substr X 3) ;;1st 2 chars.
-                     RES)))))
-     (unload_dialog DH)
-     (reverse RES))))  ;;result list return.
+                     (substr x 3) ;;1st 2 chars.
+                     res)))))
+     (unload_dialog dh)
+     (reverse res))))  ;;result list return.
 ;;-----------------------------------------------
-(defun DDINOUT_MSL (what)
+(defun ddinout_msl (what)
    ;;
    ;;what is $value string, convert it to a list
    ;;of integers using (READ).
-   (setq WHAT (read (strcat "(" what ")")))
+   (setq what (read (strcat "(" what ")")))
    ;;
    ;;for each element in WHAT, change  marker
    ;;at the (NTH) position in LST.
-   (foreach X WHAT
-      (setq LST
-        (NTH_SUBST  ;;defined below
-          X         ;;nth position
+   (foreach x what
+      (setq lst
+        (nth_subst  ;;defined below
+          x         ;;nth position
           (strcat   ;;new string
              (if (= "" ;;already selected?
-                    (substr (nth X LST) 1 1))
+                    (substr (nth x lst) 1 1))
                  " "   ;;unselect it
                  "")  ;;select it
-             (substr (nth X LST) 2))
-          LST)      ;;list
+             (substr (nth x lst) 2))
+          lst)      ;;list
       )
       ;;
       ;;update item in list box buffer at
       ;;nth position X.
-      (start_list "MSL" 1 X)
-      (add_list (nth X LST))
+      (start_list "MSL" 1 x)
+      (add_list (nth x lst))
       (end_list)
       ;;
       ;;set currently selected list member to
       ;;be the same as the one just updated.
-      (set_tile "MSL" (itoa X))
+      (set_tile "MSL" (itoa x))
    )
 )
 ;;-----------------------------------------------
-(defun DDINOUT_SEL ()
+(defun ddinout_sel ()
   ;;
   ;;force selected mark  onto all strings
   ;;in LST.
-  (setq LST (mapcar '(lambda (X)
-     (strcat "\t" (substr X 3))) LST))
+  (setq lst (mapcar '(lambda (x)
+     (strcat "\t" (substr x 3))) lst))
   ;;
   ;;Update list box buffer with new strings
   (start_list "MSL")
-  (mapcar 'add_list LST)
+  (mapcar 'add_list lst)
   (end_list)
 )
 ;;-----------------------------------------------
-(defun DDINOUT_UNS ()
+(defun ddinout_uns ()
   ;;force all members in LST to have no selected
   ;;marker.
-  (setq LST (mapcar '(lambda (X)
-     (strcat " \t" (substr X 3))) LST))
+  (setq lst (mapcar '(lambda (x)
+     (strcat " \t" (substr x 3))) lst))
   ;;
   ;;Update list box buffer with new strings
   (start_list "MSL")
-  (mapcar 'add_list LST)
+  (mapcar 'add_list lst)
   (end_list)
 )
 ;;-----------------------------------------------
 ;; NTH_SUBST   replace NDX member [base 0] in L
 ;; with NEW and return modified list.
 ;;
-(defun NTH_SUBST (NDX NEW L / TMP)
-   (while (> NDX 0)
-      (setq TMP (cons (car L) TMP)
-            L (cdr L)
-            NDX (1- NDX)
+(defun nth_subst (ndx new l / tmp)
+   (while (> ndx 0)
+      (setq tmp (cons (car l) tmp)
+            l (cdr l)
+            ndx (1- ndx)
       )
    )
-   (append (reverse TMP) (list NEW) (cdr L))
+   (append (reverse tmp) (list new) (cdr l))
 )
 ;;-----------------------------------------------

@@ -1,73 +1,73 @@
-;;;Freeze or off by selection set
+ï»¿;;;Freeze or off by selection set
 ;;;(C) Copyright 1997 by Thomas Gail Haws
 
-(HAWS-MILEPOST "Loading lastat.lsp version a")
-(DEFUN C:HAWS-FF ()
-(haws-core-init 229) (HAWS-LASTAT "freeze" NIL)(princ))
-(DEFUN C:HAWS-LK ()
-(haws-core-init 230) (HAWS-LASTAT "lock" NIL)(princ))
-(DEFUN C:HAWS-OFF () (HAWS-LASTAT "off" NIL)(princ))
+(haws-milepost "Loading lastat.lsp version a")
+(defun c:haws-ff ()
+(haws-core-init 229) (haws-lastat "freeze" nil)(princ))
+(defun c:haws-lk ()
+(haws-core-init 230) (haws-lastat "lock" nil)(princ))
+(defun c:haws-off () (haws-lastat "off" nil)(princ))
 
-(DEFUN HAWS-LASTAT (LOPERA NESTED)
+(defun haws-lastat (lopera nested)
   (haws-core-init 231)
-  (HAWS-VSAVE '("EXPERT"))
-  (SETVAR "EXPERT" 5)
-  (IF (AND
-	(= LOPERA "freeze")
-	(= (GETVAR "tilemode") 0)
-	(/= (GETVAR "cvport") 1)
-	(PROGN (INITGET "Yes No")(= (GETKWORD "\nFreeze in current viewport only? [Yes/No] <No>: ")
+  (haws-vsave '("EXPERT"))
+  (setvar "EXPERT" 5)
+  (if (and
+	(= lopera "freeze")
+	(= (getvar "tilemode") 0)
+	(/= (getvar "cvport") 1)
+	(progn (initget "Yes No")(= (getkword "\nFreeze in current viewport only? [Yes/No] <No>: ")
 	   "Yes"
 	))
       )
-    (PROGN
-      (PROMPT "\nPick layers to freeze in current viewport:")
+    (progn
+      (prompt "\nPick layers to freeze in current viewport:")
       (vl-cmdf "._mspace" "._vplayer")
-      (HAWS-LALOOP T)
+      (haws-laloop t)
       (vl-cmdf "" "")
     )
-    (PROGN
-      (PROMPT (STRCAT "\nPick layers for " LOPERA ":"))
+    (progn
+      (prompt (strcat "\nPick layers for " lopera ":"))
       (vl-cmdf "._layer")
-      (HAWS-LALOOP NIL)
+      (haws-laloop nil)
       (vl-cmdf "")
     )
   )
-  (HAWS-VRSTOR)
+  (haws-vrstor)
   (haws-core-restore)
 )
 
-(DEFUN HAWS-LALOOP (VP / SS1 I EN LA LALIST)
-  (SETQ
-    LASSET
-     (SSGET)
-    I 0
+(defun haws-laloop (vp / ss1 i en la lalist)
+  (setq
+    lasset
+     (ssget)
+    i 0
   )
-  (COND
-    (LASSET
-     (WHILE (SETQ EN (SSNAME LASSET I))
-       (SETQ LA (CDR (ASSOC 8 (ENTGET EN))))
-       (vl-cmdf (STRCAT "_" LOPERA) LA)
-       (IF VP
+  (cond
+    (lasset
+     (while (setq en (ssname lasset i))
+       (setq la (cdr (assoc 8 (entget en))))
+       (vl-cmdf (strcat "_" lopera) la)
+       (if vp
 	 (vl-cmdf "")
        )
-       (SETQ I (1+ I))
-       (IF (NOT (MEMBER LA LALIST))
-	 (SETQ LALIST (CONS LA LALIST))
+       (setq i (1+ i))
+       (if (not (member la lalist))
+	 (setq lalist (cons la lalist))
        )
      )
-     (IF VP
-       (SETQ LALIST (CONS 1 LALIST))
+     (if vp
+       (setq lalist (cons 1 lalist))
      )
-     (SETQ
-       *HAWS-LASTATLIST*
-	(IF (ASSOC LOPERA *HAWS-LASTATLIST*)
-	  (SUBST
-	    (CONS LOPERA LALIST)
-	    (ASSOC LOPERA *HAWS-LASTATLIST*)
-	    *HAWS-LASTATLIST*
+     (setq
+       *haws-lastatlist*
+	(if (assoc lopera *haws-lastatlist*)
+	  (subst
+	    (cons lopera lalist)
+	    (assoc lopera *haws-lastatlist*)
+	    *haws-lastatlist*
 	  )
-	  (CONS (CONS LOPERA LALIST) *HAWS-LASTATLIST*)
+	  (cons (cons lopera lalist) *haws-lastatlist*)
 	)
      )
     )
@@ -77,79 +77,79 @@
 ;;;(C) Copyright 1997 by Thomas Gail Haws
 ;;;Freeze or off by picking nested entities
 
-(DEFUN C:HAWS-FFX ()
-  (PROMPT (STRCAT "\n" (HAWS_EVANGEL_MSG)))
+(defun c:haws-ffx ()
+  (prompt (strcat "\n" (haws_evangel_msg)))
   (haws-core-init 232)
-  (HAWS-NLSTAT "freeze")
+  (haws-nlstat "freeze")
   (princ))
 
-(DEFUN C:HAWS-OFFX ()
-  (PROMPT (STRCAT "\n" (HAWS_EVANGEL_MSG)))
-  (HAWS-NLSTAT "off")
+(defun c:haws-offx ()
+  (prompt (strcat "\n" (haws_evangel_msg)))
+  (haws-nlstat "off")
   (princ))
 
-(DEFUN HAWS-NLSTAT (LOPERA / NESTED)
+(defun haws-nlstat (lopera / nested)
   (haws-core-init 233)
-  (HAWS-VSAVE '("EXPERT"))
-  (SETVAR "EXPERT" 5)
-  (IF (AND
-	(= LOPERA "freeze")
-	(= (GETVAR "tilemode") 0)
-	(/= (GETVAR "cvport") 1)
-	(PROGN (INITGET "Yes No")(= (GETKWORD "\nFreeze in current viewport only? [Yes/No] <No>: ")   "Yes"
+  (haws-vsave '("EXPERT"))
+  (setvar "EXPERT" 5)
+  (if (and
+	(= lopera "freeze")
+	(= (getvar "tilemode") 0)
+	(/= (getvar "cvport") 1)
+	(progn (initget "Yes No")(= (getkword "\nFreeze in current viewport only? [Yes/No] <No>: ")   "Yes"
 	))
       )
-    (PROGN
-      (PROMPT "\nPick layers to freeze in current viewport:")
+    (progn
+      (prompt "\nPick layers to freeze in current viewport:")
       (vl-cmdf "._mspace" "._vplayer")
-      (HAWS-LSPICK LOPERA T)
+      (haws-lspick lopera t)
       (vl-cmdf "")
     )
-    (PROGN
-      (PROMPT (STRCAT "\nPick layers for " LOPERA ":"))
+    (progn
+      (prompt (strcat "\nPick layers for " lopera ":"))
       (vl-cmdf "._layer")
-      (HAWS-LSPICK LOPERA NIL)
+      (haws-lspick lopera nil)
       (vl-cmdf "")
     )
   )
-  (HAWS-VRSTOR)
+  (haws-vrstor)
   (haws-core-restore)
 )
-(DEFUN HAWS-LSPICK (LOPERA VP / ES EN LA PARNTL LALIST LOPERAkey)
-  (WHILE (SETQ ES (NENTSEL))
-    (SETQ
-      EN     (CAR ES)
-      LA     (CDR (ASSOC 8 (ENTGET EN)))
-      PARNTL (CADDDR ES)
+(defun haws-lspick (lopera vp / es en la parntl lalist loperakey)
+  (while (setq es (nentsel))
+    (setq
+      en     (car es)
+      la     (cdr (assoc 8 (entget en)))
+      parntl (cadddr es)
     )
-    (COND
-      ((AND (= LA "0") (NOT PARNTL))
-       (PROMPT (strcat "\nCan't find non-0 layer to " lopera "."))
+    (cond
+      ((and (= la "0") (not parntl))
+       (prompt (strcat "\nCan't find non-0 layer to " lopera "."))
       )
-      (T
-       (WHILE (= LA "0")
-	 (SETQ LA (CDR (ASSOC 8 (ENTGET (CAR PARNTL)))))
-	 (SETQ PARNTL (CDR PARNTL))
+      (t
+       (while (= la "0")
+	 (setq la (cdr (assoc 8 (entget (car parntl)))))
+	 (setq parntl (cdr parntl))
        )
-       (REDRAW EN 3)
-       (SETQ LALIST (CONS LA LALIST))
-       (vl-cmdf (STRCAT "_" LOPERA) LA)
-       (IF VP
+       (redraw en 3)
+       (setq lalist (cons la lalist))
+       (vl-cmdf (strcat "_" lopera) la)
+       (if vp
 	 (vl-cmdf "")
        )
-       (SETQ
-	 LOPERAKEY
-	  (STRCAT "n" LOPERA)
-	 *HAWS-LASTATLIST*
-	  (IF (ASSOC LOPERAkey *HAWS-LASTATLIST*)
-	    (SUBST
-	      (CONS LOPERAkey LALIST)
-	      (ASSOC LOPERAkey *HAWS-LASTATLIST*)
-	      *HAWS-LASTATLIST*
+       (setq
+	 loperakey
+	  (strcat "n" lopera)
+	 *haws-lastatlist*
+	  (if (assoc loperakey *haws-lastatlist*)
+	    (subst
+	      (cons loperakey lalist)
+	      (assoc loperakey *haws-lastatlist*)
+	      *haws-lastatlist*
 	    )
-	    (CONS
-	      (CONS LOPERAkey LALIST)
-	      *HAWS-LASTATLIST*
+	    (cons
+	      (cons loperakey lalist)
+	      *haws-lastatlist*
 	    )
 	  )
        )
@@ -163,45 +163,45 @@
 ;;;*HAWS-LASTATLIST* is a list of layer lists in assoc groups
 ;;; "freeze" "nfreeze" "off" "noff"
 ;;; also, a freeze list may have a 1 as its second element which indicates vplayer freezing
-(DEFUN C:HAWS-UFF ()
-(haws-core-init 234) (HAWS-ULSTAT "freeze" "thaw")(princ))
-(DEFUN C:HAWS-UFFX ()
-(haws-core-init 235) (HAWS-ULSTAT "nfreeze" "thaw")(princ))
-(DEFUN C:HAWS-UOFF ()
-(haws-core-init 236) (HAWS-ULSTAT "off" "on")(princ))
-(DEFUN C:HAWS-UOFFX ()
-(haws-core-init 237) (HAWS-ULSTAT "noff" "on")(princ))
-(DEFUN HAWS-ULSTAT (LKEY LOPERA / EN LT I)
+(defun c:haws-uff ()
+(haws-core-init 234) (haws-ulstat "freeze" "thaw")(princ))
+(defun c:haws-uffx ()
+(haws-core-init 235) (haws-ulstat "nfreeze" "thaw")(princ))
+(defun c:haws-uoff ()
+(haws-core-init 236) (haws-ulstat "off" "on")(princ))
+(defun c:haws-uoffx ()
+(haws-core-init 237) (haws-ulstat "noff" "on")(princ))
+(defun haws-ulstat (lkey lopera / en lt i)
   ;; Undo layers frozen/off by picking
-  (COND
-    ((NOT (ASSOC LKEY *HAWS-LASTATLIST*))
-     (PROMPT "\nNo layer list found to undo.")
+  (cond
+    ((not (assoc lkey *haws-lastatlist*))
+     (prompt "\nNo layer list found to undo.")
     )
-    (T
-     (COND
-       ((= (CADR (ASSOC LKEY *HAWS-LASTATLIST*)) 1)
+    (t
+     (cond
+       ((= (cadr (assoc lkey *haws-lastatlist*)) 1)
 	(vl-cmdf "._vplayer")
-	(FOREACH
-	   LA (CDDR (ASSOC LKEY *HAWS-LASTATLIST*))
-	  (vl-cmdf (STRCAT "_" LOPERA) LA "")
+	(foreach
+	   la (cddr (assoc lkey *haws-lastatlist*))
+	  (vl-cmdf (strcat "_" lopera) la "")
 	)
-	(PRINC
+	(princ
 	  "\nThe last layer set frozen was viewport specific.\nPlease be sure to have the appropriate viewport current."
 	)
        )
-       (T
+       (t
 	(vl-cmdf "._layer")
-	(FOREACH
-	   LA (CDR (ASSOC LKEY *HAWS-LASTATLIST*))
-	  (vl-cmdf (STRCAT "_" LOPERA) LA)
+	(foreach
+	   la (cdr (assoc lkey *haws-lastatlist*))
+	  (vl-cmdf (strcat "_" lopera) la)
 	)
        )
      )
      (vl-cmdf "")
     )
   )
-  (PRINC)
+  (princ)
 )
- ;|«Visual LISP© Format Options»
-(72 2 40 2 nil "end of " 60 2 2 2 1 T nil nil T)
+ ;|ï¿½Visual LISPï¿½ Format Optionsï¿½
+(72 2 40 2 nil "end of " 60 2 2 2 1 t nil nil t)
 ;*** DO NOT add text below the comment! ***|

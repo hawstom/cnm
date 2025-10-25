@@ -1,56 +1,56 @@
-;;; haws-tip.lsp - Tip/evangelism opt-out system for HAWS/EDC/CNM
+﻿;;; haws-tip.lsp - Tip/evangelism opt-out system for HAWS/EDC/CNM
 ;;; See devtools/docs/standards_03_names_and_symbols.md for naming conventions
 ;;; See devtools/docs/standards_05_architecture.md S05.6 for tip system architecture
 ;; Get list of hidden tip IDs from AutoCAD config storage
-(DEFUN HAWS_TIP_HIDE_LIST (/ HIDE_LIST_STR HIDE_LIST)
-  (SETQ HIDE_LIST_STR (HAWS-READCFG (LIST "HawsEDC" "TipsHidden")))
-  (COND
-    ((AND
-        HIDE_LIST_STR  ; key exists from getcfg (not nil)
-        (/= HIDE_LIST_STR "") ; value is not empty
+(defun haws_tip_hide_list (/ hide_list_str hide_list)
+  (setq hide_list_str (haws-readcfg (list "HawsEDC" "TipsHidden")))
+  (cond
+    ((and
+        hide_list_str  ; key exists from getcfg (not nil)
+        (/= hide_list_str "") ; value is not empty
       )
-      (SETQ HIDE_LIST (READ HIDE_LIST_STR))
+      (setq hide_list (read hide_list_str))
     )
   )
-  HIDE_LIST  ; returns nil if not set, which is equivalent to '()
+  hide_list  ; returns nil if not set, which is equivalent to '()
 )
 
 ;; Save list of hidden tip IDs to AutoCAD config storage
-(DEFUN HAWS_TIP_SAVE_HIDE_LIST (LST)
-  (HAWS-WRITECFG (LIST "HawsEDC" "TipsHidden") (VL-PRIN1-TO-STRING LST))
-  LST
+(defun haws_tip_save_hide_list (lst)
+  (haws-writecfg (list "HawsEDC" "TipsHidden") (vl-prin1-to-string lst))
+  lst
 )
 ;; Show a tip if not opted out. TIP_ID is a unique integer, MSG is the tip string.
-(DEFUN HAWS_TIP_SHOW (TIP_ID MSG) 
-  (IF (NOT (MEMBER TIP_ID (HAWS_TIP_HIDE_LIST))) 
-    (PROGN 
-      (HAWS_TIP_DIALOG TIP_ID MSG)
+(defun haws_tip_show (tip_id msg) 
+  (if (not (member tip_id (haws_tip_hide_list))) 
+    (progn 
+      (haws_tip_dialog tip_id msg)
     )
   )
 )
 
 ;; Show tip dialog with opt-out checkbox using DCL
-(DEFUN HAWS_TIP_DIALOG (TIP_ID MSG) 
-  (SETQ DCL_ID (LOAD_DIALOG "haws-tip.dcl"))
-  (IF (NOT (NEW_DIALOG "haws_tip" DCL_ID)) 
-    (PROGN (UNLOAD_DIALOG DCL_ID) (ALERT MSG))
-    (PROGN 
-      (SET_TILE "tip_msg" MSG)
-      (SET_TILE "opt_in" "1")
-      (ACTION_TILE "opt_in" 
-                   (STRCAT "(if (= $value \"0\") (HAWS_TIP_HIDE " 
-                           (ITOA TIP_ID)
+(defun haws_tip_dialog (tip_id msg) 
+  (setq dcl_id (load_dialog "haws-tip.dcl"))
+  (if (not (new_dialog "haws_tip" dcl_id)) 
+    (progn (unload_dialog dcl_id) (alert msg))
+    (progn 
+      (set_tile "tip_msg" msg)
+      (set_tile "opt_in" "1")
+      (action_tile "opt_in" 
+                   (strcat "(if (= $value \"0\") (HAWS_TIP_HIDE " 
+                           (itoa tip_id)
                            "))"
                    )
       )
-      (START_DIALOG)
-      (UNLOAD_DIALOG DCL_ID)
+      (start_dialog)
+      (unload_dialog dcl_id)
     )
   )
 )
 
 ;; Hide a tip by adding its ID to the hidden list
-(DEFUN HAWS_TIP_HIDE (TIP_ID) 
-  (HAWS_TIP_SAVE_HIDE_LIST (CONS TIP_ID (VL-REMOVE TIP_ID (HAWS_TIP_HIDE_LIST))))
-  (PRINC (STRCAT "\nTip " (ITOA TIP_ID) " will no longer be shown."))
+(defun haws_tip_hide (tip_id) 
+  (haws_tip_save_hide_list (cons tip_id (vl-remove tip_id (haws_tip_hide_list))))
+  (princ (strcat "\nTip " (itoa tip_id) " will no longer be shown."))
 )

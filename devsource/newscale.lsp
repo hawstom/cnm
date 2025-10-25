@@ -1,4 +1,4 @@
-;(C) Copyright 1997 by Thomas Gail Haws
+﻿;(C) Copyright 1997 by Thomas Gail Haws
 ;GIVE A SELECTION SET OF ENTITIES A NEW SCALE ABOUT A USER SPECIFIED ENTITY POINT.
 (defun c:haws-newscale ( / dxfpt dxfsc sset sslen svalue ent xfactr ins ed)
   (haws-core-init 268)

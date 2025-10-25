@@ -1,6 +1,6 @@
-(defun c:haws-a2t ()
+﻿(defun c:haws-a2t ()
 (haws-core-init 161) (c:haws-att2txt))
-(DEFUN 	 c:haws-att2txt ( / AENT tent ilist inum pt1)
+(defun 	 c:haws-att2txt ( / aent tent ilist inum pt1)
 (haws-core-init 162)
 	(setq aent (entget (car (nentsel "\nSelect attribute: "))))
 	(setq tent '((0 . "TEXT")))

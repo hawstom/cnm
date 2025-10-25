@@ -1,4 +1,4 @@
-;(C) Copyright 1997 by Thomas Gail Haws
+﻿;(C) Copyright 1997 by Thomas Gail Haws
 ;CHANGE A COORDINATE OF AN ENTITY TO A SPECIFIED VALUE.
 (defun c:haws-chcoord ( / dxfpt el en newpt newval n oldpt sset sslen xyz)
   (haws-core-init 170)

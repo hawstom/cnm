@@ -1,4 +1,4 @@
-(defun c:haws-INCNUM ( / ss off e d s s1 i j fltr dec)
+﻿(defun c:haws-incnum ( / ss off e d s s1 i j fltr dec)
 (haws-core-init 44)
   (setvar "dimzin" 0)
   (setq fltr (list(cons 0 "TEXT") (cons 1"*#*")))
@@ -17,7 +17,7 @@
           s (cdr (assoc 1 d))
         )
        (cond
-         ((/= "" (cadr(setq s(HAWS-EXTRACT s))))
+         ((/= "" (cadr(setq s(haws-extract s))))
            (setq dec 0 j 0)
            (cond
              ((not (wcmatch (cadr s) "*.*")))

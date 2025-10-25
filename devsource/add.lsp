@@ -1,6 +1,6 @@
-;Written by Thomas Gail Haws
+﻿;Written by Thomas Gail Haws
 ;ADD
-(defun c:haws-ADD (/ sset addt addtstr ent entlst sslen stri enta1)
+(defun c:haws-add (/ sset addt addtstr ent entlst sslen stri enta1)
   (haws-core-init 154)
   (prompt "\nText to change:")(setq sset (ssget '((0 . "*TEXT"))))
   (if (not sset)

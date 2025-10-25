@@ -1,4 +1,4 @@
-;;; HAWS-LABEL.lsp - C:HAWS_LABEL command for CNM/HAWSEDC
+﻿;;; HAWS-LABEL.lsp - C:HAWS_LABEL command for CNM/HAWSEDC
 ;;; See devtools/docs/standards_03_names_and_symbols.md for naming conventions
 ;;;
 ;;; Command: HAWS_LABEL (aliases: LABEL, LAB)
@@ -32,78 +32,78 @@
 ;;;   - Readability bias keeps text "right-side up"
 ;;;   - Text height from dimension style (haws-text-height-model)
 
-(DEFUN C:HAWS_LABEL (/ ENT_DATA ENT_NAME ENT_PICK ENT_TYPE LABEL_TEXT LAYER_NAME
-                        LAYER_TABLE PICK_POINT READABILITY_BIAS SETTINGS TEXT_ANGLE
-                        TEXT_HEIGHT TEXT_STYLE_KEY TEXT_STYLE_NAME TEXT_STYLE_TABLE)
+(defun c:haws_label (/ ent_data ent_name ent_pick ent_type label_text layer_name
+                        layer_table pick_point readability_bias settings text_angle
+                        text_height text_style_key text_style_name text_style_table)
   (haws-core-init 339)
-  (HAWS-VSAVE '("CLAYER"))
+  (haws-vsave '("CLAYER"))
   
-  (SETQ SETTINGS (HAWS_LABEL_READ_SETTINGS))
-  (SETQ READABILITY_BIAS (CAR SETTINGS)
-        TEXT_STYLE_TABLE (CADR SETTINGS)
-        LAYER_TABLE (CADDR SETTINGS))
+  (setq settings (haws_label_read_settings))
+  (setq readability_bias (car settings)
+        text_style_table (cadr settings)
+        layer_table (caddr settings))
   
-  (PROMPT "\nSelect line, arc, or polyline: ")
-  (SETQ ENT_PICK (NENTSEL))
-  (IF (NOT ENT_PICK)
-    (PROGN (PRINC "\nNo entity selected.") (HAWS-VRSTOR) (EXIT))
+  (prompt "\nSelect line, arc, or polyline: ")
+  (setq ent_pick (nentsel))
+  (if (not ent_pick)
+    (progn (princ "\nNo entity selected.") (haws-vrstor) (exit))
   )
   
-  (SETQ ENT_NAME (CAR ENT_PICK)
-        PICK_POINT (CADR ENT_PICK)
-        ENT_DATA (ENTGET ENT_NAME)
-        ENT_TYPE (CDR (ASSOC 0 ENT_DATA))
-        LAYER_NAME (CDR (ASSOC 8 ENT_DATA)))
+  (setq ent_name (car ent_pick)
+        pick_point (cadr ent_pick)
+        ent_data (entget ent_name)
+        ent_type (cdr (assoc 0 ent_data))
+        layer_name (cdr (assoc 8 ent_data)))
   
-  (IF (NOT (HAWS_LABEL_VALID_ENTITY_TYPE ENT_TYPE))
-    (PROGN
-      (ALERT (STRCAT "Unsupported entity type: " ENT_TYPE "\nPlease select a LINE, ARC, or POLYLINE."))
-      (HAWS-VRSTOR)
-      (EXIT)
+  (if (not (haws_label_valid_entity_type ent_type))
+    (progn
+      (alert (strcat "Unsupported entity type: " ent_type "\nPlease select a LINE, ARC, or POLYLINE."))
+      (haws-vrstor)
+      (exit)
     )
   )
   
-  (SETQ LABEL_TEXT (HAWS_LABEL_FIND_LABEL LAYER_NAME LAYER_TABLE))
-  (IF (NOT LABEL_TEXT)
-    (PROGN
-      (ALERT (STRCAT "No label defined for layer: " LAYER_NAME))
-      (HAWS-VRSTOR)
-      (EXIT)
+  (setq label_text (haws_label_find_label layer_name layer_table))
+  (if (not label_text)
+    (progn
+      (alert (strcat "No label defined for layer: " layer_name))
+      (haws-vrstor)
+      (exit)
     )
   )
-  (SETQ TEXT_STYLE_KEY (HAWS_LABEL_FIND_STYLE_KEY LAYER_NAME LAYER_TABLE))
+  (setq text_style_key (haws_label_find_style_key layer_name layer_table))
   
-  (SETQ TEXT_STYLE_NAME (HAWS_LABEL_APPLY_STYLE TEXT_STYLE_KEY TEXT_STYLE_TABLE))
+  (setq text_style_name (haws_label_apply_style text_style_key text_style_table))
   
-  (SETQ TEXT_ANGLE (HAWS_LABEL_CALC_ANGLE ENT_TYPE ENT_DATA ENT_NAME PICK_POINT))
+  (setq text_angle (haws_label_calc_angle ent_type ent_data ent_name pick_point))
   
   ;; Apply readability bias - flip text if upside-down
   ;; READABILITY_BIAS is the angle threshold (default 110 degrees)
   ;; Text between READABILITY_BIAS and (READABILITY_BIAS + 180) gets flipped
-  (SETQ READABILITY_BIAS (/ (* READABILITY_BIAS PI) 180.0)) ; Convert to radians
-  (IF (< READABILITY_BIAS TEXT_ANGLE (+ READABILITY_BIAS PI))
-    (SETQ TEXT_ANGLE (+ TEXT_ANGLE PI))
+  (setq readability_bias (/ (* readability_bias pi) 180.0)) ; Convert to radians
+  (if (< readability_bias text_angle (+ readability_bias pi))
+    (setq text_angle (+ text_angle pi))
   )
   ;; Normalize to 0-2π range
-  (WHILE (< TEXT_ANGLE 0) (SETQ TEXT_ANGLE (+ TEXT_ANGLE (* 2 PI))))
-  (WHILE (>= TEXT_ANGLE (* 2 PI)) (SETQ TEXT_ANGLE (- TEXT_ANGLE (* 2 PI))))
+  (while (< text_angle 0) (setq text_angle (+ text_angle (* 2 pi))))
+  (while (>= text_angle (* 2 pi)) (setq text_angle (- text_angle (* 2 pi))))
   
   ;; Snap pick point to nearest point on entity
-  (SETQ PICK_POINT (OSNAP PICK_POINT "near"))
+  (setq pick_point (osnap pick_point "near"))
   
-  (SETQ TEXT_HEIGHT (haws-text-height-model))
+  (setq text_height (haws-text-height-model))
   
   ;; Create MTEXT with background mask
-  (ENTMAKE (LIST
+  (entmake (list
     '(0 . "MTEXT")
     '(100 . "AcDbEntity")
     '(100 . "AcDbMText")
-    (CONS 10 PICK_POINT)              ; Insertion point
-    (CONS 40 TEXT_HEIGHT)             ; Text height
-    (CONS 71 5)                       ; Attachment point: 5 = Middle Center
-    (CONS 50 TEXT_ANGLE)              ; Rotation angle
-    (CONS 1 LABEL_TEXT)               ; Text content
-    (CONS 7 TEXT_STYLE_NAME)          ; Text style
+    (cons 10 pick_point)              ; Insertion point
+    (cons 40 text_height)             ; Text height
+    (cons 71 5)                       ; Attachment point: 5 = Middle Center
+    (cons 50 text_angle)              ; Rotation angle
+    (cons 1 label_text)               ; Text content
+    (cons 7 text_style_name)          ; Text style
     '(90 . 3)                         ; Background mask flag: 3 = use background fill
     '(63 . 256)                       ; Background fill color: 256 = drawing background
     '(45 . 1.1)                       ; Fill box scale (border offset factor)
@@ -111,188 +111,188 @@
   ))
 
   
-  (HAWS-VRSTOR)
+  (haws-vrstor)
   (haws-core-restore)
-  (PRINC)
+  (princ)
 )
 
-(DEFUN HAWS_LABEL_READ_SETTINGS (/ F1 I KEY LAYER_TABLE RDLIN READABILITY_BIAS
-                                    SETTINGS_DATA SETTINGS_FILE TEMP TEXT_STYLE_TABLE)
-  (SETQ SETTINGS_FILE (FINDFILE "haws-label-settings.lsp"))
-  (IF (NOT SETTINGS_FILE)
-    (PROGN (ALERT "Could not find haws-label-settings.lsp") (EXIT))
+(defun haws_label_read_settings (/ f1 i key layer_table rdlin readability_bias
+                                    settings_data settings_file temp text_style_table)
+  (setq settings_file (findfile "haws-label-settings.lsp"))
+  (if (not settings_file)
+    (progn (alert "Could not find haws-label-settings.lsp") (exit))
   )
-  (SETQ F1 (OPEN SETTINGS_FILE "r"))
-  (IF (NOT F1)
-    (PROGN (ALERT "Could not open haws-label-settings.lsp") (EXIT))
+  (setq f1 (open settings_file "r"))
+  (if (not f1)
+    (progn (alert "Could not open haws-label-settings.lsp") (exit))
   )
-  (SETQ READABILITY_BIAS 110.0
-        TEXT_STYLE_TABLE '()
-        LAYER_TABLE '()
-        SETTINGS_DATA '()
-        I 0)
-  (PRINC "\n")
-  (WHILE (SETQ RDLIN (READ-LINE F1))
-    (PRINC "\rReading line ")
-    (PRINC (SETQ I (1+ I)))
-    (IF (= 'LIST (TYPE (SETQ TEMP (READ RDLIN))))
-      (SETQ SETTINGS_DATA (CONS TEMP SETTINGS_DATA))
+  (setq readability_bias 110.0
+        text_style_table '()
+        layer_table '()
+        settings_data '()
+        i 0)
+  (princ "\n")
+  (while (setq rdlin (read-line f1))
+    (princ "\rReading line ")
+    (princ (setq i (1+ i)))
+    (if (= 'LIST (type (setq temp (read rdlin))))
+      (setq settings_data (cons temp settings_data))
     )
   )
-  (CLOSE F1)
-  (SETQ SETTINGS_DATA (REVERSE SETTINGS_DATA))
-  (FOREACH RDLIN SETTINGS_DATA
-    (SETQ KEY (CAR RDLIN))
-    (COND
-      ((= KEY "READ-BIAS-DEGREES") (SETQ READABILITY_BIAS (CADR RDLIN)))
-      ((= KEY "TEXT_STYLE") (SETQ TEXT_STYLE_TABLE (CONS (CDR RDLIN) TEXT_STYLE_TABLE)))
-      ((= KEY "LAYER") (SETQ LAYER_TABLE (CONS (CDR RDLIN) LAYER_TABLE)))
+  (close f1)
+  (setq settings_data (reverse settings_data))
+  (foreach rdlin settings_data
+    (setq key (car rdlin))
+    (cond
+      ((= key "READ-BIAS-DEGREES") (setq readability_bias (cadr rdlin)))
+      ((= key "TEXT_STYLE") (setq text_style_table (cons (cdr rdlin) text_style_table)))
+      ((= key "LAYER") (setq layer_table (cons (cdr rdlin) layer_table)))
     )
   )
-  (IF (NOT TEXT_STYLE_TABLE)
-    (PROGN (ALERT "Error: No TEXT_STYLE entries in settings file") (EXIT))
+  (if (not text_style_table)
+    (progn (alert "Error: No TEXT_STYLE entries in settings file") (exit))
   )
-  (IF (NOT LAYER_TABLE)
-    (PROGN (ALERT "Error: No LAYER entries in settings file") (EXIT))
+  (if (not layer_table)
+    (progn (alert "Error: No LAYER entries in settings file") (exit))
   )
-  (LIST READABILITY_BIAS TEXT_STYLE_TABLE LAYER_TABLE)
+  (list readability_bias text_style_table layer_table)
 )
 
-(DEFUN HAWS_LABEL_VALID_ENTITY_TYPE (ENT_TYPE)
-  (OR (= ENT_TYPE "LINE") (= ENT_TYPE "ARC") 
-      (= ENT_TYPE "LWPOLYLINE") (= ENT_TYPE "POLYLINE"))
+(defun haws_label_valid_entity_type (ent_type)
+  (or (= ent_type "LINE") (= ent_type "ARC") 
+      (= ent_type "LWPOLYLINE") (= ent_type "POLYLINE"))
 )
 
-(DEFUN HAWS_LABEL_FIND_LABEL (LAYER_NAME LAYER_TABLE / ENTRY RESULT)
-  (FOREACH ENTRY LAYER_TABLE
-    (IF (AND (NOT RESULT) (WCMATCH (STRCASE LAYER_NAME) (CAR ENTRY)))
-      (SETQ RESULT (CADDR ENTRY))
+(defun haws_label_find_label (layer_name layer_table / entry result)
+  (foreach entry layer_table
+    (if (and (not result) (wcmatch (strcase layer_name) (car entry)))
+      (setq result (caddr entry))
     )
   )
-  RESULT
+  result
 )
 
-(DEFUN HAWS_LABEL_FIND_STYLE_KEY (LAYER_NAME LAYER_TABLE / ENTRY RESULT)
-  (FOREACH ENTRY LAYER_TABLE
-    (IF (AND (NOT RESULT) (WCMATCH (STRCASE LAYER_NAME) (CAR ENTRY)))
-      (SETQ RESULT (CADR ENTRY))
+(defun haws_label_find_style_key (layer_name layer_table / entry result)
+  (foreach entry layer_table
+    (if (and (not result) (wcmatch (strcase layer_name) (car entry)))
+      (setq result (cadr entry))
     )
   )
-  RESULT
+  result
 )
 
-(DEFUN HAWS_LABEL_APPLY_STYLE (TEXT_STYLE_KEY TEXT_STYLE_TABLE / ENTRY STYLE_INFO)
-  (SETQ STYLE_INFO (ASSOC TEXT_STYLE_KEY TEXT_STYLE_TABLE))
-  (IF STYLE_INFO
-    (PROGN
-      (HAWS-MKLAYR (LIST (CADR STYLE_INFO) "" ""))
-      (SETQ STYLE_INFO (CADDR STYLE_INFO))
-      (IF (TBLSEARCH "STYLE" STYLE_INFO)
-        (SETVAR "TEXTSTYLE" STYLE_INFO)
-        (ALERT (STRCAT "Warning: Text style '" STYLE_INFO "' not found in drawing"))
+(defun haws_label_apply_style (text_style_key text_style_table / entry style_info)
+  (setq style_info (assoc text_style_key text_style_table))
+  (if style_info
+    (progn
+      (haws-mklayr (list (cadr style_info) "" ""))
+      (setq style_info (caddr style_info))
+      (if (tblsearch "STYLE" style_info)
+        (setvar "TEXTSTYLE" style_info)
+        (alert (strcat "Warning: Text style '" style_info "' not found in drawing"))
       )
-      STYLE_INFO
+      style_info
     )
-    NIL
+    nil
   )
 )
 
-(DEFUN HAWS_LABEL_CALC_ANGLE (ENT_TYPE ENT_DATA ENT_NAME PICK_POINT / TEXT_ANGLE)
-  (SETQ TEXT_ANGLE 0.0)
-  (COND
-    ((= ENT_TYPE "LINE")
-     (SETQ TEXT_ANGLE (ANGLE (CDR (ASSOC 10 ENT_DATA)) (CDR (ASSOC 11 ENT_DATA))))
+(defun haws_label_calc_angle (ent_type ent_data ent_name pick_point / text_angle)
+  (setq text_angle 0.0)
+  (cond
+    ((= ent_type "LINE")
+     (setq text_angle (angle (cdr (assoc 10 ent_data)) (cdr (assoc 11 ent_data))))
     )
-    ((= ENT_TYPE "ARC")
-     (SETQ TEXT_ANGLE (+ (ANGLE (CDR (ASSOC 10 ENT_DATA)) PICK_POINT) (/ PI 2)))
+    ((= ent_type "ARC")
+     (setq text_angle (+ (angle (cdr (assoc 10 ent_data)) pick_point) (/ pi 2)))
     )
-    ((OR (= ENT_TYPE "LWPOLYLINE") (= ENT_TYPE "POLYLINE"))
-     (SETQ TEXT_ANGLE (HAWS_LABEL_CALC_PLINE_ANGLE ENT_TYPE ENT_DATA ENT_NAME PICK_POINT))
+    ((or (= ent_type "LWPOLYLINE") (= ent_type "POLYLINE"))
+     (setq text_angle (haws_label_calc_pline_angle ent_type ent_data ent_name pick_point))
     )
   )
-  TEXT_ANGLE
+  text_angle
 )
 
-(DEFUN HAWS_LABEL_CALC_PLINE_ANGLE (ENT_TYPE ENT_DATA ENT_NAME PICK_POINT 
-                                     / ANG1 BULGE CENPT CLOSEST_INDEX D DIST1 DIST2
-                                       I MIN_DIST PAIR PT1 PT2 R VERTEX_LIST)
-  (SETQ VERTEX_LIST (HAWS_LABEL_GET_VERTICES ENT_TYPE ENT_DATA ENT_NAME))
-  (SETQ CLOSEST_INDEX (HAWS_LABEL_FIND_CLOSEST_SEG VERTEX_LIST PICK_POINT))
-  (SETQ PT1 (CAR (NTH CLOSEST_INDEX VERTEX_LIST))
-        PT2 (CAR (NTH (1+ CLOSEST_INDEX) VERTEX_LIST))
-        BULGE (CADR (NTH CLOSEST_INDEX VERTEX_LIST)))
-  (IF (AND BULGE (/= BULGE 0))
-    (PROGN
-      (SETQ D (/ (DISTANCE PT1 PT2) 2)
-            ANG1 (ATAN (/ 1 BULGE))
-            R (/ D (SIN (- PI (* 2 ANG1))))
-            CENPT (POLAR PT1 (+ (ANGLE PT1 PT2) (- (* 2 ANG1) (/ PI 2))) R))
-      (+ (ANGLE CENPT PICK_POINT) (/ PI 2))
+(defun haws_label_calc_pline_angle (ent_type ent_data ent_name pick_point 
+                                     / ang1 bulge cenpt closest_index d dist1 dist2
+                                       i min_dist pair pt1 pt2 r vertex_list)
+  (setq vertex_list (haws_label_get_vertices ent_type ent_data ent_name))
+  (setq closest_index (haws_label_find_closest_seg vertex_list pick_point))
+  (setq pt1 (car (nth closest_index vertex_list))
+        pt2 (car (nth (1+ closest_index) vertex_list))
+        bulge (cadr (nth closest_index vertex_list)))
+  (if (and bulge (/= bulge 0))
+    (progn
+      (setq d (/ (distance pt1 pt2) 2)
+            ang1 (atan (/ 1 bulge))
+            r (/ d (sin (- pi (* 2 ang1))))
+            cenpt (polar pt1 (+ (angle pt1 pt2) (- (* 2 ang1) (/ pi 2))) r))
+      (+ (angle cenpt pick_point) (/ pi 2))
     )
-    (ANGLE PT1 PT2)
+    (angle pt1 pt2)
   )
 )
 
-(DEFUN HAWS_LABEL_GET_VERTICES (ENT_TYPE ENT_DATA ENT_NAME 
-                                 / BULGE I PAIR PT1 VERTEX_LIST)
-  (SETQ VERTEX_LIST '())
-  (IF (= ENT_TYPE "LWPOLYLINE")
-    (PROGN
-      (FOREACH PAIR ENT_DATA
-        (IF (= (CAR PAIR) 10)
-          (PROGN
-            (SETQ BULGE 0
-                  PT1 (CDR (MEMBER PAIR ENT_DATA)))
-            (WHILE (AND PT1 (NOT (OR (= (CAAR PT1) 42) (= (CAAR PT1) 10))))
-              (SETQ PT1 (CDR PT1))
+(defun haws_label_get_vertices (ent_type ent_data ent_name 
+                                 / bulge i pair pt1 vertex_list)
+  (setq vertex_list '())
+  (if (= ent_type "LWPOLYLINE")
+    (progn
+      (foreach pair ent_data
+        (if (= (car pair) 10)
+          (progn
+            (setq bulge 0
+                  pt1 (cdr (member pair ent_data)))
+            (while (and pt1 (not (or (= (caar pt1) 42) (= (caar pt1) 10))))
+              (setq pt1 (cdr pt1))
             )
-            (IF (AND PT1 (= (CAAR PT1) 42))
-              (SETQ BULGE (CDAR PT1))
+            (if (and pt1 (= (caar pt1) 42))
+              (setq bulge (cdar pt1))
             )
-            (SETQ VERTEX_LIST (APPEND VERTEX_LIST (LIST (LIST (CDR PAIR) BULGE))))
+            (setq vertex_list (append vertex_list (list (list (cdr pair) bulge))))
           )
         )
       )
     )
-    (PROGN
-      (SETQ I ENT_NAME)
-      (WHILE (SETQ I (ENTNEXT I))
-        (SETQ PT1 (ENTGET I))
-        (IF (= "VERTEX" (CDR (ASSOC 0 PT1)))
-          (SETQ VERTEX_LIST
-                (APPEND VERTEX_LIST
-                        (LIST (LIST (CDR (ASSOC 10 PT1))
-                                   (IF (ASSOC 42 PT1) (CDR (ASSOC 42 PT1)) 0)))))
+    (progn
+      (setq i ent_name)
+      (while (setq i (entnext i))
+        (setq pt1 (entget i))
+        (if (= "VERTEX" (cdr (assoc 0 pt1)))
+          (setq vertex_list
+                (append vertex_list
+                        (list (list (cdr (assoc 10 pt1))
+                                   (if (assoc 42 pt1) (cdr (assoc 42 pt1)) 0)))))
         )
       )
     )
   )
-  VERTEX_LIST
+  vertex_list
 )
 
-(DEFUN HAWS_LABEL_FIND_CLOSEST_SEG (VERTEX_LIST PICK_POINT 
-                                     / CLOSEST_INDEX DIST1 DIST2 I MIN_DIST PT1 PT2)
-  (SETQ MIN_DIST 1e99
-        CLOSEST_INDEX 0
-        I 0)
-  (WHILE (< I (1- (LENGTH VERTEX_LIST)))
-    (SETQ PT1 (CAR (NTH I VERTEX_LIST))
-          PT2 (CAR (NTH (1+ I) VERTEX_LIST))
-          DIST1 (DISTANCE PICK_POINT PT1)
-          DIST2 (DISTANCE PICK_POINT PT2))
-    (IF (< (SETQ DIST1 (/ (+ DIST1 DIST2) 2)) MIN_DIST)
-      (SETQ MIN_DIST DIST1
-            CLOSEST_INDEX I)
+(defun haws_label_find_closest_seg (vertex_list pick_point 
+                                     / closest_index dist1 dist2 i min_dist pt1 pt2)
+  (setq min_dist 1e99
+        closest_index 0
+        i 0)
+  (while (< i (1- (length vertex_list)))
+    (setq pt1 (car (nth i vertex_list))
+          pt2 (car (nth (1+ i) vertex_list))
+          dist1 (distance pick_point pt1)
+          dist2 (distance pick_point pt2))
+    (if (< (setq dist1 (/ (+ dist1 dist2) 2)) min_dist)
+      (setq min_dist dist1
+            closest_index i)
     )
-    (SETQ I (1+ I))
+    (setq i (1+ i))
   )
-  CLOSEST_INDEX
+  closest_index
 )
 
-(PRINC
-  (STRCAT
+(princ
+  (strcat
     "\nHAWS-LABEL.LSP loaded. Type HAWS_LABEL (or LABEL or LAB) to start."
     "\nTo customize labels: Edit haws-label-settings.lsp"
   )
 )
-(PRINC)
+(princ)

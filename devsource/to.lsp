@@ -1,7 +1,7 @@
-;TO REMOVES ALL UNDERLINING AND OVERLINING AND
+﻿;TO REMOVES ALL UNDERLINING AND OVERLINING AND
 ;COMPLETELY OVERLINES THE TEXT IN A SELECTION SET.
 ;Written by Thomas Gail Haws
-(defun c:haws-TO (/ sset en1 ent entlst i oldstr newstr sslen)
+(defun c:haws-to (/ sset en1 ent entlst i oldstr newstr sslen)
   (haws-core-init 316)
   (prompt "\nText to overline/<RETURN to overline an attribute>:")
   (setq sset (ssget '((0 . "*TEXT"))))

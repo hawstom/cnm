@@ -1,183 +1,183 @@
-;;; (C) Copyright 1997 by Thomas Gail Haws
-(DEFUN C:HAWS-DW
-            (/ ANG1 ANG2 ANG3 ANG4 ANG5 BCCEN CL1 CL2 CL3 DWMID DWWID
-             INCANG LEFT OSMOLD PT1 PT2 PT3 PT4 PT5 PT6 PT7 PT8 TS RAD
-             WNGANG
+﻿;;; (C) Copyright 1997 by Thomas Gail Haws
+(defun c:haws-dw
+            (/ ang1 ang2 ang3 ang4 ang5 bccen cl1 cl2 cl3 dwmid dwwid
+             incang left osmold pt1 pt2 pt3 pt4 pt5 pt6 pt7 pt8 ts rad
+             wngang
             )
   (haws-core-init 215)
-  (HAWS-VSAVE '("clayer"))
-  (SETQ
-    OSMOLD
-     (GETVAR "osmode")
-    DWLEN
-     (IF DWLEN
-       DWLEN
+  (haws-vsave '("clayer"))
+  (setq
+    osmold
+     (getvar "osmode")
+    dwlen
+     (if dwlen
+       dwlen
        20.0
      )
-    SWWID
-     (IF SWWID
-       SWWID
+    swwid
+     (if swwid
+       swwid
        4.0
      )
   )
-  (SETVAR "osmode" 0)
-  (HAWS-MKLAYR "DRIVEWAY")
-  (SETQ TS (haws-text-height-model))
-  (WHILE
-    (PROGN
-      (INITGET "Length Sw")
-      (PROMPT "\nCurrent SW width = ")
-      (PRINC SWWID)
-      (PROMPT "   Length dw= ")
-      (PRINC DWLEN)
-      (SETVAR "osmode" OSMOLD)
-      (SETQ
-        DWMID
-         (GETPOINT
+  (setvar "osmode" 0)
+  (haws-mklayr "DRIVEWAY")
+  (setq ts (haws-text-height-model))
+  (while
+    (progn
+      (initget "Length Sw")
+      (prompt "\nCurrent SW width = ")
+      (princ swwid)
+      (prompt "   Length dw= ")
+      (princ dwlen)
+      (setvar "osmode" osmold)
+      (setq
+        dwmid
+         (getpoint
            "\nSelect drive midpoint at back of curb or [Length/Sw width]: "
          )
       )
     )
-     (COND
-       ((= "Length" DWMID)
-        (SETQ DWLEN (GETREAL "\nDriveway length at back of curb: "))
+     (cond
+       ((= "Length" dwmid)
+        (setq dwlen (getreal "\nDriveway length at back of curb: "))
        )
-       ((= "Sw" DWMID)
-        (SETQ
-          SWWID
-           (GETREAL
+       ((= "Sw" dwmid)
+        (setq
+          swwid
+           (getreal
              "\nSidewalk width (negative for inside of curve): "
            )
         )
        )
-       ((SETQ BCCEN (OSNAP DWMID "cen"))
-        (SETQ
-          DWWID
-           (/ (* SWWID (MAX (ABS SWWID) 5.0)) (ABS SWWID))
-          ANG1
-           (ANGLE BCCEN DWMID)
-          RAD
-           (DISTANCE BCCEN DWMID)
-          INCANG
-           (/ DWLEN RAD)
-          WNGANG
-           (/ 5.0 RAD)
-          ANG2
-           (- ANG1 (/ INCANG 2.0) WNGANG)
-          ANG3
-           (+ ANG2 WNGANG)
-          ANG4
-           (+ ANG3 INCANG)
-          ANG5
-           (+ ANG4 WNGANG)
-          LEFT
-           (MINUSP (COS (- ANG1 0.7854)))
-          CL1
-           (POLAR BCCEN ANG1 (+ RAD 0.5))
-          CL2
-           (POLAR BCCEN ANG1 (+ RAD DWWID 0.5))
-          CL3
-           (POLAR CL2 ANG1 TS)
-          PT1
-           (POLAR BCCEN ANG2 RAD)
-          PT2
-           (POLAR BCCEN ANG2 (+ RAD SWWID))
-          PT3
-           (POLAR BCCEN ANG3 RAD)
-          PT4
-           (POLAR BCCEN ANG3 (+ RAD DWWID))
-          PT5
-           (POLAR BCCEN ANG4 RAD)
-          PT6
-           (POLAR BCCEN ANG4 (+ RAD DWWID))
-          PT7
-           (POLAR BCCEN ANG5 RAD)
-          PT8
-           (POLAR BCCEN ANG5 (+ RAD SWWID))
+       ((setq bccen (osnap dwmid "cen"))
+        (setq
+          dwwid
+           (/ (* swwid (max (abs swwid) 5.0)) (abs swwid))
+          ang1
+           (angle bccen dwmid)
+          rad
+           (distance bccen dwmid)
+          incang
+           (/ dwlen rad)
+          wngang
+           (/ 5.0 rad)
+          ang2
+           (- ang1 (/ incang 2.0) wngang)
+          ang3
+           (+ ang2 wngang)
+          ang4
+           (+ ang3 incang)
+          ang5
+           (+ ang4 wngang)
+          left
+           (minusp (cos (- ang1 0.7854)))
+          cl1
+           (polar bccen ang1 (+ rad 0.5))
+          cl2
+           (polar bccen ang1 (+ rad dwwid 0.5))
+          cl3
+           (polar cl2 ang1 ts)
+          pt1
+           (polar bccen ang2 rad)
+          pt2
+           (polar bccen ang2 (+ rad swwid))
+          pt3
+           (polar bccen ang3 rad)
+          pt4
+           (polar bccen ang3 (+ rad dwwid))
+          pt5
+           (polar bccen ang4 rad)
+          pt6
+           (polar bccen ang4 (+ rad dwwid))
+          pt7
+           (polar bccen ang5 rad)
+          pt8
+           (polar bccen ang5 (+ rad swwid))
         )
         (vl-cmdf "._undo" "_g")
-        (HAWS-DRAWDW
-          PT1 PT2 PT3 PT4 PT5 PT6 PT7 PT8 LEFT ANG1 CL1 CL2 CL3 TS
+        (haws-drawdw
+          pt1 pt2 pt3 pt4 pt5 pt6 pt7 pt8 left ang1 cl1 cl2 cl3 ts
          )
-        (vl-cmdf "._arc" PT4 "_e" PT6 "_r" (+ RAD DWWID) "._undo" "_e")
+        (vl-cmdf "._arc" pt4 "_e" pt6 "_r" (+ rad dwwid) "._undo" "_e")
        )
-       (T
-        (SETVAR "osmode" 128)
-        (SETQ
-          ANG1
-           (GETANGLE DWMID "\nSelect sidewalk: ")
-          ANG2
-           (+ ANG1 (/ PI 2))
-          ANG3
-           (- ANG1 (/ PI 2))
-          DWWID
-           (/ (* SWWID (MAX (ABS SWWID) 5.0)) (ABS SWWID))
-          DWLEN
-           (/ DWLEN 2)
-          LEFT
-           (MINUSP (COS (- ANG1 0.7854)))
-          CL1
-           (POLAR DWMID ANG1 0.5)
-          CL2
-           (POLAR CL1 ANG1 DWWID)
-          CL3
-           (POLAR CL2 ANG1 TS)
-          PT3
-           (POLAR DWMID ANG2 DWLEN)
-          PT1
-           (POLAR DWMID ANG2 (+ DWLEN 5))
-          PT4
-           (POLAR PT3 ANG1 DWWID)
-          PT2
-           (POLAR PT1 ANG1 SWWID)
-          PT5
-           (POLAR DWMID ANG3 DWLEN)
-          PT7
-           (POLAR DWMID ANG3 (+ DWLEN 5))
-          PT6
-           (POLAR PT5 ANG1 DWWID)
-          PT8
-           (POLAR PT7 ANG1 SWWID)
-          DWLEN
-           (* DWLEN 2)
+       (t
+        (setvar "osmode" 128)
+        (setq
+          ang1
+           (getangle dwmid "\nSelect sidewalk: ")
+          ang2
+           (+ ang1 (/ pi 2))
+          ang3
+           (- ang1 (/ pi 2))
+          dwwid
+           (/ (* swwid (max (abs swwid) 5.0)) (abs swwid))
+          dwlen
+           (/ dwlen 2)
+          left
+           (minusp (cos (- ang1 0.7854)))
+          cl1
+           (polar dwmid ang1 0.5)
+          cl2
+           (polar cl1 ang1 dwwid)
+          cl3
+           (polar cl2 ang1 ts)
+          pt3
+           (polar dwmid ang2 dwlen)
+          pt1
+           (polar dwmid ang2 (+ dwlen 5))
+          pt4
+           (polar pt3 ang1 dwwid)
+          pt2
+           (polar pt1 ang1 swwid)
+          pt5
+           (polar dwmid ang3 dwlen)
+          pt7
+           (polar dwmid ang3 (+ dwlen 5))
+          pt6
+           (polar pt5 ang1 dwwid)
+          pt8
+           (polar pt7 ang1 swwid)
+          dwlen
+           (* dwlen 2)
         )
         (vl-cmdf "._undo" "_g")
-        (HAWS-DRAWDW
-          PT1 PT2 PT3 PT4 PT5 PT6 PT7 PT8 LEFT ANG1 CL1 CL2 CL3 TS
+        (haws-drawdw
+          pt1 pt2 pt3 pt4 pt5 pt6 pt7 pt8 left ang1 cl1 cl2 cl3 ts
          )
-        (vl-cmdf "._line" PT4 PT6 "" "._undo" "_e")
+        (vl-cmdf "._line" pt4 pt6 "" "._undo" "_e")
        )
      )
   )
-  (HAWS-VRSTOR)
+  (haws-vrstor)
   (haws-core-restore)
 )
-(DEFUN HAWS-DRAWDW
-              (PT1 PT2 PT3 PT4 PT5 PT6 PT7 PT8 LEFT ANG1 CL1 CL2 CL3 TS
+(defun haws-drawdw
+              (pt1 pt2 pt3 pt4 pt5 pt6 pt7 pt8 left ang1 cl1 cl2 cl3 ts
               )
-  (SETVAR "osmode" 0)
-  (vl-cmdf "._line" PT1 PT2 "")
-  (vl-cmdf "._line" PT3 PT4 "")
-  (vl-cmdf "._line" PT5 PT6 "")
-  (vl-cmdf "._line" PT7 PT8 "")
-  (vl-cmdf "._line" PT3 PT2 "")
-  (vl-cmdf "._line" PT5 PT8 "")
-  (vl-cmdf "._line" PT2 PT4 "")
-  (vl-cmdf "._line" PT6 PT8 "")
-  (HAWS-MKLAYR "DRIVEWAYTX")
-  (vl-cmdf "._line" CL1 CL2 "")
-  (HAWS-MKTEXT
-    (IF LEFT
+  (setvar "osmode" 0)
+  (vl-cmdf "._line" pt1 pt2 "")
+  (vl-cmdf "._line" pt3 pt4 "")
+  (vl-cmdf "._line" pt5 pt6 "")
+  (vl-cmdf "._line" pt7 pt8 "")
+  (vl-cmdf "._line" pt3 pt2 "")
+  (vl-cmdf "._line" pt5 pt8 "")
+  (vl-cmdf "._line" pt2 pt4 "")
+  (vl-cmdf "._line" pt6 pt8 "")
+  (haws-mklayr "DRIVEWAYTX")
+  (vl-cmdf "._line" cl1 cl2 "")
+  (haws-mktext
+    (if left
       "MR"
       "ML"
     )
-    CL3
+    cl3
     nil
-    (IF LEFT
-      (+ ANG1 PI)
-      ANG1
+    (if left
+      (+ ang1 pi)
+      ang1
     )
     "DW"
   )
-  (HAWS-MKLAYR "DRIVEWAY")
+  (haws-mklayr "DRIVEWAY")
 )

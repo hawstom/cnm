@@ -1,6 +1,6 @@
-;;CA (COPY ATTRIBUTES) CHANGES ATTRIBUTES IN A BLOCK TO MATCH A SELECTED BLOCK.
+﻿;;CA (COPY ATTRIBUTES) CHANGES ATTRIBUTES IN A BLOCK TO MATCH A SELECTED BLOCK.
 ;;(C) Copyright 2001 by Thomas Gail Haws
-(DEFUN c:haws-CA
+(defun c:haws-ca
        (/ at av el en et sset mlist mv en sslen)
     (haws-core-init 168)
   (prompt "\nBlocks to change: ")

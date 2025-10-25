@@ -1,10 +1,10 @@
-;;;XROFFSET
+﻿;;;XROFFSET
 (defun c:haws-xro ()
 (haws-core-init 331) (c:haws-xroffset))
-(DEFUN 	 c:haws-xroffset	(/ ofdist temp xrodistr PT1 PT2 XRODISTS)
+(defun 	 c:haws-xroffset	(/ ofdist temp xrodistr pt1 pt2 xrodists)
 	(haws-core-init 332)
 	(setq ofdist (getvar "offsetdist"))
-	(if	(not *HAWS-xrosetupdone*)
+	(if	(not *haws-xrosetupdone*)
 		(progn
 			(initget "Through")
 			(setq
@@ -32,7 +32,7 @@
 			) ;_ end of setq
 		) ;_ end of progn
 	) ;_ end of if
-	(setq *HAWS-xrosetupdone* nil pt1 (cadr (nentsel)))
+	(setq *haws-xrosetupdone* nil pt1 (cadr (nentsel)))
 	(if	pt1
 		(progn
 			(setq

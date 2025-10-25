@@ -1,4 +1,4 @@
-;(C) Copyright 1997 by Thomas Gail Haws
+﻿;(C) Copyright 1997 by Thomas Gail Haws
 ;Lot numbering
 (defun c:haws-lotnum (/ i rot just pt1 pt2 txpt)
 (haws-core-init 247)
@@ -28,6 +28,6 @@
     (setvar "osmode" osmold)
     (setq i (1+ i) pt1 pt2)
   )
-  (HAWS-CORE-RESTORE)
+  (haws-core-restore)
   (princ)
 )

@@ -1,9 +1,9 @@
-;  This routine will change the size
+﻿;  This routine will change the size
 ;  of only the text.
 ;                 created by:
 ;                 David R. Williams
 ;TEXTSIZE.LSP
-(defun c:haws-TH (/ ss1 new slen count ent entinfo)
+(defun c:haws-th (/ ss1 new slen count ent entinfo)
 (haws-core-init 139)
   (setq ss1 (ssget '((0 . "TEXT"))))
   (while ss1

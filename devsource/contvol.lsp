@@ -1,7 +1,7 @@
-;;;Calculate volume between contours
+ï»¿;;;Calculate volume between contours
 ;;;(C) Copyright 2008 by Thomas Gail Haws
-(DEFUN c:haws-contvol (/ cv-cont cv-add-factor cv-area-0
-                   cv-area-1 cv-area-temp cv-elev-0 CV-ELEV-1 cv-report cv-vol-0 cv-vol-1 cv-vol-inc
+(defun c:haws-contvol (/ cv-cont cv-add-factor cv-area-0
+                   cv-area-1 cv-area-temp cv-elev-0 cv-elev-1 cv-report cv-vol-0 cv-vol-1 cv-vol-inc
                    pt1
                   )
   (haws-core-init 211)
@@ -55,9 +55,9 @@
          ) ;_ end of progn
     (cond
       ;;If user wants to change method, do it.
-      ((= cv-cont "Method") (HAWS-cvmethset))
+      ((= cv-cont "Method") (haws-cvmethset))
       ;;Else if user wants to change interval, do it.
-      ((= cv-cont "Interval") (HAWS-cvintset))
+      ((= cv-cont "Interval") (haws-cvintset))
       ;;Else if user wants to select another contour, flag the desire.
       ((= cv-cont "Add") (setq cv-add-factor 1))
       ((= cv-cont "Subtract") (setq cv-add-factor -1))
@@ -106,16 +106,16 @@
   (haws-core-restore)
   (princ)
 )
-(DEFUN HAWS-cvmethset ()
+(defun haws-cvmethset ()
   (initget "Average Conic")
   (setq *haws-cv-method* (getkword "\nVolume method [Average/Conic]: "))
   (princ)
 ) ;_ end of defun
-(DEFUN HAWS-cvintset ()
-  (setq *haws-cv-interval* (HAWS-GETREALX "\nContour interval" *haws-cv-interval* 1))
+(defun haws-cvintset ()
+  (setq *haws-cv-interval* (haws-getrealx "\nContour interval" *haws-cv-interval* 1))
   (princ)
 )
-(DEFUN haws-cv-close-elev ()
+(defun haws-cv-close-elev ()
   (setq
     cv-area-0 cv-area-1
     cv-area-1 cv-area-temp
@@ -133,7 +133,7 @@
   )
   (princ)
 )
-(DEFUN haws-cv-vol-calc ()
+(defun haws-cv-vol-calc ()
   (setq
     cv-vol-inc
      (* *haws-cv-interval*
@@ -153,7 +153,7 @@
      (+ cv-vol-0 cv-vol-inc)
   )
 )
-(DEFUN haws-cv-line-print ()
+(defun haws-cv-line-print ()
   (setq cv-report (strcat cv-report "\n" (rtos cv-elev-1 2) "\t" (rtos cv-area-1 2)))
   (cond
     (cv-vol-inc
@@ -171,6 +171,6 @@
     )
   )
 )
- ;|«Visual LISP© Format Options»
-(72 2 40 2 nil "end of " 60 2 0 0 1 nil nil nil T)
+ ;|ï¿½Visual LISPï¿½ Format Optionsï¿½
+(72 2 40 2 nil "end of " 60 2 0 0 1 nil nil nil t)
 ;*** DO NOT add text below the comment! ***|;

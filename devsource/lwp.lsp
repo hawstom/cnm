@@ -1,86 +1,86 @@
-;;; Written by Thomas Gail Haws
+﻿;;; Written by Thomas Gail Haws
 ;;; Change layer lineweights by picking.
-(DEFUN C:HAWS-LWP
-             (/ SS CC I EC LC)
+(defun c:haws-lwp
+             (/ ss cc i ec lc)
 (haws-core-init 253)
-  (COND
-    ((/= (SETQ CC (GETSTRING "\nNew layer lineweight (return to pick):"))
+  (cond
+    ((/= (setq cc (getstring "\nNew layer lineweight (return to pick):"))
          ""
      )
-     CC
+     cc
     )
-    ((SETQ CC (/ (CDR (ASSOC 370 (SETQ EC (ENTGET (CAR (ENTSEL)))))) 100))
-     CC
+    ((setq cc (/ (cdr (assoc 370 (setq ec (entget (car (entsel)))))) 100))
+     cc
     )
-    (T
-     (SETQ
-       CC (ABS
-            (/ (CDR (ASSOC 370 (TBLSEARCH "layer" (CDR (ASSOC 8 EC))))) 100)
+    (t
+     (setq
+       cc (abs
+            (/ (cdr (assoc 370 (tblsearch "layer" (cdr (assoc 8 ec))))) 100)
           )
      )
     )
   )
-  (PROMPT
+  (prompt
     "\nLayers to change by picking (lineweights by entity won't change):"
   )
-  (SETQ
-    SS (SSGET)
-    I  0
+  (setq
+    ss (ssget)
+    i  0
   )
   (vl-cmdf "._layer")
-  (WHILE (SETQ EC (SSNAME SS I))
-    (SETQ LC (CDR (ASSOC 8 (ENTGET EC))))
-    (vl-cmdf "_lw" CC LC)
-    (SETQ I (1+ I))
+  (while (setq ec (ssname ss i))
+    (setq lc (cdr (assoc 8 (entget ec))))
+    (vl-cmdf "_lw" cc lc)
+    (setq i (1+ i))
   )
   (vl-cmdf "")
-  (PRINC "lineweight ")
-  CC
+  (princ "lineweight ")
+  cc
 )
 ;;; (C) Copyright 1997 by Thomas Gail Haws
 ;;; Change layer lineweight by picking nested entities
-(DEFUN C:HAWS-LWPX
-              (/ CC EC LOPERA NESTED)
+(defun c:haws-lwpx
+              (/ cc ec lopera nested)
 (haws-core-init 254)
-  (COND
-    ((/= (SETQ CC (GETSTRING "\nNew layer lineweight (return to pick):"))
+  (cond
+    ((/= (setq cc (getstring "\nNew layer lineweight (return to pick):"))
          ""
      )
-     CC
+     cc
     )
-    ((SETQ CC (/ (CDR (ASSOC 370 (SETQ EC (ENTGET (CAR (ENTSEL)))))) 100))
-     CC
+    ((setq cc (/ (cdr (assoc 370 (setq ec (entget (car (entsel)))))) 100))
+     cc
     )
-    (T
-     (SETQ
-       CC (ABS
-            (/ (CDR (ASSOC 62 (TBLSEARCH "layer" (CDR (ASSOC 8 EC))))) 100)
+    (t
+     (setq
+       cc (abs
+            (/ (cdr (assoc 62 (tblsearch "layer" (cdr (assoc 8 ec))))) 100)
           )
      )
     )
   )
-  (SETQ FLIST NIL)
-  (PROMPT (STRCAT "\nNested layers to change by picking: "))
+  (setq flist nil)
+  (prompt (strcat "\nNested layers to change by picking: "))
   (vl-cmdf "._layer")
-  (HAWS-LWPICK)
+  (haws-lwpick)
   (vl-cmdf "")
-  (PRINC "lineweight ")
-  CC
+  (princ "lineweight ")
+  cc
 )
-(DEFUN HAWS-LWPICK
-              (/ ES EN LA PARNTL VP)
-  (WHILE (SETQ ES (NENTSEL))
-    (SETQ
-      EN     (CAR ES)
-      LA     (CDR (ASSOC 8 (ENTGET EN)))
-      PARNTL (CADDDR ES)
+(defun haws-lwpick
+              (/ es en la parntl vp)
+  (while (setq es (nentsel))
+    (setq
+      en     (car es)
+      la     (cdr (assoc 8 (entget en)))
+      parntl (cadddr es)
     )
-    (WHILE (= LA "0")
-      (SETQ LA (CDR (ASSOC 8 (ENTGET (CAR PARNTL)))))
-      (SETQ PARNTL (CDR PARNTL))
+    (while (= la "0")
+      (setq la (cdr (assoc 8 (entget (car parntl)))))
+      (setq parntl (cdr parntl))
     )
-    (REDRAW EN 3)
-    (SETQ FLIST (CONS LA FLIST))
-    (vl-cmdf "_lw" CC LA)
+    (redraw en 3)
+    (setq flist (cons la flist))
+    (vl-cmdf "_lw" cc la)
   )
 )

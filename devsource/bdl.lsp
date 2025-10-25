@@ -1,13 +1,13 @@
-;;Label line with bearing and distance
+﻿;;Label line with bearing and distance
 ;;(C) Copyright 1997 by Thomas Gail Haws
 ;;Written by Thomas Gail Haws
-(DEFUN c:haws-bdl
-	(/ ANG1 DG LBEAR LDIST LEFT LLINE LTOP PT1 PT10 PT11 PT2 PT3 PT4 PTXT ROT TXHT UCSP)
+(defun c:haws-bdl
+	(/ ang1 dg lbear ldist left lline ltop pt1 pt10 pt11 pt2 pt3 pt4 ptxt rot txht ucsp)
   (haws-core-init 163)
-  (HAWS-VSAVE
+  (haws-vsave
     '("lunits" "luprec" "aunits" "auprec" "dimtad" "ucsfollow")
   )
-  (HAWS-VSET
+  (haws-vset
     '(("lunits" 2)
       ("luprec" 2)
       ("aunits" 4)
@@ -22,11 +22,11 @@
     lline
      (nentsel "\nSelect line to label: ")
     ucsp
-     T
+     t
   )
   (setq
     txht
-     (* (HAWS-DWGSCALE) (getvar "dimtxt"))
+     (* (haws-dwgscale) (getvar "dimtxt"))
     pt1
      (osnap (cadr lline) "nea")
     lline
@@ -36,7 +36,7 @@
     pt11
      (cdr (assoc 11 lline))
     lbear
-     (HAWS-RTOB (angle pt10 pt11) 4)
+     (haws-rtob (angle pt10 pt11) 4)
     ldist
      (strcat (rtos (distance pt10 pt11)) "'")
     pt2
@@ -48,9 +48,9 @@
     rot
      (angle pt2 pt1)
     pt3
-     (polar pt2 (+ rot (/ PI 2)) (* txht 0.667))
+     (polar pt2 (+ rot (/ pi 2)) (* txht 0.667))
     pt4
-     (polar pt2 (- rot (/ PI 2)) (* txht 0.667))
+     (polar pt2 (- rot (/ pi 2)) (* txht 0.667))
   )
   (setq
     ltop
@@ -61,8 +61,8 @@
   )
   (cond
     ((= ltop "")
-     (HAWS-MKTEXT "c" pt3 nil rot lbear)
-     (HAWS-MKTEXT "tc" pt4 nil rot ldist)
+     (haws-mktext "c" pt3 nil rot lbear)
+     (haws-mktext "tc" pt4 nil rot ldist)
     )
     ((= (strcase ltop) "L")
      (vl-cmdf "._ucs" "_p")
@@ -76,7 +76,7 @@
        ((>= (atof (getvar "acadver")) 14)
 	(vl-cmdf "._leader" (trans pt1 0 1) ptxt "" lbear ldist "")
        )
-       (T
+       (t
 	(vl-cmdf "._dim" "_leader" (trans pt1 0 1) ptxt "" lbear "_exit")
 	(setq
 	  ptxt
@@ -94,7 +94,7 @@
 	     )
 	   )
 	)
-	(HAWS-MKTEXT
+	(haws-mktext
 	  (if left
 	    "mr"
 	    "ml"
@@ -107,14 +107,14 @@
        )
      )
     )
-    (T
-     (HAWS-MKTEXT "c" pt3 nil rot ltop)
+    (t
+     (haws-mktext "c" pt3 nil rot ltop)
      (vl-cmdf "._dtext" "_j" "_tc" pt4 txht (angtos rot))
     )
   )
-  (IF UCSP (vl-cmdf "._ucs" "p"))
+  (if ucsp (vl-cmdf "._ucs" "p"))
   (setq ucsp nil)
-  (HAWS-VRSTOR)
+  (haws-vrstor)
   (haws-core-restore)
   (princ)
 )

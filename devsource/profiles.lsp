@@ -1,712 +1,712 @@
-;;;PROFILES.LSP
+﻿;;;PROFILES.LSP
 ;;;(C) Copyright 1997 by Thomas Gail Haws
 ;;;A collection of related civil profile drafting tools
 
 ;;;GETHVX is used in various profile routines to get vertical exaggeration.
-(DEFUN HAWS-GETHVX
-              (/ HVOLD)
-  (IF (NOT HVEXAG)
-    (SETQ HVOLD 10.0)
-    (SETQ HVOLD HVEXAG)
+(defun haws-gethvx
+              (/ hvold)
+  (if (not hvexag)
+    (setq hvold 10.0)
+    (setq hvold hvexag)
   ) ;_ end of IF
-  (IF (NOT *HAWS-ELVSCL*)
-    (SETQ *HAWS-ELVSCL* 1)
+  (if (not *haws-elvscl*)
+    (setq *haws-elvscl* 1)
   ) ;_ end of if
-  (SETQ
-    HVEXAG
-     (GETREAL
-       (STRCAT
+  (setq
+    hvexag
+     (getreal
+       (strcat
          "\nHoriz. scale / vertical scale "
          "(Usually 10 for P&P sheets) <"
-         (RTOS HVOLD 2 0)
+         (rtos hvold 2 0)
          ">:"
        ) ;_ end of strcat
      ) ;_ end of GETREAL
   ) ;_ end of SETQ
-  (IF (NOT HVEXAG)
-    (SETQ HVEXAG HVOLD)
+  (if (not hvexag)
+    (setq hvexag hvold)
   ) ;_ end of IF
 ) ;_ end of DEFUN
 
-(DEFUN c:haws-PROPIPE
-            (/ P1 P2 D1 PIPSLD D2 P3 P4)
+(defun c:haws-propipe
+            (/ p1 p2 d1 pipsld d2 p3 p4)
   (haws-core-init 273)
-  (HAWS-VSAVE '("filedia"))
-  (HAWS-GETHVX)
-  (SETQ
-    P1 (GETPOINT "\nEndpoint of pipe invert: ")
-    P2 (GETPOINT P1 "\nSecond endpoint of pipe invert: ")
-    D1 (* (/ (GETDIST "\nID of pipe (in.): ") 12) HVEXAG *HAWS-ELVSCL*)
+  (haws-vsave '("filedia"))
+  (haws-gethvx)
+  (setq
+    p1 (getpoint "\nEndpoint of pipe invert: ")
+    p2 (getpoint p1 "\nSecond endpoint of pipe invert: ")
+    d1 (* (/ (getdist "\nID of pipe (in.): ") 12) hvexag *haws-elvscl*)
   ) ;_ end of SETQ
-  (COND
-    ((SETQ PIPSLD (FINDFILE "pipetabl.sld"))
-     (SETVAR "filedia" 0)
-     (vl-cmdf "._vslide" PIPSLD)
+  (cond
+    ((setq pipsld (findfile "pipetabl.sld"))
+     (setvar "filedia" 0)
+     (vl-cmdf "._vslide" pipsld)
     )
   ) ;_ end of cond
-  (SETQ
-    D2 (* (/ (GETDIST "\nWall thickness (in.): ") 12)
-          HVEXAG
-          *HAWS-ELVSCL*
+  (setq
+    d2 (* (/ (getdist "\nWall thickness (in.): ") 12)
+          hvexag
+          *haws-elvscl*
        ) ;_ end of *
   ) ;_ end of setq
-  (REDRAW)
-  (vl-cmdf "._line" P1 P2 "")
-  (SETQ
-    P3 (POLAR P1 (/ PI 2) D1)
-    P4 (POLAR P2 (/ PI 2) D1)
+  (redraw)
+  (vl-cmdf "._line" p1 p2 "")
+  (setq
+    p3 (polar p1 (/ pi 2) d1)
+    p4 (polar p2 (/ pi 2) d1)
   ) ;_ end of SETQ
-  (vl-cmdf "._line" P3 P4 "")
-  (SETQ
-    P3 (POLAR P1 (/ PI -2) D2)
-    P4 (POLAR P2 (/ PI -2) D2)
+  (vl-cmdf "._line" p3 p4 "")
+  (setq
+    p3 (polar p1 (/ pi -2) d2)
+    p4 (polar p2 (/ pi -2) d2)
   ) ;_ end of SETQ
-  (COND
-    ((/= 0 D2)
-     (vl-cmdf "._line" P3 P4 "")
-     (SETQ D1 (+ D1 D2))
-     (SETQ
-       P3 (POLAR P1 (/ PI 2) D1)
-       P4 (POLAR P2 (/ PI 2) D1)
+  (cond
+    ((/= 0 d2)
+     (vl-cmdf "._line" p3 p4 "")
+     (setq d1 (+ d1 d2))
+     (setq
+       p3 (polar p1 (/ pi 2) d1)
+       p4 (polar p2 (/ pi 2) d1)
      ) ;_ end of SETQ
-     (vl-cmdf "._line" P3 P4 "")
+     (vl-cmdf "._line" p3 p4 "")
     )
   ) ;_ end of COND
   (haws-core-restore)
 ) ;_ end of DEFUN
 
-(DEFUN c:haws-PROSUP
-           (/  BOTPIP ELLIP1 HVEXAG LEFT LINE1 LINE2 LINE3
-              PT1 PT2 PT3 PT4 PTCEN RIGHT UCSYDIR VRAD
+(defun c:haws-prosup
+           (/  botpip ellip1 hvexag left line1 line2 line3
+              pt1 pt2 pt3 pt4 ptcen right ucsydir vrad
            )
   (haws-core-init 274)
-  (HAWS-VSAVE '("ucsfollow" "osmode" "clayer"))
-  (HAWS-MKLAYR "PSUP")
-  (SETVAR "ucsfollow" 0)
-  (SETVAR "osmode" 16)
-  (IF (NOT HVEXAG)
-    (HAWS-GETHVX)
+  (haws-vsave '("ucsfollow" "osmode" "clayer"))
+  (haws-mklayr "PSUP")
+  (setvar "ucsfollow" 0)
+  (setvar "osmode" 16)
+  (if (not hvexag)
+    (haws-gethvx)
   ) ;_ end of IF
-  (SETQ
-    PT1
-     (GETPOINT "\nLeft ellipse quadrant: ")
-    PT2
-     (GETPOINT PT1 "\nRight ellipse quadrant: ")
-    BOTPIP
-     (ENTSEL "\nTop of lower pipe: ")
-    VRAD
-     (* HVEXAG *HAWS-ELVSCL* (/ (DISTANCE PT1 PT2) 2))
-    PT3
-     (POLAR PT1 (/ PI -2) VRAD)
-    PT4
-     (POLAR PT2 (/ PI -2) VRAD)
-    PTCEN
-     (MAPCAR
-       '(LAMBDA (LEFT RIGHT) (/ (+ LEFT RIGHT) 2.0))
-       PT1
-       PT2
+  (setq
+    pt1
+     (getpoint "\nLeft ellipse quadrant: ")
+    pt2
+     (getpoint pt1 "\nRight ellipse quadrant: ")
+    botpip
+     (entsel "\nTop of lower pipe: ")
+    vrad
+     (* hvexag *haws-elvscl* (/ (distance pt1 pt2) 2))
+    pt3
+     (polar pt1 (/ pi -2) vrad)
+    pt4
+     (polar pt2 (/ pi -2) vrad)
+    ptcen
+     (mapcar
+       '(lambda (left right) (/ (+ left right) 2.0))
+       pt1
+       pt2
      ) ;_ end of mapcar
   ) ;_ end of SETQ
-  (SETVAR "osmode" 0)
-  (ENTMAKE
-    (LIST
+  (setvar "osmode" 0)
+  (entmake
+    (list
       '(0 . "ELLIPSE")
       '(100 . "AcDbEntity")
       '(100 . "AcDbEllipse")
-      (CONS 10 (TRANS PTCEN 1 0))
+      (cons 10 (trans ptcen 1 0))
       '(41 . 0.0)
-      (CONS
+      (cons
         11
-        (MAPCAR
-          '(LAMBDA (UCSYDIR) (* UCSYDIR VRAD))
-          (GETVAR "ucsydir")
+        (mapcar
+          '(lambda (ucsydir) (* ucsydir vrad))
+          (getvar "ucsydir")
         ) ;_ end of mapcar
       ) ;_ end of CONS
-      (CONS 40 (/ 1.0 (* HVEXAG *HAWS-ELVSCL*)))
-      (CONS 42 (* 2 PI))
+      (cons 40 (/ 1.0 (* hvexag *haws-elvscl*)))
+      (cons 42 (* 2 pi))
     ) ;_ end of list
   ) ;_ end of entmake
-  (vl-cmdf "._ellipse" PT1 PT2 VRAD)
-  (SETQ ELLIP1 (ENTLAST))
-  (vl-cmdf "._line" PT1 PT3 "")
-  (SETQ LINE1 (ENTLAST))
-  (vl-cmdf "._line" PT2 PT4 "")
-  (SETQ LINE2 (ENTLAST))
+  (vl-cmdf "._ellipse" pt1 pt2 vrad)
+  (setq ellip1 (entlast))
+  (vl-cmdf "._line" pt1 pt3 "")
+  (setq line1 (entlast))
+  (vl-cmdf "._line" pt2 pt4 "")
+  (setq line2 (entlast))
   (vl-cmdf
     "._trim"
-    LINE1
-    LINE2
+    line1
+    line2
     ""
-    (LIST ELLIP1 (POLAR PT1 (/ PI 2) (/ VRAD 10)))
+    (list ellip1 (polar pt1 (/ pi 2) (/ vrad 10)))
     ""
   ) ;_ end of command
-  (IF (/= "ELLIPSE" (CDR (ASSOC 0 (ENTGET ELLIP1))))
-    (SETQ ELLIP1 (ENTLAST))
+  (if (/= "ELLIPSE" (cdr (assoc 0 (entget ellip1))))
+    (setq ellip1 (entlast))
   ) ;_ end of IF
   (vl-cmdf
     "._extend"
-    BOTPIP
+    botpip
     ""
-    (LIST LINE1 PT3)
-    (LIST LINE2 PT4)
+    (list line1 pt3)
+    (list line2 pt4)
     ""
   ) ;_ end of command
-  (SETQ PT3 (TRANS (CDR (ASSOC 11 (ENTGET LINE1))) LINE1 1))
-  (SETQ PT4 (TRANS (CDR (ASSOC 11 (ENTGET LINE2))) LINE2 1))
-  (vl-cmdf "._line" PT3 PT4 "")
-  (SETQ LINE3 (ENTLAST))
+  (setq pt3 (trans (cdr (assoc 11 (entget line1))) line1 1))
+  (setq pt4 (trans (cdr (assoc 11 (entget line2))) line2 1))
+  (vl-cmdf "._line" pt3 pt4 "")
+  (setq line3 (entlast))
   (vl-cmdf
-    "._hatch" "ansi31" "5" "0" ELLIP1 LINE1 LINE2 LINE3 ""
+    "._hatch" "ansi31" "5" "0" ellip1 line1 line2 line3 ""
    ) ;_ end of COMMAND
  ;_ end of COMMAND
  ;_ end of command
-  (vl-cmdf "._erase" ELLIP1 LINE3 "")
-  (REDRAW)
-  (HAWS-VRSTOR)
+  (vl-cmdf "._erase" ellip1 line3 "")
+  (redraw)
+  (haws-vrstor)
   (haws-core-restore)
-  (PRINC)
+  (princ)
 ) ;_ end of DEFUN
 
-(DEFUN c:haws-PC ()
-(haws-core-init 275) (c:haws-PROCB))
-(DEFUN c:haws-PROCB
-          (/ TOPPT BOTPT CBVIEW WIDTH)
+(defun c:haws-pc ()
+(haws-core-init 275) (c:haws-procb))
+(defun c:haws-procb
+          (/ toppt botpt cbview width)
   (haws-core-init 276)
-  (IF (NOT HVEXAG)
-    (HAWS-GETHVX)
+  (if (not hvexag)
+    (haws-gethvx)
   ) ;_ end of IF
-  (HAWS-VSAVE '("clayer"))
-  (INITGET "Exist Prop")
-  (SETQ
-    EXIST
-     (= (GETKWORD "[Exist/Prop] <Prop>: ") "Exist")
+  (haws-vsave '("clayer"))
+  (initget "Exist Prop")
+  (setq
+    exist
+     (= (getkword "[Exist/Prop] <Prop>: ") "Exist")
     ;;    curbht (/ (getrealx "\nCurb height" (* curbht 12) 6)12)
-    TOPPT
-     (GETPOINT "\nTop of curb: ")
-    BOTPT
-     (LIST (CAR TOPPT) (CADR (GETPOINT TOPPT "\nInvert: ")) 0.0)
+    toppt
+     (getpoint "\nTop of curb: ")
+    botpt
+     (list (car toppt) (cadr (getpoint toppt "\nInvert: ")) 0.0)
   ) ;_ end of SETQ
-  (INITGET "L R C")
-  (SETQ CBVIEW (GETKWORD "Left, right, or center view?<L/R/C>?"))
-  (SETQ
-    WIDTH
-     (IF (= CBVIEW "C")
-       (/ (GETREAL "Width: ") 2)
+  (initget "L R C")
+  (setq cbview (getkword "Left, right, or center view?<L/R/C>?"))
+  (setq
+    width
+     (if (= cbview "C")
+       (/ (getreal "Width: ") 2)
        2.0
      ) ;_ end of IF
   ) ;_ end of SETQ
-  (IF EXIST
-    (HAWS-MKLAYR "PXCB")
-    (HAWS-MKLAYR "PCB")
+  (if exist
+    (haws-mklayr "PXCB")
+    (haws-mklayr "PCB")
   ) ;_ end of IF
-  (HAWS-DRAWCB BOTPT TOPPT CBVIEW WIDTH NIL)
-  (HAWS-VRSTOR)
+  (haws-drawcb botpt toppt cbview width nil)
+  (haws-vrstor)
   (haws-core-restore)
-  (PRINC)
+  (princ)
 ) ;_ end of DEFUN
 
-(DEFUN HAWS-DRAWCB
-              (BOTPT TOPPT CBVIEW WIDTH BRKPT / PT1 PT2 PT3 PT4 PT5 PTBL PTBR CB
+(defun haws-drawcb
+              (botpt toppt cbview width brkpt / pt1 pt2 pt3 pt4 pt5 ptbl ptbr cb
               )
-  (SETQ
-    PT1 (POLAR BOTPT 0.0 WIDTH)
-    PT2 (LIST (CAR PT1) (CADR TOPPT) 0.0)
-    PT3 (POLAR BOTPT PI WIDTH)
-    PT4 (LIST (CAR PT3) (CADR TOPPT) 0.0)
-    PT5 (LIST
-          (CAR BOTPT)
-          (- (CADR TOPPT) (* HVEXAG *HAWS-ELVSCL* 0.583))
+  (setq
+    pt1 (polar botpt 0.0 width)
+    pt2 (list (car pt1) (cadr toppt) 0.0)
+    pt3 (polar botpt pi width)
+    pt4 (list (car pt3) (cadr toppt) 0.0)
+    pt5 (list
+          (car botpt)
+          (- (cadr toppt) (* hvexag *haws-elvscl* 0.583))
           0.0
         ) ;_ end of list
   ) ;_ end of SETQ
-  (COND
-    ((= CBVIEW "L")
+  (cond
+    ((= cbview "L")
      (vl-cmdf
        "._pline"
-       PT4
+       pt4
        "w"
        0
        ""
-       (SETQ PTBL PT3)
-       (SETQ PTBR BOTPT)
-       PT5
+       (setq ptbl pt3)
+       (setq ptbr botpt)
+       pt5
        ""
      ) ;_ end of command
     )
-    ((= CBVIEW "C")
+    ((= cbview "C")
      (vl-cmdf
        "._pline"
-       PT4
+       pt4
        "w"
        0
        ""
-       (SETQ PTBL PT3)
-       (SETQ PTBR PT1)
-       PT2
+       (setq ptbl pt3)
+       (setq ptbr pt1)
+       pt2
        ""
      ) ;_ end of command
-     (SETQ WIDTH (* WIDTH 2))
+     (setq width (* width 2))
     )
-    ((= CBVIEW "R")
+    ((= cbview "R")
      (vl-cmdf
        "._pline"
-       PT5
+       pt5
        "w"
        0
        ""
-       (SETQ PTBL BOTPT)
-       (SETQ PTBR PT1)
-       PT2
+       (setq ptbl botpt)
+       (setq ptbr pt1)
+       pt2
        ""
      ) ;_ end of command
     )
   ) ;_ end of COND
-  (SETQ CB (ENTLAST))
-  (COND
-    (BRKPT
-     (SETQ
-       PT1 (POLAR
-             (LIST (/ (+ (CAR PTBR) (CAR PTBL)) 2) (CADR BRKPT) 0.0)
+  (setq cb (entlast))
+  (cond
+    (brkpt
+     (setq
+       pt1 (polar
+             (list (/ (+ (car ptbr) (car ptbl)) 2) (cadr brkpt) 0.0)
              0.262
-             WIDTH
+             width
            ) ;_ end of polar
-       PT2 (POLAR PT1 (/ PI 2) 2)
-       PT3 (POLAR PT1 3.403 (* WIDTH 2))
-       PT4 (POLAR PT2 3.403 (* WIDTH 2))
+       pt2 (polar pt1 (/ pi 2) 2)
+       pt3 (polar pt1 3.403 (* width 2))
+       pt4 (polar pt2 3.403 (* width 2))
      ) ;_ end of SETQ
-     (HAWS-MKLINE PT1 PT3)
-     (SETQ LINE1 (ENTLAST))
-     (HAWS-MKLINE PT2 PT4)
-     (SETQ LINE2 (ENTLAST))
+     (haws-mkline pt1 pt3)
+     (setq line1 (entlast))
+     (haws-mkline pt2 pt4)
+     (setq line2 (entlast))
      (vl-cmdf
        "._trim"
-       LINE1
-       LINE2
+       line1
+       line2
        ""
-       (LIST CB PT4)
-       (LIST (ENTLAST) PT1)
+       (list cb pt4)
+       (list (entlast) pt1)
        ""
      ) ;_ end of command
     )
   ) ;_ end of COND
 ) ;_ end of DEFUN
 
-(DEFUN c:haws-PM ()
-(haws-core-init 277) (c:haws-PROMH))
-(DEFUN c:haws-PROMH
-          (/ TOPPT BOTPT)
+(defun c:haws-pm ()
+(haws-core-init 277) (c:haws-promh))
+(defun c:haws-promh
+          (/ toppt botpt)
   (haws-core-init 278)
-  (HAWS-VSAVE '("clayer"))
-  (INITGET "Exist Prop")
-  (SETQ
-    EXIST
-     (= (GETKWORD "Exist/Prop: ") "Exist")
-    BOTPT
-     (GETPOINT "\nInvert: ")
-    TOPPT
-     (LIST (CAR BOTPT) (CADR (GETPOINT BOTPT "\nRim: ")) 0.0)
+  (haws-vsave '("clayer"))
+  (initget "Exist Prop")
+  (setq
+    exist
+     (= (getkword "Exist/Prop: ") "Exist")
+    botpt
+     (getpoint "\nInvert: ")
+    toppt
+     (list (car botpt) (cadr (getpoint botpt "\nRim: ")) 0.0)
   ) ;_ end of SETQ
-  (IF EXIST
-    (HAWS-MKLAYR "PXMH")
-    (HAWS-MKLAYR "PMH")
+  (if exist
+    (haws-mklayr "PXMH")
+    (haws-mklayr "PMH")
   ) ;_ end of IF
-  (HAWS-DRAWMH BOTPT TOPPT NIL)
-  (HAWS-VRSTOR)
+  (haws-drawmh botpt toppt nil)
+  (haws-vrstor)
   (haws-core-restore)
-  (PRINC)
+  (princ)
 ) ;_ end of DEFUN
 
 ;;Drawmh draws a cartoon manhole from botpt to toppt.
-(DEFUN HAWS-DRAWMH
-              (BOTPT TOPPT BRKPT / EXIST BROKEN PT1 PT2 PT3 PT4 MH LINE1 LINE2
+(defun haws-drawmh
+              (botpt toppt brkpt / exist broken pt1 pt2 pt3 pt4 mh line1 line2
               )
-  (SETQ
-    PT1
-     (POLAR TOPPT 0 1)
-    PT2
-     (POLAR TOPPT 0 -1)
-    PT3
-     (POLAR BOTPT 0 -2)
-    PT4
-     (POLAR BOTPT 0 2)
-    BOTPT
-     (POLAR BOTPT 1.5708 -5)
-    TOPPT
-     (POLAR TOPPT 1.5708 40)
+  (setq
+    pt1
+     (polar toppt 0 1)
+    pt2
+     (polar toppt 0 -1)
+    pt3
+     (polar botpt 0 -2)
+    pt4
+     (polar botpt 0 2)
+    botpt
+     (polar botpt 1.5708 -5)
+    toppt
+     (polar toppt 1.5708 40)
   ) ;_ end of SETQ
-  (vl-cmdf "._pline" PT1 "_w" 0 "" PT2 PT3 PT4 "_close")
-  (SETQ MH (ENTLAST))
-  (COND
-    (BRKPT
-     (SETQ
-       PT1 (POLAR BRKPT 0.262 3)
-       PT2 (POLAR PT1 (/ PI 2) 2)
-       PT3 (POLAR PT1 3.403 6)
-       PT4 (POLAR PT2 3.403 6)
+  (vl-cmdf "._pline" pt1 "_w" 0 "" pt2 pt3 pt4 "_close")
+  (setq mh (entlast))
+  (cond
+    (brkpt
+     (setq
+       pt1 (polar brkpt 0.262 3)
+       pt2 (polar pt1 (/ pi 2) 2)
+       pt3 (polar pt1 3.403 6)
+       pt4 (polar pt2 3.403 6)
      ) ;_ end of SETQ
-     (HAWS-MKLINE PT1 PT3)
-     (SETQ LINE1 (ENTLAST))
-     (HAWS-MKLINE PT2 PT4)
-     (SETQ LINE2 (ENTLAST))
+     (haws-mkline pt1 pt3)
+     (setq line1 (entlast))
+     (haws-mkline pt2 pt4)
+     (setq line2 (entlast))
      (vl-cmdf
        "._trim"
-       LINE1
-       LINE2
+       line1
+       line2
        ""
-       (LIST MH PT4)
-       (LIST (ENTLAST) PT1)
+       (list mh pt4)
+       (list (entlast) pt1)
        ""
      ) ;_ end of command
     )
   ) ;_ end of COND
 ) ;_ end of DEFUN
 
-(DEFUN c:haws-PRED
+(defun c:haws-pred
          ()
 (haws-core-init 279)
-  (vl-cmdf "_ai_editcustfile" (STRCAT (HAWS-GETDNPATH) ".pro"))
+  (vl-cmdf "_ai_editcustfile" (strcat (haws-getdnpath) ".pro"))
 ) ;_ end of defun
 
-(DEFUN c:haws-PROE
-         (/ LANAME INVERT DIAM PIPSLD WALTHK CENPT INRAD OUTRAD
+(defun c:haws-proe
+         (/ laname invert diam pipsld walthk cenpt inrad outrad
          )
   (haws-core-init 280)
-  (IF (NOT HVEXAG)
-    (HAWS-GETHVX)
+  (if (not hvexag)
+    (haws-gethvx)
   ) ;_ end of IF
-  (HAWS-VSAVE '("clayer" "filedia"))
-  (INITGET "Exist Prop")
-  (SETQ EXIST (= (GETKWORD "Exist/Prop: ") "Exist"))
-  (IF EXIST
-    (HAWS-MKLAYR "PXEL")
-    (HAWS-MKLAYR "PEL")
+  (haws-vsave '("clayer" "filedia"))
+  (initget "Exist Prop")
+  (setq exist (= (getkword "Exist/Prop: ") "Exist"))
+  (if exist
+    (haws-mklayr "PXEL")
+    (haws-mklayr "PEL")
   ) ;_ end of IF
-  (SETQ
-    INVERT
-     (GETPOINT "\nInvert point: ")
-    DIAM
-     (/ (GETREAL "\nID (inches): ") 12)
+  (setq
+    invert
+     (getpoint "\nInvert point: ")
+    diam
+     (/ (getreal "\nID (inches): ") 12)
   ) ;_ end of SETQ
-  (COND
-    ((SETQ PIPSLD (FINDFILE "pipetabl.sld"))
-     (SETVAR "filedia" 0)
-     (vl-cmdf "._vslide" PIPSLD)
+  (cond
+    ((setq pipsld (findfile "pipetabl.sld"))
+     (setvar "filedia" 0)
+     (vl-cmdf "._vslide" pipsld)
     )
   ) ;_ end of cond
-  (SETQ
-    WALTHK
-     (/ (GETREAL "\nWall thickness (inches): ") 12)
-    INRAD
-     (/ DIAM 2.0)
-    OUTRAD
-     (+ (/ DIAM 2.0) WALTHK)
-    CENPT
-     (POLAR INVERT (/ PI 2.0) (* INRAD HVEXAG *HAWS-ELVSCL*))
+  (setq
+    walthk
+     (/ (getreal "\nWall thickness (inches): ") 12)
+    inrad
+     (/ diam 2.0)
+    outrad
+     (+ (/ diam 2.0) walthk)
+    cenpt
+     (polar invert (/ pi 2.0) (* inrad hvexag *haws-elvscl*))
   ) ;_ end of SETQ
-  (REDRAW)
-  (ENTMAKE
-    (LIST
+  (redraw)
+  (entmake
+    (list
       '(0 . "ELLIPSE")
       '(100 . "AcDbEntity")
       '(100 . "AcDbEllipse")
-      (CONS 10 (TRANS CENPT 1 0))
+      (cons 10 (trans cenpt 1 0))
       '(41 . 0.0)
-      (CONS
+      (cons
         11
-        (MAPCAR
-          '(LAMBDA (UCSYDIR) (* UCSYDIR INRAD HVEXAG *HAWS-ELVSCL*))
-          (GETVAR "ucsydir")
+        (mapcar
+          '(lambda (ucsydir) (* ucsydir inrad hvexag *haws-elvscl*))
+          (getvar "ucsydir")
         ) ;_ end of mapcar
       ) ;_ end of CONS
-      (CONS 40 (/ 1.0 (* HVEXAG *HAWS-ELVSCL*)))
-      (CONS 42 (* 2 PI))
+      (cons 40 (/ 1.0 (* hvexag *haws-elvscl*)))
+      (cons 42 (* 2 pi))
     ) ;_ end of list
   ) ;_ end of entmake
-  (IF (/= 0 WALTHK)
-    (ENTMAKE
-      (LIST
+  (if (/= 0 walthk)
+    (entmake
+      (list
         '(0 . "ELLIPSE")
         '(100 . "AcDbEntity")
         '(100 . "AcDbEllipse")
-        (CONS 10 (TRANS CENPT 1 0))
+        (cons 10 (trans cenpt 1 0))
         '(41 . 0.0)
-        (CONS
+        (cons
           11
-          (MAPCAR
-            '(LAMBDA (UCSYDIR) (* UCSYDIR OUTRAD HVEXAG *HAWS-ELVSCL*))
-            (GETVAR "ucsydir")
+          (mapcar
+            '(lambda (ucsydir) (* ucsydir outrad hvexag *haws-elvscl*))
+            (getvar "ucsydir")
           ) ;_ end of mapcar
         ) ;_ end of CONS
-        (CONS 40 (/ 1.0 (* HVEXAG *HAWS-ELVSCL*)))
-        (CONS 42 (* 2 PI))
+        (cons 40 (/ 1.0 (* hvexag *haws-elvscl*)))
+        (cons 42 (* 2 pi))
       ) ;_ end of list
     ) ;_ end of entmake
   ) ;_ end of IF
-  (HAWS-VRSTOR)
+  (haws-vrstor)
   (haws-core-restore)
-  (PRINC)
+  (princ)
 ) ;_ end of DEFUN
 
-(DEFUN c:haws-PLDR
-         (/ P1 P2 DS TS AS DG ANG LEFT P3 P4 P5 STR TEMP)
+(defun c:haws-pldr
+         (/ p1 p2 ds ts as dg ang left p3 p4 p5 str temp)
   (haws-core-init 281)
-  (SETQ
-    P1 (GETPOINT "\nStart point for leader:")
-    P2 (GETPOINT P1 "\nEnd point for leader:")
-    DS (HAWS-DWGSCALE)
-    TS (* DS (GETVAR "dimtxt"))
-    AS (* DS (GETVAR "dimasz"))
-    DG (* DS (ABS (GETVAR "dimgap")))
-    ANG
-     (ANGLE P1 P2)
-    LEFT
-     (MINUSP (COS ANG))
-    P3 (POLAR P1 ANG AS)
-    P4 (POLAR
-         P2
-         (IF LEFT
-           PI
+  (setq
+    p1 (getpoint "\nStart point for leader:")
+    p2 (getpoint p1 "\nEnd point for leader:")
+    ds (haws-dwgscale)
+    ts (* ds (getvar "dimtxt"))
+    as (* ds (getvar "dimasz"))
+    dg (* ds (abs (getvar "dimgap")))
+    ang
+     (angle p1 p2)
+    left
+     (minusp (cos ang))
+    p3 (polar p1 ang as)
+    p4 (polar
+         p2
+         (if left
+           pi
            0
          ) ;_ end of IF
-         AS
+         as
        ) ;_ end of POLAR
-    P5 (POLAR
-         (POLAR
-           P4
-           (IF LEFT
-             PI
+    p5 (polar
+         (polar
+           p4
+           (if left
+             pi
              0
            ) ;_ end of IF
-           DG
+           dg
          ) ;_ end of POLAR
-         (/ PI -2)
-         (/ TS 2)
+         (/ pi -2)
+         (/ ts 2)
        ) ;_ end of POLAR
-    STR
-     (PROGN (INITGET "Exist Prop") (GETKWORD "Exist/Prop: "))
-    EXIST
-     (= STR "Exist")
-    STR
-     (IF (= STR "Exist")
+    str
+     (progn (initget "Exist Prop") (getkword "Exist/Prop: "))
+    exist
+     (= str "Exist")
+    str
+     (if (= str "Exist")
        "EXIST "
        ""
      ) ;_ end of IF
-    STR
-     (STRCAT
-       STR
-       (COND
-         ((PROGN
-            (INITGET "Tc GUtter Pavmt Grnd")
-            (= (SETQ TEMP (GETKWORD "Tc/GUtter/Pavmt/Grnd: ")) "Tc")
+    str
+     (strcat
+       str
+       (cond
+         ((progn
+            (initget "Tc GUtter Pavmt Grnd")
+            (= (setq temp (getkword "Tc/GUtter/Pavmt/Grnd: ")) "Tc")
           ) ;_ end of progn
           "TOP OF CURB "
          )
-         ((= TEMP "GUtter") "GUTTER ")
-         ((= TEMP "Pavmt") "PVMT ")
-         ((= TEMP "Grnd") "GROUND ")
+         ((= temp "GUtter") "GUTTER ")
+         ((= temp "Pavmt") "PVMT ")
+         ((= temp "Grnd") "GROUND ")
        ) ;_ end of COND
      ) ;_ end of STRCAT
-    STR
-     (STRCAT
-       STR
-       (COND
-         ((PROGN
-            (INITGET "Left Right Center")
-            (= (SETQ TEMP (GETKWORD "Left/Right/Center: ")) "Left")
+    str
+     (strcat
+       str
+       (cond
+         ((progn
+            (initget "Left Right Center")
+            (= (setq temp (getkword "Left/Right/Center: ")) "Left")
           ) ;_ end of progn
           "LEFT"
          )
-         ((= TEMP "Right") "RIGHT")
-         ((= TEMP "Center") "@ C/L")
+         ((= temp "Right") "RIGHT")
+         ((= temp "Center") "@ C/L")
        ) ;_ end of COND
      ) ;_ end of STRCAT
   ) ;_ end of SETQ
-  (IF EXIST
-    (HAWS-MKLAYR "PXLDR")
-    (HAWS-MKLAYR "PLDR")
+  (if exist
+    (haws-mklayr "PXLDR")
+    (haws-mklayr "PLDR")
   ) ;_ end of IF
-  (COND
-    ((>= (ATOF (GETVAR "acadver")) 14)
-     (vl-cmdf "._leader" P1 P2 "" STR "")
+  (cond
+    ((>= (atof (getvar "acadver")) 14)
+     (vl-cmdf "._leader" p1 p2 "" str "")
     )
-    (T
-     (vl-cmdf "._pline" P1 "_w" 0 (/ AS 3) P3 "_w" 0 0 P2 P4 "")
-     (HAWS-MKTEXT
-       (IF LEFT
+    (t
+     (vl-cmdf "._pline" p1 "_w" 0 (/ as 3) p3 "_w" 0 0 p2 p4 "")
+     (haws-mktext
+       (if left
          "r"
-         NIL
+         nil
        ) ;_ end of IF
-       P5
-       TS
+       p5
+       ts
        0
-       STR
+       str
      ) ;_ end of mktext
     )
   ) ;_ end of COND
   (haws-core-restore)
 ) ;_ end of DEFUN
 
-(DEFUN c:haws-NEWPRO
-           (/ EXPOLD PROINPUTFILE prolaywc SS1)
+(defun c:haws-newpro
+           (/ expold proinputfile prolaywc ss1)
 (haws-core-init 282)
-  (SETQ EXPOLD (GETVAR "expert"))
-  (SETVAR "expert" 0)
+  (setq expold (getvar "expert"))
+  (setvar "expert" 0)
   (vl-cmdf "._undo" "_m" "._layer" "_off" "*" "" "")
-  (HAWS-MKLAYR "PROSTRT")
-  (SETQ
-    prolayWC (STRCAT (CAR(HAWS-GETLAYR "PROPRE")) "*")
-    SS1          (SSGET "X" (LIST (CONS 8 prolayWC)))
-    PROINPUTFILE (OPEN (STRCAT (HAWS-GETDNPATH) ".pro") "r")
+  (haws-mklayr "PROSTRT")
+  (setq
+    prolaywc (strcat (car(haws-getlayr "PROPRE")) "*")
+    ss1          (ssget "X" (list (cons 8 prolaywc)))
+    proinputfile (open (strcat (haws-getdnpath) ".pro") "r")
   ) ;_ end of SETQ
-  (IF SS1 (vl-cmdf "._erase" SS1 ""))
-  (vl-cmdf "._layer" "_u" prolayWC "")
-  (c:HAWS-PRO)
+  (if ss1 (vl-cmdf "._erase" ss1 ""))
+  (vl-cmdf "._layer" "_u" prolaywc "")
+  (c:haws-pro)
   (vl-cmdf "._layer" "_on" "*" "")
-  (SETVAR "expert" EXPOLD)
-  (PROMPT "\nType Undo Back to undo entire profile.")
-  (PRINC)
+  (setvar "expert" expold)
+  (prompt "\nType Undo Back to undo entire profile.")
+  (princ)
 ) ;_ end of DEFUN
 
 ;;File version converter for PRO
 ;;Adds or removes fields between the slope and label column.
-(DEFUN c:haws-PROFC
-          (/ COLWID FLIST FM FNAME I M N RDLIN TEMP TEMPFILE)
+(defun c:haws-profc
+          (/ colwid flist fm fname i m n rdlin temp tempfile)
   (haws-core-init 283)
-  (SETQ
-    F1 (OPEN
-         (GETFILED "List of files to convert" (HAWS-GETDNPATH) "lst" 0)
+  (setq
+    f1 (open
+         (getfiled "List of files to convert" (haws-getdnpath) "lst" 0)
          "r"
        ) ;_ end of open
   ) ;_ end of setq
-  (WHILE (SETQ RDLIN (READ-LINE F1))
-    (SETQ FLIST (CONS (FINDFILE RDLIN) FLIST))
+  (while (setq rdlin (read-line f1))
+    (setq flist (cons (findfile rdlin) flist))
   ) ;_ end of while
-  (TEXTSCR)
-  (SETQ
-    F1 (CLOSE F1)
-    COLWID
-     (GETINT "New column width: ")
-    M (GETINT "Old number of fields between slope and label: ")
-    N (GETINT "New number of fields between slope and label: ")
-    I -1
+  (textscr)
+  (setq
+    f1 (close f1)
+    colwid
+     (getint "New column width: ")
+    m (getint "Old number of fields between slope and label: ")
+    n (getint "New number of fields between slope and label: ")
+    i -1
   ) ;_ end of SETQ
-  (IF (FINDFILE
-        (SETQ TEMPFILE (STRCAT "pro" (SUBSTR (GETVAR "loginname") 1 5) ".tmp"))
+  (if (findfile
+        (setq tempfile (strcat "pro" (substr (getvar "loginname") 1 5) ".tmp"))
       ) ;_ end of findfile
-    (vl-cmdf "_del" TEMPFILE)
+    (vl-cmdf "_del" tempfile)
   ) ;_ end of IF
-  (WHILE (SETQ FNAME (NTH (SETQ I (1+ I)) FLIST))
-    (SETQ F1 (OPEN FNAME "r"))
-    (SETQ F2 (OPEN TEMPFILE "w"))
-    (WHILE (SETQ RDLIN (READ-LINE F1))
-      (COND
-        ((= (SUBSTR RDLIN 1 6) "COLWID")
-         (IF (ZEROP (SETQ FM (ATOI (SUBSTR RDLIN 8))))
-           (SETQ FM (SUBSTR RDLIN 8))
+  (while (setq fname (nth (setq i (1+ i)) flist))
+    (setq f1 (open fname "r"))
+    (setq f2 (open tempfile "w"))
+    (while (setq rdlin (read-line f1))
+      (cond
+        ((= (substr rdlin 1 6) "COLWID")
+         (if (zerop (setq fm (atoi (substr rdlin 8))))
+           (setq fm (substr rdlin 8))
          ) ;_ end of IF
-         (SETQ RDLIN (STRCAT "COLWID " (ITOA COLWID)))
+         (setq rdlin (strcat "COLWID " (itoa colwid)))
         )
-        ((= (SUBSTR RDLIN 1 6) "PRFPNT")
-         (SETQ
-           RDLIN
-            (STRCAT
-              (HAWS-MKFLD (haws-rdfld 1 RDLIN FM 1) COLWID)
-              (HAWS-MKFLD (haws-rdfld 2 RDLIN FM 1) COLWID)
-              (HAWS-MKFLD (haws-rdfld 3 RDLIN FM 1) COLWID)
-              (HAWS-MKFLD (haws-rdfld 4 RDLIN FM 1) COLWID)
-              (HAWS-MKFLD (haws-rdfld 5 RDLIN FM 1) COLWID)
-              (IF (> N 0)
-                (HAWS-MKFLD
-                  (IF (SETQ TEMP (HAWS-ATOFX (haws-rdfld 6 RDLIN FM 3) "*RIM*" 0))
-                    (RTOS TEMP 2 2)
+        ((= (substr rdlin 1 6) "PRFPNT")
+         (setq
+           rdlin
+            (strcat
+              (haws-mkfld (haws-rdfld 1 rdlin fm 1) colwid)
+              (haws-mkfld (haws-rdfld 2 rdlin fm 1) colwid)
+              (haws-mkfld (haws-rdfld 3 rdlin fm 1) colwid)
+              (haws-mkfld (haws-rdfld 4 rdlin fm 1) colwid)
+              (haws-mkfld (haws-rdfld 5 rdlin fm 1) colwid)
+              (if (> n 0)
+                (haws-mkfld
+                  (if (setq temp (haws-atofx (haws-rdfld 6 rdlin fm 3) "*RIM*" 0))
+                    (rtos temp 2 2)
                     ""
                   ) ;_ end of IF
-                  COLWID
+                  colwid
                 ) ;_ end of mkfld
                 ""
               ) ;_ end of IF
-              (IF (> N 1)
-                (HAWS-MKFLD
-                  (IF (SETQ TEMP (HAWS-ATOFX (haws-rdfld 6 RDLIN FM 3) "*\"*,*IN*" 1))
-                    (RTOS TEMP 2 2)
+              (if (> n 1)
+                (haws-mkfld
+                  (if (setq temp (haws-atofx (haws-rdfld 6 rdlin fm 3) "*\"*,*IN*" 1))
+                    (rtos temp 2 2)
                     ""
                   ) ;_ end of IF
-                  COLWID
+                  colwid
                 ) ;_ end of mkfld
                 ""
               ) ;_ end of IF
-              (haws-rdfld (+ 6 M) RDLIN FM 3)
+              (haws-rdfld (+ 6 m) rdlin fm 3)
             ) ;_ end of STRCAT
          ) ;_ end of SETQ
         )
-        ((WCMATCH RDLIN "REFPNT*,PRECIS*,HVEXAG*,PROTYP*")
-         (SETQ
-           RDLIN
-            (STRCAT
-              (MKFLD (haws-rdfld 1 RDLIN FM 1) COLWID)
-              (MKFLD (haws-rdfld 2 RDLIN FM 1) COLWID)
-              (MKFLD (haws-rdfld 3 RDLIN FM 1) COLWID)
-              (MKFLD (haws-rdfld 4 RDLIN FM 1) COLWID)
-              (MKFLD (haws-rdfld 5 RDLIN FM 1) COLWID)
+        ((wcmatch rdlin "REFPNT*,PRECIS*,HVEXAG*,PROTYP*")
+         (setq
+           rdlin
+            (strcat
+              (mkfld (haws-rdfld 1 rdlin fm 1) colwid)
+              (mkfld (haws-rdfld 2 rdlin fm 1) colwid)
+              (mkfld (haws-rdfld 3 rdlin fm 1) colwid)
+              (mkfld (haws-rdfld 4 rdlin fm 1) colwid)
+              (mkfld (haws-rdfld 5 rdlin fm 1) colwid)
             ) ;_ end of STRCAT
          ) ;_ end of SETQ
         )
       ) ;_ end of COND
-      (WHILE (= " " (SUBSTR RDLIN (MAX (STRLEN RDLIN) 1)))
-        (SETQ RDLIN (SUBSTR RDLIN 1 (1- (STRLEN RDLIN))))
+      (while (= " " (substr rdlin (max (strlen rdlin) 1)))
+        (setq rdlin (substr rdlin 1 (1- (strlen rdlin))))
       ) ;_ end of WHILE
-      (WRITE-LINE RDLIN F2)
+      (write-line rdlin f2)
     ) ;_ end of WHILE
-    (SETQ
-      F1 (CLOSE F1)
-      F2 (CLOSE F2)
+    (setq
+      f1 (close f1)
+      f2 (close f2)
     ) ;_ end of SETQ
-    (vl-cmdf "_sh" (STRCAT "copy " TEMPFILE " " FNAME))
-    (vl-cmdf "_sh" (STRCAT "del " TEMPFILE))
-    (PRINC)
+    (vl-cmdf "_sh" (strcat "copy " tempfile " " fname))
+    (vl-cmdf "_sh" (strcat "del " tempfile))
+    (princ)
   ) ;_ end of WHILE
 ) ;_ end of DEFUN
 ;;;;-----------------------------PRO------------------------------------------
-(DEFUN c:HAWS-PRO;;Localize the variables
-             (/ I PLTPT1A TS LINGAP LUP FM STA EL1DSC ELEV1 OFFSET SLOPE NUM2 PTOPT LBLTXT ACADX ACADY1 ACADY2
-              LBLMHRIM MHRIM LBLCBTC CBTC PEXIST PLTPT1 PLTSTA PLTELV INVMIR INVUP STATXT OFFTXT EL1TXT TOPTX BOTPT
-              LBLPT1 LBLPT2 LBLPT3 TXLEN TXPT1 TXPT2 TXPT3 TXPT4 TXPT5 TXPT6 TXPT7 TXPT8 TOPPT TXPT11 TXPT12 TXPT13
-              TXPT14
+(defun c:haws-pro;;Localize the variables
+             (/ i pltpt1a ts lingap lup fm sta el1dsc elev1 offset slope num2 ptopt lbltxt acadx acady1 acady2
+              lblmhrim mhrim lblcbtc cbtc pexist pltpt1 pltsta pltelv invmir invup statxt offtxt el1txt toptx botpt
+              lblpt1 lblpt2 lblpt3 txlen txpt1 txpt2 txpt3 txpt4 txpt5 txpt6 txpt7 txpt8 toppt txpt11 txpt12 txpt13
+              txpt14
              )
 (haws-core-init 284)
-  (PROMPT
+  (prompt
     "\nProfile drafter version 5.06.  Copyright 2000, Thomas Gail Haws."
   ) ;_ end of prompt
-  (DEFUN c:haws-TGH2_PRO
+  (defun c:haws-tgh2_pro
                ()
-    (WHILE (PROGN
-             (INITGET "Ref Type Vertical Precision New File Plot")
-             (SETQ
-               PROOPT
-                (GETKWORD
+    (while (progn
+             (initget "Ref Type Vertical Precision New File Plot")
+             (setq
+               proopt
+                (getkword
                   "\nRef. point/prof. Type/Vert. exag./Precision/New prof./File/Plot: "
                 ) ;_ end of getkword
              ) ;_ end of setq
-             (COND
-               ((= PROOPT
+             (cond
+               ((= proopt
                    "Ref"
-                   ((= PROOPT "Type") (GETTYP))
-                   ((= PROOPT "Vertical")
-                     (HAWS-GETHVX)
-                     (IF F2
-                       (WRITE-LINE (STRCAT "HVEXAG    " HVEXAG) F2)
+                   ((= proopt "Type") (gettyp))
+                   ((= proopt "Vertical")
+                     (haws-gethvx)
+                     (if f2
+                       (write-line (strcat "HVEXAG    " hvexag) f2)
                      ) ;_ end of IF
                    )
-                   ((= PROOPT "Precision") (GETPREC))
-                   ((= PROOPT "New")
-                     (SETQ PLTPT1 NIL)
-                     (PROMPT "\nEnded previous profile, starting new profile.")
-                     (IF F2
-                       (WRITE-LINE "NEWPRF" F2)
+                   ((= proopt "Precision") (getprec))
+                   ((= proopt "New")
+                     (setq pltpt1 nil)
+                     (prompt "\nEnded previous profile, starting new profile.")
+                     (if f2
+                       (write-line "NEWPRF" f2)
                      ) ;_ end of IF
                    )
-                   ((= PROOPT "File") (GETFOP))
-                   ((= PROOPT "Plot") (PLTPRO))
+                   ((= proopt "File") (getfop))
+                   ((= proopt "Plot") (pltpro))
                 ) ;_ end of =
                )
              ) ;_ end of cond
@@ -714,796 +714,796 @@
     ) ;_ end of while
   ) ;_ end of defun
   ;;Call the different setup sub-functions
-  (DEFUN HAWS-PROSET
-                (/ OPT)
-    (WHILE (SETQ
-             OPT
-              (PROGN
-                (INITGET "Ref Type Vertical Precision New File")
-                (GETKWORD
+  (defun haws-proset
+                (/ opt)
+    (while (setq
+             opt
+              (progn
+                (initget "Ref Type Vertical Precision New File")
+                (getkword
                   "\nRef. point/prof. Type/Vert. exag./Precision/New prof./File: "
                 ) ;_ end of getkword
               ) ;_ end of PROGN
            ) ;_ end of SETQ
-      (COND
-        ((= OPT "Ref") (GETREF))
-        ((= OPT "Type") (GETTYP))
-        ((= OPT "Vertical")
-         (HAWS-GETHVX)
-         (IF F2
-           (WRITE-LINE (STRCAT "HVEXAG    " HVEXAG) F2)
+      (cond
+        ((= opt "Ref") (getref))
+        ((= opt "Type") (gettyp))
+        ((= opt "Vertical")
+         (haws-gethvx)
+         (if f2
+           (write-line (strcat "HVEXAG    " hvexag) f2)
          ) ;_ end of IF
         )
-        ((= OPT "Precision") (GETPREC))
-        ((= OPT "New")
-         (SETQ PLTPT1 NIL)
-         (PROMPT "\nEnded previous profile, starting new profile.")
-         (IF F2
-           (WRITE-LINE "NEWPRF" F2)
+        ((= opt "Precision") (getprec))
+        ((= opt "New")
+         (setq pltpt1 nil)
+         (prompt "\nEnded previous profile, starting new profile.")
+         (if f2
+           (write-line "NEWPRF" f2)
          ) ;_ end of IF
         )
-        ((= OPT "File") (GETFOP))
+        ((= opt "File") (getfop))
       ) ;_ end of COND
     ) ;_ end of WHILE
   ) ;_ end of DEFUN
   ;;Get the profile reference point to tie profile to ACAD coordinates
-  (DEFUN GETREF
-           (/ R)
-    (WHILE (NOT
-             (AND
-               (SETQ R (GETPOINT "\nPick a reference point:  "))
-               (SETQ REFSTA (GETREAL "\nEnter reference point station as a real no.: "))
-               (SETQ REFELV (GETREAL "\nEnter reference point elevation: "))
+  (defun getref
+           (/ r)
+    (while (not
+             (and
+               (setq r (getpoint "\nPick a reference point:  "))
+               (setq refsta (getreal "\nEnter reference point station as a real no.: "))
+               (setq refelv (getreal "\nEnter reference point elevation: "))
              ) ;_ end of AND
            ) ;_ end of NOT
     ) ;_ end of WHILE
-    (SETQ
-      REFPTX
-       (CAR R)
-      REFPTY
-       (CADR R)
+    (setq
+      refptx
+       (car r)
+      refpty
+       (cadr r)
     ) ;_ end of SETQ
-    (IF F2
-      (WRITE-LINE
-        (STRCAT
-          (MKFLD "REFPNT" COLWID)
-          (MKFLD (RTOS REFPTX 2 2) COLWID)
-          (MKFLD (RTOS REFPTY 2 2) COLWID)
-          (MKFLD (RTOS REFSTA 2 2) COLWID)
-          (MKFLD (RTOS REFELV 2 2) COLWID)
+    (if f2
+      (write-line
+        (strcat
+          (mkfld "REFPNT" colwid)
+          (mkfld (rtos refptx 2 2) colwid)
+          (mkfld (rtos refpty 2 2) colwid)
+          (mkfld (rtos refsta 2 2) colwid)
+          (mkfld (rtos refelv 2 2) colwid)
         ) ;_ end of STRCAT
-        F2
+        f2
       ) ;_ end of WRITE-LINE
     ) ;_ end of IF
   ) ;_ end of DEFUN
   ;;Setup layers for the profile
-  (DEFUN SETLAY
-           (/ LLINC LLINLT LTXC LTXLT)
-    (COND
-      ((AND (= PROHT -20000) (WCMATCH PROTYP "X*"))
-       (SETQ LAYLIN (HAWS-GETLAYR "PROXDIM"))
+  (defun setlay
+           (/ llinc llinlt ltxc ltxlt)
+    (cond
+      ((and (= proht -20000) (wcmatch protyp "X*"))
+       (setq laylin (haws-getlayr "PROXDIM"))
       )
-      ((= PROHT -20000) (SETQ LAYLIN (HAWS-GETLAYR "PRODIM")))
-      ((AND (= PROHT -10000) (WCMATCH PROTYP "X*"))
-       (SETQ LAYLIN (HAWS-GETLAYR "PROXLINE"))
+      ((= proht -20000) (setq laylin (haws-getlayr "PRODIM")))
+      ((and (= proht -10000) (wcmatch protyp "X*"))
+       (setq laylin (haws-getlayr "PROXLINE"))
       )
-      ((= PROHT -10000) (SETQ LAYLIN (HAWS-GETLAYR "PROLINE")))
-      ((AND (= PROHT 1000) (WCMATCH PROTYP "X*"))
-       (HAWS-MKLAYR "PROPNT")
-       (SETQ LAYLIN (HAWS-GETLAYR "PROXEL"))
+      ((= proht -10000) (setq laylin (haws-getlayr "PROLINE")))
+      ((and (= proht 1000) (wcmatch protyp "X*"))
+       (haws-mklayr "PROPNT")
+       (setq laylin (haws-getlayr "PROXEL"))
       )
-      ((= PROHT 1000)
-       (HAWS-MKLAYR "PROPNT")
-       (SETQ LAYLIN (HAWS-GETLAYR "PROEL"))
+      ((= proht 1000)
+       (haws-mklayr "PROPNT")
+       (setq laylin (haws-getlayr "PROEL"))
       )
-      ((AND (>= PROHT 0) (WCMATCH PROTYP "X*,MESA"))
-       (SETQ LAYLIN (HAWS-GETLAYR "PROXSTRT"))
+      ((and (>= proht 0) (wcmatch protyp "X*,MESA"))
+       (setq laylin (haws-getlayr "PROXSTRT"))
       )
-      ((>= PROHT 0) (SETQ LAYLIN (HAWS-GETLAYR "PROSTRT")))
-      ((AND (< PROHT 0) (WCMATCH PROTYP "X*"))
-       (SETQ
-         LAYLIN
-          (LIST
-            (STRCAT
-              (CAR (HAWS-GETLAYR "PROPRE"))
-              (CAR (SETQ LAYLIN (HAWS-GETLAYR "PROEXMID")))
-              (SUBSTR PROTYP 2)
+      ((>= proht 0) (setq laylin (haws-getlayr "PROSTRT")))
+      ((and (< proht 0) (wcmatch protyp "X*"))
+       (setq
+         laylin
+          (list
+            (strcat
+              (car (haws-getlayr "PROPRE"))
+              (car (setq laylin (haws-getlayr "PROEXMID")))
+              (substr protyp 2)
             ) ;_ end of strcat
-            (CADR LAYLIN)
-            (CADDR LAYLIN)
+            (cadr laylin)
+            (caddr laylin)
           ) ;_ end of LIST
        ) ;_ end of SETQ
       )
-      ((< PROHT 0)
-       (SETQ
-         LAYLIN
-          (COND
-            ((HAWS-GETLAYR (STRCAT "PRO" PROTYP)))
-            ((LIST
-               (STRCAT (CAR (SETQ LAYLIN (HAWS-GETLAYR "PROPRE"))) PROTYP)
-               (CADR LAYLIN)
-               (CADDR LAYLIN)
+      ((< proht 0)
+       (setq
+         laylin
+          (cond
+            ((haws-getlayr (strcat "PRO" protyp)))
+            ((list
+               (strcat (car (setq laylin (haws-getlayr "PROPRE"))) protyp)
+               (cadr laylin)
+               (caddr laylin)
              ) ;_ end of list
             )
           ) ;_ end of COND
        ) ;_ end of SETQ
       )
     ) ;_ end of COND
-    (SETQ
-      LAYTX
-       (HAWS-GETLAYR "PROTXSUF")
-      LAYXTX
-       (HAWS-GETLAYR "PROXTXSUF")
+    (setq
+      laytx
+       (haws-getlayr "PROTXSUF")
+      layxtx
+       (haws-getlayr "PROXTXSUF")
     ) ;_ end of SETQ
-    (IF (WCMATCH PROTYP "X*")
-      (SETQ
-        PROTYP
-         (SUBSTR PROTYP 2)
-        LAYTX
-         LAYXTX
-        PEXIST
-         T
+    (if (wcmatch protyp "X*")
+      (setq
+        protyp
+         (substr protyp 2)
+        laytx
+         layxtx
+        pexist
+         t
       ) ;_ end of SETQ
-      (SETQ PEXIST NIL)
+      (setq pexist nil)
     ) ;_ end of IF
-    (SETQ LAYTX (SUBST (STRCAT (CAR LAYLIN) (CAR LAYTX)) (CAR LAYTX) LAYTX))
-    (IF (NOT (TBLSEARCH "LAYER" (CAR LAYLIN)))
-      (HAWS-MKLAYR LAYLIN)
+    (setq laytx (subst (strcat (car laylin) (car laytx)) (car laytx) laytx))
+    (if (not (tblsearch "LAYER" (car laylin)))
+      (haws-mklayr laylin)
     ) ;_ end of IF
-    (IF (NOT (TBLSEARCH "LAYER" (CAR LAYTX)))
-      (HAWS-MKLAYR LAYTX)
+    (if (not (tblsearch "LAYER" (car laytx)))
+      (haws-mklayr laytx)
     ) ;_ end of IF
-    (SETQ
-      LAYLIN
-       (CAR LAYLIN)
-      LAYTX
-       (CAR LAYTX)
-      LAYPRE
-       (CAR (HAWS-GETLAYR "PROPRE"))
-      LAYTXS
-       (CAR (HAWS-GETLAYR "PROTXSUF"))
+    (setq
+      laylin
+       (car laylin)
+      laytx
+       (car laytx)
+      laypre
+       (car (haws-getlayr "PROPRE"))
+      laytxs
+       (car (haws-getlayr "PROTXSUF"))
     ) ;_ end of SETQ
   ) ;_ end of DEFUN
   ;;Get the type of profile and set up layers.
-  (DEFUN GETTYP
-           (/ PIPSLD)
-    (SETQ
-      WALTHK
+  (defun gettyp
+           (/ pipsld)
+    (setq
+      walthk
        0
-      PROTYP
+      protyp
        ""
     ) ;_ end of SETQ
-    (INITGET 1 "Mesa Gutter PAv PIpe Line POints")
-    (SETQ
-      PROHT
-       (GETKWORD
+    (initget 1 "Mesa Gutter PAv PIpe Line POints")
+    (setq
+      proht
+       (getkword
          "\nMesa/Gutter/PAvement/PIpe/Line only/POints only:"
        ) ;_ end of getkword
     ) ;_ end of setq
-    (SETQ
-      PROHT
-       (COND
-         ((= PROHT "Mesa")
-          (SETQ PROTYP "MESA")
-          (* (/ (GETREAL "\nCurb height (in.): ") 12) HVEXAG *HAWS-ELVSCL*)
+    (setq
+      proht
+       (cond
+         ((= proht "Mesa")
+          (setq protyp "MESA")
+          (* (/ (getreal "\nCurb height (in.): ") 12) hvexag *haws-elvscl*)
          )
-         ((= PROHT "Gutter")
-          (* (/ (GETREAL "\nCurb height (in.): ") 12) HVEXAG *HAWS-ELVSCL*)
+         ((= proht "Gutter")
+          (* (/ (getreal "\nCurb height (in.): ") 12) hvexag *haws-elvscl*)
          )
-         ((= PROHT "PAv") 0)
-         ((= PROHT "PIpe")
-          (SETQ
-            PROTYP
-             (STRCASE
-               (PROGN
-                 (INITGET 1 "Wat Sew SD Irr Gas")
-                 (GETKWORD "\nWat/Sew/SD/Irr/Gas: ")
+         ((= proht "PAv") 0)
+         ((= proht "PIpe")
+          (setq
+            protyp
+             (strcase
+               (progn
+                 (initget 1 "Wat Sew SD Irr Gas")
+                 (getkword "\nWat/Sew/SD/Irr/Gas: ")
                ) ;_ end of progn
              ) ;_ end of strcase
           ) ;_ end of setq
-          (SETQ PROHT (* (/ (GETREAL "\nPipe ID (in): ") -12) HVEXAG *HAWS-ELVSCL*))
-          (COND
-            ((SETQ PIPSLD (FINDFILE "pipetabl.sld"))
-             (SETVAR "filedia" 0)
-             (vl-cmdf "._vslide" PIPSLD)
+          (setq proht (* (/ (getreal "\nPipe ID (in): ") -12) hvexag *haws-elvscl*))
+          (cond
+            ((setq pipsld (findfile "pipetabl.sld"))
+             (setvar "filedia" 0)
+             (vl-cmdf "._vslide" pipsld)
             )
           ) ;_ end of cond
-          (SETQ
-            WALTHK
-             (* (/ (GETREAL "\nWall thickness (in): ") -12)
-                HVEXAG
-                *HAWS-ELVSCL*
+          (setq
+            walthk
+             (* (/ (getreal "\nWall thickness (in): ") -12)
+                hvexag
+                *haws-elvscl*
              ) ;_ end of *
           ) ;_ end of setq
-          (REDRAW)
-          PROHT
+          (redraw)
+          proht
          )
-         ((= PROHT "Line") -10000)
-         ((= PROHT "POints") 1000)
+         ((= proht "Line") -10000)
+         ((= proht "POints") 1000)
        ) ;_ end of COND
     ) ;_ end of SETQ
-    (INITGET 1 "Exist Prop")
-    (IF (= (GETKWORD "Exist/Prop: ") "Exist")
-      (SETQ PROTYP (STRCAT "X" PROTYP))
+    (initget 1 "Exist Prop")
+    (if (= (getkword "Exist/Prop: ") "Exist")
+      (setq protyp (strcat "X" protyp))
     ) ;_ end of IF
-    (IF F2
-      (WRITE-LINE
-        (STRCAT
+    (if f2
+      (write-line
+        (strcat
           "PROTYP    "
-          (MKFLD
-            (RTOS
-              (IF (< -10000 PROHT 1000)
-                (* (/ PROHT HVEXAG *HAWS-ELVSCL*) 12.0)
-                PROHT
+          (mkfld
+            (rtos
+              (if (< -10000 proht 1000)
+                (* (/ proht hvexag *haws-elvscl*) 12.0)
+                proht
               ) ;_ end of IF
               2
               6
             ) ;_ end of RTOS
           ) ;_ end of mkfld
-          (MKFLD (RTOS (* (/ WALTHK HVEXAG *HAWS-ELVSCL*) 12) 2 6))
-          PROTYP
+          (mkfld (rtos (* (/ walthk hvexag *haws-elvscl*) 12) 2 6))
+          protyp
         ) ;_ end of STRCAT
-        F2
+        f2
       ) ;_ end of WRITE-LINE
     ) ;_ end of IF
-    (SETLAY)
+    (setlay)
   ) ;_ end of DEFUN
   ;;Get precisions for numbers.
-  (DEFUN GETPREC
+  (defun getprec
             ()
-    (WHILE (PROGN
-             (INITGET "STa Offset Elev SLope")
-             (PROMPT
+    (while (progn
+             (initget "STa Offset Elev SLope")
+             (prompt
                "\nChange rounding precision for STa/Offset/Elev/SLope: "
              ) ;_ end of prompt
-             (SETQ TEMP (GETKWORD))
+             (setq temp (getkword))
            ) ;_ end of PROGN
-      (PROMPT
-        (STRCAT
+      (prompt
+        (strcat
           "\nNumber of digits to right of decimal place for "
-          TEMP
+          temp
           ": "
         ) ;_ end of strcat
       ) ;_ end of prompt
-      (SET (READ (STRCAT (SUBSTR TEMP 1 2) "prec")) (GETINT))
+      (set (read (strcat (substr temp 1 2) "prec")) (getint))
     ) ;_ end of WHILE
-    (SETVAR "luprec" STPREC)
+    (setvar "luprec" stprec)
   ) ;_ end of DEFUN
   ;;Increment elevations in a file
-  (DEFUN INCFIL
-           (/ INCSEW INCSD INCGEN)
-    (SETQ
-      INCSEW
-       (GETREAL "\nIncrement for underground sewer elevations: ")
-      INCSD
-       (GETREAL
+  (defun incfil
+           (/ incsew incsd incgen)
+    (setq
+      incsew
+       (getreal "\nIncrement for underground sewer elevations: ")
+      incsd
+       (getreal
          "\nIncrement for underground storm drain elevations: "
        ) ;_ end of getreal
-      INCGEN
-       (GETREAL "\nIncrement for all other elevations: ")
+      incgen
+       (getreal "\nIncrement for all other elevations: ")
     ) ;_ end of SETQ
-    (SETQ
-      F1 (COND
-           (PROINPUTFILE
-            (OPEN (SETQ FNAME (STRCAT PROINPUTFILE ".pro")) "r")
+    (setq
+      f1 (cond
+           (proinputfile
+            (open (setq fname (strcat proinputfile ".pro")) "r")
            )
-           ((= (GETVAR "filedia") 1)
-            (OPEN
-              (SETQ FNAME (GETFILED "File to increment" (HAWS-GETDNPATH) "pro" 0))
+           ((= (getvar "filedia") 1)
+            (open
+              (setq fname (getfiled "File to increment" (haws-getdnpath) "pro" 0))
               "r"
             ) ;_ end of open
            )
-           (T (CAR (GETFIL "File to increment" (HAWS-GETDNPATH) "r" "pro")))
+           (t (car (getfil "File to increment" (haws-getdnpath) "r" "pro")))
          ) ;_ end of COND
     ) ;_ end of SETQ
-    (WHILE (IF F1
-             (HAWS-RDFILE)
+    (while (if f1
+             (haws-rdfile)
            ) ;_ end of IF
-      (IF (AND STA (/= STA "Setup"))
+      (if (and sta (/= sta "Setup"))
         ;;if it is a profile point
-        (PROGN
-          (PLTPRO)
+        (progn
+          (pltpro)
           ;;plot the point
-          (IF F2
+          (if f2
             ;;If requested, write all
-            (WRITE-LINE
-              (STRCAT
+            (write-line
+              (strcat
                 ;;the point information
                 "PRFPNT    "
                 ;;to a file (f2).
-                (MKFLD (RTOS STA 2 3))
-                (MKFLD
-                  (IF OFFSET
-                    (RTOS OFFSET 2 3)
+                (mkfld (rtos sta 2 3))
+                (mkfld
+                  (if offset
+                    (rtos offset 2 3)
                     ""
                   ) ;_ end of IF
                 ) ;_ end of mkfld
-                (MKFLD (RTOS ELEV1 2 3))
-                (MKFLD
-                  (IF SLOPE
-                    (RTOS SLOPE 2 4)
+                (mkfld (rtos elev1 2 3))
+                (mkfld
+                  (if slope
+                    (rtos slope 2 4)
                     ""
                   ) ;_ end of IF
                 ) ;_ end of mkfld
-                (MKFLD
-                  (IF NUM2
-                    (RTOS NUM2 2 3)
+                (mkfld
+                  (if num2
+                    (rtos num2 2 3)
                     ""
                   ) ;_ end of IF
                 ) ;_ end of mkfld
-                (COND
-                  (LBLTXT)
+                (cond
+                  (lbltxt)
                   ("")
                 ) ;_ end of COND
               ) ;_ end of STRCAT
-              F2
+              f2
             ) ;_ end of WRITE-LINE
           ) ;_ end of IF
-          (SETQ STA NIL)
+          (setq sta nil)
           ;;Reset profile point to nil.
         ) ;_ end of PROGN
-        (IF (NOT F1)
-          (HAWS-PROSET)
+        (if (not f1)
+          (haws-proset)
         ) ;_ end of IF
         ;;If not a point, do setup.
       ) ;_ end of IF
-      (PRINC "\rReading line ")
-      (PRINC (SETQ I (1+ I)))
+      (princ "\rReading line ")
+      (princ (setq i (1+ i)))
     ) ;_ end of WHILE
   ) ;_ end of DEFUN
   ;;Get file options
-  (DEFUN GETFOP
-           (/ RDWRT FPRMPT FBIT DATFIL)
-    (INITGET "Read Save Increment")
-    (SETQ
-      RDWRT
-       (GETKWORD
+  (defun getfop
+           (/ rdwrt fprmpt fbit datfil)
+    (initget "Read Save Increment")
+    (setq
+      rdwrt
+       (getkword
          "\nRead from file/Save to file/Increment elevations in a file: "
        ) ;_ end of getkword
-      F1 NIL
-      F2 NIL
+      f1 nil
+      f2 nil
     ) ;_ end of SETQ
-    (COND
-      ((= RDWRT "Increment")
-       (PRINC "\nSorry.  Incrementing not yet available.")
+    (cond
+      ((= rdwrt "Increment")
+       (princ "\nSorry.  Incrementing not yet available.")
        ;;(incfil)
       )
-      (T
-       (INITGET "Create Append")
-       (IF (= RDWRT "Read")
-         (SETQ
-           RDWRT
+      (t
+       (initget "Create Append")
+       (if (= rdwrt "Read")
+         (setq
+           rdwrt
             "r"
-           FPRMPT
+           fprmpt
             "File to read"
-           FBIT
+           fbit
             0
-           PROVER4
-            NIL
+           prover4
+            nil
          ) ;_ end of SETQ
-         (SETQ
-           RDWRT
-            (IF (= (GETKWORD "\Create new file/Append existing file: ")
+         (setq
+           rdwrt
+            (if (= (getkword "\Create new file/Append existing file: ")
                    "Create"
                 ) ;_ end of =
               "w"
               "a"
             ) ;_ end of IF
-           FPRMPT
+           fprmpt
             "File to save input to"
-           FBIT
+           fbit
             1
          ) ;_ end of SETQ
        ) ;_ end of IF
-       (SETQ
-         DATFIL
-          (COND
-            ((= (GETVAR "filedia") 1)
-             (OPEN
-               (SETQ FNAME (GETFILED FPRMPT (HAWS-GETDNPATH) "pro" FBIT))
-               RDWRT
+       (setq
+         datfil
+          (cond
+            ((= (getvar "filedia") 1)
+             (open
+               (setq fname (getfiled fprmpt (haws-getdnpath) "pro" fbit))
+               rdwrt
              ) ;_ end of open
             )
-            (T (CAR (GETFIL FPRMPT (HAWS-GETDNPATH) RDWRT "pro")))
+            (t (car (getfil fprmpt (haws-getdnpath) rdwrt "pro")))
           ) ;_ end of COND
        ) ;_ end of SETQ
-       (IF (= RDWRT "r")
-         (SETQ F1 DATFIL)
-         (PROGN (SETQ F2 DATFIL) (WRITE-LINE "COLWID 10" F2))
+       (if (= rdwrt "r")
+         (setq f1 datfil)
+         (progn (setq f2 datfil) (write-line "COLWID 10" f2))
        ) ;_ end of IF
       )
     ) ;_ end of COND
   ) ;_ end of DEFUN
   ;;Prompt for station to plot
-  (DEFUN HAWS-GETPNT
+  (defun haws-getpnt
                 ()
-    (SETQ
-      STA
-       T
-      ELEV1
-       NIL
-      LBLTXT
+    (setq
+      sta
+       t
+      elev1
+       nil
+      lbltxt
        ""
     ) ;_ end of SETQ
-    (WHILE (AND STA (NOT ELEV1))
-      (WHILE (PROGN
-               (INITGET "Setup Label")
-               (= (SETQ STA (GETREAL "\n<Station>/Label/Setup: ")) "Label")
+    (while (and sta (not elev1))
+      (while (progn
+               (initget "Setup Label")
+               (= (setq sta (getreal "\n<Station>/Label/Setup: ")) "Label")
              ) ;_ end of progn
-        (SETQ LBLTXT (GETSTRING 1 "\nEnter label for this station: "))
+        (setq lbltxt (getstring 1 "\nEnter label for this station: "))
       ) ;_ end of WHILE
-      (IF (AND STA (/= STA "Setup"))
-        (PROGN
-          (WHILE (PROGN
-                   (INITGET "Offset")
-                   (= (SETQ ELEV1 (GETREAL "<Elevation>/Offset: ")) "Offset")
+      (if (and sta (/= sta "Setup"))
+        (progn
+          (while (progn
+                   (initget "Offset")
+                   (= (setq elev1 (getreal "<Elevation>/Offset: ")) "Offset")
                  ) ;_ end of progn
-            (SETQ OFFSET (GETREAL "\nOffset: "))
+            (setq offset (getreal "\nOffset: "))
           ) ;_ end of WHILE
-          (IF (AND
-                ELEV1
-                (> (ABS (- ELEV1 REFELV)) 100)
-                (= (STRCASE
-                     (GETSTRING "\nElev. diff. is over 100 feet.  Plot? Y/N: ")
+          (if (and
+                elev1
+                (> (abs (- elev1 refelv)) 100)
+                (= (strcase
+                     (getstring "\nElev. diff. is over 100 feet.  Plot? Y/N: ")
                    ) ;_ end of strcase
                    "N"
                 ) ;_ end of =
               ) ;_ end of AND
-            (SETQ ELEV1 NIL)
+            (setq elev1 nil)
           ) ;_ end of IF
         ) ;_ end of PROGN
-        (SETQ ELEV1 T)
+        (setq elev1 t)
       ) ;_ end of IF
     ) ;_ end of WHILE
     ;;Return nil if not given station.
-    STA
+    sta
   ) ;_ end of DEFUN
   ;;Read and interpret the lines of the data file.
   ;;First six letters of each data file line are the line title.
-  (DEFUN HAWS-RDFILE
-                (/ LINERR RDLIN TITLE)
-    (IF (NOT FM)
-      (SETQ FM ",")
+  (defun haws-rdfile
+                (/ linerr rdlin title)
+    (if (not fm)
+      (setq fm ",")
     ) ;_ end of IF
-    (SETQ RDLIN (READ-LINE F1))
-    (IF RDLIN
-      (PROGN
-        (SETQ TITLE (SUBSTR RDLIN 1 6))
-        (COND
-          ((= (SUBSTR RDLIN 1 2) "0,")
-           (SETQ
-             STA
-              (haws-rdfld 2 RDLIN FM 0)
-             OFFSET
-              NIL
-             ELEV1
-              (haws-rdfld 4 RDLIN FM 0)
-             SLOPE
-              NIL
-             LBLTXT
+    (setq rdlin (read-line f1))
+    (if rdlin
+      (progn
+        (setq title (substr rdlin 1 6))
+        (cond
+          ((= (substr rdlin 1 2) "0,")
+           (setq
+             sta
+              (haws-rdfld 2 rdlin fm 0)
+             offset
+              nil
+             elev1
+              (haws-rdfld 4 rdlin fm 0)
+             slope
+              nil
+             lbltxt
               ""
            ) ;_ end of SETQ
           )
-          ((= TITLE "PRFPNT")
-           (SETQ
-             STA
-              (haws-rdfld 2 RDLIN FM 0)
-             OFFSET
-              (haws-rdfld 3 RDLIN FM 0)
-             ELEV1
-              (haws-rdfld 4 RDLIN FM 0)
-             SLOPE
-              (haws-rdfld 5 RDLIN FM 0)
-             NUM2
-              (haws-rdfld 6 RDLIN FM 0)
-             LBLTXT
-              (haws-rdfld 7 RDLIN FM 3)
+          ((= title "PRFPNT")
+           (setq
+             sta
+              (haws-rdfld 2 rdlin fm 0)
+             offset
+              (haws-rdfld 3 rdlin fm 0)
+             elev1
+              (haws-rdfld 4 rdlin fm 0)
+             slope
+              (haws-rdfld 5 rdlin fm 0)
+             num2
+              (haws-rdfld 6 rdlin fm 0)
+             lbltxt
+              (haws-rdfld 7 rdlin fm 3)
               ;;8 for version 4, 7 for version 5
            ) ;_ end of SETQ
-           (IF (NOT STA)
-             (SETQ LINERR T)
+           (if (not sta)
+             (setq linerr t)
            ) ;_ end of IF
           )
-          ((= TITLE "COLWID")
+          ((= title "COLWID")
            ;;If format line,
-           (IF ;;read field width (default ",")
-               (ZEROP (SETQ FM (ATOI (SUBSTR RDLIN 8))))
-             (SETQ FM (SUBSTR RDLIN 8))
+           (if ;;read field width (default ",")
+               (zerop (setq fm (atoi (substr rdlin 8))))
+             (setq fm (substr rdlin 8))
            ) ;_ end of IF
-           (IF (OR (NOT FM) (= "" FM))
-             (SETQ LINERR T)
+           (if (or (not fm) (= "" fm))
+             (setq linerr t)
            ) ;_ end of IF
           )
-          ((= TITLE "REFPNT")
+          ((= title "REFPNT")
            ;;If reference line,
-           (SETQ
+           (setq
              ;;read ref. pt info.
-             REFPTX
-              (haws-rdfld 2 RDLIN FM 0)
-             REFPTY
-              (haws-rdfld 3 RDLIN FM 0)
-             REFSTA
-              (haws-rdfld 4 RDLIN FM 0)
-             REFELV
-              (haws-rdfld 5 RDLIN FM 0)
-             STASCL
-              (haws-rdfld 6 RDLIN FM 0)
-             STASCL
-              (IF STASCL
-                STASCL
+             refptx
+              (haws-rdfld 2 rdlin fm 0)
+             refpty
+              (haws-rdfld 3 rdlin fm 0)
+             refsta
+              (haws-rdfld 4 rdlin fm 0)
+             refelv
+              (haws-rdfld 5 rdlin fm 0)
+             stascl
+              (haws-rdfld 6 rdlin fm 0)
+             stascl
+              (if stascl
+                stascl
                 1
               ) ;_ end of if
-             *HAWS-ELVSCL*
-              (haws-rdfld 7 RDLIN FM 0)
-             *HAWS-ELVSCL*
-              (IF *HAWS-ELVSCL*
-                *HAWS-ELVSCL*
+             *haws-elvscl*
+              (haws-rdfld 7 rdlin fm 0)
+             *haws-elvscl*
+              (if *haws-elvscl*
+                *haws-elvscl*
                 1
               ) ;_ end of if
            ) ;_ end of SETQ
-           (IF (NOT (AND REFPTX REFPTY REFSTA REFELV))
-             (SETQ LINERR T)
+           (if (not (and refptx refpty refsta refelv))
+             (setq linerr t)
            ) ;_ end of IF
           )
-          ((= TITLE "HVEXAG")
-           (SETQ HVEXAG (haws-rdfld 2 RDLIN FM 0))
-           (IF (NOT HVEXAG)
-             (SETQ LINERR T)
+          ((= title "HVEXAG")
+           (setq hvexag (haws-rdfld 2 rdlin fm 0))
+           (if (not hvexag)
+             (setq linerr t)
            ) ;_ end of IF
           )
-          ((= TITLE "PROTYP")
-           (SETQ
-             PROHT
-              (haws-rdfld 2 RDLIN FM 0)
-             PROHT
-              (IF (OR (= PROHT 1000) (<= PROHT -10000))
-                PROHT
-                (/ (* PROHT HVEXAG *HAWS-ELVSCL*) 12)
+          ((= title "PROTYP")
+           (setq
+             proht
+              (haws-rdfld 2 rdlin fm 0)
+             proht
+              (if (or (= proht 1000) (<= proht -10000))
+                proht
+                (/ (* proht hvexag *haws-elvscl*) 12)
               ) ;_ end of IF
-             WALTHK
-              (haws-rdfld 3 RDLIN FM 0)
-             WALTHK
-              (COND
-                (WALTHK (/ (* WALTHK HVEXAG *HAWS-ELVSCL*) 12))
+             walthk
+              (haws-rdfld 3 rdlin fm 0)
+             walthk
+              (cond
+                (walthk (/ (* walthk hvexag *haws-elvscl*) 12))
                 (0)
               ) ;_ end of COND
-             PROTYP
-              (STRCASE (haws-rdfld 4 RDLIN FM 1))
-             SLPTYP
-              (haws-rdfld 5 RDLIN FM 1)
+             protyp
+              (strcase (haws-rdfld 4 rdlin fm 1))
+             slptyp
+              (haws-rdfld 5 rdlin fm 1)
            ) ;_ end of SETQ
-           (IF (AND (< -10000 PROHT 0) (= PROTYP ""))
-             (SETQ LINERR T)
-             (SETLAY)
+           (if (and (< -10000 proht 0) (= protyp ""))
+             (setq linerr t)
+             (setlay)
            ) ;_ end of IF
-           (IF (AND (/= SLPTYP "") (NOT SLPRECIN))
-             (SETQ SLPREC 5)
+           (if (and (/= slptyp "") (not slprecin))
+             (setq slprec 5)
            ) ;_ end of if
           )
-          ((= TITLE "PRECIS")
-           (SETQ
-             STPREC
-              (FIX (haws-rdfld 2 RDLIN FM 0))
-             OFPREC
-              (FIX (haws-rdfld 3 RDLIN FM 0))
-             ELPREC
-              (FIX (haws-rdfld 4 RDLIN FM 0))
-             SLPRECIN
-              (FIX (haws-rdfld 5 RDLIN FM 0))
-             SLPREC
-              SLPRECIN
+          ((= title "PRECIS")
+           (setq
+             stprec
+              (fix (haws-rdfld 2 rdlin fm 0))
+             ofprec
+              (fix (haws-rdfld 3 rdlin fm 0))
+             elprec
+              (fix (haws-rdfld 4 rdlin fm 0))
+             slprecin
+              (fix (haws-rdfld 5 rdlin fm 0))
+             slprec
+              slprecin
            ) ;_ end of SETQ
           )
-          ((= TITLE "NEWPRF")
-           (SETQ
-             PLTPT1
-              NIL
-             TOPPT
-              NIL
+          ((= title "NEWPRF")
+           (setq
+             pltpt1
+              nil
+             toppt
+              nil
            ) ;_ end of setq
           )
         ) ;_ end of COND
-        (IF LINERR
-          (PRINC (STRCAT ".  Input error found:\n" RDLIN "\n"))
+        (if linerr
+          (princ (strcat ".  Input error found:\n" rdlin "\n"))
         ) ;_ end of IF
-        T
+        t
       ) ;_ end of PROGN
-      NIL
+      nil
     ) ;_ end of IF
   ) ;_ end of DEFUN
   ;;Plot profile given sta, elev1, and offset.
-  (DEFUN HAWS-PLTHARDPRO
+  (defun haws-plthardpro
                     ()
-    (SETQ
+    (setq
       ;;Extract plotting instructions then actual elevation from input
-      INVMIR
-       (COND
-         ((AND
-            ELEV1
-            (/= (DISTOF (RTOS ELEV1 2 2)) (DISTOF (RTOS ELEV1 2 3)))
+      invmir
+       (cond
+         ((and
+            elev1
+            (/= (distof (rtos elev1 2 2)) (distof (rtos elev1 2 3)))
           ) ;_ end of and
-          (> 0.35 (- (* 100 ELEV1) (FIX (* 100 ELEV1))) 0.15)
+          (> 0.35 (- (* 100 elev1) (fix (* 100 elev1))) 0.15)
          )
-         ((AND PLTPT1A (WCMATCH (STRCASE LBLTXT) "* SHEET *,")))
+         ((and pltpt1a (wcmatch (strcase lbltxt) "* SHEET *,")))
        ) ;_ end of COND
-      INVUP
-       (COND
-         ((AND
-            ELEV1
-            (/= (DISTOF (RTOS ELEV1 2 2)) (DISTOF (RTOS ELEV1 2 3)))
+      invup
+       (cond
+         ((and
+            elev1
+            (/= (distof (rtos elev1 2 2)) (distof (rtos elev1 2 3)))
           ) ;_ end of and
-          (> 0.25 (- (* 100 ELEV1) (FIX (* 100 ELEV1))) 0.05)
+          (> 0.25 (- (* 100 elev1) (fix (* 100 elev1))) 0.05)
          )
        ) ;_ end of COND
-      ELEV1
-       (IF (AND
-             (= PROHT 1000)
-             (SETQ TEMP (HAWS-DISTOFX (STRCASE LBLTXT) "*TOP*=*,*BOT*=*,*INV*=*" 0))
+      elev1
+       (if (and
+             (= proht 1000)
+             (setq temp (haws-distofx (strcase lbltxt) "*TOP*=*,*BOT*=*,*INV*=*" 0))
            ) ;_ end of and
-         TEMP
+         temp
          ;;elevation from ellipse label for ellipses
-         ELEV1
+         elev1
          ;;elevation from elevation field for everything else
        ) ;_ end of IF
-      PLTELV
-       (NOT (MINUSP ELEV1))
-      ELEV1
-       (/ (FIX (* (+ (ABS ELEV1) 0.0001) 100.0)) 100.0)
+      pltelv
+       (not (minusp elev1))
+      elev1
+       (/ (fix (* (+ (abs elev1) 0.0001) 100.0)) 100.0)
       ;;Extract plotting instructions and actual station from input
-      PLTSTA
-       (AND
-         (/= PROTYP "MESA")
-         (/= PROHT 1000)
-         (= (DISTOF (RTOS STA 2 2)) (DISTOF (RTOS STA 2 3)))
+      pltsta
+       (and
+         (/= protyp "MESA")
+         (/= proht 1000)
+         (= (distof (rtos sta 2 2)) (distof (rtos sta 2 3)))
        ) ;_ end of and
-      STA
-       (ATOF (RTOS STA 2 2))
+      sta
+       (atof (rtos sta 2 2))
       ;;Translate station and elevation to a world coordinate point
-      ACADX
-       (+ REFPTX (* STASCL (- STA REFSTA)))
-      ACADY1
-       (+ REFPTY (* HVEXAG *HAWS-ELVSCL* (- ELEV1 REFELV)))
+      acadx
+       (+ refptx (* stascl (- sta refsta)))
+      acady1
+       (+ refpty (* hvexag *haws-elvscl* (- elev1 refelv)))
       ;;Extract mh rim, cb second elevation, or other y2 from input
-      ACADY2
-       (IF NUM2
-         (+ REFPTY (* HVEXAG *HAWS-ELVSCL* (- NUM2 REFELV)))
+      acady2
+       (if num2
+         (+ refpty (* hvexag *haws-elvscl* (- num2 refelv)))
        ) ;_ end of IF
-      LBLNUM2
-       (COND
-         ((WCMATCH (STRCASE LBLTXT) "*RIM=#*")
-          (HAWS-ATOFX LBLTXT "*RIM=*" 0)
+      lblnum2
+       (cond
+         ((wcmatch (strcase lbltxt) "*RIM=#*")
+          (haws-atofx lbltxt "*RIM=*" 0)
          )                              ;Manhole rim
-         ((WCMATCH (STRCASE LBLTXT) "*TC=*")
-          (HAWS-ATOFX LBLTXT "*TC=*" 0)
+         ((wcmatch (strcase lbltxt) "*TC=*")
+          (haws-atofx lbltxt "*TC=*" 0)
          )                              ;Inlet TC
-         ((WCMATCH (STRCASE LBLTXT) "*GRATE=*")
-          (+ 0.67 (HAWS-ATOFX LBLTXT "*GRATE=*" 0))
+         ((wcmatch (strcase lbltxt) "*GRATE=*")
+          (+ 0.67 (haws-atofx lbltxt "*GRATE=*" 0))
          )                              ;Grate TC
-         ((= PROHT 1000)
-          (HAWS-ATOFX (STRCASE LBLTXT) "*\"*,* IN*" 1) ;Ellipse diameter
+         ((= proht 1000)
+          (haws-atofx (strcase lbltxt) "*\"*,* IN*" 1) ;Ellipse diameter
          )
        ) ;_ end of COND
-      LBLACADY2
-       (IF LBLNUM2
-         (+ REFPTY (* HVEXAG *HAWS-ELVSCL* (- LBLNUM2 REFELV)))
+      lblacady2
+       (if lblnum2
+         (+ refpty (* hvexag *haws-elvscl* (- lblnum2 refelv)))
        ) ;_ end of IF
-      MHRIM
-       (IF (WCMATCH (STRCASE LBLTXT) "*RIM=#*")
-         (LIST
-           ACADX
-           (COND
-             (ACADY2)
-             (LBLACADY2)
+      mhrim
+       (if (wcmatch (strcase lbltxt) "*RIM=#*")
+         (list
+           acadx
+           (cond
+             (acady2)
+             (lblacady2)
            ) ;_ end of COND
            0.0
          ) ;_ end of LIST
        ) ;_ end of IF
-      CBTC
-       (IF (AND
-             (WCMATCH (STRCASE LBLTXT) "*CB*,*INLET*,*BASIN*")
-             (OR ACADY2 LBLACADY2)
+      cbtc
+       (if (and
+             (wcmatch (strcase lbltxt) "*CB*,*INLET*,*BASIN*")
+             (or acady2 lblacady2)
            ) ;_ end of and
-         (LIST
-           ACADX
-           (COND
-             (ACADY2)
-             (LBLACADY2)
+         (list
+           acadx
+           (cond
+             (acady2)
+             (lblacady2)
            ) ;_ end of COND
            0.0
          ) ;_ end of LIST
        ) ;_ end of IF
       ;;Set acad plot points
-      PLTPT1
-       (LIST ACADX ACADY1 0.0)
-      PLTPT2
-       (IF (OR NUM2 LBLNUM2)
-         (LIST
-           ACADX
-           (COND
-             (ACADY2)
-             (LBLACADY2)
+      pltpt1
+       (list acadx acady1 0.0)
+      pltpt2
+       (if (or num2 lblnum2)
+         (list
+           acadx
+           (cond
+             (acady2)
+             (lblacady2)
            ) ;_ end of COND
            0.0
          ) ;_ end of LIST
        ) ;_ end of IF
     ) ;_ end of setq
     ;;Set points for secondary lines depending on profile type
-    (COND
-      ((< -10000 PROHT 1000)
-       (SETQ
-         TOPPT
-          (POLAR
-            PLTPT1
-            (/ PI 2)
-            (IF (= PROHT -10000)
+    (cond
+      ((< -10000 proht 1000)
+       (setq
+         toppt
+          (polar
+            pltpt1
+            (/ pi 2)
+            (if (= proht -10000)
               0
-              (ABS (+ PROHT WALTHK))
+              (abs (+ proht walthk))
             ) ;_ end of IF
           ) ;_ end of POLAR
-         BOTPT
-          (POLAR PLTPT1 (* PI 0.5) WALTHK)
+         botpt
+          (polar pltpt1 (* pi 0.5) walthk)
        ) ;_ end of setq
       )
     ) ;_ end of COND
   ) ;_ end of defun
   ;;Plot profile given sta, elev1, and offset.
-  (DEFUN HAWS-PLTSOFTPRO
-                    (/ CNFFREEPT CNFTESTPT I J K LBLCNF LDRCNF LNGSTR LDRCNFPT)
-    (SETQ
+  (defun haws-pltsoftpro
+                    (/ cnffreept cnftestpt i j k lblcnf ldrcnf lngstr ldrcnfpt)
+    (setq
       ;;Make label strings
       ;;Wrap label string as requested by user with semi-colons.
-      LBLLST
-       (HAWS-WRAP LBLTXT 3 ";")
+      lbllst
+       (haws-wrap lbltxt 3 ";")
       ;;Find longest string to be plotted.
-      LNGSTR
-       (CAR LBLLST)
-      LNGSTR
-       (FOREACH
-          STRINGI
-                 LBLLST
-         (IF (> (STRLEN STRINGI) (STRLEN LNGSTR))
-           (SETQ LNGSTR STRINGI)
-           LNGSTR
+      lngstr
+       (car lbllst)
+      lngstr
+       (foreach
+          stringi
+                 lbllst
+         (if (> (strlen stringi) (strlen lngstr))
+           (setq lngstr stringi)
+           lngstr
          ) ;_ end of IF
        ) ;_ end of FOREACH
       ;;Translate elev1 into text.
-      EL1DSC
-       (COND
-         ((= PROTYP "MESA") "FL ")
-         ((< 0 PROHT)
-          (IF (/= "" PROTYP)
-            (STRCAT PROTYP "=")
+      el1dsc
+       (cond
+         ((= protyp "MESA") "FL ")
+         ((< 0 proht)
+          (if (/= "" protyp)
+            (strcat protyp "=")
             "G="
           ) ;_ end of IF
          )
-         ((= 0 PROHT)
-          (IF (/= "" PROTYP)
-            (STRCAT PROTYP "=")
+         ((= 0 proht)
+          (if (/= "" protyp)
+            (strcat protyp "=")
             "P="
           ) ;_ end of IF
          )
-         ((> 0 PROHT) "INV=")
+         ((> 0 proht) "INV=")
        ) ;_ end of COND
-      EL1TXT
-       (STRCAT EL1DSC (RTOS ELEV1 2 ELPREC))
+      el1txt
+       (strcat el1dsc (rtos elev1 2 elprec))
     ) ;_ end of SETQ
     ;;Setq points for upright labels
-    (COND
-      ((< -10000 PROHT 1000)
-       (SETQ
+    (cond
+      ((< -10000 proht 1000)
+       (setq
          ;;Translate station real number into station string
-         STATXT
-          (STRCAT "STA " (HAWS-RTOSTA STA STPREC))
+         statxt
+          (strcat "STA " (haws-rtosta sta stprec))
          ;;Insert offset into station string if given
-         OFFTXT
-          (IF OFFSET
-            (STRCAT
+         offtxt
+          (if offset
+            (strcat
 ;;;O							(if	pltsta
 ;;;O								(strcat statxt ", ")
 ;;;O								""
 ;;;O							) ;_ end of IF
-              (RTOS (ABS OFFSET) 2 OFPREC)
-              (IF (MINUSP OFFSET)
+              (rtos (abs offset) 2 ofprec)
+              (if (minusp offset)
                 "' LT"
                 "' RT"
               ) ;_ end of IF
@@ -1511,93 +1511,93 @@
             ""
           ) ;_ end of IF
          ;;Set crown (top of curb) elevation, translate to text, and get length.
-         TOPTX
-          (+ ELEV1 (/ (ABS PROHT) HVEXAG *HAWS-ELVSCL*))
-         TOPTX
-          (COND ((< 0 PROHT 1000) (STRCAT "TC=" (RTOS TOPTX 2 ELPREC))))
-         LNGSTR
-          (IF (AND PLTSTA (< (STRLEN LNGSTR) (STRLEN STATXT)))
-            STATXT
-            LNGSTR
+         toptx
+          (+ elev1 (/ (abs proht) hvexag *haws-elvscl*))
+         toptx
+          (cond ((< 0 proht 1000) (strcat "TC=" (rtos toptx 2 elprec))))
+         lngstr
+          (if (and pltsta (< (strlen lngstr) (strlen statxt)))
+            statxt
+            lngstr
           ) ;_ end of IF
-         LNGSTR
-          (IF (< (STRLEN LNGSTR) (STRLEN OFFTXT))
-            OFFTXT
-            LNGSTR
+         lngstr
+          (if (< (strlen lngstr) (strlen offtxt))
+            offtxt
+            lngstr
           ) ;_ end of IF
-         LNGSTR
-          (IF (< (STRLEN LNGSTR) (STRLEN EL1TXT))
-            EL1TXT
-            LNGSTR
+         lngstr
+          (if (< (strlen lngstr) (strlen el1txt))
+            el1txt
+            lngstr
           ) ;_ end of IF
-         TXLEN
-          (+ (HAWS-TXLEN lngstr ts) 0)
+         txlen
+          (+ (haws-txlen lngstr ts) 0)
          ;;Set points for text and label lines
-         LBLPT1
-          (POLAR
-            (COND
-              (PLTPT2)
-              (TOPPT)
+         lblpt1
+          (polar
+            (cond
+              (pltpt2)
+              (toppt)
             ) ;_ end of COND
-            (/ PI 2)
-            (IF MHRIM
-              (* 0.05 HVEXAG *HAWS-ELVSCL*)
+            (/ pi 2)
+            (if mhrim
+              (* 0.05 hvexag *haws-elvscl*)
               0
             ) ;_ end of IF
           ) ;_ end of POLAR
-         LBLPT2
-          (POLAR LBLPT1 (/ PI 2) (* 2.0 TS))
-         CNFTESTPT
-          LBLPT2
-         CNFFREEPT
+         lblpt2
+          (polar lblpt1 (/ pi 2) (* 2.0 ts))
+         cnftestpt
+          lblpt2
+         cnffreept
           '(0.0 0.0 0.0)
-         LDRCNFPT
+         ldrcnfpt
           '(0.0 0.0 0.0)
-         I 0
-         J 0
-         K 0
+         i 0
+         j 0
+         k 0
        ) ;_ end of SETQ
        ;; Find the nearest of up to twenty conflict-free label positions or one conflict
        ;; free straight up
        ;; position.
-       (WHILE (AND (< I 100) (< J 20) (< K 1))
-         (SETQ
-           LBLCNF
-            (SSGET
+       (while (and (< i 100) (< j 20) (< k 1))
+         (setq
+           lblcnf
+            (ssget
               "C"
-              (POLAR
-                CNFTESTPT
-                PI
-                (* TS
-                   (+ (* LINGAP 0.9)
-                      (* (1+ LINGAP)
-                         (+ (IF PLTSTA
+              (polar
+                cnftestpt
+                pi
+                (* ts
+                   (+ (* lingap 0.9)
+                      (* (1+ lingap)
+                         (+ (if pltsta
                               1
                               0
                             ) ;_ end of IF
-                            (IF (= OFFTXT "")
+                            (if (= offtxt "")
                               0
                               1
                             ) ;_ end of if
-                            (IF (= (CAR LBLLST) "")
+                            (if (= (car lbllst) "")
                               0
-                              (LENGTH LBLLST)
+                              (length lbllst)
                             ) ;_ end of IF
                          ) ;_ end of +
                       ) ;_ end of *
                    ) ;_ end of +
                 ) ;_ end of *
               ) ;_ end of POLAR
-              (POLAR
-                (POLAR
-                  CNFTESTPT
+              (polar
+                (polar
+                  cnftestpt
                   0
-                  (* TS
-                     (+ LINGAP
-                        (* (1+ LINGAP)
-                           (IF (< PROHT 0)
+                  (* ts
+                     (+ lingap
+                        (* (1+ lingap)
+                           (if (< proht 0)
                              0
-                             (IF PLTPT2
+                             (if pltpt2
                                2
                                1
                              ) ;_ end of IF
@@ -1606,317 +1606,317 @@
                      ) ;_ end of +
                   ) ;_ end of *
                 ) ;_ end of POLAR
-                (/ PI 2)
-                TXLEN
+                (/ pi 2)
+                txlen
               ) ;_ end of POLAR
-              (LIST (CONS 8 (STRCAT LAYPRE "*")))
+              (list (cons 8 (strcat laypre "*")))
             ) ;_ end of SSGET
          ) ;_ end of SETQ
-         (SETQ
-           LDRCNF
-            (SSGET
+         (setq
+           ldrcnf
+            (ssget
               "F"
-              (LIST
-                (POLAR LBLPT1 (ANGLE LBLPT1 CNFTESTPT) (* TS 1))
-                CNFTESTPT
+              (list
+                (polar lblpt1 (angle lblpt1 cnftestpt) (* ts 1))
+                cnftestpt
               ) ;_ end of list
-              (LIST (CONS 8 (STRCAT LAYPRE "*" LAYTXS)))
+              (list (cons 8 (strcat laypre "*" laytxs)))
             ) ;_ end of SSGET
          ) ;_ end of SETQ
          ;;Save nearest point that has no label conflict.
-         (IF (AND
-               (NOT LBLCNF)
-               (< (DISTANCE LBLPT2 CNFTESTPT) (DISTANCE LBLPT2 LDRCNFPT))
+         (if (and
+               (not lblcnf)
+               (< (distance lblpt2 cnftestpt) (distance lblpt2 ldrcnfpt))
              ) ;_ end of and
-           (SETQ LDRCNFPT CNFTESTPT)
+           (setq ldrcnfpt cnftestpt)
          ) ;_ end of IF
          ;;Save nearest point that has no conflict at all.
-         (IF (NOT (OR LBLCNF LDRCNF))
-           (PROGN
-             (SETQ J (1+ J))
-             (IF (< (DISTANCE LBLPT2 CNFTESTPT) (DISTANCE LBLPT2 CNFFREEPT))
-               (SETQ CNFFREEPT CNFTESTPT)
+         (if (not (or lblcnf ldrcnf))
+           (progn
+             (setq j (1+ j))
+             (if (< (distance lblpt2 cnftestpt) (distance lblpt2 cnffreept))
+               (setq cnffreept cnftestpt)
              ) ;_ end of IF
            ) ;_ end of PROGN
          ) ;_ end of IF
          ;;Save first straight up point that has no label conflict and quit looking.
-         (IF (AND (NOT LBLCNF) (EQUAL (CAR LBLPT2) (CAR CNFTESTPT) 0.01))
-           (PROGN (SETQ CNFFREEPT CNFTESTPT) (SETQ K (1+ K)))
+         (if (and (not lblcnf) (equal (car lblpt2) (car cnftestpt) 0.01))
+           (progn (setq cnffreept cnftestpt) (setq k (1+ k)))
          ) ;_ end of IF
-         (SETQ
-           I (1+ I)
-           CNFTESTPT
-            (POLAR
-              (POLAR LBLPT2 (* PI 0.5) (* TS (FIX (* I 0.05))))
+         (setq
+           i (1+ i)
+           cnftestpt
+            (polar
+              (polar lblpt2 (* pi 0.5) (* ts (fix (* i 0.05))))
               ;;Move up every 20 (1/0.05) tries.
-              (* PI I)
+              (* pi i)
               ;;Switch side to side
-              (* TS (1+ LINGAP) (REM (/ (1+ I) 2.0) 20))
+              (* ts (1+ lingap) (rem (/ (1+ i) 2.0) 20))
               ;;Increase horiz distance.
             ) ;_ end of POLAR
          ) ;_ end of SETQ
        ) ;_ end of WHILE
-       (SETQ
-         LBLPT2
-          (COND
+       (setq
+         lblpt2
+          (cond
             ;;First use any straight up or extra close position, even with ldr conflict.
-            ((OR (= K 1)
-                 (AND
-                   LDRCNFPT
-                   (> (- (DISTANCE LBLPT2 CNFFREEPT) (DISTANCE LBLPT2 LDRCNFPT))
-                      (* TS 4.0)
+            ((or (= k 1)
+                 (and
+                   ldrcnfpt
+                   (> (- (distance lblpt2 cnffreept) (distance lblpt2 ldrcnfpt))
+                      (* ts 4.0)
                    ) ;_ end of >
                  ) ;_ end of and
              ) ;_ end of OR
-             LDRCNFPT
+             ldrcnfpt
             )
             ;;Next choice, use totally free position.
-            ((> J 0) CNFFREEPT)
+            ((> j 0) cnffreept)
             ;;Last choice, use the original location.
-            (T LBLPT2)
+            (t lblpt2)
           ) ;_ end of COND
-         LBLPT3
-          (POLAR LBLPT2 (/ PI 2) TXLEN)
+         lblpt3
+          (polar lblpt2 (/ pi 2) txlen)
          ;;Top end of label line
-         DIAPT1
-          (POLAR LBLPT3 (/ PI 2) (* TS 2))
-         DIAPT2
-          (POLAR DIAPT1 (/ PI -4) (* TS (SQRT 2)))
-         DIAPT3
-          (POLAR DIAPT1 (* 5 (/ PI 4)) (* TS (SQRT 2)))
-         BRKPT
-          (IF (AND (OR MHRIM CBTC) ACADY2 LBLACADY2 (/= ACADY2 LBLACADY2))
-            (POLAR
-              TOPPT
-              (/ PI 2)
-              (/ (DISTANCE
-                   TOPPT
-                   (COND
-                     (MHRIM)
-                     (CBTC)
+         diapt1
+          (polar lblpt3 (/ pi 2) (* ts 2))
+         diapt2
+          (polar diapt1 (/ pi -4) (* ts (sqrt 2)))
+         diapt3
+          (polar diapt1 (* 5 (/ pi 4)) (* ts (sqrt 2)))
+         brkpt
+          (if (and (or mhrim cbtc) acady2 lblacady2 (/= acady2 lblacady2))
+            (polar
+              toppt
+              (/ pi 2)
+              (/ (distance
+                   toppt
+                   (cond
+                     (mhrim)
+                     (cbtc)
                    ) ;_ end of COND
                  ) ;_ end of DISTANCE
                  2
               ) ;_ end of /
             ) ;_ end of POLAR
           ) ;_ end of IF
-         TXPT1
-          (POLAR LBLPT2 0 (* TS -1 LINGAP))
+         txpt1
+          (polar lblpt2 0 (* ts -1 lingap))
          ;;1 line above line
-         TXPT4
-          (POLAR LBLPT2 0 (* TS LINGAP))
+         txpt4
+          (polar lblpt2 0 (* ts lingap))
          ;;1 line below line
-         TXPT5
-          (POLAR LBLPT2 0 (* TS (+ 1 (* 2 LINGAP))))
+         txpt5
+          (polar lblpt2 0 (* ts (+ 1 (* 2 lingap))))
           ;;2 lines below line
        ) ;_ end of SETQ
       )
     ) ;_ end of COND
     ;;Setq points for horizontal labels on leaders
-    (COND
-      ((OR (= PROHT 1000) (< -10000 PROHT 0))
-       (SETQ
-         I 0
-         J 0
+    (cond
+      ((or (= proht 1000) (< -10000 proht 0))
+       (setq
+         i 0
+         j 0
        ) ;_ end of setq
        ;; Find the first conflict free label position in user selected direction.
-       (WHILE (AND (< I 15) (< J 1))
-         (SETQ
-           TXPT6
-            (POLAR
-              PLTPT1
-              (* PI
-                 (IF INVUP
+       (while (and (< i 15) (< j 1))
+         (setq
+           txpt6
+            (polar
+              pltpt1
+              (* pi
+                 (if invup
                    1
                    -1
                  ) ;_ end of IF
-                 (IF INVMIR
+                 (if invmir
                    0.75
                    0.25
                  ) ;_ end of IF
               ) ;_ end of *
-              (+ (* TS (+ 3.0 I)) (* WALTHK -1.717))
+              (+ (* ts (+ 3.0 i)) (* walthk -1.717))
             ) ;_ end of POLAR
            ;;Inv angle point
-           LNGSTR
-            (IF (AND (= PROHT 1000) (> (STRLEN LBLTXT) 0))
-              LNGSTR
-              EL1TXT
+           lngstr
+            (if (and (= proht 1000) (> (strlen lbltxt) 0))
+              lngstr
+              el1txt
             ) ;_ end of IF
-           TXLEN
-            (+ (HAWS-TXLEN LNGSTR TS) 0)
-           TXPT7
-            (POLAR
-              TXPT6
-              (IF INVMIR
-                PI
+           txlen
+            (+ (haws-txlen lngstr ts) 0)
+           txpt7
+            (polar
+              txpt6
+              (if invmir
+                pi
                 0
               ) ;_ end of IF
-              TXLEN
+              txlen
             ) ;_ end of POLAR
-           TXPT8
-            (POLAR TXPT6 (* PI 0.5) (* TS 0.5 LINGAP))
+           txpt8
+            (polar txpt6 (* pi 0.5) (* ts 0.5 lingap))
             ;;Invert text point
             ;;No 9 or 10
          ) ;_ end of SETQ
-         (SETQ
-           LBLCNF
-            (SSGET
+         (setq
+           lblcnf
+            (ssget
               "C"
-              TXPT6
-              (POLAR TXPT7 (/ PI 2) (* TS (+ 1 (* 2 LINGAP)))) ;_ end of POLAR
-              (LIST (CONS 8 (STRCAT LAYPRE "*")))
+              txpt6
+              (polar txpt7 (/ pi 2) (* ts (+ 1 (* 2 lingap)))) ;_ end of POLAR
+              (list (cons 8 (strcat laypre "*")))
             ) ;_ end of SSGET
          ) ;_ end of SETQ
          ;;Flag success for first point that has no label conflict.
-         (IF (NOT LBLCNF)
-           (SETQ J (1+ J))
+         (if (not lblcnf)
+           (setq j (1+ j))
          ) ;_ end of IF
-         (SETQ I (1+ I))
+         (setq i (1+ i))
        ) ;_ end of WHILE
       )
     ) ;_ end of COND
     ;;Set points for "MESA" profile.
-    (COND
-      ((= PROTYP "MESA")
-       (SETQ
-         TXPT11
-          (POLAR TOPPT (* PI 0.25) (* 3.08 TS))
+    (cond
+      ((= protyp "MESA")
+       (setq
+         txpt11
+          (polar toppt (* pi 0.25) (* 3.08 ts))
          ;;Slant label line text point
-         TXPT12
-          (POLAR TXPT11 (* PI 0.25) TXLEN)
+         txpt12
+          (polar txpt11 (* pi 0.25) txlen)
          ;;Slant label line end
-         TXPT13
-          (POLAR TXPT11 (* PI 0.75) (* TS LINGAP))
+         txpt13
+          (polar txpt11 (* pi 0.75) (* ts lingap))
          ;;Slant text point above line
-         TXPT14
-          (POLAR TXPT11 (* PI 0.75) (* TS -1 LINGAP))
+         txpt14
+          (polar txpt11 (* pi 0.75) (* ts -1 lingap))
           ;;Slant text point below line
        ) ;_ end of SETQ
       )
     ) ;_ end of COND
-    (COND
-      ((AND (< -10000 PROHT 0) (OR PLTSTA OFFSET (/= LBLTXT "")))
-       (HAWS-PLTLBL1)
+    (cond
+      ((and (< -10000 proht 0) (or pltsta offset (/= lbltxt "")))
+       (haws-pltlbl1)
       )
-      ((AND
-         (<= 0 PROHT 999.9)
-         (OR PLTSTA OFFSET PLTELV (/= LBLTXT ""))
+      ((and
+         (<= 0 proht 999.9)
+         (or pltsta offset pltelv (/= lbltxt ""))
        ) ;_ end of and
-       (HAWS-PLTLBL1)
+       (haws-pltlbl1)
       )
-      ((= PROHT 1000) (HAWS-PLTPNT))
-      ((= PROHT -10000)
-       (IF (NOT SLOPE)
-         (SETQ SLOPE 1000)
+      ((= proht 1000) (haws-pltpnt))
+      ((= proht -10000)
+       (if (not slope)
+         (setq slope 1000)
        ) ;_ end of IF
       )
-      ((= PROHT -20000)
-       (IF (NOT SLOPE)
-         (SETQ SLOPE 1000)
+      ((= proht -20000)
+       (if (not slope)
+         (setq slope 1000)
        ) ;_ end of IF
       )
     ) ;_ end of COND
-    (COND ((AND (< -10000 PROHT 0) PLTELV) (HAWS-PLTLBL2)))
-    (SETQ OFFSET NIL)
+    (cond ((and (< -10000 proht 0) pltelv) (haws-pltlbl2)))
+    (setq offset nil)
   ) ;_ end of DEFUN
   ;;Plot a vertical upward profile point label.
-  (DEFUN HAWS-PLTLBL1
-                 (/ I)
-    (HAWS-MKLAYR (LIST LAYTX "" ""))
-    (COND
-      ((= PROTYP "MESA")
+  (defun haws-pltlbl1
+                 (/ i)
+    (haws-mklayr (list laytx "" ""))
+    (cond
+      ((= protyp "MESA")
        ;;Slanted label
-       (HAWS-MKLINE TOPPT TXPT12)
-       (HAWS-MKTEXT NIL TXPT13 TS (* PI 0.25) LBLTXT)
-       (HAWS-MKTEXT "TL" TXPT14 TS (* PI 0.25) EL1TXT)
+       (haws-mkline toppt txpt12)
+       (haws-mktext nil txpt13 ts (* pi 0.25) lbltxt)
+       (haws-mktext "TL" txpt14 ts (* pi 0.25) el1txt)
       )
-      (T
+      (t
        ;;Vertical label
-       (HAWS-MKLINE BOTPT LBLPT1)
-       (HAWS-MKLINE LBLPT1 LBLPT2)
-       (HAWS-MKLINE LBLPT2 LBLPT3)
-       (COND
-         ((/= "" OFFTXT)
-          (HAWS-MKTEXT NIL TXPT1 TS (/ PI 2) OFFTXT)
-          (SETQ TXPT1 (POLAR TXPT1 0 (* TS -1 (+ 1 LINGAP))))
+       (haws-mkline botpt lblpt1)
+       (haws-mkline lblpt1 lblpt2)
+       (haws-mkline lblpt2 lblpt3)
+       (cond
+         ((/= "" offtxt)
+          (haws-mktext nil txpt1 ts (/ pi 2) offtxt)
+          (setq txpt1 (polar txpt1 0 (* ts -1 (+ 1 lingap))))
          )
        ) ;_ end of cond
-       (COND
-         (PLTSTA (HAWS-MKTEXT NIL TXPT1 TS (/ PI 2) STATXT))
-         (T (SETQ TXPT1 (POLAR TXPT1 0 (* TS (+ 1 LINGAP)))))
+       (cond
+         (pltsta (haws-mktext nil txpt1 ts (/ pi 2) statxt))
+         (t (setq txpt1 (polar txpt1 0 (* ts (+ 1 lingap)))))
        ) ;_ end of COND
-       (SETQ I -1)
-       (WHILE (SETQ TEMP (NTH (SETQ I (1+ I)) (REVERSE LBLLST)))
-         (HAWS-MKTEXT
-           NIL
-           (SETQ TXPT1 (POLAR TXPT1 0 (* TS -1 (+ 1 LINGAP))))
-           TS
-           (/ PI 2)
-           TEMP
+       (setq i -1)
+       (while (setq temp (nth (setq i (1+ i)) (reverse lbllst)))
+         (haws-mktext
+           nil
+           (setq txpt1 (polar txpt1 0 (* ts -1 (+ 1 lingap))))
+           ts
+           (/ pi 2)
+           temp
          ) ;_ end of HAWS-MKTEXT
        ) ;_ end of WHILE
        ;;Plot elevation text for curbs.
-       (COND
-         ((AND (<= 0 PROHT) PLTELV)
-          (HAWS-MKTEXT
+       (cond
+         ((and (<= 0 proht) pltelv)
+          (haws-mktext
             "tl"
-            TXPT4
-            TS
-            (/ PI 2)
-            (COND
-              (TOPTX)
-              (EL1TXT)
+            txpt4
+            ts
+            (/ pi 2)
+            (cond
+              (toptx)
+              (el1txt)
             ) ;_ end of COND
           ) ;_ end of mktext
-          (IF TOPTX
-            (HAWS-MKTEXT "tl" TXPT5 TS (/ PI 2) EL1TXT)
+          (if toptx
+            (haws-mktext "tl" txpt5 ts (/ pi 2) el1txt)
           ) ;_ end of IF
          )
        ) ;_ end of COND
        ;;Plot diamond
-       (COND
-         ((AND
-            (>= PROHT 0)
-            (WCMATCH (STRCASE LBLTXT) "*GC*,*G`.C`.*,*DE CHANGE*")
+       (cond
+         ((and
+            (>= proht 0)
+            (wcmatch (strcase lbltxt) "*GC*,*G`.C`.*,*DE CHANGE*")
           ) ;_ end of and
-          (vl-cmdf "._pline" LBLPT3 DIAPT2 DIAPT1 DIAPT3 "_c")
+          (vl-cmdf "._pline" lblpt3 diapt2 diapt1 diapt3 "_c")
          )
-         ((AND
-            (>= PROHT 0)
-            (WCMATCH (STRCASE LBLTXT) "*GB*,*G`.C`.*,*DE BREAK*")
+         ((and
+            (>= proht 0)
+            (wcmatch (strcase lbltxt) "*GB*,*G`.C`.*,*DE BREAK*")
           ) ;_ end of and
-          (vl-cmdf "._solid" DIAPT1 DIAPT2 DIAPT3 LBLPT3 "")
+          (vl-cmdf "._solid" diapt1 diapt2 diapt3 lblpt3 "")
          )
        ) ;_ end of COND
        ;;Plot manhole
-       (COND
-         ((< PROHT 0)
-          (IF (NOT F1)
-            (HAWS-MKTEXT "tl" TXPT4 TS (/ PI 2) "RIM=")
+       (cond
+         ((< proht 0)
+          (if (not f1)
+            (haws-mktext "tl" txpt4 ts (/ pi 2) "RIM=")
           ) ;_ end of IF
-          (COND
-            (MHRIM
-             (IF PEXIST
-               (HAWS-MKLAYR "PROXMH")
-               (HAWS-MKLAYR "PROMH")
+          (cond
+            (mhrim
+             (if pexist
+               (haws-mklayr "PROXMH")
+               (haws-mklayr "PROMH")
              ) ;_ end of IF
-             (HAWS-DRAWMH BOTPT MHRIM BRKPT)
+             (haws-drawmh botpt mhrim brkpt)
             )
-            (CBTC
-             (IF PEXIST
-               (HAWS-MKLAYR "PPROXCB")
-               (HAWS-MKLAYR "PROCB")
+            (cbtc
+             (if pexist
+               (haws-mklayr "PPROXCB")
+               (haws-mklayr "PROCB")
              ) ;_ end of IF
-             (HAWS-DRAWCB
-               BOTPT
-               CBTC
-               (IF PLTPT1A
+             (haws-drawcb
+               botpt
+               cbtc
+               (if pltpt1a
                  "R"
                  "L"
                ) ;_ end of IF
                2
-               BRKPT
+               brkpt
              ) ;_ end of drawcb
             )
           ) ;_ end of COND
@@ -1926,161 +1926,161 @@
     ) ;_ end of COND
   ) ;_ end of DEFUN
   ;;Plot a downward slant elevation tail.
-  (DEFUN HAWS-PLTLBL2
-                 (/ I)
-    (HAWS-MKLAYR (LIST LAYTX "" ""))
-    (HAWS-MKLINE PLTPT1 TXPT6)
-    (HAWS-MKLINE TXPT6 TXPT7)
-    (HAWS-MKTEXT
-      (IF INVMIR
+  (defun haws-pltlbl2
+                 (/ i)
+    (haws-mklayr (list laytx "" ""))
+    (haws-mkline pltpt1 txpt6)
+    (haws-mkline txpt6 txpt7)
+    (haws-mktext
+      (if invmir
         "BR"
         "BL"
       ) ;_ end of IF
-      TXPT8
-      TS
+      txpt8
+      ts
       0
-      EL1TXT
+      el1txt
     ) ;_ end of mktext
   ) ;_ end of DEFUN
   ;;Plot a circle or ellipse
-  (DEFUN HAWS-PLTPNT
-                (/ I XCENTER XINVERT XDIAM XWALTHK XCROWN XBOTPT XTOPPT XINRAD XOUTRAD TXPT1 TXPT2 Y
+  (defun haws-pltpnt
+                (/ i xcenter xinvert xdiam xwalthk xcrown xbotpt xtoppt xinrad xoutrad txpt1 txpt2 y
                 )
-    (COND
-      ((AND (= LBLTXT "") (NOT NUM2))
-       (PROMPT
+    (cond
+      ((and (= lbltxt "") (not num2))
+       (prompt
          "Point circles are on DEFPOINTS layer. Will not plot."
        ) ;_ end of prompt
-       (HAWS-MKLAYR (LIST "defpoints" "" ""))
-       (ENTMAKE
-         (LIST
-           (CONS 0 "CIRCLE")
-           (APPEND '(10) (TRANS PLTPT1 1 0))
-           (CONS 40 TS)
+       (haws-mklayr (list "defpoints" "" ""))
+       (entmake
+         (list
+           (cons 0 "CIRCLE")
+           (append '(10) (trans pltpt1 1 0))
+           (cons 40 ts)
          ) ;_ end of list
        ) ;_ end of entmake
       )
-      (T
-       (FOREACH
-          X
-           (QUOTE
-             ((XBOTPT "*BOT*=*") (XTOPPT "*TOP*=*") (XINVERT "*INV*=*"))
+      (t
+       (foreach
+          x
+           (quote
+             ((xbotpt "*BOT*=*") (xtoppt "*TOP*=*") (xinvert "*INV*=*"))
            ) ;_ end of quote
-         (IF (SETQ Y (HAWS-DISTOFX (STRCASE LBLTXT) (CADR X) 0))
-           (SET (CAR X) Y)
+         (if (setq y (haws-distofx (strcase lbltxt) (cadr x) 0))
+           (set (car x) y)
          ) ;_ end of IF
        ) ;_ end of FOREACH
-       (SETQ
-         XDIAM
-          (/ (COND
-               (NUM2)
-               (LBLNUM2)
+       (setq
+         xdiam
+          (/ (cond
+               (num2)
+               (lblnum2)
              ) ;_ end of COND
              12
           ) ;_ end of /
-         XWALTHK
-          (IF SLOPE
-            (/ SLOPE 12)
-            (IF WALTHK
-              WALTHK
+         xwalthk
+          (if slope
+            (/ slope 12)
+            (if walthk
+              walthk
               0
             ) ;_ end of IF
           ) ;_ end of IF
-         XINVERT
-          (LIST
-            (CAR PLTPT1)
-            (+ REFPTY
-               (* HVEXAG
-                  *HAWS-ELVSCL*
-                  (- (COND
-                       (XINVERT XINVERT)
-                       (XTOPPT (- XTOPPT XDIAM XWALTHK))
-                       (XBOTPT (+ XBOTPT XWALTHK))
-                       (T ELEV1)
+         xinvert
+          (list
+            (car pltpt1)
+            (+ refpty
+               (* hvexag
+                  *haws-elvscl*
+                  (- (cond
+                       (xinvert xinvert)
+                       (xtoppt (- xtoppt xdiam xwalthk))
+                       (xbotpt (+ xbotpt xwalthk))
+                       (t elev1)
                      ) ;_ end of COND
-                     REFELV
+                     refelv
                   ) ;_ end of -
                ) ;_ end of *
             ) ;_ end of +
             0.0
           ) ;_ end of LIST
-         XCROWN
-          (POLAR XINVERT (/ PI 2.0) (* XDIAM HVEXAG *HAWS-ELVSCL*))
-         XBOTPT
-          (POLAR
-            XINVERT
-            (/ PI -2.0)
-            (* XWALTHK
-               HVEXAG
-               *HAWS-ELVSCL*
+         xcrown
+          (polar xinvert (/ pi 2.0) (* xdiam hvexag *haws-elvscl*))
+         xbotpt
+          (polar
+            xinvert
+            (/ pi -2.0)
+            (* xwalthk
+               hvexag
+               *haws-elvscl*
             ) ;_ end of *
           ) ;_ end of POLAR
-         XTOPPT
-          (POLAR XCROWN (/ PI 2.0) (* XWALTHK HVEXAG *HAWS-ELVSCL*))
-         XINRAD
-          (/ XDIAM 2.0)
-         XOUTRAD
-          (+ (/ XDIAM 2.0) XWALTHK)
-         XCENTER
-          (POLAR XINVERT (/ PI 2.0) (* XINRAD HVEXAG *HAWS-ELVSCL*))
+         xtoppt
+          (polar xcrown (/ pi 2.0) (* xwalthk hvexag *haws-elvscl*))
+         xinrad
+          (/ xdiam 2.0)
+         xoutrad
+          (+ (/ xdiam 2.0) xwalthk)
+         xcenter
+          (polar xinvert (/ pi 2.0) (* xinrad hvexag *haws-elvscl*))
        ) ;_ end of SETQ
-       (HAWS-MKLAYR (LIST LAYLIN "" ""))
-       (ENTMAKE
-         (LIST
+       (haws-mklayr (list laylin "" ""))
+       (entmake
+         (list
            '(0 . "ELLIPSE")
            '(100 . "AcDbEntity")
            '(100 . "AcDbEllipse")
-           (CONS 10 (TRANS XCENTER 1 0))
+           (cons 10 (trans xcenter 1 0))
            '(41 . 0.0)
-           (CONS
+           (cons
              11
-             (MAPCAR
-               '(LAMBDA (UCSYDIR) (* UCSYDIR XINRAD HVEXAG *HAWS-ELVSCL*))
-               (GETVAR "ucsydir")
+             (mapcar
+               '(lambda (ucsydir) (* ucsydir xinrad hvexag *haws-elvscl*))
+               (getvar "ucsydir")
              ) ;_ end of mapcar
            ) ;_ end of CONS
-           (CONS 40 (/ 1.0 (* HVEXAG *HAWS-ELVSCL*)))
-           (CONS 42 (* 2 PI))
+           (cons 40 (/ 1.0 (* hvexag *haws-elvscl*)))
+           (cons 42 (* 2 pi))
          ) ;_ end of list
        ) ;_ end of entmake
-       (IF (/= 0 XWALTHK)
-         (ENTMAKE
-           (LIST
+       (if (/= 0 xwalthk)
+         (entmake
+           (list
              '(0 . "ELLIPSE")
              '(100 . "AcDbEntity")
              '(100 . "AcDbEllipse")
-             (CONS 10 (TRANS XCENTER 1 0))
+             (cons 10 (trans xcenter 1 0))
              '(41 . 0.0)
-             (CONS
+             (cons
                11
-               (MAPCAR
-                 '(LAMBDA (UCSYDIR) (* UCSYDIR XOUTRAD HVEXAG *HAWS-ELVSCL*))
-                 (GETVAR "ucsydir")
+               (mapcar
+                 '(lambda (ucsydir) (* ucsydir xoutrad hvexag *haws-elvscl*))
+                 (getvar "ucsydir")
                ) ;_ end of mapcar
              ) ;_ end of CONS
-             (CONS 40 (/ 1.0 (* HVEXAG *HAWS-ELVSCL*)))
-             (CONS 42 (* 2 PI))
+             (cons 40 (/ 1.0 (* hvexag *haws-elvscl*)))
+             (cons 42 (* 2 pi))
            ) ;_ end of list
          ) ;_ end of entmake
        ) ;_ end of IF
-       (COND
-         ((/= LBLTXT "")
-          (HAWS-MKLAYR (LIST LAYTX "" ""))
-          (HAWS-MKLINE PLTPT1 TXPT6)
-          (HAWS-MKLINE TXPT6 TXPT7)
-          (SETQ I -1)
-          (WHILE (SETQ TEMP (NTH (SETQ I (1+ I)) LBLLST))
-            (HAWS-MKTEXT
-              (IF INVMIR
+       (cond
+         ((/= lbltxt "")
+          (haws-mklayr (list laytx "" ""))
+          (haws-mkline pltpt1 txpt6)
+          (haws-mkline txpt6 txpt7)
+          (setq i -1)
+          (while (setq temp (nth (setq i (1+ i)) lbllst))
+            (haws-mktext
+              (if invmir
                 "R"
-                NIL
+                nil
               ) ;_ end of IF
-              TXPT8
-              TS
+              txpt8
+              ts
               0
-              TEMP
+              temp
             ) ;_ end of mktext
-            (SETQ TXPT8 (POLAR TXPT8 (/ PI 2) (* TS -1 (+ 1 LINGAP))))
+            (setq txpt8 (polar txpt8 (/ pi 2) (* ts -1 (+ 1 lingap))))
           ) ;_ end of WHILE
          )
        ) ;_ end of COND
@@ -2088,695 +2088,695 @@
     ) ;_ end of COND
   ) ;_ end of DEFUN
   ;;Plot a line between two points at a vertical offset
-  (DEFUN HAWS-PLTLIN
-                (PT1 PT2 OFFSET)
-    (HAWS-MKLINE
-      (POLAR PT1 (/ PI 2) OFFSET)
-      (POLAR PT2 (/ PI 2) OFFSET)
+  (defun haws-pltlin
+                (pt1 pt2 offset)
+    (haws-mkline
+      (polar pt1 (/ pi 2) offset)
+      (polar pt2 (/ pi 2) offset)
     ) ;_ end of HAWS-MKLINE
   ) ;_ end of defun
   ;;Connect two profile points with lines
-  (DEFUN HAWS-CONNECTHARD
+  (defun haws-connecthard
                      ()
-    (HAWS-MKLAYR (LIST LAYLIN "" ""))
-    (COND
-      ((/= -20000 PROHT) (HAWS-MKLINE PLTPT1A PLTPT1))
-      ((= PROHT -20000)
+    (haws-mklayr (list laylin "" ""))
+    (cond
+      ((/= -20000 proht) (haws-mkline pltpt1a pltpt1))
+      ((= proht -20000)
        (vl-cmdf
          "._dim1"
          "_al"
-         PLTPT1A
-         PLTPT1
-         PLTPT1
-         (IF (= LBLTXT "")
+         pltpt1a
+         pltpt1
+         pltpt1
+         (if (= lbltxt "")
            " "
-           LBLTXT
+           lbltxt
          ) ;_ end of IF
        ) ;_ end of COMMAND
       )
     ) ;_ end of COND
-    (COND
-      ((AND (< 0 PROHT 1000) TOPPTA) (HAWS-MKLINE TOPPTA TOPPT))
-      ((AND (= 0 PROHT) TOPPTA (NOT (EQUAL TOPPTA PLTPT1A)))
-       (HAWS-MKLINE TOPPTA TOPPT)
+    (cond
+      ((and (< 0 proht 1000) toppta) (haws-mkline toppta toppt))
+      ((and (= 0 proht) toppta (not (equal toppta pltpt1a)))
+       (haws-mkline toppta toppt)
       )
-      ((< -10000 PROHT 0)
-       (HAWS-PLTLIN PLTPT1A PLTPT1 (ABS PROHT))
+      ((< -10000 proht 0)
+       (haws-pltlin pltpt1a pltpt1 (abs proht))
       )
     ) ;_ end of COND
-    (COND
-      ((< WALTHK 0)
-       (HAWS-PLTLIN PLTPT1A PLTPT1 WALTHK)
-       (HAWS-PLTLIN PLTPT1A PLTPT1 (- 0 WALTHK PROHT))
+    (cond
+      ((< walthk 0)
+       (haws-pltlin pltpt1a pltpt1 walthk)
+       (haws-pltlin pltpt1a pltpt1 (- 0 walthk proht))
       )
     ) ;_ end of cond
   ) ;_ end of defun
   ;;Connect two profile points with slope text, etc.
-  (DEFUN HAWS-CONNECTSOFT
-                     (/ SLOPESTRING PT1 GUTLIP)
+  (defun haws-connectsoft
+                     (/ slopestring pt1 gutlip)
     ;;Calculate slope
-    (COND
-      ((NOT SLOPE)
-       (SETQ
-         SLOPE
-          (* (/ (- (CADR PLTPT1) (CADR PLTPT1A))
-                (- (CAR PLTPT1) (CAR PLTPT1A))
-                STASCL
+    (cond
+      ((not slope)
+       (setq
+         slope
+          (* (/ (- (cadr pltpt1) (cadr pltpt1a))
+                (- (car pltpt1) (car pltpt1a))
+                stascl
              ) ;_ end of /
-             (/ 100.0 HVEXAG *HAWS-ELVSCL*)
+             (/ 100.0 hvexag *haws-elvscl*)
           ) ;_ end of *
        ) ;_ end of setq
       )
-      ((= SLOPE 220.1)
-       (SETQ
-         GUTLIP
-          (IF (< (CADR PLTPT1) (CADR PLTPT1A))
+      ((= slope 220.1)
+       (setq
+         gutlip
+          (if (< (cadr pltpt1) (cadr pltpt1a))
             -0.083
             0.083
           ) ;_ end of IF
        ) ;_ end of SETQ
-       (SETQ
-         SLOPE
-          (* (/ (- (CADR PLTPT1) (CADR PLTPT1A) (* HVEXAG *HAWS-ELVSCL* GUTLIP))
-                (MAX (- (CAR PLTPT1) (CAR PLTPT1A) 1.5) 0.001)
-                STASCL
+       (setq
+         slope
+          (* (/ (- (cadr pltpt1) (cadr pltpt1a) (* hvexag *haws-elvscl* gutlip))
+                (max (- (car pltpt1) (car pltpt1a) 1.5) 0.001)
+                stascl
              ) ;_ end of /
-             (/ 100.0 HVEXAG *HAWS-ELVSCL*)
+             (/ 100.0 hvexag *haws-elvscl*)
           ) ;_ end of *
        ) ;_ end of SETQ
       )
     ) ;_ end of COND
-    (IF (AND
-          (NOT F1)
-          (/= PROHT -10000)
-          (SETQ
-            TEMP
-             (GETREAL
-               (STRCAT
+    (if (and
+          (not f1)
+          (/= proht -10000)
+          (setq
+            temp
+             (getreal
+               (strcat
                  "\nSlope (%)<"
-                 (RTOS SLOPE 2 SLPREC)
+                 (rtos slope 2 slprec)
                  "%>(1000 for no slope): "
                ) ;_ end of strcat
              ) ;_ end of getreal
           ) ;_ end of setq
         ) ;_ end of AND
-      (SETQ SLOPE TEMP)
+      (setq slope temp)
     ) ;_ end of IF
-    (HAWS-MKLAYR (LIST LAYTX "" ""))
+    (haws-mklayr (list laytx "" ""))
     ;;Build slope string
-    (SETQ
-      SLOPE
-       (STRCAT
-         (IF (MINUSP SLOPE)
+    (setq
+      slope
+       (strcat
+         (if (minusp slope)
            ""
            "+"
          ) ;_ end of IF
-         (IF (= SLPTYP "")
-           (STRCAT (RTOS SLOPE 2 SLPREC) "%")
-           (STRCAT (RTOS (/ SLOPE 100) 2 SLPREC) " " SLPTYP "/" SLPTYP)
+         (if (= slptyp "")
+           (strcat (rtos slope 2 slprec) "%")
+           (strcat (rtos (/ slope 100) 2 slprec) " " slptyp "/" slptyp)
          ) ;_ end of if
        ) ;_ end of STRCAT
     ) ;_ end of SETQ
-    (COND
-      ((< PROHT 0)
-       (SETQ
-         SLOPESTRING
-          (STRCAT
-            (RTOS (ABS (- (CAR PLTPT1A) (CAR PLTPT1))) 2 0)
+    (cond
+      ((< proht 0)
+       (setq
+         slopestring
+          (strcat
+            (rtos (abs (- (car pltpt1a) (car pltpt1))) 2 0)
             " LF "
-            (RTOS (ABS (* (/ PROHT HVEXAG *HAWS-ELVSCL*) 12)) 2 0)
+            (rtos (abs (* (/ proht hvexag *haws-elvscl*) 12)) 2 0)
             "\" "
-            (COND
-              ((= PROTYP "WAT") "WATER")
-              ((= PROTYP "SEW") "SEWER")
-              ((= PROTYP "SD") "SD")
-              ((= PROTYP "IRR") "IRR")
-              ((= PROTYP "GAS") "GAS")
-              (T PROTYP)
+            (cond
+              ((= protyp "WAT") "WATER")
+              ((= protyp "SEW") "SEWER")
+              ((= protyp "SD") "SD")
+              ((= protyp "IRR") "IRR")
+              ((= protyp "GAS") "GAS")
+              (t protyp)
             ) ;_ end of COND
             " @ S="
-            SLOPE
+            slope
           ) ;_ end of STRCAT
        ) ;_ end of SETQ
        ;;If pipe slope string too long, shorten
-       (COND
-         ((< (DISTANCE PLTPT1A PLTPT1)
-             (HAWS-TXLEN SLOPESTRING TS)
+       (cond
+         ((< (distance pltpt1a pltpt1)
+             (haws-txlen slopestring ts)
           ) ;_ end of <
-          (SETQ
-            SLOPESTRING
-             (STRCAT
-               (RTOS (ABS (- (CAR PLTPT1A) (CAR PLTPT1))) 2 0)
+          (setq
+            slopestring
+             (strcat
+               (rtos (abs (- (car pltpt1a) (car pltpt1))) 2 0)
                " LF "
-               (RTOS (ABS (* (/ PROHT HVEXAG *HAWS-ELVSCL*) 12)) 2 0)
+               (rtos (abs (* (/ proht hvexag *haws-elvscl*) 12)) 2 0)
                "\", "
-               SLOPE
+               slope
              ) ;_ end of STRCAT
           ) ;_ end of SETQ
          )
        ) ;_ end of COND
       )
-      (T (SETQ SLOPESTRING (STRCAT "S=" SLOPE)))
+      (t (setq slopestring (strcat "S=" slope)))
     ) ;_ end of COND
     ;;Position text at middle point
-    (SETQ
-      PT1
-       (POLAR
-         (LIST
-           (/ (+ (CAR PLTPT1A) (CAR PLTPT1)) 2)
-           (/ (+ (CADR PLTPT1A) (CADR PLTPT1)) 2)
+    (setq
+      pt1
+       (polar
+         (list
+           (/ (+ (car pltpt1a) (car pltpt1)) 2)
+           (/ (+ (cadr pltpt1a) (cadr pltpt1)) 2)
          ) ;_ end of list
-         (/ PI 2)
-         (IF (= PROHT -10000)
+         (/ pi 2)
+         (if (= proht -10000)
            0
-           (/ (ABS PROHT) 2.0)
+           (/ (abs proht) 2.0)
          ) ;_ end of IF
        ) ;_ end of POLAR
     ) ;_ end of SETQ
     ;;Adjust text position vertically if needed
-    (COND
+    (cond
       ;;If string too long, move below lines
-      ((< (DISTANCE PLTPT1A PLTPT1)
-          (HAWS-TXLEN SLOPESTRING TS)
+      ((< (distance pltpt1a pltpt1)
+          (haws-txlen slopestring ts)
        ) ;_ end of <
-       (SETQ
-         PT1
-          (POLAR
-            PT1
+       (setq
+         pt1
+          (polar
+            pt1
             -1.57
-            (+ (/ (ABS PROHT) 2.0) (ABS WALTHK) (* TS 1.5))
+            (+ (/ (abs proht) 2.0) (abs walthk) (* ts 1.5))
           ) ;_ end of polar
        ) ;_ end of setq
       )
       ;;If too little headroom, move above lines
-      ((< (ABS PROHT) (* 2 TS))
-       (SETQ PT1 (POLAR PT1 1.57 (+ TS (/ (ABS PROHT) 2.0) (ABS WALTHK))))
+      ((< (abs proht) (* 2 ts))
+       (setq pt1 (polar pt1 1.57 (+ ts (/ (abs proht) 2.0) (abs walthk))))
       )
     ) ;_ end of COND
-    (HAWS-MKTEXT
+    (haws-mktext
       "m"
-      PT1
-      TS
-      (ATAN
-        (/ (SIN (ANGLE PLTPT1A PLTPT1))
-           (COS (ANGLE PLTPT1A PLTPT1))
+      pt1
+      ts
+      (atan
+        (/ (sin (angle pltpt1a pltpt1))
+           (cos (angle pltpt1a pltpt1))
         ) ;_ end of /
       ) ;_ end of atan
-      SLOPESTRING
+      slopestring
     ) ;_ end of HAWS-MKTEXT
-    (SETQ SLOPE NIL)
+    (setq slope nil)
   ) ;_ end of DEFUN
   ;;End of subfunctions, begin main function.
   (haws-core-init 285)
-  (TERPRI)
-  (SETQ
-    I 1
-    TS (* (GETVAR "dimtxt") (HAWS-DWGSCALE))
-    LINGAP
+  (terpri)
+  (setq
+    i 1
+    ts (* (getvar "dimtxt") (haws-dwgscale))
+    lingap
      0.5
-    LUP
-     (GETVAR "luprec")
+    lup
+     (getvar "luprec")
   ) ;_ end of SETQ
-  (IF (NOT HVEXAG) (SETQ HVEXAG 10))
-  (IF (NOT STASCL) (SETQ STASCL 1))
-  (IF (NOT *HAWS-ELVSCL*) (SETQ *HAWS-ELVSCL* 1))
-  (IF (NOT SLPTYP) (SETQ SLPTYP ""))
-  (IF (NOT STPREC) (SETQ STPREC LUP))
-  (IF (NOT OFPREC) (SETQ OFPREC LUP))
-  (IF (NOT ELPREC) (SETQ ELPREC 2))
-  (IF (NOT SLPREC) (SETQ SLPREC 3))
-  (IF PROINPUTFILE
-    (SETQ F1 PROINPUTFILE)
+  (if (not hvexag) (setq hvexag 10))
+  (if (not stascl) (setq stascl 1))
+  (if (not *haws-elvscl*) (setq *haws-elvscl* 1))
+  (if (not slptyp) (setq slptyp ""))
+  (if (not stprec) (setq stprec lup))
+  (if (not ofprec) (setq ofprec lup))
+  (if (not elprec) (setq elprec 2))
+  (if (not slprec) (setq slprec 3))
+  (if proinputfile
+    (setq f1 proinputfile)
   ) ;_ end of IF
-  (WHILE (NOT (OR F1 REFSTA))
-    (PROMPT "\nPlease set reference point.")
-    (HAWS-PROSET)
+  (while (not (or f1 refsta))
+    (prompt "\nPlease set reference point.")
+    (haws-proset)
   ) ;_ end of while
-  (WHILE (NOT (OR F1 PROHT))
-    (PROMPT "\nPlease set profile type.")
-    (HAWS-PROSET)
+  (while (not (or f1 proht))
+    (prompt "\nPlease set profile type.")
+    (haws-proset)
   ) ;_ end of while
-  (IF (= 0
-         (CDR (ASSOC 40 (TBLSEARCH "STYLE" (GETVAR "textstyle"))))
+  (if (= 0
+         (cdr (assoc 40 (tblsearch "STYLE" (getvar "textstyle"))))
       ) ;_ end of =
     (vl-cmdf
       "._text"
-      (LIST 0.0 0.0 0.0)
-      TS
-      (ANGTOS (/ PI 2))
+      (list 0.0 0.0 0.0)
+      ts
+      (angtos (/ pi 2))
       "TEST"
     ) ;_ end of command
     (vl-cmdf
       "._text"
-      (LIST 0.0 0.0 0.0)
-      (ANGTOS (/ PI 2))
+      (list 0.0 0.0 0.0)
+      (angtos (/ pi 2))
       "TEST"
     ) ;_ end of command
   ) ;_ end of IF
-  (ENTDEL (ENTLAST))
-  (IF (NOT WALTHK)
-    (SETQ WALTHK 0)
+  (entdel (entlast))
+  (if (not walthk)
+    (setq walthk 0)
   ) ;_ end of IF
-  (HAWS-VSAVE '("clayer" "osmode" "luprec" "filedia"))
-  (SETVAR "osmode" 0)
-  (SETVAR "dimzin" 0)
+  (haws-vsave '("clayer" "osmode" "luprec" "filedia"))
+  (setvar "osmode" 0)
+  (setvar "dimzin" 0)
   ;;While there's input,
-  (WHILE (IF F1
-           (HAWS-RDFILE)
-           (HAWS-GETPNT)
+  (while (if f1
+           (haws-rdfile)
+           (haws-getpnt)
          ) ;_ end of IF
     ;;if it is a profile point
-    (IF (AND STA (/= STA "Setup"))
-      (PROGN
+    (if (and sta (/= sta "Setup"))
+      (progn
         (vl-cmdf "._undo" "_g")
         ;;save the last point
-        (SETQ PLTPT1A (COND (PLTPT1)))  ;
+        (setq pltpt1a (cond (pltpt1)))  ;
                                         ;and top of curb
-        (SETQ TOPPTA (COND (TOPPT)))
+        (setq toppta (cond (toppt)))
         ;;plot the point
-        (HAWS-PLTHARDPRO)
+        (haws-plthardpro)
         ;;connect to last point
-        (IF (AND (> 1000 PROHT) PLTPT1A)
-          (HAWS-CONNECTHARD)
+        (if (and (> 1000 proht) pltpt1a)
+          (haws-connecthard)
         ) ;_ end of IF
         ;;Add slope label if
-        (IF
-          (AND
-            (> 1000 PROHT -10000)       ;profile type is appropriate
-            PLTPT1A                     ;there was a previous point
-            (/= SLOPE 1000)             ;user didn't supress slope
-            (OR SLOPE (/= 0 (- (CAR PLTPT1) (CAR PLTPT1A)))) ;slope isn't divide by zero
+        (if
+          (and
+            (> 1000 proht -10000)       ;profile type is appropriate
+            pltpt1a                     ;there was a previous point
+            (/= slope 1000)             ;user didn't supress slope
+            (or slope (/= 0 (- (car pltpt1) (car pltpt1a)))) ;slope isn't divide by zero
           ) ;_ end of and
-           (HAWS-CONNECTSOFT)
+           (haws-connectsoft)
         ) ;_ end of IF
         ;;Add point label
-        (HAWS-PLTSOFTPRO)
+        (haws-pltsoftpro)
         (vl-cmdf "._undo" "_e")
         ;;If requested, write all
         ;;the point information
         ;;to a file (f2).
-        (IF F2
-          (WRITE-LINE
-            (STRCAT
+        (if f2
+          (write-line
+            (strcat
               "PRFPNT    "
-              (HAWS-MKFLD (RTOS STA 2 3) 10)
-              (HAWS-MKFLD
-                (IF OFFSET
-                  (RTOS OFFSET 2 3)
+              (haws-mkfld (rtos sta 2 3) 10)
+              (haws-mkfld
+                (if offset
+                  (rtos offset 2 3)
                   ""
                 ) ;_ end of IF
                 10
               ) ;_ end of mkfld
-              (HAWS-MKFLD (RTOS ELEV1 2 3) 10)
-              (HAWS-MKFLD
-                (IF SLOPE
-                  (RTOS SLOPE 2 4)
+              (haws-mkfld (rtos elev1 2 3) 10)
+              (haws-mkfld
+                (if slope
+                  (rtos slope 2 4)
                   ""
                 ) ;_ end of IF
                 10
               ) ;_ end of mkfld
-              (HAWS-MKFLD
-                (IF NUM2
-                  (RTOS NUM2 2 3)
+              (haws-mkfld
+                (if num2
+                  (rtos num2 2 3)
                   ""
                 ) ;_ end of IF
                 10
               ) ;_ end of mkfld
-              (COND
-                (LBLTXT)
+              (cond
+                (lbltxt)
                 ("")
               ) ;_ end of COND
             ) ;_ end of STRCAT
-            F2
+            f2
           ) ;_ end of WRITE-LINE
         ) ;_ end of IF
         ;;Reset profile point to nil.
-        (SETQ STA NIL)
+        (setq sta nil)
       ) ;_ end of PROGN
       ;;Otherwise, if not reading from file, do setup.
-      (IF (NOT F1)
-        (HAWS-PROSET)
+      (if (not f1)
+        (haws-proset)
       ) ;_ end of IF
     ) ;_ end of IF
-    (PRINC "\rReading line ")
-    (PRINC (SETQ I (1+ I)))
+    (princ "\rReading line ")
+    (princ (setq i (1+ i)))
   ) ;_ end of WHILE
-  (SETQ
-    F1 (IF F1
-         (CLOSE F1)
+  (setq
+    f1 (if f1
+         (close f1)
        ) ;_ end of IF
-    F2 (IF F2
-         (CLOSE F2)
+    f2 (if f2
+         (close f2)
        ) ;_ end of IF
   ) ;_ end of SETQ
   ;;Close files
-  (HAWS-VRSTOR)
+  (haws-vrstor)
   (haws-core-restore)
-  (PRINC)
+  (princ)
   ;;and end program.
 ) ;_ end of DEFUN
 
 ;;----------------------------LIST POINT----------------------------
-(DEFUN c:haws-LST
-        (/ PT X Y STA EL1)
+(defun c:haws-lst
+        (/ pt x y sta el1)
 (haws-core-init 286)
-  (SETQ
-    PT  (GETPOINT "\nPick Point: ")
-    X   (CAR PT)
-    Y   (CADR PT)
-    STA (HAWS-RTOSTA (+ REFSTA (- X REFPTX)) NIL)
-    EL1 (RTOS (+ REFELV (/ (- Y REFPTY) HVEXAG *HAWS-ELVSCL*)))
+  (setq
+    pt  (getpoint "\nPick Point: ")
+    x   (car pt)
+    y   (cadr pt)
+    sta (haws-rtosta (+ refsta (- x refptx)) nil)
+    el1 (rtos (+ refelv (/ (- y refpty) hvexag *haws-elvscl*)))
   ) ;_ end of SETQ
-  (PROMPT "\n           STATION = ")
-  (PRINC STA)
-  (PROMPT "  ELEVATION = ")
-  (PRINC EL1)
-  (PRINC)
+  (prompt "\n           STATION = ")
+  (princ sta)
+  (prompt "  ELEVATION = ")
+  (princ el1)
+  (princ)
 ) ;_ end of DEFUN
 ;;------------------------------------------------------------------
 ;;ELLABEL labels elevations with reference to a known point.
-(DEFUN HAWS-ELLSET
-              (/ OPTION RPT)
-  (WHILE (PROGN
-           (INITGET "Reference Vertical Flip")
-           (SETQ
-             OPTION
-              (GETKWORD
+(defun haws-ellset
+              (/ option rpt)
+  (while (progn
+           (initget "Reference Vertical Flip")
+           (setq
+             option
+              (getkword
                 "\nReference point/Vertical Exaggeration/text Flip angle/<return to exit>: "
               ) ;_ end of getkword
            ) ;_ end of setq
          ) ;_ end of PROGN
-    (COND
-      ((= OPTION "Flip")
-       (INITGET 1)
-       (SETQ
-         FLPANG
-          (GETANGLE
+    (cond
+      ((= option "Flip")
+       (initget 1)
+       (setq
+         flpang
+          (getangle
             "\nFlip text to right side of line beyond what angle?: "
           ) ;_ end of getangle
-         FLPANG
-          (- (/ PI 2) FLPANG)
+         flpang
+          (- (/ pi 2) flpang)
        ) ;_ end of SETQ
       )
-      ((= OPTION "Reference")
-       (SETQ
-         RPT
-          (GETPOINT "\nReference point: ")
-         REFPTY
-          (CADR RPT)
-         REFELV
-          (GETREAL "\nReference elevation: ")
+      ((= option "Reference")
+       (setq
+         rpt
+          (getpoint "\nReference point: ")
+         refpty
+          (cadr rpt)
+         refelv
+          (getreal "\nReference elevation: ")
        ) ;_ end of SETQ
       )
-      ((= OPTION "Vertical") (HAWS-GETHVX))
+      ((= option "Vertical") (haws-gethvx))
     ) ;_ end of COND
   ) ;_ end of WHILE
 ) ;_ end of DEFUN
-(DEFUN HAWS-ELLPLT
-              (/ ANG1 TS EL1 ELEV2 TXLEN LEFT PT2 PT3 PT4 PT5)
-  (SETQ PT5 NIL)
-  (WHILE (PROGN
-           (INITGET 1 "Two")
-           (SETQ ANG1 (GETANGLE PT1 "\nLeader rotation or [Two elevs]: "))
-           (= ANG1 "Two")
+(defun haws-ellplt
+              (/ ang1 ts el1 elev2 txlen left pt2 pt3 pt4 pt5)
+  (setq pt5 nil)
+  (while (progn
+           (initget 1 "Two")
+           (setq ang1 (getangle pt1 "\nLeader rotation or [Two elevs]: "))
+           (= ang1 "Two")
          ) ;_ end of PROGN
-    (SETQ PT5 (GETPOINT "\nSecond elevation point: "))
+    (setq pt5 (getpoint "\nSecond elevation point: "))
   ) ;_ end of WHILE
-  (SETQ
-    TS (* (HAWS-DWGSCALE) (GETVAR "dimtxt"))
-    FLPANG
-     (COND
-       (FLPANG)
+  (setq
+    ts (* (haws-dwgscale) (getvar "dimtxt"))
+    flpang
+     (cond
+       (flpang)
        (0)
      ) ;_ end of COND
-    EL1
-     (GETSTRING
-       (IF PT5
+    el1
+     (getstring
+       (if pt5
          "\nFirst description: "
          "\nDescription: "
        ) ;_ end of IF
      ) ;_ end of GETSTRING
-    EL1
-     (IF (= EL1 "")
+    el1
+     (if (= el1 "")
        ""
-       (STRCAT " " EL1)
+       (strcat " " el1)
      ) ;_ end of IF
-    EL1
-     (STRCAT
-       (RTOS
-         (+ REFELV (/ (- (CADR PT1) REFPTY) HVEXAG *HAWS-ELVSCL*))
+    el1
+     (strcat
+       (rtos
+         (+ refelv (/ (- (cadr pt1) refpty) hvexag *haws-elvscl*))
          2
          2
        ) ;_ end of rtos
-       EL1
+       el1
      ) ;_ end of strcat
-    ELEV2
-     (IF PT5
-       (GETSTRING "\nSecond description: ")
+    elev2
+     (if pt5
+       (getstring "\nSecond description: ")
        ""
      ) ;_ end of IF
-    ELEV2
-     (IF (= ELEV2 "")
+    elev2
+     (if (= elev2 "")
        ""
-       (STRCAT " " ELEV2)
+       (strcat " " elev2)
      ) ;_ end of IF
-    ELEV2
-     (IF PT5
-       (STRCAT
-         (RTOS
-           (+ REFELV (/ (- (CADR PT5) REFPTY) HVEXAG *HAWS-ELVSCL*))
+    elev2
+     (if pt5
+       (strcat
+         (rtos
+           (+ refelv (/ (- (cadr pt5) refpty) hvexag *haws-elvscl*))
            2
            2
          ) ;_ end of rtos
-         ELEV2
+         elev2
        ) ;_ end of strcat
        " "
      ) ;_ end of IF
-    TXLEN
-     (MAX
-       (HAWS-TXLEN el1 TS)
-       (HAWS-TXLEN elev2 TS)
+    txlen
+     (max
+       (haws-txlen el1 ts)
+       (haws-txlen elev2 ts)
      ) ;_ end of MAX
-    LEFT
-     (MINUSP (COS (+ FLPANG ANG1)))
-    PT2
-     (POLAR PT1 ANG1 (* TS 2))
-    PT3
-     (POLAR PT2 ANG1 TXLEN)
-    PT4
-     (POLAR
-       PT2
-       (+ ANG1
-          (/ PI
-             (IF LEFT
+    left
+     (minusp (cos (+ flpang ang1)))
+    pt2
+     (polar pt1 ang1 (* ts 2))
+    pt3
+     (polar pt2 ang1 txlen)
+    pt4
+     (polar
+       pt2
+       (+ ang1
+          (/ pi
+             (if left
                2
                -2
              ) ;_ end of IF
           ) ;_ end of /
        ) ;_ end of +
-       (/ TS 3)
+       (/ ts 3)
      ) ;_ end of POLAR
   ) ;_ end of SETQ
-  (SETVAR "osmode" 0)
-  (vl-cmdf "._line" PT1 PT3 "")
-  (HAWS-MKTEXT
-    (IF LEFT
+  (setvar "osmode" 0)
+  (vl-cmdf "._line" pt1 pt3 "")
+  (haws-mktext
+    (if left
       "BR"
       "BL"
     ) ;_ end of IF
-    PT2
-    TS
-    (IF LEFT
-      (+ ANG1 PI)
-      ANG1
+    pt2
+    ts
+    (if left
+      (+ ang1 pi)
+      ang1
     ) ;_ end of IF
-    EL1
+    el1
   ) ;_ end of mktext
-  (IF PT5
-    (HAWS-MKTEXT
-      (IF LEFT
+  (if pt5
+    (haws-mktext
+      (if left
         "TR"
         "TL"
       ) ;_ end of IF
-      PT4
-      TS
-      (IF LEFT
-        (+ ANG1 PI)
-        ANG1
+      pt4
+      ts
+      (if left
+        (+ ang1 pi)
+        ang1
       ) ;_ end of IF
-      ELEV2
+      elev2
     ) ;_ end of mktext
   ) ;_ end of IF
 ) ;_ end of DEFUN
-(DEFUN c:haws-ELLABEL
-            (/ PT1)
+(defun c:haws-ellabel
+            (/ pt1)
   (haws-core-init 287)
-  (HAWS-VSAVE '("osmode"))
-  (SETVAR "dimzin" 0)
-  (IF (NOT HVEXAG)
-    (SETQ HVEXAG 10)
+  (haws-vsave '("osmode"))
+  (setvar "dimzin" 0)
+  (if (not hvexag)
+    (setq hvexag 10)
   ) ;_ end of IF
-  (IF (NOT REFPTY)
-    (HAWS-ELLSET)
+  (if (not refpty)
+    (haws-ellset)
   ) ;_ end of IF
-  (WHILE (PROGN
-           (SETVAR "osmode" 13)
-           (INITGET "Setup")
-           (SETQ PT1 (GETPOINT "\nPoint to label or [Setup]: "))
+  (while (progn
+           (setvar "osmode" 13)
+           (initget "Setup")
+           (setq pt1 (getpoint "\nPoint to label or [Setup]: "))
          ) ;_ end of progn
-    (COND
-      ((= PT1 "Setup") (HAWS-ELLSET))
-      (T (HAWS-ELLPLT))
+    (cond
+      ((= pt1 "Setup") (haws-ellset))
+      (t (haws-ellplt))
     ) ;_ end of COND
   ) ;_ end of WHILE
-  (HAWS-VRSTOR)
+  (haws-vrstor)
   (haws-core-restore)
-  (PRINC)
+  (princ)
 ) ;_ end of DEFUN
 
 ;;---------------------------STATION LABEL-------------------------
-(DEFUN c:haws-STALABEL
-             (/ PNT1 INC N STA1 ENDSTA STA)
+(defun c:haws-stalabel
+             (/ pnt1 inc n sta1 endsta sta)
   (haws-core-init 288)
-  (HAWS-MKLAYR "PSTALBL")
-  (HAWS-VSAVE '("luprec"))
-  (SETVAR "luprec" 0)
-  (SETQ
-    PNT1
-     (GETPOINT "\nTop center point of first label: ")
-    INC
-     (GETDIST "\nDistance between labels: ")
-    N (GETINT "\nNumber of labels: ")
-    STA1
-     (GETINT "\nFirst station: ")
-    ENDSTA
-     (+ STA1 (* (1- N) INC))
-    STA
-     STA1
+  (haws-mklayr "PSTALBL")
+  (haws-vsave '("luprec"))
+  (setvar "luprec" 0)
+  (setq
+    pnt1
+     (getpoint "\nTop center point of first label: ")
+    inc
+     (getdist "\nDistance between labels: ")
+    n (getint "\nNumber of labels: ")
+    sta1
+     (getint "\nFirst station: ")
+    endsta
+     (+ sta1 (* (1- n) inc))
+    sta
+     sta1
   ) ;_ end of SETQ
-  (WHILE (<= STA ENDSTA)
-    (HAWS-MKTEXT
+  (while (<= sta endsta)
+    (haws-mktext
       "tc"
-      (LIST (+ (CAR PNT1) (- STA STA1)) (CADR PNT1))
-      (* (HAWS-DWGSCALE) 0.12)
+      (list (+ (car pnt1) (- sta sta1)) (cadr pnt1))
+      (* (haws-dwgscale) 0.12)
       0
-      (HAWS-RTOSTA STA NIL)
+      (haws-rtosta sta nil)
     ) ;_ end of mktext
-    (SETQ STA (+ INC STA))
+    (setq sta (+ inc sta))
   ) ;_ end of WHILE
-  (HAWS-VRSTOR)
+  (haws-vrstor)
   (haws-core-restore)
-  (PRINC)
+  (princ)
 ) ;_ end of DEFUN
 ;;---------------------------ELEVATION LABEL------------------------
-(DEFUN c:haws-ELV
-        (/ PNT1 INC N ELV1 ENDELV ELV)
+(defun c:haws-elv
+        (/ pnt1 inc n elv1 endelv elv)
 (haws-core-init 289)
-  (IF (NOT HVEXAG)
-    (HAWS-GETHVX)
+  (if (not hvexag)
+    (haws-gethvx)
   ) ;_ end of IF
-  (HAWS-MKLAYR "PELEVLBL")
-  (SETQ
-    PNT1
-     (GETPOINT "\nBottom right point of first label: ")
-    INC
-     (GETINT "\nElevation increment: ")
-    N (GETINT "\nNumber of labels: ")
-    ELV1
-     (GETINT "\nFirst elevation: ")
-    ENDELV
-     (+ ELV1 (* (1- N) INC))
-    ELV
-     ELV1
+  (haws-mklayr "PELEVLBL")
+  (setq
+    pnt1
+     (getpoint "\nBottom right point of first label: ")
+    inc
+     (getint "\nElevation increment: ")
+    n (getint "\nNumber of labels: ")
+    elv1
+     (getint "\nFirst elevation: ")
+    endelv
+     (+ elv1 (* (1- n) inc))
+    elv
+     elv1
   ) ;_ end of SETQ
-  (WHILE (<= ELV ENDELV)
-    (HAWS-MKTEXT
+  (while (<= elv endelv)
+    (haws-mktext
       "br"
-      (LIST
-        (CAR PNT1)
-        (+ (* HVEXAG *HAWS-ELVSCL* (- ELV ELV1)) (CADR PNT1))
+      (list
+        (car pnt1)
+        (+ (* hvexag *haws-elvscl* (- elv elv1)) (cadr pnt1))
       ) ;_ end of list
-      (* (HAWS-DWGSCALE) 0.12)
+      (* (haws-dwgscale) 0.12)
       0
-      (ITOA ELV)
+      (itoa elv)
     ) ;_ end of mktext
-    (SETQ ELV (+ INC ELV))
+    (setq elv (+ inc elv))
   ) ;_ end of WHILE
-  (PRINC)
+  (princ)
 ) ;_ end of DEFUN
 ;;--------------------------SLOPE CALCULATOR------------------------------
-(DEFUN c:haws-GRD
-        (/ A)
+(defun c:haws-grd
+        (/ a)
 (haws-core-init 290)
-  (DEFUN HAWS-GR1
-             (/ STA1 EL1 STA2 ELEV2 STAD ELD X1 GR)
-    (PROMPT "\nTo Determine the Slope Between 2 Points.")
-    (SETQ
-      STA1
-       (GETREAL "\nEnter 1st Station as a real number: ")
-      EL1
-       (GETREAL "\nEnter 1st Elevation: ")
-      STA2
-       (GETREAL "\nEnter 2nd Station as a real number: ")
-      ELEV2
-       (GETREAL "\nEnter 2nd Elevation: ")
-      STAD
-       (- STA2 STA1)
-      ELD
-       (- ELEV2 EL1)
-      X1 (/ ELD STAD)
-      GR (* X1 100.0)
+  (defun haws-gr1
+             (/ sta1 el1 sta2 elev2 stad eld x1 gr)
+    (prompt "\nTo Determine the Slope Between 2 Points.")
+    (setq
+      sta1
+       (getreal "\nEnter 1st Station as a real number: ")
+      el1
+       (getreal "\nEnter 1st Elevation: ")
+      sta2
+       (getreal "\nEnter 2nd Station as a real number: ")
+      elev2
+       (getreal "\nEnter 2nd Elevation: ")
+      stad
+       (- sta2 sta1)
+      eld
+       (- elev2 el1)
+      x1 (/ eld stad)
+      gr (* x1 100.0)
     ) ;_ end of SETQ
-    (PROMPT "\nSLOPE = ")
-    (PROMPT (RTOS GR 2 4))
-    (PROMPT "%")
+    (prompt "\nSLOPE = ")
+    (prompt (rtos gr 2 4))
+    (prompt "%")
   ) ;_ end of DEFUN
-  (DEFUN HAWS-GR2
-             (/ STA1 EL1 STA2 GR STAD ELEV2)
-    (PROMPT
+  (defun haws-gr2
+             (/ sta1 el1 sta2 gr stad elev2)
+    (prompt
       "\nTo Determine the Elevation at a Specified Station."
     ) ;_ end of prompt
-    (SETQ
-      STA1  (GETREAL "\nEnter 1st Station as a real number: ")
-      EL1   (GETREAL "\nEnter 1st Elevation: ")
-      STA2  (GETREAL "\nEnter 2nd Station as a real number: ")
-      GR    (GETREAL "\nEnter Slope in Percent: ")
-      STAD  (- STA2 STA1)
-      ELEV2 (+ EL1 (* STAD (/ GR 100.0)))
+    (setq
+      sta1  (getreal "\nEnter 1st Station as a real number: ")
+      el1   (getreal "\nEnter 1st Elevation: ")
+      sta2  (getreal "\nEnter 2nd Station as a real number: ")
+      gr    (getreal "\nEnter Slope in Percent: ")
+      stad  (- sta2 sta1)
+      elev2 (+ el1 (* stad (/ gr 100.0)))
     ) ;_ end of SETQ
-    (PROMPT "\nELEVATION AT STATION ")
-    (PRINC STA2)
-    (PROMPT " = ")
-    (PROMPT (RTOS ELEV2 2 4))
+    (prompt "\nELEVATION AT STATION ")
+    (princ sta2)
+    (prompt " = ")
+    (prompt (rtos elev2 2 4))
   ) ;_ end of DEFUN
-  (INITGET 1 "Slope Elevation")
-  (SETQ A (GETKWORD "\nFind Slope/Elevation:"))
-  (COND
-    ((= A "Slope") (HAWS-GR1))
-    ((= A "Elevation") (HAWS-GR2))
+  (initget 1 "Slope Elevation")
+  (setq a (getkword "\nFind Slope/Elevation:"))
+  (cond
+    ((= a "Slope") (haws-gr1))
+    ((= a "Elevation") (haws-gr2))
   ) ;_ end of COND
-  (PRINC)
+  (princ)
 ) ;_ end of DEFUN
 
-(DEFUN c:haws-GRC ()
-(haws-core-init 291) (HAWS-LINBLK "*GRC" "PGC"))
-(DEFUN c:haws-GRB ()
-(haws-core-init 292) (HAWS-LINBLK "*GRB" "PGB"))
-(DEFUN HAWS-LINBLK
-              (BLNAME BLLAY / PT1 PT2)
-  (HAWS-MKLAYR BLLAY)
-  (SETQ PT1 (GETPOINT "\nFirst point: "))
-  (vl-cmdf "._pline" PT1)
-  (WHILE (SETQ PT2 (GETPOINT PT1 "Next point: "))
-    (vl-cmdf PT2)
-    (SETQ PT1 PT2)
+(defun c:haws-grc ()
+(haws-core-init 291) (haws-linblk "*GRC" "PGC"))
+(defun c:haws-grb ()
+(haws-core-init 292) (haws-linblk "*GRB" "PGB"))
+(defun haws-linblk
+              (blname bllay / pt1 pt2)
+  (haws-mklayr bllay)
+  (setq pt1 (getpoint "\nFirst point: "))
+  (vl-cmdf "._pline" pt1)
+  (while (setq pt2 (getpoint pt1 "Next point: "))
+    (vl-cmdf pt2)
+    (setq pt1 pt2)
   ) ;_ end of while
   (vl-cmdf "")
   (vl-cmdf
     "._insert"
-    BLNAME
+    blname
     "_Scale"
-    (* (HAWS-DWGSCALE) (GETVAR "dimtxt"))
-    PT1
+    (* (haws-dwgscale) (getvar "dimtxt"))
+    pt1
   ) ;_ end of command
 ) ;_ end of DEFUN

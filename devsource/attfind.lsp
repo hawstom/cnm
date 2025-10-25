@@ -1,4 +1,4 @@
-;ATTFIND
+﻿;ATTFIND
 ;(C) Copyright 1997 by Thomas Gail Haws
 ;Usage:
 ; (attfind [blockwc] [list of criteria lists] [return tag list] [stop flag])
@@ -16,7 +16,7 @@
 ;  ( <block2ename> (<att2aename> <att2bename>))
 ;)
 ;If the stop flag is not nil, ATTFIND stops after finding the first match.
-(defun HAWS-attfind
+(defun haws-attfind
   (blkwc crtl0 tagl0 stop /
   at av blki blkm blkss crti crtli el en et i blklst tagli)
   (setq
@@ -43,7 +43,7 @@
       )
       (if (member at tagl0)(setq tagli (cons en tagli)))
     )
-    (setq blkm T)
+    (setq blkm t)
     (foreach crt0 crtl0
       (if
         (or

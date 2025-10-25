@@ -1,14 +1,14 @@
-;;; 4.2.30 deprecation section
-(defun haws-deprecation-01 (FUNCTION-NAME)
+﻿;;; 4.2.30 deprecation section
+(defun haws-deprecation-01 (function-name)
   (alert
     (princ
       (strcat
 	"\nCNM can no longer expose functions that have names without reserved safe prefixes like HAWS- and HCNM-. Something you invoked called the HAWSEDC legacy \""
-	FUNCTION-NAME
+	function-name
 	"\" routine. If your command works at all, it will not likely work right.\n\nPlease find the  \""
-	FUNCTION-NAME
+	function-name
 	"\"call and replace it with \"HAWS-"
-	FUNCTION-NAME.
+	function-name.
 	"\"."
       )
     )
@@ -54,20 +54,20 @@
 ;;; To restore previous UCS, set a global symbol 'ucsp to non-nil.
 ;;; To restore another previous UCS, set a global symbol 'ucspp to non-nil.
 (defun erdf$@ () (errdef))
-(DEFUN 	  errdef
+(defun 	  errdef
 		()
   (haws-deprecation-01 "errdef")
 )
 
-(DEFUN haws-errdef ()
-  (PRINC "\nThank you for using this HawsEDC tool.  See HawsEDC.com for support.")
+(defun haws-errdef ()
+  (princ "\nThank you for using this HawsEDC tool.  See HawsEDC.com for support.")
   ;;Load extended visual lisp functions
-  (VL-LOAD-COM)
-  (SETQ
-    OLDERR
-     *ERROR*
-    *ERROR*
-     haws-STPERR
+  (vl-load-com)
+  (setq
+    olderr
+     *error*
+    *error*
+     haws-stperr
   ) ;_ end of setq
 ) ;_ end of defun
 
@@ -80,9 +80,9 @@
       (princ (strcat "\nTrapped error: " s))
   ) )
   (vl-cmdf-s)
-  (if (= (type f1) (quote FILE))(setq f1(close f1))); Close files
-  (if (= (type f2) (quote FILE))(setq f2(close f2)))
-  (if (= (type f3) (quote FILE))(setq f3(close f3)))
+  (if (= (type f1) (quote file))(setq f1(close f1))); Close files
+  (if (= (type f2) (quote file))(setq f2(close f2)))
+  (if (= (type f3) (quote file))(setq f3(close f3)))
   (if (= 8 (logand (getvar"undoctl") 8))(vl-cmdf-s "._undo" "end")); End undo group
   (if (and vrstor vstr) (vrstor))     ; Restore variables to previous values
   (if ucsp (vl-cmdf-s "._UCS""P"))       ; Restore previous UCS
@@ -92,7 +92,7 @@
   (setq ucsp nil ucspp nil enm nil)
   (princ)
 )
-(DEFUN 	  errrst
+(defun 	  errrst
 		()
   (haws-deprecation-01 "errrst")
 )
@@ -104,10 +104,10 @@
 )
 ;;; END ERROR HANDLER
 
-(DEFUN HAWS-DWGSCALE ()
-  (COND
-    ((OR (= (GETVAR "DIMANNO") 1) (= (GETVAR "DIMSCALE") 0)) (/ 1 (GETVAR "CANNOSCALEVALUE")))
-    ((GETVAR "DIMSCALE"))
+(defun haws-dwgscale ()
+  (cond
+    ((or (= (getvar "DIMANNO") 1) (= (getvar "DIMSCALE") 0)) (/ 1 (getvar "CANNOSCALEVALUE")))
+    ((getvar "DIMSCALE"))
   )
 )
 
@@ -238,7 +238,7 @@
           (setq file (open fname ftype))
         )
       )
-      (T (setq file (open fname ftype)))
+      (t (setq file (open fname ftype)))
     )
     (if
       (not file)
@@ -250,7 +250,7 @@
 ;;; ----  GETSTRING WITH DEFAULT PROMPT  -----------------------------------------
 (defun haws-getstringx (prmpt curval dflt / input)
   (if (not curval) (setq curval dflt))
-  (setq input (getstring T (strcat prmpt " <"  curval ">: ")))
+  (setq input (getstring t (strcat prmpt " <"  curval ">: ")))
   (if (= input "") curval input)
 )
 
@@ -291,14 +291,14 @@
      (setq i 0 mkfld_field "")
      (cond
        ((wcmatch string (strcat "*`" format "*,*\"*"))
-        (setq mkfld_literal T mkfld_field "\"")
+        (setq mkfld_literal t mkfld_field "\"")
      ) )
      (while (<= (setq i (1+ i)) (strlen string))
        (setq mkfld_field
          (strcat mkfld_field
            (cond
              ((= (setq char (substr string i 1)) "\"") "\"\"")
-             (T char)
+             (t char)
            )
          )
        )
@@ -306,7 +306,7 @@
      (if mkfld_literal (setq mkfld_field (strcat mkfld_field "\"")))
      (setq mkfld_field (strcat mkfld_field format))
     )
-    (T
+    (t
      (setq mkfld_field string)
      (while (< (strlen(setq mkfld_field(substr mkfld_field 1 format))) format)
        (setq mkfld_field (strcat mkfld_field " "))
@@ -320,35 +320,35 @@
 ;;;  Use empty quotes for default color and linetype (eg. (mklay (list "AZ" "" ""))
   (defun haws-getusl (/ rdlin temp)
     (setq temp (findfile"layers.dat"))
-    (COND
-      (TEMP
-       (PROMPT "\nReading layer settings from ")
-       (PRINC TEMP)
+    (cond
+      (temp
+       (prompt "\nReading layer settings from ")
+       (princ temp)
       )
-      ((PROMPT "\nLayer settings file not found.") (EXIT))
+      ((prompt "\nLayer settings file not found.") (exit))
     )
-    (SETQ
-      F3 (OPEN TEMP "r")
-      I 0
+    (setq
+      f3 (open temp "r")
+      i 0
     )
-    (WHILE (SETQ RDLIN (READ-LINE F3))
-      (princ "\rReading line ")(princ (setq I (1+ i)))
-      (IF (= 'LIST (TYPE (SETQ TEMP (READ RDLIN))))
-        (SETQ *HAWS:LAYERS* (CONS TEMP *HAWS:LAYERS*))
+    (while (setq rdlin (read-line f3))
+      (princ "\rReading line ")(princ (setq i (1+ i)))
+      (if (= 'LIST (type (setq temp (read rdlin))))
+        (setq *haws:layers* (cons temp *haws:layers*))
       )
     )
-    (SETQ F3 (CLOSE F3))
+    (setq f3 (close f3))
   )
 (defun haws-getlayr ( key / temp)
-  (if (not *HAWS:LAYERS*)(haws-getusl))
+  (if (not *haws:layers*)(haws-getusl))
   (cond
-    ( (cdr (assoc key *HAWS:LAYERS*)))
-    ( T
+    ( (cdr (assoc key *haws:layers*)))
+    ( t
       (prompt (strcat "\nSettings for \"" key "\" not found in LAYERS.DAT.  Using current layer."))
     )
   )
 )
-(DEFUN 	  mklayr
+(defun 	  mklayr
 		(laopt)
   (haws-deprecation-01 "mklayr")
 )
@@ -388,7 +388,7 @@
   (vl-cmdf "")
   laopt
 )
-(DEFUN 	  mktext
+(defun 	  mktext
 		(j i h r s)
   (haws-deprecation-01 "mktext")
 )
@@ -465,10 +465,10 @@
       (while
         (and
           (/= i fldno)
-          (if(> (setq j (1+ j)) 1000)(prompt"\nFields or delimiters missing?") T)
+          (if(> (setq j (1+ j)) 1000)(prompt"\nFields or delimiters missing?") t)
         )
         (if (= (setq char (substr string j 1)) "\"")
-          (if (not literal)(setq literal T)(setq literal nil))
+          (if (not literal)(setq literal t)(setq literal nil))
         )
         (if (and (not literal)(= (substr string j 1) fldwid))(setq i (1+ i)))
       )
@@ -479,15 +479,15 @@
         )
         (cond
           ((= char "\"")
-           (if (not literal)(setq literal T)(setq literal nil))
-           (if (not firstquote) (setq firstquote T)(setq firstquote nil))
+           (if (not literal)(setq literal t)(setq literal nil))
+           (if (not firstquote) (setq firstquote t)(setq firstquote nil))
           )
-          (T (setq firstquote nil))
+          (t (setq firstquote nil))
         )
         (if (not firstquote)(setq atomx (strcat atomx char)))
       )
     )
-    ( T
+    ( t
       (setq atomx
         (substr
           string
@@ -499,7 +499,7 @@
           (while (= " " (substr atomx 1 1))
             (setq atomx (substr atomx 2))
           )
-          (while (= " " (HAWS-ENDSTR atomx 1 1))
+          (while (= " " (haws-endstr atomx 1 1))
             (setq atomx (substr atomx 1 (1- (strlen atomx))))
           )
       ) )
@@ -545,7 +545,7 @@
   (if isneg (setq before (strcat "-(" before) after (strcat after ")")))
   (strcat before "+" after)
 )
-(DEFUN 	  vset
+(defun 	  vset
 		(vlst)
   (haws-deprecation-01 "vset")
 )
@@ -562,7 +562,7 @@
   (princ)
 )
 
-(DEFUN 	  vsave
+(defun 	  vsave
 		(vlst)
   (haws-deprecation-01 "vsave")
 )
@@ -574,7 +574,7 @@
   )
 )
 
-(DEFUN 	  vrstor
+(defun 	  vrstor
 		()
   (haws-deprecation-01 "vrstor")
 )
@@ -595,7 +595,7 @@
 (defun haws-wrap (strng1 maxlen char / first i lstrni stripc strips
   strng2 strngi temp wlist)
   (setq
-    i 1 char (strcat "`" char) first T
+    i 1 char (strcat "`" char) first t
     wlist nil strng2 "" strngi "" lstrni 0
   )
   ;Break strng1 at every break point
@@ -644,7 +644,7 @@
           first nil
         )
       )
-      ( T
+      ( t
         (setq
           i (1+ i)
         )
@@ -663,7 +663,7 @@
     (setq elst (entget (setq enm (car e))))
     (if(/=  (cdr(assoc 0 elst)) serch)
       (princ (strcat "**Not a " serch ", try again**"))
-      (setq ok T)
+      (setq ok t)
     )
   )
   e

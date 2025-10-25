@@ -1,4 +1,4 @@
-;;; Command aliases for all CNM commands.
+ï»¿;;; Command aliases for all CNM commands.
 ;;; To change a command name to your liking,
 ;;; Just change the Alias.
 ;;; It's strongly recommended to copy only the commands you change
@@ -439,6 +439,6 @@
 
 ;;;---------------Set a flag that aliases have been loaded
 (setq *hcnm-cnmaliasloaded* t)
- ;|«Visual LISP© Format Options»
-(132 2 40 2 nil "end of " 100 2 1 1 1 nil nil nil T)
+ ;|ï¿½Visual LISPï¿½ Format Optionsï¿½
+(132 2 40 2 nil "end of " 100 2 1 1 1 nil nil nil t)
 ;*** DO NOT add text below the comment! ***|;

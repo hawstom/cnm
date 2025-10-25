@@ -1,110 +1,110 @@
-(DEFUN C:HAWS-LTP
-             (/ SS CC I EC LC)
+﻿(defun c:haws-ltp
+             (/ ss cc i ec lc)
 (haws-core-init 251)
-  (COND
-    ((/= (SETQ CC (GETSTRING "\nNew layer linetype (return to pick):"))
+  (cond
+    ((/= (setq cc (getstring "\nNew layer linetype (return to pick):"))
          ""
      )
-     CC
+     cc
     )
-    ((SETQ
-       CC (CDR
-            (ASSOC
+    ((setq
+       cc (cdr
+            (assoc
               6
-              (SETQ EC (ENTGET (CAR (NENTSEL "\nSelect linetype: "))))
+              (setq ec (entget (car (nentsel "\nSelect linetype: "))))
             )
           )
      )
-     CC
+     cc
     )
-    (T
-     (SETQ
-       CC
-        (CDR (ASSOC 6 (TBLSEARCH "layer" (CDR (ASSOC 8 EC)))))
+    (t
+     (setq
+       cc
+        (cdr (assoc 6 (tblsearch "layer" (cdr (assoc 8 ec)))))
      )
-     (COND
-       ((WCMATCH CC "*|*")
-        (ALERT
+     (cond
+       ((wcmatch cc "*|*")
+        (alert
           "Can't set to external linetype.\nWill try using bare linetype name."
         )
-        (WHILE (WCMATCH (SETQ CC (SUBSTR CC 2)) "*|*"))
+        (while (wcmatch (setq cc (substr cc 2)) "*|*"))
        )
      )
     )
   )
-  (PROMPT
+  (prompt
     "\nLayers to change by picking (Linetypes by entity won't change):"
   )
-  (SETQ
-    SS (SSGET)
-    I  0
+  (setq
+    ss (ssget)
+    i  0
   )
   (vl-cmdf "._layer")
-  (WHILE (SETQ EC (SSNAME SS I))
-    (SETQ LC (CDR (ASSOC 8 (ENTGET EC))))
-    (vl-cmdf "_lt" CC LC)
-    (SETQ I (1+ I))
+  (while (setq ec (ssname ss i))
+    (setq lc (cdr (assoc 8 (entget ec))))
+    (vl-cmdf "_lt" cc lc)
+    (setq i (1+ i))
   )
   (vl-cmdf "")
-  (PRINC "Linetype ")
-  CC
+  (princ "Linetype ")
+  cc
 )
 ;;; (C) Copyright 1997 by Thomas Gail Haws
 ;;; Change layer color by picking nested entities
-(DEFUN C:HAWS-LTPX
-              (/ CC EC LOPERA NESTED)
+(defun c:haws-ltpx
+              (/ cc ec lopera nested)
 (haws-core-init 252)
-  (COND
-    ((/= (SETQ CC (GETSTRING "\nNew layer linetype (return to pick):"))
+  (cond
+    ((/= (setq cc (getstring "\nNew layer linetype (return to pick):"))
          ""
      )
-     CC
+     cc
     )
-    ((SETQ
-       CC (CDR
-            (ASSOC
+    ((setq
+       cc (cdr
+            (assoc
               6
-              (SETQ EC (ENTGET (CAR (NENTSEL "\nSelect linetype: "))))
+              (setq ec (entget (car (nentsel "\nSelect linetype: "))))
             )
           )
      )
-     CC
+     cc
     )
-    (T
-     (SETQ
-       CC (CDR (ASSOC 6 (TBLSEARCH "layer" (CDR (ASSOC 8 EC)))))
+    (t
+     (setq
+       cc (cdr (assoc 6 (tblsearch "layer" (cdr (assoc 8 ec)))))
      )
-     (COND
-       ((WCMATCH CC "*|*")
-        (ALERT
+     (cond
+       ((wcmatch cc "*|*")
+        (alert
           "Can't set to external linetype.\nWill try using bare linetype name."
         )
-        (WHILE (WCMATCH (SETQ CC (SUBSTR CC 2)) "*|*"))
+        (while (wcmatch (setq cc (substr cc 2)) "*|*"))
        )
      )
     )
   )
-  (PROMPT (STRCAT "\nNested layers to change by picking: "))
+  (prompt (strcat "\nNested layers to change by picking: "))
   (vl-cmdf "._layer")
-  (HAWS-LTPICK)
+  (haws-ltpick)
   (vl-cmdf "")
-  (PRINC "Linetype ")
-  CC
+  (princ "Linetype ")
+  cc
 )
-(DEFUN HAWS-LTPICK
-              (/ ES EN LA PARNTL VP)
-  (WHILE (SETQ ES (NENTSEL))
-    (SETQ
-      EN     (CAR ES)
-      LA     (CDR (ASSOC 8 (ENTGET EN)))
-      PARNTL (CADDDR ES)
+(defun haws-ltpick
+              (/ es en la parntl vp)
+  (while (setq es (nentsel))
+    (setq
+      en     (car es)
+      la     (cdr (assoc 8 (entget en)))
+      parntl (cadddr es)
     )
-    (WHILE (= LA "0")
-      (SETQ LA (CDR (ASSOC 8 (ENTGET (CAR PARNTL)))))
-      (SETQ PARNTL (CDR PARNTL))
+    (while (= la "0")
+      (setq la (cdr (assoc 8 (entget (car parntl)))))
+      (setq parntl (cdr parntl))
     )
-    (REDRAW EN 3)  
-    (vl-cmdf "_lt" CC LA)
+    (redraw en 3)  
+    (vl-cmdf "_lt" cc la)
   )
 )
 

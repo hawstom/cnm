@@ -1,4 +1,4 @@
-(defun c:haws-polarset ()
+﻿(defun c:haws-polarset ()
 (haws-core-init 98)
  (setvar "polarang" (/ pi 12))
 ; (if (= (getvar "osmode") 0)(setvar "osmode" 8)); A running osnap not needed post ACAD 2000.  Bug fixed.

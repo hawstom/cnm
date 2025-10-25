@@ -1,12 +1,12 @@
-;Freeze, off, or lock all except picked layers
+﻿;Freeze, off, or lock all except picked layers
 ;Written by Thomas Gail Haws
 
-(defun c:haws-FFI ()
-(haws-core-init 226) (HAWS-isolat "_freeze" nil))
-(defun HAWS-isolat (lopera nested / ss1 i en)
+(defun c:haws-ffi ()
+(haws-core-init 226) (haws-isolat "_freeze" nil))
+(defun haws-isolat (lopera nested / ss1 i en)
   (haws-core-init 76)
-  (HAWS-VSAVE '("EXPERT"))
-  (SETVAR "EXPERT" 5)
+  (haws-vsave '("EXPERT"))
+  (setvar "EXPERT" 5)
   (prompt "\nLayers to isolate")
   (setq issset (ssget))
   (vl-cmdf "._layer" lopera "*")
@@ -24,5 +24,5 @@
     (setq i (1+ i))
   )
   (vl-cmdf "")
-  (HAWS-VRSTOR)(haws-core-restore)
+  (haws-vrstor)(haws-core-restore)
 );end freeze/off/lock isolate by picking

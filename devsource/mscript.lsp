@@ -1,24 +1,24 @@
-;;(C) Copyright 1997 by Thomas Gail Haws
+ï»¿;;(C) Copyright 1997 by Thomas Gail Haws
 ;;Rev. 2011-10-21 to limit call to VBA to the VBA versions.
 ;;Rev. 7/22/99
 ;;Runs a script file on multiple drawings.
-(DEFUN C:HAWS-MSCR ()
-(haws-core-init 263) (C:HAWS-MSCRIPT))
-(DEFUN C:HAWS-MSCRIPT (/ TEMP MSNAMELIST MSNAMESHORT PLTCMD FLSPEC RDSCR
-                   RPTSCR RSNAME USERS1OLD USERS2OLD USERS3OLD USERS4OLD
-                   DWGFIL COLUMN DEL
+(defun c:haws-mscr ()
+(haws-core-init 263) (c:haws-mscript))
+(defun c:haws-mscript (/ temp msnamelist msnameshort pltcmd flspec rdscr
+                   rptscr rsname users1old users2old users3old users4old
+                   dwgfil column del
                   )
-  (SETQ TEMP "MSCRIPT.LSP version 1.22 by Thomas Gail Haws")
-  (IF (NOT
-        (SETQ
-          F1 (OPEN
-               (STRCAT
-                 (SETQ
-                   MSNAMESHORT
-                    (STRCAT
-                      (GETVAR "dwgprefix")
+  (setq temp "MSCRIPT.LSP version 1.22 by Thomas Gail Haws")
+  (if (not
+        (setq
+          f1 (open
+               (strcat
+                 (setq
+                   msnameshort
+                    (strcat
+                      (getvar "dwgprefix")
                       "mscr"
-                      (SUBSTR (GETVAR "loginname") 1 3)
+                      (substr (getvar "loginname") 1 3)
                     )
                  )
                  ".scr"
@@ -27,84 +27,84 @@
              ) ;_ end of open
         ) ;_ end of setq
       ) ;_ end of not
-    (SETQ MSNAMESHORT (STRCAT (GETVAR "dwgprefix") "mscr"))
-    (SETQ F1 (CLOSE F1))
+    (setq msnameshort (strcat (getvar "dwgprefix") "mscr"))
+    (setq f1 (close f1))
   ) ;_ end of if
-  (SETQ
-    MSNAMELIST
-     (COND
-       (*HAWS-MSCRIPTLISTFILE*)
-       ((STRCAT MSNAMESHORT ".lst"))
+  (setq
+    msnamelist
+     (cond
+       (*haws-mscriptlistfile*)
+       ((strcat msnameshort ".lst"))
      )
-    DN (HAWS-GETDNPATH)
+    dn (haws-getdnpath)
   )
   (haws-core-init 264)                       ;requires library function
-  (TEXTPAGE)
-  (PROMPT TEMP)
-  (PROMPT
+  (textpage)
+  (prompt temp)
+  (prompt
     "\n\nMSCRIPT must have the following conditions to run trouble-free."
   )
-  (PROMPT
+  (prompt
     "\n  1. Any needed font files, xref files, etc. must be accessible."
   )
-  (PROMPT
+  (prompt
     "\n  2. Script commands can not call dialogue boxes."
   )
-  (COND
-    ((AND
-       (< (ATOF (GETVAR "acadver")) 18)
-       (>= (ATOF (GETVAR "acadver")) 15)
+  (cond
+    ((and
+       (< (atof (getvar "acadver")) 18)
+       (>= (atof (getvar "acadver")) 15)
      )
-     (SETQ
-       USERS1OLD
-        (GETVAR "users1")
-       USERS2OLD
-        (GETVAR "users2")
-       USERS3OLD
-        (GETVAR "users3")
-       USERS4OLD
-        (GETVAR "users4")
+     (setq
+       users1old
+        (getvar "users1")
+       users2old
+        (getvar "users2")
+       users3old
+        (getvar "users3")
+       users4old
+        (getvar "users4")
      )
-     (SETVAR "users1" (STRCAT MSNAMELIST))
-     (SETVAR "users2" "Drawings (*.dwg)|*.dwg")
-     (SETVAR
+     (setvar "users1" (strcat msnamelist))
+     (setvar "users2" "Drawings (*.dwg)|*.dwg")
+     (setvar
        "users3"
        "File(s) listed below will be processed with the script selected in the next step:"
      )
-     (SETVAR
+     (setvar
        "users4"
        "Multiple Script Processor runs a script repeatedly on multiple drawings for automation, uniformity, and speed.  It is wise to check the script on a single drawing first and to back up all drawings before processing."
      )
      (vl-cmdf "-vbarun" "fselect.dvb!modFileSelect.FileSelect")
-     (SETQ
-       F1 (SETQ MSNAMELIST (GETVAR "users1"))
-       *HAWS-MSCRIPTLISTFILE* MSNAMELIST
+     (setq
+       f1 (setq msnamelist (getvar "users1"))
+       *haws-mscriptlistfile* msnamelist
      )
-     (IF (/= (GETVAR "users2") "OK")
-       (SETQ TEMP T)
+     (if (/= (getvar "users2") "OK")
+       (setq temp t)
      )
-     (SETVAR "users1" USERS1OLD)
-     (SETVAR "users2" USERS2OLD)
-     (SETVAR "users3" USERS3OLD)
-     (SETVAR "users4" USERS4OLD)
-     (IF TEMP
-       (EXIT)
+     (setvar "users1" users1old)
+     (setvar "users2" users2old)
+     (setvar "users3" users3old)
+     (setvar "users4" users4old)
+     (if temp
+       (exit)
      )
     )
-    ((AND
-       (OR (SETQ LSTFIL (FINDFILE (STRCAT DN ".lst")))
-           (SETQ
-             LSTFIL
-              (FINDFILE (STRCAT (GETVAR "DWGPREFIX") "mscript.lst"))
+    ((and
+       (or (setq lstfil (findfile (strcat dn ".lst")))
+           (setq
+             lstfil
+              (findfile (strcat (getvar "DWGPREFIX") "mscript.lst"))
            )
        )
        (= "Yes"
-          (PROGN
-            (INITGET 1 "Yes No")
-            (GETKWORD
-              (STRCAT
+          (progn
+            (initget 1 "Yes No")
+            (getkword
+              (strcat
                 "\nKeep and use existing list file, \""
-                LSTFIL
+                lstfil
                 "\"? [Yes/No]: "
               )
             )
@@ -112,9 +112,9 @@
        )
      )
     )
-    (T
-     (PROMPT
-       (STRCAT
+    (t
+     (prompt
+       (strcat
          "\n\nHow will you specify drawings to process?"
          "\nUse a text file you have prepared with a List of drawings"
          "\n(MSCRIPT will automatically use mscript.lst if present), "
@@ -122,232 +122,232 @@
          "\nor Select drawings one at a time from a dialogue box?"
         )
      )
-     (INITGET 1 "List Wildcards Select")
-     (SETQ
-       TEMP
-        (GETKWORD "\n[List file/Wildcards/Select one at a time]: ")
+     (initget 1 "List Wildcards Select")
+     (setq
+       temp
+        (getkword "\n[List file/Wildcards/Select one at a time]: ")
      )
-     (COND
-       ((= TEMP "List")
-        (SETQ LSTFIL (GETFILED "Select a List File" "" "LST" 0))
+     (cond
+       ((= temp "List")
+        (setq lstfil (getfiled "Select a List File" "" "LST" 0))
        )
-       ((= TEMP "Wildcards")
+       ((= temp "Wildcards")
         ;;Add function to user's ACAD.PGP to shell and wait for attrib command to finish.
-        (SETQ
-          LSTFIL
-           (STRCAT DN ".lst")
-          TEMP
-           (FINDFILE "acad.pgp")
-          F1 (OPEN TEMP "r")
+        (setq
+          lstfil
+           (strcat dn ".lst")
+          temp
+           (findfile "acad.pgp")
+          f1 (open temp "r")
         )
-        (WHILE (SETQ DWGFIL (READ-LINE F1))
-          (IF (= "RUN," (SUBSTR DWGFIL 1 4))
-            (SETQ PGPMOD T)
+        (while (setq dwgfil (read-line f1))
+          (if (= "RUN," (substr dwgfil 1 4))
+            (setq pgpmod t)
           )
-          (IF (= "SH," (SUBSTR DWGFIL 1 3))
-            (SETQ
-              SHTLST
-               (CONS
+          (if (= "SH," (substr dwgfil 1 3))
+            (setq
+              shtlst
+               (cons
                  ";The following line was added by HawsEDC Construction Notes Manager for file processing by Wildcard."
-                 SHTLST
+                 shtlst
                )
-              SHTLST
-               (CONS
+              shtlst
+               (cons
                  "RUN,       cmd /c,         0,*Batch file to run: ,"
-                 SHTLST
+                 shtlst
                )
             )
           )
-          (SETQ SHTLST (CONS DWGFIL SHTLST))
+          (setq shtlst (cons dwgfil shtlst))
         )
-        (SETQ F1 (CLOSE F1))
-        (IF (NOT PGPMOD)
-          (PROGN
-            (SETQ
-              F1     (OPEN TEMP "w")
-              SHTLST (REVERSE SHTLST)
+        (setq f1 (close f1))
+        (if (not pgpmod)
+          (progn
+            (setq
+              f1     (open temp "w")
+              shtlst (reverse shtlst)
             )
-            (FOREACH DWGFIL SHTLST (WRITE-LINE DWGFIL F1))
-            (SETQ F1 (CLOSE F1))
-            (SETVAR "re-init" 16)
+            (foreach dwgfil shtlst (write-line dwgfil f1))
+            (setq f1 (close f1))
+            (setvar "re-init" 16)
           )
         )
-        (WHILE (NOT COLUMN)
-          (SETQ
-            FLSPEC
-             (GETSTRING
-               T
+        (while (not column)
+          (setq
+            flspec
+             (getstring
+               t
                "\nFiles to process using OS wildcards (eg. * or grad\\*): "
              )
           )
           (vl-cmdf
             "run"
-            (STRCAT "attrib \"" FLSPEC ".dwg\" > " LSTFIL)
+            (strcat "attrib \"" flspec ".dwg\" > " lstfil)
           )
-          (SETQ
-            F1 (OPEN LSTFIL "r")
-            DWGFIL
-             (READ-LINE F1)
-            COLUMN
-             (STRLEN DWGFIL)
+          (setq
+            f1 (open lstfil "r")
+            dwgfil
+             (read-line f1)
+            column
+             (strlen dwgfil)
           )
-          (COND
-            ((WCMATCH DWGFIL "* not found *")
-             (SETQ
-               COLUMN NIL
-               F1 (CLOSE F1)
+          (cond
+            ((wcmatch dwgfil "* not found *")
+             (setq
+               column nil
+               f1 (close f1)
              )
-             (ALERT
-               (PRINC
-                 (STRCAT
+             (alert
+               (princ
+                 (strcat
                    "The operating system could not find\nany files found matching the wildcard:\n\n "
-                   FLSPEC
+                   flspec
                    "\n\nPlease try again."
                  )
                )
              )
             )
-            (T
-             (WHILE (NOT
-                      (AND
-                        (WCMATCH
-                          (STRCASE (SUBSTR DWGFIL COLUMN))
-                          (STRCASE (STRCAT FLSPEC "`.DWG"))
+            (t
+             (while (not
+                      (and
+                        (wcmatch
+                          (strcase (substr dwgfil column))
+                          (strcase (strcat flspec "`.DWG"))
                         )
-                        (OR (= "\\" (SUBSTR DWGFIL (1- COLUMN) 1))
-                            (= "\\" (SUBSTR DWGFIL COLUMN 1))
-                            (= ":" (SUBSTR DWGFIL (1+ COLUMN) 1))
+                        (or (= "\\" (substr dwgfil (1- column) 1))
+                            (= "\\" (substr dwgfil column 1))
+                            (= ":" (substr dwgfil (1+ column) 1))
                         )
                       )
                     )
-               (SETQ COLUMN (1- COLUMN))
+               (setq column (1- column))
              )
-             (SETQ
-               F1     (CLOSE F1)
-               F1     (OPEN LSTFIL "r")
-               SHTLST NIL
+             (setq
+               f1     (close f1)
+               f1     (open lstfil "r")
+               shtlst nil
              )
-             (WHILE (SETQ DWGFIL (READ-LINE F1))
-               (SETQ
-                 DWGFIL
-                  (SUBSTR DWGFIL COLUMN)
-                 SHTLST
-                  (CONS
-                    (SUBSTR DWGFIL 1 (- (STRLEN DWGFIL) 4))
-                    SHTLST
+             (while (setq dwgfil (read-line f1))
+               (setq
+                 dwgfil
+                  (substr dwgfil column)
+                 shtlst
+                  (cons
+                    (substr dwgfil 1 (- (strlen dwgfil) 4))
+                    shtlst
                   )
                )
              )
-             (SETQ
-               F1 (CLOSE F1)
-               F1 (OPEN LSTFIL "w")
+             (setq
+               f1 (close f1)
+               f1 (open lstfil "w")
              )
-             (SETQ SHTLST (REVERSE SHTLST))
-             (FOREACH DWGFIL SHTLST (WRITE-LINE DWGFIL F1))
-             (SETQ F1 (CLOSE F1))
+             (setq shtlst (reverse shtlst))
+             (foreach dwgfil shtlst (write-line dwgfil f1))
+             (setq f1 (close f1))
             )
           )
         )
        )
-       ((= TEMP "Select")
-        (SETQ
-          LSTFIL
-           (STRCAT DN ".lst")
-          F1 (OPEN LSTFIL "w")
+       ((= temp "Select")
+        (setq
+          lstfil
+           (strcat dn ".lst")
+          f1 (open lstfil "w")
         )
-        (WHILE (SETQ
-                 DWGFIL
-                  (GETFILED
+        (while (setq
+                 dwgfil
+                  (getfiled
                     "File to process (Cancel when Finished)"
                     ""
                     "DWG"
                     6
                   )
                )
-          (WRITE-LINE (SUBSTR DWGFIL 1 (- (STRLEN DWGFIL) 4)) F1)
+          (write-line (substr dwgfil 1 (- (strlen dwgfil) 4)) f1)
         )
-        (SETQ F1 (CLOSE F1))
+        (setq f1 (close f1))
        )
      )
     )
   )
-  (SETQ
-    RSNAME
-     (GETFILED
+  (setq
+    rsname
+     (getfiled
        "Select script to repeat on each drawing"
        ""
        "SCR"
        2
      )
-    F1 (OPEN LSTFIL "r")
-    F2 (OPEN (STRCAT MSNAMESHORT ".scr") "w")
-    DWGFIL
-     (READ-LINE F1)
+    f1 (open lstfil "r")
+    f2 (open (strcat msnameshort ".scr") "w")
+    dwgfil
+     (read-line f1)
   ) ;_ end of setq
-  (SETQ COLUMN 0)
-  (IF (WCMATCH DWGFIL "*:\\*,*\\\\*")
-    (WHILE (NOT
-             (WCMATCH
-               (SUBSTR DWGFIL (SETQ COLUMN (1+ COLUMN)))
+  (setq column 0)
+  (if (wcmatch dwgfil "*:\\*,*\\\\*")
+    (while (not
+             (wcmatch
+               (substr dwgfil (setq column (1+ column)))
                "?:\\*,\\\\*"
              )
            )
     )
-    (SETQ COLUMN 1)
+    (setq column 1)
   ) ;_ end of if
-  (SETQ DWGFIL (SUBSTR DWGFIL COLUMN))
+  (setq dwgfil (substr dwgfil column))
   ;;  Begin writing script file.
   ;;  First script line sets pre R-12 commands and opens first drawing.
-  (IF (AND
-        (<= 15.0 (ATOF (GETVAR "acadver")))
-        (= 0 (GETVAR "sdi"))
+  (if (and
+        (<= 15.0 (atof (getvar "acadver")))
+        (= 0 (getvar "sdi"))
       )
-    (PRINC "sdi 1 " F2)
+    (princ "sdi 1 " f2)
   ) ;_ end of if
-  (WRITE-LINE (STRCAT "qsave open \"" DWGFIL "\"") F2)
+  (write-line (strcat "qsave open \"" dwgfil "\"") f2)
   ;;  Write script lines for each drawing.
-  (WHILE DWGFIL
+  (while dwgfil
     ;;  Script line sets newly opened drawing to pre R-12 commands.
     ;;  Other commands for each dwg. may be added or deleted after "cmddia 0".
-    (WRITE-LINE "filedia 0 cmddia 0" F2)
+    (write-line "filedia 0 cmddia 0" f2)
     ;;  Embed selected script file.
-    (SETQ RPTSCR (OPEN (FINDFILE RSNAME) "r"))
-    (WHILE (SETQ RDSCR (READ-LINE RPTSCR))
-      (WRITE-LINE RDSCR F2)
+    (setq rptscr (open (findfile rsname) "r"))
+    (while (setq rdscr (read-line rptscr))
+      (write-line rdscr f2)
     )
-    (CLOSE RPTSCR)
+    (close rptscr)
     ;;  Save each drawing.
-    (PRINC "filedia 1 cmddia 1\nqsave " F2)
-    (SETQ DWGFIL (READ-LINE F1))
+    (princ "filedia 1 cmddia 1\nqsave " f2)
+    (setq dwgfil (read-line f1))
     ;;  If there is another file to process, open it.
-    (IF DWGFIL
-      (SETQ DWGFIL (SUBSTR DWGFIL COLUMN))
+    (if dwgfil
+      (setq dwgfil (substr dwgfil column))
     )
-    (IF (AND
-          DWGFIL
-          (OR (FINDFILE DWGFIL) (FINDFILE (STRCAT DWGFIL ".dwg")))
+    (if (and
+          dwgfil
+          (or (findfile dwgfil) (findfile (strcat dwgfil ".dwg")))
         )
-      (WRITE-LINE (STRCAT "open \"" DWGFIL "\"") F2)
-      (SETQ DWGFIL NIL)
+      (write-line (strcat "open \"" dwgfil "\"") f2)
+      (setq dwgfil nil)
     ) ;_ end of if
   ) ;_ end while
-  (IF (AND
-        (<= 15.0 (ATOF (GETVAR "acadver")))
-        (= 0 (GETVAR "sdi"))
+  (if (and
+        (<= 15.0 (atof (getvar "acadver")))
+        (= 0 (getvar "sdi"))
       )
-    (WRITE-LINE "sdi 0" F2)
+    (write-line "sdi 0" f2)
   ) ;_ end of if
-  (CLOSE F2)
-  (CLOSE F1)
-  (IF DEL
-    (vl-cmdf "sh" (STRCAT "del \"" MSNAMELIST "\""))
+  (close f2)
+  (close f1)
+  (if del
+    (vl-cmdf "sh" (strcat "del \"" msnamelist "\""))
   ) ;_ end of if
-  (IF (AND
-        (<= 15.0 (ATOF (GETVAR "acadver")))
-        (= 0 (GETVAR "sdi"))
+  (if (and
+        (<= 15.0 (atof (getvar "acadver")))
+        (= 0 (getvar "sdi"))
       )
-    (ALERT
-      (STRCAT
+    (alert
+      (strcat
         "MSCRIPT is now ready to process drawings, but must return to Single Drawing Interface (pre-2000) first."
         "\n\nAfter closing this message, please verify that all drawing windows"
         "\nexcept the current drawing are closed"
@@ -357,25 +357,25 @@
        ) ;_ end of STRCAT
     ) ;_ end of ALERT
   ) ;_ end of if
-  (INITGET "Yes No")
-  (IF (= (GETKWORD
+  (initget "Yes No")
+  (if (= (getkword
            "\nProcess drawings now after saving current dwg?[Yes/No]:"
          )
          "Yes"
       )
-    (vl-cmdf "._script" MSNAMESHORT)
-    (PROMPT
-      (STRCAT
+    (vl-cmdf "._script" msnameshort)
+    (prompt
+      (strcat
         "Done.  Run script file '"
-        MSNAMESHORT
+        msnameshort
         "' to process."
       )
     )
   ) ;_ end of if
   (haws-core-restore)                         ;requires library function
-  (PRINC)
+  (princ)
 ) ;_ end of DEFUN
 
-;|«Visual LISP© Format Options»
-(72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)
+;|ï¿½Visual LISPï¿½ Format Optionsï¿½
+(72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil t)
 ;*** DO NOT add text below the comment! ***|;

@@ -1,4 +1,4 @@
-;To load commands automatically, remove the first semi-colon from the 
+﻿;To load commands automatically, remove the first semi-colon from the 
 ;desired lines with parentheses.  Then copy this file to a different 
 ;directory so it won't be overwritten.  
 ;Standard directory is c:haws-\user.

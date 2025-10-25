@@ -1,4 +1,4 @@
-;(C) Copyright 1997 by Thomas Gail Haws
+﻿;(C) Copyright 1997 by Thomas Gail Haws
 ;                          |<------------dwlen->|
 ;                          |                    |
 ;                   - 7----6--------------------14----15 -     
@@ -16,10 +16,10 @@
 ;
 (defun c:haws-m42 ( / ang1 ang2 ang3 ang4 ang5 ang6 ang7 ang8 ang9 ang10 ang11
   anga angb angc angd ange bccen cl1 cl2 cl3
-  HAWS-drawdw dwmid dwwid incang left osmold pt1 pt2 pt3 pt4 pt5 pt6 pt7 pt8
+  haws-drawdw dwmid dwwid incang left osmold pt1 pt2 pt3 pt4 pt5 pt6 pt7 pt8
   pt9 pt10 pt11 pt12 pt13 pt14 pt15 pt16 ts rad wngang)
 (haws-core-init 86)
-  (defun HAWS-drawm42 ()
+  (defun haws-drawm42 ()
     (setvar "osmode" 0)
     (vl-cmdf "._line" pt1  pt6  "")
     (vl-cmdf "._line" pt2  pt4  "")
@@ -31,28 +31,28 @@
     (vl-cmdf "._line" pt11 pt12 "")
     (vl-cmdf "._line" pt13 pt16 "")
     (vl-cmdf "._line" pt16 pt15 "")
-    (HAWS-MKLAYR "DRIVEWAYTX")
+    (haws-mklayr "DRIVEWAYTX")
     (vl-cmdf "._line" cl1  cl2 "")
-    (HAWS-MKTEXT
+    (haws-mktext
       (if left "MR" "ML")
       cl3
       ts
       (if left (+ ang1 pi) ang1)
       "DW"
     )
-    (HAWS-MKLAYR "DRIVEWAY")
+    (haws-mklayr "DRIVEWAY")
   )
-  (HAWS-VSAVE '("clayer"))
+  (haws-vsave '("clayer"))
   (setq
     osmold (getvar "osmode")
     hcwid (if hcwid hcwid 4.0)
     dwlen(if dwlen dwlen 20.0)
     dwwid (if swwid swwid 12.0)
     swwid (if swwid swwid 4.0)
-    ts (* (HAWS-DWGSCALE)(getvar"dimtxt"))
+    ts (* (haws-dwgscale)(getvar"dimtxt"))
   )
   (setvar "osmode" 0)
-  (HAWS-MKLAYR "DRIVEWAY")
+  (haws-mklayr "DRIVEWAY")
   (while
     (progn
       (initget "Length Dw Sw")
@@ -107,11 +107,11 @@
           pt15 (polar bccen ang8  (+ rad dwwid hcwid))
           pt16 (polar bccen ang11 (+ rad swwid))
         )
-        (HAWS-drawm42)
+        (haws-drawm42)
         (vl-cmdf "._arc" pt12 "e" pt4 "r" (+ rad dwwid))
         (vl-cmdf "._arc" pt15 "e" pt7 "r" (+ rad dwwid hcwid))
       )
-      ( T
+      ( t
         (setvar "osmode" 128)
         (setq
           ang1 (getangle dwmid "\nSelect sidewalk: ")
@@ -139,11 +139,11 @@
           pt16 (polar pt13  ang1 swwid)
           dwlen (* dwlen 2)
         )
-        (HAWS-drawm42)
+        (haws-drawm42)
         (vl-cmdf "._line" pt4 pt12 "")
         (vl-cmdf "._line" pt7 pt15 "")
       )
   ) )
-  (HAWS-VRSTOR)(haws-core-restore)
+  (haws-vrstor)(haws-core-restore)
 )
 

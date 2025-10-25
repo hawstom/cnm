@@ -1,6 +1,6 @@
-;X,Y Coordinates on Leader Lines
+﻿;X,Y Coordinates on Leader Lines
 ;Written by Thomas Gail Haws
-(defun c:haws-XY (/ dg txht pnt1 p1x p1y ang1 left ptxt)
+(defun c:haws-xy (/ dg txht pnt1 p1x p1y ang1 left ptxt)
   (haws-core-init 334)
   (setq
     txht (haws-text-height-model)
@@ -14,13 +14,13 @@
     ( (>= (atof(getvar "acadver"))14)
       (vl-cmdf "._leader" pnt1 ptxt "" "" "_None")
     )
-    ( T
+    ( t
       (vl-cmdf "._dim" "_leader" pnt1 ptxt)(vl-cmdf)
     )
   )
   (setq ptxt (polar ptxt (if left pi 0) (* txht 0.5)))
-  (HAWS-MKTEXT (if left "mr" "ml") ptxt nil 0 p1x)
+  (haws-mktext (if left "mr" "ml") ptxt nil 0 p1x)
   (setq ptxt (polar ptxt(/ pi -2)(* 1.667 txht)))
-  (HAWS-MKTEXT (if left "mr" "ml") ptxt nil 0 p1y)
+  (haws-mktext (if left "mr" "ml") ptxt nil 0 p1y)
   (haws-core-restore)(princ)
 ) ;end

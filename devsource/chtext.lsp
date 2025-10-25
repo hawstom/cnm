@@ -1,4 +1,4 @@
-;;;   CHTEXT.lsp
+﻿;;;   CHTEXT.lsp
 ;;;   (C) Copyright 1988-1992 by Autodesk, Inc.
 ;;;
 ;;;   This program is copyrighted by Autodesk, Inc. and is  licensed
@@ -94,7 +94,7 @@
 
   (setq ct_ver "1.12")                ; Reset this local if you make a change.
   ;; Set undo groups and ends
-  (defun cht_UG () (vl-cmdf "_.undo" "_group"))
+  (defun cht_ug () (vl-cmdf "_.undo" "_group"))
   (defun cht_ue () (vl-cmdf "_.undo" "_en"))
   ;;
   ;; Internal error handler defined locally
@@ -129,7 +129,7 @@
   (setq cht_oh (getvar "highlight"))
   (setvar "cmdecho" 0)
 
-  (CHT_UG)
+  (cht_ug)
 
   (princ (strcat "\nChange text, Version " ct_ver
                  ", (c) 1990-1991 by Autodesk, Inc. "))
@@ -145,7 +145,7 @@
   (cht_ol)
 
   (if cht_oe (setq *error* cht_oe))   ; Reset old error function if error
-  (cht_UE)
+  (cht_ue)
   (if cht_ot (setvar "texteval" cht_ot))
   (if cht_oh (setvar "highlight" cht_oh))
   (if cht_oc (setvar "cmdecho" cht_oc)) ; Reset command echoing
@@ -155,7 +155,7 @@
 ;;; The option loop.
 ;;;
 (defun cht_ol ()
-  (setq opt T unctr 0)
+  (setq opt t unctr 0)
   (while (and opt (> (sslength sset) 0))
     (setq unctr (1+ unctr))
     (vl-cmdf "_.UNDO" "_GROUP")
@@ -260,7 +260,7 @@
     ((= justp "BCenter") (setq justp 1 justq 1) )
     ((= justp "BRight")  (setq justp 2 justq 1) )
     ((= justp "?")       (setq justp nil)       )
-    (T                   (setq justp nil)       )
+    (t                   (setq justp nil)       )
   )
   (if justp
     (justpt) ; Process them...
@@ -370,14 +370,14 @@
         (setq ent (entget(ssname sset (setq sslen (1- sslen)))))
         (redraw (cdr(assoc -1 ent)) 3)
         (prompt (strcat "\nOld text: " (cdr(assoc 1 ent))))
-        (setq nt (getstring  T "\nNew text: "))
+        (setq nt (getstring  t "\nNew text: "))
         (redraw (cdr(assoc -1 ent)) 1)
         (if (> (strlen nt) 0)
           (entmod (subst (cons 1 nt) (assoc 1 ent) ent))
         )
       )
     )
-    (T
+    (t
       (chgtext sset)                  ; Change 'em all
     )
   )
@@ -387,7 +387,7 @@
 ;;; The old CHGTEXT command - rudimentary text editor
 ;;;
 ;;;
-(defun c:haws-CHGTEXT ()
+(defun c:haws-chgtext ()
 (haws-core-init 174) (chgtext nil))
 
 (defun chgtext (objs / last_o tot_o ent o_str n_str st s_temp
@@ -420,7 +420,7 @@
           (princ "\nThis version of CHT will match wildcards with only one escape character (`).")
           (setq o_slen (1- (strlen o_str)))
         )
-        (T (setq o_slen (strlen o_str)))
+        (t (setq o_slen (strlen o_str)))
       )
       (if (/= o_slen 0)
         (progn
@@ -492,7 +492,7 @@
 ;;; GLOBALS:
 ;;;   sset  -- The selection set of text entities
 ;;;
-(defun cht_pe (typ prmpt FLD / temp ow nw ent tw sty w hw lw
+(defun cht_pe (typ prmpt fld / temp ow nw ent tw sty w hw lw
                               sslen n sn ssl)
   (if (= (sslength sset) 1)           ; Special case if there is only
                                       ; one entity selected
@@ -541,8 +541,8 @@
   (setvar "highlight" 0)
   (while (> sslen 0)
     (setq temp (ssname sset (setq sslen (1- sslen))))
-    (entmod (subst (cons FLD nw)
-                   (assoc FLD (setq ent (entget temp)))
+    (entmod (subst (cons fld nw)
+                   (assoc fld (setq ent (entget temp)))
                    ent
             )
     )
@@ -555,7 +555,7 @@
 ;;;
 (defun cht_p1 ()
   (setq temp (ssname sset 0))
-  (setq ow (cdr(assoc FLD (entget temp))))
+  (setq ow (cdr(assoc fld (entget temp))))
   (if (or (= opt "Rot")(= opt "Obl"))
     (setq ow (/ (* ow 180.0) pi))
   )
@@ -578,14 +578,14 @@
     (if (null (tblsearch "style" nw))
       (princ (strcat "\nStyle " nw " not found. "))
 
-      (entmod (subst (cons FLD nw)
-                     (assoc FLD (setq ent (entget temp)))
+      (entmod (subst (cons fld nw)
+                     (assoc fld (setq ent (entget temp)))
                      ent
               )
       )
     )
-    (entmod (subst (cons FLD nw)
-                   (assoc FLD (setq ent (entget temp)))
+    (entmod (subst (cons fld nw)
+                   (assoc fld (setq ent (entget temp)))
                    ent
             )
     )
@@ -627,9 +627,9 @@
     (if (= typ "Style")
       (progn
         (if (= tw 0)
-          (setq tw (list (cdr(assoc FLD (entget temp)))))
+          (setq tw (list (cdr(assoc fld (entget temp)))))
           (progn
-            (setq sty (cdr(assoc FLD (entget temp))))
+            (setq sty (cdr(assoc fld (entget temp))))
             (if (not (member sty tw))
               (setq tw (append tw (list sty)))
             )
@@ -637,7 +637,7 @@
         )
       )
       (progn
-        (setq tw (+ tw (setq w (cdr(assoc FLD (entget temp))))))
+        (setq tw (+ tw (setq w (cdr(assoc fld (entget temp))))))
         (if (= (sslength sset) (1+ sslen)) (setq lw w hw w))
         (if (< hw w) (setq hw w))
         (if (> lw w) (setq lw w))
@@ -673,7 +673,7 @@
   (setq sslen (sslength sset))
   (while (> sslen 0)
     (setq temp (ssname sset (setq sslen (1- sslen))))
-    (setq ow (cdr(assoc FLD (entget temp))))
+    (setq ow (cdr(assoc fld (entget temp))))
     (if (or (= typ "Rot")(= typ "Obl"))
       (setq ow (/ (* ow 180.0) pi))
     )
@@ -699,8 +699,8 @@
     (if (or (= typ "Rot")(= typ "Obl"))
       (setq nw (* (/ nw 180.0) pi))
     )
-    (entmod (subst (cons FLD nw)
-                   (assoc FLD (setq ent (entget temp)))
+    (entmod (subst (cons fld nw)
+                   (assoc fld (setq ent (entget temp)))
                    ent
             )
     )

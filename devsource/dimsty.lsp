@@ -1,6 +1,6 @@
-(defun c:haws-dimsty ()
+﻿(defun c:haws-dimsty ()
 (haws-core-init 14)
-  (defun dimVSET (varlst / dimsty dsexist val var)
+  (defun dimvset (varlst / dimsty dsexist val var)
     (foreach var varlst
       (setq val (cadr var) var (car var))
       (cond
@@ -8,16 +8,16 @@
         ( (wcmatch var "*BLK*")
           (cond
             ( (= val "")
-              (VL-CMDF  "dim1" var ".")
+              (vl-cmdf  "dim1" var ".")
             )
-            ( T
+            ( t
               (cond
                 ( (not (tblsearch "BLOCK" val))
                   (cond
                     ( (findfile (strcat val ".dwg"))
-                      (VL-CMDF  "._insert" val)(VL-CMDF )
+                      (vl-cmdf  "._insert" val)(vl-cmdf )
                     )
-                    (T (setq val ""))
+                    (t (setq val ""))
                   )
                 )
               )
@@ -28,14 +28,14 @@
         ( (getvar var)(setvar var val))
       )
     )
-    (if (tblsearch "dimstyle" dimsty)(setq dsexist T)(setq dsexist nil))
+    (if (tblsearch "dimstyle" dimsty)(setq dsexist t)(setq dsexist nil))
     (vl-cmdf "dim1" "save" dimsty)
     (if dsexist (vl-cmdf "y"))
     (princ)
   )
   (prompt"Use SETUP and ROMANS before DIMSTY to set up sizes and text style as needed.  Use DDIM after DIMSTY to select dimstyles.")
   ;Street dimensions
-  (dimVSET
+  (dimvset
     '(
       ("DIMALT"  0);alternate units toggle
       ("DIMALTD" 2);alt. decimals
@@ -90,7 +90,7 @@
     )
   )
   ;Lot dimensions, suppress extension 2
-  (dimVSET
+  (dimvset
     '(
       ("DIMALT"  0);alternate units toggle
       ("DIMALTD" 2);alt. decimals
@@ -145,7 +145,7 @@
     )
   )
   ;Profile dimensions
-  (dimVSET
+  (dimvset
     '(
       ("DIMALT"  0);alternate units toggle
       ("DIMALTD" 2);alt. decimals
@@ -200,7 +200,7 @@
     )
   )
   ;Standard dimension style
-  (dimVSET
+  (dimvset
     '(
       ("DIMALT"  0);alternate units toggle
       ("DIMALTD" 2);alt. decimals

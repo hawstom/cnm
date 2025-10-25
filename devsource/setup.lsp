@@ -1,4 +1,4 @@
-;Written by Thomas Gail Haws
+﻿;Written by Thomas Gail Haws
 (defun c:haws-10 ()
 (haws-core-init 129)(setup 20.0 0.10))
 (defun c:haws-12 ()
@@ -13,7 +13,7 @@
   (setq
     ds (getreal "\nDrawing scale: 1\" = ")
     ts (getreal "\nText height in inches: ")
-    dwgsetupdone T
+    dwgsetupdone t
   )
   (setup ds ts)
 )
@@ -34,13 +34,13 @@
   (prompt"\nEnter DIMSTY to set up dimension styles.")
   (princ)
 )
-(DEFUN setup:vset
-            (VLST)
-  (FOREACH
-     V
-      VLST
-    (IF (GETVAR (CAR V))
-      (SETVAR (CAR V) (CADR V))
+(defun setup:vset
+            (vlst)
+  (foreach
+     v
+      vlst
+    (if (getvar (car v))
+      (setvar (car v) (cadr v))
     ) ;_ end of if
   ) ;_ end of foreach
 ) ;_ end of defun

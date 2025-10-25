@@ -1,23 +1,23 @@
-;; Get Dynamic Block Property Value  -  Lee Mac
+﻿;; Get Dynamic Block Property Value  -  Lee Mac
 ;; Returns the value of a Dynamic Block property (if present)
 ;; block-object-1 - [vla] VLA Dynamic Block Reference object
 ;; dynamic-property-name - [str] Dynamic Block property name (case-insensitive)
 
-(DEFUN LM:GETDYNPROPVALUE (BLOCK-OBJECT-1
-                       DYNAMIC-PROPERTY-NAME
+(defun lm:getdynpropvalue (block-object-1
+                       dynamic-property-name
                        /
-                       DYNAMIC-PROPERTY-NAME-UPPER
+                       dynamic-property-name-upper
                       )
-  (SETQ DYNAMIC-PROPERTY-NAME-UPPER (STRCASE DYNAMIC-PROPERTY-NAME))
-  (VL-SOME
-    '(LAMBDA (X)
-       (IF (= DYNAMIC-PROPERTY-NAME-UPPER
-              (STRCASE (VLAX-GET X 'PROPERTYNAME))
+  (setq dynamic-property-name-upper (strcase dynamic-property-name))
+  (vl-some
+    '(lambda (x)
+       (if (= dynamic-property-name-upper
+              (strcase (vlax-get x 'PROPERTYNAME))
            )
-         (VLAX-GET X 'VALUE)
+         (vlax-get x 'VALUE)
        )
      )
-    (VLAX-INVOKE BLOCK-OBJECT-1 'GETDYNAMICBLOCKPROPERTIES)
+    (vlax-invoke block-object-1 'GETDYNAMICBLOCKPROPERTIES)
   )
 )
 
@@ -29,35 +29,35 @@
 ;; val - [any] New value for property
 ;; Returns: [any] New value if successful, else nil
 
-(DEFUN LM:SETDYNPROPVALUE (BLOCK-OBJECT-1 DYNAMIC-PROPERTY-NAME VAL /
-                       DYNAMIC-PROPERTY-NAME-UPPER
+(defun lm:setdynpropvalue (block-object-1 dynamic-property-name val /
+                       dynamic-property-name-upper
                       )
-  (SETQ DYNAMIC-PROPERTY-NAME-UPPER (STRCASE DYNAMIC-PROPERTY-NAME))
-  (VL-SOME
-    '(LAMBDA (X)
-       (IF (EQ DYNAMIC-PROPERTY-NAME-UPPER
-               (STRCASE (VLAX-GET X 'PROPERTYNAME))
+  (setq dynamic-property-name-upper (strcase dynamic-property-name))
+  (vl-some
+    '(lambda (x)
+       (if (eq dynamic-property-name-upper
+               (strcase (vlax-get x 'PROPERTYNAME))
            )
-         (PROGN
-           (VLA-PUT-VALUE
-             X
-             (VLAX-MAKE-VARIANT
-               VAL
-               (VLAX-VARIANT-TYPE (VLA-GET-VALUE X))
+         (progn
+           (vla-put-value
+             x
+             (vlax-make-variant
+               val
+               (vlax-variant-type (vla-get-value x))
              )
            )
-           (COND
-             (VAL)
-             (T)
+           (cond
+             (val)
+             (t)
            )
          )
        )
      )
-    (VLAX-INVOKE BLOCK-OBJECT-1 'GETDYNAMICBLOCKPROPERTIES)
+    (vlax-invoke block-object-1 'GETDYNAMICBLOCKPROPERTIES)
   )
 )
 
-(defun LM:isAnnotative ( style / object annotx )
+(defun lm:isannotative ( style / object annotx )
   (and
     (setq object (tblobjname "STYLE" style))
     (setq annotx (cadr (assoc -3 (entget object '("AcadAnnotative")))))
@@ -78,7 +78,7 @@
 ;;  Returns:  String with formatting codes removed            ;;
 ;;------------------------------------------------------------;;
 
-(defun LM:UnFormat ( str mtx / _replace rx )
+(defun lm:unformat ( str mtx / _replace rx )
 
     (defun _replace ( new old str )
         (vlax-put-property rx 'pattern old)

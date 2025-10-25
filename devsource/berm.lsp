@@ -1,8 +1,8 @@
-;Written by Thomas Gail Haws
+﻿;Written by Thomas Gail Haws
 (defun c:haws-berm ( / dbvar dbold)
   (haws-core-init 165)
-  (HAWS-VSAVE '("clayer"))
-  (HAWS-MKLAYR "BERM")
+  (haws-vsave '("clayer"))
+  (haws-mklayr "BERM")
   (cond
     ((not (tblsearch "DIMSTYLE" "BERM"))
      (vl-cmdf "._insert" "berm")(vl-cmdf)
@@ -16,5 +16,5 @@
   (vl-cmdf "._Leader" pause)
   (prompt "\nBottom of berm: ")
   (vl-cmdf pause "" "" "_n")
-  (HAWS-VRSTOR)(haws-core-restore)(princ)
+  (haws-vrstor)(haws-core-restore)(princ)
 )

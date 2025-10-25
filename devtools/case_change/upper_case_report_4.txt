@@ -1,0 +1,2416 @@
+add.lsp:5:   (prompt "\nText to change:")(setq sset (ssget '((0 . "*TEXT"))))
+aee.lsp:4:   (vl-cmdf "._AREA" "_E" pause)
+aee.lsp:6:   (princ (getvar "AREA"))
+aee.lsp:8:   (princ (getvar "PERIMETER"))
+aee.lsp:10:   (princ (/ (getvar "AREA") 43560))
+arcarrow.lsp:2: ;LeRoy Cordes of the Greater Chicago AutoCAD Users' Group is supposed
+arcarrow.lsp:4: ;In CADalyst it was called "ARROW", but to avoid confusion I renamed it
+arcarrow.lsp:5: ;"ARCARROW"
+att2txt.lsp:6: 	(setq tent '((0 . "TEXT")))
+attfind.lsp:1: ;ATTFIND
+attfind.lsp:6: ;(ATTFIND
+attfind.lsp:7: ;  "*NOTE*"
+attfind.lsp:8: ;  '(("NOTETYPE" "HEX")("NOTENUM" "1A"))
+attfind.lsp:9: ;  '("NOTETEXT" "NOTETXT2")
+attfind.lsp:12: ;Searches through all blocks named *NOTE* and returns the block entity name
+attfind.lsp:18: ;If the stop flag is not nil, ATTFIND stops after finding the first match.
+attfind.lsp:38:         (= "ATTRIB"(setq et(cdr(assoc 0(setq el(entget en))))))
+berm.lsp:5:   (haws-mklayr "BERM")
+berm.lsp:7:     ((not (tblsearch "DIMSTYLE" "BERM"))
+bl0.lsp:13:   (if (= (haws-dxf 0 ent) "INSERT")
+bl0.lsp:47:     (if (= (haws-dxf 0 ent) "INSERT") ;if en is a block
+blm.lsp:2: (haws-core-init 5)(vl-cmdf "._XREF" "D" "*")(princ))
+blm.lsp:4: (haws-core-init 6)(vl-cmdf "._XREF" "R" "*")(princ))
+blm.lsp:5: ;;--------------------------END ONE LINERS-------------------------
+blm.lsp:6: ;;--------------------------ONE LINERS-------------------------
+brk.lsp:1: ;BREAKS LINES, ARCS, POLYLINES WITH THE SAME INTERSECTION
+brk.lsp:2: ;BY SELECTING AT INTERSECTION WHERE OBJECTS MEET.
+brk.lsp:6:   (setq cmd (getvar "CMDECHO"))
+brk.lsp:7:   (setvar "CMDECHO" 0)
+brk.lsp:9:   (vl-cmdf "OSNAP" "INT")
+brk.lsp:10:   (prompt "SELECT INTERSECTION OF OBJECTS TO BREAK. . .")
+brk.lsp:18:   );SETQ
+brk.lsp:22:     );PROGN
+brk.lsp:25:         (vl-cmdf "BREAK" (ssname be no) brk brk)
+brk.lsp:27:       );REPEAT
+brk.lsp:28:     );PROGN
+brk.lsp:31:   (setvar "CMDECHO" cmd)
+brk.lsp:34: );DEFUN
+brkmat.lsp:1: ;BRKMAT-BREAKS A LINE BETWEEN 2 POINTS AND DRAWS A LINE IN THE GAP TO MATCH PICK
+brkmat.lsp:18: ;end BRKMAT
+bw.lsp:6:   (haws-mklayr "BWLDR")
+ca.lsp:1: ;;CA (COPY ATTRIBUTES) CHANGES ATTRIBUTES IN A BLOCK TO MATCH A SELECTED BLOCK.
+ca.lsp:7:   (setq sset (ssget '((0 . "INSERT"))))
+ca.lsp:18:             (/= "SEQEND"
+ca.lsp:23:              ((= et "ATTRIB")
+ca.lsp:64:             (/= "SEQEND"
+ca.lsp:70:                 (= et "ATTRIB")
+chcoord.lsp:2: ;CHANGE A COORDINATE OF AN ENTITY TO A SPECIFIED VALUE.
+chcoord.lsp:10:             "\n\nAUTOCAD POINT CODES"
+chdim.lsp:1: ;CHDIM
+chdim.lsp:5:    (setq chm     0  p (ssget '((0 . "DIMENSION"))))
+chdim.lsp:28:             (entmod e)         ; Modify the DIMENSION entity
+chm.lsp:8:   (if (not dlt)(setq dlt "BYLAYER"))
+chm.lsp:9:   (if (not dc)(setq dc "BYLAYER"))
+chm.lsp:10:   (vl-cmdf "._CHANGE" ss "" "_P" "_LT" dlt "_LA" dl "_C" dc "" )
+chnum.lsp:8:     txset (ssget '((0 . "*TEXT")))
+chtext.lsp:1: ;;;   CHTEXT.lsp
+chtext.lsp:13: ;;;   AUTODESK  PROVIDES THIS PROGRAM "AS IS" AND WITH  ALL  FAULTS.
+chtext.lsp:14: ;;;   AUTODESK  SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTY OF  MER-
+chtext.lsp:15: ;;;   CHANTABILITY OR FITNESS FOR A PARTICULAR USE.  AUTODESK,  INC.
+chtext.lsp:16: ;;;   DOES  NOT  WARRANT THAT THE OPERATION OF THE PROGRAM  WILL  BE
+chtext.lsp:17: ;;;   UNINTERRUPTED OR ERROR FREE.
+chtext.lsp:22: ;;;   REVISIONS
+chtext.lsp:30: ;;; DESCRIPTION
+chtext.lsp:45: ;;;   If nothing is selected the message "ERROR: Nothing selected."
+chtext.lsp:78: ;;;   Pressing RETURN at this point puts you back at the Command: prompt.
+chtext.lsp:83: ;;;   This is based on the system variable "DIMCLRD" being present.
+chtext.lsp:102:   (defun cht_er (s)                   ; If an error (such as CTRL-C) occurs
+chtext.lsp:137:   (setq sset (ssget '((0 . "*TEXT"))))
+chtext.lsp:140:       (princ "\nERROR: Nothing selected.")
+chtext.lsp:161:     (vl-cmdf "_.UNDO" "_GROUP")
+chtext.lsp:187:     (vl-cmdf "_.UNDO" "_END")
+chtext.lsp:196:       (vl-cmdf "_.UNDO" "_END")
+chtext.lsp:197:       (vl-cmdf "_.UNDO" "2")
+chtext.lsp:216:   (vl-cmdf "_.CHANGE" sset "" "")
+chtext.lsp:236:   (if (getvar "DIMCLRD")
+chtext.lsp:278:     (if (getvar "DIMCLRD")
+chtext.lsp:324:   (if (getvar "DIMCLRD") (textpage))
+chtext.lsp:331:   (if (not (getvar "DIMCLRD")) (textscr))
+chtext.lsp:363:           (vl-cmdf "_.DDEDIT" sn "")
+chtext.lsp:387: ;;; The old CHGTEXT command - rudimentary text editor
+chtext.lsp:401:       (if (= (type objs) 'ENAME)
+chtext.lsp:430:                 tot_o  (if (= (type objs) 'ENAME)
+chtext.lsp:436:             (if (= "TEXT"             ; Look for TEXT entity type (group 0)
+chtext.lsp:461:                     ; Modify the TEXT entity
+chtext.lsp:475:   (if (/= (type objs) 'ENAME)
+chtext.lsp:488: ;;; ARGUMENTS:
+chtext.lsp:492: ;;; GLOBALS:
+chtext.lsp:732:   (princ " text entities with STYLE of ")
+cl.lsp:1: ;CHANGE ENTITIES TO CURRENT LAYER  9/25/92  BRB
+cl.lsp:4:   (setq c (getvar "CLAYER") e (ssget))
+cl.lsp:5:   (vl-cmdf "._CHANGE" e "" "_P" "_LT" "BYLAYER" "_LA" c "_C" "BYLAYER" "")
+clean.lsp:8:       (vl-cmdf "._WBLOCK" (haws-getdnpath) "_Y" "*")
+clean.lsp:11:         (vl-cmdf "._OPEN" "_Y" (haws-getdnpath))
+clean.lsp:15:         (vl-cmdf "._CLOSE" "_Y")
+cmpro.lsp:2: ;CHANGE ANY GROUP CODE OF A SELECTION SET OF ENTITIES TO MATCH SELECTED ENTITY.
+cmpro.lsp:11:               "\n\nUSE THE EG OR EGN COMMAND TO LIST ALL THE GROUP CODES FOR AN ENTITY."
+cmt.lsp:1: ;CMT CHANGES TEXT TO MATCH A SELECTED TEXT ENTITY.
+cmt.lsp:4:   (prompt "\nText to change:")(setq sset (ssget '((0 . "*TEXT"))))
+cmt.lsp:24:         (if (not mtclr)(setq mtclr "BYLAYER"))
+cmt.lsp:25:         (if (not mtlyr)(setq mtlyr "BYLAYER"))
+CNM-Install.lsp:1: ;;; CNMInstall
+CNM-Install.lsp:7: ;;; This file licensed to the public under the terms of the GNU General Public License
+CNM-Install.lsp:19:     ((getvar "TRUSTEDPATHS")
+CNM-Install.lsp:38:      (setq menus-done-string (apply 'STRCAT (mapcar '(lambda (x) (strcat "\n" (car x))) menus-done)))
+CNM-Install.lsp:66:          (vlax-get-property (haws-acad-object) 'MENUGROUPS)
+CNM-Install.lsp:67:          'LOAD
+CNM-Install.lsp:82:        (vlax-get-property (vlax-get-property (haws-acad-object) 'MENUGROUPS) 'COUNT)
+CNM-Install.lsp:89:                 (vlax-invoke-method (vlax-get-property (haws-acad-object) 'MENUGROUPS) 'ITEM counter)
+CNM-Install.lsp:90:                 'NAME
+CNM-Install.lsp:96:            (vlax-invoke-method (vlax-get-property (haws-acad-object) 'MENUGROUPS) 'ITEM counter)
+CNM-Install.lsp:97:            'UNLOAD
+CNM-Install.lsp:121:   (setq files (vlax-get-property (vlax-get-property (haws-acad-object) 'PREFERENCES) 'FILES))
+CNM-Install.lsp:122:   (vlax-put-property files 'SUPPORTPATH (strcat newstring ";" (vlax-get-property files 'SUPPORTPATH)))
+CNM-Install.lsp:128:      (vlax-get-property (vlax-get-property (haws-acad-object) 'PREFERENCES) 'FILES)
+CNM-Install.lsp:130:      (vlax-get-property files 'SUPPORTPATH)
+CNM-Install.lsp:140:          'SUPPORTPATH
+CNM-Install.lsp:148:   (setvar "TRUSTEDPATHS" (strcat newstring ";" (getvar "TRUSTEDPATHS")))
+CNM-Install.lsp:152:   (setq oldtrustedpath (getvar "TRUSTEDPATHS"))
+CNM-Install.lsp:153:   (setvar "TRUSTEDPATHS" (vl-string-subst "" string oldtrustedpath))
+CNM-Install.lsp:157:   (vl-registry-read "HKEY_CURRENT_USER\\Software\\HawsEDC" "InstallPending")
+CNM-Install.lsp:161:   (vl-registry-delete "HKEY_CURRENT_USER\\Software\\HawsEDC" "InstallPending")
+CNM-Install.lsp:168:     ;; MODE can be "auto" or "manual"
+CNM-Install.lsp:177:      ;;(C:HAWS-ALIASMANAGE)
+CNM-Install.lsp:178:      (alert (princ "\nPlease read:\n\n1. Use the CNMALIAS command to activate CNM keyboard aliases.\n2. If you moved CNM from a previous location, you must restart AutoCAD."))
+CNM-Install.lsp:184: ;|�Visual LISP� Format Options�
+CNM-Install.lsp:186: ;*** DO NOT add text below the comment! ***|;
+cnm.lsp:2: ;;; CONSTRUCTION NOTES MANAGER
+cnm.lsp:4: ;;; PHASING
+cnm.lsp:5: ;;; NOTES allows up to 9 phases named 1 through 9.
+cnm.lsp:6: ;;; To use phases, first build the table block NOTEQTY using TBLQTY1 through TBLQTY9
+cnm.lsp:7: ;;; attributes for NOTES to fill out in columns as it makes the table.
+cnm.lsp:8: ;;; then when drafting, put the phase for each bubble note in the NOTEPHASE attribute
+cnm.lsp:9: ;;; of the bubble note block.  NOTES will read the phase for each bubble note and
+cnm.lsp:11: ;;; NOTES lets you use different phase columns for different sheets in a plan set,
+cnm.lsp:12: ;;; up to a total of 9.  You just have to define the NOTEQTY block the way you want it in
+cnm.lsp:14: ;;; If you aren't using phases, you can use bubble notes with or without a NOTEPHASE attribute
+cnm.lsp:15: ;;; and you can use a TBLQTY attribute for a quantites column in the NOTEQTY block.
+cnm.lsp:16: ;;; You can't use a TBLQTY attribute if you are using multiple phasing.
+cnm.lsp:23: ;;; 20050415 v4.1.19 Fix a bug for M2Group about Titles.  Was adding limitless zeros internally to NOTETITLES, then having error.
+cnm.lsp:24: ;;; 20050413 v4.1.18 Recompiled for M2Group with correct v4.1 ldrblk.lsp. (4.1.16 had some 4.2 functions ref'd) Yes QT VBA call
+cnm.lsp:25: ;;; 20050413 v4.1.17 Recompiled for M2Group with correct v4.1 ldrblk.lsp. (4.1.16 had some 4.2 functions ref'd) No QT VBA call.
+cnm.lsp:28: ;;; 20050204 v4.1.14 Added ShowKeyGrid (now ShowKeyTableGrid) and ShowKeyQuantities (now ShowKeyTableQuantities) registry options and layers in NOTEQTYs. Made TITLES behavior better and consistent between KT and QT.
+cnm.lsp:29: ;;; 20040813 v4.1.13 Fixed LDRBLK.LSP and a few bubble block problems so that bubbles work with variable number of text fields and prompts depending on preset attribute flag.
+cnm.lsp:33: ;;; 20040307 v4.1.09 Changed QT (was Tally) File Selection VBA macro.  Now called via USERS1-4 ACAD setvar/getvars
+cnm.lsp:35: ;;; 20040220 v4.1.08a Made Import always show file dialogue box.  Fixed some CTABONLY bugs.  Made layer edit refresh on exit.
+cnm.lsp:36: ;;; 20040208 v4.1.07 Made Tally compatible with VBA File Select form.
+cnm.lsp:39: ;;; 20040107 v4.1.04 Changed CONSTNOT.TXT location search and added command to change path.  Made SET TXTHT do nothing if missing 3rd field.
+cnm.lsp:40: ;;; 20031125 v4.1.03 Added user choice for CONSTNOT.TXT location. Combined Bubble1 and Bubble2 styles into one package.
+cnm.lsp:45: ;;; 20030916 v4.1.00 Changed .NOT to native NOTELIST format.
+cnm.lsp:46: ;;;                  Added the SET variables CTABONLY, TBLWID, and PHASEWID to CONSTNOT.TXT
+cnm.lsp:48: ;;;                  Moved the note description into NOTEQTY as an attribute
+cnm.lsp:49: ;;;                  Removed the special drawing name recognition for AGRA style naming.
+cnm.lsp:55: ;;; 20030501 v4.0.9 Added SET PHASES to CONSTNOT.TXT, warning message for skipped phases, made SET variables space insensitive
+cnm.lsp:56: ;;; 20030417 v4.0.8 Fixed bug in MAKENOTELIST no phasing PHASELIST '("" 0 "") to '("" 1 "").
+cnm.lsp:57: ;;; 20030317 v4.0.7 Added ACAD.PGP write for TALLY wildcard.  Added error alerts.
+cnm.lsp:58: ;;; 20030304 v4.0.6 Debugged option to select TALLY list file.
+cnm.lsp:59: ;;; 20030227 v4.0.5 Added option to select TALLY list file.
+cnm.lsp:60: ;;; 20030220 v4.0.4 Fixed TXTHT.  Wasn't affecting other size variables.  Added "other drawing spaces" check to notes purge.
+cnm.lsp:66: ;;; 2000            Added user size variables to CONSTNOT.TXT
+cnm.lsp:73:   ;;Check for phasing in qty table block.  Phasing is controlled by presence of TBLQTY? attributes.
+cnm.lsp:78:   ;;Insert table line NOTEQTY block if not exist
+cnm.lsp:86:     ((not (tblsearch "BLOCK" "NOTEQTY"))
+cnm.lsp:88:      (vl-cmdf "._insert" (strcat "NOTEQTY=NOTEQTY" j) "_Scale" "1" "_Rotate" "0" "0,0")
+cnm.lsp:95:     en (cdr (assoc -2 (tblsearch "BLOCK" "NOTEQTY")))
+cnm.lsp:101:           (= "ATTDEF" (cdr (assoc 0 el)))
+cnm.lsp:102:           (wcmatch (cdr (assoc 2 el)) "TBLQTY?")
+cnm.lsp:120:     en (cdr (assoc -2 (tblsearch "BLOCK" "NOTEQTY")))
+cnm.lsp:127:          (= "ATTDEF" (cdr (assoc 0 el)))
+cnm.lsp:128:          (wcmatch (cdr (assoc 2 el)) "TBLQTY?")
+cnm.lsp:144:          (= "ATTDEF" (cdr (assoc 0 el)))
+cnm.lsp:145:          (= "NOTETYPE" (cdr (assoc 2 el)))
+cnm.lsp:150:          (= "ATTDEF" (cdr (assoc 0 el)))
+cnm.lsp:151:          (= "TBLDSC" (cdr (assoc 2 el)))
+cnm.lsp:215:            "The NOTEQTY block in this drawing had the wrong attributes for this version of Construction Notes Manager."
+cnm.lsp:216:            "\nor it was missing the description text attribute, TBLDSC."
+cnm.lsp:222:            "\n\nTBLTYPE\nTBLNUM\nTBLDSC\nTBLQTY\nTBLUNT"
+cnm.lsp:230: ;;; SEARCHANDSAVE reads through CONSTNOT.TXT and lists all notes and counting instructions.
+cnm.lsp:231: ;;; Also checks NOTEQTY block for version and phases
+cnm.lsp:239: ;;; If TBLQTY is the only quantity attribute in the NOTEQTY block, the phaselist is '("" 1 "").
+cnm.lsp:252: ;;;Set up list from CONSTNOT.TXT and NOTEQTY block.
+cnm.lsp:262:   ;; Section 1.  Make an empty NOTELIST from tblqty and constnot.txt.  TGHI can use this section for Tally, except there is a conflict in the way they do PHASELIST.
+cnm.lsp:320:      (ssget "X" (list (cons 0 "VIEWPORT")))
+cnm.lsp:324:       (setq mvport (entget mvport '("ACAD")))
+cnm.lsp:327:            (= (getvar "CTAB") (cdr (assoc 410 mvport)))
+cnm.lsp:350:      (ssget "X" (list (cons 0 "INSERT")))
+cnm.lsp:355:   ;;Remove all blocks not in current space if CTABONLY = 1.
+cnm.lsp:365:                  (tblsearch "LAYER" (cdr (assoc 8 (entget blki))))
+cnm.lsp:372:             (assoc 62 (tblsearch "LAYER" (cdr (assoc 8 (entget blki)))))
+cnm.lsp:381:                  (tblsearch "BLOCK" (cdr (assoc 2 (entget blki))))
+cnm.lsp:392:                  (tblsearch "BLOCK" (cdr (assoc 2 (entget blki))))
+cnm.lsp:402:           (/= (cdr (assoc 410 (entget blki))) (getvar "CTAB"))
+cnm.lsp:412:   ;;Search through bubble notes and add their quantities to NOTELIST
+cnm.lsp:436:     ;;Substitute the value of each NOTETXT attribute for its respective member of the pre-filled NOTETXT list.
+cnm.lsp:439:        (cadr (assoc "NOTENUM" attributes))
+cnm.lsp:443:             (cadr (assoc (strcat "NOTETXT" (itoa i)) attributes))
+cnm.lsp:448:        (cadr (assoc "NOTEPHASE" attributes))
+cnm.lsp:475:          ((= qtyopt "COUNT") (setq noteqty (1+ noteqty)))
+cnm.lsp:476:          ((wcmatch qtyopt "LINE#")
+cnm.lsp:504:                 (mapcar                 ;Substitute NOTEQTY for the Nth of NOTEI
+cnm.lsp:522:       ;;If there isn't such a phase, note it in SKIPPEDPHASES
+cnm.lsp:558:      (ssget "X" (list (cons 2 "NOTEQTY")))
+cnm.lsp:566:          (/= (cdr (assoc 410 (entget blki))) (getvar "CTAB"))
+cnm.lsp:572:        ;;and put them into the NOTEQTY variable
+cnm.lsp:578:            (= "ATTRIB" (setq et (cdr (assoc 0 (setq el (entget en))))))
+cnm.lsp:585:             ((= at "TBLTYPE") (setq notetype av))
+cnm.lsp:586:             ((= at "TBLNUM") (setq notenum av))
+cnm.lsp:587:             ((wcmatch at "TBLQTY*")
+cnm.lsp:597:        ;;then put its quantities for all phases in NOTELIST.
+cnm.lsp:615:           ;;Insert the quantities from NOTEQTY into NOTELIST
+cnm.lsp:628:                          ;;Get the table quantities stored in NOTEQTY
+cnm.lsp:660:   ;;Now that NOTELIST is filled, alert user if any phases in bubbles were skipped.
+cnm.lsp:680:          (strcat "-" (getvar "CTAB"))
+cnm.lsp:687:   ;;Write NOTELIST to the work file
+cnm.lsp:726: ;;MAKENOTETABLE reads NOTELIST from file nfname and makes a table of notes and quantities.
+cnm.lsp:729: ;; TGH to use this for TALLY, maybe I just need to read NOTELIST as an argument instead of from a file in this function.
+cnm.lsp:768:           (findfile (strcat dn "-" (getvar "CTAB") ".not"))
+cnm.lsp:781:   ;;Check that we got a valid NOTELIST from file.
+cnm.lsp:782:   (if (/= (type notelist) 'LIST)
+cnm.lsp:808:   ;;Check that the right NOTEQTY block is inserted.
+cnm.lsp:844:          ((and (= "TXTHT" usrvar) (setq usrvar (caddr entry)))
+cnm.lsp:859:       ;;and added a zero to front of NOTETITLES, clear them first.
+cnm.lsp:879:       ;;flag any NOTETITLES as complete with a 0.
+cnm.lsp:880:       ;;If it is found in NOTELIST, write it with quantities
+cnm.lsp:883:       ;; STYLE GUIDE
+cnm.lsp:884:       ;; LINSPC is the spacing/height of a line from its own top to bottom.
+cnm.lsp:885:       ;; NOTSPC is the spacing above each note or group of titles.
+cnm.lsp:886:       ;; (- NOTSPC LINSPC) is the additional space above a note or group of titles.
+cnm.lsp:933:                    ((= (type qty) 'REAL) (rtos qty 2 8))
+cnm.lsp:1111:                "LAYER"
+cnm.lsp:1126:     '(("NOTESKEYGRID" "ShowKeyTableGrid")
+cnm.lsp:1127:       ("NOTESKEYQTYS" "ShowKeyTableQuantities")
+cnm.lsp:1181: ;;;       (VL-CMDF
+cnm.lsp:1182: ;;;  "._insert" "NOTEQTY" "non"   
+cnm.lsp:1183: ;;;  QTYPT
+cnm.lsp:1185: ;;;    TXTHT
+cnm.lsp:1190: ;;;     (SETQ EN (ENTLAST))
+cnm.lsp:1191: ;;;    (WHILE (AND
+cnm.lsp:1192: ;;;  (SETQ EN (ENTNEXT EN))
+cnm.lsp:1193: ;;;  (/= "SEQEND" (CDR (ASSOC 0 (SETQ EL (ENTGET EN)))))
+cnm.lsp:1195: ;;;  (COND
+cnm.lsp:1196: ;;;    ((= "ATTRIB" (CDR (ASSOC 0 EL)))
+cnm.lsp:1197: ;;;     (SETQ
+cnm.lsp:1198: ;;;       ATAG
+cnm.lsp:1199: ;;;     (CDR (ASSOC 2 EL))
+cnm.lsp:1200: ;;;       AVAL
+cnm.lsp:1201: ;;;     (COND
+cnm.lsp:1202: ;;;       ((= ATAG "TBLTYPE") NOTTYP)
+cnm.lsp:1203: ;;;       ((= ATAG "TBLNUM") (CAR NOTNUM))
+cnm.lsp:1204: ;;;       ((= ATAG "TBLDSC") NOTDSC)
+cnm.lsp:1205: ;;;       ((= ATAG "DELTA")
+cnm.lsp:1206: ;;;        (VL-STRING-SUBST "%%d" "d" (ANGTOS DELTA 1 4))
+cnm.lsp:1208: ;;;       ((= ATAG "CHORD") (RTOS (* 2 RAD (SIN DOVER2)) 2 2))
+cnm.lsp:1209: ;;;       ((= ATAG "TANGENT")
+cnm.lsp:1210: ;;;        (RTOS (* RAD (/ (SIN DOVER2) (COS DOVER2))) 2 2)
+cnm.lsp:1212: ;;;       ((= ATAG "BEARING")
+cnm.lsp:1213: ;;;        (VL-STRING-SUBST "%%d" "d" (ANGTOS BEARING 4 4))
+cnm.lsp:1217: ;;;     (ENTMOD (SUBST (CONS 1 AVAL) (ASSOC 1 EL) EL))
+cnm.lsp:1218: ;;;     (ENTUPD EN)
+cnm.lsp:1224:     "NOTEQTY"
+cnm.lsp:1257: ;;HCNM_KEY_TABLE_FROM_SEARCH
+cnm.lsp:1258: ;;In the NOTES strategy, this routine is first of three main routines.
+cnm.lsp:1259: ;;Gets project info from CONSTNOT.TXT
+cnm.lsp:1267:      (ssget "X" (list (cons 8 (car (haws-mklayr "NOTESEXP")))))
+cnm.lsp:1280:          ((or (= (getvar "CTAB") (setq tablespace (cdr (assoc 410 el))))
+cnm.lsp:1314: ;;HCNM_IMPORT
+cnm.lsp:1315: ;;In the NOTES strategy, this routine is second of three main routines.
+cnm.lsp:1316: ;;Reads from .NOT file, created by HCNM_KEY_TABLE_FROM_SEARCH, everything necessary and creates a table. 
+cnm.lsp:1322:      (ssget "X" (list (cons 8 (car (haws-mklayr "NOTESIMP")))))
+cnm.lsp:1335:          ((or (= (getvar "CTAB") (setq tablespace (cdr (assoc 410 el))))
+cnm.lsp:1371: ;;HCNM_TALLY
+cnm.lsp:1372: ;;In the NOTES strategy, this routine is the third of three main routines.
+cnm.lsp:1374: ;;Reads CONSTNOT.TXT to put the .NOT files in order.
+cnm.lsp:1377: ;;1. Build an empty phase checklist PHASELIST '(("1" 1 nil) (phasej j nil)...("9" 9 nil)).
+cnm.lsp:1378: ;;2. Fill PHASELIST with phase aliases from CONSTNOT.TXT.
+cnm.lsp:1379: ;;2. Read NOTELIST from each .NOT file and combine with sheet name into a master QTYLIST.
+cnm.lsp:1381: ;;2. Fill PHASELIST list from .NOTs by putting each phase from each sheet into the list if not already there.
+cnm.lsp:1382: ;;7. FILL QTYLIST note by note, sheet by sheet, filling the full number of phase qty positions
+cnm.lsp:1406:               (findfile (strcat (getvar "DWGPREFIX") "tally.lst"))
+cnm.lsp:1443:         ;;Add function to user's ACAD.PGP to shell and wait for attrib command to finish.
+cnm.lsp:1623: ;;;  Read all .NOT's into a master ALL_SHEETS_QUANTITIES
+cnm.lsp:1670:         ;;If its alias is not yet in PHASES_DEFINITION, add the phase.
+cnm.lsp:1688:         ;;If alias in PHASES_DEFINITION isn't same as alias in this sheet, alert user.
+cnm.lsp:1715:   ;;Condense list to standard PHASES_DEFINITION format: '((phasej j aliasj)...)
+cnm.lsp:1733:           "\nList which notes from CONSTNOT.TXT? All/Used: "
+cnm.lsp:1745:                  (cons 8 (car (haws-mklayr "NOTESTAL")))
+cnm.lsp:1760:           (or (= (getvar "CTAB")
+cnm.lsp:1819:   (princ "TYPE,NO,ITEM,UNIT,PRICE," f2) ;; Price and cost
+cnm.lsp:1833:                  " (SINGLE PHASE)"
+cnm.lsp:1834:                  " PHASE "
+cnm.lsp:1849:         "TOTAL"
+cnm.lsp:1851:           " (SINGLE PHASE)"
+cnm.lsp:1852:           " PHASE "
+cnm.lsp:1855:         ",COST"
+cnm.lsp:1857:           " (SINGLE PHASE)"
+cnm.lsp:1858:           " PHASE "
+cnm.lsp:1878:          ((and (= "TXTHT" usrvar) (setq usrvar (caddr entry)))
+cnm.lsp:1910:       ;;flag the NOTETITLES as complete with a 0.
+cnm.lsp:2135:          (if (= (type x) 'LIST)
+cnm.lsp:2155: ;#region CNM Main
+cnm.lsp:2249: ;;HCNM_PROJINIT initializes the CNM project variables
+cnm.lsp:2264: ;;is validated by (HCNM_PROJ)
+cnm.lsp:2269: ;; HCNM_PROJ gets a valid project root folder for this drawing's folder.
+cnm.lsp:2325:        ;;Well-formed complex (multi-folder) projects.  CNMPROJ.TXT is here and
+cnm.lsp:2375:         "\nhas both its own project settings (CNM.ini) and a link (in CNMPROJ.TXT) to a project in another folder:\n"
+cnm.lsp:2436:       "\nUsing project settings from another folder as directed by CNMPROJ.TXT in this drawing's folder."
+cnm.lsp:2439:       "\\CNM.INI as directed by CNMPROJ.TXT in this drawing's folder."
+cnm.lsp:2509:        shlobj 'BROWSEFORFOLDER 0 prmstr ioptns deffld
+cnm.lsp:2517:          (vlax-get-property folder 'SELF)
+cnm.lsp:2519:          (vlax-get-property fldobj 'PATH)
+cnm.lsp:2645: ;;Makes a project root reference file CNMPROJ.TXT in this drawing's folder
+cnm.lsp:2657: ;CNMPROJ.TXT (this file) points from each folder to 
+cnm.lsp:2678: ;;; when it is functional, copy it to EDCLIB.
+cnm.lsp:2681: ;;; Begin Settings input/output functions  NOT YET FUNCTIONAL
+cnm.lsp:2683: ;;; Should FILE be an argument to HAWS-GETVAR and HAWS-SETVAR?  If
+cnm.lsp:2686: ;;; (HAWS-INI)?
+cnm.lsp:2692: ;;; 1.  section name for its section in *HAWS-SETTINGS*
+cnm.lsp:2695: ;;;      "a" APPLICATION settings are currently stored in the program folder in a given section of a given ini file
+cnm.lsp:2696: ;;;      "u" USER settings are currently stored in ACAD.CFG with (setcfg)/(getcfg) or the Windows registry
+cnm.lsp:2697: ;;;      "p" PROJECT settings are kept in the current project folder in a given section of a given ini file, with editable defaults in the the program folder
+cnm.lsp:2698: ;;;      "d" DRAWING settings are kept in the current drawing
+cnm.lsp:2708: ;;; PROJECTS
+cnm.lsp:2714: ;;; For CNM, this file was called CNMPROJ.TXT.  I suppose that same convention could be followed
+cnm.lsp:2715: ;;; for other apps by pasting the app key name to "PROJ.TXT".
+cnm.lsp:2720: ;;; This could be turned on an off by the calling application.  See HAWS-REMOVESETTINGS
+cnm.lsp:2722: ;;; Settings are stored in *HAWS-SETTINGS*, which is in the likeness
+cnm.lsp:2725: ;;; *HAWS-SETTINGS*
+cnm.lsp:2726: ;;; '("SCOPE"            Every scope may have a different storage mechanism
+cnm.lsp:2727: ;;;    ("APPNAME"        Key Name of an application using a single inifile the settings are stored in
+cnm.lsp:2728: ;;;      (0 . "INIFILE") Known path to settings for this scope and application
+cnm.lsp:2729: ;;;      ("SECTION"      Ini section or path to variable
+cnm.lsp:2754: ;; C:PRETEST - Clean up before testing bubble notes
+cnm.lsp:2756: ;; Removes all reactors and deletes all bubbles with HCNM-BUBBLE XDATA
+cnm.lsp:2757: ;; Usage: Type PRETEST at command line before testing
+cnm.lsp:2759:   (princ "\n=== PRE-TEST CLEANUP ===")
+cnm.lsp:2776:   ;; Step 2: Erase all bubbles with HCNM-BUBBLE XDATA and their leaders
+cnm.lsp:2777:   (princ "\nScanning for bubbles with XDATA...")
+cnm.lsp:2781:     ;; Check if entity has HCNM-BUBBLE XDATA
+cnm.lsp:2782:     (setq xdata (assoc -3 (entget ename '("HCNM-BUBBLE"))))
+cnm.lsp:2815:   (princ "\n\n=== CLEANUP COMPLETE ===")
+cnm.lsp:2825:     ;; application name for its section in *hcnm_concept_SETTINGS*
+cnm.lsp:2837: ;;to call hcnm_concept_GETVAR.
+cnm.lsp:2842:     ;; application name for its section in *hcnm_concept_SETTINGS*
+cnm.lsp:2861: ;; HAWSEDC.INI in it.
+cnm.lsp:2863: ;; and return a "drive:\\...\\INIFOLDER" path to other functions.
+cnm.lsp:2866: ;;; hcnm_concept_INIFOLDER gets a valid INI folder.
+cnm.lsp:2867: ;;; This function is wrong because there isn't a single *hcnm_concept_INIFOLDER* that this function
+cnm.lsp:2884:     ;;TGH OK.  Here we need to take the case of each scope and treat them differently
+cnm.lsp:2920: ;;Sets a variable in the global lisp list and in HAWSEDC.INI
+cnm.lsp:2922:   ;; Call GETVAR before setting var.  Why?  To populate *hcnm_concept_SETTINGS*?
+cnm.lsp:2935: ;; hcnm_concept_GETVAR
+cnm.lsp:2936: ;; hcnm_concept_GETVAR is called by wrapper functions like HCNM_GETVAR or hcnm_concept_EDCGETVAR
+cnm.lsp:2938: ;; (Higher calling functions may use functions like HCNM_PROJINIT or
+cnm.lsp:2939: ;; hcnm_concept_REMOVESETTINGS to remove settings and force a file
+cnm.lsp:2941: ;; hcnm_concept_GETVAR gets a program setting from
+cnm.lsp:2942: ;; 1. The global *hcnm_concept_SETTINGS* list if found
+cnm.lsp:2946: ;; INIFILE is an ini filename. Ini file might not be used for a given scope in the current strategy.  
+cnm.lsp:2950: ;; SECTION is the ini section/path/tree path/location the var is in or goes in
+cnm.lsp:2952: ;; DEFAULTS is a list of defaults in the HawsEDC standard settings format as follows:
+cnm.lsp:2953: ;;  '((VAR1 DEFAULT1)(VAR2 DEFAULT2))
+cnm.lsp:2966:     ;; Does the variable need to be added to the *hcnm_concept_SETTINGS* list? Assume yes initially.
+cnm.lsp:3135: ;;Saves *hcnm_concept_SETTINGS* to the requested inifile
+cnm.lsp:3146: ;;; CONFIG: Name of the app
+cnm.lsp:3147: ;;; DEFINITIONS: Name of an entry in the def
+cnm.lsp:3148: ;;; SCOPE_KEY: eg. "User"
+cnm.lsp:3149: ;;; SCOPE_CODE: eg. 4
+cnm.lsp:3150: ;;; ENTRY: An entry in the var list
+cnm.lsp:3166:      (list "LXXListMode" "yes" 4)
+cnm.lsp:3167:      (list "CNMAliasActivation" "0" 4)
+cnm.lsp:3202:      (list "TCGLeaderDimstyle" "TCG Leader" 2)
+cnm.lsp:3262:             "HKEY_CURRENT_USER\\Software\\HawsEDC\\CNM"
+cnm.lsp:3266:        (wcmatch (strcase reg_val) "*CNMEDIT*")
+cnm.lsp:3344:   ;; This function doesn't need to setq an ini_configs since it does HCNM_CONFIG_READ_USER var by var.
+cnm.lsp:3372:   ;; Maybe this function can do what HCNM_CONFIG_READ_ALL_USER does; it doesn't need to setq an ini_configs since it does HCNM_CONFIG_READ_USER var by var.
+cnm.lsp:3531:        "HKEY_CURRENT_USER\\Software\\HawsEDC\\CNM"
+cnm.lsp:3543:        "HKEY_CURRENT_USER\\Software\\HawsEDC\\CNM"
+cnm.lsp:3605:      ;|(SETQ F2 (OPEN PROJINI "w"))
+cnm.lsp:3606:      (princ "[CNM]" f2) ; TODO TEST AND REMOVE
+cnm.lsp:3622: ;;Saves *HCNM_CONFIG* to this project's ini
+cnm.lsp:3640:   ;;Second, if the style is TCGLeader and doesn't already exist, set the _DotSmall ldrblk.
+cnm.lsp:3643:        (= key "TCGLeaderDimstyle")
+cnm.lsp:3644:        (not (tblsearch "DIMSTYLE" dsty))
+cnm.lsp:3651:     ((and (/= key "") (tblsearch "DIMSTYLE" dsty))
+cnm.lsp:3673: ;; HCNM_PROJNOTES gets a valid project notes file
+cnm.lsp:3686:       "HCNM_PROJNOTES is beginning with ProjectNotes="
+cnm.lsp:3717:     ;;The CFREAD functions will later evaluate the necessity of changing the file
+cnm.lsp:3737:      ;;If CONSTNOT.TXT was found in the app folder,
+cnm.lsp:3786: ;; HCNM_READCF
+cnm.lsp:3787: ;; Reads any acceptable Project Notes file format to a *HCNM_CNMPROJECTNOTES* list of the following format
+cnm.lsp:3790: ;; TXT1 Fixed field ;Comment\nSET VAR VAL\nNUM (comment)\nBOX (type)\nTITLE \n1    Text thru column 67...UNTCOUNT\n     Cont. text.
+cnm.lsp:3800:       "HCNM_READCF is deciphering the format of "
+cnm.lsp:3939:          ;;CNMVERSION greater than 4.1 triggers ignoring SET variables other than TXTHT
+cnm.lsp:3940:          ((and (= var "CNMVERSION") (< 4.1 (atof val1)))
+cnm.lsp:3947:          ;;TXTHT gets added to CFLIST
+cnm.lsp:3948:          ((= var "TXTHT")
+cnm.lsp:3958:                ((= var "LINSPC") "LineSpacing")
+cnm.lsp:3959:                ((= var "TBLWID") "TableWidth")
+cnm.lsp:3960:                ((= var "PHASEWID") "PhaseWidthAdd")
+cnm.lsp:3961:                ((= var "NDWID") "NumberToDescriptionWidth")
+cnm.lsp:3962:                ((= var "DQWID") "DescriptionToQuantityWidth")
+cnm.lsp:3963:                ((= var "QQWID") "QuantityToQuantityWidth")
+cnm.lsp:3964:                ((= var "QUWID") "QuantityToUnitsWidth")
+cnm.lsp:3965:                ((= var "PHASES") "InsertTablePhases")
+cnm.lsp:3966:                ((= var "CTABONLY") "DoCurrentTabOnly")
+cnm.lsp:3967:                ((= var "PHASEALIAS") "PhaseAlias")
+cnm.lsp:4001:       ((= "TITLE" (substr rdlin 1 5))
+cnm.lsp:4045:        ;;If there's no CFLIST, educate the user.
+cnm.lsp:4135:       "HCNM_READCFTXT2 read "
+cnm.lsp:4148:           (list 1 "CNMVERSION" "4.2")
+cnm.lsp:4157:            " to a version 4.2 file.\n\nNote: The meaning of the TXTHT setting has changed\nfrom \"Text height in AutoCAD units\"\nto \"Plotted text height\"\n\nCNM is using the current value of DIMSCALE to convert text heights."
+cnm.lsp:4173:                  (/= (haws-rdfld 2 rdlin "W" 1) "TXTHT")
+cnm.lsp:4193:      (write-line "SET CNMVERSION 4.2" f2)
+cnm.lsp:4198:            ";The variable settings section below is not used by CNM 4.2.\n;All variables except TXTHT (optional) and CNMVERSION are in CNM.INI.\n;You can use TXTHT to vary text heights from one line to the next.\n;CNM uses the current DIMTXT for the whole table if TXTHT is omitted,\n;."
+cnm.lsp:4238:        (cond ((= (strcat var) "WRAP")(setq wrap (atoi val))))
+cnm.lsp:4243:          ((= "TITLE" (haws-rdfld 2 rdlin "," 1))
+cnm.lsp:4428:   ;;(HCNM_WRAP_DESCRIPTION NOTDSCSTR WRAP)
+cnm.lsp:4449:       ;;Set variable (TXTHT only at this time)
+cnm.lsp:4458:        (write-line (strcat "TITLE " (caddr item)) f2)
+cnm.lsp:4519:        (write-line (strcat nottyp ",TITLE," (caddr item) ",,") f2)
+cnm.lsp:4570:            "\nInvalid ProjectNotesEditor. CNM cannot continue.\nUse HCNM-CNMOptions to select your desired editor.\n\nFound ProjectNotesEditor="
+cnm.lsp:4614:          "\\CNMEdit.exe"
+cnm.lsp:4678:         (strcat (c:hcnm-config-getvar "AppFolder") "\\CNMLayer.exe")
+cnm.lsp:4693:   ;;Get a layer to renew *HAWS:LAYERS*  
+cnm.lsp:4694:   (haws-getlayr "NOTES-EXPORT")
+cnm.lsp:4704:       (if (tblsearch "LTYPE" (cadddr layer))
+cnm.lsp:4726: ;;SETNOTEPHASES
+cnm.lsp:4766:          ;;If there is a SET PHASES line already, remove it.
+cnm.lsp:4769:             (= (haws-rdfld 2 rdlin "W" 1) "PHASES")
+cnm.lsp:4779:         ;;Put the SET PHASES line at the beginning of the file.
+cnm.lsp:4780:         (cons (strcat "SET PHASES " phases) (reverse cflist))
+cnm.lsp:4814:        "HKEY_LOCAL_MACHINE\\Software\\HawsEDC\\CNM"
+cnm.lsp:4822:   ;;If the old program folder is still in the ACAD path, remove it.
+cnm.lsp:4859:       "\nto the current user profile's\nAutoCAD Support Files Search Path\nand load the CNM menu."
+cnm.lsp:4863:     "HKEY_LOCAL_MACHINE\\Software\\HawsEDC\\CNM"
+cnm.lsp:4869:       "HKEY_CURRENT_USER\\"
+cnm.lsp:4872:       (getvar "CPROFILE")
+cnm.lsp:4875:     "ACAD"
+cnm.lsp:4889:     pl (car (haws-getlayr "NOTESEXP"))
+cnm.lsp:4916: ;;; SETNOTESBUBBLESTYLE
+cnm.lsp:4956: ;;; Put attributes on NOPLOT layer
+cnm.lsp:4959:   (hcnm_attlayer "NOTESNOPLOT")
+cnm.lsp:4964:     (haws-getlayr "NOTESNOPLOT")
+cnm.lsp:4972:   (haws-vsave '("CLAYER"))
+cnm.lsp:4975:   (if (not (tblsearch "LAYER" nplayer))
+cnm.lsp:4979:   (setq sset (ssget '((0 . "INSERT"))))
+cnm.lsp:4994:         (if (= "ATTRIB" (cdr (assoc 0 (entget en))))
+cnm.lsp:5014:                  (/= "SEQEND"
+cnm.lsp:5020:                (= et "ATTRIB")
+cnm.lsp:5040: ;#region Legacy LDRBLK (not for CNM)
+cnm.lsp:5042: ;;; LDRBLK.LSP
+cnm.lsp:5045: ;;; LDRBLK attaches a left or right block to an AutoCAD LEADER and fills in 
+cnm.lsp:5047: ;;; LDRBLK explodes any block inserted that doesn't have attributes.
+cnm.lsp:5049: ;;; Developer notes for NOTE* blocks:
+cnm.lsp:5050: ;;; Each NOTE???D block contains a NOTE???L, a NOTE???R block, and left and right NOTEHK blocks.
+cnm.lsp:5052: ;;; The NOTETYPE attribute is preset to the shape of the block.
+cnm.lsp:5057: ;;; Hint: Toggle the [INSERT] key off to fill in the blanks for a new command.
+cnm.lsp:5060: ;;;|COMMAND|LEFT BLK |RIGHT BLK |DRAG BLK |LAYER KEY |DIMSTYLE KEY
+cnm.lsp:5065:     "ldrtcgl" "ldrtcgr" "ldrtcgd" "TCGLDR" "TCGLeader"
+cnm.lsp:5071:     "ldrtxtl" "ldrtxtr" "ldrtxtd" "NOTESLDR" "NotesLeader"
+cnm.lsp:5092:        ((= (getvar "DIMANNO") 1) nil)
+cnm.lsp:5155:        (t (vl-cmdf "_none" "._INSERT"))
+cnm.lsp:5192: ;;end of LDRBLK
+cnm.lsp:5216:   ;; system can be uninitialized, causing crashes at GETKWORD prompts (specifically
+cnm.lsp:5218:   ;; Must use (COMMAND) not (VL-CMDF) - synchronous execution is required.
+cnm.lsp:5222:   (command "._REDRAW")
+cnm.lsp:5226:      (alert "Setting WIPEOUTFRAME to 2 to show but not plot")
+cnm.lsp:5231:     ((= (getvar "ANNOALLVISIBLE") 0)
+cnm.lsp:5236:             "ANNOALLVISIBLE is 0. Set to 1 so that bubble notes appear at all scales? [Yes/No] <Yes>: "
+cnm.lsp:5240:         (setvar "ANNOALLVISIBLE" 1)
+cnm.lsp:5262:           (if (getvar "DIMANNO")
+cnm.lsp:5264:             (getvar "DIMTXT")
+cnm.lsp:5268:   (haws-mklayr "NOTESLDR")
+cnm.lsp:5271:         bubble_data (hcnm_ldrblk_bd_set bubble_data "BLOCKNAME" blockname)
+cnm.lsp:5272:         bubble_data (hcnm_ldrblk_bd_set bubble_data "NOTETYPE" notetype)
+cnm.lsp:5273:         bubble_data (hcnm_ldrblk_bd_set bubble_data "REPLACE_BUBBLE_P" (not notetype))
+cnm.lsp:5276:                       ((hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE_OLD")
+cnm.lsp:5277:                        (hcnm_ldrblk_bd_ensure_p1_world bubble_data) ;  WE REALLY ONLY NEED ENAME_LEADER_OLD AND P1_OCS, BUT THIS ISN'T A BAD WAY TO GET IT.
+cnm.lsp:5285:                       ((hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE")
+cnm.lsp:5288:                            (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE")
+cnm.lsp:5295:         bubble_data (hcnm_ldrblk_bd_set bubble_data "NOTETYPE" notetype)
+cnm.lsp:5297:   ;; Draw bubble, update BUBBLE_DATA with P2 and new entities
+cnm.lsp:5312:     (cons "ATTRIBUTES" nil)
+cnm.lsp:5313:     (cons "AVPORT" nil)
+cnm.lsp:5314:     (cons "BLOCKNAME" nil)
+cnm.lsp:5315:     (cons "ENAME_BUBBLE" nil)
+cnm.lsp:5316:     (cons "ENAME_BUBBLE_OLD" nil)
+cnm.lsp:5317:     (cons "ENAME_LAST" nil)
+cnm.lsp:5318:     (cons "ENAME_LEADER" nil)
+cnm.lsp:5319:     (cons "ENAME_LEADER_OLD" nil)
+cnm.lsp:5320:     (cons "NOTETYPE" nil)
+cnm.lsp:5323:     (cons "P1_WORLD" nil)
+cnm.lsp:5325:     (cons "PSPACE_BUBBLE_P" nil)
+cnm.lsp:5326:     (cons "REPLACE_BUBBLE_P" nil)
+cnm.lsp:5331: ;; HCNM_LDRBLK_BD Module - Bubble Data Accessors
+cnm.lsp:5335: ;; LDRBLK = "Leader Block" (consistent with rest of codebase)
+cnm.lsp:5338: ;; Get a value from bubble data using HAWS_NESTED_LIST_GET
+cnm.lsp:5343: ;; Set a value in bubble data using HAWS_NESTED_LIST_UPDATE
+cnm.lsp:5348:       (princ (strcat "\nError: Invalid BUBBLE_DATA key: " key))
+cnm.lsp:5355: ;; Ensure P1_WORLD is present in bubble data (computes if missing)
+cnm.lsp:5358:     (setq ename_bubble (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE"))
+cnm.lsp:5360:       (hcnm_ldrblk_bd_get bubble_data "ENAME_LEADER")
+cnm.lsp:5363:                           "ENAME_LEADER"
+cnm.lsp:5367:       (princ "\nError in HCNM_LDRBLK_BD_ENSURE_P1_WORLD: Could not find leader associated with bubble note.")
+cnm.lsp:5369:     (setq ename_leader (hcnm_ldrblk_bd_get bubble_data "ENAME_LEADER"))
+cnm.lsp:5373:       (princ "\nError in HCNM_LDRBLK_BD_ENSURE_P1_WORLD: Could not determine P1_OCS from leader.")
+cnm.lsp:5377:       (hcnm_ldrblk_bd_get bubble_data "P1_WORLD")
+cnm.lsp:5378:       (setq bubble_data (hcnm_ldrblk_bd_set bubble_data "P1_WORLD" (hcnm_ldrblk_p1_world ename_leader p1_ocs ename_bubble)))
+cnm.lsp:5379:       (princ "\nError in HCNM_LDRBLK_BD_ENSURE_P1_WORLD: Could not compute P1_WORLD from P1_OCS.")
+cnm.lsp:5381:     (setq p1_world (hcnm_ldrblk_bd_get bubble_data "P1_WORLD"))
+cnm.lsp:5382:     (princ (strcat "\nDebug P1_OCS: " (vl-princ-to-string p1_ocs) " P1_WORLD: " (vl-princ-to-string p1_world)))
+cnm.lsp:5388:   (setq replace_bubble_p (hcnm_ldrblk_bd_get bubble_data "REPLACE_BUBBLE_P"))
+cnm.lsp:5401:                     (= (cdr (assoc 0 elist_block_old)) "INSERT")
+cnm.lsp:5408:                       "CNM-BUBBLE-*"
+cnm.lsp:5415:      (setq bubble_data (hcnm_ldrblk_bd_set bubble_data "ENAME_BUBBLE_OLD" ename_bubble_old))
+cnm.lsp:5470:     blockname (hcnm_ldrblk_bd_get bubble_data "BLOCKNAME")
+cnm.lsp:5471:     notetype (hcnm_ldrblk_bd_get bubble_data "NOTETYPE")
+cnm.lsp:5492:   (vl-cmdf "._MOVE" ss1 "" p1_ucs pause)
+cnm.lsp:5500: ;; Draw bubble and update BUBBLE_DATA with new leader/block info
+cnm.lsp:5506:         ename_bubble_old (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE_OLD")
+cnm.lsp:5507:         ename_leader_old (hcnm_ldrblk_bd_get bubble_data "ENAME_LEADER_OLD")
+cnm.lsp:5510:         blockname        (hcnm_ldrblk_bd_get bubble_data "BLOCKNAME")
+cnm.lsp:5511:         notetype         (hcnm_ldrblk_bd_get bubble_data "NOTETYPE")
+cnm.lsp:5566:      (setq associate_p (cond ((= (getvar "DIMANNO") 1) t) (nil)))
+cnm.lsp:5569:              (getvar "CANNOSCALEVALUE")
+cnm.lsp:5570:              (/= (getvar "DIMSCALE") (/ 1.0 (getvar "CANNOSCALEVALUE")))
+cnm.lsp:5576:               (rtos (getvar "DIMSCALE") 2 2)
+cnm.lsp:5578:               (rtos (/ 1.0 (getvar "CANNOSCALEVALUE")) 2 2)
+cnm.lsp:5583:         ;; Workaround: Initialize command/input system before GETKWORD
+cnm.lsp:5584:         (command "._REDRAW")
+cnm.lsp:5588:           ((= input1 "Yes") (setvar "DIMSCALE" (/ 1.0 (getvar "CANNOSCALEVALUE"))))
+cnm.lsp:5595:       ;; SAVE LAST ENTITY FOR ENTNEXT USAGE.
+cnm.lsp:5596:      (setq bubble_data (hcnm_ldrblk_bd_set bubble_data "ENAME_LAST" (entlast)))
+cnm.lsp:5601:         (cond (associate_p (vl-cmdf "_block")) (t (vl-cmdf "_none" "._INSERT")))
+cnm.lsp:5612:            bubble_data  (hcnm_ldrblk_bd_set bubble_data "ENAME_BUBBLE" ename_bubble)
+cnm.lsp:5620:     replace_bubble_p (hcnm_ldrblk_bd_get bubble_data "REPLACE_BUBBLE_P")
+cnm.lsp:5621:     ename_bubble (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE")
+cnm.lsp:5660:   (hcnm_ldrblk_bd_set bubble_data "ATTRIBUTES" (hcnm_ldrblk_adjust_formats attribute_list))
+cnm.lsp:5664:     ename_last (hcnm_ldrblk_bd_get bubble_data "ENAME_LAST")
+cnm.lsp:5666:     ename_bubble (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE")
+cnm.lsp:5667:     ename_bubble_old (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE_OLD")
+cnm.lsp:5668:     replace_bubble_p (hcnm_ldrblk_bd_get bubble_data "REPLACE_BUBBLE_P")
+cnm.lsp:5669:     attributes (hcnm_ldrblk_bd_get bubble_data "ATTRIBUTES")
+cnm.lsp:5670:     notetype (hcnm_ldrblk_bd_get bubble_data "NOTETYPE")
+cnm.lsp:5678:       (/= "LEADER" (cdr (assoc 0 (entget (setq ename_temp (entnext ename_temp))))))
+cnm.lsp:5717:                (vlax-get-property x 'PROPERTYNAME)
+cnm.lsp:5718:                (vlax-get-property x 'VALUE)
+cnm.lsp:5724:             'GETDYNAMICBLOCKPROPERTIES
+cnm.lsp:5730:         (vlax-invoke vlaobj_block_new 'GETDYNAMICBLOCKPROPERTIES)
+cnm.lsp:5737:                     'PROPERTYNAME
+cnm.lsp:5742:              (/= (vlax-get-property vlaobj_property_new 'READONLY)
+cnm.lsp:5748:            'VALUE
+cnm.lsp:5763:             (strcat "NOTETXT" (itoa index))
+cnm.lsp:5770:      (cons (list "NOTEDATA" "") attribute_list)
+cnm.lsp:5772:      (cons (list "NOTEGAP" "") attribute_list)
+cnm.lsp:5774:      (cons (list "NOTENUM" num) attribute_list)
+cnm.lsp:5815:     txt1_raw (cadr (assoc "NOTETXT1" attribute_list))
+cnm.lsp:5816:     txt2_raw (cadr (assoc "NOTETXT2" attribute_list))
+cnm.lsp:5833:     ;; NOTEGAP is system-controlled and goes in prefix field with delimiters
+cnm.lsp:5849:        "NOTETXT1"
+cnm.lsp:5855:        "NOTETXT2"
+cnm.lsp:5861:        "NOTEGAP"
+cnm.lsp:5868:   ;|(COND
+cnm.lsp:5983:         ;; Add format code to prefix (use code from auto if found, else use CODE parameter)
+cnm.lsp:5986:             ;; If auto had format, use that instead of CODE
+cnm.lsp:5995:             ;; Otherwise use CODE parameter
+cnm.lsp:6028:      (strcat "NOTETXT" (itoa line_number))
+cnm.lsp:6087:   ;; - Requires_Coordinates: T if needs P1_WORLD from leader, nil otherwise
+cnm.lsp:6092:     ("STa" "Sta" "AL" t)       ; Station - needs P1_WORLD for alignment query
+cnm.lsp:6093:     ("Off" "Off" "AL" t)       ; Offset - needs P1_WORLD for alignment query
+cnm.lsp:6094:     ("stAoff" "StaOff" "AL" t) ; Station+Offset - needs P1_WORLD for alignment query
+cnm.lsp:6096:     ("STAName" "StaName" "AL" t)     ; Station + Alignment Name - needs P1_WORLD
+cnm.lsp:6097:     ("N" "N" nil t)            ; Northing - needs P1_WORLD for coordinate
+cnm.lsp:6098:     ("E" "E" nil t)            ; Easting - needs P1_WORLD for coordinate
+cnm.lsp:6099:     ("NE" "NE" nil t)          ; Northing+Easting - needs P1_WORLD for coordinate
+cnm.lsp:6100:     ("Z" "Z" "SU" t)           ; Elevation - needs P1_WORLD for surface query (unimplemented)
+cnm.lsp:6101:     ("Dia" "Dia" "PIPE" nil)   ; Pipe Diameter - user selects pipe object
+cnm.lsp:6102:     ("SLope" "Slope" "PIPE" nil) ; Pipe Slope - user selects pipe object
+cnm.lsp:6103:     ("L" "L" "PIPE" nil)       ; Pipe Length - user selects pipe object
+cnm.lsp:6114:         'STRCAT
+cnm.lsp:6132:              'STRCAT
+cnm.lsp:6163:           (strcat "NOTETXT" (itoa line_number))
+cnm.lsp:6176: ;; bubble-data-update: HCNM_LDRBLK_AUTO_DISPATCH is called from command line (insertion) and from edit box (editing) to get string as requested by user. It needs to get not only string, but also data (reference object and reference type).
+cnm.lsp:6181: ;; HCNM_LDRBLK_AUTO_DISPATCH returns ATTRIBUTE_LIST including NOTEDATA information
+cnm.lsp:6182: ;; HCNM_LDRBLK_GET_AUTO_TYPE returns ATTRIBUTE_LIST
+cnm.lsp:6183: ;; HCNM_LDRBLK_GET_TEXT_ENTRY returns ATTRIBUTE_LIST
+cnm.lsp:6184: ;; HCNM_LDRBLK_GET_BUBBLE_DATA returns BLOCK_DATA that includes ATTRIBUTE_LIST after adjusting formatting  (overline and underline)
+cnm.lsp:6185: ;; HCNM_SET_ATTRIBUTES puts ATTRIBUTE_LIST into bubble note
+cnm.lsp:6188: ;; HCNM_LDRBLK_AUTO_DISPATCH returns ATTRIBUTE_LIST including NOTEDATA information
+cnm.lsp:6189: ;; HCNM_EB:GET_TEXT modifies semi-global HCNM_EB:ATTRIBUTE_LIST after adjusting formatting (overline and underline)
+cnm.lsp:6190: ;; HCNM_EB:SAVE calls HCNM_SET_ATTRIBUTES to save semi-global HCNM_EB:ATTRIBUTE_LIST
+cnm.lsp:6191: ;; HCNM_EDIT_BUBBLE top level manages editing dialog
+cnm.lsp:6196: ;; 3. Update "NOTEDATA" block attribute to include reference object, attribute, and reference type
+cnm.lsp:6200: ;; (HCNM_LDRBLK_UPDATE_DATA KEY OBJECT)
+cnm.lsp:6203: ;; INPUT IS THE OBJECT (ENAME OR VLA-OBJECT; COULD BE STANDARDIZED) OR STRING WE NEED TO EXAMINE IF WE AREN'T ASKING THE USER FOR IT OR NIL IF WE NEED TO GET IT.
+cnm.lsp:6204: ;; Returns ATTRIBUTE_LIST with the requested auto data added.
+cnm.lsp:6206:     ;; bubble-data-update: Build BUBBLE_DATA and pass to subfunctions
+cnm.lsp:6208:     bubble_data (hcnm_ldrblk_bd_set bubble_data "ENAME_BUBBLE" ename_bubble)
+cnm.lsp:6209:     bubble_data (hcnm_ldrblk_bd_set bubble_data "ATTRIBUTES" attribute_list)
+cnm.lsp:6211:   ;; Ensure ENAME_LEADER is in BUBBLE_DATA (needed for reactor attachment)
+cnm.lsp:6213:     ((not (hcnm_ldrblk_bd_get bubble_data "ENAME_LEADER"))
+cnm.lsp:6216:                          "ENAME_LEADER" 
+cnm.lsp:6220:   ;; Only calculate P1_WORLD for auto-types that require coordinates
+cnm.lsp:6221:   ;; BUT: For alignment auto-text, only calculate P1_WORLD when we have INPUT (reactor update)
+cnm.lsp:6222:   ;; When INPUT is NIL (user selection), AUTO_AL will handle viewport selection AFTER user picks alignment
+cnm.lsp:6254:     attribute_list (hcnm_ldrblk_bd_get bubble_data "ATTRIBUTES")
+cnm.lsp:6261:     attribute_list (hcnm_ldrblk_bd_get bubble_data "ATTRIBUTES")
+cnm.lsp:6268:   ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
+cnm.lsp:6269:   ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
+cnm.lsp:6280:     bubble_data (hcnm_ldrblk_bd_set bubble_data "ATTRIBUTES" attribute_list)
+cnm.lsp:6286:   (setq attribute_list (hcnm_ldrblk_bd_get bubble_data "ATTRIBUTES"))
+cnm.lsp:6304:             "\nSelect object to link dynamically or [Selection set (not dynamic) including AECC_PIPEs] <Selection set>: "
+cnm.lsp:6313:               (load "HAWS-QT")
+cnm.lsp:6361:   ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
+cnm.lsp:6362:   ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
+cnm.lsp:6370:     bubble_data (hcnm_ldrblk_bd_set bubble_data "ATTRIBUTES" attribute_list)
+cnm.lsp:6374: ;; NOT USED
+cnm.lsp:6378:     (vlax-property-available-p obj 'MTEXTATTRIBUTE)
+cnm.lsp:6384:   (cond ((= (getvar "CVPORT") 1) (vl-cmdf "._MSPACE") t))
+cnm.lsp:6387:   (cond (pspace_bubble_p (vl-cmdf "._PSPACE")))
+cnm.lsp:6392: ;; COORDINATE AUTO-TEXT VALIDATION AND WARNING SYSTEM
+cnm.lsp:6397: ;; Check if AUTO_TYPE is coordinate-based using GET_AUTO_TYPE_KEYS
+cnm.lsp:6418: ;; TODO: Replace with dismissable tip system when implemented
+cnm.lsp:6455:        "IMPORTANT: Paper space bubble notes don't react to viewport changes.\n\nTo avoid causing chaos when changing viewport views, auto text for coordinates\ndoes not react to viewport view changes.\n\nYou must use the ____ command if you want to refresh the world coordinates of selected bubble notes on a viewport.")
+cnm.lsp:6461: ;; ALIGNMENT AUTO-TEXT (Sta/Off/StaOff)
+cnm.lsp:6466: ;; REFACTORED: Split into modular functions for better maintainability
+cnm.lsp:6467: ;;   - HCNM_LDRBLK_AUTO_ALIGNMENT_CALCULATE: Pure calculation (testable)
+cnm.lsp:6468: ;;   - HCNM_LDRBLK_AUTO_ALIGNMENT_FORMAT_STATION: Format station string
+cnm.lsp:6469: ;;   - HCNM_LDRBLK_AUTO_ALIGNMENT_FORMAT_OFFSET: Format offset string
+cnm.lsp:6470: ;;   - HCNM_LDRBLK_AUTO_AL: Main orchestrator (backward compatible)
+cnm.lsp:6475: ;;   ALIGNMENT_OBJECT - VLA-OBJECT of Civil 3D alignment
+cnm.lsp:6476: ;;   P1_WORLD - (X Y Z) point in world coordinates
+cnm.lsp:6478: ;;   (DRAWSTATION . OFFSET) on success
+cnm.lsp:6482:     ((and (= (type alignment_object) 'VLA-OBJECT) p1_world)
+cnm.lsp:6487:        'STATIONOFFSET
+cnm.lsp:6490:        'DRAWSTATION
+cnm.lsp:6491:        'OFFSET
+cnm.lsp:6502: ;;   ALIGNMENT_OBJECT - VLA-OBJECT to get station string with equations
+cnm.lsp:6503: ;;   DRAWSTATION - Raw station value from StationOffset method
+cnm.lsp:6510:       'GETSTATIONSTRINGWITHEQUATIONS
+cnm.lsp:6519: ;;   OFFSET - Raw offset value (positive = right, negative = left)
+cnm.lsp:6561: ;; HCNM_LDRBLK_AUTO_PIPE_GET_OBJECT
+cnm.lsp:6567: ;;   ENAME_BUBBLE - Entity name of bubble being edited (required)
+cnm.lsp:6569: ;;   AUTO_TYPE - Property type: "Dia", "Slope", or "L" (required)
+cnm.lsp:6572: ;;   VLA-OBJECT of selected pipe, or NIL if selection failed
+cnm.lsp:6578: ;;   HCNM_LDRBLK_AUTO_PIPE
+cnm.lsp:6581: ;;   (SETQ OBJ_PIPE (HCNM_LDRBLK_AUTO_PIPE_GET_OBJECT ENAME_BUBBLE "NOTETXT1" "Dia"))
+cnm.lsp:6602:          'VLAX-ENAME->vla-object
+cnm.lsp:6619: ;; HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER
+cnm.lsp:6626: ;;   OBJ_PIPE - VLA-OBJECT of Civil 3D pipe (required)
+cnm.lsp:6635: ;;   HCNM_LDRBLK_AUTO_PIPE
+cnm.lsp:6636: ;;   HCNM_LDRBLK_AUTO_PIPE_FORMAT_SLOPE
+cnm.lsp:6639: ;;   (SETQ TEXT (HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER OBJ_PIPE))
+cnm.lsp:6643:     dia_value (vl-catch-all-apply 'VLAX-GET-PROPERTY (list obj_pipe 'InnerDiameterOrWidth))
+cnm.lsp:6648:      "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
+cnm.lsp:6668: ;; HCNM_LDRBLK_AUTO_PIPE_FORMAT_SLOPE
+cnm.lsp:6675: ;;   OBJ_PIPE - VLA-OBJECT of Civil 3D pipe (required)
+cnm.lsp:6684: ;;   HCNM_LDRBLK_AUTO_PIPE
+cnm.lsp:6685: ;;   HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER
+cnm.lsp:6688: ;;   (SETQ TEXT (HCNM_LDRBLK_AUTO_PIPE_FORMAT_SLOPE OBJ_PIPE))
+cnm.lsp:6692:     slope_value (vl-catch-all-apply 'VLAX-GET-PROPERTY (list obj_pipe 'Slope))
+cnm.lsp:6697:      "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
+cnm.lsp:6717: ;; HCNM_LDRBLK_AUTO_PIPE_FORMAT_LENGTH
+cnm.lsp:6724: ;;   OBJ_PIPE - VLA-OBJECT of Civil 3D pipe (required)
+cnm.lsp:6733: ;;   HCNM_LDRBLK_AUTO_PIPE
+cnm.lsp:6734: ;;   HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER
+cnm.lsp:6737: ;;   (SETQ TEXT (HCNM_LDRBLK_AUTO_PIPE_FORMAT_LENGTH OBJ_PIPE))
+cnm.lsp:6741:     length_value (vl-catch-all-apply 'VLAX-GET-PROPERTY (list obj_pipe 'Length2D))
+cnm.lsp:6746:      "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
+cnm.lsp:6763: ;; HCNM_LDRBLK_AUTO_PIPE
+cnm.lsp:6771: ;;   BUBBLE_DATA - Bubble data alist (required)
+cnm.lsp:6773: ;;   AUTO_TYPE - Property type: "Dia", "Slope", or "L" (required)
+cnm.lsp:6774: ;;   INPUT - Pre-selected pipe VLA-OBJECT (optional, for reactor callbacks)
+cnm.lsp:6777: ;;   Updated BUBBLE_DATA with new attribute value
+cnm.lsp:6780: ;;   - Prompts user for pipe selection if INPUT is NIL
+cnm.lsp:6781: ;;   - Attaches VLR-OBJECT-REACTOR to pipe for automatic updates
+cnm.lsp:6783: ;;   - Updates ATTRIBUTE_LIST within BUBBLE_DATA
+cnm.lsp:6786: ;;   HCNM_LDRBLK_AUTO_PIPE_GET_OBJECT
+cnm.lsp:6787: ;;   HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER
+cnm.lsp:6788: ;;   HCNM_LDRBLK_AUTO_PIPE_FORMAT_SLOPE
+cnm.lsp:6789: ;;   HCNM_LDRBLK_AUTO_PIPE_FORMAT_LENGTH
+cnm.lsp:6790: ;;   HCNM_LDRBLK_ASSURE_AUTO_TEXT_HAS_REACTOR
+cnm.lsp:6793: ;;   (SETQ BUBBLE_DATA
+cnm.lsp:6794: ;;     (HCNM_LDRBLK_AUTO_PIPE BUBBLE_DATA "NOTETXT1" "Dia" NIL)
+cnm.lsp:6799:     attribute_list (hcnm_ldrblk_bd_get bubble_data "ATTRIBUTES")
+cnm.lsp:6800:     ename_bubble (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE")
+cnm.lsp:6801:     ename_leader (hcnm_ldrblk_bd_get bubble_data "ENAME_LEADER")
+cnm.lsp:6804:   ;; STEP 1: Get pipe object (user selection or provided input)
+cnm.lsp:6825:   ;; STEP 2: Extract and format the property based on AUTO_TYPE
+cnm.lsp:6829:        "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
+cnm.lsp:6840:       (t "!!!!!!!!!!!!!!!!!INVALID TYPE!!!!!!!!!!!!!!!!!!!!!!!")
+cnm.lsp:6844:   ;; STEP 3: Save the formatted string to the attribute list and update BUBBLE_DATA
+cnm.lsp:6852:     bubble_data (hcnm_ldrblk_bd_set bubble_data "ATTRIBUTES" attribute_list)
+cnm.lsp:6860: ;;   BUBBLE_DATA - Bubble data alist
+cnm.lsp:6862: ;;   AUTO_TYPE - "Sta", "Off", "StaOff", "AlName", or "StaName"
+cnm.lsp:6863: ;;   INPUT - Optional: Pre-selected alignment object (used by reactor updates)
+cnm.lsp:6864: ;; Returns: Updated BUBBLE_DATA with new attribute value
+cnm.lsp:6867:     attribute_list (hcnm_ldrblk_bd_get bubble_data "ATTRIBUTES")
+cnm.lsp:6868:     ename_bubble (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE")
+cnm.lsp:6869:     ename_leader (hcnm_ldrblk_bd_get bubble_data "ENAME_LEADER")
+cnm.lsp:6870:     p1_world (hcnm_ldrblk_bd_get bubble_data "P1_WORLD")
+cnm.lsp:6873:   ;; STEP 1: Get alignment object (user selection or provided input)
+cnm.lsp:6883:      ;; NOTE: Still in MSPACE at this point - capture viewport transformation if needed
+cnm.lsp:6888:         (setq cvport (getvar "CVPORT"))
+cnm.lsp:6908:      ;; Now calculate P1_WORLD if needed for coordinate-based types and not already in BUBBLE_DATA
+cnm.lsp:6913:               p1_world (hcnm_ldrblk_bd_get bubble_data "P1_WORLD"))
+cnm.lsp:6923:   ;; STEP 2: Calculate station and offset (only needed for coordinate-based types)
+cnm.lsp:6930:   ;; STEP 3: Format the result based on AUTO_TYPE
+cnm.lsp:6936:         (setq string (vl-catch-all-apply 'VLAX-GET-PROPERTY (list objalign 'NAME)))
+cnm.lsp:6939:            (setq string "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
+cnm.lsp:6944:         (setq string "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
+cnm.lsp:6967:               (setq string (vl-catch-all-apply 'VLAX-GET-PROPERTY (list objalign 'NAME)))
+cnm.lsp:6978:            )  ; End inner COND for STRING
+cnm.lsp:6979:      )  ; End SETQ
+cnm.lsp:6980:     )  ; End first branch of outer COND
+cnm.lsp:6983:      (setq string "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
+cnm.lsp:6985:   )  ; End outer COND
+cnm.lsp:6987:   ;; Step 4: Save the formatted string to the attribute list and update BUBBLE_DATA
+cnm.lsp:6995:     bubble_data (hcnm_ldrblk_bd_set bubble_data "ATTRIBUTES" attribute_list)
+cnm.lsp:7007:        ((and (= (type objalign_old) 'VLA-OBJECT) 
+cnm.lsp:7008:              (not (vl-catch-all-error-p (vl-catch-all-apply 'VLAX-GET-PROPERTY (list objalign_old 'NAME)))))
+cnm.lsp:7009:         (vl-catch-all-apply 'VLAX-GET-PROPERTY (list objalign_old 'NAME))
+cnm.lsp:7027:        (= (cdr (assoc 0 (entget (car esalign)))) "AECC_ALIGNMENT")
+cnm.lsp:7053:             ;; No XDATA exists - show warning and prompt for viewport
+cnm.lsp:7056:             ;; Capture viewport transformation data now while in MSPACE with selected viewport
+cnm.lsp:7077:             ;; XDATA already exists - no need to prompt, will use stored transformation
+cnm.lsp:7078:             (princ "\nUsing existing viewport transformation from XDATA")
+cnm.lsp:7089:     attribute_list (hcnm_ldrblk_bd_get bubble_data "ATTRIBUTES")
+cnm.lsp:7090:     ename_bubble (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE")
+cnm.lsp:7091:     ename_leader (hcnm_ldrblk_bd_get bubble_data "ENAME_LEADER")
+cnm.lsp:7092:     ;; INPUT = NIL means initial creation
+cnm.lsp:7093:     ;; INPUT = T means reactor update for coordinate types (sentinel value)
+cnm.lsp:7094:     ;; INPUT = VLA-OBJECT means reactor update with reference object (not used for N/E/NE)
+cnm.lsp:7095:     reactor_update_p (and input (or (= input t) (= (type input) 'VLA-OBJECT)))
+cnm.lsp:7103:   ;; Calculate or get P1_WORLD
+cnm.lsp:7106:      ;; Reactor update - recalculate P1_WORLD from current leader position using stored transformation
+cnm.lsp:7111:      ;; Initial creation - get from BUBBLE_DATA (already calculated by BD_ENSURE_P1_WORLD which prompts for viewport)
+cnm.lsp:7112:      (setq p1_world (hcnm_ldrblk_bd_get bubble_data "P1_WORLD"))
+cnm.lsp:7115:   ;; Calculate coordinates from P1_WORLD
+cnm.lsp:7136:       ;; P1_WORLD is NIL - couldn't get world coordinates
+cnm.lsp:7137:       (setq string "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
+cnm.lsp:7146:   ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
+cnm.lsp:7147:   ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
+cnm.lsp:7155:     bubble_data (hcnm_ldrblk_bd_set bubble_data "ATTRIBUTES" attribute_list)
+cnm.lsp:7174:     attribute_list (hcnm_ldrblk_bd_get bubble_data "ATTRIBUTES")
+cnm.lsp:7175:     ename_bubble (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE")
+cnm.lsp:7179:   ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
+cnm.lsp:7180:   ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
+cnm.lsp:7188:     bubble_data (hcnm_ldrblk_bd_set bubble_data "ATTRIBUTES" attribute_list)
+cnm.lsp:7193: ;; NOTE: Warning should be shown BEFORE calling this function (via HCNM_LDRBLK_WARN_PSPACE_COORDINATES)
+cnm.lsp:7194: ;; NOTE: This function does NOT restore space - caller must handle that after capturing transformation matrix
+cnm.lsp:7198:     ((= (getvar "CVPORT") 1)
+cnm.lsp:7199:      (princ "\nWARNING: Not in model space - switching to MSPACE first")
+cnm.lsp:7200:      (vl-cmdf "._MSPACE")
+cnm.lsp:7206:         (princ "\nSet the TARGET viewport active and press ENTER to continue: ")
+cnm.lsp:7207:         (equal (setq input (grread nil 10)) '(2 13)) ; WAIT FOR ENTER (ASCII 13)
+cnm.lsp:7211:   (setq input (getvar "CVPORT")) ; Capture the viewport ID
+cnm.lsp:7212:   ;; DO NOT restore space here - caller needs to capture transformation matrix first!
+cnm.lsp:7254: ;; Get viewport transformation matrix from bubble's XDATA
+cnm.lsp:7255: ;; Returns list: (CVPORT REF_OCS_1 REF_WCS_1 REF_OCS_2 REF_WCS_2 REF_OCS_3 REF_WCS_3) or NIL
+cnm.lsp:7257:   (setq appname "HCNM-BUBBLE")
+cnm.lsp:7259:     ((setq xdata (assoc -3 (entget ename_bubble '("HCNM-BUBBLE"))))
+cnm.lsp:7261:       (princ (strcat "\nDebug XDATA found: " (vl-princ-to-string xdata)))
+cnm.lsp:7262:       ;; Check if this is new format (VPTRANS) or old format (AVPORT)
+cnm.lsp:7264:         ((= (cdr (assoc 1000 xdata)) "VPTRANS")
+cnm.lsp:7276:               ;; We have CVPORT and 6 points (3 OCS + 3 WCS)
+cnm.lsp:7277:               (princ (strcat "\nDebug transform matrix: CVPORT=" (itoa cvport) 
+cnm.lsp:7279:               (cons cvport points)  ; Return (CVPORT pt1 pt2 pt3 pt4 pt5 pt6)
+cnm.lsp:7282:               (princ "\nDebug: Incomplete VPTRANS data")
+cnm.lsp:7288:           ;; Old format - just AVPORT integer, no transformation data
+cnm.lsp:7289:           (princ "\nDebug: Old AVPORT format (no transform data)")
+cnm.lsp:7295:       (princ "\nDebug: No XDATA found on bubble")
+cnm.lsp:7301: ;; DEPRECATED: Old function - use HCNM_LDRBLK_GET_VIEWPORT_TRANSFORM_XDATA instead
+cnm.lsp:7303:   (setq appname "HCNM-BUBBLE")
+cnm.lsp:7306:       ((setq xdata (assoc -3 (entget ename_bubble '("HCNM-BUBBLE"))))
+cnm.lsp:7314: ;; Set viewport transformation matrix in bubble's XDATA
+cnm.lsp:7315: ;; Stores CVPORT and 3 pairs of reference points (OCS and WCS)
+cnm.lsp:7322:   (setq appname "HCNM-BUBBLE")
+cnm.lsp:7325:     ((not (tblsearch "APPID" appname))
+cnm.lsp:7329:   ;; Create XDATA structure with transformation matrix data
+cnm.lsp:7330:   ;; Format: (1000 "VPTRANS") (1070 CVPORT) 
+cnm.lsp:7336:                                   (list (cons 1000 "VPTRANS")
+cnm.lsp:7344:   ;; Apply XDATA to entity
+cnm.lsp:7348: ;; Clear viewport transformation XDATA from bubble
+cnm.lsp:7351:   (setq appname "HCNM-BUBBLE")
+cnm.lsp:7352:   ;; Get entity list without XDATA
+cnm.lsp:7355:   ;; Update entity without XDATA
+cnm.lsp:7359: ;; DEPRECATED: Old function that only stored AVPORT integer
+cnm.lsp:7360: ;; Kept for reference - now replaced by HCNM_LDRBLK_SET_VIEWPORT_TRANSFORM_XDATA
+cnm.lsp:7362:   (setq appname "HCNM-BUBBLE")
+cnm.lsp:7364:     ((not (tblsearch "APPID" appname))
+cnm.lsp:7370:                                   (list (cons 1000 "AVPORT")
+cnm.lsp:7374: ;; RETURNS P1_WORLD GIVEN P1_OCS
+cnm.lsp:7375: ;; Uses viewport transformation data from bubble's XDATA if available
+cnm.lsp:7386:                          (= layout_name "MODEL")
+cnm.lsp:7393:      ;; Try to get viewport transformation data from XDATA
+cnm.lsp:7409:          ;; Calculate the transformation: P1_WORLD = f(P1_OCS)
+cnm.lsp:7415:          (princ (strcat "\nTransformed P1_WORLD: " (vl-princ-to-string p1_world)))
+cnm.lsp:7425:             ;; User selected a viewport - capture transformation matrix and store in XDATA
+cnm.lsp:7432:             ;; Calculate P1_WORLD using TRANS
+cnm.lsp:7434:             ;; Store transformation matrix in XDATA for future use
+cnm.lsp:7442:             ;; Not in a viewport or no bubble entity - just calculate P1_WORLD
+cnm.lsp:7447:          (princ (strcat "\nDebug P1_WORLD: " (vl-princ-to-string p1_world)))
+cnm.lsp:7462: ;; bubble-data-update: 2025-10-15 update: I think NOTEDATA (new attribute for this reactor project) may be repurposed to hold information about whether each bubble line is auto text (and what kind) or manual.
+cnm.lsp:7463: ;; Placeholder. Does nothing . Needs to adjust the NOTEDATA element of ATTRIBUTE_LIST to contain DATA.
+cnm.lsp:7465: ;; 1. Delete any references whose STRING has been deleted by user.
+cnm.lsp:7503: ;;; Expand plain text value to delimiter structure using XDATA if available
+cnm.lsp:7504: ;;; If value doesn't have chr(160) delimiters, try to parse using XDATA auto-text
+cnm.lsp:7506: ;;; Special handling for NOTENUM, NOTEPHASE, NOTEGAP - these go to prefix field
+cnm.lsp:7509: ;; System-controlled tags (NOTENUM, NOTEPHASE, NOTEGAP) go entirely to prefix.
+cnm.lsp:7517:     ;; NOTENUM, NOTEPHASE, NOTEGAP are system-controlled - put in prefix, not auto
+cnm.lsp:7518:     ((member tag '("NOTENUM" "NOTEPHASE" "NOTEGAP"))
+cnm.lsp:7526:        ;; VL-STRING-SEARCH returns 0-based position, SUBSTR uses 1-based
+cnm.lsp:7528:          (substr migrated 1 delim_pos)  ; prefix: chars 1 through DELIM_POS
+cnm.lsp:7532:        ;; No format codes, put entire value in PREFIX to preserve user's manual text
+cnm.lsp:7547:     ;; Semi-global variable. Global to the HCNM-EB: functions called from here.
+cnm.lsp:7551:     notetextradiocolumn "RadioNOTETXT1"
+cnm.lsp:7558:     "CNM uses a non-breaking space (ASCII code 160 or Alt+0160) to separate your text from auto text.\n\nKeep this in mind in the event you edit bubble notes without this editor.")
+cnm.lsp:7566:        ;; Show the CNM Bubble Note Editor dialog with the requested text line's radio button selected.
+cnm.lsp:7600: ;;; bubble-data-update: this or something below it needs to populate the NOTEDATA attribute.
+cnm.lsp:7625:     ;; Handle auto-text generation buttons (only if AUTO_TYPE is valid)
+cnm.lsp:7642:     ;; Invalid DONE_CODE - just ignore
+cnm.lsp:7652: ;;; Remove delimiters from ATTRIBUTE_LIST before saving
+cnm.lsp:7662:             (hcnm_eb:flatten_value (cadr attr))  ; Remove delimiters from VALUE
+cnm.lsp:7709: ;; Save auto-text to XDATA for each attribute tag
+cnm.lsp:7711:   ;; Save WITH delimiters (chr 160 non-breaking space is invisible in AutoCAD)
+cnm.lsp:7737: ;;; If VALUE doesn't have delimiters but starts with format codes,
+cnm.lsp:7740: ;;; otherwise returns VALUE unchanged.
+cnm.lsp:7777:   (new_dialog "HCNMEditBubble" dclfile)
+cnm.lsp:7778:   (set_tile "Title" "Edit CNM Bubble Note")
+cnm.lsp:7783:   ;; EXECUTIVE: The general disclaimer in the edit dialog is sufficient.
+cnm.lsp:7785:   ;; the detailed dismissable tip via HCNM_LDRBLK_WARN_PSPACE_COORDINATES.
+cnm.lsp:7795:   ;; Migration already happened in EXPAND_VALUE during ADD_DELIMITERS
+cnm.lsp:7809:       (strcat "(HCNM_EB:SAVE_PREFIX \"" tag "\" $value)")
+cnm.lsp:7817:       (strcat "(HCNM_EB:SAVE_POSTFIX \"" tag "\" $value)")
+cnm.lsp:7827:     "(SETQ NoteTextRadioColumn $value)"
+cnm.lsp:7834:          (strcat "(DONE_DIALOG " (itoa (car code)) ")")
+cnm.lsp:7840:   (action_tile "ClearAuto" "(DONE_DIALOG 28)")
+cnm.lsp:7842:   (action_tile "ChgView" "(DONE_DIALOG 29)")
+cnm.lsp:7843:   (action_tile "accept" "(DONE_DIALOG 1)")
+cnm.lsp:7844:   (action_tile "cancel" "(DONE_DIALOG 0)")
+cnm.lsp:7854:      ;; No separator - treat entire value as PREFIX (preserves user manual text)
+cnm.lsp:7857:      ;; Split on NBSP
+cnm.lsp:7903:   ;; Update dialog display to reflect any changes from ADJUST_FORMATS
+cnm.lsp:7922:   ;; Update dialog display to reflect any changes from ADJUST_FORMATS
+cnm.lsp:7941: ;; FIELD_CODE_P NIL SIMPLIFIES PROCESSING WHEN BLOCKS LIKE NOTEQTY ARE KNOWN NOT TO HAVE FIELD CODES IN THEM
+cnm.lsp:7946:            (/= "SEQEND"
+cnm.lsp:7951:       ((= etype "ATTRIB")
+cnm.lsp:7973:                 (wcmatch (cdr (assoc 0 (setq en (entget en)))) "TEXT,MTEXT,ATTRIB")
+cnm.lsp:7975:                 (setq en (dictsearch en "ACAD_FIELD"))
+cnm.lsp:7976:                 (setq en (dictsearch (cdr (assoc -1 en)) "TEXT"))
+cnm.lsp:8002:            (/= "SEQEND"
+cnm.lsp:8008:          (= etype "ATTRIB")
+cnm.lsp:8017:         ;; UPDATEFIELD commented out to avoid "0 field(s) found/updated" messages
+cnm.lsp:8019:         ;(COND ((= (HCNM_LDRBLK_GET_MTEXT_STRING) "")(VL-CMDF "._updatefield" ENAME_NEXT "")))
+cnm.lsp:8024: ;;; NEED TO DEFINE THE USER EVENTS THAT TRIGGER REACTOR CLEANUP. OR MAYBE THE CALLBACK DOES THE CLEANUP. CLEANUP ENTAILS THE FOLLOWING STEPS
+cnm.lsp:8025: ;;; -	USE THE REACTOR DATA AND NOTEDATA ATTRIBUTE OF ALL BUBBLES TO FIND ATTRIBUTES THAT ARE AFFECTED BY THE REACTOR
+cnm.lsp:8026: ;;; -	IF AN ATTRIBUTE IS EMPTY, REMOVE ITS REFERENCE IN ITS BUBBLE'S NOTEDATA AND IN THE REACTOR DATA.
+cnm.lsp:8027: ;;; -	IF THE BUBBLE HAS NO NOTEDATA LEFT FOR THE OWNER OBJECT THAT TRIGGERED THE REACTOR, REMOVE THE BUBBLE FROM THE REACTOR DATA.
+cnm.lsp:8029: ;;; NEED TO CHECK FOR REACTOR BEFORE ATTACHING ONE
+cnm.lsp:8030: ;;; CHECK THE DATA (VLR-DATA REACTOR) OF ALL REACTORS (VLR-REACTORS :VLR-OBJECT-REACTOR) OR (VLR-PERS-LIST) TO SEE IF THIS OBJECT IS ALREADY ATTACHED. IF SO, DON'T ADD. SEE ALSO OBJECTS (VLR-OWNERS REACTOR) AND CALLBACKS (VLR-REACTIONS REACTOR)
+cnm.lsp:8032: ;;; IF THE REACTOR ALREADY EXISTS:
+cnm.lsp:8033: ;;; 1.	(VLR-DATA-SET) OVERWRITES THE DATA (Integer, Real, String, List, VLA-object, Safearray, Variant, T, or nil) ADDED BY MY APPLICATION TO THE REACTOR.
+cnm.lsp:8034: ;;; 2.	(vlr-owner-add) ADDS AN OBJECT AS AN OWNER ON THE REACTOR. (vlr-owner-remove) REMOVES ONE 
+cnm.lsp:8035: ;;; 3.	(vlr-remove) DISABLES A REACTOR. (vlr-remove-all) DISABLES ALL OF SPECIFIED TYPE. (vlr-add) ENABLES A DISABLED REACTOR.
+cnm.lsp:8037: ;;; ABOUT MODIFYING REACTORS: https://help.autodesk.com/view/ACDLT/2025/ENU/?guid=GUID-F6B719E4-537B-42C2-8D22-9A313FE900A0
+cnm.lsp:8045:     ;;(vlax-dump-object REACTOR)
+cnm.lsp:8048:     ;; (vlr-remove REACTOR)
+cnm.lsp:8051: ;; ABOUT MODIFYING REACTORS: https://help.autodesk.com/view/ACDLT/2025/ENU/?guid=GUID-F6B719E4-537B-42C2-8D22-9A313FE900A0
+cnm.lsp:8054: ;; (VLR-REMOVE-ALL :VLR-OBJECT-REACTOR) TO REMOVE ALL
+cnm.lsp:8055: ;; (VLR-DATA (CADAR (VLR-REACTORS :VLR-OBJECT-REACTOR))) IF THERE IS ONLY ONE REACTOR
+cnm.lsp:8056: ;; (VLR-OWNERS (CADAR (VLR-REACTORS :VLR-OBJECT-REACTOR))) IF THERE IS ONLY ONE REACTOR
+cnm.lsp:8057: ;; New structure: KEYS = '("HCNM-BUBBLE" HANDLE_REFERENCE HANDLE_BUBBLE TAG)
+cnm.lsp:8058: ;; VALUE = AUTO_TYPE (just the string)
+cnm.lsp:8064:                           ;; vlr-trace-reaction IS A CANNED CALLBACK PROVIDED BY AUTODESK FOR TESTING. IT PRINTS A MESSAGE. IT CAN BE REMOVED.
+cnm.lsp:8070:                           ;; If OBJREF is NIL (for N/E/NE), only attach to leader
+cnm.lsp:8075:         key_app         "HCNM-BUBBLE"
+cnm.lsp:8081:   ;; Check for reactor proliferation (FATAL CONDITION)
+cnm.lsp:8095:      ;; FATAL: Multiple HCNM-BUBBLE reactors found - this is a programming error
+cnm.lsp:8098:        "\n*** PROGRAMMING ERROR DETECTED ***\n\n"
+cnm.lsp:8099:        "Found " (itoa reactor_count) " HCNM-BUBBLE reactors.\n"
+cnm.lsp:8108:      (princ "\n*** REACTOR PROLIFERATION ERROR - All reactors removed, creating new reactor for current bubble ***")
+cnm.lsp:8109:      ;; Set REACTOR_OLD to NIL so we create a fresh reactor below
+cnm.lsp:8117:   ;; Now handle reactor attachment/creation based on REACTOR_OLD
+cnm.lsp:8120:      ;; ATTACH THIS OWNER NOTIFIER IF NOT ALREADY ATTACHED.
+cnm.lsp:8128:      ;; UPDATE THE DATA
+cnm.lsp:8139:      ;; ELSE MAKE REACTOR AND MAKE IT PERSISTENT
+cnm.lsp:8146:                      owners ; ATTACHED OWNERS OF REACTOR
+cnm.lsp:8164:                (vl-catch-all-apply 'VLA-GET-HANDLE (list obj_notifier))))
+cnm.lsp:8167:          (setq key_app         "HCNM-BUBBLE"
+cnm.lsp:8233:            ;; DETACH THE NOTIFIER IF USER REMOVED ALL ITS DEPENDENT AUTO-TEXT FROM ALL BUBBLES.
+cnm.lsp:8237:            ;; UPDATE THE REACTOR DATA IF USER REMOVED SOME OF ITS DEPENDENT AUTO-TEXT
+cnm.lsp:8242:        )  ; End of PROGN for valid object
+cnm.lsp:8243:        ;; ELSE: Object was erased, silently ignore
+cnm.lsp:8247:   )  ; End of suppression check COND
+cnm.lsp:8268:     (= (strcase layout_name) "MODEL")
+cnm.lsp:8296:           objref  ; Pass the reference object as INPUT, or T for coordinate-only reactor updates
+cnm.lsp:8301:          ;; UPDATE BLOCK INSERTION
+cnm.lsp:8312:       (princ (strcat "\nError in HCNM_LDRBLK_UPDATE_BUBBLE_TAG: BUBBLE not found"))
+cnm.lsp:8316: ;; UPDATES A BUBBLE INSERTION. RETURNS BUBBLE WITH ATTRIBUTES REMOVED IF USER REMOVED THEM (SINCE WE DON'T YET HAVE A STRUCTURED INTERFACE THAT WOULD LET THE USER REMOVE IN REAL TIME. MAYBE IT WOULD BE EASIEST TO JUST HAVE A WAY TO DISABLE EDITING AUTO ATTRIBUTES UNLESS USER CLICKS A "MANUAL" BUTTON. I LOVE THAT. EDIT BUBBLE COULD READ THE REACTOR DATA OR EACH BUBBLE COULD HAVE A LIST IN NOTEDATA)
+cnm.lsp:8318: ;; NOTE: This function is now deprecated in favor of HCNM_LDRBLK_UPDATE_BUBBLE_TAG but kept for reference
+cnm.lsp:8326:       ;; AT THE MOMENT, ONLY TOTAL ATTRIBUTE DELETION CANCELS A REACTOR.
+cnm.lsp:8328:        ;; I AM CURIOUS WHETHER MODIFYING BUBBLE WITHIN FOREACH WILL CAUSE A BUG. I THINK NOT SINCE IT ITERATES OVER A COPY.
+cnm.lsp:8337:                               obj_notifier ; INPUT bubble-data-update: This is not right. We need, not the notifier object (which could be a leader or an alignment or other), but the reference object. So the reactor data has to include handle, tag, ref_type, and ref_object
+cnm.lsp:8345:      ;; UPDATE BLOCK INSERTION
+cnm.lsp:8357: ;#region CNM Options dialog
+cnm.lsp:8394:   (new_dialog "HCNMOptions" cnmdcl)
+cnm.lsp:8395:   (set_tile "Title" "CNM Options")
+cnm.lsp:8396:   (action_tile "General" "(DONE_DIALOG 11)")
+cnm.lsp:8397:   (action_tile "Bubble" "(DONE_DIALOG 12)")
+cnm.lsp:8398:   (action_tile "Key" "(DONE_DIALOG 13)")
+cnm.lsp:8399:   (action_tile "QT" "(DONE_DIALOG 14)")
+cnm.lsp:8400:   (action_tile "accept" "(DONE_DIALOG 1)")
+cnm.lsp:8401:   (action_tile "cancel" "(DONE_DIALOG 0)")
+cnm.lsp:8406:   (new_dialog "HCNMGeneral" cnmdcl)
+cnm.lsp:8408:   (set_tile "Title" "CNM General Options")
+cnm.lsp:8432:     "(HCNM_CONFIG_TEMP_SETVAR \"ProjectNotes\"(HCNM_GETPROJNOTES))(SET_TILE \"ProjectNotes\" (HCNM_CONFIG_TEMP_GETVAR \"ProjectNotes\"))"
+cnm.lsp:8436:   (action_tile "close" "(DONE_DIALOG 2)")
+cnm.lsp:8441:   (new_dialog "HCNMBubble" cnmdcl)
+cnm.lsp:8442:   (set_tile "Title" "CNM Bubble Options")
+cnm.lsp:8492:   (action_tile "close" "(DONE_DIALOG 2)")
+cnm.lsp:8497:   (new_dialog "HCNMKey" cnmdcl)
+cnm.lsp:8499:   (set_tile "Title" "CNM Key Notes Table Options")
+cnm.lsp:8508:   (action_tile "close" "(DONE_DIALOG 2)")
+cnm.lsp:8513:   (new_dialog "HCNMQT" cnmdcl)
+cnm.lsp:8515:   (set_tile "Title" "CNM Quantity Take-off Table Options")
+cnm.lsp:8520:   (action_tile "close" "(DONE_DIALOG 2)")
+cnm.lsp:8526:     ("ProjectNotesEditor" (("text" "System Text Editor") ("csv" "System CSV (spreadsheet)") ("cnm" "CNM Pro Editor")))
+cnm.lsp:8527:     ("LayersEditor" (("notepad" "Notepad") ("cnm" "CNM Pro Editor")))
+cnm.lsp:8535:     (strcat "(HCNM_CONFIG_TEMP_SETVAR \"" var "\" $value)")
+cnm.lsp:8554:     "(HCNM_CONFIG_DCL_LIST_CALLBACK $key $value)"
+cnm.lsp:8559:   (mapcar 'ADD_LIST options)
+cnm.lsp:8581: ;; Shows reactor, its data, and XDATA of a selected bubble note
+cnm.lsp:8596:       ;; Find THE ONE HCNM reactor (there should be only one)
+cnm.lsp:8599:         (if (and (listp data) (assoc "HCNM-BUBBLE" data))
+cnm.lsp:8610:              "ERROR: No HCNM-BUBBLE reactor found!")
+cnm.lsp:8612:              (strcat "ERROR: Reactor proliferation! Found " (itoa reactor_count) " reactors.\nThere should be only ONE reactor for all bubbles."))
+cnm.lsp:8615:                "ONE HCNM-BUBBLE Reactor (correct)\n\n"
+cnm.lsp:8620:                "Selected bubble XDATA:\n" (vl-prin1-to-string (assoc -3 (entget en '("HCNM-BUBBLE"))))
+cnm.lsp:8634: ;|�Visual LISP� Format Options�
+cnm.lsp:8636: ;*** DO NOT add text below the comment! ***|;
+cnmalias.lsp:5: ;;; to a USER.LSP file in the AutoCAD support files search path above
+cnmalias.lsp:14: ;;; All of these can be disabled as a group using the CNMAlias command.
+cnmalias.lsp:15: ;;; They can also be converted to custom ACAD.PGP aliases with help from the same command.
+cnmalias.lsp:32: (hcnm-define-command-alias '("Join" "JOIN" "Custompgp" "Join has been replaced by PJL and PJ.  Issuing command JOIN."))
+cnmalias.lsp:56: ;;; These want to be simple aliases, but when defined as simple LISP aliases,
+cnmalias.lsp:60: (hcnm-define-lisp-alias '("haws-copy" "c" "Custompgp" "Circle is CC. Use CNMAlias to change."))
+cnmalias.lsp:61: ;;;---------------LISP versions of the Autodesk standard command aliases-------------
+cnmalias.lsp:62: ;;; All of these can be disabled as a group using the CNMAlias command.
+cnmalias.lsp:63: ;;; They can also be converted to custom ACAD.PGP aliases with help from the same command.
+cnmalias.lsp:174: ;;; INSBLK sub-section   )
+cnmalias.lsp:177: (hcnm-define-lisp-alias '("haws-INVL" "INVL" "Tools" ""))
+cnmalias.lsp:178: (hcnm-define-lisp-alias '("haws-INVR" "INVR" "Tools" ""))
+cnmalias.lsp:179: (hcnm-define-lisp-alias '("haws-LOTEL" "LOTEL" "Tools" ""))
+cnmalias.lsp:187: (hcnm-define-lisp-alias '("haws-SLOPE" "SLOPE" "Tools" ""))
+cnmalias.lsp:189: (hcnm-define-lisp-alias '("haws-SPOTEL" "SPOTEL" "Tools" ""))
+cnmalias.lsp:191: (hcnm-define-lisp-alias '("haws-TCELEV" "TCELEV" "Tools" ""))
+cnmalias.lsp:192: (hcnm-define-lisp-alias '("haws-TCELEVL" "TCL" "Tools" ""))
+cnmalias.lsp:193: (hcnm-define-lisp-alias '("haws-TCELEVR" "TCR" "Tools" ""))
+cnmalias.lsp:338: (hcnm-define-lisp-alias '("haws-clone" "clone" "Tools" "Try AutoCAD CopyToLayer (CNM alias CCC)"))
+cnmalias.lsp:431: (hcnm-define-lisp-alias '("haws-aliasmanage" "ham" "Tools" "Use CAM (CNMAlias)"))
+cnmalias.lsp:442:  ;|�Visual LISP� Format Options�
+cnmalias.lsp:444: ;*** DO NOT add text below the comment! ***|;
+cnmaliaslib.lsp:5:        "CNMAliasActivation"
+cnmaliaslib.lsp:21:      "custom alias for AutoCAD command (change with CNMAlias)"
+cnmaliaslib.lsp:22:      "Activate CNM's custom LISP changes to PGP definitions including C Copy and CC circle (not recommended; shown above in PGP format)"
+cnmaliaslib.lsp:27:      "verbatim alias for AutoCAD command (change with CNMAlias)"
+cnmaliaslib.lsp:28:      "Activate verbatim LISP duplications of stock PGP definitions (not recommended; shown above in PGP format)"
+cnmaliaslib.lsp:29:      "Stock AutoCAD Command Aliases"
+cnmaliaslib.lsp:128:       "\nCNMAlias: Manage CNM Command Aliases"
+cnmaliaslib.lsp:135:        (c:hcnm-config-getvar "CNMAliasActivation")
+cnmaliaslib.lsp:193:          "CNMAliasActivation"
+cnmaliaslib.lsp:204:            "\nStep 2. Continue to edit individual CNMAlias.lsp aliases? [Yes/No]: "
+cnmaliaslib.lsp:214:          "CNMAlias.lsp has been opened in Notepad for you to edit. Follow the instructions inside.\n\nClick OK to load CNM aliases after editing and saving.\n\nAny previous aliases will remain active--overriding PGP aliases--until a new session is started."
+cnmaliaslib.lsp:249: ;|�Visual LISP� Format Options�
+cnmaliaslib.lsp:251: ;*** DO NOT add text below the comment! ***|;
+cnmloader.lsp:3: ;;; HOW TO ADD A NEW CNM/HAWSEDC COMMAND
+cnmloader.lsp:5: ;;; 1. Create the canonical command function (DEFUN C:COMMAND_NAME ...) in the appropriate .lsp file.
+cnmloader.lsp:6: ;;; 2. Add a new entry to *HAWS-EDCCOMMANDS* in edclib.LSP to get a tracker id for the command: (<tracker-id> <appgroup> "command-name")
+cnmloader.lsp:18: ;;;     CNMLOADER.LSP
+cnmloader.lsp:26: ;;; Instead, it simply loads command autoloaders for the CNM Plus tools submenu,
+cnmloader.lsp:39:              (strcat "(defun " function-name "() (PRINC \"" (strcat "\nAutoloading CNM command: " cmd ) "\") (c:HAWS-LOAD-FROM-APP-DIR " qfn ") (" function-name "))")
+cnmloader.lsp:238: ;-------------MODIFY THE ABOVE--------------------------------------
+cnmloader.lsp:240: ;; LISPUTIL.LSP has library functions for legacy routines some legacy users have.
+cnmloader.lsp:249: ;;;CNMALIAS.LSP has short names for all the commands.
+contelev.lsp:1: ;;; AutoCAD Wiki AutoLISP code header.  
+contelev.lsp:4: ;;; Start highlighting OUTSIDE the code boxes and use the mouse or keyboard to
+contelev.lsp:12: ;;; it under the terms of the GNU General Public License as published by
+contelev.lsp:17: ;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+contelev.lsp:18: ;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+contelev.lsp:19: ;;; GNU General Public License for more details.
+contelev.lsp:21: ;;; The working version of this software is located at the AutoCAD Wiki.
+contelev.lsp:23: ;;; http://autocad.wikia.com/wiki/Contour_Elevations_at_Intervals_with_Labels_(AutoLISP_application)
+contelev.lsp:26: ;;; Copyleft 2017 Thomas Gail Haws licensed under the terms of the GNU GPL
+contelev.lsp:29: ;;; Official Repository: http://autocad.wikia.com/wiki/Contour_Elevations_at_Intervals_with_Labels_(AutoLISP_application
+contelev.lsp:80:          (/= (car setting) "LUPREC")
+contelev.lsp:231:        ((= (cdr (assoc 0 pline1data)) "POLYLINE")
+contelev.lsp:243:        ((= (cdr (assoc 0 pline1data)) "LWPOLYLINE")
+contelev.lsp:283:        (not (tblsearch "BLOCK" (haws-cel:getvar "LabelBlockName")))
+contelev.lsp:350:       ((= (cdr (assoc 0 eg1)) "MTEXT")
+contelev.lsp:381: ;;; TODO: It would be good for somebody who understands this function to improve the symbol names for readability.
+contelev.lsp:398:            (entget (cdr (last (dictnext dict "ACAD_FIELD"))))
+contelev.lsp:425:   ;; If drawing LUPREC changed, use it.
+contelev.lsp:427:     ((/= (setq luprec (getvar "LUPREC"))
+contelev.lsp:428:          (haws-cel:getvar "LUPREC")
+contelev.lsp:430:      (haws-cel:setvar "LUPREC" luprec)
+contelev.lsp:441: ;; Get settings from AutoCAD's AutoLISP permananent storage system
+contelev.lsp:510:          "Warning in haws-cel:SETVAR.\n\nVariable: "
+contelev.lsp:533:   (setq luprec (itoa (getvar "LUPREC")))
+contelev.lsp:537:     (list "LUPREC" luprec 'int)
+contelev.lsp:555:  ;|�Visual LISP� Format Options�
+contelev.lsp:557: ;*** DO NOT add text below the comment! ***|;
+contvol.lsp:16:     cv-report "VOLUME PROVIDED\nDEPTH\tAREA\tINC. VOL.\tVOL."
+contvol.lsp:174:  ;|�Visual LISP� Format Options�
+contvol.lsp:176: ;*** DO NOT add text below the comment! ***|;
+contxt.lsp:6:   (haws-mklayr "CONTLBL")
+copyrot.lsp:1: ;;;COPY AND ROTATE AN OBJECT
+copyrot.lsp:50:  ;|�Visual LISP� Format Options�
+copyrot.lsp:52: ;*** DO NOT add text below the comment! ***|;
+copyrot.lsp:53:  ;|�Visual LISP� Format Options�
+copyrot.lsp:55: ;*** DO NOT add text below the comment! ***|;
+cs.lsp:1: ;;; CS (COPY STRING) CHANGES TEXT STRING TO MATCH A SELECTED TEXT ENTITY.
+cs.lsp:5:   (prompt "\nText/Multileader to change/<RETURN to change an attribute>:")
+cs.lsp:6:   (setq sset (ssget '((0 . "*TEXT,MULTILEADER"))))
+cs.lsp:44:     ((or (= et "TEXT")(= et "MTEXT"))
+cs.lsp:47:     ((= et "MULTILEADER")
+cs.lsp:60:        ((or (= et "TEXT") (= et "MTEXT"))
+cs.lsp:63:        ((= et "MULTILEADER") 304)
+cs.lsp:69:  ;|�Visual LISP� Format Options�
+cs.lsp:71: ;*** DO NOT add text below the comment! ***|;
+cumdist.lsp:1: ;TIP567.LSP    Cumulative Distance    (c)1990, Bob Thomas
+cumdist.lsp:27: ;end CUMDIST
+ddinout.lsp:12:              (findfile "DDINOUT.DCL")))
+ddinout.lsp:15:   (if (and dh (new_dialog "DDINOUT" dh))
+ddinout.lsp:28:      (set_tile "TITLE" title)
+ddinout.lsp:31:                   "(DDINOUT_MSL $value)")
+ddinout.lsp:34:                   "(DDINOUT_SEL)")
+ddinout.lsp:37:                   "(DDINOUT_UNS)")
+ddinout.lsp:52:    ;;of integers using (READ).
+ddinout.lsp:55:    ;;for each element in WHAT, change  marker
+ddinout.lsp:107: ;; NTH_SUBST   replace NDX member [base 0] in L
+dimsty.lsp:7:         ( (= var "DIMSTYLE")(setq dimsty val))
+dimsty.lsp:15:                 ( (not (tblsearch "BLOCK" val))
+dimsty.lsp:36:   (prompt"Use SETUP and ROMANS before DIMSTY to set up sizes and text style as needed.  Use DDIM after DIMSTY to select dimstyles.")
+dimsty.lsp:40:       ("DIMALT"  0);alternate units toggle
+dimsty.lsp:41:       ("DIMALTD" 2);alt. decimals
+dimsty.lsp:42:       ("DIMALTF" 25.40);alt. DIMLFAC
+dimsty.lsp:43:       ("DIMALTTZ"0);tolerances DIMZIN
+dimsty.lsp:44:       ("DIMALTU" 2);alternate DIMUNITS
+dimsty.lsp:45:       ("DIMALTZ" 0);alternate DIMZIN
+dimsty.lsp:46:       ("DIMAPOST""")
+dimsty.lsp:47:       ("DIMASO"  1)
+dimsty.lsp:48:       ("DIMATFIT"3)
+dimsty.lsp:49:       ("DIMBLK"  "")
+dimsty.lsp:50:       ("DIMBLK1" "")
+dimsty.lsp:51:       ("DIMBLK2" "")
+dimsty.lsp:52:       ("DIMCLRD" 0)
+dimsty.lsp:53:       ("DIMCLRE" 0)
+dimsty.lsp:54:       ("DIMCLRT" 0)
+dimsty.lsp:55:       ("DIMDLE"  0.00)
+dimsty.lsp:56:       ("DIMFIT"  3)
+dimsty.lsp:57:       ("DIMJUST" 0)
+dimsty.lsp:58:       ("DIMLDRBLK" "")
+dimsty.lsp:59:       ("DIMLFAC" 1.00)
+dimsty.lsp:60:       ("DIMLIM"  0)
+dimsty.lsp:61:       ("DIMLUNIT" 2)
+dimsty.lsp:62:       ("DIMLWD"  -2)
+dimsty.lsp:63:       ("DIMLWE"  -2)
+dimsty.lsp:64:       ("DIMPOST" "'")
+dimsty.lsp:65:       ("DIMRND"  0.00)
+dimsty.lsp:66:       ("DIMSAH"  0)
+dimsty.lsp:67:       ("DIMSD1"  0)
+dimsty.lsp:68:       ("DIMSD2"  0)
+dimsty.lsp:69:       ("DIMSE1"  1)
+dimsty.lsp:70:       ("DIMSE2"  1)
+dimsty.lsp:71:       ("DIMSHO"  1)
+dimsty.lsp:72:       ("DIMSOXD" 0)
+dimsty.lsp:73:       ("DIMSTYLE""STREET")
+dimsty.lsp:74:       ("DIMTAD"  0)
+dimsty.lsp:75:       ("DIMTDEC" 2);tolerance decimals
+dimsty.lsp:76:       ("DIMTFAC" 1.00)
+dimsty.lsp:77:       ("DIMTIH"  0)
+dimsty.lsp:78:       ("DIMTIX"  1)
+dimsty.lsp:79:       ("DIMTM"   0.00)
+dimsty.lsp:80:       ("DIMTmoVE" 0)
+dimsty.lsp:81:       ("DIMTOFL" 0)
+dimsty.lsp:82:       ("DIMTOH"  0)
+dimsty.lsp:83:       ("DIMTOL"  0)
+dimsty.lsp:84:       ("DIMTOLJ" 1);tolerance vertical justification
+dimsty.lsp:85:       ("DIMTP"   0.00)
+dimsty.lsp:86:       ("DIMTSZ"  0.00)
+dimsty.lsp:87:       ("DIMTVP"  1.00)
+dimsty.lsp:88:       ("DIMUPT"  0);dimension line follows user positioned text
+dimsty.lsp:89:       ("DIMZIN"  0)
+dimsty.lsp:95:       ("DIMALT"  0);alternate units toggle
+dimsty.lsp:96:       ("DIMALTD" 2);alt. decimals
+dimsty.lsp:97:       ("DIMALTF" 25.40);alt. DIMLFAC
+dimsty.lsp:98:       ("DIMALTTZ"0);tolerances DIMZIN
+dimsty.lsp:99:       ("DIMALTU" 2);alternate DIMUNITS
+dimsty.lsp:100:       ("DIMALTZ" 0);alternate DIMZIN
+dimsty.lsp:101:       ("DIMAPOST""")
+dimsty.lsp:102:       ("DIMASO"  1)
+dimsty.lsp:103:       ("DIMATFIT"3)
+dimsty.lsp:104:       ("DIMBLK"  "")
+dimsty.lsp:105:       ("DIMBLK1" "")
+dimsty.lsp:106:       ("DIMBLK2" "")
+dimsty.lsp:107:       ("DIMCLRD" 0)
+dimsty.lsp:108:       ("DIMCLRE" 0)
+dimsty.lsp:109:       ("DIMCLRT" 0)
+dimsty.lsp:110:       ("DIMDLE"  0.00)
+dimsty.lsp:111:       ("DIMFIT"  3)
+dimsty.lsp:112:       ("DIMJUST" 0)
+dimsty.lsp:113:       ("DIMLDRBLK" "")
+dimsty.lsp:114:       ("DIMLFAC" 1.00)
+dimsty.lsp:115:       ("DIMLIM"  0)
+dimsty.lsp:116:       ("DIMLUNIT" 2)
+dimsty.lsp:117:       ("DIMLWD"  -2)
+dimsty.lsp:118:       ("DIMLWE"  -2)
+dimsty.lsp:119:       ("DIMPOST" "'")
+dimsty.lsp:120:       ("DIMRND"  0.00)
+dimsty.lsp:121:       ("DIMSAH"  0)
+dimsty.lsp:122:       ("DIMSD1"  0)
+dimsty.lsp:123:       ("DIMSD2"  0)
+dimsty.lsp:124:       ("DIMSE1"  0)
+dimsty.lsp:125:       ("DIMSE2"  1)
+dimsty.lsp:126:       ("DIMSHO"  1)
+dimsty.lsp:127:       ("DIMSOXD" 0)
+dimsty.lsp:128:       ("DIMSTYLE""LOT")
+dimsty.lsp:129:       ("DIMTAD"  0)
+dimsty.lsp:130:       ("DIMTDEC" 2);tolerance decimals
+dimsty.lsp:131:       ("DIMTFAC" 1.00)
+dimsty.lsp:132:       ("DIMTIH"  0)
+dimsty.lsp:133:       ("DIMTIX"  0)
+dimsty.lsp:134:       ("DIMTM"   0.00)
+dimsty.lsp:135:       ("DIMTmoVE" 0)
+dimsty.lsp:136:       ("DIMTOFL" 0)
+dimsty.lsp:137:       ("DIMTOH"  0)
+dimsty.lsp:138:       ("DIMTOL"  0)
+dimsty.lsp:139:       ("DIMTOLJ" 1);tolerance vertical justification
+dimsty.lsp:140:       ("DIMTP"   0.00)
+dimsty.lsp:141:       ("DIMTSZ"  0.00)
+dimsty.lsp:142:       ("DIMTVP"  1.00)
+dimsty.lsp:143:       ("DIMUPT"  0);dimension line follows user positioned text
+dimsty.lsp:144:       ("DIMZIN"  0)
+dimsty.lsp:150:       ("DIMALT"  0);alternate units toggle
+dimsty.lsp:151:       ("DIMALTD" 2);alt. decimals
+dimsty.lsp:152:       ("DIMALTF" 25.40);alt. DIMLFAC
+dimsty.lsp:153:       ("DIMALTTZ"0);tolerances DIMZIN
+dimsty.lsp:154:       ("DIMALTU" 2);alternate DIMUNITS
+dimsty.lsp:155:       ("DIMALTZ" 0);alternate DIMZIN
+dimsty.lsp:156:       ("DIMAPOST""")
+dimsty.lsp:157:       ("DIMASO"  1)
+dimsty.lsp:158:       ("DIMATFIT"3)
+dimsty.lsp:159:       ("DIMBLK"  "")
+dimsty.lsp:160:       ("DIMBLK1" "")
+dimsty.lsp:161:       ("DIMBLK2" "")
+dimsty.lsp:162:       ("DIMCLRD" 0)
+dimsty.lsp:163:       ("DIMCLRE" 0)
+dimsty.lsp:164:       ("DIMCLRT" 0)
+dimsty.lsp:165:       ("DIMDLE"  0.00)
+dimsty.lsp:166:       ("DIMFIT"  3)
+dimsty.lsp:167:       ("DIMJUST" 0)
+dimsty.lsp:168:       ("DIMLDRBLK" "")
+dimsty.lsp:169:       ("DIMLFAC" 1.00)
+dimsty.lsp:170:       ("DIMLIM"  0)
+dimsty.lsp:171:       ("DIMLUNIT" 2)
+dimsty.lsp:172:       ("DIMLWD"  -2)
+dimsty.lsp:173:       ("DIMLWE"  -2)
+dimsty.lsp:174:       ("DIMPOST" "'")
+dimsty.lsp:175:       ("DIMRND"  0.00)
+dimsty.lsp:176:       ("DIMSAH"  0)
+dimsty.lsp:177:       ("DIMSD1"  0)
+dimsty.lsp:178:       ("DIMSD2"  0)
+dimsty.lsp:179:       ("DIMSE1"  1)
+dimsty.lsp:180:       ("DIMSE2"  1)
+dimsty.lsp:181:       ("DIMSHO"  1)
+dimsty.lsp:182:       ("DIMSOXD" 0)
+dimsty.lsp:183:       ("DIMSTYLE""PROFILE")
+dimsty.lsp:184:       ("DIMTAD"  0)
+dimsty.lsp:185:       ("DIMTDEC" 2);tolerance decimals
+dimsty.lsp:186:       ("DIMTFAC" 1.00)
+dimsty.lsp:187:       ("DIMTIH"  1)
+dimsty.lsp:188:       ("DIMTIX"  0)
+dimsty.lsp:189:       ("DIMTM"   0.00)
+dimsty.lsp:190:       ("DIMTmoVE" 0)
+dimsty.lsp:191:       ("DIMTOFL" 0)
+dimsty.lsp:192:       ("DIMTOH"  0)
+dimsty.lsp:193:       ("DIMTOL"  0)
+dimsty.lsp:194:       ("DIMTOLJ" 1);tolerance vertical justification
+dimsty.lsp:195:       ("DIMTP"   0.00)
+dimsty.lsp:196:       ("DIMTSZ"  0.00)
+dimsty.lsp:197:       ("DIMTVP"  1.00)
+dimsty.lsp:198:       ("DIMUPT"  0);dimension line follows user positioned text
+dimsty.lsp:199:       ("DIMZIN"  0)
+dimsty.lsp:205:       ("DIMALT"  0);alternate units toggle
+dimsty.lsp:206:       ("DIMALTD" 2);alt. decimals
+dimsty.lsp:207:       ("DIMALTF" 25.40);alt. DIMLFAC
+dimsty.lsp:208:       ("DIMALTTZ"0);tolerances DIMZIN
+dimsty.lsp:209:       ("DIMALTU" 2);alternate DIMUNITS
+dimsty.lsp:210:       ("DIMALTZ" 0);alternate DIMZIN
+dimsty.lsp:211:       ("DIMAPOST""")
+dimsty.lsp:212:       ("DIMASO"  1)
+dimsty.lsp:213:       ("DIMATFIT"3)
+dimsty.lsp:214:       ("DIMBLK"  "")
+dimsty.lsp:215:       ("DIMBLK1" "")
+dimsty.lsp:216:       ("DIMBLK2" "")
+dimsty.lsp:217:       ("DIMCLRD" 0)
+dimsty.lsp:218:       ("DIMCLRE" 0)
+dimsty.lsp:219:       ("DIMCLRT" 0)
+dimsty.lsp:220:       ("DIMDLE"  0.00)
+dimsty.lsp:221:       ("DIMFIT"  3)
+dimsty.lsp:222:       ("DIMJUST" 0)
+dimsty.lsp:223:       ("DIMLDRBLK" "")
+dimsty.lsp:224:       ("DIMLFAC" 1.00)
+dimsty.lsp:225:       ("DIMLIM"  0)
+dimsty.lsp:226:       ("DIMLUNIT" 2)
+dimsty.lsp:227:       ("DIMLWD"  -2)
+dimsty.lsp:228:       ("DIMLWE"  -2)
+dimsty.lsp:229:       ("DIMPOST" "'")
+dimsty.lsp:230:       ("DIMRND"  0.00);round dimensions to nearest multiple of this amount
+dimsty.lsp:231:       ("DIMSAH"  0);use separate user defined arrow-head blocks
+dimsty.lsp:232:       ("DIMSD1"  0)
+dimsty.lsp:233:       ("DIMSD2"  0)
+dimsty.lsp:234:       ("DIMSE1"  0)
+dimsty.lsp:235:       ("DIMSE2"  0)
+dimsty.lsp:236:       ("DIMSHO"  1)
+dimsty.lsp:237:       ("DIMSOXD" 0)
+dimsty.lsp:238:       ("DIMSTYLE""STANDARD")
+dimsty.lsp:239:       ("DIMTAD"  0)
+dimsty.lsp:240:       ("DIMTDEC" 2);tolerance decimals
+dimsty.lsp:241:       ("DIMTFAC" 1.00)
+dimsty.lsp:242:       ("DIMTIH"  0)
+dimsty.lsp:243:       ("DIMTIX"  0)
+dimsty.lsp:244:       ("DIMTM"   0.00)
+dimsty.lsp:245:       ("DIMTmoVE" 0)
+dimsty.lsp:246:       ("DIMTOFL" 0)
+dimsty.lsp:247:       ("DIMTOH"  0)
+dimsty.lsp:248:       ("DIMTOL"  0)
+dimsty.lsp:249:       ("DIMTOLJ" 1);tolerance vertical justification
+dimsty.lsp:250:       ("DIMTP"   0.00)
+dimsty.lsp:251:       ("DIMTSZ"  0.00)
+dimsty.lsp:252:       ("DIMTVP"  1.00)
+dimsty.lsp:253:       ("DIMUPT"  0);dimension line follows user positioned text
+dimsty.lsp:254:       ("DIMZIN"  0)
+dms.lsp:1: ;;--------------------------ONE LINERS-------------------------
+dms.lsp:3: (haws-core-init 15)(haws-vtog '("DIMSE1")))
+dms.lsp:5: (haws-core-init 16)(haws-vtog '("DIMSE2")))
+dms.lsp:7: (haws-core-init 17)(vl-cmdf "DIM1" "DIMPOST")(princ))
+dms.lsp:9: (haws-core-init 18)(vl-cmdf "DIM1" "UPDATE")(princ))
+dms.lsp:13: (haws-core-init 20)(vl-cmdf "DIM1" "HOMETEXT")(princ))
+dms.lsp:15: (haws-core-init 21)(vl-cmdf "DIM1" "TEDIT")(princ))
+dms.lsp:17: (haws-core-init 22)(haws-vtog '("DIMTIX")))
+dms.lsp:18: ;;--------------------------END ONE LINERS-------------------------
+dw.lsp:24:   (haws-mklayr "DRIVEWAY")
+dw.lsp:167:   (haws-mklayr "DRIVEWAYTX")
+dw.lsp:182:   (haws-mklayr "DRIVEWAY")
+dwg.lsp:1: ;;--------------------------ONE LINERS-------------------------
+dwg.lsp:3: (haws-core-init 23)(vl-cmdf "CIRCLE" "2P")(princ))
+dwg.lsp:5: (haws-core-init 24)(vl-cmdf "CIRCLE" "TTR")(princ))
+dwg.lsp:7: (haws-core-init 25)(vl-cmdf "DONUT" "0" "5")(princ))
+dwg.lsp:9: (haws-core-init 26)(setvar "PLINEWID" 0)(princ))
+dwg.lsp:10: ;;--------------------------END ONE LINERS-------------------------
+edclib.lsp:1: ;#region HEAD
+edclib.lsp:3: ;;; ICAD compatibility issues:
+edclib.lsp:10: ;;; 20170907 4.2.30 TGH See Git. Revamped bubble notes. Removed PGP. Reworked installer to replace AcadInst.exe. Improved CNM project mgt. Command spreadsheet audit/enhance.
+edclib.lsp:11: ;;; 20151001 4.2.29 TGH Added BIOS date registry location for Windows 10.
+edclib.lsp:12: ;;; 20150921 4.2.28 TGH Added LWP and LWPX.
+edclib.lsp:13: ;;; 20150916 4.2.27 TGH Fixed (vl-cmdf) incompatibility with v2015+ in lambdas.  Using (vl-cmdf-s).
+edclib.lsp:14: ;;; 20111021 4.2.21 TGH Made MSCRIPT use VBA only for releases 15 through 17 (2000 through 2009).  CNM QT had already been fixed that way.
+edclib.lsp:15: ;;; 20090923 4.2.20 TGH Changed authorization scheme in many ways to fix bugs.  Works with setcfg and still gets old stuff from registry.
+edclib.lsp:16: ;;; 20090923 4.2.19 TGH Changed authorization scheme (for Jared Cox) to use only HKCU section.
+edclib.lsp:17: ;;; 20090623 4.2.18 TGH Further fixed bug in CNM that caused no count (manual) notes to list quantities from other tabs in CTABONLY mode.  Also txtht didn't work after TITLE. 
+edclib.lsp:18: ;;; 20090622 4.2.17 TGH Fixed NOTEFND bug in CNM that caused notes to list even if not found if previously in table. 
+edclib.lsp:19: ;;; 20090309 4.2.16 TGH Fixed capitalization bug in CNM vars.  Vars remain case sensitive. 
+edclib.lsp:20: ;;; 20090205 4.2.15 TGH Fix bugs in (HCNM-PROJ) that were wiping Project Notes file clean if ProjectNotes= path was invalid. 
+edclib.lsp:21: ;;; 20081020 4.2.13 TGH Made CNM Bubbles follow a dimstyle stored in  CNM.INI. 
+edclib.lsp:22: ;;; 20080906 4.2.11 TGH Changed layers toward AIA/NCS.  Fixed CNM bubble hook bug. 
+edclib.lsp:23: ;;; 20080520 4.2.07 TGH Added non-nagging expiration mode and made nag mode a random 20% chance nag.
+edclib.lsp:24: ;;; 20080508 4.2.05 TGH Customized copy protection for XP, Vista, and ICAD.  Enhanced GETINTX, GETDISTX, and GETREALX.  Fixed CNM Table Grid INI var mismatch.
+edclib.lsp:25: ;;; 20080111 4.2.04 TGH Added phases A-Z to CNM for Danny Shahenian at DEI.
+edclib.lsp:26: ;;; 20071228 4.2.03 TGH Fixed a bug in timed trial reporting. Eased copy protection to use only (setcfg).
+edclib.lsp:27: ;;; 20070926 4.2.02 TGH Removed HKLM wssh `RegWrite and HKLM regwrite.  Swapped all to (setcfg) and (setenv) for Vista and ICAD compatibility.
+edclib.lsp:28: ;;; 20070818 4.2.01 TGH Fixed several bugs throughout incl stacl, layersav.  Made several globals local. Fixed HKLM wssh `RegWrite for Vista.
+edclib.lsp:29: ;;; 20050831 1.05   TGH Changed CNM to version 4.2.00.  Recompiled
+edclib.lsp:41: ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
+edclib.lsp:55:     "\nCNM Bubble notes now offer auto text that reacts to leader and reference object changes."
+edclib.lsp:56:     "\nDid you see LABEL (HAWS_LABEL), our new utility research pipe labeler? Edit haws-label-settings.lsp."
+edclib.lsp:65:   (setq big_date (* (getvar "DATE") 100000000))
+edclib.lsp:80:           'STRCAT
+edclib.lsp:108: ;#region ERROR AND PACKAGING
+edclib.lsp:123: ;;  1 NOTES apps
+edclib.lsp:124: ;;  2 CNMEdit.exe
+edclib.lsp:127: ;;  1 NOTES package standard
+edclib.lsp:128: ;;  2 NOTES package with CNMEdit.exe
+edclib.lsp:129: ;;  3 Full HawsEDC with CNMEdit.exe (CNM Pro plus HawsEDC tools)
+edclib.lsp:131: ;; Don't forget to add new packages to HAWS-CHECKSTOREDSTRINGS function at
+edclib.lsp:137:    '((0 "CNM Lite") (3 "CNM Pro"))
+edclib.lsp:277: ;;END ERROR HANDLER
+edclib.lsp:279: ;;VALIDATEAPPGROUP looks for authorization to run an application.
+edclib.lsp:315:          ;;(machine matching should have already been checked by HAWS-CHECKSTOREDSTRINGS on loadup)
+edclib.lsp:384: ;;; AUTHORIZEAPPGROUP gives user order code, prompts user for matching
+edclib.lsp:459:        ;;(machine matching should have already been checked by HAWS-CHECKSTOREDSTRINGS on loadup)
+edclib.lsp:485: ;;; USERSTRINGDATEDIFF compares an authorization string and a user
+edclib.lsp:492:     ;; If AUTHSTRING isn't the same length as ORDERSTRING,
+edclib.lsp:518: ;;;(HAWS-READPACKAGECODE 0 "AuthString")
+edclib.lsp:519: ;;;(HAWS-READPACKAGECODE 0 "OrderString")
+edclib.lsp:524: ;;; Since this is executed by (HAWS-CHECKSTOREDSTRINGS) on load, we can use this function to transfer stored info from the registry
+edclib.lsp:529:       "Beginning READPACKAGECODE for package "
+edclib.lsp:540: ;;; HAWS-READCFG gets the value of a setting from the favorite HAWS-location.
+edclib.lsp:555:     ;;Else if the value is set in the HKCU registry section, use it and write to (setcfg).
+edclib.lsp:556:     (;;Read from the HKCU registry section
+edclib.lsp:563:             "HKEY_CURRENT_USER"
+edclib.lsp:572:     ;;Else try reading it from the HKLM section
+edclib.lsp:579:             "HKEY_LOCAL_MACHINE"
+edclib.lsp:604: ;;;(HAWS-WRITEPACKAGECODE 0 "AuthString")
+edclib.lsp:605: ;;;(HAWS-WRITEPACKAGECODE 0 "OrderString")
+edclib.lsp:614:       "Beginning WRITEPACKAGECODE for package "
+edclib.lsp:627: ;;; HAWS-WRITECFG sets the value of a setting in the favorite HAWS- location.
+edclib.lsp:663: ;;; ORDERPACKAGE is called when the user opts to order.
+edclib.lsp:773: ;;; HAWS-ORDERLICENSES gets an order code from the command line
+edclib.lsp:779: ;;GETPACKAGE displays a user form to get an order for the package
+edclib.lsp:802:      (prompt "\nCNM Lite (no custom Project Notes editor) .......1")
+edclib.lsp:807:      (prompt "\nCNM Pro (includes custom Project Notes editor) ..2")
+edclib.lsp:819:   ;;  "2" NOTES package standard
+edclib.lsp:820:   ;;  "3" NOTES package with CNMEdit.exe
+edclib.lsp:821:   ;;  "4" Full HawsEDC with CNMEdit.exe (CNM Pro plus HawsEDC tools)
+edclib.lsp:833: ;;;  (PROMPT "\nGetting single seat authorization for Construction Notes Manager Pro.") ; prompt
+edclib.lsp:834: ;;;  (SETQ STRING "2")
+edclib.lsp:839: ;;GetBiosDate uses BIOSDATE.EXE to return system bios date as a
+edclib.lsp:848:           "HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System\\BIOS"
+edclib.lsp:849:           "BIOSReleaseDate"
+edclib.lsp:854:           "HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System"
+edclib.lsp:860:           "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Biosinfo"
+edclib.lsp:866:           "HKEY_LOCAL_MACHINE\\Enum\\Root\\*PNP0C01\\0000"
+edclib.lsp:867:           "BIOSDate"
+edclib.lsp:891:             "HKEY_LOCAL_MACHINE\\System\\CurrentControlSet"
+edclib.lsp:897:        ("O NO NAME FOUND O")
+edclib.lsp:905: ;;; GETSHORTCOMPUTERNAME gets the first and last characters of the computer name
+edclib.lsp:916: ;;; LISTTOBINARY converts a list
+edclib.lsp:924: ;;; Bits 41-56 16-bit binary ASCII for the first and last characters of the licensed computer name
+edclib.lsp:925: ;;; Bits 57-60 4-bit binary number of the BIOS date month
+edclib.lsp:926: ;;; Bits 61-65 5-bit binary number of the BIOS date day
+edclib.lsp:927: ;;; Bits 66-72 7-bit binary number of the BIOS date year
+edclib.lsp:931:   ;;Pad BINARYSTRING from 68 to 72 bits to make 12 6-bit bytes.
+edclib.lsp:1038: ;;; BINARYTOLIST converts a 72 character binary string as follows:
+edclib.lsp:1043: ;;; Bits 41-56 16-bit binary ASCII for the first and last characters of the licensed computer name
+edclib.lsp:1044: ;;; Bits 57-60 4-bit binary number of the BIOS date month
+edclib.lsp:1045: ;;; Bits 61-65 5-bit binary number of the BIOS date day
+edclib.lsp:1046: ;;; Bits 66-72 7-bit binary number of the BIOS date year
+edclib.lsp:1091: ;;; ENCRYPTAUTHSTRING encrypts a padded binarystring
+edclib.lsp:1108:     'STRCAT
+edclib.lsp:1110:       '(lambda (x) (apply 'STRCAT x))
+edclib.lsp:1111:       (apply 'MAPCAR (cons 'LIST sj))
+edclib.lsp:1116: ;;; DECRYPTAUTHSTRING decrypts a padded authorization binarystring
+edclib.lsp:1133:     'STRCAT
+edclib.lsp:1135:       '(lambda (x) (apply 'STRCAT x))
+edclib.lsp:1136:       (apply 'MAPCAR (cons 'LIST sj))
+edclib.lsp:1141: ;;; ENCRYPTORDERSTRING encrypts a padded binarystring
+edclib.lsp:1158:     'STRCAT
+edclib.lsp:1160:       '(lambda (x) (apply 'STRCAT x))
+edclib.lsp:1161:       (apply 'MAPCAR (cons 'LIST sj))
+edclib.lsp:1166: ;;; DECRYPTORDERSTRING decrypts a padded order binarystring
+edclib.lsp:1183:     'STRCAT
+edclib.lsp:1185:       '(lambda (x) (apply 'STRCAT x))
+edclib.lsp:1186:       (apply 'MAPCAR (cons 'LIST sj))
+edclib.lsp:1191: ;;BINARYTOUSER
+edclib.lsp:1227: ;; USERTOBINARY translates the 12-character user string generated by
+edclib.lsp:1228: ;; BINARYTOUSER
+edclib.lsp:1315: ;; ORDERTOAUTH
+edclib.lsp:1318: ;; TRIALDAYS = -1000000 for unlimited authorization
+edclib.lsp:1336: ;; ORDERTOTRIAL
+edclib.lsp:1342: ;; ORDERTOUNLIMITED
+edclib.lsp:1349: ;;ORDERTOLIST translates a user order string into an order list.
+edclib.lsp:1355: ;; AUTHTOLIST translates a user authorization string into an order
+edclib.lsp:1362: ;;LISTTOORDER translates a an order list into a user order string.
+edclib.lsp:1368: ;; LISTTOAUTH translates a an order list into a user authorization
+edclib.lsp:1376: ;#region USE LOG
+edclib.lsp:1736: ;;; The ASCII code of each character of the log string (one for each command) represents the number of times the command has been used this session. This implies that we count only up to 255 uses per session.
+edclib.lsp:1754:     http (vlax-create-object "MSXML2.XMLHTTP")
+edclib.lsp:1768:   (vlax-invoke-method http 'OPEN "post" url :vlax-true)
+edclib.lsp:1772:        (vl-catch-all-apply 'VLAX-INVOKE (list http 'SEND log-data))
+edclib.lsp:1783: ;#region GETTERS
+edclib.lsp:1835: ;;;HAWS-GETDISTX
+edclib.lsp:1837: (vl-acad-defun 'HAWS-GETDISTX)
+edclib.lsp:1849: ;;;HAWS-GETDISTPOINT
+edclib.lsp:1852: (vl-acad-defun 'HAWS-GETDISTPOINT)
+edclib.lsp:1950: (vl-acad-defun 'HAWS-GETDN)
+edclib.lsp:1962: (vl-acad-defun 'HAWS-GETDNPATH)
+edclib.lsp:2004: ;;HAWS-GETINTX
+edclib.lsp:2006: (vl-acad-defun 'HAWS-GETINTX)
+edclib.lsp:2010: ;;;HAWS-GETINTXX
+edclib.lsp:2013: ;;;1. If a default or initial value is supplied, GETINTX prompts with it and allows user to enter Select from drawing text mode.
+edclib.lsp:2014: ;;;2. If no default is supplied and MODE is 0, the first prompt is for standard input, with fallback to selecting value from drawing text.
+edclib.lsp:2015: ;;;3. If no default is supplied and MODE is 1, the first prompt is for drawing text selection, with fallback to standard input.
+edclib.lsp:2017: (vl-acad-defun 'HAWS-GETINTXX)
+edclib.lsp:2024:       "HAWS-GETINTX GX-PROMPT="
+edclib.lsp:2026:       " GX-DEFAULT="
+edclib.lsp:2031:       " GX-INITIALVALUE="
+edclib.lsp:2148:        (= (type gx-response) 'LIST)
+edclib.lsp:2166: ;;HAWS-GETREALX
+edclib.lsp:2168: (vl-acad-defun 'HAWS-GETREALX)
+edclib.lsp:2172: ;;;HAWS-GETREALXX
+edclib.lsp:2175: ;;;1. If a default or initial value is supplied, GETREALX prompts with it and allows user to enter Select from drawing text mode.
+edclib.lsp:2176: ;;;2. If no default is supplied and MODE is 0, the first prompt is for standard input, with fallback to selecting value from drawing text.
+edclib.lsp:2177: ;;;3. If no default is supplied and MODE is 1, the first prompt is for drawing text selection, with fallback to standard input.
+edclib.lsp:2178: ;;;Returns an REAL or nil if nothing provided.
+edclib.lsp:2179: (vl-acad-defun 'HAWS-GETREALXX)
+edclib.lsp:2186:       "HAWS-GETREALX GX-PROMPT="
+edclib.lsp:2188:       " GX-DEFAULT="
+edclib.lsp:2193:       " GX-INITIALVALUE="
+edclib.lsp:2300:        (= (type gx-response) 'REAL)
+edclib.lsp:2310:        (= (type gx-response) 'LIST)
+edclib.lsp:2328: ;;;HAWSGETPOINTX
+edclib.lsp:2329: (vl-acad-defun 'HAWS-GETPOINTX)
+edclib.lsp:2367: (vl-acad-defun 'HAWS-GETSTRINGX)
+edclib.lsp:2394: ;#region STRING EXTRACTION
+edclib.lsp:2398: ;;the number matches a give wild card spec.  Requires EXTRACTX.
+edclib.lsp:2402: (vl-acad-defun 'HAWS-ATOFX)
+edclib.lsp:2414: ;;the number matches a give wild card spec.  Requires EXTRACTX.
+edclib.lsp:2418: (vl-acad-defun 'HAWS-DISTOFX)
+edclib.lsp:2432: (vl-acad-defun 'HAWS-ENDSTR)
+edclib.lsp:2439: (vl-acad-defun 'HAWS-EXTRACT)
+edclib.lsp:2484: (vl-acad-defun 'HAWS-EXTRACTX)
+edclib.lsp:2582: ;#region ICAD SUBSTITUTES
+edclib.lsp:2596: ;; HAWS-FILE-COPY
+edclib.lsp:2598: ;; Intellicad substitute for VL-FILE-COPY
+edclib.lsp:2600: ;; CAUTION: May not return the same value as vl-file-copy.
+edclib.lsp:2602: (vl-acad-defun 'HAWS-FILE-COPY)
+edclib.lsp:2606:     ((and (= (substr (getvar "DWGNAME") 1 7) "Drawing") (wcmatch destination (strcat (getvar "DWGPREFIX") "*")) (wcmatch (getvar "ACADVER") "*BricsCAD"))
+edclib.lsp:2630: ;;HAWS-FILENAME-BASE
+edclib.lsp:2634: (vl-acad-defun 'HAWS-FILENAME-BASE)
+edclib.lsp:2669: ;;HAWS-FILENAME-DIRECTORY
+edclib.lsp:2673: (vl-acad-defun 'HAWS-FILENAME-DIRECTORY)
+edclib.lsp:2701: ;;;HAWS-FILENAME-EXTENSION
+edclib.lsp:2707: (vl-acad-defun 'HAWS-FILENAME-EXTENSION)
+edclib.lsp:2747: ;#region DEVELOP
+edclib.lsp:2748: ;; HAWS_UNIT_TEST EXAMPLE
+edclib.lsp:2762:   'HAWS_NESTED_LIST_UPDATE
+edclib.lsp:2798: ;;; HAWS-LOG
+edclib.lsp:2800: (vl-acad-defun 'HAWS-LOG)
+edclib.lsp:2826: ;;; HAWS-MILEPOST
+edclib.lsp:2828: (vl-acad-defun 'HAWS-MILEPOST)
+edclib.lsp:2837: ;#region MISC
+edclib.lsp:2845: ;; Usage: (HAWS_NESTED_LIST_GET DATA '(1 13 132 1323))
+edclib.lsp:2857:           (setq val (cadr pair))  ; Changed from (CDR PAIR) to (CADR PAIR) for uniform LIST structure
+edclib.lsp:2864:                 ((listp val) (haws_nested_list_get val rest))  ; Recurse into sub-alist - removed (CAR VAL)
+edclib.lsp:2877: ;; Usage: (HAWS_NESTED_LIST_UPDATE DATA '(1 13 132 1323) "2")
+edclib.lsp:2888:           (setq new_pair (list key val))  ; Changed from (CONS KEY VAL) to (LIST KEY VAL) for uniform structure
+edclib.lsp:2895:           (setq sub (cadr pair))  ; Changed from (CDR PAIR) then (CAR SUB) to just (CADR PAIR)
+edclib.lsp:2897:           (setq new_pair (list key new_sub_alist))  ; Changed from (CONS KEY (LIST ...)) to (LIST KEY ...)
+edclib.lsp:2910: ;; Usage: (HAWS_NESTED_LIST_DELETE DATA '(1 13 132 1323))
+edclib.lsp:2923:           (setq sub (cadr pair))  ; Changed from (CDR PAIR) then (CAR SUB) to just (CADR PAIR)
+edclib.lsp:2931:                   (setq new_pair (list key new_sub_alist))  ; Changed from (CONS KEY (LIST ...))
+edclib.lsp:2944: ;; Usage: (HAWS_NESTED_LIST_TEST)
+edclib.lsp:2945: ;; Credit to Grok AI 2025-10-17, updated 2025-10-20 for uniform LIST structure
+edclib.lsp:2967:   ;; Test list value storage (like ATTRIBUTE_LIST)
+edclib.lsp:2968:   (setq data (haws_nested_list_update data '("ATTRIBUTES") '(("TAG1" "value1") ("TAG2" "value2"))))
+edclib.lsp:2969:   (princ "\nAfter adding ATTRIBUTES list, we get ")
+edclib.lsp:2972:   (print (haws_nested_list_get data '("ATTRIBUTES")))
+edclib.lsp:2974: );; HAWS-FILE-OPEN
+edclib.lsp:2980:   (setq errobj (vl-catch-all-apply 'OPEN (list filename mode)))
+edclib.lsp:3010: ;;;  HAWS-FLATTEN
+edclib.lsp:3011: (vl-acad-defun 'HAWS-FLATTEN)
+edclib.lsp:3016: ;;; HAWS-LSTTOSTR
+edclib.lsp:3029: ;;;(HAWS-LSTTOSTR '("1" "2" "3") "," "\"")
+edclib.lsp:3030: ;;;(HAWS-LSTTOSTR '("1" "2\""" "3") "," "\"")
+edclib.lsp:3031: (vl-acad-defun 'HAWS-LSTTOSTR)
+edclib.lsp:3045:            "Text delimiter processing in HAWS-LstToStr isn't implemented yet."
+edclib.lsp:3066: ;;; HAWS-LOAD-FROM-APP-DIR
+edclib.lsp:3067: ;;; loads a vlx, fas, or lsp, in that preferred order (AutoLISP
+edclib.lsp:3076:          'LOAD
+edclib.lsp:3089: ;;MKFLD sub-function makes a field string out of a string.
+edclib.lsp:3095: (vl-acad-defun 'HAWS-MKFLD)
+edclib.lsp:3142: ;; MKLAYR sub-function defines and makes current a layer for another routine.
+edclib.lsp:3162:     (if (= 'LIST (type (setq temp (read rdlin))))
+edclib.lsp:3168: (vl-acad-defun 'HAWS-GETLAYR)
+edclib.lsp:3187:          "\" not found in LAYERS.DAT.  Using current layer."
+edclib.lsp:3194: (vl-acad-defun 'HAWS-MKLAYR)
+edclib.lsp:3196:   ;;(princ "\nHAWS-MKLAYR in edclib")
+edclib.lsp:3215:   (while (and (/= laltyp "") (not (tblsearch "LTYPE" laltyp)))
+edclib.lsp:3238:       ((not (tblsearch "LTYPE" laltyp))
+edclib.lsp:3253:   (if (not (tblsearch "LAYER" laname))
+edclib.lsp:3275:            (not (tblsearch "LTYPE" ltype))
+edclib.lsp:3303: (vl-acad-defun 'HAWS-DWGSCALE)
+edclib.lsp:3306:     ((or (= (getvar "DIMANNO") 1) (= (getvar "DIMSCALE") 0))
+edclib.lsp:3307:      (/ 1 (getvar "CANNOSCALEVALUE"))
+edclib.lsp:3309:     ((getvar "DIMSCALE"))
+edclib.lsp:3314:   (getvar "DIMTXT")
+edclib.lsp:3318:   (* (getvar "DIMTXT") (haws-dwgscale))
+edclib.lsp:3321: (vl-acad-defun 'HAWS-MKTEXT)
+edclib.lsp:3353:       (cons 0 "TEXT")
+edclib.lsp:3358:           ("This text created by HAWS-MKTEXT")
+edclib.lsp:3373:       (assoc 41 (tblsearch "STYLE" (getvar "textstyle")))
+edclib.lsp:3377:         (cdr (assoc 50 (tblsearch "STYLE" (getvar "textstyle"))))
+edclib.lsp:3413: (vl-acad-defun 'HAWS-MKLINE)
+edclib.lsp:3427:       (cons 0 "LINE")
+edclib.lsp:3435: ;; HAWS-PATH-CHOP-TRUNK
+edclib.lsp:3440: (vl-acad-defun 'HAWS-PATH-CHOP-TRUNK)
+edclib.lsp:3477: ;;HAWS-PATH-RELATE
+edclib.lsp:3482: (vl-acad-defun 'HAWS-PATH-RELATE)
+edclib.lsp:3511:             'STRCAT
+edclib.lsp:3523: ;;HAWS-PATH-UNRELATE
+edclib.lsp:3528: (vl-acad-defun 'HAWS-PATH-UNRELATE)
+edclib.lsp:3561: ;;HAWS-PRIN1-TO-STRING
+edclib.lsp:3564: ;; VL-PRIN1-TO-STRING
+edclib.lsp:3567: (vl-acad-defun 'HAWS-PRIN1-TO-STRING)
+edclib.lsp:3583: ;;;  HAWS-3PTTOBULGE
+edclib.lsp:3613: (vl-acad-defun 'HAWS-3PTTOBULGE)
+edclib.lsp:3628:        ;;CHORD / SIN(ANG2) is 
+edclib.lsp:3669: ;;;  HAWS-SEGMENT-LENGTH
+edclib.lsp:3670: (vl-acad-defun 'HAWS-SEGMENT-LENGTH)
+edclib.lsp:3697: ;;;HAWS-STRTOLST
+edclib.lsp:3717: (vl-acad-defun 'HAWS-STRTOLST)
+edclib.lsp:3867: (vl-acad-defun 'HAWS-RDFLD)
+edclib.lsp:3953: (vl-acad-defun 'HAWS-RDFLD-UNPAD)
+edclib.lsp:3964: ;;Returns nil if in ICAD mode
+edclib.lsp:3965: (vl-acad-defun 'HAWS-REGISTRY-READ)
+edclib.lsp:3973: ;;Returns nil if in ICAD mode
+edclib.lsp:3974: (vl-acad-defun 'HAWS-REGISTRY-WRITE)
+edclib.lsp:3984: (vl-acad-defun 'HAWS-REMOVE)
+edclib.lsp:3993: (vl-acad-defun 'HAWS-RTOB)
+edclib.lsp:4019:         ((= b "N") "NORTH")
+edclib.lsp:4020:         ((= b "S") "SOUTH")
+edclib.lsp:4021:         ((= b "E") "EAST")
+edclib.lsp:4022:         ((= b "W") "WEST")
+edclib.lsp:4028: ;; RTOSTA sub-function converts a real number to a base 100 road
+edclib.lsp:4030: (vl-acad-defun 'HAWS-RTOSTA)
+edclib.lsp:4073: ;;;  Trig functions not included with AutoLISP
+edclib.lsp:4074: (vl-acad-defun 'HAWS-ASIN)
+edclib.lsp:4076: (vl-acad-defun 'HAWS-ACOS)
+edclib.lsp:4080: (vl-acad-defun 'HAWS-VSET)
+edclib.lsp:4090: (vl-acad-defun 'HAWS-VTOG)
+edclib.lsp:4108: (vl-acad-defun 'HAWS-VSAVE)
+edclib.lsp:4113: (vl-acad-defun 'HAWS-VRSTOR)
+edclib.lsp:4127: (vl-acad-defun 'HAWS-WRAP)
+edclib.lsp:4198: (vl-acad-defun 'HAWS-SELCEROB)
+edclib.lsp:4212: ;;HAWS-TXLEN
+edclib.lsp:4216: (vl-acad-defun 'HAWS-TXLEN)
+edclib.lsp:4225: ;; HAWS-VLISP-P
+edclib.lsp:4228: (vl-acad-defun 'HAWS-VLISP-P)
+edclib.lsp:4244: ;;; If (HAWS-READCFG "/HawsEDC/Modules/package/OrderString") "",
+edclib.lsp:4247:   (haws-milepost "Entering HAWS-CHECKSTOREDSTRINGS")
+edclib.lsp:4352:   (haws-milepost "Finished HAWS-CHECKSTOREDSTRINGS")
+edclib.lsp:4357: ;#endregion(PROMPT "loaded.")
+edclib.lsp:4358:  ;|�Visual LISP� Format Options�
+edclib.lsp:4360: ;*** DO NOT add text below the comment! ***|;
+editall.lsp:21:       ((= etype "ATTDEF") (vl-cmdf "._TEXTEDIT" obj1 ""))
+editall.lsp:22:       ((= etype "TEXT") (vl-cmdf "._TEXTEDIT" obj1 ""))
+editall.lsp:23:       ((= etype "MTEXT") (vl-cmdf "._TEXTEDIT" obj1 ""))
+editall.lsp:24:       ((= etype "DIMENSION") (vl-cmdf "._TEXTEDIT" obj1 ""))
+editall.lsp:33:       ((and (= etype "INSERT") (cdr (assoc 66 e)))
+editall.lsp:34:        (vl-cmdf "._DDATTE" obj1)
+editall.lsp:44: ;|�Visual LISP� Format Options�
+editall.lsp:46: ;*** DO NOT add text below the comment! ***|;
+edt.lsp:1: ;;--------------------------ONE LINERS-------------------------
+edt.lsp:3: (haws-core-init 28)(vl-cmdf "._BREAK" pause "F")(princ))
+edt.lsp:5: (haws-core-init 29)(vl-cmdf "._COPY" (ssget) "" "M")(princ))
+edt.lsp:9: (haws-core-init 31) (vl-cmdf "._MOVE" "P")(princ))
+edt.lsp:13: (haws-core-init 33) (vl-cmdf "._ROTATE" (ssget) "" pause "180") (princ))
+edt.lsp:15: (haws-core-init 34) (vl-cmdf "._ROTATE" (ssget) "" pause "270") (princ))
+edt.lsp:17: (haws-core-init 35) (vl-cmdf "._ROTATE" (ssget) "" pause "45") (princ))
+edt.lsp:19: (haws-core-init 36) (vl-cmdf "._ROTATE" (ssget) "" pause "90") (princ))
+edt.lsp:21: (haws-core-init 37)(vl-cmdf "._STRETCH" "C")(princ))
+edt.lsp:23: (haws-core-init 38)(vl-cmdf "._UNDO" "BACK")(princ))
+edt.lsp:25: (haws-core-init 39)(vl-cmdf "._UNDO" "M")(princ))
+edt.lsp:28: ;;--------------------------END ONE LINERS-------------------------
+eop.lsp:26:   ) ;_ end of SETQ
+eop.lsp:37:      ) ;_ end of SETQ
+eop.lsp:40:   ) ;_ end of COND
+eop.lsp:44: ) ;_ end of DEFUN
+eop.lsp:45: ;|�Visual LISP� Format Options�
+eop.lsp:47: ;*** DO NOT add text below the comment! ***|;
+facnum.lsp:4:   (setq fltr (list(cons 0"TEXT") (cons 1"*#*")))
+geodata.lsp:1: ;;; GEODATA - Get curve data from an arc and save to RADIUS, LENGTH, DELTA, CHORD, and TANGENT attributes in a block.
+geodata.lsp:7: ;;; CRVS is an Autodesk registered symbol to avoid conflicts with other applications.
+geodata.lsp:96:        ) ;_ end of HAWS-RTOB
+geodata.lsp:127:        (strcat "DELTA=" (caddr crvdata))
+geodata.lsp:191:        (strcat "DELTA=" (caddr crvdata))
+geodata.lsp:204:       (/= "SEQEND"
+geodata.lsp:209:        ((= et "ATTRIB")
+geodata.lsp:215:           ((setq n (member at '("BEARING" "TANGENT" "DELTA" "LENGTH" "RADIUS")))
+geodata.lsp:221:              ) ;_ end of SUBST
+geodata.lsp:222:            ) ;_ end of ENTMOD
+geodata.lsp:237: ;;; ========== End sub-functions to GEODATA ===========
+geodata.lsp:244:   "\nGEODATA version 2.0, Copyright (C) 2002 Thomas Gail Haws
+geodata.lsp:245: GEODATA comes with ABSOLUTELY NO WARRANTY.
+geodata.lsp:247: redistribute it under the terms of the GNU General Public License.
+geodata.lsp:248: The latest version of GEODATA is always available at www.hawsedc.com"
+geodata.lsp:259:        ((= etype "LINE") (crvs-linedata el)) ; For lines...
+geodata.lsp:260:        ((= etype "CIRCLE") (crvs-cirdata el)) ; For circles...
+geodata.lsp:261:        ((= etype "VERTEX") (crvs-pldata es)) ; For plines...
+geodata.lsp:262:        (t (vl-cmdf "._AREA" "_E" pickpt))  ; Default, invoke AREA command.
+geodata.lsp:264:   ) ;_ end of SETQ
+geodata.lsp:269:          'STRCAT
+geodata.lsp:271:            'STRCAT
+geodata.lsp:285:           ) ;_ end of ENTSEL
+geodata.lsp:286:         ) ;_ end of PROGN
+geodata.lsp:287:      ) ;_ end of SETQ
+geodata.lsp:296:      ) ;_ end of COND
+geodata.lsp:298:   ) ;_ end of COND
+geodata.lsp:301: ;;end GEODATA
+haws-label-settings.lsp:2: ("READ-BIAS-DEGREES" 110)
+haws-label-settings.lsp:3: ; Table 1: TEXT_STYLE
+haws-label-settings.lsp:4: ; TEXT_STYLE_KEY    LAYER_NAME   TEXT_STYLE_NAME
+haws-label-settings.lsp:5: ("TEXT_STYLE"       "EX"         "EX-TOPO-TEXT"   "TOPOTEXT"       )
+haws-label-settings.lsp:6: ("TEXT_STYLE"       "PROP"       "NOTES"          "STANDARD"         )
+haws-label-settings.lsp:8: ;;             LAYER_NAME"       "TEXT_STYLE_KEY" "LABEL_TEXT
+haws-label-settings.lsp:9: ;;                                 !!! You MUST use \" for " !!!
+haws-label-settings.lsp:10: ("LAYER"      "EX-WTR-6IN"       "EX"            "6w"              )
+haws-label-settings.lsp:11: ("LAYER"      "EX-WTR-12IN"      "EX"            "12w"             )
+haws-label-settings.lsp:12: ("LAYER"      "EX-WTR-8IN-PVC"   "EX"            "8w pvc"          )
+haws-label-settings.lsp:13: ("LAYER"      "WTR-4IN-CL2"      "PROP"          "4W CL2"          )
+haws-label-settings.lsp:14: ("LAYER"      "WTR-6IN-CL2"      "PROP"          "6W CL2"          )
+haws-label-settings.lsp:15: ("LAYER"      "WTR-8IN-CL2"      "PROP"          "8W CL2"          )
+haws-label-settings.lsp:16: ("LAYER"      "WTR-10IN-CL2"     "PROP"          "10W CL2"         )
+haws-label-settings.lsp:17: ("LAYER"      "WTR-12IN-CL2"     "PROP"          "12W CL2"         )
+haws-label-settings.lsp:18: ("LAYER"      "WTR-16IN-CL2"     "PROP"          "16W CL2"         )
+haws-label-settings.lsp:19: ("LAYER"      "WTR-18IN-CL2"     "PROP"          "18W CL2"         )
+haws-label-settings.lsp:20: ("LAYER"      "WTR-24IN-CL2"     "PROP"          "24W CL2"         )
+haws-label-settings.lsp:21: ("LAYER"      "WTR-30IN-CL2"     "PROP"          "30W CL2"         )
+haws-label-settings.lsp:22: ("LAYER"      "WTR-36IN-CL2"     "PROP"          "36W CL2"         )
+haws-label-settings.lsp:23: ("LAYER"      "SD-6IN"           "PROP"          "6\"SD"           )
+haws-label-settings.lsp:24: ("LAYER"      "SD-8IN"           "PROP"          "8\"SD"           )
+haws-label-settings.lsp:25: ("LAYER"      "SD-10IN"          "PROP"          "10\"SD"          )
+haws-label-settings.lsp:26: ("LAYER"      "SD-12IN"          "PROP"          "12\"SD"          )
+haws-label-settings.lsp:27: ("LAYER"      "SD-16IN"          "PROP"          "16\"SD"          )
+haws-label-settings.lsp:28: ("LAYER"      "SD-18IN"          "PROP"          "18\"SD"          )
+haws-label-settings.lsp:29: ("LAYER"      "WTR-6IN-DIP"      "PROP"          "6W DIP"          )
+haws-label-settings.lsp:30: ("LAYER"      "SWR-8IN*"         "PROP"          "8\"S"            )
+haws-label-settings.lsp:31: ("LAYER"      "0"                "PROP"          "TOM 72\""        )
+haws-label-settings.lsp:32: ;;                                 !!! You MUST use \" for " !!!
+haws-label.lsp:1: ;;; HAWS-LABEL.lsp - C:HAWS_LABEL command for CNM/HAWSEDC
+haws-label.lsp:4: ;;; Command: HAWS_LABEL (aliases: LABEL, LAB)
+haws-label.lsp:7: ;;; TO CUSTOMIZE: Edit haws-label-settings.lsp to define layer-specific text
+haws-label.lsp:16: ;;;   1. Type HAWS_LABEL (or LABEL or LAB)
+haws-label.lsp:21: ;;;   READ-BIAS-DEGREES - Angle threshold for flipping text (default 110)
+haws-label.lsp:22: ;;;   TEXT_STYLE - (key layer-name style-name) mappings
+haws-label.lsp:23: ;;;   LAYER - (layer-pattern style-key label-text) mappings
+haws-label.lsp:24: ;;;     Keys and layer names must be UPPERCASE
+haws-label.lsp:28: ;;;   - Supports LINE, ARC, LWPOLYLINE, POLYLINE entities
+haws-label.lsp:39:   (haws-vsave '("CLAYER"))
+haws-label.lsp:60:       (alert (strcat "Unsupported entity type: " ent_type "\nPlease select a LINE, ARC, or POLYLINE."))
+haws-label.lsp:81:   ;; READABILITY_BIAS is the angle threshold (default 110 degrees)
+haws-label.lsp:82:   ;; Text between READABILITY_BIAS and (READABILITY_BIAS + 180) gets flipped
+haws-label.lsp:96:   ;; Create MTEXT with background mask
+haws-label.lsp:98:     '(0 . "MTEXT")
+haws-label.lsp:138:     (if (= 'LIST (type (setq temp (read rdlin))))
+haws-label.lsp:147:       ((= key "READ-BIAS-DEGREES") (setq readability_bias (cadr rdlin)))
+haws-label.lsp:148:       ((= key "TEXT_STYLE") (setq text_style_table (cons (cdr rdlin) text_style_table)))
+haws-label.lsp:149:       ((= key "LAYER") (setq layer_table (cons (cdr rdlin) layer_table)))
+haws-label.lsp:153:     (progn (alert "Error: No TEXT_STYLE entries in settings file") (exit))
+haws-label.lsp:156:     (progn (alert "Error: No LAYER entries in settings file") (exit))
+haws-label.lsp:162:   (or (= ent_type "LINE") (= ent_type "ARC") 
+haws-label.lsp:163:       (= ent_type "LWPOLYLINE") (= ent_type "POLYLINE"))
+haws-label.lsp:190:       (if (tblsearch "STYLE" style_info)
+haws-label.lsp:191:         (setvar "TEXTSTYLE" style_info)
+haws-label.lsp:203:     ((= ent_type "LINE")
+haws-label.lsp:209:     ((or (= ent_type "LWPOLYLINE") (= ent_type "POLYLINE"))
+haws-label.lsp:239:   (if (= ent_type "LWPOLYLINE")
+haws-label.lsp:261:         (if (= "VERTEX" (cdr (assoc 0 pt1)))
+haws-label.lsp:294:     "\nHAWS-LABEL.LSP loaded. Type HAWS_LABEL (or LABEL or LAB) to start."
+haws-qt.lsp:50: ;;; HAWS-QT "Class" library section
+haws-qt.lsp:52: ;; Constructs an instance of the HAWS-QT object if not already present
+haws-qt.lsp:53: ;; NAME is the string that identifies this instance.
+haws-qt.lsp:138: ;; Follows HAWS-QT instance properties for formatting: factor, underline, overline, prefix, postfix, precision
+haws-qt.lsp:139: ;; Sets HAWS-QT instance string property
+haws-qt.lsp:218:     ((and input1 (= (type input1) 'PICKSET))
+haws-qt.lsp:246:        ((and input1 (= (type input1) 'LIST))
+haws-qt.lsp:257:         (= (cdr (assoc 0 (entget e))) "VERTEX")
+haws-qt.lsp:266:      (vl-catch-all-apply 'VLAX-CURVE-GETSTARTPOINT (list obj))
+haws-qt.lsp:280:             ((= (cdr (assoc 0 (entget e))) "AECC_PIPE")
+haws-qt.lsp:281:              (princ "\nGetting 3D length of AECC_PIPE object.")
+haws-qt.lsp:282:              (vlax-get-property obj 'LENGTH3D)
+haws-qt.lsp:317:  ;|�Visual LISP� Format Options�
+haws-qt.lsp:319: ;*** DO NOT add text below the comment! ***|
+haws-tip.lsp:1: ;;; haws-tip.lsp - Tip/evangelism opt-out system for HAWS/EDC/CNM
+haws-tip.lsp:41:                    (strcat "(if (= $value \"0\") (HAWS_TIP_HIDE " 
+imp_exp.lsp:2: ;import or export ASCII text files.
+imp_exp.lsp:7:   (setq efnam (getfiled "Select ASCII Import File" "" "" 4))
+imp_exp.lsp:96:   (setq ans (getkword "\nASCII text file <Import/Export>: "))
+incnum.lsp:4:   (setq fltr (list(cons 0 "TEXT") (cons 1"*#*")))
+ini-edit.lsp:1: ;;; INI-EDIT.LSP contains functions to create and edit 
+ini-edit.lsp:5: ;;; INI-EDIT is freeware by
+ini-edit.lsp:7: ;;; imago mundi CAD Systemhaus GmbH
+ini-edit.lsp:21: ;;; FUNCTIONS
+ini-edit.lsp:23: ;;; (INI_WRITEENTRY inifile section variable value)
+ini-edit.lsp:35: ;;;       (ini_writeentry "c:/test.ini" "NEWSECTION" "NEWVALUE" "100")
+ini-edit.lsp:37: ;;;       [NEWSECTION]
+ini-edit.lsp:38: ;;;       NEWVALUE=100
+ini-edit.lsp:42: ;;; (INI_WRITESECTION inifile section entrylist)
+ini-edit.lsp:55: ;;;       (ini_writeentry "c:/test.ini" "NEWSECTION" '(("NEWVALUE1" "100")("NEWVALUE2" "200")))
+ini-edit.lsp:57: ;;;       [NEWSECTION]
+ini-edit.lsp:58: ;;;       NEWVALUE1=100
+ini-edit.lsp:59: ;;;       NEWVALUE2=200
+ini-edit.lsp:62: ;;; (INI_READENTRY inifile section variable)
+ini-edit.lsp:70: ;;;       (ini_readentry "c:/test.ini" "NEWSECTION" "NEWVALUE")
+ini-edit.lsp:74: ;;; (INI_READSECTION inifile section)
+ini-edit.lsp:82: ;;;       (ini_readsection "c:/test.ini" "NEWSECTION")
+ini-edit.lsp:83: ;;;     returns (("NEWVALUE" "100") ("NEXTVALUE" "SAMPLE"))
+ini-edit.lsp:86: ;;; (INI_READINI inifile)
+ini-edit.lsp:93: ;;;     returns (("[NEWSECTION]" ("NEWVALUE" "100") ("NEXTVALUE" "SAMPLE")) ("[NEXTSECTION]" ("INIPATH" "c:\\TEST.INI")))
+ini-edit.lsp:96: ;;; (INI_INILINE line separator)
+ini-edit.lsp:101: ;;;       (ini_iniline "NEWVALUE=100" "=")
+ini-edit.lsp:102: ;;;     returns ("NEWVALUE" "100")
+inq.lsp:1: ;;--------------------------ONE LINERS-------------------------
+inq.lsp:6: ;;--------------------------END ONE LINERS-------------------------
+insblk.lsp:1: ;;; INSBLK.LSP
+insblk.lsp:98:   ;;; (if (= (cdr(assoc 0(entget(entlast)))) "TEXT")(vl-cmdf "._._textedit" (entlast)))
+insblk.lsp:101: ;;;ROTATION note: Enter insertion rotation or "P" to prompt for rotation.
+insblk.lsp:103: ;;;OPTIONS key: Add up the options needed. 
+insblk.lsp:110: ;;;Hint: Toggle the [INSERT] key off to fill in the blanks for a new command.
+insblk.lsp:112: ;;;       |COMMAND|               |BLOCK     ||LAYER KEY OR LIST         |ROT||OPTIONS
+insblk.lsp:115: (haws-core-init 54)(insblk "gb"        "ANNOMISC"                 "P"  27))
+insblk.lsp:117: (haws-core-init 55)(insblk "gc"        "ANNOMISC"                 "P"  27))
+insblk.lsp:119: (haws-core-init 56)(insblk "invert_l"  "ANNOMISC"                 "P"  27))
+insblk.lsp:121: (haws-core-init 57)(insblk "invert_r"  "ANNOMISC"                 "P"  27))
+insblk.lsp:123: (haws-core-init 58)(insblk "lotel"     "ANNOMISC"                 "P"  27))
+insblk.lsp:125: (haws-core-init 59)(insblk "pad"       "ANNOMISC"                 "0"  11))
+insblk.lsp:127: (haws-core-init 60)(insblk "delta"     "IB-DELTA"                 "0"  27))
+insblk.lsp:137: (haws-core-init 65)(insblk "sta_offl"  "ANNOMISC"                 "P"  27))
+insblk.lsp:139: (haws-core-init 66)(insblk "slope"     "ANNOMISC"                 "P"  27))
+insblk.lsp:141: (haws-core-init 67)(insblk "sta_off"   "ANNOMISC"                 "P"  27))
+insblk.lsp:143: (haws-core-init 68)(insblk "spotel"    "ANNOMISC"                 "P"  27))
+insblk.lsp:145: (haws-core-init 69)(insblk "p-tcg-tx"  "ANNOMISC"                 "0"  27))
+insblk.lsp:147: (haws-core-init 70)(insblk "tcelev"    "ANNOMISC"                 "P"  8))
+insblk.lsp:149: (haws-core-init 71)(insblk "l-tcelev"  "ANNOMISC"                 "P"  27))
+insblk.lsp:151: (haws-core-init 72)(insblk "r-tcelev"  "ANNOMISC"                 "P"  27))
+isolat.lsp:8:   (haws-vsave '("EXPERT"))
+isolat.lsp:9:   (setvar "EXPERT" 5)
+istan.lsp:16:             (= (car e) "LINE")
+istan.lsp:17:             (= (car e) "VERTEX")
+istan.lsp:29:       ( (=(car e)"LINE")
+istan.lsp:32:       ( (= (car e) "VERTEX")
+lam.lsp:1: (defun c:haws-l0 ()(haws-core-init 73)(vl-cmdf "._LAYER" "T" "0" "S" "0" "")(princ))
+lam.lsp:2: ;;(DEFUN c:haws-LK0 () (haws-core-init 74)(vl-cmdf "._LAYER" "LOCK" "0" "")(PRINC))
+lam.lsp:3: (defun c:haws-lka ()(haws-core-init 75)(vl-cmdf "._LAYER" "LO" "*" "")(princ))
+lam.lsp:4: (defun c:haws-lki ()(haws-core-init 76)(vl-cmdf "._LAYISO" "_Settings" "_Lock" "")(princ))
+lam.lsp:5: (defun c:haws-ofi ()(haws-core-init 77)(vl-cmdf "._LAYISO" "_Settings" "_Off" "_Off")(princ))
+lam.lsp:6: (defun c:haws-ula ()(haws-core-init 78)(vl-cmdf "._LAYER" "U" "*" "")(princ))
+lam.lsp:7: ;;--------------------------END ONE LINERS-------------------------
+lastat.lsp:13:   (haws-vsave '("EXPERT"))
+lastat.lsp:14:   (setvar "EXPERT" 5)
+lastat.lsp:93:   (haws-vsave '("EXPERT"))
+lastat.lsp:94:   (setvar "EXPERT" 5)
+lastat.lsp:163: ;;;*HAWS-LASTATLIST* is a list of layer lists in assoc groups
+lastat.lsp:205:  ;|�Visual LISP� Format Options�
+lastat.lsp:207: ;*** DO NOT add text below the comment! ***|
+layersav.lsp:1: ;;;LAYERSAV.LSP version 5.0
+layersav.lsp:7: ;;;          10/20/95 Added non-dialogue box restore option LARPLT for script use.
+layersav.lsp:22: 		 (ssget "X" (list (cons 0 "VIEWPORT")))
+layersav.lsp:24: 	(while (setq layer (tblnext "LAYER" (not layer))) (prin1 layer f1) (princ (chr 10) f1))
+layersav.lsp:27: 			(setq mvport (entget mvport '("ACAD")))
+layersav.lsp:66: 	(while (and (setq laline (read-line f1)) (= "LAYER" (cdr (assoc 0 (setq laline (read laline))))))
+layersav.lsp:90: 			((or (wcmatch (setq name (cdr (assoc 2 layer))) "*`**,*`?*") (tblsearch "LAYER" name))
+layersav.lsp:132: 					 (if (tblsearch "LTYPE" ltype)
+layrprn.lsp:1: ; TIP964.LSP: LP.LSP   Layer List to File   (c)1994, Michael L. Jenkins
+layrprn.lsp:18:       (substr (rtos (getvar "CDATE") 2 6) 10 2)
+layrprn.lsp:20:       (substr (rtos (getvar "CDATE") 2 6) 12 2)
+layrprn.lsp:22:       (substr (rtos (getvar "CDATE") 2 6) 14 2)
+layrprn.lsp:34:     lyr (tblnext "LAYER" t)
+layrprn.lsp:40:       lyr (tblnext "LAYER")
+layrprn.lsp:57:       lyr (tblsearch "LAYER" (strcase lyr))
+layrprn.lsp:81:   (prompt "\rGenerating report...DONE!")
+lee-mac.lsp:3: ;; block-object-1 - [vla] VLA Dynamic Block Reference object
+lee-mac.lsp:15:               (strcase (vlax-get x 'PROPERTYNAME))
+lee-mac.lsp:17:          (vlax-get x 'VALUE)
+lee-mac.lsp:20:     (vlax-invoke block-object-1 'GETDYNAMICBLOCKPROPERTIES)
+lee-mac.lsp:27: ;; block-object-1 - [vla] VLA Dynamic Block Reference object
+lee-mac.lsp:39:                (strcase (vlax-get x 'PROPERTYNAME))
+lee-mac.lsp:56:     (vlax-invoke block-object-1 'GETDYNAMICBLOCKPROPERTIES)
+lee-mac.lsp:62:     (setq object (tblobjname "STYLE" style))
+lee-mac.lsp:108:                                 (_replace "\\\\" "\032" (_replace "\\$1$2$3" "(\\\\[ACcFfHLlOoPpQSTW])|({)|(})" str))
+letter.lsp:1: ;CONSECUTIVE LETTERING LISP
+letter.lsp:12:         (initget "C M R TL TC TR ML MC MR BL BC BR")
+lisputil.lsp:6: 	"\nCNM can no longer expose functions that have names without reserved safe prefixes like HAWS- and HCNM-. Something you invoked called the HAWSEDC legacy \""
+lisputil.lsp:10: 	"\"call and replace it with \"HAWS-"
+lisputil.lsp:18: ;;; Vintage HawsEDC Lisp library
+lisputil.lsp:22: ;;; the number matches a give wild card spec.  Requires EXTRACTX.
+lisputil.lsp:32: ;;; the number matches a give wild card spec.  Requires EXTRACTX.
+lisputil.lsp:50: ;;; The new standard HawsEDC error trapper in EDCLIB is called HAWS-CORE-INIT.
+lisputil.lsp:105: ;;; END ERROR HANDLER
+lisputil.lsp:109:     ((or (= (getvar "DIMANNO") 1) (= (getvar "DIMSCALE") 0)) (/ 1 (getvar "CANNOSCALEVALUE")))
+lisputil.lsp:110:     ((getvar "DIMSCALE"))
+lisputil.lsp:186: ;;; ----  GETANGLE WITH DEFAULT PROMPT  ------------------------------------------
+lisputil.lsp:193: ;;; ----  GETDIST WITH DEFAULT PROMPT  -------------------------------------------
+lisputil.lsp:250: ;;; ----  GETSTRING WITH DEFAULT PROMPT  -----------------------------------------
+lisputil.lsp:257: ;;; ----  GETINT WITH DEFAULT PROMPT  --------------------------------------------
+lisputil.lsp:263: ;;; ----  GETREAL WITH DEFAULT PROMPT  -------------------------------------------
+lisputil.lsp:269: ;;; ----  GETPOINT WITH DEFAULT PROMPT  ------------------------------------------
+lisputil.lsp:282: ;;;MKFLD sub-function makes a field string out of a string.
+lisputil.lsp:318: ;;; MKLAYR sub-function defines and makes current a layer for another routine.
+lisputil.lsp:336:       (if (= 'LIST (type (setq temp (read rdlin))))
+lisputil.lsp:347:       (prompt (strcat "\nSettings for \"" key "\" not found in LAYERS.DAT.  Using current layer."))
+lisputil.lsp:361:   (if (not (or (= laltyp "")(tblsearch "LTYPE" laltyp)))
+lisputil.lsp:364:   (while (not (or (= laltyp "")(tblsearch "LTYPE" laltyp)))
+lisputil.lsp:375:       ( (not (tblsearch "LTYPE" laltyp))
+lisputil.lsp:382:   (if(not(tblsearch "LAYER" laname))
+lisputil.lsp:418:       (cons 0  "TEXT")
+lisputil.lsp:423:       (assoc 41 (tblsearch "STYLE" (getvar"textstyle")))
+lisputil.lsp:425:       (cons 51 (cdr(assoc 50 (tblsearch "STYLE" (getvar"textstyle")))))
+lisputil.lsp:443:       (cons 0 "LINE")
+lisputil.lsp:447: (setq hawsedcexpdate 2452792);EXPIRES ON JUNE 1, 2003
+lisputil.lsp:521:       ( (= b "N") "NORTH")
+lisputil.lsp:522:       ( (= b "S") "SOUTH")
+lisputil.lsp:523:       ( (= b "E") "EAST")
+lisputil.lsp:524:       ( (= b "W") "WEST")
+lisputil.lsp:530: ;;; RTOSTA sub-function converts a real number to a base 100 road station.
+loadandrun.lsp:8:     "\nEnter AutoLISP file/function name: "))
+loadandrun.lsp:32:   ;  (princ(strcat "\nError: c:haws-" funcname " is not a valid AutoLISP function"))
+lx.lsp:2: ;;; This AutoLISP program lists a nested entity inside a XREF, BLOCK, or PLINE
+lx.lsp:54:          (c:hcnm-config-getvar "LXXListMode")
+lx.lsp:68:   (cond ((= (c:hcnm-config-getvar "LXXListMode") "yes") (haws-xlist-list)))
+lx.lsp:78:     "LXXListMode"
+lx.lsp:80:       ((= (c:hcnm-config-getvar "LXXListMode") "yes") "no")
+lx.lsp:102:     ((and input1 (= (type input1) 'PICKSET))
+lx.lsp:120:     ((and input1 (= (type input1) 'LIST))
+lx.lsp:132:              "BYBLOCK"
+lx.lsp:134:             ((= eclr "256") "BYLAYER")
+lx.lsp:137:           "BYLAYER"
+lx.lsp:144:               (tblsearch "LAYER" (setq lai (haws-dxf 8 el)))
+lx.lsp:170:                        (= "INSERT" (cdr (assoc 0 shelll)))
+lx.lsp:222:     "._LAYER"
+lx.lsp:223:     "_FILTER"
+lx.lsp:224:     "_DELETE"
+lx.lsp:225:     "HAWS-XLIST"
+lx.lsp:227:     "._LAYER"
+lx.lsp:228:     "_FILTER"
+lx.lsp:230:     "_GROUP"
+lx.lsp:233:     "HAWS-XLIST"
+lx.lsp:234:     "_EXIT"
+lx.lsp:236:     "LAYERPALETTE"
+lx.lsp:240:  ;|�Visual LISP� Format Options�
+lx.lsp:242: ;*** DO NOT add text below the comment! ***|
+m40.lsp:33:     (haws-mklayr "DRIVEWAYTX")
+m40.lsp:42:     (haws-mklayr "DRIVEWAY")
+m40.lsp:52:   (haws-mklayr "DRIVEWAY")
+m42.lsp:34:     (haws-mklayr "DRIVEWAYTX")
+m42.lsp:43:     (haws-mklayr "DRIVEWAY")
+m42.lsp:55:   (haws-mklayr "DRIVEWAY")
+mc2033.lsp:33:     (haws-mklayr "DRIVEWAYTX")
+mc2033.lsp:42:     (haws-mklayr "DRIVEWAY")
+mc2033.lsp:53:   (haws-mklayr "DRIVEWAY")
+mc2033.lsp:57:       (prompt "\nMCDOT 2033 driveway entrance.)
+mfillet.lsp:2: ;MFILLET.LSP--Multiple concentric fillet
+mfillet.lsp:35:     (if (wcmatch (cdr (assoc 0 (entget (car es1)))) "*POLY*")
+misc.lsp:1: ;;-------------------------EXTERNAL-------------------------
+misc.lsp:8: ;;-------------------------END EXTERNAL-------------------------
+moffset.lsp:2: ;MOFFSET.LSP--Multiple offsets to different layers.
+moffset.lsp:40:           (if (not(tblsearch"LAYER"layi))(vl-cmdf"._layer""_n"layi""))
+mrename.lsp:2: ;MULTIREN.LSP--Multiple Autocad rename
+mscript.lsp:11:   (setq temp "MSCRIPT.LSP version 1.22 by Thomas Gail Haws")
+mscript.lsp:45:     "\n\nMSCRIPT must have the following conditions to run trouble-free."
+mscript.lsp:98:               (findfile (strcat (getvar "DWGPREFIX") "mscript.lst"))
+mscript.lsp:120:          "\n(MSCRIPT will automatically use mscript.lst if present), "
+mscript.lsp:135:         ;;Add function to user's ACAD.PGP to shell and wait for attrib command to finish.
+mscript.lsp:151:                  ";The following line was added by HawsEDC Construction Notes Manager for file processing by Wildcard."
+mscript.lsp:351:         "MSCRIPT is now ready to process drawings, but must return to Single Drawing Interface (pre-2000) first."
+mscript.lsp:354:         "\nbefore letting MSCRIPT process drawings."
+mscript.lsp:357:        ) ;_ end of STRCAT
+mscript.lsp:358:     ) ;_ end of ALERT
+mscript.lsp:377: ) ;_ end of DEFUN
+mscript.lsp:379: ;|�Visual LISP� Format Options�
+mscript.lsp:381: ;*** DO NOT add text below the comment! ***|;
+mv.lsp:1: ;THIS ROUTINE SETS CURRENT LAYER TO DEFPOINTS AND CREATES A PAPER SPACE VIEWPORT
+mv.lsp:7:   (prompt "\nSelect corners:")(vl-cmdf "._MVIEW" pause pause)
+newang.lsp:2: ;;;NEWANG CHANGES ENTITY ORIENTATION TO MATCH A SELECTED ENTITY.
+newang.lsp:98:                   "LINE"
+newang.lsp:101:                (= metype "VERTEX")
+newang.lsp:102:                (= metype "TEXT")
+newang.lsp:103:                (= metype "MTEXT")
+newang.lsp:104:                (= metype "ATTDEF")
+newang.lsp:105:                (= metype "ATTRIB")
+newang.lsp:106:                (= metype "SHAPE")
+newang.lsp:107:                (= metype "INSERT")
+newang.lsp:128:        ((= metype "LINE")
+newang.lsp:147:            (angle '(0.0 0.0 0.0) (getvar "UCSXDIR"))
+newang.lsp:150:        ((= metype "VERTEX")
+newang.lsp:156:        ((or (= metype "TEXT")
+newang.lsp:157:             (= metype "SHAPE")
+newang.lsp:158:             (= metype "ATTDEF")
+newang.lsp:159:             (= metype "ATTRIB")
+newang.lsp:160:             (= metype "INSERT")
+newang.lsp:163:            (angle '(0.0 0.0 0.0) (getvar "UCSXDIR"))
+newang.lsp:195:             (or (= (setq etype (cdr (assoc 0 entlst))) "TEXT")
+newang.lsp:196:                 (= etype "ATTDEF")
+newang.lsp:197:                 (= etype "ATTRIB")
+newang.lsp:211:            ((= etype "LINE")
+newang.lsp:217:            ((or (= etype "INSERT")
+newang.lsp:218:                 (= etype "TEXT")
+newang.lsp:219:                 (= etype "ATTDEF")
+newang.lsp:220:                 (= etype "ATTRIB")
+newang.lsp:221:                 (= etype "SHAPE")
+newang.lsp:224:                (angle '(0.0 0.0 0.0) (getvar "UCSXDIR"))
+newang.lsp:227:            ((= etype "MTEXT")
+newang.lsp:230:            ((= etype "POLYLINE")
+newang.lsp:274:  ;|�Visual LISP� Format Options�
+newang.lsp:276: ;*** DO NOT add text below the comment! ***|
+newscale.lsp:2: ;GIVE A SELECTION SET OF ENTITIES A NEW SCALE ABOUT A USER SPECIFIED ENTITY POINT.
+newscale.lsp:10:             "\n\nAUTOCAD POINT CODES"
+newscale.lsp:23:             "\n\nAUTOCAD SCALE CODES"
+newscale.lsp:28:               "\nThis routine uses the SCALE command to scale each entity."
+num.lsp:1: ;CONSECUTIVE NUMBERING LISP
+num.lsp:2: ;MODIFIED 8/21/95 TO ADD JUSTIFICATION OPTION. Thomas Gail Haws
+num.lsp:9:         (initget "C M R TL TC TR ML MC MR BL BC BR")
+offsetx.lsp:2: ;Routine that works identical to the Autocad "OFFSET" command
+offsetx.lsp:11:   (princ (if (= (type qdofst) 'REAL) (rtos qdofst) "Through"))
+offsetx.lsp:15:   (setq clay (getvar "CLAYER"))
+offsetx.lsp:20:     (vl-cmdf ".OFFSET" qdofst pp pause "")
+pjl.lsp:14:     ((and (wcmatch et "ARC,LINE") (= (getvar "peditaccept") 0))
+pjl.lsp:21: ;|�Visual LISP� Format Options�
+pjl.lsp:23: ;*** DO NOT add text below the comment! ***|;
+polarset.lsp:4: ; (if (= (getvar "osmode") 0)(setvar "osmode" 8)); A running osnap not needed post ACAD 2000.  Bug fixed.
+presuf.lsp:11:     (cond ((wcmatch (cdr (assoc 0 (setq e (entget e)))) "*TEXT")
+profiles.lsp:1: ;;;PROFILES.LSP
+profiles.lsp:5: ;;;GETHVX is used in various profile routines to get vertical exaggeration.
+profiles.lsp:24:      ) ;_ end of GETREAL
+profiles.lsp:25:   ) ;_ end of SETQ
+profiles.lsp:29: ) ;_ end of DEFUN
+profiles.lsp:40:   ) ;_ end of SETQ
+profiles.lsp:58:   ) ;_ end of SETQ
+profiles.lsp:63:   ) ;_ end of SETQ
+profiles.lsp:71:      ) ;_ end of SETQ
+profiles.lsp:74:   ) ;_ end of COND
+profiles.lsp:76: ) ;_ end of DEFUN
+profiles.lsp:84:   (haws-mklayr "PSUP")
+profiles.lsp:109:   ) ;_ end of SETQ
+profiles.lsp:113:       '(0 . "ELLIPSE")
+profiles.lsp:124:       ) ;_ end of CONS
+profiles.lsp:143:   (if (/= "ELLIPSE" (cdr (assoc 0 (entget ellip1))))
+profiles.lsp:160:    ) ;_ end of COMMAND
+profiles.lsp:161:  ;_ end of COMMAND
+profiles.lsp:168: ) ;_ end of DEFUN
+profiles.lsp:188:   ) ;_ end of SETQ
+profiles.lsp:197:   ) ;_ end of SETQ
+profiles.lsp:199:     (haws-mklayr "PXCB")
+profiles.lsp:206: ) ;_ end of DEFUN
+profiles.lsp:221:   ) ;_ end of SETQ
+profiles.lsp:263:   ) ;_ end of COND
+profiles.lsp:276:      ) ;_ end of SETQ
+profiles.lsp:291:   ) ;_ end of COND
+profiles.lsp:292: ) ;_ end of DEFUN
+profiles.lsp:308:   ) ;_ end of SETQ
+profiles.lsp:310:     (haws-mklayr "PXMH")
+profiles.lsp:317: ) ;_ end of DEFUN
+profiles.lsp:336:   ) ;_ end of SETQ
+profiles.lsp:346:      ) ;_ end of SETQ
+profiles.lsp:361:   ) ;_ end of COND
+profiles.lsp:362: ) ;_ end of DEFUN
+profiles.lsp:381:     (haws-mklayr "PXEL")
+profiles.lsp:389:   ) ;_ end of SETQ
+profiles.lsp:405:   ) ;_ end of SETQ
+profiles.lsp:409:       '(0 . "ELLIPSE")
+profiles.lsp:420:       ) ;_ end of CONS
+profiles.lsp:428:         '(0 . "ELLIPSE")
+profiles.lsp:439:         ) ;_ end of CONS
+profiles.lsp:448: ) ;_ end of DEFUN
+profiles.lsp:472:        ) ;_ end of POLAR
+profiles.lsp:481:          ) ;_ end of POLAR
+profiles.lsp:484:        ) ;_ end of POLAR
+profiles.lsp:491:        "EXIST "
+profiles.lsp:502:           "TOP OF CURB "
+profiles.lsp:504:          ((= temp "GUtter") "GUTTER ")
+profiles.lsp:505:          ((= temp "Pavmt") "PVMT ")
+profiles.lsp:506:          ((= temp "Grnd") "GROUND ")
+profiles.lsp:507:        ) ;_ end of COND
+profiles.lsp:508:      ) ;_ end of STRCAT
+profiles.lsp:517:           "LEFT"
+profiles.lsp:519:          ((= temp "Right") "RIGHT")
+profiles.lsp:521:        ) ;_ end of COND
+profiles.lsp:522:      ) ;_ end of STRCAT
+profiles.lsp:523:   ) ;_ end of SETQ
+profiles.lsp:525:     (haws-mklayr "PXLDR")
+profiles.lsp:526:     (haws-mklayr "PLDR")
+profiles.lsp:545:   ) ;_ end of COND
+profiles.lsp:547: ) ;_ end of DEFUN
+profiles.lsp:555:   (haws-mklayr "PROSTRT")
+profiles.lsp:557:     prolaywc (strcat (car(haws-getlayr "PROPRE")) "*")
+profiles.lsp:560:   ) ;_ end of SETQ
+profiles.lsp:568: ) ;_ end of DEFUN
+profiles.lsp:592:   ) ;_ end of SETQ
+profiles.lsp:603:         ((= (substr rdlin 1 6) "COLWID")
+profiles.lsp:607:          (setq rdlin (strcat "COLWID " (itoa colwid)))
+profiles.lsp:609:         ((= (substr rdlin 1 6) "PRFPNT")
+profiles.lsp:639:             ) ;_ end of STRCAT
+profiles.lsp:640:          ) ;_ end of SETQ
+profiles.lsp:642:         ((wcmatch rdlin "REFPNT*,PRECIS*,HVEXAG*,PROTYP*")
+profiles.lsp:651:             ) ;_ end of STRCAT
+profiles.lsp:652:          ) ;_ end of SETQ
+profiles.lsp:654:       ) ;_ end of COND
+profiles.lsp:657:       ) ;_ end of WHILE
+profiles.lsp:659:     ) ;_ end of WHILE
+profiles.lsp:663:     ) ;_ end of SETQ
+profiles.lsp:667:   ) ;_ end of WHILE
+profiles.lsp:668: ) ;_ end of DEFUN
+profiles.lsp:697:                        (write-line (strcat "HVEXAG    " hvexag) f2)
+profiles.lsp:705:                        (write-line "NEWPRF" f2)
+profiles.lsp:726:               ) ;_ end of PROGN
+profiles.lsp:727:            ) ;_ end of SETQ
+profiles.lsp:734:            (write-line (strcat "HVEXAG    " hvexag) f2)
+profiles.lsp:742:            (write-line "NEWPRF" f2)
+profiles.lsp:746:       ) ;_ end of COND
+profiles.lsp:747:     ) ;_ end of WHILE
+profiles.lsp:748:   ) ;_ end of DEFUN
+profiles.lsp:749:   ;;Get the profile reference point to tie profile to ACAD coordinates
+profiles.lsp:759:     ) ;_ end of WHILE
+profiles.lsp:765:     ) ;_ end of SETQ
+profiles.lsp:769:           (mkfld "REFPNT" colwid)
+profiles.lsp:774:         ) ;_ end of STRCAT
+profiles.lsp:776:       ) ;_ end of WRITE-LINE
+profiles.lsp:778:   ) ;_ end of DEFUN
+profiles.lsp:784:        (setq laylin (haws-getlayr "PROXDIM"))
+profiles.lsp:786:       ((= proht -20000) (setq laylin (haws-getlayr "PRODIM")))
+profiles.lsp:788:        (setq laylin (haws-getlayr "PROXLINE"))
+profiles.lsp:790:       ((= proht -10000) (setq laylin (haws-getlayr "PROLINE")))
+profiles.lsp:792:        (haws-mklayr "PROPNT")
+profiles.lsp:793:        (setq laylin (haws-getlayr "PROXEL"))
+profiles.lsp:796:        (haws-mklayr "PROPNT")
+profiles.lsp:797:        (setq laylin (haws-getlayr "PROEL"))
+profiles.lsp:799:       ((and (>= proht 0) (wcmatch protyp "X*,MESA"))
+profiles.lsp:800:        (setq laylin (haws-getlayr "PROXSTRT"))
+profiles.lsp:802:       ((>= proht 0) (setq laylin (haws-getlayr "PROSTRT")))
+profiles.lsp:808:               (car (haws-getlayr "PROPRE"))
+profiles.lsp:809:               (car (setq laylin (haws-getlayr "PROEXMID")))
+profiles.lsp:814:           ) ;_ end of LIST
+profiles.lsp:815:        ) ;_ end of SETQ
+profiles.lsp:823:                (strcat (car (setq laylin (haws-getlayr "PROPRE"))) protyp)
+profiles.lsp:828:           ) ;_ end of COND
+profiles.lsp:829:        ) ;_ end of SETQ
+profiles.lsp:831:     ) ;_ end of COND
+profiles.lsp:834:        (haws-getlayr "PROTXSUF")
+profiles.lsp:836:        (haws-getlayr "PROXTXSUF")
+profiles.lsp:837:     ) ;_ end of SETQ
+profiles.lsp:846:       ) ;_ end of SETQ
+profiles.lsp:850:     (if (not (tblsearch "LAYER" (car laylin)))
+profiles.lsp:853:     (if (not (tblsearch "LAYER" (car laytx)))
+profiles.lsp:862:        (car (haws-getlayr "PROPRE"))
+profiles.lsp:864:        (car (haws-getlayr "PROTXSUF"))
+profiles.lsp:865:     ) ;_ end of SETQ
+profiles.lsp:866:   ) ;_ end of DEFUN
+profiles.lsp:875:     ) ;_ end of SETQ
+profiles.lsp:887:           (setq protyp "MESA")
+profiles.lsp:923:        ) ;_ end of COND
+profiles.lsp:924:     ) ;_ end of SETQ
+profiles.lsp:932:           "PROTYP    "
+profiles.lsp:941:             ) ;_ end of RTOS
+profiles.lsp:945:         ) ;_ end of STRCAT
+profiles.lsp:947:       ) ;_ end of WRITE-LINE
+profiles.lsp:950:   ) ;_ end of DEFUN
+profiles.lsp:960:            ) ;_ end of PROGN
+profiles.lsp:969:     ) ;_ end of WHILE
+profiles.lsp:971:   ) ;_ end of DEFUN
+profiles.lsp:984:     ) ;_ end of SETQ
+profiles.lsp:997:          ) ;_ end of COND
+profiles.lsp:998:     ) ;_ end of SETQ
+profiles.lsp:1012:                 "PRFPNT    "
+profiles.lsp:1037:                 ) ;_ end of COND
+profiles.lsp:1038:               ) ;_ end of STRCAT
+profiles.lsp:1040:             ) ;_ end of WRITE-LINE
+profiles.lsp:1044:         ) ;_ end of PROGN
+profiles.lsp:1052:     ) ;_ end of WHILE
+profiles.lsp:1053:   ) ;_ end of DEFUN
+profiles.lsp:1065:     ) ;_ end of SETQ
+profiles.lsp:1083:          ) ;_ end of SETQ
+profiles.lsp:1096:          ) ;_ end of SETQ
+profiles.lsp:1108:           ) ;_ end of COND
+profiles.lsp:1109:        ) ;_ end of SETQ
+profiles.lsp:1112:          (progn (setq f2 datfil) (write-line "COLWID 10" f2))
+profiles.lsp:1115:     ) ;_ end of COND
+profiles.lsp:1116:   ) ;_ end of DEFUN
+profiles.lsp:1127:     ) ;_ end of SETQ
+profiles.lsp:1134:       ) ;_ end of WHILE
+profiles.lsp:1142:           ) ;_ end of WHILE
+profiles.lsp:1154:         ) ;_ end of PROGN
+profiles.lsp:1157:     ) ;_ end of WHILE
+profiles.lsp:1160:   ) ;_ end of DEFUN
+profiles.lsp:1185:            ) ;_ end of SETQ
+profiles.lsp:1187:           ((= title "PRFPNT")
+profiles.lsp:1202:            ) ;_ end of SETQ
+profiles.lsp:1207:           ((= title "COLWID")
+profiles.lsp:1217:           ((= title "REFPNT")
+profiles.lsp:1243:            ) ;_ end of SETQ
+profiles.lsp:1248:           ((= title "HVEXAG")
+profiles.lsp:1254:           ((= title "PROTYP")
+profiles.lsp:1269:               ) ;_ end of COND
+profiles.lsp:1274:            ) ;_ end of SETQ
+profiles.lsp:1283:           ((= title "PRECIS")
+profiles.lsp:1295:            ) ;_ end of SETQ
+profiles.lsp:1297:           ((= title "NEWPRF")
+profiles.lsp:1305:         ) ;_ end of COND
+profiles.lsp:1310:       ) ;_ end of PROGN
+profiles.lsp:1313:   ) ;_ end of DEFUN
+profiles.lsp:1327:          ((and pltpt1a (wcmatch (strcase lbltxt) "* SHEET *,")))
+profiles.lsp:1328:        ) ;_ end of COND
+profiles.lsp:1337:        ) ;_ end of COND
+profiles.lsp:1355:          (/= protyp "MESA")
+profiles.lsp:1379:          ((wcmatch (strcase lbltxt) "*GRATE=*")
+profiles.lsp:1380:           (+ 0.67 (haws-atofx lbltxt "*GRATE=*" 0))
+profiles.lsp:1385:        ) ;_ end of COND
+profiles.lsp:1397:            ) ;_ end of COND
+profiles.lsp:1399:          ) ;_ end of LIST
+profiles.lsp:1403:              (wcmatch (strcase lbltxt) "*CB*,*INLET*,*BASIN*")
+profiles.lsp:1411:            ) ;_ end of COND
+profiles.lsp:1413:          ) ;_ end of LIST
+profiles.lsp:1425:            ) ;_ end of COND
+profiles.lsp:1427:          ) ;_ end of LIST
+profiles.lsp:1442:           ) ;_ end of POLAR
+profiles.lsp:1447:     ) ;_ end of COND
+profiles.lsp:1468:        ) ;_ end of FOREACH
+profiles.lsp:1472:          ((= protyp "MESA") "FL ")
+profiles.lsp:1486:        ) ;_ end of COND
+profiles.lsp:1489:     ) ;_ end of SETQ
+profiles.lsp:1510:             ) ;_ end of STRCAT
+profiles.lsp:1541:             ) ;_ end of COND
+profiles.lsp:1547:           ) ;_ end of POLAR
+profiles.lsp:1559:        ) ;_ end of SETQ
+profiles.lsp:1590:               ) ;_ end of POLAR
+profiles.lsp:1608:                 ) ;_ end of POLAR
+profiles.lsp:1611:               ) ;_ end of POLAR
+profiles.lsp:1613:             ) ;_ end of SSGET
+profiles.lsp:1614:          ) ;_ end of SETQ
+profiles.lsp:1624:             ) ;_ end of SSGET
+profiles.lsp:1625:          ) ;_ end of SETQ
+profiles.lsp:1640:            ) ;_ end of PROGN
+profiles.lsp:1656:             ) ;_ end of POLAR
+profiles.lsp:1657:          ) ;_ end of SETQ
+profiles.lsp:1658:        ) ;_ end of WHILE
+profiles.lsp:1677:           ) ;_ end of COND
+profiles.lsp:1697:                    ) ;_ end of COND
+profiles.lsp:1698:                  ) ;_ end of DISTANCE
+profiles.lsp:1701:             ) ;_ end of POLAR
+profiles.lsp:1712:        ) ;_ end of SETQ
+profiles.lsp:1714:     ) ;_ end of COND
+profiles.lsp:1739:             ) ;_ end of POLAR
+profiles.lsp:1756:             ) ;_ end of POLAR
+profiles.lsp:1761:          ) ;_ end of SETQ
+profiles.lsp:1767:               (polar txpt7 (/ pi 2) (* ts (+ 1 (* 2 lingap)))) ;_ end of POLAR
+profiles.lsp:1769:             ) ;_ end of SSGET
+profiles.lsp:1770:          ) ;_ end of SETQ
+profiles.lsp:1776:        ) ;_ end of WHILE
+profiles.lsp:1778:     ) ;_ end of COND
+profiles.lsp:1779:     ;;Set points for "MESA" profile.
+profiles.lsp:1781:       ((= protyp "MESA")
+profiles.lsp:1795:        ) ;_ end of SETQ
+profiles.lsp:1797:     ) ;_ end of COND
+profiles.lsp:1819:     ) ;_ end of COND
+profiles.lsp:1822:   ) ;_ end of DEFUN
+profiles.lsp:1828:       ((= protyp "MESA")
+profiles.lsp:1848:        ) ;_ end of COND
+profiles.lsp:1857:          ) ;_ end of HAWS-MKTEXT
+profiles.lsp:1858:        ) ;_ end of WHILE
+profiles.lsp:1870:             ) ;_ end of COND
+profiles.lsp:1876:        ) ;_ end of COND
+profiles.lsp:1881:             (wcmatch (strcase lbltxt) "*GC*,*G`.C`.*,*DE CHANGE*")
+profiles.lsp:1887:             (wcmatch (strcase lbltxt) "*GB*,*G`.C`.*,*DE BREAK*")
+profiles.lsp:1891:        ) ;_ end of COND
+profiles.lsp:1901:                (haws-mklayr "PROXMH")
+profiles.lsp:1902:                (haws-mklayr "PROMH")
+profiles.lsp:1908:                (haws-mklayr "PPROXCB")
+profiles.lsp:1909:                (haws-mklayr "PROCB")
+profiles.lsp:1922:           ) ;_ end of COND
+profiles.lsp:1924:        ) ;_ end of COND
+profiles.lsp:1926:     ) ;_ end of COND
+profiles.lsp:1927:   ) ;_ end of DEFUN
+profiles.lsp:1944:   ) ;_ end of DEFUN
+profiles.lsp:1952:          "Point circles are on DEFPOINTS layer. Will not plot."
+profiles.lsp:1957:            (cons 0 "CIRCLE")
+profiles.lsp:1972:        ) ;_ end of FOREACH
+profiles.lsp:1978:              ) ;_ end of COND
+profiles.lsp:2000:                      ) ;_ end of COND
+profiles.lsp:2006:           ) ;_ end of LIST
+profiles.lsp:2017:           ) ;_ end of POLAR
+profiles.lsp:2026:        ) ;_ end of SETQ
+profiles.lsp:2030:            '(0 . "ELLIPSE")
+profiles.lsp:2041:            ) ;_ end of CONS
+profiles.lsp:2049:              '(0 . "ELLIPSE")
+profiles.lsp:2060:              ) ;_ end of CONS
+profiles.lsp:2084:           ) ;_ end of WHILE
+profiles.lsp:2086:        ) ;_ end of COND
+profiles.lsp:2088:     ) ;_ end of COND
+profiles.lsp:2089:   ) ;_ end of DEFUN
+profiles.lsp:2096:     ) ;_ end of HAWS-MKLINE
+profiles.lsp:2115:        ) ;_ end of COMMAND
+profiles.lsp:2117:     ) ;_ end of COND
+profiles.lsp:2126:     ) ;_ end of COND
+profiles.lsp:2157:        ) ;_ end of SETQ
+profiles.lsp:2166:        ) ;_ end of SETQ
+profiles.lsp:2168:     ) ;_ end of COND
+profiles.lsp:2198:        ) ;_ end of STRCAT
+profiles.lsp:2199:     ) ;_ end of SETQ
+profiles.lsp:2210:               ((= protyp "WAT") "WATER")
+profiles.lsp:2211:               ((= protyp "SEW") "SEWER")
+profiles.lsp:2216:             ) ;_ end of COND
+profiles.lsp:2219:           ) ;_ end of STRCAT
+profiles.lsp:2220:        ) ;_ end of SETQ
+profiles.lsp:2234:              ) ;_ end of STRCAT
+profiles.lsp:2235:           ) ;_ end of SETQ
+profiles.lsp:2237:        ) ;_ end of COND
+profiles.lsp:2240:     ) ;_ end of COND
+profiles.lsp:2254:        ) ;_ end of POLAR
+profiles.lsp:2255:     ) ;_ end of SETQ
+profiles.lsp:2275:     ) ;_ end of COND
+profiles.lsp:2286:     ) ;_ end of HAWS-MKTEXT
+profiles.lsp:2288:   ) ;_ end of DEFUN
+profiles.lsp:2299:   ) ;_ end of SETQ
+profiles.lsp:2320:          (cdr (assoc 40 (tblsearch "STYLE" (getvar "textstyle"))))
+profiles.lsp:2327:       "TEST"
+profiles.lsp:2333:       "TEST"
+profiles.lsp:2381:               "PRFPNT    "
+profiles.lsp:2408:               ) ;_ end of COND
+profiles.lsp:2409:             ) ;_ end of STRCAT
+profiles.lsp:2411:           ) ;_ end of WRITE-LINE
+profiles.lsp:2415:       ) ;_ end of PROGN
+profiles.lsp:2423:   ) ;_ end of WHILE
+profiles.lsp:2431:   ) ;_ end of SETQ
+profiles.lsp:2437: ) ;_ end of DEFUN
+profiles.lsp:2439: ;;----------------------------LIST POINT----------------------------
+profiles.lsp:2449:   ) ;_ end of SETQ
+profiles.lsp:2450:   (prompt "\n           STATION = ")
+profiles.lsp:2452:   (prompt "  ELEVATION = ")
+profiles.lsp:2455: ) ;_ end of DEFUN
+profiles.lsp:2457: ;;ELLABEL labels elevations with reference to a known point.
+profiles.lsp:2468:          ) ;_ end of PROGN
+profiles.lsp:2479:        ) ;_ end of SETQ
+profiles.lsp:2489:        ) ;_ end of SETQ
+profiles.lsp:2492:     ) ;_ end of COND
+profiles.lsp:2493:   ) ;_ end of WHILE
+profiles.lsp:2494: ) ;_ end of DEFUN
+profiles.lsp:2502:          ) ;_ end of PROGN
+profiles.lsp:2504:   ) ;_ end of WHILE
+profiles.lsp:2511:      ) ;_ end of COND
+profiles.lsp:2518:      ) ;_ end of GETSTRING
+profiles.lsp:2578:      ) ;_ end of POLAR
+profiles.lsp:2579:   ) ;_ end of SETQ
+profiles.lsp:2610: ) ;_ end of DEFUN
+profiles.lsp:2630:     ) ;_ end of COND
+profiles.lsp:2631:   ) ;_ end of WHILE
+profiles.lsp:2635: ) ;_ end of DEFUN
+profiles.lsp:2637: ;;---------------------------STATION LABEL-------------------------
+profiles.lsp:2641:   (haws-mklayr "PSTALBL")
+profiles.lsp:2656:   ) ;_ end of SETQ
+profiles.lsp:2666:   ) ;_ end of WHILE
+profiles.lsp:2670: ) ;_ end of DEFUN
+profiles.lsp:2671: ;;---------------------------ELEVATION LABEL------------------------
+profiles.lsp:2678:   (haws-mklayr "PELEVLBL")
+profiles.lsp:2691:   ) ;_ end of SETQ
+profiles.lsp:2704:   ) ;_ end of WHILE
+profiles.lsp:2706: ) ;_ end of DEFUN
+profiles.lsp:2707: ;;--------------------------SLOPE CALCULATOR------------------------------
+profiles.lsp:2729:     ) ;_ end of SETQ
+profiles.lsp:2730:     (prompt "\nSLOPE = ")
+profiles.lsp:2733:   ) ;_ end of DEFUN
+profiles.lsp:2746:     ) ;_ end of SETQ
+profiles.lsp:2747:     (prompt "\nELEVATION AT STATION ")
+profiles.lsp:2751:   ) ;_ end of DEFUN
+profiles.lsp:2757:   ) ;_ end of COND
+profiles.lsp:2759: ) ;_ end of DEFUN
+profiles.lsp:2782: ) ;_ end of DEFUN
+purge.lsp:8:     ".PURGE"
+purge.lsp:21:               (/= "0" (cdr (assoc 2 y)))(/= "STANDARD" (cdr (assoc 2 y)))
+qdtext.lsp:1: ;QUICK DTEXT COMMANDS
+qdtext.lsp:28: ;END QUICK DTEXT
+rescale.lsp:2: ;SCALE A SELECTION SET OF ENTITIES ABOUT A USER SPECIFIED ENTITY POINT.
+rescale.lsp:11:             "\n\nAUTOCAD POINT CODES"
+romans.lsp:11:   (while (setq st (tblnext "STYLE" (not st)))
+romans.lsp:23:             (= sn "STANDARD")
+romans.lsp:28:                   (strcat "\nChange font file for "sn" to ROMANS.SHX?<No>: ")
+romans.lsp:32:         (vl-cmdf "._style" sn "ROMANS" "" "0.95" "" "" "" "")
+romans.lsp:34:   (setvar "textstyle" "ROMANS")
+round.lsp:9:         (cons 0  "TEXT")         ;Insertion entities (blocks, xrefs, etc.)
+sde.lsp:1: ;;--------------------------ONE LINERS-------------------------
+sde.lsp:3: (haws-core-init 100)(setvar "TILEMODE" 0)(princ))
+sde.lsp:5: (haws-core-init 101)(setvar "TILEMODE" 1)(princ))
+sde.lsp:7: (haws-core-init 102)(vl-cmdf "SNAPANG" 0 "SNAPANG")(princ))
+sde.lsp:9: (haws-core-init 103)(haws-vtog '("ATTDIA")))
+sde.lsp:11: (haws-core-init 104)(haws-vtog '("CMDECHO")))
+sde.lsp:13: (haws-core-init 105)(haws-vtog '("CMDDIA")))
+sde.lsp:15: (haws-core-init 106)(haws-vtog '("FILEDIA" "CMDDIA" "ATTDIA")))
+sde.lsp:17: (haws-core-init 107)(haws-vtog '("FILEDIA")))
+sde.lsp:19: (haws-core-init 108)(haws-vtog '("MENUBAR")))
+sde.lsp:21: (haws-core-init 109)(haws-vtog '("QTEXTmoDE")))
+sde.lsp:23: (haws-core-init 110)(vl-cmdf "SNAP""S""I" "" "SNAP""OF" "ISOPLANE" "L")(princ))
+sde.lsp:25: (haws-core-init 111)(vl-cmdf "SNAP""S""S" "" "SNAP""OF")(princ))
+sde.lsp:27: (haws-core-init 112)(vl-cmdf "SNAP""S""I" "" "SNAP""OF" "ISOPLANE" "R")(princ))
+sde.lsp:29: (haws-core-init 113)(vl-cmdf "SNAP""S""I" "" "SNAP""OF" "ISOPLANE" "T")(princ))
+sde.lsp:31: (haws-core-init 114)(setq eold (getvar "EXPERT"))(setvar "EXPERT" 5)(vl-cmdf "LINETYPE" "L" "*" "" "")(setvar "EXPERT" eold)(princ))
+sde.lsp:37: (haws-core-init 117)(vl-cmdf "OSNAP" "END")(princ))
+sde.lsp:39: (haws-core-init 118)(vl-cmdf "OSNAP" "INT")(princ))
+sde.lsp:41: (haws-core-init 119)(vl-cmdf "OSNAP" "MID")(princ))
+sde.lsp:43: (haws-core-init 120)(vl-cmdf "OSNAP" "NON")(princ))
+sde.lsp:45: (haws-core-init 121)(haws-vtog '("PSLTSCALE")))
+sde.lsp:47: (haws-core-init 122)(vl-cmdf "INSERT" "*PROTO" "0,0" "" "")(princ))
+sde.lsp:49: (haws-core-init 123)(vl-cmdf "INSERT" "*PROTOX" "0,0" "" "")(princ))
+sde.lsp:51: (haws-core-init 124)(haws-vtog '("REGENMODE")))
+sde.lsp:53: (haws-core-init 125)(haws-vtog '("UCSFOLLOW")))
+sde.lsp:55: (haws-core-init 126)(princ "\nType UF to toggle UCSFOLLOW")(princ))
+sde.lsp:57: (haws-core-init 127)(princ "\nType UF to toggle UCSFOLLOW")(princ))
+sde.lsp:59: (haws-core-init 128)(haws-vtog '("VISRETAIN")))
+sde.lsp:60: ;;--------------------------END ONE LINERS-------------------------
+setup.lsp:7: (haws-core-init 131)(alert "Please note that the SETDIM10 command has been changed to \"10\"")(c:haws-10))
+setup.lsp:9: (haws-core-init 132)(alert "Please note that the SETDIM12 command has been changed to \"12\"")(c:haws-12))
+setup.lsp:12:   (prompt "\nSETUP sets ltscale and the dimension variables dimasz, dimcen, dimdli, dimexe, dimexo, dimgap, dimscale, and dimtxt.")
+setup.lsp:34:   (prompt"\nEnter DIMSTY to set up dimension styles.")
+sheet.lsp:1: ;SHEET.LSP
+sheet.lsp:12: ;The block must have an attribute with the tag "SHTNO" and
+sheet.lsp:20:   (prompt "\nSHEET 1.1 by Thomas Gail Haws")
+sheet.lsp:23:     (prompt "\nCreating UCS PLAN based on plan view block for this drawing")
+sheet.lsp:29:       ( (setq plnblk (caar(haws-attfind "*" (list(list"SHTNO" shtnm))'("SHTNO") t)))
+sheet.lsp:47:     (haws-mklayr "SHTMVW")
+sheet.lsp:64:       ( (setq plnblk (caar(haws-attfind "*" (list(list"SHTNO" shtnm))'("SHTNO") t)))
+sheet.lsp:92:         ( (tblsearch "BLOCK" basei)
+sheet.lsp:113:       (= 1 (sslength(ssget "X" '((0 . "VIEWPORT")))))
+sheet.lsp:189:           (haws-attfind "blname" (list(list"CONTENT" "XX"))'("CONTENT") t)
+sideel.lsp:2: ;;; SIDEEL (SEL and SER)
+sideel.lsp:12: ;;; -(HAWS-MKLAYR layer_key_or_list) subroutine to make layer (included in HawsEDC edclib.lsp) or comment out (HAWS-MKLAYR) line.
+sideel.lsp:13: ;;; -(HAWS-MKTEXT j i h r s) subroutine to make a text entity.
+sideel.lsp:14: ;;; -(HAWS-ATOFX) subroutine to EXTRACT number from text.
+sideel.lsp:16: ;;; This is an open-source AutoLISP program by Thomas Gail Haws
+ssx.lsp:7: ;;;   THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT EXPRESS OR IMPLIED WARRANTY.
+ssx.lsp:8: ;;;   ALL IMPLIED WARRANTIES OF FITNESS FOR ANY PARTICULAR PURPOSE AND OF
+ssx.lsp:9: ;;;   MERCHANTABILITY ARE HEREBY DISCLAIMED.
+ssx.lsp:18: ;;; DESCRIPTION
+ssx.lsp:21: ;;;   "(SSX)" -  Easy SSGET filter routine.
+ssx.lsp:36: ;;;Select object/<None>: (RETURN)
+ssx.lsp:39: ;;;   Pressing RETURN at the initial prompt gives you a null selection
+ssx.lsp:44: ;;;Select object/<None>:  (a LINE selected)
+ssx.lsp:45: ;;;Filter: ((0 . "LINE") (8 . "0") (39 . 2.0) (62 . 1) (210 0.0 0.0 1.0))
+ssx.lsp:49: ;;;   option keyword, then pressing RETURN.
+ssx.lsp:51: ;;;>>Layer name to add/<RETURN to remove>: (RETURN)
+ssx.lsp:53: ;;;Filter: ((0 . "LINE") (39 . 2.0) (62 . 1) (210 0.0 0.0 1.0))
+ssx.lsp:95: ;;; INTERNAL ERROR HANDLER
+ssx.lsp:97: (defun ssx_er (s)                     ; If an error (such as CTRL-C) occurs
+ssx.lsp:119: ;;; or remove an item from the list by selecting it and pressing RETURN.
+ssx.lsp:145:         ((= t2  2)  (getstring "\n>>Block name to add/<RETURN to remove>: "))
+ssx.lsp:149:               "\n>>Color number to add/?/<RETURN to remove>: ")) "?")
+ssx.lsp:159:         ((= t2  0) (getstring "\n>>Entity type to add/<RETURN to remove>: "))
+ssx.lsp:160:         ((= t2  8) (getstring "\n>>Layer name to add/<RETURN to remove>: "))
+ssx.lsp:161:         ((= t2  6) (getstring "\n>>Linetype name to add/<RETURN to remove>: "))
+ssx.lsp:163:           (getstring "\n>>Text style name to add/<RETURN to remove>: ")
+ssx.lsp:165:         ((= t2 39)  (getreal   "\n>>Thickness to add/<RETURN to remove>: "))
+ssx.lsp:168:           (getpoint  "\n>>Extrusion Vector to add/<RETURN to remove>: ")
+ssx.lsp:170:         ((= t2  1) (getstring 1 "\n>>Text string to add/<RETURN to remove>: "))
+ssx.lsp:210:   (princ "\n                       0        |      <BYBLOCK>     ")
+ssx.lsp:219:   (princ "\n                      256       |      <BYLAYER>     ")
+ssxpro.lsp:15:               "\n(0 . \"LINE\")                    Object type (a string)"
+ssxpro.lsp:22:               "\n\nUSE THE EG OR EGN COMMAND TO LIST ALL THE GROUP CODES FOR ANY ENTITY."
+ssxpro.lsp:23:               "\n\nUse SSXPRO to create a selection set with particular"
+stacl.lsp:1: ;;;STACL.LSP--Thomas Gail Haws  March 1996
+stacl.lsp:18:   (prompt"     STACL.LSP--Adds numbered station ticks to a polyline centerline")
+stacl.lsp:26:     style0 (= 0 (cdr (assoc 40 (tblsearch "STYLE" (getvar "textstyle")))))
+stacl.lsp:37: ;Define "STACL" block for use with measure command
+stacl.lsp:62:     ( (= (cdr (assoc 0 (entget workcl))) "POLYLINE")
+stacl.lsp:63:       (while (/= (cdr (assoc 0 (entget wclend))) "SEQEND")
+stacl.lsp:84:     (if (= (cdr (assoc 0 (entget workcl))) "POLYLINE") cl1 workcl)
+stacl.lsp:93:     (if (= (cdr (assoc 0 (entget enext))) "INSERT")(vl-cmdf "._explode" enext))
+stacl.lsp:97:     (if (= (cdr (assoc 0 (entget enext))) "TEXT")
+stdim.lsp:20:     ( (= *haws-dimlay* "Xdim")(haws-mklayr "XDIM"))
+stdim.lsp:23:   (prompt"\nTip: Type DIMSTY to load dimension styles, then select STREET style before using DM.")
+stdim12.lsp:6:   (princ "\nDM just set the following dimension variables:\nDIMSE1  1\nDIMSE2  1\nDIMSOXD 1\nDIMTAD  1\nDIMTIH  0\nDIMTIX  1\nDIMTOFL 1")
+stdim12.lsp:21:     ( (= dimlay "Xdim")(haws-mklayr "XDIM"))
+stdim12.lsp:41:     "\nIf dim is short and you want arrows back, use DIMSOXD 0 to allow arrows outside."
+swap.lsp:1: ;SWAP TWO THINGS
+tap.lsp:12:   (princ "\nStarting SEWTAP using current chamfer distances:  ")
+tap.lsp:18:     (haws-mklayr "SEWTAP")
+tap.lsp:32:     (haws-mklayr "SEWTAPTX")
+textsize.lsp:5: ;TEXTSIZE.LSP
+textsize.lsp:8:   (setq ss1 (ssget '((0 . "TEXT"))))
+to.lsp:1: ;TO REMOVES ALL UNDERLINING AND OVERLINING AND
+to.lsp:2: ;COMPLETELY OVERLINES THE TEXT IN A SELECTION SET.
+to.lsp:6:   (prompt "\nText to overline/<RETURN to overline an attribute>:")
+to.lsp:7:   (setq sset (ssget '((0 . "*TEXT"))))
+tu.lsp:1: ;TO REMOVES ALL UNDERLINING AND OVERLINING AND
+tu.lsp:2: ;COMPLETELY UNDERLINES THE TEXT IN A SELECTION SET.
+tu.lsp:6:   (prompt "\nText to completely underline/<RETURN to underline an attribute>:")
+tu.lsp:7:   (setq sset (ssget '((0 . "*TEXT"))))
+tw.lsp:8:   (haws-vsave '("AUNITS"))
+tw.lsp:10:   (vl-cmdf "._UCS" "_WORLD")
+tw.lsp:12:   (setvar"AUNITS"3)
+tw.lsp:13:   (vl-cmdf "._DVIEW" "" "_TWIST" (* -1 twist) "")
+tw.lsp:14:   (vl-cmdf "._UCS" "_PREVIOUS")
+txtsum.lsp:9:         (cons 0  "*TEXT")        ;Insertion entities (blocks, xrefs, etc.)
+txtsum.lsp:34:   (if txpt(haws-mktext "m" txpt nil 0 (strcat (rtos sum) " TOTAL")))
+usersamp.lsp:9: ;(if s::startup (setq s::STARTUP (append s::STARTUP '((purge"all"))))
+ut.lsp:1: ;;; UTILITY LINES
+ut.lsp:26:   ;; Draw centerline using PLINE command
+ut.lsp:38:         (if (= (type pt2) 'LIST)
+ut.lsp:104:        (if (= (cdr (assoc 0 (entget enext))) "INSERT")
+ut.lsp:111:          ((= (cdr (assoc 0 (setq elnext (entget enext)))) "TEXT")
+ut.lsp:202:           ((= (haws-ut-getvar "Key") "ELEC") "E")
+ut.lsp:204:           ((= (haws-ut-getvar "Key") "CATV") "TV")
+ut.lsp:275:        (not (tblsearch "BLOCK" block-name))
+ut.lsp:308:  ;|�Visual LISP� Format Options�
+ut.lsp:310: ;*** DO NOT add text below the comment! ***|;
+vz.lsp:1: ;;--------------------------ONE LINERS-------------------------
+vz.lsp:3: (haws-core-init 140)(vl-cmdf "'ZOOM" ".2X")(princ))
+vz.lsp:5: (haws-core-init 141)(vl-cmdf "'ZOOM" ".5X")(princ))
+vz.lsp:7: (haws-core-init 142)(vl-cmdf "'ZOOM" ".9X")(princ))
+vz.lsp:11: (haws-core-init 144)(vl-cmdf "'ZOOM" "2X")(princ))
+vz.lsp:13: (haws-core-init 145)(vl-cmdf "'ZOOM" "W")(princ))
+vz.lsp:15: (haws-core-init 146)(vl-cmdf "'ZOOM" "W" "0,0" "36,24")(princ))
+vz.lsp:17: (haws-core-init 147)(vl-cmdf "'ZOOM" "A")(princ))
+vz.lsp:19: (haws-core-init 148)(vl-cmdf "'ZOOM" "E")(princ))
+vz.lsp:21: (haws-core-init 149)(vl-cmdf "'ZOOM" "1.5X")(princ))
+vz.lsp:23: (haws-core-init 150)(vl-cmdf "'ZOOM" "0.5X")(princ))
+vz.lsp:25: (haws-core-init 151)(vl-cmdf "'ZOOM" "V")(princ))
+vz.lsp:27: (haws-core-init 152)(vl-cmdf "'ZOOM" "P")(princ))
+vz.lsp:28: ;;--------------------------END ONE LINERS-------------------------
+wall.lsp:1: ;BLOCK WALLS
+wall.lsp:8:   (if(not (tblsearch "LTYPE" "utilpl"))
+wall.lsp:17:   (setq wlaypl (car(haws-mklayr (if wexist "WALLXPL" "WALLPL"))))
+wall.lsp:18:   (setq wlayer (car(haws-mklayr (if wexist "WALLXEDGE" "WALLEDGE"))))
+wall.lsp:26:     (if (and (= (type pt3) 'LIST)(not pt4))(setq pt4 pt3))
+wall.lsp:35:     (if (= (type pt3) 'LIST)(setq pt2 pt3))
+wl.lsp:6:     lalst (tblsearch "LAYER" (setq la (haws-dxf 8 e)))
+wl.lsp:7:     lt (if(haws-dxf 6 e)(haws-dxf 6 e)"BYLAYER")
+wl.lsp:9:     clr (if(haws-dxf 62 e)(rtos(abs(haws-dxf 62 e))2 0) "BYLAYER")
+xroffset.lsp:1: ;;;XROFFSET
+xroffset.lsp:62: 			(princ (strcat (rtos (car pt2)) "," (rtos (cadr pt2)) "  ._erase !xroen  (setq *HAWS-xrosetupdone* T) haws-xroffset ") f1)

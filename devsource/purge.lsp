@@ -1,9 +1,9 @@
-;Contributed by Craig Hendricks
+﻿;Contributed by Craig Hendricks
 ;Modified by Thomas Gail Haws
-(DEFUN c:haws-PALL ()
-(haws-core-init 293)(HAWS-purge"ALL")(PRINC))
+(defun c:haws-pall ()
+(haws-core-init 293)(haws-purge"ALL")(princ))
 
-(defun HAWS-purge (a)
+(defun haws-purge (a)
   (vl-cmdf
     ".PURGE"
     (cond

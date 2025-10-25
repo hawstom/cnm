@@ -1,6 +1,6 @@
-;;--------------------------ONE LINERS-------------------------
-(DEFUN c:haws-EG ()
+﻿;;--------------------------ONE LINERS-------------------------
+(defun c:haws-eg ()
 (haws-core-init 47) (princ(entget (car (entsel)))))
-(DEFUN c:haws-EGN ()
+(defun c:haws-egn ()
 (haws-core-init 48) (princ(entget (car (nentsel)))))
 ;;--------------------------END ONE LINERS-------------------------

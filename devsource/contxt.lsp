@@ -1,10 +1,10 @@
-;Written by Thomas Gail Haws
+﻿;Written by Thomas Gail Haws
 (defun c:haws-contxt (/ txtht txtstr inspt rot)
   (haws-core-init 212)
-  (HAWS-VSAVE '("cmdecho"))
+  (haws-vsave '("cmdecho"))
   (setq txtstr (getstring "\nContour text:"))
-  (HAWS-MKLAYR "CONTLBL")
+  (haws-mklayr "CONTLBL")
   (setq inspt (getpoint "\nMiddle point:") rot (getangle inspt " Rotation: "))
-  (HAWS-MKTEXT "m" inspt nil rot txtstr)
-  (HAWS-VRSTOR)(haws-core-restore)(princ)
+  (haws-mktext "m" inspt nil rot txtstr)
+  (haws-vrstor)(haws-core-restore)(princ)
 )

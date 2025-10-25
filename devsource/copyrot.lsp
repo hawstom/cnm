@@ -1,55 +1,55 @@
-;;;COPY AND ROTATE AN OBJECT
-(DEFUN C:HAWS-COPYROT ()
-(haws-core-init 11) (HAWS-COPYROT NIL))
-(DEFUN C:HAWS-COPYROTDRAG ()
-(haws-core-init 12) (HAWS-COPYROT T))
-(DEFUN HAWS-COPYROT (DRAG-MODE-P / EN-I EN-LAST INPUT1 PT-BASE ANG-REF ANG-ROT SS1)
-  (SETQ SS1 (SSGET))
-  (COND (SS1 (SETQ PT-BASE (GETPOINT "\nSpecify base point: "))))
-  (COND
-    (PT-BASE
-     (SETQ ANG-REF (GETANGLE PT-BASE "\nSpecify reference angle: "))
+ï»¿;;;COPY AND ROTATE AN OBJECT
+(defun c:haws-copyrot ()
+(haws-core-init 11) (haws-copyrot nil))
+(defun c:haws-copyrotdrag ()
+(haws-core-init 12) (haws-copyrot t))
+(defun haws-copyrot (drag-mode-p / en-i en-last input1 pt-base ang-ref ang-rot ss1)
+  (setq ss1 (ssget))
+  (cond (ss1 (setq pt-base (getpoint "\nSpecify base point: "))))
+  (cond
+    (pt-base
+     (setq ang-ref (getangle pt-base "\nSpecify reference angle: "))
     )
   )
-  (COND
-    (ANG-REF
+  (cond
+    (ang-ref
      (vl-cmdf "._undo" "_g")
-     (WHILE
-       (COND
-         (DRAG-MODE-P
-          (INITGET "eXit")
-          (SETQ INPUT1 (GETKWORD "\n[eXit] <continue>: "))
-          (NOT INPUT1)
+     (while
+       (cond
+         (drag-mode-p
+          (initget "eXit")
+          (setq input1 (getkword "\n[eXit] <continue>: "))
+          (not input1)
          )
-         (T (SETQ ANG-ROT (GETANGLE PT-BASE "\nSpecify rotation angle: ")))
+         (t (setq ang-rot (getangle pt-base "\nSpecify rotation angle: ")))
        )
-       (SETQ
-         EN-I (ENTLAST)
-         SS2  (SSADD)
+       (setq
+         en-i (entlast)
+         ss2  (ssadd)
        )
-       (vl-cmdf "._copy" SS1 "" "0,0" "0,0")
-       (WHILE (SETQ EN-I (ENTNEXT EN-I))
-         (SETQ SS2 (SSADD EN-I SS2))
+       (vl-cmdf "._copy" ss1 "" "0,0" "0,0")
+       (while (setq en-i (entnext en-i))
+         (setq ss2 (ssadd en-i ss2))
        )
        (vl-cmdf
          "._rotate"
-         SS2
+         ss2
          ""
-         PT-BASE
+         pt-base
          "_r"
-         PT-BASE
-         (POLAR PT-BASE ANG-REF 1)
-         (COND (DRAG-MODE-P PAUSE)((POLAR PT-BASE ANG-ROT 1)))
+         pt-base
+         (polar pt-base ang-ref 1)
+         (cond (drag-mode-p pause)((polar pt-base ang-rot 1)))
        )
      )
     )
   )
   (vl-cmdf "._undo" "_e")
-  (PRINC)
+  (princ)
 )
- ;|«Visual LISP© Format Options»
-(72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)
+ ;|ï¿½Visual LISPï¿½ Format Optionsï¿½
+(72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil t)
 ;*** DO NOT add text below the comment! ***|;
- ;|«Visual LISP© Format Options»
-(72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil T)
+ ;|ï¿½Visual LISPï¿½ Format Optionsï¿½
+(72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil t)
 ;*** DO NOT add text below the comment! ***|;

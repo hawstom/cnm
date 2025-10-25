@@ -1,7 +1,7 @@
-;(C) Copyright 1997 by Thomas Gail Haws
-(defun c:haws-TAP (/ ANG1 LEFT MAINLN OSUSER STUBPT TAPLIN TMPSEW TS)
+﻿;(C) Copyright 1997 by Thomas Gail Haws
+(defun c:haws-tap (/ ang1 left mainln osuser stubpt taplin tmpsew ts)
   (haws-core-init 312)
-  (HAWS-VSAVE '("osmode" "clayer"))
+  (haws-vsave '("osmode" "clayer"))
   (setq
     osuser (getvar "osmode")
     ts (haws-text-height-model)
@@ -15,7 +15,7 @@
   (princ "\nUse the chamfer command to change.")
   ;;;Put sewer taps on    sewtap layer,33 color.
   (while (setq stubpt (getpoint "\nEnd of sewer tap (Return to quit):"))
-    (HAWS-MKLAYR "SEWTAP")
+    (haws-mklayr "SEWTAP")
     (setq mainln (entsel "\nSewer main downstream of connection point:"))
     (vl-cmdf "._line" stubpt "_perp")
     (vl-cmdf (cadr mainln))
@@ -29,8 +29,8 @@
     (vl-cmdf "._chamfer" (list taplin stubpt) (list tmpsew (cadr mainln)))
     (vl-cmdf "._erase" tmpsew "")
     (setvar "osmode" osuser)
-    (HAWS-MKLAYR "SEWTAPTX")
-    (HAWS-MKTEXT
+    (haws-mklayr "SEWTAPTX")
+    (haws-mktext
       (if left "MR" "ML")
       (polar stubpt ang1 ts)
       nil
@@ -39,6 +39,6 @@
     )
   )
   (vl-cmdf "._redraw")
-  (HAWS-VRSTOR)(haws-core-restore)
+  (haws-vrstor)(haws-core-restore)
   (princ)
 )

@@ -1,4 +1,4 @@
-;;;   ssx.lsp
+﻿;;;   ssx.lsp
 ;;;   Copyright (C) 1990 by Autodesk, Inc.
 ;;;
 ;;;   Permission to use, copy, modify, and distribute this software and its
@@ -137,7 +137,7 @@
         ((eq t1 "LType")      6)   ((eq t1 "Style")      7)
         ((eq t1 "Thickness") 39)   ((eq t1 "Flag" )     66)
         ((eq t1 "Vector")   210)   ((eq t1 "STRing")     1)
-        (T t1)
+        (t t1)
       )
     )
     (setq t3
@@ -151,7 +151,7 @@
               (ssx_pc)                ; Print color values.
               nil
             )
-            (T
+            (t
               t3                      ; Return t3.
             )
           )
@@ -168,7 +168,7 @@
           (getpoint  "\n>>Extrusion Vector to add/<RETURN to remove>: ")
         )
         ((= t2  1) (getstring 1 "\n>>Text string to add/<RETURN to remove>: "))
-        (T          nil)
+        (t          nil)
       )
     )
     (cond
@@ -184,7 +184,7 @@
       ((and t3 (/= t3 ""))
         (setq f1 (cons (cons t2 t3) f1))
       )
-      (T nil)
+      (t nil)
     )
   )
   (if f1 (setq f2 (ssget "x" f1)))

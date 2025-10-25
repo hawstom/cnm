@@ -1,15 +1,15 @@
-;(C) Copyright 1998 by Thomas Gail Haws
+﻿;(C) Copyright 1998 by Thomas Gail Haws
 (defun c:haws-tapinv ( /  dmain dtap emain invmh invtap invtxt mh
   tapptf tapptn)
-  (defun HAWS-tiset ()
-    (HAWS-VSAVE '("luprec"))
+  (defun haws-tiset ()
+    (haws-vsave '("luprec"))
     (setvar "luprec" 5)
     (setq  ;Set four global variables
-      timdia (HAWS-GETINTX "\nMain diameter in inches" timdia 8)
-      tismain (HAWS-GETREALX "\nSlope of main sewer line up from manhole" tismain 0.0033)
-      tishc (HAWS-GETREALX "\nSlope of house connection up from main line crown" tishc 0.0104)
+      timdia (haws-getintx "\nMain diameter in inches" timdia 8)
+      tismain (haws-getrealx "\nSlope of main sewer line up from manhole" tismain 0.0033)
+      tishc (haws-getrealx "\nSlope of house connection up from main line crown" tishc 0.0104)
     )
-    (HAWS-VRSTOR)
+    (haws-vrstor)
     timdia
   )
   (haws-core-init 313)
@@ -26,11 +26,11 @@
             (=(setq mh(getpoint"\nSelect downstream manhole or [Setup]: "))"Setup")
           )
         )
-        (HAWS-tiset)
+        (haws-tiset)
       )
       ( mh
         (setq
-          invmh (HAWS-GETREALX "\nInvert of mainline at downstream manhole" tiinvmh 0.0)
+          invmh (haws-getrealx "\nInvert of mainline at downstream manhole" tiinvmh 0.0)
           emain (entsel "\nSewer main line: ")
         )
         (setvar "osmode" 1)
@@ -52,7 +52,7 @@
           )
         )
       )
-      ( T nil)
+      ( t nil)
     )
   )
   (haws-core-restore)

@@ -1,4 +1,4 @@
-;Written by Thomas Gail Haws
+﻿;Written by Thomas Gail Haws
 (defun c:haws-pipe (/ p1 p2 p3 p4 d1 d2 a1)
   (haws-core-init 270)
   (setq p1 (getpoint "\nPipe centerline start point: ")

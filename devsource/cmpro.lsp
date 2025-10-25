@@ -1,4 +1,4 @@
-;(C) Copyright 1997 by Thomas Gail Haws
+﻿;(C) Copyright 1997 by Thomas Gail Haws
 ;CHANGE ANY GROUP CODE OF A SELECTION SET OF ENTITIES TO MATCH SELECTED ENTITY.
 (defun c:haws-cmpro ( / group mg me sset sslen ent ed eg)
   (haws-core-init 177)

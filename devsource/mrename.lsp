@@ -1,17 +1,17 @@
-;(C) Copyright 1997 by Thomas Gail Haws
+﻿;(C) Copyright 1997 by Thomas Gail Haws
 ;MULTIREN.LSP--Multiple Autocad rename
 ;Thomas Gail Haws, Feb. 1996
 (defun c:haws-mren ()
 (haws-core-init 261)(c:haws-mrename))
 (defun c:haws-mrename ( / opt entry)
   (haws-core-init 262)
-  (setq opt (HAWS-mren_opt) entry nil)
+  (setq opt (haws-mren_opt) entry nil)
   (while (setq entry (tblnext (car opt) (not entry)))
     (setq entry (cdr (assoc 2 entry)))
-    (HAWS-mren_chg opt entry)
+    (haws-mren_chg opt entry)
 ) )
 
-(defun HAWS-mren_opt ( / entset incexc remove add addlen)
+(defun haws-mren_opt ( / entset incexc remove add addlen)
   (initget 1 "Block Dimstyle LAyer LType Style Ucs VIew VPort")
   (setq rntype(getkword "\nBlock/Dimstyle/LAyer/LType/Style/Ucs/VIew/VPort?:"))
   (initget 1 "Allqxz Select")
@@ -36,7 +36,7 @@
   (list (strcase rntype) entset incexc remove add addlen)
 )
 
-(defun HAWS-mren_chg (opt entry / entold)
+(defun haws-mren_chg (opt entry / entold)
   (setq
     entold entry rntype (car opt) entset (cadr opt) incexc (caddr opt)
     remove (cadddr opt) add (nth 4 opt)
@@ -45,10 +45,10 @@
   (if
     (and
       (/= "0" entry)
-      (if (= incexc "Exclude") (wcmatch entry (strcat "~" entset)) T)
+      (if (= incexc "Exclude") (wcmatch entry (strcat "~" entset)) t)
       (or
         (= entset "Allqxz")
-        (if (= incexc "Include") (wcmatch entry entset) T)
+        (if (= incexc "Include") (wcmatch entry entset) t)
       )
     )
     (progn

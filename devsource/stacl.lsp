@@ -1,4 +1,4 @@
-;;;STACL.LSP--Thomas Gail Haws  March 1996
+﻿;;;STACL.LSP--Thomas Gail Haws  March 1996
 ;;;(C) Copyright 1997 by Thomas Gail Haws
 ;;; 2007-08-17 Fixed the pline that was being left at end.
 (defun c:haws-stacl ( / ds style0 txht blpt1 blpt2 inspt ststa meas1 cl strtpt
@@ -7,7 +7,7 @@
 ;Set layer, error trapper, undo group, etc.
 
   (haws-core-init 309)
-  (if HAWS-VSAVE (HAWS-VSAVE '("clayer" "osmode" "expert")))
+  (if haws-vsave (haws-vsave '("clayer" "osmode" "expert")))
   (vl-cmdf "._undo" "_group")
   (vl-cmdf "._layer" "_n" "sta" "_t" "sta" "_s" "sta" "_c" 1 "" "")
   (setvar "osmode" 0)
@@ -22,7 +22,7 @@
   (prompt"\n\nCurrent style will be used for text.")
   (prompt"\n\nDimscale and dimtxt will be used to scale text.")
   (setq
-    ds (HAWS-DWGSCALE)
+    ds (haws-dwgscale)
     style0 (= 0 (cdr (assoc 40 (tblsearch "STYLE" (getvar "textstyle")))))
     txht (* ds (getvar "dimtxt"))
     blpt1 (list 0 (* -0.5 txht) 0)  blpt2 (list 0 (* 0.5 txht) 0)
@@ -103,6 +103,6 @@
         (setq count (1+ count))
   ) ) )
   (vl-cmdf "._erase" cl1 cl2  circ1 "" "._undo" "_end" "._redraw")
-  (haws-core-restore)(HAWS-VRSTOR)
+  (haws-core-restore)(haws-vrstor)
   (princ)
 )

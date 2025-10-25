@@ -1,6 +1,6 @@
-;(C) Copyright 1997 by Thomas Gail Haws
-(DEFUN c:haws-txtsum
-  ( / ss1 i sum enamei blname ELISTI TS TXPT)
+﻿;(C) Copyright 1997 by Thomas Gail Haws
+(defun c:haws-txtsum
+  ( / ss1 i sum enamei blname elisti ts txpt)
 (haws-core-init 319)
   (setq
     ss1
@@ -29,9 +29,9 @@
   (princ sum)
   (setq
     txpt (getpoint "\nMiddle point for text:")
-    ts (* (HAWS-DWGSCALE)(getvar "dimtxt"))
+    ts (* (haws-dwgscale)(getvar "dimtxt"))
   )
-  (if txpt(HAWS-MKTEXT "m" txpt nil 0 (strcat (rtos sum) " TOTAL")))
+  (if txpt(haws-mktext "m" txpt nil 0 (strcat (rtos sum) " TOTAL")))
   (princ)
 )
 

@@ -1,4 +1,4 @@
-;(C) Copyright 2001 by Thomas Gail Haws
+﻿;(C) Copyright 2001 by Thomas Gail Haws
 ;                          |<------------dwwid->|
 ;                          |                    |
 ;              7------------6--------------------14------------15             ----
@@ -18,7 +18,7 @@
   dwmid dwdep incang left osmold pt1 pt2 pt3 pt4 pt5 pt6 pt7 pt8
   pt9 pt10 pt11 pt12 pt13 pt14 pt15 pt16 ts rad wngang)
 (haws-core-init 87)
-  (defun HAWS-drawmc2033 ()
+  (defun haws-drawmc2033 ()
     (setvar "osmode" 0)
     (vl-cmdf "._line" pt1  pt6  "")
     (vl-cmdf "._line" pt1  pt5  "")
@@ -30,27 +30,27 @@
     (vl-cmdf "._line" pt10 pt13 "")
     (vl-cmdf "._line" pt11 pt16 "")
     (vl-cmdf "._line" pt16 pt15 "")
-    (HAWS-MKLAYR "DRIVEWAYTX")
+    (haws-mklayr "DRIVEWAYTX")
     (vl-cmdf "._line" cl1  cl2 "")
-    (HAWS-MKTEXT
+    (haws-mktext
       (if left "MR" "ML")
       cl3
       ts
       (if left (+ ang1 pi) ang1)
       "DW"
     )
-    (HAWS-MKLAYR "DRIVEWAY")
+    (haws-mklayr "DRIVEWAY")
   )
-  (HAWS-VSAVE '("clayer"))
+  (haws-vsave '("clayer"))
   (setq
     osmold (getvar "osmode")
     hcdep (if hcdep hcdep 3.0)
     dwwid(if dwwid dwwid 20.0)
     swwid (if swwid swwid 4.0)
     totdep (if totdep totdep (+ (max swwid 5.0) hcdep))
-    ts (* (HAWS-DWGSCALE)(getvar"dimtxt"))
+    ts (* (haws-dwgscale)(getvar"dimtxt"))
   )
-  (HAWS-MKLAYR "DRIVEWAY")
+  (haws-mklayr "DRIVEWAY")
   (while
     (progn
       (initget "Hc Total Dw Sw ")
@@ -106,13 +106,13 @@
           pt15 (polar bccen ang8 (+ rad dwdep hcdep))
           pt16 (polar bccen ang9 (+ rad swwid))
         )
-        (HAWS-drawmc2033)
+        (haws-drawmc2033)
         (vl-cmdf "._arc" pt13 "e" pt5 "r" (+ rad dwdep))
         (vl-cmdf "._arc" pt15 "e" pt7 "r" (+ rad dwdep hcdep))
         (setvar "osmode" osmold)
         (vl-cmdf "._undo" "e")
       )
-      ( T
+      ( t
         (vl-cmdf "._undo" "g")
         (setvar "osmode" 128)
         (setq
@@ -142,12 +142,12 @@
           pt16 (polar pt11  ang1 swwid)
           dwwid (* dwwid 2)
         )
-        (HAWS-drawmc2033)
+        (haws-drawmc2033)
         (vl-cmdf "._line" pt5 pt13 "")
         (vl-cmdf "._line" pt7 pt15 "")
         (setvar "osmode" osmold)
         (vl-cmdf "._undo" "e")
       )
   ) )
-  (HAWS-VRSTOR)(haws-core-restore)
+  (haws-vrstor)(haws-core-restore)
 )

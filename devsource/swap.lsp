@@ -1,4 +1,4 @@
-;SWAP TWO THINGS
+﻿;SWAP TWO THINGS
 (defun c:haws-swap (/ p ss2 pt1 pt2)
 (haws-core-init 138)
   (princ "\nFirst swap-set ")

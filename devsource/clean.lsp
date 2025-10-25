@@ -1,16 +1,16 @@
-(DEFUN C:HAWS-CLEAN ( / inp)
+﻿(defun c:haws-clean ( / inp)
 (haws-core-init 9)
   (initget "Yes No")
   (setq inp (getkword "\nClean uses the wlock * command, which does not preserve Civil 3D styles.  Continue? [Yes/No]: "))
   (cond 
     ((= inp "Yes")
-      (SETVAR "expert" 0)
-      (vl-cmdf "._WBLOCK" (HAWS-GETDNPATH) "_Y" "*")
+      (setvar "expert" 0)
+      (vl-cmdf "._WBLOCK" (haws-getdnpath) "_Y" "*")
       (cond
-        ((= (GETVAR "sdi") 1)
-        (vl-cmdf "._OPEN" "_Y" (HAWS-GETDNPATH))
+        ((= (getvar "sdi") 1)
+        (vl-cmdf "._OPEN" "_Y" (haws-getdnpath))
          )
-        (T
+        (t
          (alert (princ "Drawing has been cleaned and saved.\nClean must now close drawing.\nPlease re-open from disk."))
         (vl-cmdf "._CLOSE" "_Y")
          )

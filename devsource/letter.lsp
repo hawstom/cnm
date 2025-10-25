@@ -1,11 +1,11 @@
-;CONSECUTIVE LETTERING LISP
+﻿;CONSECUTIVE LETTERING LISP
 ;10/04/95  Thomas Gail Haws
 ;(C) Copyright 1997 by Thomas Gail Haws
 (defun c:haws-letter (/ a b c d e f g)
 (haws-core-init 246)
   (setq
-    a (HAWS-getlet "\nFirst letter of series (between a and zy):")
-    b (HAWS-getlet "\nLast letter of series (between b and zz):")
+    a (haws-getlet "\nFirst letter of series (between a and zy):")
+    b (haws-getlet "\nLast letter of series (between b and zz):")
     c (getreal "\nText height: ")
     d (getreal "\nText rotation <0>: ")
     e (progn
@@ -29,11 +29,11 @@
     (vl-cmdf f c d g)
     (setq a (+ a 1))
   )
-  (HAWS-CORE-RESTORE)
+  (haws-core-restore)
 )
 ;Function getlet prompts for a letter code between a and zz.
 ;returns an integer code for the letter entered (1 for A, 26 for Z, 28 for AB)
-(defun HAWS-getlet (prmpt / letter)
+(defun haws-getlet (prmpt / letter)
   (while (< 2 (strlen (setq letter (strcase(getstring prmpt)))))
     (prompt "\nLimit 2 characters.  Try again.")
   )

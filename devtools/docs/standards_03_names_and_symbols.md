@@ -12,17 +12,17 @@ HAWSEDC STANDARDS VOLUME 03: NAMES AND SYMBOLS
 # 1. QUICK START
 
 ## 1.1 Key Rules
-- **Case:** UPPERCASE for code symbols. This means variables and functions. Schedule: Very aggressive
+- **Case:** lowercase for code symbols. This means variables and functions. Schedule: Very aggressive
 - **Delimiter:** Underscores (not hyphens or colons). This means squash all hyphens and colons. Schedule: Moderately aggressive
-  - **Exception:** `C:` prefix for AutoCAD command functions is required by AutoLISP (e.g., `C:CNM`, `C:CNMEDIT`)
+  - **Exception:** `c:` prefix for AutoCAD command functions is required by AutoLISP (e.g., `c:cnm`, `c:cnmedit`)
 - **Files:** lowercase with underscores. Schedule: Moderately conservative
 - **Prefixes:**  Moderately aggressive.
-  - `OBJ_` for VLA-OBJECTS
-  - `ES_` for the results of (entsel)
-  - `EN_` for entity names
-  - `EL_` or `EG_` for the results of (entget en)
-  - `LST_` for lists when clarification is needed
-  - `_P` suffix for booleans.
+  - `obj_` for VLA-OBJECTS
+  - `es_` for the results of (entsel)
+  - `en_` for entity names
+  - `el_` or `eg_` for the results of (entget en)
+  - `lst_` for lists when clarification is needed
+  - `_p` suffix for booleans.
 
 ---
 <!-- #endregion -->
@@ -38,10 +38,10 @@ This volume defines naming conventions for all code elements: functions, variabl
 
 ## 2.3 Scope
 This volume covers:
-- Case conventions (UPPERCASE for symbols)
+- Case conventions (lowercase for symbols)
 - Delimiter style (underscores not hyphens)
-- Type prefixing (OBJ_, EN_, _P suffix)
-- Function naming patterns (VERB_NOUN)
+- Type prefixing (obj_, en_, _p suffix)
+- Function naming patterns (verb_noun)
 - Name length guidelines
 - File and folder naming
 
@@ -55,29 +55,33 @@ This volume covers:
 ## 3.1 Symbols and Functions
 
 ### 3.1.1 Standard
-**FIRM:** ALL CAPS for all AutoLISP symbols and functions
+**FIRM:** lowercase for all AutoLISP symbols and functions
 
-### 3.1.2 Pros and Cons
-**Pros:**
-- AutoLISP reads all code as uppercase regardless of input
-- Existing codebase is 95% uppercase already
-- Matches AutoCAD native function style
-- Consistency > aesthetics
+### 3.1.2 Rationale
+**Why lowercase:**
+- Matches community convention (most AutoLISP forums and examples use lowercase)
+- Matches file naming convention (lowercase_with_underscores)
+- Ends the debate - aligns with what everyone else does
+- AutoLISP internally converts all code to uppercase anyway (cosmetic choice only)
 
-**Cons:**
-- Converting would be massive churn for aesthetic gain only
-- Some developers prefer mixed case for readability
+**Why NOT UPPERCASE:**
+- Differs from community standard (looks unusual to other AutoLISP developers)
+- Doesn't match file naming (creates inconsistency)
+- Creates perpetual "why did you do that?" questions
+
+**Decision:**
+This project uses lowercase for consistency with community practice and file naming. AutoLISP converts everything to uppercase internally anyway, so this is purely a source code cosmetic choice.
 
 ### 3.1.3 Examples
 ```lisp
 ;; CORRECT
-(DEFUN HCNM_LDRBLK_AUTO_PIPE (BUBBLE_DATA TAG AUTO_TYPE)
-  (SETQ OBJ_PIPE (GET_PIPE_OBJECT))
+(defun hcnm_ldrblk_auto_pipe (bubble_data tag auto_type)
+  (setq obj_pipe (get_pipe_object))
 )
 
 ;; AVOID (inconsistent with project)
-(defun hcnm_ldrblk_auto_pipe (bubble_data tag auto_type)
-  (setq obj_pipe (get_pipe_object))
+(DEFUN HCNM_LDRBLK_AUTO_PIPE (BUBBLE_DATA TAG AUTO_TYPE)
+  (SETQ OBJ_PIPE (GET_PIPE_OBJECT))
 )
 
 ;; ACCEPTABLE (borrowed/vendored code - leave as-is)
@@ -87,7 +91,7 @@ This volume covers:
 ```
 
 ### 3.1.4 Exception
-Mixed case in borrowed/vendored code is acceptable. Don't force-convert external libraries.
+UPPERCASE or mixed case in borrowed/vendored code is acceptable. Don't force-convert external libraries.
 
 ## 3.2 Files and Folders
 
@@ -135,7 +139,7 @@ Existing files use hyphens (`haws-tip.lsp`). Migrating to underscores (`haws_tip
 
 ### 4.1.3 Hierarchical Example
 ```lisp
-HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER
+hcnm_ldrblk_auto_pipe_format_diameter
 └──┬─┘ └──┬──┘ └─┬─┘└─┬─┘ └────┬────┘
    │      │       │    │        └─ Operation
    │      │       │    └──────── Type
@@ -182,72 +186,72 @@ Google's Common Lisp Style Guide suggests avoiding Hungarian notation (e.g., `in
 ## 5.2 Required Prefixes
 
 ### 5.2.1 VLA-OBJECT (Most Important)
-Use `OBJ_` prefix to distinguish from entity names and lists:
+Use `obj_` prefix to distinguish from entity names and lists:
 
 ```lisp
 ;; CORRECT
-OBJ_PIPE      ; VLA-OBJECT of pipe
-OBJ_ALIGN     ; VLA-OBJECT of alignment
-OBJ_SURFACE   ; VLA-OBJECT of surface
+obj_pipe      ; VLA-OBJECT of pipe
+obj_align     ; VLA-OBJECT of alignment
+obj_surface   ; VLA-OBJECT of surface
 
 ;; AVOID (ambiguous type)
-PIPE          ; Could be entity, object, or string
-ALIGNMENT     ; Unclear what type
+pipe          ; Could be entity, object, or string
+alignment     ; Unclear what type
 ```
 
 ### 5.2.2 Entity Names
-Use `EN_` prefix:
+Use `en_` prefix:
 
 ```lisp
 ;; CORRECT
-EN_BUBBLE
-EN_LEADER
-EN_BLOCK
+en_bubble
+en_leader
+en_block
 ```
 
 ### 5.2.3 Entsel Results
-Use `ES_` prefix:
+Use `es_` prefix:
 
 ```lisp
 ;; CORRECT
-ES_CIRCLE  ; The result of (ENTSEL) for the circle
+es_circle  ; The result of (entsel) for the circle
 ```
 
 ### 5.2.4 Entget Lists
-Use `EG_` or `EL_` prefix if stored/passed around:
+Use `eg_` or `el_` prefix if stored/passed around:
 
 ```lisp
 ;; CORRECT
-EG_BUBBLE  ; (ENTGET EN_BUBBLE)
-EL_BUBBLE  ; (ENTGET EN_BUBBLE)
+eg_bubble  ; (entget en_bubble)
+el_bubble  ; (entget en_bubble)
 ```
 
 ### 5.2.5 Selection Sets
-Use `SS_` prefix:
+Use `ss_` prefix:
 
 ```lisp
 ;; CORRECT
-SS_TREES  ; A selection set of trees
-SS1       ; Generic selection set
+ss_trees  ; A selection set of trees
+ss1       ; Generic selection set
 ```
 
 ## 5.3 Boolean Suffix
 
 ### 5.3.1 Standard
-Use `_P` suffix (Lisp predicate convention):
+Use `_p` suffix (Lisp predicate convention):
 
 ```lisp
 ;; CORRECT
-FOUND_P
-PSPACE_P
-MODIFIED_P
-HAS_ATTRIBUTES_P
+found_p
+pspace_p
+modified_p
+has_attributes_p
 
 ;; AVOID (doesn't follow Lisp convention)
-IS_FOUND
-PSPACE_FLAG
-IS_PSPACE_P    ; Redundant - just use PSPACE_P
-WAS_MODIFIED_P ; Redundant - just use MODIFIED_P
+is_found
+pspace_flag
+is_pspace_p    ; Redundant - just use pspace_p
+was_modified_p ; Redundant - just use modified_p
 ```
 
 ## 5.4 Optional Prefixes
@@ -257,14 +261,14 @@ Only prefix if type is ambiguous:
 
 ```lisp
 ;; CLEAR (no prefix needed)
-ATTRIBUTE_LIST
-PHASE_LIST
-REACTOR_LIST
-BUBBLES  ; A list of BUBBLE items
+attribute_list
+phase_list
+reactor_list
+bubbles  ; A list of bubble items
 
 ;; ACCEPTABLE (when clarification helps)
-LST_BUBBLE_DATA
-LST_BUBBLES
+lst_bubble_data
+lst_bubbles
 ```
 
 ---
@@ -295,9 +299,9 @@ LST_BUBBLES
 ### 6.2.2 Examples
 ```lisp
 ;; GOOD - clear at a glance
-HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER
-BUBBLE_TEXT_PREFIX_PIPE_DIA
-HCNM_LDRBLK_ASSURE_AUTO_TEXT_HAS_REACTOR
+hcnm_ldrblk_auto_pipe_format_diameter
+bubble_text_prefix_pipe_dia
+hcnm_ldrblk_assure_auto_text_has_reactor
 ```
 
 ## 6.3 Short Names (Acceptable)
@@ -310,15 +314,15 @@ HCNM_LDRBLK_ASSURE_AUTO_TEXT_HAS_REACTOR
 ### 6.3.2 Examples
 ```lisp
 ;; ACCEPTABLE abbreviations
-AUTO_TYPE     ; "Automatic text type" - clear in context
-STA           ; Universal civil engineering abbreviation
-DIA           ; Common diameter abbreviation
-OFF           ; Offset (clear in context)
+auto_type     ; "Automatic text type" - clear in context
+sta           ; Universal civil engineering abbreviation
+dia           ; Common diameter abbreviation
+off           ; Offset (clear in context)
 
 ;; ACCEPTABLE loop variables
-(FOREACH I LIST_ITEMS ...)
-(SETQ N 0)
-(WHILE (< X 10) ...)
+(foreach i list_items ...)
+(setq n 0)
+(while (< x 10) ...)
 ```
 
 ## 6.4 When to Shorten
@@ -332,11 +336,11 @@ Abbreviation is clearer than full word in domain context.
 ### 6.4.3 Examples
 ```lisp
 ;; GOOD - Domain abbreviation improves clarity
-DRAWSTATION   ; Better than DRAWING_STATION_VALUE
+drawstation   ; Better than drawing_station_value
 
 ;; AVOID - Cryptic abbreviation reduces clarity
-PSPACE_BBL_P  ; Worse than PSPACE_BUBBLE_P
-ALREF         ; Worse than ALIGN_REFERENCE
+pspace_bbl_p  ; Worse than pspace_bubble_p
+alref         ; Worse than align_reference
 ```
 
 ---
@@ -348,29 +352,29 @@ ALREF         ; Worse than ALIGN_REFERENCE
 ## 7.1 Pattern
 
 ### 7.1.1 Standard
-**FIRM:** VERB_NOUN or GET/SET/UPDATE/CALCULATE pattern
+**FIRM:** verb_noun or get/set/update/calculate pattern
 
 **Schedule:** Moderately conservative (well-established pattern, apply to new functions, rename only when refactoring)
 
 ### 7.1.2 Examples
 ```lisp
 ;; CORRECT - Action verbs for clarity
-HCNM_LDRBLK_AUTO_PIPE_GET_OBJECT        ; Retrieves object
-HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER   ; Formats value
-HCNM_LDRBLK_AUTO_PIPE_CALCULATE_SLOPE   ; Performs calculation
-HCNM_LDRBLK_UPDATE_BUBBLE_TAG            ; Modifies existing
+hcnm_ldrblk_auto_pipe_get_object        ; Retrieves object
+hcnm_ldrblk_auto_pipe_format_diameter   ; Formats value
+hcnm_ldrblk_auto_pipe_calculate_slope   ; Performs calculation
+hcnm_ldrblk_update_bubble_tag            ; Modifies existing
 ```
 
 ## 7.2 Verb Vocabulary
 
 ### 7.2.1 Standard Verbs
-- **GET_** - Retrieve data (may prompt user)
-- **SET_** - Store data
-- **CALCULATE_** - Perform computation (pure function)
-- **FORMAT_** - Convert to display string
-- **UPDATE_** - Modify existing data
-- **ASSURE_** - Check and create if missing
-- **VALIDATE_** - Check validity
+- **get_** - Retrieve data (may prompt user)
+- **set_** - Store data
+- **calculate_** - Perform computation (pure function)
+- **format_** - Convert to display string
+- **update_** - Modify existing data
+- **assure_** - Check and create if missing
+- **validate_** - Check validity
 
 ---
 <!-- #endregion -->
@@ -385,8 +389,8 @@ Use descriptive names, no special prefix:
 
 ```lisp
 ;; CORRECT
-HCNM_ERROR_NOT_FOUND "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
-HCNM_DEFAULT_PRECISION "2"
+hcnm_error_not_found "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
+hcnm_default_precision "2"
 ```
 
 ## 8.2 Global Variables
@@ -396,11 +400,11 @@ Use `*` wrapper if truly global (session lifetime):
 
 ```lisp
 ;; CORRECT - Global session variables
-*HCNM_CONFIG*              ; Config cache
-*HAWS_CONFIG_CACHE*        ; Multi-app config cache
+*hcnm_config*              ; Config cache
+*haws_config_cache*        ; Multi-app config cache
 
 ;; CORRECT - Module-scoped (no asterisks)
-HCNM_EB_ATTRIBUTE_LIST     ; Edit bubble dialog state
+hcnm_eb_attribute_list     ; Edit bubble dialog state
 ```
 
 ## 8.3 Temporary Variables
@@ -410,14 +414,14 @@ In small scopes, single letters acceptable:
 
 ```lisp
 ;; ACCEPTABLE in 5-line loop
-(FOREACH I ITEM_LIST
-  (SETQ N (1+ N))
+(foreach i item_list
+  (setq n (1+ n))
 )
 
 ;; AVOID - Too cryptic if used across 50 lines
-(SETQ A (GET_ALIGN)
-      S (CALC_STA A P)
-      O (CALC_OFF A P)
+(setq a (get_align)
+      s (calc_sta a p)
+      o (calc_off a p)
 )
 ```
 
@@ -453,7 +457,7 @@ In small scopes, single letters acceptable:
 
 ## 9.3 Example Migration Commit
 ```
-refactor: rename HCNM-LDRBLK-AUTO-PIPE to HCNM_LDRBLK_AUTO_PIPE
+refactor: rename hcnm-ldrblk-auto-pipe to hcnm_ldrblk_auto_pipe
 
 - Updated function definition
 - Updated all 7 call sites
@@ -469,26 +473,24 @@ refactor: rename HCNM-LDRBLK-AUTO-PIPE to HCNM_LDRBLK_AUTO_PIPE
 ## 10.1 Good Example
 ```lisp
 ;; CORRECT - Follows all conventions
-(DEFUN HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER (OBJ_PIPE / DIA_FEET DIA_INCHES)
-  (SETQ DIA_FEET   (VLAX-GET-PROPERTY OBJ_PIPE 'InnerDiameterOrWidth)
-        DIA_INCHES (* DIA_FEET 12.0)
+(defun hcnm_ldrblk_auto_pipe_format_diameter (obj_pipe / dia_feet dia_inches)
+  (setq dia_feet   (vlax-get-property obj_pipe 'InnerDiameterOrWidth)
+        dia_inches (* dia_feet 12.0)
   )
-  (STRCAT
-    (C:HCNM-CONFIG-GETVAR "BubbleTextPrefixPipeDia")  ;; OLD code (uses hyphens)
-    (RTOS DIA_INCHES 2 (ATOI (C:HCNM-CONFIG-GETVAR "BubbleTextPrecisionPipeDia")))
-    (C:HCNM-CONFIG-GETVAR "BubbleTextPostfixPipeDia")
+  (strcat
+    (c:hcnm_config_getvar "BubbleTextPrefixPipeDia")
+    (rtos dia_inches 2 (atoi (c:hcnm_config_getvar "BubbleTextPrecisionPipeDia")))
+    (c:hcnm_config_getvar "BubbleTextPostfixPipeDia")
   )
 )
 ```
 
-[AI: Note - C:HCNM-CONFIG-GETVAR uses hyphens because that's the current code. Per S03.4.1, this will be renamed to C:HCNM_CONFIG_GETVAR during refactoring. See S06.5.2.2]
-
 ## 10.2 Poor Example
 ```lisp
 ;; AVOID - Multiple convention violations
-(defun fmtdia (p / d)  ; Lowercase, cryptic names
-  (setq d (vlax-get-property p 'InnerDiameterOrWidth))  ; No OBJ_ prefix
-  (strcat (getvar "pfx") (rtos (* d 12) 2 2) (getvar "sfx"))  ; Unclear abbreviations
+(DEFUN FMTDIA (P / D)  ; UPPERCASE not project standard
+  (SETQ D (VLAX-GET-PROPERTY P 'InnerDiameterOrWidth))  ; No obj_ prefix, UPPERCASE
+  (STRCAT (GETVAR "pfx") (RTOS (* D 12) 2 2) (GETVAR "sfx"))  ; Unclear abbreviations
 )
 ```
 
@@ -524,32 +526,32 @@ refactor: rename HCNM-LDRBLK-AUTO-PIPE to HCNM_LDRBLK_AUTO_PIPE
 **Example:**
 ```lisp
 ;; CORRECT - No blank lines
-(DEFUN CALCULATE_AREA (WIDTH HEIGHT / AREA)
-  (SETQ AREA (* WIDTH HEIGHT))
-  (IF (> AREA 1000)
-    (PRINC "\nLarge area")
-    (PRINC "\nSmall area")
+(defun calculate_area (width height / area)
+  (setq area (* width height))
+  (if (> area 1000)
+    (princ "\nLarge area")
+    (princ "\nSmall area")
   )
-  AREA
+  area
 )
-(DEFUN CALCULATE_VOLUME (WIDTH HEIGHT DEPTH)
-  (* WIDTH HEIGHT DEPTH)
+(defun calculate_volume (width height depth)
+  (* width height depth)
 )
 ;; AVOID - Any blank lines
-(DEFUN CALCULATE_AREA (WIDTH HEIGHT / AREA)
+(defun calculate_area (width height / area)
 
-  (SETQ AREA (* WIDTH HEIGHT))
+  (setq area (* width height))
 
-  (IF (> AREA 1000)
-    (PRINC "\nLarge area")
-    (PRINC "\nSmall area")
+  (if (> area 1000)
+    (princ "\nLarge area")
+    (princ "\nSmall area")
   )
 
-  AREA
+  area
 )
 
-(DEFUN CALCULATE_VOLUME (WIDTH HEIGHT DEPTH)
-  (* WIDTH HEIGHT DEPTH)
+(defun calculate_volume (width height depth)
+  (* width height depth)
 )
 ```
 

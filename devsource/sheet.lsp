@@ -1,4 +1,4 @@
-;SHEET.LSP
+﻿;SHEET.LSP
 ;Public domain 2018 by Thomas Gail Haws
 ;This routine sets up a plan and profile sheet by attaching the
 ;required xrefs in model space and paper space and creating a
@@ -12,21 +12,21 @@
 ;The block must have an attribute with the tag "SHTNO" and
 ;a value equal to the sheet number.
 ;
-(if (not HAWS-attfind)(load"attfind"))
+(if (not haws-attfind)(load"attfind"))
 (defun c:haws-sheet
   ( / basei blname dn insscl plnblk ptmcen ptmvc1 ptmvc2
-    shtnm ssblk xrname xrpath BASEI BLNAME CONT CONT1 CONT2 DN INSSCL OPT PLNBLK PTINS PTMCEN PTMVC1 PTMVC2 PTPCEN SHTANG SHTNM SHTNO SHTTP SS1 SSBLK TOTINC UCSP XRNAME XRPATH
+    shtnm ssblk xrname xrpath basei blname cont cont1 cont2 dn insscl opt plnblk ptins ptmcen ptmvc1 ptmvc2 ptpcen shtang shtnm shtno shttp ss1 ssblk totinc ucsp xrname xrpath
   )
   (prompt "\nSHEET 1.1 by Thomas Gail Haws")
   ;Create ucs
-  (defun HAWS-shtucs ()
+  (defun haws-shtucs ()
     (prompt "\nCreating UCS PLAN based on plan view block for this drawing")
     (setvar "tilemode" 1)
     (vl-cmdf "._ucs" "w")
-    (setq ucsp T)
+    (setq ucsp t)
     (cond
       ;Look for plan view block for this drawing.
-      ( (setq plnblk (caar(HAWS-attfind "*" (list(list"SHTNO" shtnm))'("SHTNO") T)))
+      ( (setq plnblk (caar(haws-attfind "*" (list(list"SHTNO" shtnm))'("SHTNO") t)))
         (vl-cmdf "ucs" "d" "plan" "ucs" "e" plnblk "ucs" "s" "plan" "ucs" "p")
         (initget "Yes No")
         (cond
@@ -37,14 +37,14 @@
         )
       )
       ;If not found, give error message.
-      ( T (prompt "\nNo plan view block for this drawing found."))
+      ( t (prompt "\nNo plan view block for this drawing found."))
     )
     (setq ucsp nil)
     (vl-cmdf "ucs" "p" "tilemode" 0 "pspace")
   )
   ;Create mview
-  (defun HAWS-shtmv ()
-    (HAWS-MKLAYR "SHTMVW")
+  (defun haws-shtmv ()
+    (haws-mklayr "SHTMVW")
     (setq
       ptmvc1(getpoint "\nFirst corner for centered paper space viewport: ")
       ptmvc2(getcorner ptmvc1 "Other corner: ")
@@ -58,19 +58,19 @@
     (vl-cmdf "._mview" ptmvc1 ptmvc2)
     (prompt "\nMview created on defpoints layer.  Will not plot.  Leave thawed.")
     (vl-cmdf "._mspace" "._ucs" "w")
-    (setq ucsp T)
+    (setq ucsp t)
     (cond
       ;Look for plan view block for this drawing.
-      ( (setq plnblk (caar(HAWS-attfind "*" (list(list"SHTNO" shtnm))'("SHTNO") T)))
+      ( (setq plnblk (caar(haws-attfind "*" (list(list"SHTNO" shtnm))'("SHTNO") t)))
         (vl-cmdf
           "ucs" "d" "plan" "ucs" "e" plnblk "ucs" "s" "plan" "plan" ""
-          "zoom" "c" "0,0" (strcat"1/"(rtos (HAWS-DWGSCALE) 2 0)"xp")
+          "zoom" "c" "0,0" (strcat"1/"(rtos (haws-dwgscale) 2 0)"xp")
           "view""s""plan"
           "ucs" "p"
         )
       )
       ;If not found, prompt for view points.
-      ( T
+      ( t
         (initget 1 "Yes No")
         (if (= (getkword "\nZoom extents in model space? [Yes/No]: ") "Yes")
           (vl-cmdf "._zoom" "e")
@@ -79,7 +79,7 @@
         (setq shtang (getangle "\nSheet rotation: "))
         (vl-cmdf
           "ucs" "d" "plan" "ucs" "o" ptmcen "ucs" "z" shtang "ucs" "s" "plan" "plan" ""
-          "zoom" "c" "0,0" (strcat"1/"(rtos (HAWS-DWGSCALE) 2 0)"xp")
+          "zoom" "c" "0,0" (strcat"1/"(rtos (haws-dwgscale) 2 0)"xp")
           "view""s""plan"
           "ucs" "p" "ucs" "p"
         )
@@ -95,7 +95,7 @@
         ( (not(setq basei(findfile (strcat basei ".dwg"))))
           (prompt"  Xref not found.")
         )
-        ( T (vl-cmdf "._xref" "a" basei "0,0" 1 1 0))
+        ( t (vl-cmdf "._xref" "a" basei "0,0" 1 1 0))
       )
     )
     (setq
@@ -108,7 +108,7 @@
     (vl-cmdf "ucs" "p" "pspace")
   )
   ;Attach plan view in model space
-  (defun HAWS-shtpnm ()
+  (defun haws-shtpnm ()
     (if
       (= 1 (sslength(ssget "X" '((0 . "VIEWPORT")))))
       (prompt "\nUse the Mview and bases option to make a viewport first.")
@@ -128,10 +128,10 @@
     )
   )
   ;Attach plan view in paper space
-  (defun HAWS-shtpnp ()
+  (defun haws-shtpnp ()
     (setq
       xrname (strcat(substr dn 1 (- 9 (strlen shtnm)))"n"(substr shtnm 3))
-      insscl (/ 1.0 (HAWS-DWGSCALE))
+      insscl (/ 1.0 (haws-dwgscale))
     )
     (if
       (and ptpcen shtang (findfile (strcat xrname ".dwg")))
@@ -140,11 +140,11 @@
     )
   )
   ;Attach profile view
-  (defun HAWS-shtpr ( )
+  (defun haws-shtpr ( )
     (setq
       xrname (strcat(substr dn 1 (- 9 (strlen shtnm)))"r"(substr shtnm 3))
       xrpath xrname
-      insscl (/ 1.0 (HAWS-DWGSCALE))
+      insscl (/ 1.0 (haws-dwgscale))
     )
     (while
       (not(findfile (strcat xrpath ".dwg")))
@@ -156,7 +156,7 @@
     (vl-cmdf "._xref" "d" xrname "._xref" "a" (findfile (strcat xrpath ".dwg")) "0,0" insscl "" 0)
   )
   ;Attach quantities
-  (defun HAWS-shtpq ()
+  (defun haws-shtpq ()
     (setq
       xrname (strcat(substr dn 1 (- 9 (strlen shtnm)))"q"(substr shtnm 3))
       insscl 1
@@ -168,7 +168,7 @@
     )
   )
   ;Insert bdrtxt
-  (defun HAWS-shtbt ()
+  (defun haws-shtbt ()
     (setq
       blname (getstring "\nBorder text block name: ")
       insscl 1
@@ -186,7 +186,7 @@
         (setvar "regenmode" 0)
         (vl-cmdf "._insert" (strcat blname "=") "_Scale" insscl "_Rotate" 0 "0,0")
         (if
-          (HAWS-attfind "blname" (list(list"CONTENT" "XX"))'("CONTENT") T)
+          (haws-attfind "blname" (list(list"CONTENT" "XX"))'("CONTENT") t)
           (vl-cmdf "._attedit" "n" "n" blname "content" "XX" "XX" cont)
         )
         (vl-cmdf
@@ -202,15 +202,15 @@
   )
   (haws-core-init 134)
   (vl-cmdf "._undo" "g")
-  (HAWS-VSAVE '("aunits""clayer""ucsfollow""attdia" "regenmode"))
+  (haws-vsave '("aunits""clayer""ucsfollow""attdia" "regenmode"))
   (setvar "ucsfollow" 0)
   (setvar "aunits" 3)
   (setvar "attdia" 0)
   (setq
-    dn (strcase (HAWS-GETDN))
-    shtpre (GETINT "\nNumber of characters in drawing name before sheet name: ")
-    shttp (strcase(HAWS-GETSTRINGX "\nSheet type" nil (substr dn (1+ shtpre) 2)))
-    shtno (strcase(HAWS-GETSTRINGX "\nThis sheet no." nil (substr dn (+ shtpre 1 (strlen shttp)) 7)))
+    dn (strcase (haws-getdn))
+    shtpre (getint "\nNumber of characters in drawing name before sheet name: ")
+    shttp (strcase(haws-getstringx "\nSheet type" nil (substr dn (1+ shtpre) 2)))
+    shtno (strcase(haws-getstringx "\nThis sheet no." nil (substr dn (+ shtpre 1 (strlen shttp)) 7)))
     shtnm (strcat shttp shtno)
   )
   (setvar "tilemode" 0)(vl-cmdf "pspace")
@@ -220,15 +220,15 @@
       (setq opt (getkword "\nUcs only/Mview and bases/MSPlan xref/PSPlan xref/PRofile xref/Quantity xref/Border text: "))
     )
     (cond
-      ( (= opt "Ucs")(HAWS-shtucs))
-      ( (= opt "Mview")(HAWS-shtmv))
-      ( (= opt "MSPlan")(HAWS-shtpnm))
-      ( (= opt "PSPlan")(HAWS-shtpnp))
-      ( (= opt "PRofile")(HAWS-shtpr))
-      ( (= opt "Quantity")(HAWS-shtpq))
-      ( (= opt "Border")(HAWS-shtbt))
+      ( (= opt "Ucs")(haws-shtucs))
+      ( (= opt "Mview")(haws-shtmv))
+      ( (= opt "MSPlan")(haws-shtpnm))
+      ( (= opt "PSPlan")(haws-shtpnp))
+      ( (= opt "PRofile")(haws-shtpr))
+      ( (= opt "Quantity")(haws-shtpq))
+      ( (= opt "Border")(haws-shtbt))
     )
   )
   (vl-cmdf "._undo" "e")
-  (HAWS-VRSTOR)(haws-core-restore)(princ)
+  (haws-vrstor)(haws-core-restore)(princ)
 )
