@@ -17,12 +17,12 @@ HAWSEDC STANDARDS VOLUME 03: NAMES AND SYMBOLS
   - **Exception:** `c:` prefix for AutoCAD command functions is required by AutoLISP (e.g., `c:cnm`, `c:cnmedit`)
 - **Files:** lowercase with underscores. Schedule: Moderately conservative
 - **Prefixes:**  Moderately aggressive.
-  - `obj_` for VLA-OBJECTS
-  - `es_` for the results of (entsel)
-  - `en_` for entity names
-  - `el_` or `eg_` for the results of (entget en)
-  - `lst_` for lists when clarification is needed
-  - `_p` suffix for booleans.
+  - `obj-` for VLA-OBJECTS
+  - `es-` for the results of (entsel)
+  - `en-` for entity names
+  - `el-` or `eg-` for the results of (entget en)
+  - `lst-` for lists when clarification is needed
+  - `-p` suffix for booleans.
 
 ---
 <!-- #endregion -->
@@ -40,8 +40,8 @@ This volume defines naming conventions for all code elements: functions, variabl
 This volume covers:
 - Case conventions (lowercase for symbols)
 - Delimiter style (underscores not hyphens)
-- Type prefixing (obj_, en_, _p suffix)
-- Function naming patterns (verb_noun)
+- Type prefixing (obj-, en-, -p suffix)
+- Function naming patterns (verb-noun)
 - Name length guidelines
 - File and folder naming
 
@@ -57,26 +57,27 @@ This volume covers:
 ### 3.1.1 Standard
 **FIRM:** lowercase for all AutoLISP symbols and functions
 
-### 3.1.2 Rationale
-**Why lowercase:**
+### 3.1.2 Pros and Cons
+**Why lowercase (Pros):**
+- Less typing confusion.
 - Matches community convention (most AutoLISP forums and examples use lowercase)
-- Matches file naming convention (lowercase_with_underscores)
+- Matches file naming convention (lowercase-with-hyphens)
 - Ends the debate - aligns with what everyone else does
 - AutoLISP internally converts all code to uppercase anyway (cosmetic choice only)
 
-**Why NOT UPPERCASE:**
-- Differs from community standard (looks unusual to other AutoLISP developers)
-- Doesn't match file naming (creates inconsistency)
-- Creates perpetual "why did you do that?" questions
+**Why UPPERCASE (Cons):**
+- More readable and larger
+  - But doesn't match file naming (creates inconsistency)
+  - But creates perpetual "why did you do that?" questions
 
 **Decision:**
-This project uses lowercase for consistency with community practice and file naming. AutoLISP converts everything to uppercase internally anyway, so this is purely a source code cosmetic choice.
+This project uses lowercase for everything possible for consistency with community practice and our file naming standard file naming. AutoLISP converts everything to uppercase internally anyway, so this is purely a source code cosmetic choice.
 
 ### 3.1.3 Examples
 ```lisp
 ;; CORRECT
-(defun hcnm_ldrblk_auto_pipe (bubble_data tag auto_type)
-  (setq obj_pipe (get_pipe_object))
+(defun hcnm-ldrblk-auto-pipe (bubble-data tag auto-type)
+  (setq obj-pipe (get-pipe-object))
 )
 
 ;; AVOID (inconsistent with project)
@@ -109,7 +110,7 @@ The following are intentionally left with their original case (often UPPERCASE):
 **PLANNED:** lowercase with underscores (migrating from hyphens)
 
 ### 3.2.2 Current State
-Existing files use hyphens (`haws-tip.lsp`). Migrating to underscores (`haws_tip.lsp`) for consistency with symbol naming.
+Existing files use hyphens (`haws-tip.lsp`). Migrating to underscores (`haws-tip.lsp`) for consistency with symbol naming.
 
 ### 3.2.3 Migration Strategy
 - New files: Use underscores
@@ -128,28 +129,30 @@ Existing files use hyphens (`haws-tip.lsp`). Migrating to underscores (`haws_tip
 **FIRM:** Underscores for all symbol delimiters
 
 ### 4.1.2 Pros and Cons
-**Why underscores (Pros):**
+**In favor of hyphens (Pros):**
+- Easiest to type (no shift key)
+- Common Lisp standards
+- Autodesk examples
+- Autodesk symbols (with occasional deviations)
+- AutoLISP community consensus practice (though it's an admittedly disorganized and unprofessional community)
+
+**In favor of underscores (Cons):**
 1. In other languages, `-` means subtract
-2. More editors recognize `_` as symbol continuation (better autocomplete)
+2. More editors including VS Code, currently pushed by Autodesk, recognize `_` as symbol continuation (better autocomplete)
 3. Provides visual disambiguation from AutoCAD native functions (which use hyphens)
 4. Slightly more readable word boundaries
-5. Consistency across symbols and files
 
-**Why not hyphens (Cons):**
-- See reasons 1-3 above
-
-**Why not colons (Cons):**
+**In favor of colons (Cons):**
 - In Common Lisp, colons denote package boundaries (`package:symbol`)
-- AutoLISP has no package system, so colons have no semantic role
-- Colons confuse readers expecting Common Lisp conventions
-- Non-idiomatic in AutoLISP (Autodesk documentation never uses colons in symbol examples)
-- Reduces portability in mixed Lisp environments
-- Would be implemented inconsistently (scattershot adoption)
-- Common Lisp Style Guide warns against using colons outside package contexts
+  - but AutoLISP has no package system, so colons have no semantic role, 
+  - so colons confuse readers who expect Common Lisp conventions
+  - so they would be implemented inconsistently (scattershot adoption)
+  - and they would achieve minimal portability in mixed Lisp environments
+  - because Common Lisp Style Guide warns against using colons outside package contexts
 
 ### 4.1.3 Hierarchical Example
 ```lisp
-hcnm_ldrblk_auto_pipe_format_diameter
+hcnm-ldrblk-auto-pipe-format-diameter
 └──┬─┘ └──┬──┘ └─┬─┘└─┬─┘ └────┬────┘
    │      │       │    │        └─ Operation
    │      │       │    └──────── Type
@@ -190,18 +193,18 @@ hcnm_ldrblk_auto_pipe_format_diameter
 **Schedule:** Moderately aggressive (important for code clarity, apply to new code immediately)
 
 ### 5.1.2 Reference
-Google's Common Lisp Style Guide suggests avoiding Hungarian notation (e.g., `int_foo`) unless the type is critical to understanding the symbol's purpose. AutoLISP deviates slightly due to its integration with AutoCAD's type-specific APIs.
+Google's Common Lisp Style Guide suggests avoiding Hungarian notation (e.g., `int-foo`) unless the type is critical to understanding the symbol's purpose. AutoLISP deviates slightly due to its integration with AutoCAD's type-specific APIs.
 
 ## 5.2 Required Prefixes
 
 ### 5.2.1 VLA-OBJECT (Most Important)
-Use `obj_` prefix to distinguish from entity names and lists:
+Use `obj-` prefix to distinguish from entity names and lists:
 
 ```lisp
 ;; CORRECT
-obj_pipe      ; VLA-OBJECT of pipe
-obj_align     ; VLA-OBJECT of alignment
-obj_surface   ; VLA-OBJECT of surface
+obj-pipe      ; VLA-OBJECT of pipe
+obj-align     ; VLA-OBJECT of alignment
+obj-surface   ; VLA-OBJECT of surface
 
 ;; AVOID (ambiguous type)
 pipe          ; Could be entity, object, or string
@@ -209,58 +212,58 @@ alignment     ; Unclear what type
 ```
 
 ### 5.2.2 Entity Names
-Use `en_` prefix:
+Use `en-` prefix:
 
 ```lisp
 ;; CORRECT
-en_bubble
-en_leader
-en_block
+en-bubble
+en-leader
+en-block
 ```
 
 ### 5.2.3 Entsel Results
-Use `es_` prefix:
+Use `es-` prefix:
 
 ```lisp
 ;; CORRECT
-es_circle  ; The result of (entsel) for the circle
+es-circle  ; The result of (entsel) for the circle
 ```
 
 ### 5.2.4 Entget Lists
-Use `eg_` or `el_` prefix if stored/passed around:
+Use `eg-` or `el-` prefix if stored/passed around:
 
 ```lisp
 ;; CORRECT
-eg_bubble  ; (entget en_bubble)
-el_bubble  ; (entget en_bubble)
+eg-bubble  ; (entget en-bubble)
+el-bubble  ; (entget en-bubble)
 ```
 
 ### 5.2.5 Selection Sets
-Use `ss_` prefix:
+Use `ss-` prefix:
 
 ```lisp
 ;; CORRECT
-ss_trees  ; A selection set of trees
+ss-trees  ; A selection set of trees
 ss1       ; Generic selection set
 ```
 
 ## 5.3 Boolean Suffix
 
 ### 5.3.1 Standard
-Use `_p` suffix (Lisp predicate convention):
+Use `-p` suffix (Lisp predicate convention):
 
 ```lisp
 ;; CORRECT
-found_p
-pspace_p
-modified_p
-has_attributes_p
+found-p
+pspace-p
+modified-p
+has-attributes-p
 
 ;; AVOID (doesn't follow Lisp convention)
-is_found
-pspace_flag
-is_pspace_p    ; Redundant - just use pspace_p
-was_modified_p ; Redundant - just use modified_p
+is-found
+pspace-flag
+is-pspace-p    ; Redundant - just use pspace-p
+was-modified-p ; Redundant - just use modified-p
 ```
 
 ## 5.4 Optional Prefixes
@@ -270,14 +273,14 @@ Only prefix if type is ambiguous:
 
 ```lisp
 ;; CLEAR (no prefix needed)
-attribute_list
-phase_list
-reactor_list
+attribute-list
+phase-list
+reactor-list
 bubbles  ; A list of bubble items
 
 ;; ACCEPTABLE (when clarification helps)
-lst_bubble_data
-lst_bubbles
+lst-bubble-data
+lst-bubbles
 ```
 
 ---
@@ -289,12 +292,12 @@ lst_bubbles
 ## 6.1 General Principle
 
 ### 6.1.1 Standard
-**FIRM:** Favor clarity over brevity. Use shorter names for local variables, longer names for variables that appear in many scattered locations and functions.
+**FIRM:** Favor clarity over brevity. Use shorter names ony for local variables or notorious concepts, longer names for unremarkable variables that appear in many scattered locations and functions.
 
-**Schedule:** Moderately conservative (apply judgment, don't force renames without good reason)
+**Schedule:** Moderately aggressive (see S01.3)
 
 ### 6.1.2 Guidelines
-- Keep short except as needed to disambiguate or to document across many locations and functions
+- Keep short only for readability. Lengthen liberally as needed to disambiguate or to document across many locations and functions
 - Use full words for public API functions, configuration variables, complex domain concepts
 - Abbreviations only when established domain convention or very local scope
 
@@ -308,9 +311,9 @@ lst_bubbles
 ### 6.2.2 Examples
 ```lisp
 ;; GOOD - clear at a glance
-hcnm_ldrblk_auto_pipe_format_diameter
-bubble_text_prefix_pipe_dia
-hcnm_ldrblk_assure_auto_text_has_reactor
+hcnm-ldrblk-auto-pipe-format-diameter
+bubble-text-prefix-pipe-dia
+hcnm-ldrblk-assure-auto-text-has-reactor
 ```
 
 ## 6.3 Short Names (Acceptable)

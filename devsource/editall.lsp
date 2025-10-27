@@ -28,7 +28,7 @@
              "cnm-bubble-*"
            )
        )
-       (hcnm_edit_bubble obj1)
+       (hcnm-edit-bubble obj1)
       )
       ((and (= etype "INSERT") (cdr (assoc 66 e)))
        (vl-cmdf "._DDATTE" obj1)

@@ -67,7 +67,7 @@
 ;;; 1999     v3.20  Improved performance by rewriting code.
 ;#endregion
 ;#region Table from search
-(defun hcnm_getphaselistfromtblqty (/ el en i dsctag noteqtyondisk oldtags
+(defun hcnm-getphaselistfromtblqty (/ el en i dsctag noteqtyondisk oldtags
                                 phasealias phaselist
                                )
   ;;Check for phasing in qty table block.  Phasing is controlled by presence of TBLQTY? attributes.
@@ -250,7 +250,7 @@
 ;;; Then saves all the notes and quantities for drawing in file nfname.
 ;;;
 ;;;Set up list from CONSTNOT.TXT and NOTEQTY block.
-(defun hcnm_key_table_searchandsave (dn projnotes / aliaslist at attributes av blki
+(defun hcnm-key_table_searchandsave (dn projnotes / aliaslist at attributes av blki
                                    blkss count ctabonly el en et i j
                                    mvport mvsset n nfname notefnd notei
                                    notelines notelist notenum notephase
@@ -263,13 +263,13 @@
   ;;
   (setq
     phaselist
-     (hcnm_getphaselistfromtblqty)
+     (hcnm-getphaselistfromtblqty)
     ctabonly
      (= "1" (c:hcnm-config-getvar "DoCurrentTabOnly"))
     nottyp ""
   )
   (foreach
-     entry *hcnm_cnmprojectnotes*
+     entry *hcnm-cnmprojectnotes*
     (cond
       ;;If it's a note
       ((= 3 (car entry))
@@ -431,7 +431,7 @@
       notetxt
        '(0 1 2 3 4 5 6 7 8 9)
       notephase ""
-      attributes (hcnm_get_attributes en nil)
+      attributes (hcnm-get_attributes en nil)
     )
     ;;Substitute the value of each NOTETXT attribute for its respective member of the pre-filled NOTETXT list.
     (setq
@@ -727,14 +727,14 @@
 ;;Uses the qty block.
 ;;Puts table at qtypt.
 ;; TGH to use this for TALLY, maybe I just need to read NOTELIST as an argument instead of from a file in this function.
-(defun hcnm_key_table_make (nfsource qtypt qtyset dn txtht / ctabonly icol
+(defun hcnm-key_table_make (nfsource qtypt qtyset dn txtht / ctabonly icol
                         iphase column_height note_first_line_p
                         column_height_pending nfname notdsc notelist
                         notesmaxheight notetitles notnum notqty nottyp
                         notunt numfnd phaselist prompteachcol qty qtypt1
                         rdlin txthttemp typfnd usrvar
                        )
-  (setq phaselist (hcnm_getphaselistfromtblqty))
+  (setq phaselist (hcnm-getphaselistfromtblqty))
   (setvar "osmode" 0)
   (setvar "attreq" 1)
   (initget "Prompt")
@@ -789,8 +789,8 @@
     )
   )
   ;;All prompts done.  Let's make table!
-  (hcnm_projinit)                       ;Initialize project after user pauses
-  (hcnm_readcf (hcnm_projnotes))
+  (hcnm-projinit)                       ;Initialize project after user pauses
+  (hcnm-readcf (hcnm-projnotes))
   (setq
     linspc
      (atof (c:hcnm-config-getvar "LineSpacing"))
@@ -835,7 +835,7 @@
     (vl-cmdf "._erase" qtyset "")
   )
   (foreach
-     entry *hcnm_cnmprojectnotes*
+     entry *hcnm-cnmprojectnotes*
     (cond
       ;;If it's a variable config, set it.
       ((= 1 (car entry))
@@ -1023,7 +1023,7 @@
                                         ; Won't fit
             (/= column_height 0)        ; Not first note in column
           )
-          (hcnm_key_table_advance_column)
+          (hcnm-key_table_advance_column)
          )
        )
        ;; Add any titles
@@ -1042,22 +1042,22 @@
                (cond
                  ;; Add a paragraph space above first title based on its height
                  ((= i_title 0)
-                  (hcnm_key_table_advance_down (* 0.5 (- notspc linspc)))
+                  (hcnm-key_table_advance_down (* 0.5 (- notspc linspc)))
                  )
                )
-               (hcnm_key_table_advance_down (* 0.5 linspc))
+               (hcnm-key_table_advance_down (* 0.5 linspc))
               )
             )
             (cond
               ((= (c:hcnm-config-getvar "ShowKeyTableTitleShapes") "1")
-               (hcnm_key_table_insert_shape)
+               (hcnm-key_table_insert_shape)
               )
             )
             (setq notdsc (cadr notetitle))
-            (hcnm_key_table_insert_text)
-            (hcnm_key_table_advance_down (* 0.5 linspc))
+            (hcnm-key_table_insert_text)
+            (hcnm-key_table_advance_down (* 0.5 linspc))
           )
-          (hcnm_key_table_advance_down (* 0.5 (- notspc linspc)))
+          (hcnm-key_table_advance_down (* 0.5 (- notspc linspc)))
           (setq txtht txthttemp)
          )
        )
@@ -1068,33 +1068,33 @@
           (cond
             (;; Note won't fit after titles.
              (> (+ column_height_pending column_height) notesmaxheight)
-             (hcnm_key_table_advance_column)
+             (hcnm-key_table_advance_column)
             )
             (;; Note will fit after titles.
              t
              ;; Paragraph spacing
-             (hcnm_key_table_advance_down (* 0.5 (- notspc linspc)))
+             (hcnm-key_table_advance_down (* 0.5 (- notspc linspc)))
              ;; Down to middle of first note
-             (hcnm_key_table_advance_down (* 0.5 linspc))
+             (hcnm-key_table_advance_down (* 0.5 linspc))
             )
           )
          )
        )
        ;; Now add note
        (setq note_first_line_p t)
-       (hcnm_key_table_insert_shape)
-       (hcnm_key_table_advance_down (* -0.5 linspc))
+       (hcnm-key_table_insert_shape)
+       (hcnm-key_table_advance_down (* -0.5 linspc))
        (foreach
           notdsc (nth 6 entry)
-         (hcnm_key_table_advance_down (* 0.5 linspc))
-         (hcnm_key_table_insert_text)
-         (hcnm_key_table_advance_down (* 0.5 linspc))
+         (hcnm-key_table_advance_down (* 0.5 linspc))
+         (hcnm-key_table_insert_text)
+         (hcnm-key_table_advance_down (* 0.5 linspc))
          (setq
            notetitles nil
            note_first_line_p nil
          )
        )
-       (hcnm_key_table_advance_down (* 0.5 (- notspc linspc)))
+       (hcnm-key_table_advance_down (* 0.5 (- notspc linspc)))
       )
     )
   )
@@ -1133,7 +1133,7 @@
 
 
 
-(defun hcnm_key_table_advance_column ()
+(defun hcnm-key_table_advance_column ()
   (setq
     column_height 0
     icol
@@ -1151,7 +1151,7 @@
   )
 )
 
-(defun hcnm_key_table_advance_down (space / down_height)
+(defun hcnm-key_table_advance_down (space / down_height)
   (setq
     down_height (* space txtht)
     qtypt
@@ -1163,7 +1163,7 @@
   )
 )
 
-(defun hcnm_key_table_insert_shape ()
+(defun hcnm-key_table_insert_shape ()
   (vl-cmdf
     "._insert"
     (strcat "cnm" nottyp)
@@ -1175,7 +1175,7 @@
   )
 )
 
-(defun hcnm_key_table_insert_text ()
+(defun hcnm-key_table_insert_text ()
 ;;;All this stuff is to make the attribute order insensitive.
 ;;;    (setvar "attreq" 0)
 ;;;       (VL-CMDF
@@ -1254,12 +1254,12 @@
   )
 )
 
-;;HCNM_KEY_TABLE_FROM_SEARCH
+;;hcnm-KEY_TABLE_FROM_SEARCH
 ;;In the NOTES strategy, this routine is first of three main routines.
 ;;Gets project info from CONSTNOT.TXT
 ;;Gets drawing info from bubbles or table.
 ;;Saves all in .NOT file for other two routines
-(defun hcnm_key_table_from_search (dn projnotes txtht linspc tblwid phasewid /
+(defun hcnm-key_table_from_search (dn projnotes txtht linspc tblwid phasewid /
                            el en i notelist qtypt qtyset tablespace
                           )
   (setq
@@ -1305,16 +1305,16 @@
   (if (not qtypt)
     (setq qtypt (getpoint "\nStart point for key notes table: "))
   )
-  (hcnm_key_table_searchandsave dn projnotes)
+  (hcnm-key_table_searchandsave dn projnotes)
   ;;Make a new notes table
-  (hcnm_key_table_make "E" qtypt qtyset dn txtht)
+  (hcnm-key_table_make "E" qtypt qtyset dn txtht)
 )
 ;#endregion
 ;#region Table from import
-;;HCNM_IMPORT
+;;hcnm-IMPORT
 ;;In the NOTES strategy, this routine is second of three main routines.
-;;Reads from .NOT file, created by HCNM_KEY_TABLE_FROM_SEARCH, everything necessary and creates a table. 
-(defun hcnm_import (dn projnotes txtht linspc tblwid phasewid / el en i qtypt
+;;Reads from .NOT file, created by hcnm-KEY_TABLE_FROM_SEARCH, everything necessary and creates a table. 
+(defun hcnm-import (dn projnotes txtht linspc tblwid phasewid / el en i qtypt
                qtyset tablespace
               )
   (setq
@@ -1364,11 +1364,11 @@
     )
   )
   ;;Make a new notes table after erasing qtyset
-  (hcnm_key_table_make "I" qtypt qtyset dn txtht)
+  (hcnm-key_table_make "I" qtypt qtyset dn txtht)
 )
 ;#endregion
 ;#region Tally
-;;HCNM_TALLY
+;;hcnm-TALLY
 ;;In the NOTES strategy, this routine is the third of three main routines.
 ;;Reads from a group of .NOT files everything necessary to create a list of total quantities for job.
 ;;Reads CONSTNOT.TXT to put the .NOT files in order.
@@ -1383,7 +1383,7 @@
 ;;   for all notes, and using (cadr phaselisti) to know which position in qtylist to
 ;;   put the qtys.  Use "" for any unused phases on a sheet.
 ;;   '((shti (typj (notek qty1 qty2 qtyk))))
-(defun hcnm_tally (dn projnotes txtht linspc tblwid phasewid / allnot
+(defun hcnm-tally (dn projnotes txtht linspc tblwid phasewid / allnot
                   all_sheets_quantities col1x column dqwid el
                   flspec i input ndwid notdesc notetitles note_first_line_p
                   notnum notprice notqty notspc nottyp notunt numfnd
@@ -1780,8 +1780,8 @@
        )
      )
   )
-  (hcnm_projinit)                       ;Initialize project after user pauses
-  (hcnm_readcf (hcnm_projnotes))
+  (hcnm-projinit)                       ;Initialize project after user pauses
+  (hcnm-readcf (hcnm-projnotes))
   (setq
     linspc
      (atof (c:hcnm-config-getvar "LineSpacing"))
@@ -1869,7 +1869,7 @@
   )
   ;;For each line in project file
   (foreach
-     entry *hcnm_cnmprojectnotes*
+     entry *hcnm-cnmprojectnotes*
     (cond
       ;;If it's a config setting, set it.
       ((= 1 (car entry))
@@ -2155,18 +2155,18 @@
 ;#region CNM Main
 ;;CNM main commands
 (defun c:hcnm-cnm ()
-(haws-core-init 179) (hcnm_cnm nil)(haws-core-restore))
+(haws-core-init 179) (hcnm-cnm nil)(haws-core-restore))
 (defun c:hcnm-cnmkt ()
   (haws-core-init 180)
   (prompt (strcat "\n" (haws_cnm_evangel_msg)))
-  (hcnm_cnm "Search")
+  (hcnm-cnm "Search")
   (haws-core-restore))
 (defun c:hcnm-cnmkti ()
-(haws-core-init 181) (hcnm_cnm "Import")(haws-core-restore))
+(haws-core-init 181) (hcnm-cnm "Import")(haws-core-restore))
 (defun c:hcnm-cnmqt ()
-(haws-core-init 338) (hcnm_cnm "Tally")(haws-core-restore))
+(haws-core-init 338) (hcnm-cnm "Tally")(haws-core-restore))
 ;;CNM main function
-(defun hcnm_cnm (opt / cfname dn linspc phasewid tblwid txtht)
+(defun hcnm-cnm (opt / cfname dn linspc phasewid tblwid txtht)
   ;;Main function
   (haws-vsave
     '("attdia" "attreq" "clayer" "osmode")
@@ -2193,13 +2193,13 @@
      )
     )
   )
-  (hcnm_projinit)                       ;Initialize after pauses
+  (hcnm-projinit)                       ;Initialize after pauses
   ;;Set user's desired dimstyle.
-  (hcnm_set_dimstyle "NotesKeyTableDimstyle")
+  (hcnm-set_dimstyle "NotesKeyTableDimstyle")
   (setq
     dn (haws-getdnpath)
     projnotes
-     (hcnm_projnotes)
+     (hcnm-projnotes)
     txtht
      (* (getvar "dimtxt") (haws-dwgscale))
     ;;Column and line spacing widths (half width for middle justified columns)
@@ -2213,22 +2213,22 @@
     phasewid
      (atof (c:hcnm-config-getvar "PhaseWidthAdd"))
   )
-  (hcnm_readcf projnotes)
+  (hcnm-readcf projnotes)
   (cond
     ((= opt "Search")
-     (hcnm_key_table_from_search
+     (hcnm-key_table_from_search
        dn projnotes txtht linspc tblwid phasewid
       )
     )
     ((= opt "Import")
-     (hcnm_import dn projnotes txtht linspc tblwid phasewid)
+     (hcnm-import dn projnotes txtht linspc tblwid phasewid)
     )
     ((= opt "Tally")
-     (hcnm_tally dn projnotes txtht linspc tblwid phasewid)
+     (hcnm-tally dn projnotes txtht linspc tblwid phasewid)
     )
   )
   ;;Restore old dimstyle
-  (hcnm_restore_dimstyle)
+  (hcnm-restore_dimstyle)
   (haws-vrstor)
   (haws-core-restore)
   (princ)
@@ -2246,46 +2246,46 @@
 ;;;================================================================================================================
 
 ;;
-;;HCNM_PROJINIT initializes the CNM project variables
+;;hcnm-PROJINIT initializes the CNM project variables
 ;;because there is good reason to believe they need to
 ;;be checked again (a pause for user input or a new user command)
 ;;All the functions assume if they are present they are valid.
 ;;
-(defun hcnm_projinit ()
+(defun hcnm-projinit ()
   (setq
-    *hcnm_config* nil
-    *hcnm_cnmprojectroot* nil
-    *hcnm_cnmprojectnotes* nil
+    *hcnm-config* nil
+    *hcnm-cnmprojectroot* nil
+    *hcnm-cnmprojectnotes* nil
   )
 )
 
 
 ;;Does nothing but strcat, since the existence of the file
-;;is validated by (HCNM_PROJ)
-(defun hcnm_ini_name (proj)
-  (hcnm_project_folder_to_ini proj)
+;;is validated by (hcnm-PROJ)
+(defun hcnm-ini_name (proj)
+  (hcnm-project_folder_to_ini proj)
 )
 
-;; HCNM_PROJ gets a valid project root folder for this drawing's folder.
+;; hcnm-PROJ gets a valid project root folder for this drawing's folder.
 ;; While it returns the folder only, that folder is qualified to have CNM.INI in it.
 ;; It should resolve all errors and user conditions
 ;; and return a "drive:\\...\\projroot" path to other functions.
-(defun hcnm_proj (/ dwgdir linked_project_folder linked_project_marker
+(defun hcnm-proj (/ dwgdir linked_project_folder linked_project_marker
               local_project_folder local_project_marker
              )
   (setq
     dwgdir
      (haws-filename-directory (getvar "dwgprefix"))
     local_project_marker
-     (hcnm_local_project_marker dwgdir)
+     (hcnm-local_project_marker dwgdir)
     linked_project_marker
-     (hcnm_linked_project_marker dwgdir)
+     (hcnm-linked_project_marker dwgdir)
   )
   (cond
     (local_project_marker
      (setq
        local_project_folder
-        (hcnm_assure_local_project
+        (hcnm-assure_local_project
           local_project_marker
         )
      )
@@ -2295,37 +2295,37 @@
     (linked_project_marker
      (setq
        linked_project_folder
-        (hcnm_assure_linked_project
+        (hcnm-assure_linked_project
           linked_project_marker
         )
      )
     )
   )
   (setq
-    *hcnm_cnmprojectroot*
+    *hcnm-cnmprojectroot*
      (cond
        ;;If project is already defined this session, use it.
        ;;(Assume it's valid.  Calling function should init project if there's been a chance of change or loss by user.)
-       (*hcnm_cnmprojectroot*)
+       (*hcnm-cnmprojectroot*)
        ((and
           local_project_marker
           linked_project_marker
         )
-        (hcnm_error_ambiguous_project_markers
+        (hcnm-error_ambiguous_project_markers
           local_project_folder
           linked_project_folder
         )
        )
        ;;Else well-formed simple (single-folder) projects. CNM.INI is here.
        (local_project_marker
-        (hcnm_assure_local_project
+        (hcnm-assure_local_project
           local_project_marker
         )
        )
        ;;Well-formed complex (multi-folder) projects.  CNMPROJ.TXT is here and
        ;;we'll make sure it really points to a CNM.INI.
        (linked_project_marker
-        (hcnm_assure_linked_project
+        (hcnm-assure_linked_project
           linked_project_marker
         )
        )
@@ -2338,22 +2338,22 @@
             )
           )
         )
-        (hcnm_initialize_project dwgdir)
+        (hcnm-initialize_project dwgdir)
         dwgdir
        )
      )
   )
 )
 
-(defun hcnm_local_project_marker (dwgdir)
-  (findfile (hcnm_project_folder_to_ini dwgdir))
+(defun hcnm-local_project_marker (dwgdir)
+  (findfile (hcnm-project_folder_to_ini dwgdir))
 )
 
-(defun hcnm_linked_project_marker (dwgdir)
-  (findfile (hcnm_project_folder_to_link dwgdir))
+(defun hcnm-linked_project_marker (dwgdir)
+  (findfile (hcnm-project_folder_to_link dwgdir))
 )
 
-(defun hcnm_error_not_writeable
+(defun hcnm-error_not_writeable
    ()
   (alert
     (princ
@@ -2366,7 +2366,7 @@
   (exit)
 )
 
-(defun hcnm_error_ambiguous_project_markers
+(defun hcnm-error_ambiguous_project_markers
    (local_project_folder linked_project_folder)
   (alert
     (princ
@@ -2381,25 +2381,25 @@
   (princ
     (strcat
       "\nLocal project: "
-      (hcnm_project_folder_to_ini local_project_folder)
+      (hcnm-project_folder_to_ini local_project_folder)
     )
   )
   (princ
     (strcat
       "\nLink to another project: "
-      (hcnm_project_folder_to_link local_project_folder)
+      (hcnm-project_folder_to_link local_project_folder)
     )
   )
   (exit)
 )
 
 
-(defun hcnm_assure_local_project (local_marker_file)
-  (hcnm_check_moved_project local_marker_file)
+(defun hcnm-assure_local_project (local_marker_file)
+  (hcnm-check_moved_project local_marker_file)
   (haws-filename-directory local_marker_file)
 )
 
-(defun hcnm_assure_linked_project (link_marker / projroot rdlin)
+(defun hcnm-assure_linked_project (link_marker / projroot rdlin)
   (cond
     ((and
        (setq f1 (open link_marker "r"))
@@ -2425,11 +2425,11 @@
      )
     )
   )
-  (if (not (findfile (hcnm_ini_name projroot)))
-    (hcnm_initialize_project projroot)
+  (if (not (findfile (hcnm-ini_name projroot)))
+    (hcnm-initialize_project projroot)
   )
-  (hcnm_check_moved_project
-    (hcnm_project_folder_to_ini projroot)
+  (hcnm-check_moved_project
+    (hcnm-project_folder_to_ini projroot)
   )
   (princ
     (strcat
@@ -2442,7 +2442,7 @@
   projroot
 )
 
-(defun hcnm_check_moved_project
+(defun hcnm-check_moved_project
    (project_file_name / input1 pnname thisfile_value)
   (cond
     ((and
@@ -2484,14 +2484,14 @@
 )
 
 
-(defun hcnm_project_ini_name () "cnm.ini")
-(defun hcnm_project_link_name () "cnmproj.txt")
+(defun hcnm-project_ini_name () "cnm.ini")
+(defun hcnm-project_link_name () "cnmproj.txt")
 
-(defun hcnm_project_folder_to_ini (project_folder)
-  (strcat project_folder "\\" (hcnm_project_ini_name))
+(defun hcnm-project_folder_to_ini (project_folder)
+  (strcat project_folder "\\" (hcnm-project_ini_name))
 )
-(defun hcnm_project_folder_to_link (project_folder)
-  (strcat project_folder "\\" (hcnm_project_link_name))
+(defun hcnm-project_folder_to_link (project_folder)
+  (strcat project_folder "\\" (hcnm-project_link_name))
 )
 
 
@@ -2529,27 +2529,27 @@
 ;;or modifying this drawing's folder's cnmproj.txt
 ;;returns project root
 (defun c:hcnm-linkproj ()
-(haws-core-init 183) (hcnm_linkproj nil) (haws-core-restore)(princ))
+(haws-core-init 183) (hcnm-linkproj nil) (haws-core-restore)(princ))
 
 ;; Sets the CNM project to the given folder. Includes wizards, alerts, and error checks.
-(defun hcnm_linkproj (proj / dwgdir localproj localprojbak oldlink)
+(defun hcnm-linkproj (proj / dwgdir localproj localprojbak oldlink)
   (setq
     dwgdir
      (haws-filename-directory (getvar "dwgprefix"))
-    *hcnm_cnmprojectroot*
+    *hcnm-cnmprojectroot*
      (cond
-       (*hcnm_cnmprojectroot*)
+       (*hcnm-cnmprojectroot*)
        (dwgdir)
      )
   )
-  (cond ((not proj)(setq proj (hcnm_browseproj *hcnm_cnmprojectroot*))))
+  (cond ((not proj)(setq proj (hcnm-browseproj *hcnm-cnmprojectroot*))))
   (cond
     (proj
-     (setq *hcnm_cnmprojectroot* proj)
+     (setq *hcnm-cnmprojectroot* proj)
      (cond
        ((= proj dwgdir)
         (cond
-          ((setq oldlink (findfile (hcnm_project_folder_to_link proj)))
+          ((setq oldlink (findfile (hcnm-project_folder_to_link proj)))
            (alert
              (princ
                "Setting project to this drawing's folder by deleting an existing link to another folder."
@@ -2561,7 +2561,7 @@
            (alert
              (strcat
                "Project Folder\n"
-               *hcnm_cnmprojectroot*
+               *hcnm-cnmprojectroot*
                "\nnot changed."
              )
            )
@@ -2569,7 +2569,7 @@
         )
        )
        (proj
-        (hcnm_makeprojtxt proj dwgdir)
+        (hcnm-makeprojtxt proj dwgdir)
         (alert
           (princ
             (strcat
@@ -2581,7 +2581,7 @@
         (cond
           ((setq
              localproj
-              (findfile (hcnm_project_folder_to_ini dwgdir))
+              (findfile (hcnm-project_folder_to_ini dwgdir))
            )
            (setq localprojbak (strcat localproj ".bak"))
            (alert
@@ -2599,11 +2599,11 @@
        )
      )
     )
-    (*hcnm_cnmprojectroot*
+    (*hcnm-cnmprojectroot*
      (alert
        (strcat
          "Project Folder\n"
-         *hcnm_cnmprojectroot*
+         *hcnm-cnmprojectroot*
          "\nnot changed."
        )
      )
@@ -2611,11 +2611,11 @@
   )
 )
 
-(defun hcnm_browseproj (oldproj)
+(defun hcnm-browseproj (oldproj)
   (cond
     ((haws-vlisp-p)
      (ale_browseforfolder
-       (hcnm_shorten_path oldproj 50)
+       (hcnm-shorten_path oldproj 50)
        48
        ""
      )
@@ -2628,7 +2628,7 @@
   )
 )
 
-(defun hcnm_shorten_path (path nshort)
+(defun hcnm-shorten_path (path nshort)
   (cond
     ((< (strlen path) nshort) path)
     ((strcat
@@ -2644,8 +2644,8 @@
 
 ;;Makes a project root reference file CNMPROJ.TXT in this drawing's folder
 ;;Returns nil.
-(defun hcnm_makeprojtxt (projdir dwgdir)
-  (setq f2 (open (hcnm_project_folder_to_link dwgdir) "w"))
+(defun hcnm-makeprojtxt (projdir dwgdir)
+  (setq f2 (open (hcnm-project_folder_to_link dwgdir) "w"))
   (princ
     (strcat
       ";For simple projects, all project drawings are in one folder, 
@@ -2738,7 +2738,7 @@
 ;;;Test functions
 (defun c:testset ()
 (haws-core-init 184)
-  (hcnm_concept_testsetvar
+  (hcnm-concept_testsetvar
     (getstring "\nVariable name: ")
     (getstring "\nValue: ")
   )
@@ -2746,7 +2746,7 @@
 )
 (defun c:testget ()
 (haws-core-init 185)
-  (hcnm_concept_testgetvar (getstring "\nVariable name: "))
+  (hcnm-concept_testgetvar (getstring "\nVariable name: "))
   (haws-core-restore)
 )
 
@@ -2784,7 +2784,7 @@
       (xdata
        ;; Found a bubble - determine if it's in model or paper space
        (cond
-         ((hcnm_ldrblk_is_on_model_tab ename)
+         ((hcnm-ldrblk_is_on_model_tab ename)
           (setq count_ms (1+ count_ms))
          )
          (t
@@ -2792,7 +2792,7 @@
          )
        )
        ;; Find and delete the associated leader first
-       (setq ename_leader (hcnm_ldrblk_bubble_leader ename))
+       (setq ename_leader (hcnm-ldrblk_bubble_leader ename))
        (cond
          (ename_leader
           (entdel ename_leader)
@@ -2816,13 +2816,13 @@
   (princ)
 )
 
-(defun hcnm_concept_testsetvar (var val)
-  (hcnm_concept_setvar
+(defun hcnm-concept_testsetvar (var val)
+  (hcnm-concept_setvar
     ;; variable
     var
     ;;value
     val
-    ;; application name for its section in *hcnm_concept_SETTINGS*
+    ;; application name for its section in *hcnm-concept_SETTINGS*
     "test"
     ;; indicator file name for default location of ini or vanilla ini
     ;; (indicator file can be optionally a fully qualified path)
@@ -2834,12 +2834,12 @@
    )
 )
 ;;This is a sample wrapper function that an application would use
-;;to call hcnm_concept_GETVAR.
-(defun hcnm_concept_testgetvar (var)
-  (hcnm_concept_getvar
+;;to call hcnm-concept_GETVAR.
+(defun hcnm-concept_testgetvar (var)
+  (hcnm-concept_getvar
     ;;variable
     var
-    ;; application name for its section in *hcnm_concept_SETTINGS*
+    ;; application name for its section in *hcnm-concept_SETTINGS*
     "test"
     ;; indicator file name for default location of ini or vanilla ini
     ;; (indicator file can be optionally a fully qualified path)
@@ -2855,7 +2855,7 @@
    )
 )
 
-;; hcnm_concept_INI
+;; hcnm-concept_INI
 ;; Finds INI file
 ;; Returns a fully qualified path, that folder is qualified to have
 ;; HAWSEDC.INI in it.
@@ -2863,10 +2863,10 @@
 ;; and return a "drive:\\...\\INIFOLDER" path to other functions.
 
 
-;;; hcnm_concept_INIFOLDER gets a valid INI folder.
-;;; This function is wrong because there isn't a single *hcnm_concept_INIFOLDER* that this function
+;;; hcnm-concept_INIFOLDER gets a valid INI folder.
+;;; This function is wrong because there isn't a single *hcnm-concept_INIFOLDER* that this function
 ;;; can throw around globally.
-(defun hcnm_concept_inifile (app scope testfile / inifile assumedinifolder
+(defun hcnm-concept_inifile (app scope testfile / inifile assumedinifolder
                  assumedinifile
                 )
   (cond ((not testfile) (setq testfile (strcat app ".cui"))))
@@ -2877,7 +2877,7 @@
     ((cdr
        (assoc
          0
-         (cdr (assoc app (cdr (assoc scope *hcnm_concept_settings*))))
+         (cdr (assoc app (cdr (assoc scope *hcnm-concept_settings*))))
        )
      )
     )
@@ -2892,7 +2892,7 @@
        (setq assumedinifolder (findfile testfile))
        (setq
          assumedinifolder
-          (hcnm_concept_filename_directory assumedinifolder)
+          (hcnm-concept_filename_directory assumedinifolder)
        )
        (setq
          assumedinifile
@@ -2902,50 +2902,50 @@
      assumedinifile
     )
     ;;Or make an ini file in folder with testfile in it or in proj folder
-    ((hcnm_concept_getinidefaults assumedinifolder) assumedinifolder)
+    ((hcnm-concept_getinidefaults assumedinifolder) assumedinifolder)
   )
 )
 
 
 ;;Gets all settings from an inifile if it can.
-(defun hcnm_concept_getsettings (inifile testfile apporproj)
+(defun hcnm-concept_getsettings (inifile testfile apporproj)
   (setq
-    *hcnm_concept_settings*
+    *hcnm-concept_settings*
      (ini_readini
-       (hcnm_concept_ini (hcnm_concept_inifolder inifile testfile))
+       (hcnm-concept_ini (hcnm-concept_inifolder inifile testfile))
      )
   )
 )
 
 ;;Sets a variable in the global lisp list and in HAWSEDC.INI
-(defun hcnm_concept_setvar (inifile inisection var val / setting)
-  ;; Call GETVAR before setting var.  Why?  To populate *hcnm_concept_SETTINGS*?
-  (hcnm_concept_getvar
+(defun hcnm-concept_setvar (inifile inisection var val / setting)
+  ;; Call GETVAR before setting var.  Why?  To populate *hcnm-concept_SETTINGS*?
+  (hcnm-concept_getvar
     var inisection inifile testfile apporproj defaults
    )
-  (hcnm_concept_addvartolist var val inisection inifile)
+  (hcnm-concept_addvartolist var val inisection inifile)
   (ini_writeentry
-    (hcnm_concept_ini (hcnm_concept_inifolder))
+    (hcnm-concept_ini (hcnm-concept_inifolder))
     inisection
     setting
     val
   )
 )
 
-;; hcnm_concept_GETVAR
-;; hcnm_concept_GETVAR is called by wrapper functions like HCNM_GETVAR or hcnm_concept_EDCGETVAR
+;; hcnm-concept_GETVAR
+;; hcnm-concept_GETVAR is called by wrapper functions like hcnm-GETVAR or hcnm-concept_EDCGETVAR
 ;; It gets a variable without opening a file if it can.
-;; (Higher calling functions may use functions like HCNM_PROJINIT or
-;; hcnm_concept_REMOVESETTINGS to remove settings and force a file
+;; (Higher calling functions may use functions like hcnm-PROJINIT or
+;; hcnm-concept_REMOVESETTINGS to remove settings and force a file
 ;; read.)
-;; hcnm_concept_GETVAR gets a program setting from
-;; 1. The global *hcnm_concept_SETTINGS* list if found
+;; hcnm-concept_GETVAR gets a program setting from
+;; 1. The global *hcnm-concept_SETTINGS* list if found
 ;; 2. An ini file or other location
 ;; 3. reverts to a default value without fail
 ;;
 ;; INIFILE is an ini filename. Ini file might not be used for a given scope in the current strategy.  
-;; If there is no such ini file found and is needed, hcnm_concept_getvar creates it.
-;; If hcnm_concept_getvar can't create the file, it sends an alert.
+;; If there is no such ini file found and is needed, hcnm-concept_getvar creates it.
+;; If hcnm-concept_getvar can't create the file, it sends an alert.
 ;;
 ;; SECTION is the ini section/path/tree path/location the var is in or goes in
 ;;
@@ -2959,11 +2959,11 @@
 ;; A flag indicating whether the active settings are to be kept in the
 ;; app folder or the project folder ("app" "prj")
 ;; application defaults for all variables
-(defun hcnm_concept_getvar (var sect app scope testfile defaults / addtolist
+(defun hcnm-concept_getvar (var sect app scope testfile defaults / addtolist
                 addtoini dir ini setting val
                )
   (setq
-    ;; Does the variable need to be added to the *hcnm_concept_SETTINGS* list? Assume yes initially.
+    ;; Does the variable need to be added to the *hcnm-concept_SETTINGS* list? Assume yes initially.
     addtolist
      t
     ;; Does the variable need to be added to the appropriate ini file? Assume yes initially
@@ -2971,16 +2971,16 @@
      t
   )
   ;;Get var list if no var list
-  (if (not *hcnm_concept_settings*)
-    (hcnm_concept_getsettings)
+  (if (not *hcnm-concept_settings*)
+    (hcnm-concept_getsettings)
   )
   (cond
     ;;Try getting from list
     ((setq
        val
-        (hcnm_concept_vartoval
+        (hcnm-concept_vartoval
           var
-          (cadr (assoc sect (caddr (assoc app *hcnm_concept_settings*))))
+          (cadr (assoc sect (caddr (assoc app *hcnm-concept_settings*))))
         )
      )
      (setq
@@ -3000,13 +3000,13 @@
        (setq dir (findfile testfile))
        (setq
          ini
-          (findfile (strcat (hcnm_concept_filename_directory dir) "\\" app))
+          (findfile (strcat (hcnm-concept_filename_directory dir) "\\" app))
        )
        (setq val (ini_readentry ini sect setting))
      )
     )
     ;;Use default if there is one
-    ((setq val (hcnm_concept_vartoval var defaults)))
+    ((setq val (hcnm-concept_vartoval var defaults)))
     ;;Otherwise fail.
     (t
      (alert
@@ -3024,19 +3024,19 @@
     )
   )
   (if addtolist
-    (hcnm_concept_addvartolist var val sect app)
+    (hcnm-concept_addvartolist var val sect app)
   )
   (if addtoini
-    (ini_writeentry (hcnm_concept_ini (hcnm_concept_inifolder)) app setting val)
+    (ini_writeentry (hcnm-concept_ini (hcnm-concept_inifolder)) app setting val)
   )
   val
 )
 
-(defun hcnm_concept_addvartolist (var val inisection inifile)
+(defun hcnm-concept_addvartolist (var val inisection inifile)
   (setq
     setting
-     (hcnm_concept_vartosetting var)
-    *hcnm_concept_settings*
+     (hcnm-concept_vartosetting var)
+    *hcnm-concept_settings*
      (subst
        (subst
          (subst
@@ -3045,19 +3045,19 @@
              inisetting
              (assoc
                inisection
-               (assoc inifile *hcnm_concept_settings*)
+               (assoc inifile *hcnm-concept_settings*)
              )
            )
            (assoc
              inisection
-             (assoc inifile *hcnm_concept_settings*)
+             (assoc inifile *hcnm-concept_settings*)
            )
          )
-         (assoc inisection (assoc file *hcnm_concept_settings*))
-         (assoc inifile *hcnm_concept_settings*)
+         (assoc inisection (assoc file *hcnm-concept_settings*))
+         (assoc inifile *hcnm-concept_settings*)
        )
-       (assoc inifile *hcnm_concept_settings*)
-       *hcnm_concept_settings*
+       (assoc inifile *hcnm-concept_settings*)
+       *hcnm-concept_settings*
      )
   )
 )
@@ -3067,7 +3067,7 @@
 ;;or else writes defaults to a fresh ini.
 ;;Doesn't add to existing ini.
 ;;Returns ini file name.
-(defun hcnm_concept_getinidefaults (proj / app appini projini)
+(defun hcnm-concept_getinidefaults (proj / app appini projini)
   (alert
     (princ
       (strcat
@@ -3084,10 +3084,10 @@
        (setq
          appini
           (findfile
-            (strcat (hcnm_concept_filename_directory app) "\\" "cnm.ini")
+            (strcat (hcnm-concept_filename_directory app) "\\" "cnm.ini")
           )
        )
-       (hcnm_concept_file_copy appini projini)
+       (hcnm-concept_file_copy appini projini)
      )
      (while (not (findfile projini)))
      projini
@@ -3132,12 +3132,12 @@ ImportLayerSettings=No
   )
 )
 
-;;Saves *hcnm_concept_SETTINGS* to the requested inifile
-(defun hcnm_concept_savesettingstoini (inifile testfile apporproj)
+;;Saves *hcnm-concept_SETTINGS* to the requested inifile
+(defun hcnm-concept_savesettingstoini (inifile testfile apporproj)
   (ini_writesection
-    (hcnm_concept_ini (hcnm_concept_inifolder inifile testfile))
+    (hcnm-concept_ini (hcnm-concept_inifolder inifile testfile))
     inifile
-    *hcnm_concept_settings*
+    *hcnm-concept_settings*
   )
 )
 ;;;================================================================================================================
@@ -3151,7 +3151,7 @@ ImportLayerSettings=No
 ;;; VAR: The string name of a var
 ;;; VAL: The string value of a var
 ;;;
-(defun hcnm_config_definitions (/)
+(defun hcnm-config_definitions (/)
   (list
     (list "Scope"
      (list "Session" 0)
@@ -3165,7 +3165,7 @@ ImportLayerSettings=No
      (list "AppFolder"  (haws-filename-directory (findfile "cnm.mnl")) 0)
      (list "LXXListMode" "yes" 4)
      (list "CNMAliasActivation" "0" 4)
-     (list "ProjectNotesEditor" (hcnm_config_default_projectnoteseditor) 2) ; text, csv, or cnm
+     (list "ProjectNotesEditor" (hcnm-config_default_projectnoteseditor) 2) ; text, csv, or cnm
      (list "LayersEditor" "notepad" 4) ; notepad or cnm
      (list "ProjectNotes" "constnot.csv" 2)
      (list "ThisFile" "" 2)
@@ -3252,7 +3252,7 @@ ImportLayerSettings=No
    )
 )
 
-(defun hcnm_config_default_projectnoteseditor (/ reg_val)
+(defun hcnm-config_default_projectnoteseditor (/ reg_val)
   (cond
     ((and
        (haws-vlisp-p)
@@ -3272,32 +3272,32 @@ ImportLayerSettings=No
 )
 
 ;; Strips scope stuff and returns just defaults list
-(defun hcnm_config_defaults ()
+(defun hcnm-config_defaults ()
   (cond
-    (*hcnm_config_defaults*)
+    (*hcnm-config_defaults*)
     ((mapcar
-       '(lambda (var) (hcnm_config_entry_strip_scope var))
-       (cdr (assoc "Var" (hcnm_config_definitions)))
+       '(lambda (var) (hcnm-config_entry_strip_scope var))
+       (cdr (assoc "Var" (hcnm-config_definitions)))
      )
     )
   )
 )
 
-(defun hcnm_config_entry_strip_scope (entry)
+(defun hcnm-config_entry_strip_scope (entry)
   (reverse (cdr (reverse entry)))
 )
 
-(defun hcnm_config_defaults_single_scope
+(defun hcnm-config_defaults_single_scope
    (scope_key / scope_code scope_list)
-  (setq scope_code (hcnm_config_scope_code scope_key))
+  (setq scope_code (hcnm-config_scope_code scope_key))
   (foreach
-     entry (cdr (assoc "Var" (hcnm_config_definitions)))
+     entry (cdr (assoc "Var" (hcnm-config_definitions)))
     (cond
-      ((= (hcnm_config_entry_scope_code entry) scope_code)
+      ((= (hcnm-config_entry_scope_code entry) scope_code)
        (setq
          scope_list
           (cons
-            (hcnm_config_entry_strip_scope entry)
+            (hcnm-config_entry_strip_scope entry)
             scope_list
           )
        )
@@ -3307,151 +3307,151 @@ ImportLayerSettings=No
   (reverse scope_list)
 )
 
-(defun hcnm_config_scope_code (scope_key)
+(defun hcnm-config_scope_code (scope_key)
   (cadr
     (assoc
       scope_key
-      (cdr (assoc "Scope" (hcnm_config_definitions)))
+      (cdr (assoc "Scope" (hcnm-config_definitions)))
     )
   )
 )
 
-(defun hcnm_config_scope_eq (var scope_key)
-  (= (hcnm_config_entry_scope_code
-       (assoc var (cdr (assoc "Var" (hcnm_config_definitions))))
+(defun hcnm-config_scope_eq (var scope_key)
+  (= (hcnm-config_entry_scope_code
+       (assoc var (cdr (assoc "Var" (hcnm-config_definitions))))
      )
-     (hcnm_config_scope_code scope_key)
+     (hcnm-config_scope_code scope_key)
   )
 )
 
-(defun hcnm_config_entry_var (entry) (car entry))
+(defun hcnm-config_entry_var (entry) (car entry))
 
-(defun hcnm_config_entry_val (entry) (cadr entry))
+(defun hcnm-config_entry_val (entry) (cadr entry))
 
-(defun hcnm_config_entry_scope_code (entry) (caddr entry))
+(defun hcnm-config_entry_scope_code (entry) (caddr entry))
 
-(defun hcnm_config_get_default (var)
-  (hcnm_config_entry_val (assoc var (hcnm_config_defaults)))
+(defun hcnm-config_get_default (var)
+  (hcnm-config_entry_val (assoc var (hcnm-config_defaults)))
 )
 
-(defun hcnm_config_read_all (/ ini_configs)
+(defun hcnm-config_read_all (/ ini_configs)
   (append
-    (hcnm_config_read_all_user)
-    (hcnm_config_read_all_project)
+    (hcnm-config_read_all_user)
+    (hcnm-config_read_all_project)
   )
 )
-(defun hcnm_config_read_all_user (/ )
-  ;; This function doesn't need to setq an ini_configs since it does HCNM_CONFIG_READ_USER var by var.
+(defun hcnm-config_read_all_user (/ )
+  ;; This function doesn't need to setq an ini_configs since it does hcnm-CONFIG_READ_USER var by var.
   (mapcar
     '(lambda (entry / var val)
        (setq
-         var (hcnm_config_entry_var entry)
-         val (hcnm_config_read_user var)
+         var (hcnm-config_entry_var entry)
+         val (hcnm-config_read_user var)
        )
        (list var val)
      )
-    (hcnm_config_defaults_single_scope "User")
-  )
-)
-
-(defun hcnm_config_read_all_project (/ ini_configs)
-  (setq ini_configs (ini_readsection (hcnm_ini_name (hcnm_proj)) "CNM"))
-  (mapcar
-    '(lambda (entry / var val)
-       (setq
-         var (hcnm_config_entry_var entry)
-         val (hcnm_config_entry_val (assoc var ini_configs))
-       )
-       (list var val)
-     )
-    (hcnm_config_defaults_single_scope "Project")
+    (hcnm-config_defaults_single_scope "User")
   )
 )
 
-(defun hcnm_config_read_all_session (/ ini_configs)
-  ;; Maybe this function can do what HCNM_CONFIG_READ_ALL_USER does; it doesn't need to setq an ini_configs since it does HCNM_CONFIG_READ_USER var by var.
-  (setq ini_configs *hcnm_config_session*)
+(defun hcnm-config_read_all_project (/ ini_configs)
+  (setq ini_configs (ini_readsection (hcnm-ini_name (hcnm-proj)) "CNM"))
   (mapcar
     '(lambda (entry / var val)
        (setq
-         var (hcnm_config_entry_var entry)
-         val (hcnm_config_entry_val (assoc var ini_configs))
+         var (hcnm-config_entry_var entry)
+         val (hcnm-config_entry_val (assoc var ini_configs))
        )
        (list var val)
      )
-    (hcnm_config_defaults_single_scope "Session")
+    (hcnm-config_defaults_single_scope "Project")
+  )
+)
+
+(defun hcnm-config_read_all_session (/ ini_configs)
+  ;; Maybe this function can do what hcnm-CONFIG_READ_ALL_USER does; it doesn't need to setq an ini_configs since it does hcnm-CONFIG_READ_USER var by var.
+  (setq ini_configs *hcnm-config_session*)
+  (mapcar
+    '(lambda (entry / var val)
+       (setq
+         var (hcnm-config_entry_var entry)
+         val (hcnm-config_entry_val (assoc var ini_configs))
+       )
+       (list var val)
+     )
+    (hcnm-config_defaults_single_scope "Session")
   )
 )
 
 ;;;Sets a variable in a temporary global lisp list
-(defun hcnm_config_temp_setvar (var val)
+(defun hcnm-config_temp_setvar (var val)
   (cond
-    ((assoc var *hcnm_config_temp*)
+    ((assoc var *hcnm-config_temp*)
      (setq
-       *hcnm_config_temp*
+       *hcnm-config_temp*
         (subst
           (list var val)
-          (assoc var *hcnm_config_temp*)
-          *hcnm_config_temp*
+          (assoc var *hcnm-config_temp*)
+          *hcnm-config_temp*
         )
      )
     )
     (t
-     (setq *hcnm_config_temp* (cons (list var val) *hcnm_config_temp*))
+     (setq *hcnm-config_temp* (cons (list var val) *hcnm-config_temp*))
     )
   )
 )
 
 ;;;Gets a variable in a temporary global lisp list
 ;;;If it's not present there, gets real value.
-(defun hcnm_config_temp_getvar (var)
+(defun hcnm-config_temp_getvar (var)
   (cond
-    ((cadr (assoc var *hcnm_config_temp*)))
+    ((cadr (assoc var *hcnm-config_temp*)))
     (t (c:hcnm-config-getvar var))
   )
 )
 
 
 ;;;Saves the global list of temporary configs in the real global lisp list and in CNM.INI
-(defun hcnm_config_temp_save ()
+(defun hcnm-config_temp_save ()
   (foreach
-     entry *hcnm_config_temp*
+     entry *hcnm-config_temp*
     (c:hcnm-config-setvar
-      (hcnm_config_entry_var entry)
-      (hcnm_config_entry_val entry)
+      (hcnm-config_entry_var entry)
+      (hcnm-config_entry_val entry)
     )
   )
 )
 
 ;;;Saves the global list of temporary configs in the real global lisp list and in CNM.INI
-(defun hcnm_config_temp_clear ()
-  (setq *hcnm_config_temp* nil)
+(defun hcnm-config_temp_clear ()
+  (setq *hcnm-config_temp* nil)
 )
 
 ;;;Sets a variable in the global lisp list and in CNM.INI
 (defun c:hcnm-config-setvar (var val)
   (setq
-    *hcnm_config*
+    *hcnm-config*
      (cond
-       ((assoc var *hcnm_config*)
+       ((assoc var *hcnm-config*)
         (subst
           (list var val)
-          (assoc var *hcnm_config*)
-          *hcnm_config*
+          (assoc var *hcnm-config*)
+          *hcnm-config*
         )
        )
-       (t (cons (list var val) *hcnm_config*))
+       (t (cons (list var val) *hcnm-config*))
      )
   )
   (cond
-    ((hcnm_config_scope_eq var "User")
-     (hcnm_config_write_user var val)
+    ((hcnm-config_scope_eq var "User")
+     (hcnm-config_write_user var val)
     )
-    ((hcnm_config_scope_eq var "Project")
-     (ini_writeentry (hcnm_ini_name (hcnm_proj)) "CNM" var val)
+    ((hcnm-config_scope_eq var "Project")
+     (ini_writeentry (hcnm-ini_name (hcnm-proj)) "CNM" var val)
     )
-    ((hcnm_config_scope_eq var "Session")
-     (hcnm_config_write_session var val)
+    ((hcnm-config_scope_eq var "Session")
+     (hcnm-config_write_session var val)
     )
   )
   val
@@ -3465,35 +3465,35 @@ ImportLayerSettings=No
   (setq setvar_p t)
   (cond
     ;; Initialize configs as needed
-    ((not (assoc var *hcnm_config*))
+    ((not (assoc var *hcnm-config*))
      (cond
-       ((hcnm_config_scope_eq var "Project")
+       ((hcnm-config_scope_eq var "Project")
         (setq
-          *hcnm_config*
+          *hcnm-config*
            (append
-             *hcnm_config*
+             *hcnm-config*
              ;; If one project var is missing, all project vars are missing
-             (hcnm_config_read_all_project)
+             (hcnm-config_read_all_project)
            )
         )
        )
-       ((hcnm_config_scope_eq var "User")
+       ((hcnm-config_scope_eq var "User")
         (setq
-          *hcnm_config*
+          *hcnm-config*
            (append
-             *hcnm_config*
+             *hcnm-config*
              ;; If one user var is missing, all user vars are missing
-             (hcnm_config_read_all_user)
+             (hcnm-config_read_all_user)
            )
         )
        )
-       ((hcnm_config_scope_eq var "Session")
+       ((hcnm-config_scope_eq var "Session")
         (setq
-          *hcnm_config*
+          *hcnm-config*
            (append
-             *hcnm_config*
+             *hcnm-config*
              ;; If one session var is missing, all session vars are missing
-             (hcnm_config_read_all_session)
+             (hcnm-config_read_all_session)
            )
         )
        )       
@@ -3502,11 +3502,11 @@ ImportLayerSettings=No
   )
   (cond
     ;;Try getting from list
-    ((setq val (cadr (assoc var *hcnm_config*)))
+    ((setq val (cadr (assoc var *hcnm-config*)))
      (setq setvar_p nil)
     )
     ;;Use default if there is one
-    ((setq val (hcnm_config_get_default var)))
+    ((setq val (hcnm-config_get_default var)))
     ;;Otherwise fail.
     (t
      (alert
@@ -3524,7 +3524,7 @@ ImportLayerSettings=No
   val
 )
 
-(defun hcnm_config_read_user (var / )
+(defun hcnm-config_read_user (var / )
   (cond
     ((haws-vlisp-p)
      (vl-registry-read
@@ -3536,7 +3536,7 @@ ImportLayerSettings=No
   )
 )
 
-(defun hcnm_config_write_user (var val)
+(defun hcnm-config_write_user (var val)
   (cond
     ((haws-vlisp-p)
      (vl-registry-write
@@ -3548,22 +3548,22 @@ ImportLayerSettings=No
   )
 )
 
-(defun hcnm_config_read_session (var / )
-    (cadr (assoc var *hcnm_config_session*))
+(defun hcnm-config_read_session (var / )
+    (cadr (assoc var *hcnm-config_session*))
 )
 
-(defun hcnm_config_write_session (var val)
+(defun hcnm-config_write_session (var val)
   (setq
-    *hcnm_config_session*
+    *hcnm-config_session*
      (cond
-       ((assoc var *hcnm_config_session*)
+       ((assoc var *hcnm-config_session*)
         (subst
           (list var val)
-          (assoc var *hcnm_config_session*)
-          *hcnm_config_session*
+          (assoc var *hcnm-config_session*)
+          *hcnm-config_session*
         )
        )
-       (t (cons (list var val) *hcnm_config_session*))
+       (t (cons (list var val) *hcnm-config_session*))
      )
   )
 )
@@ -3572,14 +3572,14 @@ ImportLayerSettings=No
 ;;or else writes defaults to a fresh ini.
 ;;Doesn't add to existing ini.
 ;;Returns ini file name.
-(defun hcnm_initialize_project (proj / app appini projini mark_file_p)
-  (setq projini (hcnm_project_folder_to_ini proj))
+(defun hcnm-initialize_project (proj / app appini projini mark_file_p)
+  (setq projini (hcnm-project_folder_to_ini proj))
   (cond
     ((and
        (setq app (c:hcnm-config-getvar "AppFolder"))
-       (setq appini (findfile (hcnm_project_folder_to_ini app)))
+       (setq appini (findfile (hcnm-project_folder_to_ini app)))
      )
-     (if (not (haws-file-copy appini projini)) (hcnm_error_not_writeable)) 
+     (if (not (haws-file-copy appini projini)) (hcnm-error_not_writeable)) 
      (alert
        (princ
          (strcat
@@ -3605,9 +3605,9 @@ ImportLayerSettings=No
      ;|(SETQ F2 (OPEN PROJINI "w"))
      (princ "[CNM]" f2) ; TODO TEST AND REMOVE
      (setq f2 (close f2))|;
-     (setq *hcnm_config* (hcnm_config_defaults_single_scope "Project"))
-     (hcnm_config_write_project proj)
-     (setq *hcnm_config* (hcnm_config_defaults))
+     (setq *hcnm-config* (hcnm-config_defaults_single_scope "Project"))
+     (hcnm-config_write_project proj)
+     (setq *hcnm-config* (hcnm-config_defaults))
      (setq mark_file_p t)
      projini
     )
@@ -3619,21 +3619,21 @@ ImportLayerSettings=No
   )
 )
 
-;;Saves *HCNM_CONFIG* to this project's ini
-(defun hcnm_config_write_project (proj)
+;;Saves *hcnm-CONFIG* to this project's ini
+(defun hcnm-config_write_project (proj)
   (ini_writesection
-    (hcnm_ini_name
+    (hcnm-ini_name
       (cond
         (proj)
-        ((hcnm_proj))
+        ((hcnm-proj))
       )
     )
     "CNM"
-    *hcnm_config*
+    *hcnm-config*
   )
 )
 
-(defun hcnm_set_dimstyle (key / dsty)
+(defun hcnm-set_dimstyle (key / dsty)
   ;;Set dimstyle as requested by calling function and set by user
   ;;First, get dimstyle name
   (setq dsty (c:hcnm-config-getvar key))
@@ -3649,15 +3649,15 @@ ImportLayerSettings=No
   ;;Third, if the desired style exists, save current style for later, then restore the desired style.
   (cond
     ((and (/= key "") (tblsearch "DIMSTYLE" dsty))
-     (setq *hcnm_dimstyleold* (getvar "dimstyle"))
+     (setq *hcnm-dimstyleold* (getvar "dimstyle"))
      (vl-cmdf "._dimstyle" "_restore" dsty)
     )
   )
 )
-(defun hcnm_restore_dimstyle ()
+(defun hcnm-restore_dimstyle ()
   (cond
-    (*hcnm_dimstyleold*
-     (vl-cmdf "._dimstyle" "_restore" *hcnm_dimstyleold*)
+    (*hcnm-dimstyleold*
+     (vl-cmdf "._dimstyle" "_restore" *hcnm-dimstyleold*)
     )
   )
 )
@@ -3670,10 +3670,10 @@ ImportLayerSettings=No
 ;;;
 ;;;============================================================================
 
-;; HCNM_PROJNOTES gets a valid project notes file
+;; hcnm-PROJNOTES gets a valid project notes file
 ;; It should resolve all errors and user conditions.
 ;; and return a "drive:\\...\\projroot\\pnname" filename to other functions.
-(defun hcnm_projnotes (/ app apppn format opt1 pnname projnotes)
+(defun hcnm-projnotes (/ app apppn format opt1 pnname projnotes)
   (setq pnname (c:hcnm-config-getvar "ProjectNotes"))
   (if (= pnname "")
     (c:hcnm-config-setvar
@@ -3683,7 +3683,7 @@ ImportLayerSettings=No
   )
   (haws-milepost
     (strcat
-      "HCNM_PROJNOTES is beginning with ProjectNotes="
+      "hcnm-PROJNOTES is beginning with ProjectNotes="
       pnname
     )
   )
@@ -3701,7 +3701,7 @@ ImportLayerSettings=No
        (setq
          projnotes
           (strcat
-            (hcnm_proj)
+            (hcnm-proj)
             "\\"
             (haws-filename-base pnname)
             (haws-filename-extension pnname)
@@ -3719,7 +3719,7 @@ ImportLayerSettings=No
     ((and
        (setq app (c:hcnm-config-getvar "AppFolder"))
        (setq
-         format (hcnm_config_project_notes_format)
+         format (hcnm-config_project_notes_format)
          apppn
           (findfile
             (strcat
@@ -3755,9 +3755,9 @@ ImportLayerSettings=No
   )
 )
 
-(defun hcnm_getprojnotes (/ dpname oldprojnotes projnotes)
-  (hcnm_projinit)                       ;Initialize variables in case any files changed.
-  (setq oldprojnotes (hcnm_projnotes))
+(defun hcnm-getprojnotes (/ dpname oldprojnotes projnotes)
+  (hcnm-projinit)                       ;Initialize variables in case any files changed.
+  (setq oldprojnotes (hcnm-projnotes))
   (setq dpname (strcat (getvar "dwgprefix") "constnot.txt"))
   (setq
     projnotes
@@ -3770,7 +3770,7 @@ ImportLayerSettings=No
   )
   ;;Remove path if project notes is in project folder.
   (cond
-    ((and projnotes (= (haws-filename-directory projnotes) (hcnm_proj)))
+    ((and projnotes (= (haws-filename-directory projnotes) (hcnm-proj)))
      (setq
        projnotes
         (strcat
@@ -3783,21 +3783,21 @@ ImportLayerSettings=No
   projnotes
 )
 
-;; HCNM_READCF
-;; Reads any acceptable Project Notes file format to a *HCNM_CNMPROJECTNOTES* list of the following format
+;; hcnm-READCF
+;; Reads any acceptable Project Notes file format to a *hcnm-CNMPROJECTNOTES* list of the following format
 ;; '((0 . "comment")(1 "var" "val1" "val2")(2 . "title")(3 "type" "num" "unit" "count" "text"))
 ;; The acceptable file formats are:
 ;; TXT1 Fixed field ;Comment\nSET VAR VAL\nNUM (comment)\nBOX (type)\nTITLE \n1    Text thru column 67...UNTCOUNT\n     Cont. text.
 ;; TXT2 White space delimited ;Comment\n
 ;; Excel CSV
 ;; Doesn't do project management except to write txt2 configs to cnm.ini in the same folder as projnotes.
-(defun hcnm_readcf (projnotes / bakprojnotes pnformat rdlin requested_format)
+(defun hcnm-readcf (projnotes / bakprojnotes pnformat rdlin requested_format)
   ;;Do a file read to figure out what the file format is.
   ;;For now, assume that a file that has any of the shape keys followed by a comma ("BOX,", etc.) is CSV
   ;;any other file is TXT2
   (haws-milepost
     (strcat
-      "HCNM_READCF is deciphering the format of "
+      "hcnm-READCF is deciphering the format of "
       projnotes
       "\nand evaluating the need for format conversion."
     )
@@ -3820,11 +3820,11 @@ ImportLayerSettings=No
     )
   )
   (setq f1 (close f1)
-    requested_format (hcnm_config_project_notes_format)
+    requested_format (hcnm-config_project_notes_format)
   )
   (cond
     ((= pnformat "txt2")
-     (hcnm_readcftxt2 projnotes)
+     (hcnm-readcftxt2 projnotes)
      (cond
        ((= requested_format "csv")
         (setq bakprojnotes projnotes)
@@ -3857,12 +3857,12 @@ ImportLayerSettings=No
             )
           )
         )
-        (hcnm_writecfcsv projnotes)
+        (hcnm-writecfcsv projnotes)
        )
      )
     )
     ((= pnformat "csv")
-     (hcnm_readcfcsv projnotes)
+     (hcnm-readcfcsv projnotes)
      (cond
        ((= requested_format "txt2")
         (setq bakprojnotes projnotes)
@@ -3895,7 +3895,7 @@ ImportLayerSettings=No
             )
           )
         )
-        (hcnm_writecftxt2 projnotes)
+        (hcnm-writecftxt2 projnotes)
        )
      )
     )
@@ -3914,7 +3914,7 @@ ImportLayerSettings=No
   )
 )
 
-(defun hcnm_readcftxt2 (projnotes / alertnote alerttitle cfitem cflist
+(defun hcnm-readcftxt2 (projnotes / alertnote alerttitle cfitem cflist
                     cflist2 commentbegin filev42 iline ininame nottyp
                     rdlin val1 val2 var varlist n notdesc notnum typwc
                    )
@@ -4123,17 +4123,17 @@ ImportLayerSettings=No
      (foreach
         entry varlist
        (c:hcnm-config-setvar
-         (hcnm_config_entry_var entry)
-         (hcnm_config_entry_val entry)
+         (hcnm-config_entry_var entry)
+         (hcnm-config_entry_val entry)
        )
      )
     )
   )
-  (setq *hcnm_cnmprojectnotes* (reverse cflist))
+  (setq *hcnm-cnmprojectnotes* (reverse cflist))
   (haws-milepost
     (strcat
-      "HCNM_READCFTXT2 read "
-      (itoa (length *hcnm_cnmprojectnotes*))
+      "hcnm-READCFTXT2 read "
+      (itoa (length *hcnm-cnmprojectnotes*))
       " lines from "
       projnotes
       "."
@@ -4143,7 +4143,7 @@ ImportLayerSettings=No
   (cond
     ((not filev42)
      (setq
-       *hcnm_cnmprojectnotes*
+       *hcnm-cnmprojectnotes*
         (cons
           (list 1 "CNMVERSION" "4.2")
           (reverse cflist)
@@ -4208,7 +4208,7 @@ ImportLayerSettings=No
 )
 
 
-(defun hcnm_readcfcsv (projnotes / cflist notdscstr nottyp rdlin typwc val var wrap
+(defun hcnm-readcfcsv (projnotes / cflist notdscstr nottyp rdlin typwc val var wrap
                   )
   (setq
     wrap (atoi (c:hcnm-config-getvar "DescriptionWrap"))
@@ -4262,7 +4262,7 @@ ImportLayerSettings=No
                  (cond ((haws-rdfld 4 rdlin "," 1)) (""))
                  (cond ((haws-rdfld 5 rdlin "," 1)) (""))
                  (cond ((haws-rdfld 6 rdlin "," 1)) ("")); Price
-                 (hcnm_wrap_description (cond ((haws-rdfld 3 rdlin "," 1)) ("")) wrap)
+                 (hcnm-wrap_description (cond ((haws-rdfld 3 rdlin "," 1)) ("")) wrap)
                )
                cflist
              )
@@ -4273,10 +4273,10 @@ ImportLayerSettings=No
     )
   )
   (setq f1 (close f1))
-  (setq *hcnm_cnmprojectnotes* (reverse cflist))
+  (setq *hcnm-cnmprojectnotes* (reverse cflist))
 )
 
-(defun hcnm_wrap_description (notdscstr wrap / character_i i i_endline i_newline_prev
+(defun hcnm-wrap_description (notdscstr wrap / character_i i i_endline i_newline_prev
                           i_newword_prev inword_p need_wrap_p notdsclst
                           word_provided_p wrap_exceeded_p
                          )
@@ -4355,7 +4355,7 @@ ImportLayerSettings=No
 )
 
 ;|
-(defun hcnm_wrap_description_test ( / errorstring notdscstr wrap)
+(defun hcnm-wrap_description_test ( / errorstring notdscstr wrap)
   (setq
     notdscstr "A23456789 B23456789 C23456789"
     wrap 2
@@ -4364,7 +4364,7 @@ ImportLayerSettings=No
      (strcat
        errorstring
        (cond
-         ((/= (car (hcnm_wrap_description notdscstr wrap))
+         ((/= (car (hcnm-wrap_description notdscstr wrap))
               "A23456789 "
           )
           "\nMust leave at least one word on each line"
@@ -4377,7 +4377,7 @@ ImportLayerSettings=No
      (strcat
        errorstring
        (cond
-         ((/= (car (hcnm_wrap_description notdscstr wrap))
+         ((/= (car (hcnm-wrap_description notdscstr wrap))
               "A23456789 "
           )
           "\nMust wrap word 2 to line 3 if it exceeds by many."
@@ -4390,7 +4390,7 @@ ImportLayerSettings=No
      (strcat
        errorstring
        (cond
-         ((/= (car (hcnm_wrap_description notdscstr wrap))
+         ((/= (car (hcnm-wrap_description notdscstr wrap))
               "A23456789 B23456789 "
           )
           "\nMust wrap word 3 to line 3 if it exceeds by one."
@@ -4403,7 +4403,7 @@ ImportLayerSettings=No
      (strcat
        errorstring
        (cond
-         ((/= (car (hcnm_wrap_description notdscstr wrap))
+         ((/= (car (hcnm-wrap_description notdscstr wrap))
               "A23456789 B23456789 "
           )
           "\nMust wrap word 3 to line two if it exceeds by many."
@@ -4416,7 +4416,7 @@ ImportLayerSettings=No
      (strcat
        errorstring
        (cond
-         ((/= (car (hcnm_wrap_description notdscstr wrap))
+         ((/= (car (hcnm-wrap_description notdscstr wrap))
               "A23456789 "
           )
           "\nMust wrap word 2 to line two if it exceeds by one."
@@ -4425,12 +4425,12 @@ ImportLayerSettings=No
        )
      )
   )
-  ;;(HCNM_WRAP_DESCRIPTION NOTDSCSTR WRAP)
+  ;;(hcnm-WRAP_DESCRIPTION NOTDSCSTR WRAP)
   errorstring
 )
 |;
 
-(defun hcnm_writecftxt2 (projnotes / i item nottyp nottxt nottxtnew)
+(defun hcnm-writecftxt2 (projnotes / i item nottyp nottxt nottxtnew)
   (alert
     (princ
       (strcat
@@ -4442,7 +4442,7 @@ ImportLayerSettings=No
   )
   (setq f2 (open projnotes "w"))
   (foreach
-     item *hcnm_cnmprojectnotes*
+     item *hcnm-cnmprojectnotes*
     (cond
       ;;Comment
       ((= 0 (car item)) (write-line (strcat ";" (cdr item)) f2))
@@ -4480,10 +4480,10 @@ ImportLayerSettings=No
     )
   )
   (setq f2 (close f2))
-  *hcnm_cnmprojectnotes*
+  *hcnm-cnmprojectnotes*
 )
 
-(defun hcnm_writecfcsv (projnotes / desc descline item nottyp)
+(defun hcnm-writecfcsv (projnotes / desc descline item nottyp)
   (alert
     (princ
       (strcat
@@ -4495,7 +4495,7 @@ ImportLayerSettings=No
   )
   (setq f2 (open projnotes "w"))
   (foreach
-     item *hcnm_cnmprojectnotes*
+     item *hcnm-cnmprojectnotes*
     (cond
       ((= 0 (car item))
        (write-line
@@ -4546,10 +4546,10 @@ ImportLayerSettings=No
     )
   )
   (setq f2 (close f2))
-  *hcnm_cnmprojectnotes*
+  *hcnm-cnmprojectnotes*
 )
 
-(defun hcnm_config_project_notes_format (/ editor format valid_editors)
+(defun hcnm-config_project_notes_format (/ editor format valid_editors)
   (setq
     valid_editors
      (list
@@ -4599,12 +4599,12 @@ ImportLayerSettings=No
   )
   ;; Since this is a user command, possibly after deletion of project root files,
   ;; refresh project root at beginning.
-  (hcnm_projinit)
+  (hcnm-projinit)
   ;; Read to convert project notes if necessary before editing
-  (setq pnname (hcnm_projnotes))
-  (hcnm_readcf pnname)
-  (setq pnname (hcnm_projnotes_match_extension pnname noteseditor))
-  (princ (strcat "\nEditing " (hcnm_projnotes) "."))
+  (setq pnname (hcnm-projnotes))
+  (hcnm-readcf pnname)
+  (setq pnname (hcnm-projnotes_match_extension pnname noteseditor))
+  (princ (strcat "\nEditing " (hcnm-projnotes) "."))
   (cond
     (cnmedit_p
      (startapp
@@ -4617,7 +4617,7 @@ ImportLayerSettings=No
          pnname
          "\" "
          "\""
-         (hcnm_proj)
+         (hcnm-proj)
          "\\cnm.ini\""
        )
      )
@@ -4628,14 +4628,14 @@ ImportLayerSettings=No
   (princ)
 )
 
-(defun hcnm_projnotes_match_extension (projnotes noteseditor)
+(defun hcnm-projnotes_match_extension (projnotes noteseditor)
   (cond
-    ((= noteseditor "text")(hcnm_change_filename_extension projnotes "txt"))
-    (t(hcnm_change_filename_extension projnotes "csv"))
+    ((= noteseditor "text")(hcnm-change_filename_extension projnotes "txt"))
+    (t(hcnm-change_filename_extension projnotes "csv"))
   )
 )
 
-(defun hcnm_change_filename_extension
+(defun hcnm-change_filename_extension
    (old_filename new_extension / new_filename)
   (cond
     ((/= (haws-filename-extension old_filename) new_extension)
@@ -4758,7 +4758,7 @@ ImportLayerSettings=No
     )
     ((= opt1 "Project")
      (setq
-       f1     (open (hcnm_projnotes) "r")
+       f1     (open (hcnm-projnotes) "r")
        cflist nil
      )
      (while (setq rdlin (read-line f1))
@@ -4778,7 +4778,7 @@ ImportLayerSettings=No
        cflist
         ;;Put the SET PHASES line at the beginning of the file.
         (cons (strcat "SET PHASES " phases) (reverse cflist))
-       f1 (open (hcnm_projnotes) "W")
+       f1 (open (hcnm-projnotes) "W")
      )
      (foreach rdlin cflist (write-line rdlin f1))
      (setq f1 (close f1))
@@ -4956,7 +4956,7 @@ ImportLayerSettings=No
 ;;; Put attributes on NOPLOT layer
 (defun c:hcnm-attnoplot ()
 (haws-core-init 192)
-  (hcnm_attlayer "NOTESNOPLOT")
+  (hcnm-attlayer "NOTESNOPLOT")
   (vl-cmdf
     "._layer"
     "_Plot"
@@ -4966,8 +4966,8 @@ ImportLayerSettings=No
   )
   (haws-core-restore)
 )
-(defun c:hcnm-attplot () (hcnm_attlayer "0"))
-(defun hcnm_attlayer (layer / at el en et nplayer nplist sset sslen)
+(defun c:hcnm-attplot () (hcnm-attlayer "0"))
+(defun hcnm-attlayer (layer / at el en et nplayer nplist sset sslen)
   (haws-core-init 193)
   (haws-vsave '("CLAYER"))
   (vl-cmdf "._undo" "_g")
@@ -5093,8 +5093,8 @@ ImportLayerSettings=No
        (t)
      )
   )
-  (hcnm_projinit)
-  (hcnm_set_dimstyle (strcat bldsty "Dimstyle"))
+  (hcnm-projinit)
+  (hcnm-set_dimstyle (strcat bldsty "Dimstyle"))
   (setvar "osmode" 0)
   (haws-mklayr bllay)
   (setq
@@ -5183,7 +5183,7 @@ ImportLayerSettings=No
       ""
     )
   )
-  (hcnm_restore_dimstyle)
+  (hcnm-restore_dimstyle)
   (haws-vrstor)
   (vl-cmdf "._undo" "_e")
   (haws-core-restore)
@@ -5195,19 +5195,19 @@ ImportLayerSettings=No
 ;#region Bubble insertion and editing
 
 
-(defun c:haws-boxl () (haws-core-init 198) (hcnm_ldrblk_dynamic "BOX"))
-(defun c:haws-cirl () (haws-core-init 199) (hcnm_ldrblk_dynamic "CIR"))
-(defun c:haws-dial () (haws-core-init 200) (hcnm_ldrblk_dynamic "DIA"))
-(defun c:haws-elll () (haws-core-init 201) (hcnm_ldrblk_dynamic "ELL"))
-(defun c:haws-hexl () (haws-core-init 202) (hcnm_ldrblk_dynamic "HEX"))
-(defun c:haws-octl () (haws-core-init 203) (hcnm_ldrblk_dynamic "OCT"))
-(defun c:haws-penl () (haws-core-init 204) (hcnm_ldrblk_dynamic "PEN"))
-(defun c:haws-recl () (haws-core-init 205) (hcnm_ldrblk_dynamic "REC"))
-(defun c:haws-sstl () (haws-core-init 206) (hcnm_ldrblk_dynamic "SST"))
-(defun c:haws-tril () (haws-core-init 207) (hcnm_ldrblk_dynamic "TRI"))
-(defun c:hcnm-replace-bubble () (haws-core-init 338) (hcnm_ldrblk_dynamic nil))
+(defun c:haws-boxl () (haws-core-init 198) (hcnm-ldrblk_dynamic "BOX"))
+(defun c:haws-cirl () (haws-core-init 199) (hcnm-ldrblk_dynamic "CIR"))
+(defun c:haws-dial () (haws-core-init 200) (hcnm-ldrblk_dynamic "DIA"))
+(defun c:haws-elll () (haws-core-init 201) (hcnm-ldrblk_dynamic "ELL"))
+(defun c:haws-hexl () (haws-core-init 202) (hcnm-ldrblk_dynamic "HEX"))
+(defun c:haws-octl () (haws-core-init 203) (hcnm-ldrblk_dynamic "OCT"))
+(defun c:haws-penl () (haws-core-init 204) (hcnm-ldrblk_dynamic "PEN"))
+(defun c:haws-recl () (haws-core-init 205) (hcnm-ldrblk_dynamic "REC"))
+(defun c:haws-sstl () (haws-core-init 206) (hcnm-ldrblk_dynamic "SST"))
+(defun c:haws-tril () (haws-core-init 207) (hcnm-ldrblk_dynamic "TRI"))
+(defun c:hcnm-replace-bubble () (haws-core-init 338) (hcnm-ldrblk_dynamic nil))
 
-(defun hcnm_ldrblk_dynamic (notetype / blockname bubble_data bubblehooks
+(defun hcnm-ldrblk_dynamic (notetype / blockname bubble_data bubblehooks
                         ename_bubble_old replace_bubble_p
                         th
                        )
@@ -5243,15 +5243,15 @@ ImportLayerSettings=No
     )
   )
   (vl-cmdf "._undo" "_g")
-  (hcnm_projinit)
-  (hcnm_set_dimstyle "NotesLeaderDimstyle")
+  (hcnm-projinit)
+  (hcnm-set_dimstyle "NotesLeaderDimstyle")
   (setq
     bubblehooks
      (c:hcnm-config-getvar "BubbleHooks")
     blockname
      (strcat
        "cnm-bubble-"
-       (hcnm_ldrblk_get_mtext_string)
+       (hcnm-ldrblk_get_mtext_string)
        (cond
          ((= (strcase bubblehooks) "YES") "1")
          ((= (strcase bubblehooks) "NO") "0")
@@ -5267,39 +5267,39 @@ ImportLayerSettings=No
   )
   (haws-mklayr "NOTESLDR")
   (setvar "attreq" 0)
-  (setq bubble_data (hcnm_ldrblk_bd_set bubble_data "TH" th)
-        bubble_data (hcnm_ldrblk_bd_set bubble_data "BLOCKNAME" blockname)
-        bubble_data (hcnm_ldrblk_bd_set bubble_data "NOTETYPE" notetype)
-        bubble_data (hcnm_ldrblk_bd_set bubble_data "REPLACE_BUBBLE_P" (not notetype))
-        bubble_data (hcnm_ldrblk_get_ename_bubble_old bubble_data)
+  (setq bubble_data (hcnm-ldrblk_bd_set bubble_data "TH" th)
+        bubble_data (hcnm-ldrblk_bd_set bubble_data "BLOCKNAME" blockname)
+        bubble_data (hcnm-ldrblk_bd_set bubble_data "NOTETYPE" notetype)
+        bubble_data (hcnm-ldrblk_bd_set bubble_data "REPLACE_BUBBLE_P" (not notetype))
+        bubble_data (hcnm-ldrblk_get_ename_bubble_old bubble_data)
         bubble_data (cond 
-                      ((hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE_OLD")
-                       (hcnm_ldrblk_bd_ensure_p1_world bubble_data) ;  WE REALLY ONLY NEED ENAME_LEADER_OLD AND P1_OCS, BUT THIS ISN'T A BAD WAY TO GET IT.
+                      ((hcnm-ldrblk_bd_get bubble_data "ENAME_BUBBLE_OLD")
+                       (hcnm-ldrblk_bd_ensure_p1_world bubble_data) ;  WE REALLY ONLY NEED ENAME_LEADER_OLD AND P1_OCS, BUT THIS ISN'T A BAD WAY TO GET IT.
                       )
                       (t
-                       (hcnm_ldrblk_get_user_start_point bubble_data)
+                       (hcnm-ldrblk_get_user_start_point bubble_data)
                       )
                     )
         notetype    (cond 
                       (notetype)
-                      ((hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE")
+                      ((hcnm-ldrblk_bd_get bubble_data "ENAME_BUBBLE")
                        (lm:getdynpropvalue 
                          (vlax-ename->vla-object 
-                           (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE")
+                           (hcnm-ldrblk_bd_get bubble_data "ENAME_BUBBLE")
                          )
                          "Shape"
                        )
                       )
                       (t notetype)
                     )
-        bubble_data (hcnm_ldrblk_bd_set bubble_data "NOTETYPE" notetype)
+        bubble_data (hcnm-ldrblk_bd_set bubble_data "NOTETYPE" notetype)
   )
   ;; Draw bubble, update BUBBLE_DATA with P2 and new entities
-  (setq bubble_data (hcnm_ldrblk_get_p2_data bubble_data))
-  (setq bubble_data (hcnm_ldrblk_draw_bubble bubble_data))
-  (setq bubble_data (hcnm_ldrblk_get_bubble_data bubble_data))
-  (hcnm_ldrblk_finish_bubble bubble_data)
-  (hcnm_restore_dimstyle)
+  (setq bubble_data (hcnm-ldrblk_get_p2_data bubble_data))
+  (setq bubble_data (hcnm-ldrblk_draw_bubble bubble_data))
+  (setq bubble_data (hcnm-ldrblk_get_bubble_data bubble_data))
+  (hcnm-ldrblk_finish_bubble bubble_data)
+  (hcnm-restore_dimstyle)
   (haws-vrstor)
   (vl-cmdf "._undo" "_e")
   (haws-core-restore)
@@ -5307,7 +5307,7 @@ ImportLayerSettings=No
 )
 ;; Create a bubble data structure (alist) for passing state
 ;; All parameters optional - pass nil for unset fields
-(defun hcnm_ldrblk_bd_def ()
+(defun hcnm-ldrblk_bd_def ()
   (list
     (cons "ATTRIBUTES" nil)
     (cons "AVPORT" nil)
@@ -5328,7 +5328,7 @@ ImportLayerSettings=No
 )
 
 ;;==============================================================================
-;; HCNM_LDRBLK_BD Module - Bubble Data Accessors
+;; hcnm-ldrblk_BD Module - Bubble Data Accessors
 ;;==============================================================================
 ;; Provides typed accessors for bubble data alist structure.
 ;; BD = "Bubble Data" (commonly used abbreviation in this module)
@@ -5336,14 +5336,14 @@ ImportLayerSettings=No
 ;;==============================================================================
 
 ;; Get a value from bubble data using HAWS_NESTED_LIST_GET
-(defun hcnm_ldrblk_bd_get (bd key)
+(defun hcnm-ldrblk_bd_get (bd key)
   (haws_nested_list_get bd (list key))
 )
 
 ;; Set a value in bubble data using HAWS_NESTED_LIST_UPDATE
 ;; Validates key against known schema
-(defun hcnm_ldrblk_bd_set (bd key val )
-   (if (not (assoc key (hcnm_ldrblk_bd_def)))
+(defun hcnm-ldrblk_bd_set (bd key val )
+   (if (not (assoc key (hcnm-ldrblk_bd_def)))
     (progn
       (princ (strcat "\nError: Invalid BUBBLE_DATA key: " key))
       bd
@@ -5353,39 +5353,39 @@ ImportLayerSettings=No
 )
 
 ;; Ensure P1_WORLD is present in bubble data (computes if missing)
-(defun hcnm_ldrblk_bd_ensure_p1_world (bubble_data / ename_bubble ename_leader p1_ocs p1_world)
+(defun hcnm-ldrblk_bd_ensure_p1_world (bubble_data / ename_bubble ename_leader p1_ocs p1_world)
   (and
-    (setq ename_bubble (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE"))
+    (setq ename_bubble (hcnm-ldrblk_bd_get bubble_data "ENAME_BUBBLE"))
     (or
-      (hcnm_ldrblk_bd_get bubble_data "ENAME_LEADER")
-      (setq bubble_data (hcnm_ldrblk_bd_set
+      (hcnm-ldrblk_bd_get bubble_data "ENAME_LEADER")
+      (setq bubble_data (hcnm-ldrblk_bd_set
                           bubble_data
                           "ENAME_LEADER"
-                          (hcnm_ldrblk_bubble_leader ename_bubble)
+                          (hcnm-ldrblk_bubble_leader ename_bubble)
                         )
       )
-      (princ "\nError in HCNM_LDRBLK_BD_ENSURE_P1_WORLD: Could not find leader associated with bubble note.")
+      (princ "\nError in hcnm-ldrblk_BD_ENSURE_P1_WORLD: Could not find leader associated with bubble note.")
     )
-    (setq ename_leader (hcnm_ldrblk_bd_get bubble_data "ENAME_LEADER"))
+    (setq ename_leader (hcnm-ldrblk_bd_get bubble_data "ENAME_LEADER"))
     (or
-      (hcnm_ldrblk_bd_get bubble_data "P1_OCS")
-      (setq bubble_data (hcnm_ldrblk_bd_set bubble_data "P1_OCS" (hcnm_ldrblk_p1_ocs ename_leader)))
-      (princ "\nError in HCNM_LDRBLK_BD_ENSURE_P1_WORLD: Could not determine P1_OCS from leader.")
+      (hcnm-ldrblk_bd_get bubble_data "P1_OCS")
+      (setq bubble_data (hcnm-ldrblk_bd_set bubble_data "P1_OCS" (hcnm-ldrblk_p1_ocs ename_leader)))
+      (princ "\nError in hcnm-ldrblk_BD_ENSURE_P1_WORLD: Could not determine P1_OCS from leader.")
     )
-    (setq p1_ocs (hcnm_ldrblk_bd_get bubble_data "P1_OCS"))
+    (setq p1_ocs (hcnm-ldrblk_bd_get bubble_data "P1_OCS"))
     (or
-      (hcnm_ldrblk_bd_get bubble_data "P1_WORLD")
-      (setq bubble_data (hcnm_ldrblk_bd_set bubble_data "P1_WORLD" (hcnm_ldrblk_p1_world ename_leader p1_ocs ename_bubble)))
-      (princ "\nError in HCNM_LDRBLK_BD_ENSURE_P1_WORLD: Could not compute P1_WORLD from P1_OCS.")
+      (hcnm-ldrblk_bd_get bubble_data "P1_WORLD")
+      (setq bubble_data (hcnm-ldrblk_bd_set bubble_data "P1_WORLD" (hcnm-ldrblk_p1_world ename_leader p1_ocs ename_bubble)))
+      (princ "\nError in hcnm-ldrblk_BD_ENSURE_P1_WORLD: Could not compute P1_WORLD from P1_OCS.")
     )
-    (setq p1_world (hcnm_ldrblk_bd_get bubble_data "P1_WORLD"))
+    (setq p1_world (hcnm-ldrblk_bd_get bubble_data "P1_WORLD"))
     (princ (strcat "\nDebug P1_OCS: " (vl-princ-to-string p1_ocs) " P1_WORLD: " (vl-princ-to-string p1_world)))
   )
   bubble_data
 )
 
-(defun hcnm_ldrblk_get_ename_bubble_old (bubble_data / elist_block_old ename_bubble_old replace_bubble_p)
-  (setq replace_bubble_p (hcnm_ldrblk_bd_get bubble_data "REPLACE_BUBBLE_P"))
+(defun hcnm-ldrblk_get_ename_bubble_old (bubble_data / elist_block_old ename_bubble_old replace_bubble_p)
+  (setq replace_bubble_p (hcnm-ldrblk_bd_get bubble_data "REPLACE_BUBBLE_P"))
   (cond
     (replace_bubble_p
      ;; Prompt and check for old block.
@@ -5412,16 +5412,16 @@ ImportLayerSettings=No
             )
        (princ "\nSelected entity is not a CNM bubble note.")
      )
-     (setq bubble_data (hcnm_ldrblk_bd_set bubble_data "ENAME_BUBBLE_OLD" ename_bubble_old))
+     (setq bubble_data (hcnm-ldrblk_bd_set bubble_data "ENAME_BUBBLE_OLD" ename_bubble_old))
     )
     (t nil)
   )
   bubble_data
 )
-(defun hcnm_ldrblk_get_user_start_point (bubble_data) 
-    (hcnm_ldrblk_bd_set bubble_data "P1_UCS" (getpoint "\nStart point for leader:"))
+(defun hcnm-ldrblk_get_user_start_point (bubble_data) 
+    (hcnm-ldrblk_bd_set bubble_data "P1_UCS" (getpoint "\nStart point for leader:"))
 )
-(defun hcnm_ldrblk_bubble_leader (ename_bubble / elist_bubble ename_330 ename_leader) 
+(defun hcnm-ldrblk_bubble_leader (ename_bubble / elist_bubble ename_330 ename_leader) 
   (setq elist_bubble (entget ename_bubble))
   ;; Get start point
   ;; Find associated leader.
@@ -5451,7 +5451,7 @@ ImportLayerSettings=No
   )
   ename_leader
 )
-(defun hcnm_ldrblk_p1_ocs (ename_leader)
+(defun hcnm-ldrblk_p1_ocs (ename_leader)
   (cond 
     (ename_leader
      (cdr (assoc 10 (entget ename_leader)))
@@ -5463,12 +5463,12 @@ ImportLayerSettings=No
 )
 ;; Gets insertion point of bubble in UCS coordinates
 ;; Bubble still doesn't exist. Draws temp bubbles only.
-(defun hcnm_ldrblk_get_p2_data (bubble_data / ename_bubble_temp p1_ucs p2 ss1 obj_bubble_temp th blockname notetype)
+(defun hcnm-ldrblk_get_p2_data (bubble_data / ename_bubble_temp p1_ucs p2 ss1 obj_bubble_temp th blockname notetype)
   (setq
-    p1_ucs (hcnm_ldrblk_bd_get bubble_data "P1_UCS")
-    th (hcnm_ldrblk_bd_get bubble_data "TH")
-    blockname (hcnm_ldrblk_bd_get bubble_data "BLOCKNAME")
-    notetype (hcnm_ldrblk_bd_get bubble_data "NOTETYPE")
+    p1_ucs (hcnm-ldrblk_bd_get bubble_data "P1_UCS")
+    th (hcnm-ldrblk_bd_get bubble_data "TH")
+    blockname (hcnm-ldrblk_bd_get bubble_data "BLOCKNAME")
+    notetype (hcnm-ldrblk_bd_get bubble_data "NOTETYPE")
     ss1 (ssadd)
   )
   (foreach flipstate '("right" "left")
@@ -5492,23 +5492,23 @@ ImportLayerSettings=No
   (vl-cmdf "._MOVE" ss1 "" p1_ucs pause)
   (setq
     p2 (trans (cdr (assoc 10 (entget ename_bubble_temp))) ename_bubble_temp 1)
-    bubble_data (hcnm_ldrblk_bd_set bubble_data "P2" p2)
+    bubble_data (hcnm-ldrblk_bd_set bubble_data "P2" p2)
   )
   (vl-cmdf "._erase" ss1 "")
   bubble_data
 )
 ;; Draw bubble and update BUBBLE_DATA with new leader/block info
-(defun hcnm_ldrblk_draw_bubble (bubble_data / p1_ucs ename_bubble ename_bubble_old 
+(defun hcnm-ldrblk_draw_bubble (bubble_data / p1_ucs ename_bubble ename_bubble_old 
                                 ename_leader p2 ang1 flipstate associate_p auold th 
                                 blockname notetype input1 elist_leader_old
                                ) 
-  (setq p1_ucs           (hcnm_ldrblk_bd_get bubble_data "P1_UCS")
-        ename_bubble_old (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE_OLD")
-        ename_leader_old (hcnm_ldrblk_bd_get bubble_data "ENAME_LEADER_OLD")
-        p2               (hcnm_ldrblk_bd_get bubble_data "P2")
-        th               (hcnm_ldrblk_bd_get bubble_data "TH")
-        blockname        (hcnm_ldrblk_bd_get bubble_data "BLOCKNAME")
-        notetype         (hcnm_ldrblk_bd_get bubble_data "NOTETYPE")
+  (setq p1_ucs           (hcnm-ldrblk_bd_get bubble_data "P1_UCS")
+        ename_bubble_old (hcnm-ldrblk_bd_get bubble_data "ENAME_BUBBLE_OLD")
+        ename_leader_old (hcnm-ldrblk_bd_get bubble_data "ENAME_LEADER_OLD")
+        p2               (hcnm-ldrblk_bd_get bubble_data "P2")
+        th               (hcnm-ldrblk_bd_get bubble_data "TH")
+        blockname        (hcnm-ldrblk_bd_get bubble_data "BLOCKNAME")
+        notetype         (hcnm-ldrblk_bd_get bubble_data "NOTETYPE")
         ang1             (- (angle p1_ucs p2) (getvar "snapang"))
         flipstate        (cond ((minusp (cos ang1)) "left") (t "right"))
   )
@@ -5533,7 +5533,7 @@ ImportLayerSettings=No
        (ename_leader_old
         (setq elist_leader_old (entget ename_leader_old))
         ;; Change its arrowhead if needed.
-        (hcnm_ldrblk_change_arrowhead ename_leader_old)
+        (hcnm-ldrblk_change_arrowhead ename_leader_old)
         ;; Stretch it.
         (entmod 
           (subst 
@@ -5593,7 +5593,7 @@ ImportLayerSettings=No
            flipstate (cond ((minusp (cos ang1)) "left") (t "right"))
      )
       ;; SAVE LAST ENTITY FOR ENTNEXT USAGE.
-     (setq bubble_data (hcnm_ldrblk_bd_set bubble_data "ENAME_LAST" (entlast)))
+     (setq bubble_data (hcnm-ldrblk_bd_set bubble_data "ENAME_LAST" (entlast)))
      ;;Start insertion
      (cond 
        ((>= (atof (getvar "acadver")) 14)
@@ -5609,22 +5609,22 @@ ImportLayerSettings=No
      (vl-cmdf (strcat blockname "-" flipstate) "_Scale" th p2 (getvar "snapang"))
      (setvar "aunits" auold)
      (setq ename_bubble (entlast)
-           bubble_data  (hcnm_ldrblk_bd_set bubble_data "ENAME_BUBBLE" ename_bubble)
+           bubble_data  (hcnm-ldrblk_bd_set bubble_data "ENAME_BUBBLE" ename_bubble)
      )
     )
   )
   bubble_data
 )
 ;; Get input from user. ename_bubble already exists so that we can do auto text.
-(defun hcnm_ldrblk_get_bubble_data (bubble_data / attribute_list ename_bubble p1_ucs num)
+(defun hcnm-ldrblk_get_bubble_data (bubble_data / attribute_list ename_bubble p1_ucs num)
   (setq
-    replace_bubble_p (hcnm_ldrblk_bd_get bubble_data "REPLACE_BUBBLE_P")
-    ename_bubble (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE")
-    p1_ucs (hcnm_ldrblk_bd_get bubble_data "P1_UCS")
+    replace_bubble_p (hcnm-ldrblk_bd_get bubble_data "REPLACE_BUBBLE_P")
+    ename_bubble (hcnm-ldrblk_bd_get bubble_data "ENAME_BUBBLE")
+    p1_ucs (hcnm-ldrblk_bd_get bubble_data "P1_UCS")
   )
   (cond
     (ename_replace_bubble_p
-     (setq attribute_list (hcnm_get_attributes ename_bubble t))
+     (setq attribute_list (hcnm-get_attributes ename_bubble t))
     )
     (t
      (initget 128 "Copy")
@@ -5633,19 +5633,19 @@ ImportLayerSettings=No
        ((= num "Copy")
         (setq
           attribute_list
-           (hcnm_get_attributes
+           (hcnm-get_attributes
              (setq ename_bubble (car (entsel)))
              t
            )
         )
        )
        (t
-        (setq attribute_list (hcnm_ldrblk_initialize_attribute_list))
+        (setq attribute_list (hcnm-ldrblk_initialize_attribute_list))
         (mapcar
           '(lambda (index)
              (setq
                attribute_list
-                (hcnm_ldrblk_get_text_entry
+                (hcnm-ldrblk_get_text_entry
                   ename_bubble
                   index
                   attribute_list
@@ -5660,19 +5660,19 @@ ImportLayerSettings=No
   )
   ;; Save XDATA before formatting flattens the auto field
   (hcnm-save-bubble-xdata ename_bubble attribute_list)
-  (hcnm_ldrblk_bd_set bubble_data "ATTRIBUTES" (hcnm_ldrblk_ensure_fields_and_adjust_formats attribute_list))
+  (hcnm-ldrblk_bd_set bubble_data "ATTRIBUTES" (hcnm-ldrblk_ensure_fields_and_adjust_formats attribute_list))
 )
-(defun hcnm_ldrblk_finish_bubble (bubble_data / ename_bubble ename_bubble_old ename_last ename_leader ename_temp replace_bubble_p attributes notetype)
+(defun hcnm-ldrblk_finish_bubble (bubble_data / ename_bubble ename_bubble_old ename_last ename_leader ename_temp replace_bubble_p attributes notetype)
   (setq
-    ename_last (hcnm_ldrblk_bd_get bubble_data "ENAME_LAST")
+    ename_last (hcnm-ldrblk_bd_get bubble_data "ENAME_LAST")
     ename_temp ename_last
-    ename_bubble (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE")
-    ename_bubble_old (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE_OLD")
-    replace_bubble_p (hcnm_ldrblk_bd_get bubble_data "REPLACE_BUBBLE_P")
-    attributes (hcnm_ldrblk_bd_get bubble_data "ATTRIBUTES")
-    notetype (hcnm_ldrblk_bd_get bubble_data "NOTETYPE")
+    ename_bubble (hcnm-ldrblk_bd_get bubble_data "ENAME_BUBBLE")
+    ename_bubble_old (hcnm-ldrblk_bd_get bubble_data "ENAME_BUBBLE_OLD")
+    replace_bubble_p (hcnm-ldrblk_bd_get bubble_data "REPLACE_BUBBLE_P")
+    attributes (hcnm-ldrblk_bd_get bubble_data "ATTRIBUTES")
+    notetype (hcnm-ldrblk_bd_get bubble_data "NOTETYPE")
   )
-  (hcnm_ldrblk_set_dynprops ename_bubble ename_bubble_old notetype replace_bubble_p)
+  (hcnm-ldrblk_set_dynprops ename_bubble ename_bubble_old notetype replace_bubble_p)
   (if replace_bubble_p (entdel ename_bubble_old))
   (hcnm-save-bubble ename_bubble attributes)
   ;; Use entnext to look for a leader starting from the last entity before this bubble.
@@ -5683,15 +5683,15 @@ ImportLayerSettings=No
   )
   (setq ename_leader ename_temp)
   ;; Change leader arrowhead if needed.
-  (hcnm_ldrblk_change_arrowhead ename_leader)
+  (hcnm-ldrblk_change_arrowhead ename_leader)
 )
-(defun hcnm_ldrblk_get_mtext_string ()
+(defun hcnm-ldrblk_get_mtext_string ()
   (cond
     ((= (c:hcnm-config-getvar "BubbleMtext") "1") "m-")
     (t "")
   )
 )
-(defun hcnm_ldrblk_change_arrowhead (ename_leader)
+(defun hcnm-ldrblk_change_arrowhead (ename_leader)
   (cond
     ((= (c:hcnm-config-getvar "BubbleArrowIntegralPending") "1")
      ;; 18 is "Integral" arrowhead type.
@@ -5703,7 +5703,7 @@ ImportLayerSettings=No
     )
   )
 )
-(defun hcnm_ldrblk_set_dynprops (ename_bubble_new ename_bubble_old notetype replace_bubble_p /  dyn_props_old dyn_props_old_i vlaobj_block_new vlaobj_block_old)
+(defun hcnm-ldrblk_set_dynprops (ename_bubble_new ename_bubble_old notetype replace_bubble_p /  dyn_props_old dyn_props_old_i vlaobj_block_new vlaobj_block_old)
   (setq
     vlaobj_block_new
      (vlax-ename->vla-object ename_bubble_new)
@@ -5757,7 +5757,7 @@ ImportLayerSettings=No
     (t (lm:setdynpropvalue vlaobj_block_new "Shape" notetype))
   )
 )
-(defun hcnm_ldrblk_initialize_attribute_list (/ attribute_list)
+(defun hcnm-ldrblk_initialize_attribute_list (/ attribute_list)
   (setq
     attribute_list
      (mapcar
@@ -5786,7 +5786,7 @@ ImportLayerSettings=No
 ;; Save attribute to list - works with new format (tag prefix auto postfix)
 ;; If value is a string, puts it in prefix field (for compatibility)
 ;; If value is a list (prefix auto postfix), uses it directly
-(defun hcnm_ldrblk_save_attribute_to_list (tag value attribute_list / attr prefix auto postfix)
+(defun hcnm-ldrblk_save_attribute_to_list (tag value attribute_list / attr prefix auto postfix)
   (setq attr (assoc tag attribute_list))
   (cond
     ;; Value is a list (prefix auto postfix)
@@ -5803,7 +5803,7 @@ ImportLayerSettings=No
 
 ;; Save auto-generated text to attribute list
 ;; Updates only the auto field, preserves user's prefix/postfix
-(defun hcnm_ldrblk_save_auto_to_list (tag auto_new attribute_list / attr prefix postfix)
+(defun hcnm-ldrblk_save_auto_to_list (tag auto_new attribute_list / attr prefix postfix)
   (setq attr (assoc tag attribute_list)
         prefix (cadr attr)
         postfix (cadddr attr))
@@ -5813,7 +5813,7 @@ ImportLayerSettings=No
 ;;;
 ;;; RESPONSIBILITY: Data validation and normalization
 ;;;
-;;; CALLED BY: Wrapper around HCNM_LDRBLK_ADJUST_FORMATS
+;;; CALLED BY: Wrapper around hcnm-ldrblk_ADJUST_FORMATS
 ;;;
 ;;; DATA FLOW:
 ;;; 1. Get attribute values
@@ -5829,11 +5829,11 @@ ImportLayerSettings=No
 ;;; - ADJUST_FORMATS: Apply format codes to normalized data
 ;;; - ADJUST_FORMAT: Strip/add individual format codes
 ;;;
-(defun hcnm_ldrblk_ensure_fields_and_adjust_formats (attribute_list)
+(defun hcnm-ldrblk_ensure_fields_and_adjust_formats (attribute_list)
   ;; Ensure proper structure before formatting
-  (setq attribute_list (hcnm_ldrblk_ensure_fields attribute_list))
+  (setq attribute_list (hcnm-ldrblk_ensure_fields attribute_list))
   ;; Apply format codes
-  (hcnm_ldrblk_adjust_formats attribute_list)
+  (hcnm-ldrblk_adjust_formats attribute_list)
 )
 
 ;;; Ensure all bubble attributes have proper 4-element list structure.
@@ -5842,8 +5842,8 @@ ImportLayerSettings=No
 ;;;          before applying format codes.
 ;;;
 ;;; INPUT: attribute_list from various sources:
-;;;   - hcnm_get_attributes: Returns attributes from existing bubble (may be legacy 2-element format)
-;;;   - hcnm_ldrblk_initialize_attribute_list: Returns fresh 4-element format
+;;;   - hcnm-get_attributes: Returns attributes from existing bubble (may be legacy 2-element format)
+;;;   - hcnm-ldrblk_initialize_attribute_list: Returns fresh 4-element format
 ;;;   - After auto-text or manual text entry: Should already be 4-element format
 ;;;
 ;;; RETURNS: attribute_list with ALL attributes normalized to 4-element format:
@@ -5859,7 +5859,7 @@ ImportLayerSettings=No
 ;;;   Input:  (("NOTENUM" "123" "" "") ("NOTETXT1" "" "N=12345.67" ""))
 ;;;   Output: (("NOTENUM" "123" "" "") ("NOTETXT1" "" "N=12345.67" "")) - unchanged, already correct
 ;;;
-(defun hcnm_ldrblk_ensure_fields (attribute_list)
+(defun hcnm-ldrblk_ensure_fields (attribute_list)
   (mapcar
     '(lambda (attr)
        (cond
@@ -5883,14 +5883,14 @@ ImportLayerSettings=No
 )
 
 ;;; Ensure single attribute string has exactly two chr(160) delimiters.
-(defun hcnm_ldrblk_ensure_field (string / sep count_sep)
+(defun hcnm-ldrblk_ensure_field (string / sep count_sep)
   (setq sep (chr 160))
   (cond
     ;; Empty string -> "§§"
     ((= string "") (strcat sep sep))
     ;; Count delimiters
     (t
-     (setq count_sep (hcnm_ldrblk_count_char string sep))
+     (setq count_sep (hcnm-ldrblk_count_char string sep))
      (cond
        ;; Two or more -> already valid
        ((>= count_sep 2) string)
@@ -5903,7 +5903,7 @@ ImportLayerSettings=No
 )
 
 ;;; Count occurrences of character in string
-(defun hcnm_ldrblk_count_char (string char / count pos)
+(defun hcnm-ldrblk_count_char (string char / count pos)
   (setq count 0)
   (while (setq pos (vl-string-search char string))
     (setq count (1+ count))
@@ -5925,12 +5925,12 @@ ImportLayerSettings=No
 ;;; 3. Handle NOTEGAP (underline + spaces if either line has content)
 ;;; 4. Save formatted values back to attribute_list
 ;;;
-(defun hcnm_ldrblk_adjust_formats (attribute_list / bubblemtext txt1_formatted txt2_formatted txt1_raw txt2_raw
+(defun hcnm-ldrblk_adjust_formats (attribute_list / bubblemtext txt1_formatted txt2_formatted txt1_raw txt2_raw
                                txt1_attr txt2_attr txt1_auto txt1_postfix txt2_auto txt2_postfix gap overline underline
                               )
   ;; Determine format codes based on mtext vs dtext
   (setq
-    bubblemtext (hcnm_ldrblk_get_mtext_string)
+    bubblemtext (hcnm-ldrblk_get_mtext_string)
     underline (cond ((= bubblemtext "") "%%u") (t "\\L"))
     overline (cond ((= bubblemtext "") "%%o") (t "\\O"))
     ;; Get full attributes (tag prefix auto postfix)
@@ -5947,16 +5947,16 @@ ImportLayerSettings=No
   )
   
   ;; Format TXT1 (underline) - adjust_format handles empty/delimiter checks and returns formatted string
-  (setq txt1_formatted (hcnm_ldrblk_adjust_format txt1_raw underline))
+  (setq txt1_formatted (hcnm-ldrblk_adjust_format txt1_raw underline))
   
   ;; Format TXT2 (overline) - adjust_format handles empty/delimiter checks
-  (setq txt2_formatted (hcnm_ldrblk_adjust_format txt2_raw overline))
+  (setq txt2_formatted (hcnm-ldrblk_adjust_format txt2_raw overline))
   
   ;; GAP: underline + two spaces if either line has content
   (setq gap
     (cond
-      ((and (not (hcnm_ldrblk_attr_has_content_p txt1_raw))
-            (not (hcnm_ldrblk_attr_has_content_p txt2_raw)))
+      ((and (not (hcnm-ldrblk_attr_has_content_p txt1_raw))
+            (not (hcnm-ldrblk_attr_has_content_p txt2_raw)))
        "")
       (t "%%u  ")))
   
@@ -5964,12 +5964,12 @@ ImportLayerSettings=No
   ;; (Format codes wrap the entire concatenated text, so we store it all in prefix)
   (setq attribute_list (subst (list "NOTETXT1" txt1_formatted "" "") txt1_attr attribute_list))
   (setq attribute_list (subst (list "NOTETXT2" txt2_formatted "" "") txt2_attr attribute_list))
-  (setq attribute_list (hcnm_ldrblk_save_attribute_to_list "NOTEGAP" gap attribute_list))
+  (setq attribute_list (hcnm-ldrblk_save_attribute_to_list "NOTEGAP" gap attribute_list))
   attribute_list
 )
 ;;; Check if attribute has actual content (not just empty or delimiters).
 ;;; Returns T if there's text content, NIL otherwise.
-(defun hcnm_ldrblk_attr_has_content_p (string)
+(defun hcnm-ldrblk_attr_has_content_p (string)
   (and (not (= string ""))
        (not (= string (chr 160)))
        (not (= string (strcat (chr 160) (chr 160)))))
@@ -5989,10 +5989,10 @@ ImportLayerSettings=No
 ;;; - This handles both mtext codes (\L, \O) and dtext codes (%%u, %%o)
 ;;; - We don't need to handle every edge case; false positives are visible but not fatal
 ;;;
-(defun hcnm_ldrblk_adjust_format (string code)
+(defun hcnm-ldrblk_adjust_format (string code)
   (cond
     ;; Empty string or delimiter-only string - no formatting
-    ((not (hcnm_ldrblk_attr_has_content_p string))
+    ((not (hcnm-ldrblk_attr_has_content_p string))
      string)
     ;; Non-empty string - strip existing format and add CODE
     (t
@@ -6010,14 +6010,14 @@ ImportLayerSettings=No
      (strcat code string))
   )
 )
-(defun hcnm_ldrblk_get_text_entry (ename_bubble line_number attribute_list /
+(defun hcnm-ldrblk_get_text_entry (ename_bubble line-number attribute_list /
                                input skip_entry_p input loop-p prompt-p string tag attr
                               )
   (setq
     loop-p t
     prompt-p
      (= (c:hcnm-config-getvar
-          (strcat "BubbleTextLine" (itoa line_number) "PromptP")
+          (strcat "BubbleTextLine" (itoa line-number) "PromptP")
         )
         "1"
      )
@@ -6025,7 +6025,7 @@ ImportLayerSettings=No
      (= (c:hcnm-config-getvar "BubbleSkipEntryPrompt") "1")
     string ""
     tag
-     (strcat "NOTETXT" (itoa line_number))
+     (strcat "NOTETXT" (itoa line-number))
   )
   (while (and prompt-p loop-p)
     (cond
@@ -6036,7 +6036,7 @@ ImportLayerSettings=No
                    1
                    (strcat
                      "\nLine "
-                     (itoa line_number)
+                     (itoa line-number)
                      " text or . for automatic text: "
                    )
                  )
@@ -6046,9 +6046,9 @@ ImportLayerSettings=No
        )
        (setq
          attribute_list
-          (hcnm_ldrblk_get_auto_type
+          (hcnm-ldrblk_get_auto_type
             ename_bubble
-            line_number
+            line-number
             tag
             attribute_list
           )
@@ -6061,7 +6061,7 @@ ImportLayerSettings=No
        (setq
          string input
          attribute_list
-          (hcnm_ldrblk_save_attribute_to_list
+          (hcnm-ldrblk_save_attribute_to_list
             tag
             string
             attribute_list
@@ -6078,7 +6078,7 @@ ImportLayerSettings=No
   )
   attribute_list
 )
-(defun hcnm_ldrblk_get_auto_type_keys ()
+(defun hcnm-ldrblk_get_auto_type_keys ()
   ;; Returns list of auto-text type definitions
   ;; Structure: (Input_Key Display_Type Reference_Type Requires_Coordinates)
   ;; - Input_Key: Keyword entered by user (initget format)
@@ -6105,7 +6105,7 @@ ImportLayerSettings=No
     ("ENtry" "ENtry" nil nil)  ; Entry number - static text
   )
 )
-(defun hcnm_ldrblk_get_auto_type (ename_bubble line_number tag attribute_list /
+(defun hcnm-ldrblk_get_auto_type (ename_bubble line-number tag attribute_list /
                               cvport_old haws-qt-new input space string
                              )
   (initget
@@ -6114,7 +6114,7 @@ ImportLayerSettings=No
         'STRCAT
         (mapcar
           '(lambda (x) (strcat " " (car x)))
-          (hcnm_ldrblk_get_auto_type_keys)
+          (hcnm-ldrblk_get_auto_type_keys)
         )
       )
       2
@@ -6125,20 +6125,20 @@ ImportLayerSettings=No
      (getkword
        (strcat
          "\nLine "
-         (itoa line_number)
+         (itoa line-number)
          " automatic text. Enter an option ["
          (substr
            (apply
              'STRCAT
              (mapcar
                '(lambda (x) (strcat "/" (car x)))
-               (hcnm_ldrblk_get_auto_type_keys)
+               (hcnm-ldrblk_get_auto_type_keys)
              )
            )
            2
          )
          "] <"
-         (car (last (hcnm_ldrblk_get_auto_type_keys)))
+         (car (last (hcnm-ldrblk_get_auto_type_keys)))
          ">: "
        )
      )
@@ -6147,7 +6147,7 @@ ImportLayerSettings=No
     ((or (not input) (= input "ENtry"))
       (setq
         attribute_list
-         (hcnm_ldrblk_save_attribute_to_list
+         (hcnm-ldrblk_save_attribute_to_list
            tag
            "ENtry"
            attribute_list
@@ -6157,12 +6157,12 @@ ImportLayerSettings=No
     (t
      (setq
        attribute_list
-        (hcnm_ldrblk_auto_dispatch
-          ename_bubble
-          attribute_list
-          (strcat "NOTETXT" (itoa line_number))
+        (hcnm-ldrblk-auto-dispatch
+          ename-bubble
+          attribute-list
+          (strcat "NOTETXT" (itoa line-number))
           (cadr
-            (assoc input (hcnm_ldrblk_get_auto_type_keys))
+            (assoc input (hcnm-ldrblk_get_auto_type_keys))
           )
           nil
         )
@@ -6173,131 +6173,273 @@ ImportLayerSettings=No
   ;; I feel like I really should find a way to abstract the interface from this other business logic. There may be a good example in my recent subdivision tools.
   attribute_list
 )
-;; Bubble-data-update: hcnm_ldrblk_auto_dispatch is called from command line (insertion) and from edit box (editing) to get string as requested by user. It needs to get not only string, but also data (reference object and reference type).
+;; hcnm-ldrblk_auto_dispatch is called from command line (insertion) and from edit box (editing) to get string as requested by user. It needs to get not only string, but also data (reference object and reference type).
 ;; 
 ;; This is how bubble note auto text works.
 ;; 
 ;; Bubble note creation process from inside out:
-;; hcnm_ldrblk_auto_dispatch returns attribute_list including notedata information
-;; hcnm_ldrblk_get_auto_type returns attribute_list
-;; hcnm_ldrblk_get_text_entry returns attribute_list
-;; hcnm_ldrblk_get_bubble_data returns block_data that includes attribute_list after adjusting formatting  (overline and underline)
-;; hcnm_set_attributes puts attribute_list into bubble note
+;; hcnm-ldrblk_auto_dispatch returns attribute_list including notedata information
+;; hcnm-ldrblk_get_auto_type returns attribute_list
+;; hcnm-ldrblk_get_text_entry returns attribute_list
+;; hcnm-ldrblk_get_bubble_data returns block_data that includes attribute_list after adjusting formatting  (overline and underline)
+;; hcnm-set_attributes puts attribute_list into bubble note
 ;; 
 ;; Bubble note editing process from inside out:
-;; hcnm_ldrblk_auto_dispatch returns attribute_list including notedata information
-;; hcnm_eb:get_text modifies semi-global hcnm_eb:attribute_list after adjusting formatting (overline and underline)
-;; hcnm_eb:save calls hcnm_set_attributes to save semi-global hcnm_eb:attribute_list
-;; hcnm_edit_bubble top level manages editing dialog
-;; 
+;; hcnm-ldrblk_auto_dispatch returns attribute_list including notedata information
+;; hcnm-eb-get_text modifies semi-global hcnm-eb-attribute_list after adjusting formatting (overline and underline)
+;; hcnm-eb-save calls hcnm-set_attributes to save semi-global hcnm-eb-attribute_list
+;; hcnm-edit_bubble top level manages editing dialog
+;;
+;; Reactor update process from inside out:
+;; hcnm-ldrblk_auto_dispatch returns attribute_list including notedata information
+;; hcnm-ldrblk_update_bubble_tag modifies bubble_data that includes attribute_list after adjusting formatting  (overline and underline)
+;; hcnm-ldrblk_reactor_update calls hcnm-ldrblk_update_bubble_tag to update semi-global bubble_data
+;; hcnm-ldrblk_reactor top level manages reactor update
+;;;
+;;; PARAMETERS:
 ;; Input is the object (ename or vla-object; could be standardized) or string we need to examine if we aren't asking the user for it or nil if we need to get it.
 ;; Returns attribute_list with the requested auto data added.
-(defun hcnm_ldrblk_auto_dispatch (ename_bubble attribute_list tag auto_type input / bubble_data)
+
+;; Debug function to examine bubble XDATA
+(defun c:hcnm-debug-bubble-xdata ( / ss ename xdata)
+  (if (setq ss (ssget "_:S" '((0 . "INSERT"))))
+    (progn
+      (setq ename (ssname ss 0)
+            xdata (entget ename '("HCNM-BUBBLE")))
+      (princ "\n=== Bubble XDATA Debug ===")
+      (princ (strcat "\nEntity: " (vl-princ-to-string ename)))
+      (foreach item xdata
+        (cond
+          ((= (car item) -3)
+           (princ "\nXDATA:")
+           (foreach xitem (cdr item)
+             (princ (strcat "\n  " (vl-princ-to-string xitem)))
+           )
+          )
+          ((member (car item) '(0 2 8 10))
+           (princ (strcat "\n" (vl-princ-to-string item)))
+          )
+        )
+      )
+      (princ "\n========================\n")
+    )
+    (princ "\nNo bubble selected.")
+  )
+  (princ)
+)
+
+;; hcnm-ldrblk-gateways-to-viewport-selection-prompt - Gateway architecture for AVPORT prompting
+;;
+;; SIDE EFFECT PROCEDURE (returns nil): Determines whether to prompt user for viewport, 
+;; use CVPORT, or skip viewport capture entirely. Uses 5 named boolean gateways that 
+;; must all be open to prompt. Super-clearance bypasses all gates.
+;;
+;; When this function executes a capture path, it calls hcnm-ldrblk_capture_viewport_transform
+;; which stores the viewport transformation matrix in the bubble's XDATA. This stored
+;; transform allows coordinate calculations to convert from OCS to WCS correctly.
+;;
+;; PARAMETERS:
+;;   ename-bubble - Entity name of bubble block reference
+;;   auto-type - String: "N", "E", "NE", "Sta", "Off", etc. (for gateway 1 check and warning)
+;;   input - Object reference (alignment) or nil
+;;   object-reference-status - String indicating how object was obtained:
+;;     "NO-OBJECT" - No object needed/used (N/E/NE)
+;;     "PICKED" - User just picked object in this session
+;;     "REUSED" - Using object from previous session (bubble_data)
+;;   request-type - String indicating context:
+;;     nil - Normal auto-text generation flow
+;;     "LINK-VIEWPORT" - Explicit user request (super-clearance)
+;;
+;; THREE OUTCOMES (via side effects):
+;;   1. Prompt user for viewport, then capture transform
+;;   2. Use current CVPORT without prompting, then capture
+;;   3. Skip entirely (no capture needed)
+;;
+;; RETURNS: nil (this is a procedure with side effects, not a value-returning function)
+;;
+(defun hcnm-ldrblk-gateways-to-viewport-selection-prompt 
+       (ename-bubble auto-type input object-reference-status request-type /
+        avport-coordinates-gateway-open-p
+        avport-paperspace-gateway-open-p
+        avport-reactor-gateway-open-p
+        avport-xdata-gateway-open-p
+        avport-object-gateway-open-p
+        has-super-clearance-p
+        cvport)
+  
+  ;; Gateway 1: Coordinate-based auto-text
+  (setq avport-coordinates-gateway-open-p 
+        (hcnm-ldrblk_auto_type_is_coordinate_p auto-type))
+  (princ (strcat "\n  Gateway 1 (coordinates): " 
+                 (if avport-coordinates-gateway-open-p "OPEN" "CLOSED")
+                 " [" (if auto-type auto-type "nil") "]"))
+  
+  ;; Gateway 2: Paper space (not model space)
+  (setq avport-paperspace-gateway-open-p
+        (and ename-bubble
+             (not (hcnm-ldrblk_is_on_model_tab ename-bubble))))
+  (princ (strcat "\n  Gateway 2 (paperspace): " 
+                 (if avport-paperspace-gateway-open-p "OPEN" "CLOSED")))
+  
+  ;; Gateway 3: Not a reactor update (input is nil during insertion/editing)
+  (setq avport-reactor-gateway-open-p
+        (not input))
+  (princ (strcat "\n  Gateway 3 (not-reactor): " 
+                 (if avport-reactor-gateway-open-p "OPEN" "CLOSED")
+                 " [input=" (if input "exists" "nil") "]"))
+  
+  ;; Gateway 4: No existing viewport XDATA
+  (setq avport-xdata-gateway-open-p
+        (not (hcnm-xdata-get-vptrans ename-bubble)))
+  (princ (strcat "\n  Gateway 4 (no-xdata): " 
+                 (if avport-xdata-gateway-open-p "OPEN" "CLOSED")))
+  
+  ;; Gateway 5: Object not picked (either no object, or reused from previous)
+  ;; When user picks an object in this session, we trust CVPORT without prompting
+  (setq avport-object-gateway-open-p
+        (not (equal object-reference-status "PICKED")))
+  (princ (strcat "\n  Gateway 5 (not-picked): " 
+                 (if avport-object-gateway-open-p "OPEN" "CLOSED")
+                 " [status=" (if object-reference-status object-reference-status "nil") "]"))
+  
+  ;; Super clearance: Explicit user request bypasses all gates
+  (setq has-super-clearance-p
+        (equal request-type "LINK-VIEWPORT"))
+  (princ (strcat "\n  Super clearance: " 
+                 (if has-super-clearance-p "YES" "no")
+                 " [request=" (if request-type request-type "nil") "]"))
+  
+  ;; Decision logic
+  (cond
+    ;; Path 1: Super clearance - always prompt
+    (has-super-clearance-p
+     (princ "\n  >>> DECISION: Prompt for viewport (super clearance)")
+     (hcnm-ldrblk_warn_pspace_coordinates ename-bubble auto-type)
+     (hcnm-ldrblk_capture_viewport_transform ename-bubble (hcnm-ldrblk_get_target_vport))
+    )
+    
+    ;; Path 2: All gates open - prompt user
+    ((and avport-coordinates-gateway-open-p
+          avport-paperspace-gateway-open-p
+          avport-reactor-gateway-open-p
+          avport-xdata-gateway-open-p
+          avport-object-gateway-open-p)
+     (princ "\n  >>> DECISION: Prompt for viewport (all gates open)")
+     (hcnm-ldrblk_warn_pspace_coordinates ename-bubble auto-type)
+     (hcnm-ldrblk_capture_viewport_transform ename-bubble (hcnm-ldrblk_get_target_vport))
+    )
+    
+    ;; Path 3: Only object gateway closed - use CVPORT without prompting
+    ((and avport-coordinates-gateway-open-p
+          avport-paperspace-gateway-open-p
+          avport-reactor-gateway-open-p
+          avport-xdata-gateway-open-p
+          (not avport-object-gateway-open-p))
+     (princ "\n  >>> DECISION: Use CVPORT silently (object just picked)")
+     (setq cvport (getvar "CVPORT"))
+     (if cvport
+       (hcnm-ldrblk_capture_viewport_transform ename-bubble cvport)
+       (princ "\n  WARNING: CVPORT is nil - cannot capture viewport")
+     )
+    )
+    
+    ;; Path 4: Any other gate closed - skip
+    (t
+     (princ "\n  >>> DECISION: Skip viewport capture (gate closed)")
+    )
+  )
+  (princ) ; Return nil with clean output (this is a side-effect procedure)
+)
+
+(defun hcnm-ldrblk-auto-dispatch (ename-bubble attribute-list tag auto-type input / bubble-data)
     ;; bubble-data-update: Build BUBBLE_DATA and pass to subfunctions
   (setq 
-    bubble_data (hcnm_ldrblk_bd_set bubble_data "ENAME_BUBBLE" ename_bubble)
-    bubble_data (hcnm_ldrblk_bd_set bubble_data "ATTRIBUTES" attribute_list)
+    bubble-data (hcnm-ldrblk_bd_set bubble-data "ENAME_BUBBLE" ename-bubble)
+    bubble-data (hcnm-ldrblk_bd_set bubble-data "ATTRIBUTES" attribute-list)
   )
   ;; Ensure ENAME_LEADER is in BUBBLE_DATA (needed for reactor attachment)
   (cond
-    ((not (hcnm_ldrblk_bd_get bubble_data "ENAME_LEADER"))
-     (setq bubble_data (hcnm_ldrblk_bd_set 
-                         bubble_data 
+    ((not (hcnm-ldrblk_bd_get bubble-data "ENAME_LEADER"))
+     (setq bubble-data (hcnm-ldrblk_bd_set 
+                         bubble-data 
                          "ENAME_LEADER" 
-                         (hcnm_ldrblk_bubble_leader ename_bubble)))
+                         (hcnm-ldrblk_bubble_leader ename-bubble)))
     )
   )
-  ;; Only calculate P1_WORLD for auto-types that require coordinates
-  ;; BUT: For alignment auto-text, only calculate P1_WORLD when we have INPUT (reactor update)
-  ;; When INPUT is NIL (user selection), AUTO_AL will handle viewport selection AFTER user picks alignment
-  ;;
-  ;; IMPORTANT: For N/E/NE in paper space, capture viewport transform BEFORE calculating P1_WORLD
-  ;; This is part of the "auto-text generation" user experience
-  (cond
-    ((and (not input)  ; Initial insertion, not reactor update
-          (member auto_type '("N" "E" "NE"))
-          ename_bubble
-          (not (hcnm_ldrblk_is_on_model_tab ename_bubble)))
-     ;; Capture viewport for N/E/NE coordinate types in paper space
-     (hcnm_ldrblk_capture_viewport_transform ename_bubble (getvar "CVPORT"))
-    )
-  )
-  (cond
-    ((and (hcnm_ldrblk_auto_type_is_coordinate_p auto_type)
-          (or input  ; Reactor update - have alignment already
-              (not (member auto_type '("Sta" "Off" "StaOff" "AlName" "StaName")))))  ; Not alignment-based
-     (setq bubble_data (hcnm_ldrblk_bd_ensure_p1_world bubble_data))
-    )
-  )
+  
+  ;; NOTE: Coordinate-based auto-text handlers (auto_ne, auto_al, auto_su) each call helpers
+  ;; in a parallel way to get AVPORT and P1_WORLD at the top of their function body
+  
   (setq
-    bubble_data
+    bubble-data
      (cond
-       ((= auto_type "Text") (hcnm_ldrblk_auto_es bubble_data tag auto_type input))
-       ((= auto_type "LF") (hcnm_ldrblk_auto_qty bubble_data tag auto_type "Length" "1" input))
-       ((= auto_type "SF") (hcnm_ldrblk_auto_qty bubble_data tag auto_type "Area" "1" input))
-       ((= auto_type "SY")
-        (hcnm_ldrblk_auto_qty bubble_data tag auto_type "Area" "0.11111111" input)
+       ((= auto-type "Text") (hcnm-ldrblk-auto-es bubble-data tag auto-type input))
+       ((= auto-type "LF") (hcnm-ldrblk-auto-qty bubble-data tag auto-type "Length" "1" input))
+       ((= auto-type "SF") (hcnm-ldrblk-auto-qty bubble-data tag auto-type "Area" "1" input))
+       ((= auto-type "SY")
+        (hcnm-ldrblk-auto-qty bubble-data tag auto-type "Area" "0.11111111" input)
        )
-       ((= auto_type "Sta") (hcnm_ldrblk_auto_al bubble_data tag auto_type input))
-       ((= auto_type "Off") (hcnm_ldrblk_auto_al bubble_data tag auto_type input))
-       ((= auto_type "StaOff")
-        (hcnm_ldrblk_auto_al bubble_data tag auto_type input)
+       ((= auto-type "Sta") (hcnm-ldrblk-auto-al bubble-data tag auto-type input))
+       ((= auto-type "Off") (hcnm-ldrblk-auto-al bubble-data tag auto-type input))
+       ((= auto-type "StaOff")
+        (hcnm-ldrblk-auto-al bubble-data tag auto-type input)
        )
-       ((= auto_type "AlName") (hcnm_ldrblk_auto_al bubble_data tag auto_type input))
-       ((= auto_type "StaName") (hcnm_ldrblk_auto_al bubble_data tag auto_type input))
-       ((= auto_type "N") (hcnm_ldrblk_auto_ne bubble_data tag auto_type input))
-       ((= auto_type "E") (hcnm_ldrblk_auto_ne bubble_data tag auto_type input))
-       ((= auto_type "NE") (hcnm_ldrblk_auto_ne bubble_data tag auto_type input))
-       ((= auto_type "Z") (hcnm_ldrblk_auto_su bubble_data tag auto_type input))
-       ((= auto_type "Dia") (hcnm_ldrblk_auto_pipe bubble_data tag auto_type input))
-       ((= auto_type "Slope") (hcnm_ldrblk_auto_pipe bubble_data tag auto_type input))
-       ((= auto_type "L") (hcnm_ldrblk_auto_pipe bubble_data tag auto_type input))
+       ((= auto-type "AlName") (hcnm-ldrblk-auto-al bubble-data tag auto-type input))
+       ((= auto-type "StaName") (hcnm-ldrblk-auto-al bubble-data tag auto-type input))
+       ((= auto-type "N") (hcnm-ldrblk-auto-ne bubble-data tag auto-type input))
+       ((= auto-type "E") (hcnm-ldrblk-auto-ne bubble-data tag auto-type input))
+       ((= auto-type "NE") (hcnm-ldrblk-auto-ne bubble-data tag auto-type input))
+       ((= auto-type "Z") (hcnm-ldrblk-auto-su bubble-data tag auto-type input))
+       ((= auto-type "Dia") (hcnm-ldrblk-auto-pipe bubble-data tag auto-type input))
+       ((= auto-type "Slope") (hcnm-ldrblk-auto-pipe bubble-data tag auto-type input))
+       ((= auto-type "L") (hcnm-ldrblk-auto-pipe bubble-data tag auto-type input))
      )
-    attribute_list (hcnm_ldrblk_bd_get bubble_data "ATTRIBUTES")
+    attribute-list (hcnm-ldrblk_bd_get bubble-data "ATTRIBUTES")
   )
-  attribute_list
+  attribute-list
 )
 
-(defun hcnm_ldrblk_auto_es (bubble_data tag auto_type input / ename attribute_list) 
+(defun hcnm-ldrblk-auto-es (bubble-data tag auto-type input / ename attribute-list) 
   (setq
-    attribute_list (hcnm_ldrblk_bd_get bubble_data "ATTRIBUTES")
+    attribute-list (hcnm-ldrblk_bd_get bubble-data "ATTRIBUTES")
     ename
     (cond
       (input)
-      (t (car (nentsel (strcat "\nSelect object with " auto_type ": "))))
+      (t (car (nentsel (strcat "\nSelect object with " auto-type ": "))))
     )     
   )
-  ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
-  ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
+  ;; END hcnm-ldrblk_AUTO_GET_INPUT SUBFUNCTION
+  ;; START hcnm-ldrblk_AUTO_UPDATE SUBFUNCTION
   (setq  
-    attribute_list 
-     (hcnm_ldrblk_save_auto_to_list 
+    attribute-list 
+     (hcnm-ldrblk_save_auto_to_list 
        tag
        (cond 
          (ename (cdr (assoc 1 (entget ename))))
          (t "")
        )
-       attribute_list
+       attribute-list
      )
-    bubble_data (hcnm_ldrblk_bd_set bubble_data "ATTRIBUTES" attribute_list)
+    bubble-data (hcnm-ldrblk_bd_set bubble-data "ATTRIBUTES" attribute-list)
   )
-  bubble_data
+  bubble-data
 )
-(defun hcnm_ldrblk_auto_qty (bubble_data tag auto_type qt_type factor input / attribute_list str_backslash input1 pspace_bubble_p
-                         ss-p string)
-  (setq attribute_list (hcnm_ldrblk_bd_get bubble_data "ATTRIBUTES"))
+(defun hcnm-ldrblk-auto-qty (bubble-data tag auto-type qt-type factor input / 
+                              attribute-list str-backslash input1 pspace-bubble-p
+                              ss-p string)
+  (setq attribute-list (hcnm-ldrblk_bd_get bubble-data "ATTRIBUTES"))
   (cond
     ((setq string input))
     (t  
       (cond
         ((and
-          (= qt_type "Area")
+          (= qt-type "Area")
           (= (c:hcnm-config-getvar "BubbleAreaIntegral") "1")
           )
         (c:hcnm-config-setvar "BubbleArrowIntegralPending" "1")
         )
       )
-      (setq pspace_bubble_p (hcnm_ldrblk_space_set_model))
+      (setq pspace-bubble-p (hcnm-ldrblk_space_set_model))
       (initget "Selection")
       (setq
         input1
@@ -6315,13 +6457,13 @@ ImportLayerSettings=No
               (load "HAWS-QT")
             )
             (haws-qt-new "ldrblk")
-            (haws-qt-set-property "ldrblk" "type" (strcase qt_type t))
+            (haws-qt-set-property "ldrblk" "type" (strcase qt-type t))
             (haws-qt-set-property "ldrblk" "factor" (read factor))
             (haws-qt-set-property
               "ldrblk"
               "postfix"
               (c:hcnm-config-getvar
-                (strcat "BubbleTextPostfix" auto_type)
+                (strcat "BubbleTextPostfix" auto-type)
               )
             )
             (haws-qt-string "ldrblk")
@@ -6330,7 +6472,7 @@ ImportLayerSettings=No
           (t
             (strcat
               (c:hcnm-config-getvar
-                (strcat "BubbleTextPrefix" auto_type)
+                (strcat "BubbleTextPrefix" auto-type)
               )
               "%<\\AcObjProp Object(%<\\_ObjId "
               (vla-getobjectidstring
@@ -6341,51 +6483,51 @@ ImportLayerSettings=No
                 :vlax-false
               )
               ">%)."
-              qt_type
+              qt-type
               " \\f \"%lu2%pr"
               (c:hcnm-config-getvar
-                (strcat "BubbleTextPrecision" auto_type)
+                (strcat "BubbleTextPrecision" auto-type)
               )
               "%ct8["
               factor
               "]\">%"
               (c:hcnm-config-getvar
-                (strcat "BubbleTextPostfix" auto_type)
+                (strcat "BubbleTextPostfix" auto-type)
               )
             )
           )
         )
       )
-      (hcnm_ldrblk_space_restore pspace_bubble_p)
+      (hcnm-ldrblk_space_restore pspace-bubble-p)
       
     )
   )
-  ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
-  ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
+  ;; END hcnm-ldrblk_AUTO_GET_INPUT SUBFUNCTION
+  ;; START hcnm-ldrblk_AUTO_UPDATE SUBFUNCTION
   (setq
-    attribute_list
-    (hcnm_ldrblk_save_auto_to_list 
+    attribute-list
+    (hcnm-ldrblk_save_auto_to_list 
       tag
       string
-      attribute_list
+      attribute-list
     )
-    bubble_data (hcnm_ldrblk_bd_set bubble_data "ATTRIBUTES" attribute_list)
+    bubble-data (hcnm-ldrblk_bd_set bubble-data "ATTRIBUTES" attribute-list)
   )
-  bubble_data
+  bubble-data
 )
 ;; NOT USED
-(defun hcnm_ldrblk_mtextatribute_p (en)
+(defun hcnm-ldrblk_mtextatribute_p (en)
   (setq obj (vlax-ename->vla-object en))
   (and
     (vlax-property-available-p obj 'MTEXTATTRIBUTE)
     (vla-get-mtextattribute obj)
   )
 )
-(defun hcnm_ldrblk_space_set_model ()
+(defun hcnm-ldrblk_space_set_model ()
   (c:hcnm-config-setvar "AllowReactors" "0")
   (cond ((= (getvar "CVPORT") 1) (vl-cmdf "._MSPACE") t))
 )
-(defun hcnm_ldrblk_space_restore (pspace_bubble_p)
+(defun hcnm-ldrblk_space_restore (pspace_bubble_p)
   (cond (pspace_bubble_p (vl-cmdf "._PSPACE")))
   (c:hcnm-config-setvar "AllowReactors" "1")
 )
@@ -6399,12 +6541,12 @@ ImportLayerSettings=No
 ;; Check if AUTO_TYPE is coordinate-based using GET_AUTO_TYPE_KEYS
 ;; Returns: T if auto-type requires coordinates (Sta/Off/N/E/Z), NIL otherwise
 ;; Usage: Determines if paper space warning should be shown
-(defun hcnm_ldrblk_auto_type_is_coordinate_p (auto_type / type_def)
+(defun hcnm-ldrblk_auto_type_is_coordinate_p (auto_type / type_def)
   (setq type_def 
     (car 
       (vl-remove-if-not 
         '(lambda (x) (= (cadr x) auto_type))
-        (hcnm_ldrblk_get_auto_type_keys)
+        (hcnm-ldrblk_get_auto_type_keys)
       )
     )
   )
@@ -6419,11 +6561,11 @@ ImportLayerSettings=No
 ;; When: Only shown for coordinate-based auto-text in paper space bubbles
 ;; TODO: Replace with dismissable tip system when implemented
 ;; Capture and store viewport transformation matrix for paper space bubble
-;; This is the ONLY function that should call hcnm_ldrblk_set_viewport_transform_xdata
+;; This is the ONLY function that should call hcnm-ldrblk_set_viewport_transform_xdata
 ;; All viewport capture logic is centralized here to maintain architectural clarity
 ;;
 ;; ARCHITECTURE: Two user experiences call this function:
-;;   1. Auto-text generation (via hcnm_ldrblk_auto_al and similar dispatch-auto functions)
+;;   1. Auto-text generation (via hcnm-ldrblk_auto_al and similar dispatch-auto functions)
 ;;      - When inserting bubble with coordinate-based auto-text in paper space
 ;;      - When editing bubble and switching to coordinate-based auto-text  
 ;;   2. Viewport linking (explicit user actions)
@@ -6432,7 +6574,7 @@ ImportLayerSettings=No
 ;;
 ;; This captures 3 reference points to calculate rotation, scale, and translation
 ;; Returns T if successful, NIL if failed
-(defun hcnm_ldrblk_capture_viewport_transform (ename_bubble cvport / ref_ocs_1 ref_ocs_2 ref_ocs_3 ref_wcs_1 ref_wcs_2 ref_wcs_3)
+(defun hcnm-ldrblk_capture_viewport_transform (ename_bubble cvport / ref_ocs_1 ref_ocs_2 ref_ocs_3 ref_wcs_1 ref_wcs_2 ref_wcs_3)
   (cond
     ((and cvport (> cvport 1))
      ;; We're in a viewport - capture transformation matrix
@@ -6443,7 +6585,7 @@ ImportLayerSettings=No
            ref_wcs_1 (trans (trans ref_ocs_1 3 2) 2 0)
            ref_wcs_2 (trans (trans ref_ocs_2 3 2) 2 0)
            ref_wcs_3 (trans (trans ref_ocs_3 3 2) 2 0))
-     (hcnm_ldrblk_set_viewport_transform_xdata ename_bubble cvport 
+     (hcnm-ldrblk_set_viewport_transform_xdata ename_bubble cvport 
                                                  ref_ocs_1 ref_wcs_1
                                                  ref_ocs_2 ref_wcs_2
                                                  ref_ocs_3 ref_wcs_3)
@@ -6458,14 +6600,14 @@ ImportLayerSettings=No
 ;; This is necessary because you can't show a modal dialog from inside another modal dialog
 ;; Show paper space coordinate warning tip
 ;; Can be called from anywhere - shows tip immediately
-(defun hcnm_ldrblk_warn_pspace_coordinates (ename_bubble auto_type)
+(defun hcnm-ldrblk_warn_pspace_coordinates (ename_bubble auto_type)
   (cond
     ((and ename_bubble 
-          (not (hcnm_ldrblk_is_on_model_tab ename_bubble))
-          (hcnm_ldrblk_auto_type_is_coordinate_p auto_type))
+          (not (hcnm-ldrblk_is_on_model_tab ename_bubble))
+          (hcnm-ldrblk_auto_type_is_coordinate_p auto_type))
      ;; Bubble is in paper space and auto-type is coordinate-based - show warning
      (haws_tip_show 1001 ; Unique tip ID for paper space warning
-       "IMPORTANT: Paper space bubble notes don't react to viewport changes.\n\nTo avoid causing chaos when changing viewport views, auto text for coordinates\ndoes not react to viewport view changes.\n\nYou must use the 'Change View' button in the edit dialog (or the future CNMCHGVPORT command) if you want to refresh the viewport association and world coordinates of selected bubble notes.")
+       "IMPORTANT: Paper space bubble notes don't react to viewport changes.\n\nTo avoid causing chaos when changing viewport views, auto text for coordinates does not react to viewport view changes.\n\nYou must use the 'Change View' button in the edit dialog (or the future CNMCHGVPORT command) if you want to refresh the viewport association and world coordinates of selected bubble notes.")
     )
   )
 )
@@ -6477,10 +6619,10 @@ ImportLayerSettings=No
 ;; Workflow: Get alignment → Calculate Sta/Off → Format text → Attach reactor
 ;;
 ;; REFACTORED: Split into modular functions for better maintainability
-;;   - HCNM_LDRBLK_AUTO_ALIGNMENT_CALCULATE: Pure calculation (testable)
-;;   - HCNM_LDRBLK_AUTO_ALIGNMENT_FORMAT_STATION: Format station string
-;;   - HCNM_LDRBLK_AUTO_ALIGNMENT_FORMAT_OFFSET: Format offset string
-;;   - HCNM_LDRBLK_AUTO_AL: Main orchestrator (backward compatible)
+;;   - hcnm-ldrblk_AUTO_ALIGNMENT_CALCULATE: Pure calculation (testable)
+;;   - hcnm-ldrblk_AUTO_ALIGNMENT_FORMAT_STATION: Format station string
+;;   - hcnm-ldrblk_AUTO_ALIGNMENT_FORMAT_OFFSET: Format offset string
+;;   - hcnm-ldrblk_AUTO_AL: Main orchestrator (backward compatible)
 
 ;; Calculate raw station and offset from alignment and world point
 ;; Pure function: No side effects, easily testable
@@ -6490,7 +6632,7 @@ ImportLayerSettings=No
 ;; Returns:
 ;;   (DRAWSTATION . OFFSET) on success
 ;;   NIL on failure
-(defun hcnm_ldrblk_auto_alignment_calculate (alignment_object p1_world / drawstation offset)
+(defun hcnm-ldrblk_auto_alignment_calculate (alignment_object p1_world / drawstation offset)
   (cond
     ((and (= (type alignment_object) 'VLA-OBJECT) p1_world)
      ;; Call Civil 3D alignment method to get station/offset
@@ -6515,7 +6657,7 @@ ImportLayerSettings=No
 ;;   ALIGNMENT_OBJECT - VLA-OBJECT to get station string with equations
 ;;   DRAWSTATION - Raw station value from StationOffset method
 ;; Returns: Formatted station string (e.g., "STA 10+50.00")
-(defun hcnm_ldrblk_auto_alignment_format_station (alignment_object drawstation)
+(defun hcnm-ldrblk_auto_alignment_format_station (alignment_object drawstation)
   (strcat 
     (c:hcnm-config-getvar "BubbleTextPrefixSta")
     (vlax-invoke-method 
@@ -6531,7 +6673,7 @@ ImportLayerSettings=No
 ;; Arguments:
 ;;   OFFSET - Raw offset value (positive = right, negative = left)
 ;; Returns: Formatted offset string (e.g., "25.00 RT" or "LT 10.50")
-(defun hcnm_ldrblk_auto_alignment_format_offset (offset / offset_value)
+(defun hcnm-ldrblk_auto_alignment_format_offset (offset / offset_value)
   ;; Determine offset value (absolute or with sign)
   (setq offset_value
     (cond 
@@ -6571,7 +6713,7 @@ ImportLayerSettings=No
 ;; ============================================================================
 
 ;;==============================================================================
-;; HCNM_LDRBLK_AUTO_PIPE_GET_OBJECT
+;; hcnm-ldrblk_AUTO_PIPE_GET_OBJECT
 ;;==============================================================================
 ;; Purpose:
 ;;   Prompts user to select a Civil 3D pipe network pipe object.
@@ -6588,12 +6730,12 @@ ImportLayerSettings=No
 ;;   - Prompts user to select pipe with custom message
 ;;
 ;; Related:
-;;   HCNM_LDRBLK_AUTO_PIPE
+;;   hcnm-ldrblk_AUTO_PIPE
 ;;
 ;; Example:
-;;   (SETQ OBJ_PIPE (HCNM_LDRBLK_AUTO_PIPE_GET_OBJECT ENAME_BUBBLE "NOTETXT1" "Dia"))
+;;   (SETQ OBJ_PIPE (hcnm-ldrblk_AUTO_PIPE_GET_OBJECT ENAME_BUBBLE "NOTETXT1" "Dia"))
 ;;==============================================================================
-(defun hcnm_ldrblk_auto_pipe_get_object (ename_bubble tag auto_type / esapipe obj_pipe)
+(defun hcnm-ldrblk_auto_pipe_get_object (ename_bubble tag auto_type / esapipe obj_pipe)
   (setq esapipe
     (nentsel 
       (strcat 
@@ -6629,7 +6771,7 @@ ImportLayerSettings=No
 )
 
 ;;==============================================================================
-;; HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER
+;; hcnm-ldrblk_AUTO_PIPE_FORMAT_DIAMETER
 ;;==============================================================================
 ;; Purpose:
 ;;   Formats pipe diameter value with user-configured prefix, postfix, and precision.
@@ -6645,13 +6787,13 @@ ImportLayerSettings=No
 ;;   - Reads config variables: BubbleTextPrefixPipeDia, PostfixPipeDia, PrecisionPipeDia
 ;;
 ;; Related:
-;;   HCNM_LDRBLK_AUTO_PIPE
-;;   HCNM_LDRBLK_AUTO_PIPE_FORMAT_SLOPE
+;;   hcnm-ldrblk_AUTO_PIPE
+;;   hcnm-ldrblk_AUTO_PIPE_FORMAT_SLOPE
 ;;
 ;; Example:
-;;   (SETQ TEXT (HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER OBJ_PIPE))
+;;   (SETQ TEXT (hcnm-ldrblk_AUTO_PIPE_FORMAT_DIAMETER OBJ_PIPE))
 ;;==============================================================================
-(defun hcnm_ldrblk_auto_pipe_format_diameter (obj_pipe / dia_value dia_inches)
+(defun hcnm-ldrblk_auto_pipe_format_diameter (obj_pipe / dia_value dia_inches)
   (setq 
     dia_value (vl-catch-all-apply 'VLAX-GET-PROPERTY (list obj_pipe 'InnerDiameterOrWidth))
   )
@@ -6678,7 +6820,7 @@ ImportLayerSettings=No
 )
 
 ;;==============================================================================
-;; HCNM_LDRBLK_AUTO_PIPE_FORMAT_SLOPE
+;; hcnm-ldrblk_AUTO_PIPE_FORMAT_SLOPE
 ;;==============================================================================
 ;; Purpose:
 ;;   Formats pipe slope value with user-configured prefix, postfix, and precision.
@@ -6694,13 +6836,13 @@ ImportLayerSettings=No
 ;;   - Reads config variables: BubbleTextPrefixPipeSlope, PostfixPipeSlope, PrecisionPipeSlope
 ;;
 ;; Related:
-;;   HCNM_LDRBLK_AUTO_PIPE
-;;   HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER
+;;   hcnm-ldrblk_AUTO_PIPE
+;;   hcnm-ldrblk_AUTO_PIPE_FORMAT_DIAMETER
 ;;
 ;; Example:
-;;   (SETQ TEXT (HCNM_LDRBLK_AUTO_PIPE_FORMAT_SLOPE OBJ_PIPE))
+;;   (SETQ TEXT (hcnm-ldrblk_AUTO_PIPE_FORMAT_SLOPE OBJ_PIPE))
 ;;==============================================================================
-(defun hcnm_ldrblk_auto_pipe_format_slope (obj_pipe / slope_value slope_percent)
+(defun hcnm-ldrblk_auto_pipe_format_slope (obj_pipe / slope_value slope_percent)
   (setq 
     slope_value (vl-catch-all-apply 'VLAX-GET-PROPERTY (list obj_pipe 'Slope))
   )
@@ -6727,7 +6869,7 @@ ImportLayerSettings=No
 )
 
 ;;==============================================================================
-;; HCNM_LDRBLK_AUTO_PIPE_FORMAT_LENGTH
+;; hcnm-ldrblk_AUTO_PIPE_FORMAT_LENGTH
 ;;==============================================================================
 ;; Purpose:
 ;;   Formats pipe length value with user-configured prefix, postfix, and precision.
@@ -6743,13 +6885,13 @@ ImportLayerSettings=No
 ;;   - Reads config variables: BubbleTextPrefixPipeLength, PostfixPipeLength, PrecisionPipeLength
 ;;
 ;; Related:
-;;   HCNM_LDRBLK_AUTO_PIPE
-;;   HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER
+;;   hcnm-ldrblk_AUTO_PIPE
+;;   hcnm-ldrblk_AUTO_PIPE_FORMAT_DIAMETER
 ;;
 ;; Example:
-;;   (SETQ TEXT (HCNM_LDRBLK_AUTO_PIPE_FORMAT_LENGTH OBJ_PIPE))
+;;   (SETQ TEXT (hcnm-ldrblk_AUTO_PIPE_FORMAT_LENGTH OBJ_PIPE))
 ;;==============================================================================
-(defun hcnm_ldrblk_auto_pipe_format_length (obj_pipe / length_value)
+(defun hcnm-ldrblk_auto_pipe_format_length (obj_pipe / length_value)
   (setq 
     length_value (vl-catch-all-apply 'VLAX-GET-PROPERTY (list obj_pipe 'Length2D))
   )
@@ -6773,7 +6915,7 @@ ImportLayerSettings=No
 )
 
 ;;==============================================================================
-;; HCNM_LDRBLK_AUTO_PIPE
+;; hcnm-ldrblk_AUTO_PIPE
 ;;==============================================================================
 ;; Purpose:
 ;;   Main pipe network auto-text orchestrator. Gets pipe object, extracts
@@ -6796,59 +6938,63 @@ ImportLayerSettings=No
 ;;   - Updates ATTRIBUTE_LIST within BUBBLE_DATA
 ;;
 ;; Related:
-;;   HCNM_LDRBLK_AUTO_PIPE_GET_OBJECT
-;;   HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER
-;;   HCNM_LDRBLK_AUTO_PIPE_FORMAT_SLOPE
-;;   HCNM_LDRBLK_AUTO_PIPE_FORMAT_LENGTH
-;;   HCNM_LDRBLK_ASSURE_AUTO_TEXT_HAS_REACTOR
+;;   hcnm-ldrblk_AUTO_PIPE_GET_OBJECT
+;;   hcnm-ldrblk_AUTO_PIPE_FORMAT_DIAMETER
+;;   hcnm-ldrblk_AUTO_PIPE_FORMAT_SLOPE
+;;   hcnm-ldrblk_AUTO_PIPE_FORMAT_LENGTH
+;;   hcnm-ldrblk_ASSURE_AUTO_TEXT_HAS_REACTOR
 ;;
 ;; Example:
 ;;   (SETQ BUBBLE_DATA
-;;     (HCNM_LDRBLK_AUTO_PIPE BUBBLE_DATA "NOTETXT1" "Dia" NIL)
+;;     (hcnm-ldrblk_AUTO_PIPE BUBBLE_DATA "NOTETXT1" "Dia" NIL)
 ;;   )
 ;;==============================================================================
-(defun hcnm_ldrblk_auto_pipe (bubble_data tag auto_type input / attribute_list ename_bubble ename_leader obj_pipe pspace_bubble_p string)
+(defun hcnm-ldrblk-auto-pipe (bubble-data tag auto-type input / attribute-list ename-bubble ename-leader obj-pipe pspace-bubble-p string)
   (setq 
-    attribute_list (hcnm_ldrblk_bd_get bubble_data "ATTRIBUTES")
-    ename_bubble (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE")
-    ename_leader (hcnm_ldrblk_bd_get bubble_data "ENAME_LEADER")
+    attribute-list (hcnm-ldrblk_bd_get bubble-data "ATTRIBUTES")
+    ename-bubble (hcnm-ldrblk_bd_get bubble-data "ENAME_BUBBLE")
+    ename-leader (hcnm-ldrblk_bd_get bubble-data "ENAME_LEADER")
   )
+  
+  ;; NOTE: Pipe auto-text (Dia/Slope/L) does not use world coordinates.
+  ;; At this point, coordinate-based auto-text functions get world coordinates
+  ;; and the associated viewport as needed (via gateway + P1_WORLD helpers).
   
   ;; STEP 1: Get pipe object (user selection or provided input)
   (cond 
-    ((setq obj_pipe input)
+    ((setq obj-pipe input)
      ;; Pipe provided (reactor update or programmatic call)
     )
     (t
      ;; Get pipe from user
-     (setq pspace_bubble_p (hcnm_ldrblk_space_set_model)
-           obj_pipe         (hcnm_ldrblk_auto_pipe_get_object ename_bubble tag auto_type)
+     (setq pspace-bubble-p (hcnm-ldrblk_space_set_model)
+           obj-pipe         (hcnm-ldrblk_auto_pipe_get_object ename-bubble tag auto-type)
      )
      ;; Attach reactor to watch for pipe changes (no leader needed since not coordinate-based)
      (cond
-       (obj_pipe
-        (hcnm_ldrblk_assure_auto_text_has_reactor obj_pipe ename_bubble nil tag auto_type)
+       (obj-pipe
+        (hcnm-ldrblk_assure_auto_text_has_reactor obj-pipe ename-bubble nil tag auto-type)
        )
      )
      ;; Restore space after selection
-     (hcnm_ldrblk_space_restore pspace_bubble_p)
+     (hcnm-ldrblk_space_restore pspace-bubble-p)
     )
   )
   
   ;; STEP 2: Extract and format the property based on AUTO_TYPE
   (setq string
     (cond 
-      ((not obj_pipe)
+      ((not obj-pipe)
        "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
       )
-      ((= auto_type "Dia")
-       (hcnm_ldrblk_auto_pipe_format_diameter obj_pipe)
+      ((= auto-type "Dia")
+       (hcnm-ldrblk_auto_pipe_format_diameter obj-pipe)
       )
-      ((= auto_type "Slope")
-       (hcnm_ldrblk_auto_pipe_format_slope obj_pipe)
+      ((= auto-type "Slope")
+       (hcnm-ldrblk_auto_pipe_format_slope obj-pipe)
       )
-      ((= auto_type "L")
-       (hcnm_ldrblk_auto_pipe_format_length obj_pipe)
+      ((= auto-type "L")
+       (hcnm-ldrblk_auto_pipe_format_length obj-pipe)
       )
       (t "!!!!!!!!!!!!!!!!!INVALID TYPE!!!!!!!!!!!!!!!!!!!!!!!")
     )
@@ -6856,15 +7002,15 @@ ImportLayerSettings=No
   
   ;; STEP 3: Save the formatted string to the attribute list and update BUBBLE_DATA
   (setq
-    attribute_list
-    (hcnm_ldrblk_save_auto_to_list 
+    attribute-list
+    (hcnm-ldrblk_save_auto_to_list 
       tag
       string
-      attribute_list
+      attribute-list
     )
-    bubble_data (hcnm_ldrblk_bd_set bubble_data "ATTRIBUTES" attribute_list)
+    bubble-data (hcnm-ldrblk_bd_set bubble-data "ATTRIBUTES" attribute-list)
   )
-  bubble_data
+  bubble-data
 )
 
 ;; Main alignment auto-text function (backward compatible)
@@ -6875,52 +7021,55 @@ ImportLayerSettings=No
 ;;   AUTO_TYPE - "Sta", "Off", "StaOff", "AlName", or "StaName"
 ;;   INPUT - Optional: Pre-selected alignment object (used by reactor updates)
 ;; Returns: Updated BUBBLE_DATA with new attribute value
-(defun hcnm_ldrblk_auto_al (bubble_data tag auto_type input / alignment_name attribute_list ename_bubble ename_leader sta_off_pair drawstation offset objalign p1_world pspace_bubble_p sta_string off_string string cvport ref_ocs_1 ref_ocs_2 ref_ocs_3 ref_wcs_1 ref_wcs_2 ref_wcs_3)
+(defun hcnm-ldrblk-auto-al (bubble-data tag auto-type input / 
+                             alignment-name attribute-list ename-bubble ename-leader 
+                             sta-off-pair drawstation offset obj-align p1-world 
+                             pspace-bubble-p sta-string off-string string cvport 
+                             ref-ocs-1 ref-ocs-2 ref-ocs-3 ref-wcs-1 ref-wcs-2 ref-wcs-3)
   (setq 
-    attribute_list (hcnm_ldrblk_bd_get bubble_data "ATTRIBUTES")
-    ename_bubble (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE")
-    ename_leader (hcnm_ldrblk_bd_get bubble_data "ENAME_LEADER")
-    p1_world (hcnm_ldrblk_bd_get bubble_data "P1_WORLD")
+    attribute-list (hcnm-ldrblk_bd_get bubble_data "ATTRIBUTES")
+    ename-bubble (hcnm-ldrblk_bd_get bubble_data "ENAME_BUBBLE")
+    ename-leader (hcnm-ldrblk_bd_get bubble_data "ENAME_LEADER")
+    p1-world (hcnm-ldrblk_bd_get bubble_data "P1_WORLD")
   )
   
   ;; STEP 1: Get alignment object (user selection or provided input)
   (cond 
-    ((setq objalign input)
-     ;; Alignment provided (reactor update or programmatic call)
-    )
-    (t
-     ;; Get alignment from user
-     (setq pspace_bubble_p (hcnm_ldrblk_space_set_model)
-           objalign        (hcnm_ldrblk_auto_al_get_alignment ename_bubble tag auto_type)
-     )
-     ;; NOTE: Still in MSPACE at this point - capture viewport transformation if needed
-     ;; Capture viewport transformation data if bubble is in paper space
-     ;; Capture viewport transformation if in paper space
-     ;; This is part of the "auto-text generation" user experience
+    (input
+     ;; Reactor callback - for coordinate types, just recalculate P1_WORLD from current leader
+     ;; No gateway call needed - gate 3 (not-reactor) will be closed
+     (setq obj-align input)
      (cond
-       ((and objalign ename_bubble (not (hcnm_ldrblk_is_on_model_tab ename_bubble)))
-        (hcnm_ldrblk_capture_viewport_transform ename_bubble (getvar "CVPORT"))
+       ((or (= auto_type "Sta") (= auto_type "Off") (= auto_type "StaOff") (= auto_type "StaName"))
+        (setq bubble_data (hcnm-ldrblk_bd_ensure_p1_world bubble_data)
+              p1-world (hcnm-ldrblk_bd_get bubble_data "P1_WORLD"))
        )
      )
-     ;; Now calculate P1_WORLD if needed for coordinate-based types and not already in BUBBLE_DATA
+    )
+    (t
+     ;; Initial creation - get alignment from user (they're picking it NOW or reusing previous)
+     (setq pspace-bubble-p (hcnm-ldrblk_space_set_model)
+           obj-align       (hcnm-ldrblk-auto-al-get-alignment ename-bubble tag auto-type)
+     )
+     
+     ;; Now calculate P1_WORLD if needed for coordinate-based types
      (cond
-       ((and (not p1_world)
-             (or (= auto_type "Sta") (= auto_type "Off") (= auto_type "StaOff") (= auto_type "StaName")))
-        (setq bubble_data (hcnm_ldrblk_bd_ensure_p1_world bubble_data)
-              p1_world (hcnm_ldrblk_bd_get bubble_data "P1_WORLD"))
+       ((or (= auto_type "Sta") (= auto_type "Off") (= auto_type "StaOff") (= auto_type "StaName"))
+        (setq bubble_data (hcnm-ldrblk_bd_ensure_p1_world bubble_data)
+              p1-world (hcnm-ldrblk_bd_get bubble_data "P1_WORLD"))
        )
      )
      ;; Attach reactor to watch for alignment/leader changes
-     (hcnm_ldrblk_assure_auto_text_has_reactor objalign ename_bubble ename_leader tag auto_type)
+     (hcnm-ldrblk_assure_auto_text_has_reactor obj-align ename-bubble ename-leader tag auto_type)
      ;; Now restore space after everything is done
-     (hcnm_ldrblk_space_restore pspace_bubble_p)
+     (hcnm-ldrblk_space_restore pspace-bubble-p)
     )
   )
   
   ;; STEP 2: Calculate station and offset (only needed for coordinate-based types)
   (cond
     ((or (= auto_type "Sta") (= auto_type "Off") (= auto_type "StaOff") (= auto_type "StaName"))
-     (setq sta_off_pair (hcnm_ldrblk_auto_alignment_calculate objalign p1_world))
+     (setq sta-off-pair (hcnm-ldrblk_auto_alignment_calculate obj-align p1-world))
     )
   )
   
@@ -6929,8 +7078,8 @@ ImportLayerSettings=No
     ((= auto_type "AlName")
      ;; Alignment name only - no coordinates needed
      (cond
-       (objalign
-        (setq string (vl-catch-all-apply 'VLAX-GET-PROPERTY (list objalign 'NAME)))
+       (obj-align
+        (setq string (vl-catch-all-apply 'VLAX-GET-PROPERTY (list obj-align 'NAME)))
         (cond
           ((vl-catch-all-error-p string)
            (setq string "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
@@ -6942,32 +7091,32 @@ ImportLayerSettings=No
        )
      )
     )
-    (sta_off_pair
+    (sta-off-pair
      ;; Calculation succeeded - extract and format
-     (setq drawstation (car sta_off_pair)
-           offset      (cdr sta_off_pair)
-           sta_string  (hcnm_ldrblk_auto_alignment_format_station objalign drawstation)
-           off_string  (hcnm_ldrblk_auto_alignment_format_offset offset)
+     (setq drawstation (car sta-off-pair)
+           offset      (cdr sta-off-pair)
+           sta-string  (hcnm-ldrblk_auto_alignment_format_station obj-align drawstation)
+           off-string  (hcnm-ldrblk_auto_alignment_format_offset offset)
            string
            (cond 
-             ((= auto_type "Sta") sta_string)
-             ((= auto_type "Off") off_string)
+             ((= auto_type "Sta") sta-string)
+             ((= auto_type "Off") off-string)
              ((= auto_type "StaOff")
               (strcat 
-                sta_string
+                sta-string
                 (c:hcnm-config-getvar "BubbleTextJoinDelSta")
-                off_string
+                off-string
               )
              )
              ((= auto_type "StaName")
               ;; Station + alignment name
-              (setq string (vl-catch-all-apply 'VLAX-GET-PROPERTY (list objalign 'NAME)))
+              (setq string (vl-catch-all-apply 'VLAX-GET-PROPERTY (list obj-align 'NAME)))
               (cond
                 ((vl-catch-all-error-p string)
-                 (setq string sta_string)  ; If name fails, just use station
+                 (setq string sta-string)  ; If name fails, just use station
                 )
                 (t
-                 (setq string (strcat sta_string " " string))
+                 (setq string (strcat sta-string " " string))
                 )
               )
               string
@@ -6983,31 +7132,31 @@ ImportLayerSettings=No
   
   ;; Step 4: Save the formatted string to the attribute list and update BUBBLE_DATA
   (setq
-    attribute_list
-    (hcnm_ldrblk_save_auto_to_list 
+    attribute-list
+    (hcnm-ldrblk_save_auto_to_list 
       tag
       string
-      attribute_list
+      attribute-list
     )
-    bubble_data (hcnm_ldrblk_bd_set bubble_data "ATTRIBUTES" attribute_list)
+    bubble_data (hcnm-ldrblk_bd_set bubble_data "ATTRIBUTES" attribute-list)
   )
   bubble_data
 )
-(defun hcnm_ldrblk_auto_al_get_alignment
-   (ename_bubble tag auto_type / avport cvport esalign name objalign objalign_old 
-    ref_ocs_1 ref_ocs_2 ref_ocs_3 ref_wcs_1 ref_wcs_2 ref_wcs_3 )
+(defun hcnm-ldrblk-auto-al-get-alignment
+   (ename-bubble tag auto-type / avport cvport es-align name obj-align obj-align-old 
+    ref-ocs-1 ref-ocs-2 ref-ocs-3 ref-wcs-1 ref-wcs-2 ref-wcs-3 )
   (setq
-    objalign_old
+    obj-align-old
      (c:hcnm-config-getvar "BubbleCurrentAlignment")
     name
      (cond
-       ((and (= (type objalign_old) 'VLA-OBJECT) 
-             (not (vl-catch-all-error-p (vl-catch-all-apply 'VLAX-GET-PROPERTY (list objalign_old 'NAME)))))
-        (vl-catch-all-apply 'VLAX-GET-PROPERTY (list objalign_old 'NAME))
+       ((and (= (type obj-align-old) 'VLA-OBJECT) 
+             (not (vl-catch-all-error-p (vl-catch-all-apply 'VLAX-GET-PROPERTY (list obj-align-old 'NAME)))))
+        (vl-catch-all-apply 'VLAX-GET-PROPERTY (list obj-align-old 'NAME))
        )
-       (t (setq objalign_old nil) "")
+       (t (setq obj-align-old nil) "")
      )
-    esalign
+    es-align
      (nentsel
        (strcat
          "\nSelect alignment"
@@ -7018,86 +7167,73 @@ ImportLayerSettings=No
        )
      )
   )
+  (hcnm-ldrblk-gateways-to-viewport-selection-prompt 
+    ename-bubble 
+    auto-type 
+    nil                              ; input=nil for initial creation
+    (if es-align "PICKED" "REUSED")  ; Based on whether user selected something
+    nil)                             ; Normal auto-text flow (not super-clearance)
   (cond
     ((and
-       esalign
-       (= (cdr (assoc 0 (entget (car esalign)))) "AECC_ALIGNMENT")
+       es-align
+       (= (cdr (assoc 0 (entget (car es-align)))) "AECC_ALIGNMENT")
      )
-     (setq objalign (vlax-ename->vla-object (car esalign)))
-     (c:hcnm-config-setvar "BubbleCurrentAlignment" objalign)
-     ;; Show paper space warning if bubble is in paper space and auto-type requires coordinates
-     (cond
-       ((and ename_bubble (not (hcnm_ldrblk_is_on_model_tab ename_bubble))
-             (hcnm_ldrblk_auto_type_is_coordinate_p auto_type))
-        (hcnm_ldrblk_warn_pspace_coordinates ename_bubble auto_type)
-       )
-     )
+     (setq obj-align (vlax-ename->vla-object (car es-align)))
+     (c:hcnm-config-setvar "BubbleCurrentAlignment" obj-align)
     )
-    (esalign 
+    (es-align 
       (alert (princ "\nSelected object is not an alignment. Keeping previous alignment."))
-      (setq objalign objalign_old)
+      (setq obj-align obj-align-old)
     )
     (t 
       (princ "\nNo object selected. Keeping previous alignment.")
-      (setq objalign objalign_old)
-      ;; If using previous alignment and bubble is in paper space, check if we need viewport selection
-      (cond
-        ((and objalign ename_bubble (not (hcnm_ldrblk_is_on_model_tab ename_bubble)))
-         ;; Bubble is in paper space with previous alignment
-         ;; Only prompt for viewport if transformation data doesn't already exist
-         (cond
-           ((not (hcnm_ldrblk_get_viewport_transform_xdata ename_bubble))
-            ;; No XDATA exists - show warning, then prompt for viewport
-            (hcnm_ldrblk_warn_pspace_coordinates ename_bubble auto_type)
-            (setq avport (hcnm_ldrblk_get_target_vport))
-            ;; Capture viewport transformation - part of "auto-text generation" user experience
-            (hcnm_ldrblk_capture_viewport_transform ename_bubble avport)
-           )
-           (t
-            ;; XDATA already exists - no need to prompt, will use stored transformation
-            (princ "\nUsing existing viewport transformation from XDATA")
-           )
-         )
-        )
-      )
+      (setq obj-align obj-align-old)
     )
   )
-  objalign  ; Return the alignment object
+  
+  obj-align  ; Return the alignment object
 )
-(defun hcnm_ldrblk_auto_ne (bubble_data tag auto_type input / attribute_list e ename_bubble ename_leader n ne p1_ocs p1_world reactor_update_p string)
+(defun hcnm-ldrblk-auto-ne (bubble-data tag auto-type input / 
+                             attribute-list e ename-bubble ename-leader n ne 
+                             p1-ocs p1-world reactor-update-p string)
   (setq 
-    attribute_list (hcnm_ldrblk_bd_get bubble_data "ATTRIBUTES")
-    ename_bubble (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE")
-    ename_leader (hcnm_ldrblk_bd_get bubble_data "ENAME_LEADER")
+    attribute-list (hcnm-ldrblk_bd_get bubble-data "ATTRIBUTES")
+    ename-bubble (hcnm-ldrblk_bd_get bubble-data "ENAME_BUBBLE")
+    ename-leader (hcnm-ldrblk_bd_get bubble-data "ENAME_LEADER")
     ;; INPUT = NIL means initial creation
     ;; INPUT = T means reactor update for coordinate types (sentinel value)
     ;; INPUT = VLA-OBJECT means reactor update with reference object (not used for N/E/NE)
-    reactor_update_p (and input (or (= input t) (= (type input) 'VLA-OBJECT)))
+    reactor-update-p (and input (or (= input t) (= (type input) 'VLA-OBJECT)))
   )
-  ;; Show paper space warning only during initial insertion, not reactor updates
-  (cond
-    ((not reactor_update_p)
-     (hcnm_ldrblk_warn_pspace_coordinates ename_bubble auto_type)
-    )
-  )
+  
+  ;; Ensure viewport transform is captured if needed (gateway architecture)
+  ;; MUST happen BEFORE P1_WORLD calculation below, which depends on viewport transform
+  (hcnm-ldrblk-gateways-to-viewport-selection-prompt 
+    ename-bubble 
+    auto-type 
+    input 
+    "NO-OBJECT"  ; N/E/NE don't use reference objects
+    nil)         ; Normal auto-text flow (not super-clearance)
+  
   ;; Calculate or get P1_WORLD
   (cond
-    (reactor_update_p
+    (reactor-update-p
      ;; Reactor update - recalculate P1_WORLD from current leader position using stored transformation
-     (setq p1_ocs (hcnm_ldrblk_p1_ocs ename_leader))
-     (setq p1_world (hcnm_ldrblk_p1_world ename_leader p1_ocs ename_bubble))
+     (setq p1-ocs (hcnm-ldrblk_p1_ocs ename-leader))
+     (setq p1-world (hcnm-ldrblk_p1_world ename-leader p1-ocs ename-bubble))
     )
     (t
-     ;; Initial creation - get from BUBBLE_DATA (already calculated by BD_ENSURE_P1_WORLD which prompts for viewport)
-     (setq p1_world (hcnm_ldrblk_bd_get bubble_data "P1_WORLD"))
+     ;; Initial creation - ensure P1_WORLD is calculated (now that viewport transform is in XDATA)
+     (setq bubble-data (hcnm-ldrblk_bd_ensure_p1_world bubble-data)
+           p1-world (hcnm-ldrblk_bd_get bubble-data "P1_WORLD"))
     )
   )
   ;; Calculate coordinates from P1_WORLD
   (cond
-    (p1_world
+    (p1-world
       (setq
-        n  (hcnm_ldrblk_auto_rtos (cadr p1_world) "N")
-        e  (hcnm_ldrblk_auto_rtos (car p1_world) "E")
+        n  (hcnm-ldrblk_auto_rtos (cadr p1-world) "N")
+        e  (hcnm-ldrblk_auto_rtos (car p1-world) "E")
         ne (strcat
             n
             (c:hcnm-config-getvar (strcat "BubbleTextJoinDel" "N"))
@@ -7106,9 +7242,9 @@ ImportLayerSettings=No
       )
       (setq string
         (cond
-          ((= auto_type "N") n)
-          ((= auto_type "E") e)
-          ((= auto_type "NE") ne)
+          ((= auto-type "N") n)
+          ((= auto-type "E") e)
+          ((= auto-type "NE") ne)
         )
       )
     )
@@ -7119,24 +7255,24 @@ ImportLayerSettings=No
   )
   ;; Attach reactor to leader for coordinate updates (only on initial creation, not reactor updates)
   (cond
-    ((not reactor_update_p)
-     (hcnm_ldrblk_assure_auto_text_has_reactor nil ename_bubble ename_leader tag auto_type)
+    ((not reactor-update-p)
+     (hcnm-ldrblk_assure_auto_text_has_reactor nil ename-bubble ename-leader tag auto-type)
     )
   )
-  ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
-  ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
+  ;; END hcnm-ldrblk_AUTO_GET_INPUT SUBFUNCTION
+  ;; START hcnm-ldrblk_AUTO_UPDATE SUBFUNCTION
   (setq
-    attribute_list
-    (hcnm_ldrblk_save_auto_to_list 
+    attribute-list
+    (hcnm-ldrblk_save_auto_to_list 
       tag
       string
-      attribute_list
+      attribute-list
     )
-    bubble_data (hcnm_ldrblk_bd_set bubble_data "ATTRIBUTES" attribute_list)
+    bubble-data (hcnm-ldrblk_bd_set bubble-data "ATTRIBUTES" attribute-list)
   )
-  bubble_data
+  bubble-data
 )
-(defun hcnm_ldrblk_auto_rtos (number key)
+(defun hcnm-ldrblk_auto_rtos (number key)
   (strcat
     (c:hcnm-config-getvar (strcat "BubbleTextPrefix" key))
     (rtos
@@ -7149,30 +7285,41 @@ ImportLayerSettings=No
 )
 ;; Civil 3D Surface query auto-text (Z elevation)
 ;; Currently unimplemented - returns apology message
-(defun hcnm_ldrblk_auto_su (bubble_data tag auto_type input / attribute_list ename_bubble)
+(defun hcnm-ldrblk-auto-su (bubble-data tag auto-type input / attribute-list ename-bubble)
   (setq 
-    attribute_list (hcnm_ldrblk_bd_get bubble_data "ATTRIBUTES")
-    ename_bubble (hcnm_ldrblk_bd_get bubble_data "ENAME_BUBBLE")
+    attribute-list (hcnm-ldrblk_bd_get bubble-data "ATTRIBUTES")
+    ename-bubble (hcnm-ldrblk_bd_get bubble-data "ENAME_BUBBLE")
   )
-  ;; Show paper space warning if applicable
-  (hcnm_ldrblk_warn_pspace_coordinates ename_bubble auto_type)
-  ;; END HCNM_LDRBLK_AUTO_GET_INPUT SUBFUNCTION
-  ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
+  
+  ;; Ensure viewport transform is captured if needed (gateway architecture)
+  ;; TODO: When Z elevation is implemented, this will be needed for coordinate calculations
+  (hcnm-ldrblk-gateways-to-viewport-selection-prompt 
+    ename-bubble 
+    auto-type 
+    input 
+    "NO-OBJECT"  ; Z elevation doesn't use reference objects
+    nil)         ; Normal auto-text flow (not super-clearance)
+  
+  ;; TODO: When implemented, calculate P1_WORLD here after gateway call
+  ;; (setq bubble-data (hcnm-ldrblk_bd_ensure_p1_world bubble-data))
+  
+  ;; END hcnm-ldrblk_AUTO_GET_INPUT SUBFUNCTION
+  ;; START hcnm-ldrblk_AUTO_UPDATE SUBFUNCTION
   (setq
-    attribute_list
-    (hcnm_ldrblk_save_auto_to_list 
+    attribute-list
+    (hcnm-ldrblk_save_auto_to_list 
       tag
-      (hcnm_ldrblk_auto_apology auto_type)
-      attribute_list
+      (hcnm-ldrblk_auto_apology auto-type)
+      attribute-list
     )
-    bubble_data (hcnm_ldrblk_bd_set bubble_data "ATTRIBUTES" attribute_list)
+    bubble-data (hcnm-ldrblk_bd_set bubble-data "ATTRIBUTES" attribute-list)
   )
-  bubble_data
+  bubble-data
 )
 ;; Gets the target viewport from user. This would only be called because we needed it before we could determine it automatically or when user clicks the button to change association.
-;; NOTE: Warning should be shown BEFORE calling this function (via HCNM_LDRBLK_WARN_PSPACE_COORDINATES)
+;; NOTE: Warning should be shown BEFORE calling this function (via hcnm-ldrblk_WARN_PSPACE_COORDINATES)
 ;; NOTE: This function does NOT restore space - caller must handle that after capturing transformation matrix
-(defun hcnm_ldrblk_get_target_vport ( / input)
+(defun hcnm-ldrblk_get_target_vport ( / input)
   ;; Ensure user is in model space so they can activate a viewport (caller should have already done this)
   (cond
     ((= (getvar "CVPORT") 1)
@@ -7195,7 +7342,7 @@ ImportLayerSettings=No
 ;; Apply affine transformation using 3-point correspondence
 ;; Given 3 OCS points and their corresponding 3 WCS points, transform any OCS point to WCS
 ;; Uses barycentric coordinates to interpolate the transformation
-(defun hcnm_ldrblk_apply_transform_matrix (p_ocs 
+(defun hcnm-ldrblk_apply_transform_matrix (p_ocs 
                                             ocs1 wcs1 
                                             ocs2 wcs2 
                                             ocs3 wcs3
@@ -7233,14 +7380,14 @@ ImportLayerSettings=No
 
 ;; Get viewport transformation matrix from bubble's XDATA
 ;; Returns list: (CVPORT REF_OCS_1 REF_WCS_1 REF_OCS_2 REF_WCS_2 REF_OCS_3 REF_WCS_3) or NIL
-(defun hcnm_ldrblk_get_viewport_transform_xdata (ename_bubble)
+(defun hcnm-ldrblk_get_viewport_transform_xdata (ename_bubble)
   ;; Use service layer to get viewport transform
   ;; Returns: (cvport ref_ocs_1 ref_wcs_1 ref_ocs_2 ref_wcs_2 ref_ocs_3 ref_wcs_3) or nil
   (hcnm-xdata-get-vptrans ename_bubble)
 )
 
-;; DEPRECATED: Old function - use HCNM_LDRBLK_GET_VIEWPORT_TRANSFORM_XDATA instead
-(defun hcnm_ldrblk_get_avport_xdata (ename_bubble / xdata appname result)
+;; DEPRECATED: Old function - use hcnm-ldrblk_GET_VIEWPORT_TRANSFORM_XDATA instead
+(defun hcnm-ldrblk_get_avport_xdata (ename_bubble / xdata appname result)
   (setq appname "HCNM-BUBBLE")
   (setq result
     (cond
@@ -7273,7 +7420,7 @@ ImportLayerSettings=No
 ;; If viewport transform is missing when needed, that's a legitimate error
 ;; state that should be handled gracefully (warn user, fail gracefully),
 ;; not silently "fixed" by prompting during background operations.
-(defun hcnm_ldrblk_set_viewport_transform_xdata (ename_bubble cvport 
+(defun hcnm-ldrblk_set_viewport_transform_xdata (ename_bubble cvport 
                                                    ref_ocs_1 ref_wcs_1
                                                    ref_ocs_2 ref_wcs_2
                                                    ref_ocs_3 ref_wcs_3)
@@ -7288,7 +7435,7 @@ ImportLayerSettings=No
 
 ;; Clear viewport transformation XDATA from bubble
 ;; Used when user wants to change viewport association via "Chg View" button
-(defun hcnm_ldrblk_clear_viewport_transform_xdata (ename_bubble / appname elist elist_no_xdata)
+(defun hcnm-ldrblk_clear_viewport_transform_xdata (ename_bubble / appname elist elist_no_xdata)
   (setq appname "HCNM-BUBBLE")
   ;; Get entity list without XDATA
   (setq elist (entget ename_bubble)
@@ -7298,8 +7445,8 @@ ImportLayerSettings=No
 )
 
 ;; DEPRECATED: Old function that only stored AVPORT integer
-;; Kept for reference - now replaced by HCNM_LDRBLK_SET_VIEWPORT_TRANSFORM_XDATA
-(defun hcnm_ldrblk_set_avport_xdata (ename_bubble avport / appname xdata_new)
+;; Kept for reference - now replaced by hcnm-ldrblk_SET_VIEWPORT_TRANSFORM_XDATA
+(defun hcnm-ldrblk_set_avport_xdata (ename_bubble avport / appname xdata_new)
   (setq appname "HCNM-BUBBLE")
   (cond
     ((not (tblsearch "APPID" appname))
@@ -7316,7 +7463,7 @@ ImportLayerSettings=No
 ;; Uses viewport transformation data from bubble's XDATA if available
 ;; This allows coordinate transformation without switching viewports
 ;; If bubble is on Model tab, no viewport processing needed
-(defun hcnm_ldrblk_p1_world (ename_leader p1_ocs ename_bubble / elist_leader layout_name
+(defun hcnm-ldrblk_p1_world (ename_leader p1_ocs ename_bubble / elist_leader layout_name
                              pspace_current_p on_model_tab_p transform_data
                              cvport_stored ref_ocs_1 ref_wcs_1 ref_ocs_2 ref_wcs_2 ref_ocs_3 ref_wcs_3
                             ) 
@@ -7333,7 +7480,7 @@ ImportLayerSettings=No
      ;; Bubble is on a layout tab - need viewport processing
      ;; Try to get viewport transformation data from XDATA
      (setq transform_data (cond 
-                            (ename_bubble (hcnm_ldrblk_get_viewport_transform_xdata ename_bubble))
+                            (ename_bubble (hcnm-ldrblk_get_viewport_transform_xdata ename_bubble))
                             (t nil)))
      (cond
        (transform_data
@@ -7348,7 +7495,7 @@ ImportLayerSettings=No
          (princ (strcat "\nUsing stored viewport " (itoa cvport_stored) " transformation matrix"))
          ;; Apply affine transformation using the 3-point matrix
          ;; Calculate the transformation: P1_WORLD = f(P1_OCS)
-         (setq p1_world (hcnm_ldrblk_apply_transform_matrix 
+         (setq p1_world (hcnm-ldrblk_apply_transform_matrix 
                           p1_ocs
                           ref_ocs_1 ref_wcs_1
                           ref_ocs_2 ref_wcs_2
@@ -7373,7 +7520,7 @@ ImportLayerSettings=No
     )
   )
 )
-(defun hcnm_ldrblk_auto_apology (auto_type)
+(defun hcnm-ldrblk_auto_apology (auto_type)
   (alert (princ (strcat "Sorry. Selection of " auto_type " is not fully programmed yet and is not anticipated to be dynamic once programmed.\n\nPlease let Tom Haws <tom.haws@gmail.com> know if you are eager for this as static text.")))
   "N/A"
 )
@@ -7386,12 +7533,12 @@ ImportLayerSettings=No
 ;; 4. Add reference to reference list.
 ;; 5. Update string in appropriate attribute of list.
 ;; Returns update attribute list.
-(defun hcnm_ldrblk_adjust_notedata (data attribute_list / tag value)
+(defun hcnm-ldrblk_adjust_notedata (data attribute_list / tag value)
   (setq
     tag   (car data)
     value (cadddr data)
   )
-  (hcnm_ldrblk_save_attribute_to_list tag value attribute_list)
+  (hcnm-ldrblk_save_attribute_to_list tag value attribute_list)
 )
 (defun c:hcnm-edit-bubbles ()
   (haws-core-init 337)
@@ -7402,7 +7549,7 @@ ImportLayerSettings=No
   (haws-core-restore)
 )
 ;;; Add delimiter structure to plain text attributes for editing
-(defun hcnm_eb:add_delimiters (attribute_list ename_bubble / result)
+(defun hcnm-eb-add_delimiters (attribute_list ename_bubble / result)
   (setq result '())
   (foreach attr attribute_list
     (setq result 
@@ -7410,7 +7557,7 @@ ImportLayerSettings=No
         (list 
           (list 
             (car attr)  ; TAG
-            (hcnm_eb:expand_value_to_delimited (car attr) (cadr attr))
+            (hcnm-eb-expand_value_to_delimited (car attr) (cadr attr))
           )
         )
       )
@@ -7427,44 +7574,44 @@ ImportLayerSettings=No
 ;; System-controlled tags (NOTENUM, NOTEPHASE, NOTEGAP) go entirely to prefix.
 ;; Legacy format codes (%%u, %%o, \L, \O) are migrated to prefix field.
 ;; User manual text is preserved in prefix field.
-(defun hcnm_eb:expand_value_to_delimited (tag value / migrated delim_pos)
+(defun hcnm-eb-expand_value_to_delimited (tag value / migrated delim_pos)
   (cond
-    ((not value) (hcnm_eb:concat_parts "" "" ""))  ; NIL -> empty structure
+    ((not value) (hcnm-eb-concat_parts "" "" ""))  ; NIL -> empty structure
     ((vl-string-search (chr 160) value) value)  ; Already has delimiters
-    ((= value "") (hcnm_eb:concat_parts "" "" ""))  ; Empty -> empty structure
+    ((= value "") (hcnm-eb-concat_parts "" "" ""))  ; Empty -> empty structure
     ;; NOTENUM, NOTEPHASE, NOTEGAP are system-controlled - put in prefix, not auto
     ((member tag '("NOTENUM" "NOTEPHASE" "NOTEGAP"))
-     (hcnm_eb:concat_parts value "" "")
+     (hcnm-eb-concat_parts value "" "")
     )
     (t 
      ;; Try legacy format code migration
-     (setq migrated (hcnm_eb:migrate_legacy_format value))
+     (setq migrated (hcnm-eb-migrate_legacy_format value))
      (if (setq delim_pos (vl-string-search (chr 160) migrated))
        ;; Migration created delimiter structure: prefix§auto - split it properly
        ;; VL-STRING-SEARCH returns 0-based position, SUBSTR uses 1-based
-       (hcnm_eb:concat_parts 
+       (hcnm-eb-concat_parts 
          (substr migrated 1 delim_pos)  ; prefix: chars 1 through DELIM_POS
          (substr migrated (+ delim_pos 2))  ; auto: skip delimiter (position is 0-based, add 2 for 1-based + skip char)
          ""  ; empty postfix
        )
        ;; No format codes, put entire value in PREFIX to preserve user's manual text
        ;; (Auto field gets replaced by auto-text buttons, prefix/postfix are preserved)
-       (hcnm_eb:concat_parts value "" "")
+       (hcnm-eb-concat_parts value "" "")
      )
     )
   )
 )
 
-(defun hcnm_edit_bubble (ename_bubble / bubble_data dclfile
-                     ename_leader hcnm_eb:attribute_list
+(defun hcnm-edit_bubble (ename_bubble / bubble_data dclfile
+                     ename_leader hcnm-eb-attribute_list
                      notetextradiocolumn return_list tag done_code
                     )
   (setq
     ename_leader
-      (hcnm_ldrblk_bubble_leader ename_bubble)
-    ;; Semi-global variable. Global to the HCNM-EB: functions called from here.
+      (hcnm-ldrblk_bubble_leader ename_bubble)
+    ;; Semi-global variable. Global to the HCNM-eb- functions called from here.
     ;; Read attributes and XDATA to get prefix/auto/postfix structure
-    hcnm_eb:attribute_list
+    hcnm-eb-attribute_list
       (hcnm-read-bubble-data ename_bubble t)
     notetextradiocolumn "RadioNOTETXT1"
     dclfile
@@ -7476,15 +7623,15 @@ ImportLayerSettings=No
     "CNM stores auto-text separately from your text using XDATA (extended entity data).\n\nThis keeps auto-text invisible in the attributes, while preserving it for the editor.")
   (while (> done_code -1)
     (cond
-      ((= done_code 0) (setq done_code (hcnm_edit_bubble_cancel)))
+      ((= done_code 0) (setq done_code (hcnm-edit_bubble_cancel)))
       ((= done_code 1)
-       (setq done_code (hcnm_eb:save ename_bubble))
+       (setq done_code (hcnm-eb-save ename_bubble))
       )
       ((= done_code 2)
        ;; Show the CNM Bubble Note Editor dialog with the requested text line's radio button selected.
        (setq
          return_list
-          (hcnm_eb:show dclfile notetextradiocolumn ename_bubble)
+          (hcnm-eb-show dclfile notetextradiocolumn ename_bubble)
          done_code
           (car return_list)
          notetextradiocolumn
@@ -7495,55 +7642,60 @@ ImportLayerSettings=No
       )
       ((= done_code 29)
          ;; Change View button - clear viewport transformation data and immediately prompt for new association
-         (hcnm_ldrblk_clear_viewport_transform_xdata ename_bubble)
+         (hcnm-ldrblk_clear_viewport_transform_xdata ename_bubble)
          (princ "\nViewport association cleared. Please select the new target viewport.")
-         (hcnm_ldrblk_warn_pspace_coordinates ename_bubble "Sta")
-         (hcnm_ldrblk_capture_viewport_transform ename_bubble (hcnm_ldrblk_get_target_vport))
+         ;; Use super-clearance path to bypass all gateways and force prompt
+         (hcnm-ldrblk-gateways-to-viewport-selection-prompt 
+           ename_bubble 
+           "Sta"  ; Representative coordinate type for warning message
+           nil    ; No input object
+           nil    ; No object reference status needed for super-clearance
+           "LINK-VIEWPORT")  ; Super-clearance - bypass all gateways
          (setq done_code 2)  ; Return to dialog
       )
       (t
        ;; Process clicked action tile (button) other than cancel or save.
        ;; bubble-data-update: This is start point 2 of 2 of the bubble data logic. This one is for the bubble note editing process.
        ;; this is called whenever a dialog auto-text button is clicked.
-       (hcnm_eb:get_text ename_bubble done_code tag)
+       (hcnm-eb-get_text ename_bubble done_code tag)
        (setq done_code 2)
       )
     )
   )
   ;; Change its arrowhead if needed.
-  (hcnm_ldrblk_change_arrowhead ename_leader)
+  (hcnm-ldrblk_change_arrowhead ename_leader)
   (haws-core-restore)
   (princ)
 )
-(defun hcnm_eb:get_text (ename_bubble done_code tag / auto_string auto_type attr prefix postfix)
+(defun hcnm-eb-get_text (ename_bubble done_code tag / auto_string auto_type attr prefix postfix)
   (setq
     auto_type
-     (cadr (assoc done_code (hcnm_edit_bubble_done_codes)))
+     (cadr (assoc done_code (hcnm-edit_bubble_done_codes)))
   )
   (cond
     ;; Handle ClearAuto button (code 28)
     ((= done_code 28)
      ;; Get current attribute (tag prefix auto postfix), clear the auto part
-     (setq attr (assoc tag hcnm_eb:attribute_list)
+     (setq attr (assoc tag hcnm-eb-attribute_list)
            prefix (cadr attr)
            postfix (cadddr attr))
      ;; Save with empty auto field
-     (setq hcnm_eb:attribute_list
-       (hcnm_ldrblk_adjust_formats
-         (hcnm_ldrblk_save_auto_to_list tag "" hcnm_eb:attribute_list)
+     (setq hcnm-eb-attribute_list
+       (hcnm-ldrblk_adjust_formats
+         (hcnm-ldrblk_save_auto_to_list tag "" hcnm-eb-attribute_list)
        )
      )
     )
     ;; Handle auto-text generation buttons (only if AUTO_TYPE is valid)
     ((and auto_type (not (= auto_type "")))
      ;; bubble-data-update: this is called from command line and from edit box to get string as requested by user.
-     (setq hcnm_eb:attribute_list
-       (hcnm_ldrblk_adjust_formats
-         (hcnm_ldrblk_auto_dispatch
-           ename_bubble
-           hcnm_eb:attribute_list
+     (setq hcnm-eb-attribute_list
+       (hcnm-ldrblk_adjust_formats
+         (hcnm-ldrblk-auto-dispatch
+           ename-bubble
+           hcnm-eb-attribute_list
            tag
-           auto_type
+           auto-type
            nil  ; NIL = prompt user to select/confirm alignment
          )
        )
@@ -7556,12 +7708,12 @@ ImportLayerSettings=No
   )
 )
 
-(defun hcnm_edit_bubble_cancel ()
+(defun hcnm-edit_bubble_cancel ()
  -1
 )
 ;;; Remove delimiters from ATTRIBUTE_LIST before saving
 ;;; Concatenates prefix+auto+postfix into plain text
-(defun hcnm_eb:remove_delimiters (attribute_list / result)
+(defun hcnm-eb-remove_delimiters (attribute_list / result)
   (setq result '())
   (foreach attr attribute_list
     (setq result 
@@ -7569,7 +7721,7 @@ ImportLayerSettings=No
         (list 
           (list 
             (car attr)  ; TAG
-            (hcnm_eb:flatten_value (cadr attr))  ; Remove delimiters from VALUE
+            (hcnm-eb-flatten_value (cadr attr))  ; Remove delimiters from VALUE
           )
         )
       )
@@ -7580,11 +7732,11 @@ ImportLayerSettings=No
 ;;; Flatten a delimited value to plain text
 ;;; If value contains chr(160) delimiters, concatenate parts with spaces between non-empty parts
 ;;; Otherwise return as-is
-(defun hcnm_eb:flatten_value (value / parts prefix auto postfix result)
+(defun hcnm-eb-flatten_value (value / parts prefix auto postfix result)
   (cond
     ((not value) "")
     ((vl-string-search (chr 160) value)
-     (setq parts (hcnm_eb:split_on_nbsp value)
+     (setq parts (hcnm-eb-split_on_nbsp value)
            prefix (nth 0 parts)
            auto (nth 1 parts)
            postfix (nth 2 parts)
@@ -7617,12 +7769,12 @@ ImportLayerSettings=No
   )
 )
 ;; Save auto-text to XDATA for each attribute tag
-(defun hcnm_eb:save (ename_bubble)
+(defun hcnm-eb-save (ename_bubble)
   ;; Save attributes (concatenated) and XDATA (auto text only)
-  (hcnm-save-bubble ename_bubble hcnm_eb:attribute_list)
+  (hcnm-save-bubble ename_bubble hcnm-eb-attribute_list)
   -1
 ) 
-(defun hcnm_edit_bubble_done_codes ( / eb_done)
+(defun hcnm-edit_bubble_done_codes ( / eb_done)
   (setq eb_done t)
   '((11 "LF" eb_done)
     (12 "SF" eb_done)
@@ -7647,7 +7799,7 @@ ImportLayerSettings=No
 ;;; move the codes to a new prefix field and create delimiter structure.
 ;;; Returns migrated value with prefix§auto§postfix structure if codes found,
 ;;; otherwise returns VALUE unchanged.
-(defun hcnm_eb:migrate_legacy_format (value / sep format_code text)
+(defun hcnm-eb-migrate_legacy_format (value / sep format_code text)
   (cond
     ;; Empty or nil - return as-is
     ((or (not value) (= value "")) value)
@@ -7683,38 +7835,38 @@ ImportLayerSettings=No
 )
 
 ;; ACTION_TILE callback: Update prefix field in attribute_list when user edits it
-(defun hcnm_eb:update_prefix (tag new_prefix / attr)
-  (setq attr (assoc tag hcnm_eb:attribute_list))
-  (setq hcnm_eb:attribute_list
+(defun hcnm-eb-update_prefix (tag new_prefix / attr)
+  (setq attr (assoc tag hcnm-eb-attribute_list))
+  (setq hcnm-eb-attribute_list
     (subst
       (list tag new_prefix (caddr attr) (cadddr attr))
       attr
-      hcnm_eb:attribute_list)
+      hcnm-eb-attribute_list)
   )
 )
 
 ;; ACTION_TILE callback: Update postfix field in attribute_list when user edits it
-(defun hcnm_eb:update_postfix (tag new_postfix / attr)
-  (setq attr (assoc tag hcnm_eb:attribute_list))
-  (setq hcnm_eb:attribute_list
+(defun hcnm-eb-update_postfix (tag new_postfix / attr)
+  (setq attr (assoc tag hcnm-eb-attribute_list))
+  (setq hcnm-eb-attribute_list
     (subst
       (list tag (cadr attr) (caddr attr) new_postfix)
       attr
-      hcnm_eb:attribute_list)
+      hcnm-eb-attribute_list)
   )
 )
 
-(defun hcnm_eb:show
+(defun hcnm-eb-show
    (dclfile notetextradiocolumn ename_bubble / tag value parts prefix auto postfix on_model_tab_p)
   (new_dialog "HCNMEditBubble" dclfile)
   (set_tile "Title" "Edit CNM Bubble Note")
   ;; Check if bubble is in paper space
-  (setq on_model_tab_p (or (not ename_bubble) (hcnm_ldrblk_is_on_model_tab ename_bubble)))
+  (setq on_model_tab_p (or (not ename_bubble) (hcnm-ldrblk_is_on_model_tab ename_bubble)))
   ;; Show/hide paper space disclaimer and Chg View button
   ;; Always show paper space warning above OKCancel
   ;; EXECUTIVE: The general disclaimer in the edit dialog is sufficient.
   ;; When user actually adds coordinate auto-text (Sta/Off/etc), they get
-  ;; the detailed dismissable tip via HCNM_LDRBLK_WARN_PSPACE_COORDINATES.
+  ;; the detailed dismissable tip via hcnm-ldrblk_WARN_PSPACE_COORDINATES.
   (set_tile 
     "Message"         
     (strcat 
@@ -7723,17 +7875,17 @@ ImportLayerSettings=No
     )
   )  
   (mode_tile "ChgView" 0)  ; Always enable
-  ;; Note attribute edit boxes - hcnm_eb:attribute_list already split into prefix/auto/postfix 
+  ;; Note attribute edit boxes - hcnm-eb-attribute_list already split into prefix/auto/postfix 
   ;; at time of read by hcnm-read-bubble-data
   (foreach
-     attribute hcnm_eb:attribute_list
+     attribute hcnm-eb-attribute_list
     (setq tag (car attribute)
           prefix (cadr attribute)
           auto (caddr attribute)
           postfix (cadddr attribute))
     ;; Set prefix field to save when edited.
     (set_tile (strcat "Prefix" tag) prefix)
-    (action_tile (strcat "Prefix" tag) (strcat "(hcnm_eb:update_prefix \"" tag "\" $value)"))
+    (action_tile (strcat "Prefix" tag) (strcat "(hcnm-eb-update_prefix \"" tag "\" $value)"))
     ;; Set auto field (editing is disabled, for auto text only)
     ;; All auto text editor buttons update attribute_list directly.
     ;; If auto text fails to save to bubble, then our assumption on the previous line is wrong.
@@ -7742,7 +7894,7 @@ ImportLayerSettings=No
     ;; Postfix only has meaning when there's auto-text to come after
     (set_tile (strcat "Postfix" tag) postfix)
     (mode_tile (strcat "Postfix" tag) (if (and auto (/= auto "")) 0 1))  ; 0=enable, 1=disable
-    (action_tile (strcat "Postfix" tag) (strcat "(hcnm_eb:update_postfix \"" tag "\" $value)"))
+    (action_tile (strcat "Postfix" tag) (strcat "(hcnm-eb-update_postfix \"" tag "\" $value)"))
   )
   ;;Radio buttons
   (set_tile
@@ -7761,7 +7913,7 @@ ImportLayerSettings=No
          (strcat "(DONE_DIALOG " (itoa (car code)) ")")
        )
      )
-    (hcnm_edit_bubble_done_codes)
+    (hcnm-edit_bubble_done_codes)
   )
   ;; Clear Auto Text button
   (action_tile "ClearAuto" "(DONE_DIALOG 28)")
@@ -7773,7 +7925,7 @@ ImportLayerSettings=No
 )
 ;; Split value on chr(1) delimiter into (prefix auto postfix)
 ;; Returns list of three strings, using "" for missing parts
-(defun hcnm_eb:split_on_nbsp (value / nbsp parts)
+(defun hcnm-eb-split_on_nbsp (value / nbsp parts)
   (setq nbsp (chr 160))  ; Non-breaking space - invisible delimiter
   (cond
     ((not value) '("" "" ""))
@@ -7782,7 +7934,7 @@ ImportLayerSettings=No
      (list value "" ""))
     (t
      ;; Split on NBSP
-     (setq parts (hcnm_eb:split_string value nbsp))
+     (setq parts (hcnm-eb-split_string value nbsp))
      (cond
        ((= (length parts) 3) parts)
        ((= (length parts) 2) (append parts '("")))
@@ -7794,7 +7946,7 @@ ImportLayerSettings=No
 )
 
 ;; Split string on delimiter
-(defun hcnm_eb:split_string (str delim / pos result)
+(defun hcnm-eb-split_string (str delim / pos result)
   (setq result '())
   (while (setq pos (vl-string-search delim str))
     (setq result (append result (list (substr str 1 pos)))
@@ -7816,7 +7968,7 @@ ImportLayerSettings=No
 ;; - Empty delimited string "§§" is distinguishable from truly empty "" (old format)
 ;; - Makes round-trip parsing reliable: concat(split(x)) = x
 ;;
-(defun hcnm_eb:concat_parts (prefix auto postfix / nbsp)
+(defun hcnm-eb-concat_parts (prefix auto postfix / nbsp)
   (setq nbsp (chr 160))  ; Non-breaking space - invisible delimiter
   (strcat 
     (if prefix prefix "")
@@ -7954,7 +8106,7 @@ ImportLayerSettings=No
 )
 
 ;; FIELD_CODE_P NIL SIMPLIFIES PROCESSING WHEN BLOCKS LIKE NOTEQTY ARE KNOWN NOT TO HAVE FIELD CODES IN THEM
-(defun hcnm_get_attributes (ename_block field_code_p / attribute_list elist ename_next etype field_code obj_next)
+(defun hcnm-get_attributes (ename_block field_code_p / attribute_list elist ename_next etype field_code obj_next)
   (setq ename_next ename_block)
   (while (and
            (setq ename_next (entnext ename_next))
@@ -8275,7 +8427,7 @@ ImportLayerSettings=No
   )
 )
 
-(defun hcnm_set_attributes (ename_block attribute_list / atag elist ename_next etype obj_next)
+(defun hcnm-set_attributes (ename_block attribute_list / atag elist ename_next etype obj_next)
   (setq ename_next ename_block)
   (while (and
            (setq ename_next (entnext ename_next))
@@ -8296,7 +8448,7 @@ ImportLayerSettings=No
         )
         ;; UPDATEFIELD commented out to avoid "0 field(s) found/updated" messages
         ;; May be necessary for some bubble types - uncomment if needed
-        ;(COND ((= (HCNM_LDRBLK_GET_MTEXT_STRING) "")(VL-CMDF "._updatefield" ENAME_NEXT "")))
+        ;(COND ((= (hcnm-ldrblk_GET_MTEXT_STRING) "")(VL-CMDF "._updatefield" ENAME_NEXT "")))
       )
     )
   )
@@ -8319,7 +8471,7 @@ ImportLayerSettings=No
 ;;; You can reset the data of a reactor.
 
 ;;Playing with reactors
-(defun hcnm_ldrblk_list_reactors ( / reactors)
+(defun hcnm-ldrblk_list_reactors ( / reactors)
   (setq reactors (cdar(vlr-reactors :vlr-object-reactor)))
   (foreach reactor reactors
     ;;(vlax-dump-object REACTOR)
@@ -8336,11 +8488,11 @@ ImportLayerSettings=No
 ;; (VLR-OWNERS (CADAR (VLR-REACTORS :VLR-OBJECT-REACTOR))) IF THERE IS ONLY ONE REACTOR
 ;; New structure: KEYS = '("HCNM-BUBBLE" HANDLE_REFERENCE HANDLE_BUBBLE TAG)
 ;; VALUE = AUTO_TYPE (just the string)
-(defun hcnm_ldrblk_assure_auto_text_has_reactor (objref ename_bubble ename_leader tag auto_type / callbacks data data_old reactor 
+(defun hcnm-ldrblk_assure_auto_text_has_reactor (objref ename_bubble ename_leader tag auto_type / callbacks data data_old reactor 
                                                  handle_bubble handle_reference keys key_app reactor_old reactors_old owner owners object_leader
-                                                 hcnm_reactors reactor_count
+                                                 hcnm-reactors reactor_count
                                                 ) 
-  (setq callbacks       '((:vlr-modified . hcnm_ldrblk_reactor_callback)
+  (setq callbacks       '((:vlr-modified . hcnm-ldrblk_reactor_callback)
                           ;; vlr-trace-reaction IS A CANNED CALLBACK PROVIDED BY AUTODESK FOR TESTING. IT PRINTS A MESSAGE. IT CAN BE REMOVED.
                           ;; (:vlr-modified . vlr-trace-reaction)
                          )
@@ -8359,7 +8511,7 @@ ImportLayerSettings=No
         reactor_old     nil  ; Initialize to nil
   )
   ;; Check for reactor proliferation (FATAL CONDITION)
-  (setq hcnm_reactors
+  (setq hcnm-reactors
     (vl-remove-if-not
       '(lambda (r)
          (and (listp (vlr-data r))
@@ -8367,7 +8519,7 @@ ImportLayerSettings=No
        )
       reactors_old
     )
-    reactor_count (length hcnm_reactors)
+    reactor_count (length hcnm-reactors)
   )
   ;; Handle reactor proliferation
   (cond
@@ -8391,7 +8543,7 @@ ImportLayerSettings=No
     )
     (t
      ;; Normal operation - 0 or 1 reactor
-     (setq reactor_old (car hcnm_reactors))
+     (setq reactor_old (car hcnm-reactors))
     )
   )
   ;; Now handle reactor attachment/creation based on REACTOR_OLD
@@ -8432,7 +8584,7 @@ ImportLayerSettings=No
     )
   )
 )
-(defun hcnm_ldrblk_reactor_callback (obj_notifier obj_reactor parameter-list / key_app data_old data handle_notifier reference_list found_p handle_reference bubble_list handle_bubble tag_list tag auto_type)
+(defun hcnm-ldrblk_reactor_callback (obj_notifier obj_reactor parameter-list / key_app data_old data handle_notifier reference_list found_p handle_reference bubble_list handle_bubble tag_list tag auto_type)
   ;; Skip reactor processing during space transitions to avoid spurious modification events
   (cond
     ((= (c:hcnm-config-getvar "AllowReactors") "0") 
@@ -8470,7 +8622,7 @@ ImportLayerSettings=No
          (foreach tag_data tag_list
            (setq tag       (car tag_data)
                  auto_type (cadr tag_data))
-           (hcnm_ldrblk_update_bubble_tag handle_bubble tag auto_type handle_reference)
+           (hcnm-ldrblk_update_bubble_tag handle_bubble tag auto_type handle_reference)
          )
        )
        ;; Re-enable reactors after updates complete
@@ -8485,7 +8637,7 @@ ImportLayerSettings=No
          ;; We need to check if the leader for this bubble is the notifier
          ;; Since leaders are associated with bubbles, we check the bubble's leader
          (cond
-           ((hcnm_ldrblk_bubble_has_leader handle_bubble handle_notifier)
+           ((hcnm-ldrblk_bubble_has_leader handle_bubble handle_notifier)
             ;; This bubble's leader moved - update all its tags with the correct reference
             (setq found_p t)
             (princ (strcat "\nLeader modified for bubble: " handle_bubble " using reference: " handle_reference))
@@ -8494,7 +8646,7 @@ ImportLayerSettings=No
             (foreach tag_data tag_list
               (setq tag       (car tag_data)
                     auto_type (cadr tag_data))
-              (hcnm_ldrblk_update_bubble_tag handle_bubble tag auto_type handle_reference)
+              (hcnm-ldrblk_update_bubble_tag handle_bubble tag auto_type handle_reference)
             )
             ;; Re-enable reactors after updates complete
             (c:hcnm-config-setvar "AllowReactors" "1")
@@ -8527,11 +8679,11 @@ ImportLayerSettings=No
   )  ; End of suppression check COND
 )
 ;; Helper function to check if a bubble has a specific leader
-(defun hcnm_ldrblk_bubble_has_leader (handle_bubble handle_leader / ename_bubble ename_leader)
+(defun hcnm-ldrblk_bubble_has_leader (handle_bubble handle_leader / ename_bubble ename_leader)
   (setq ename_bubble (handent handle_bubble))
   (cond
     (ename_bubble
-      (setq ename_leader (hcnm_ldrblk_bubble_leader ename_bubble))
+      (setq ename_leader (hcnm-ldrblk_bubble_leader ename_bubble))
       (cond
         (ename_leader
           (= handle_leader (cdr (assoc 5 (entget ename_leader))))
@@ -8543,13 +8695,13 @@ ImportLayerSettings=No
   )
 )
 ;; Helper function to check if entity is on the "Model" tab
-(defun hcnm_ldrblk_is_on_model_tab (ename / layout_name)
+(defun hcnm-ldrblk_is_on_model_tab (ename / layout_name)
   (setq layout_name (cdr (assoc 410 (entget ename))))
     (= (strcase layout_name) "MODEL")
 )
 ;; Updates a specific tag in a bubble based on reactor notification
 ;; Called when either the leader moves or the reference object changes
-(defun hcnm_ldrblk_update_bubble_tag (handle_bubble tag auto_type handle_reference / ename_bubble ename_reference attribute_list attribute_list_old objref)
+(defun hcnm-ldrblk_update_bubble_tag (handle_bubble tag auto_type handle_reference / ename_bubble ename_reference attribute_list attribute_list_old objref)
   (setq ename_bubble       (handent handle_bubble)
         ;; Handle empty string for N/E/NE which have no reference object
         ename_reference    (cond 
@@ -8568,11 +8720,11 @@ ImportLayerSettings=No
                      (t t)  ; Use T as sentinel value for reactor updates with no reference object
                    ))
       (setq attribute_list 
-        (hcnm_ldrblk_auto_dispatch 
-          ename_bubble
-          attribute_list
+        (hcnm-ldrblk-auto-dispatch 
+          ename-bubble
+          attribute-list
           tag
-          auto_type
+          auto-type
           objref  ; Pass the reference object as INPUT, or T for coordinate-only reactor updates
         )
       )
@@ -8582,9 +8734,9 @@ ImportLayerSettings=No
          ;; Save XDATA before adjust_formats flattens the auto field
          (hcnm-save-bubble-xdata ename_bubble attribute_list)
          ;; Save formatted attributes
-         (hcnm_set_attributes 
+         (hcnm-set_attributes 
            ename_bubble
-           (hcnm_ldrblk_ensure_fields_and_adjust_formats 
+           (hcnm-ldrblk_ensure_fields_and_adjust_formats 
              attribute_list
            )
          )
@@ -8592,7 +8744,7 @@ ImportLayerSettings=No
       )
     )
     (t
-      (princ (strcat "\nError in HCNM_LDRBLK_UPDATE_BUBBLE_TAG: BUBBLE not found"))
+      (princ (strcat "\nError in hcnm-ldrblk_UPDATE_BUBBLE_TAG: BUBBLE not found"))
     )
   )
 )
@@ -8600,21 +8752,21 @@ ImportLayerSettings=No
 ;#region CNM Options dialog
 (defun c:hcnm-cnmoptions (/ cnmdcl done_code retn)
   (haws-core-init 210)
-  (hcnm_projinit)
-  (hcnm_proj)
+  (hcnm-projinit)
+  (hcnm-proj)
  ;; Load Dialog
   (setq cnmdcl (load_dialog "cnm.dcl"))
   (setq done_code 2)
   (while (> done_code -1)
     (setq done_code
       (cond
-        ((= done_code 0)(hcnm_dcl_options_cancel))
-        ((= done_code 1)(hcnm_dcl_options_save))
-        ((= done_code 2)(hcnm_dcl_options_show cnmdcl))
-        ((= done_code 11)(hcnm_dcl_general_show cnmdcl))
-        ((= done_code 12)(hcnm_dcl_bubble_show cnmdcl))
-        ((= done_code 13)(hcnm_dcl_key_show cnmdcl))
-        ((= done_code 14)(hcnm_dcl_qt_show cnmdcl))
+        ((= done_code 0)(hcnm-dcl_options_cancel))
+        ((= done_code 1)(hcnm-dcl_options_save))
+        ((= done_code 2)(hcnm-dcl_options_show cnmdcl))
+        ((= done_code 11)(hcnm-dcl_general_show cnmdcl))
+        ((= done_code 12)(hcnm-dcl_bubble_show cnmdcl))
+        ((= done_code 13)(hcnm-dcl_key_show cnmdcl))
+        ((= done_code 14)(hcnm-dcl_qt_show cnmdcl))
       )
     )
   )
@@ -8622,18 +8774,18 @@ ImportLayerSettings=No
  (princ)
 )
 
-(defun hcnm_dcl_options_cancel()
- (hcnm_config_temp_clear)
+(defun hcnm-dcl_options_cancel()
+ (hcnm-config_temp_clear)
  -1
 )
 
 ;; Saves, then passes control to temp var clear function.
-(defun hcnm_dcl_options_save()
- (hcnm_config_temp_save)
+(defun hcnm-dcl_options_save()
+ (hcnm-config_temp_save)
  0
 )
 
-(defun hcnm_dcl_options_show (cnmdcl)
+(defun hcnm-dcl_options_show (cnmdcl)
   (new_dialog "HCNMOptions" cnmdcl)
   (set_tile "Title" "CNM Options")
   (action_tile "General" "(DONE_DIALOG 11)")
@@ -8645,159 +8797,159 @@ ImportLayerSettings=No
   (start_dialog)
 )
 
-(defun hcnm_dcl_general_show (cnmdcl)
+(defun hcnm-dcl_general_show (cnmdcl)
   (new_dialog "HCNMGeneral" cnmdcl)
   ;; Dialog Actions
   (set_tile "Title" "CNM General Options")
-  (hcnm_config_set_action_tile "DoCurrentTabOnly")
-  (hcnm_config_dcl_list "InsertTablePhases")
-  (hcnm_config_set_action_tile "PhaseAlias1")
-  (hcnm_config_set_action_tile "PhaseAlias2")
-  (hcnm_config_set_action_tile "PhaseAlias3")
-  (hcnm_config_set_action_tile "PhaseAlias4")
-  (hcnm_config_set_action_tile "PhaseAlias5")
-  (hcnm_config_set_action_tile "PhaseAlias6")
-  (hcnm_config_set_action_tile "PhaseAlias7")
-  (hcnm_config_set_action_tile "PhaseAlias8")
-  (hcnm_config_set_action_tile "PhaseAlias9")
-  (hcnm_config_set_action_tile "NotesKeyTableDimstyle")
-  (hcnm_config_set_action_tile "NotesLeaderDimstyle")
+  (hcnm-config_set_action_tile "DoCurrentTabOnly")
+  (hcnm-config_dcl_list "InsertTablePhases")
+  (hcnm-config_set_action_tile "PhaseAlias1")
+  (hcnm-config_set_action_tile "PhaseAlias2")
+  (hcnm-config_set_action_tile "PhaseAlias3")
+  (hcnm-config_set_action_tile "PhaseAlias4")
+  (hcnm-config_set_action_tile "PhaseAlias5")
+  (hcnm-config_set_action_tile "PhaseAlias6")
+  (hcnm-config_set_action_tile "PhaseAlias7")
+  (hcnm-config_set_action_tile "PhaseAlias8")
+  (hcnm-config_set_action_tile "PhaseAlias9")
+  (hcnm-config_set_action_tile "NotesKeyTableDimstyle")
+  (hcnm-config_set_action_tile "NotesLeaderDimstyle")
   (set_tile
     "ProjectFolder"
     (strcat
       "Project folder "
-      (hcnm_shorten_path (hcnm_proj) 100)
+      (hcnm-shorten_path (hcnm-proj) 100)
     )
   )
-  (hcnm_config_set_action_tile "ProjectNotes")
+  (hcnm-config_set_action_tile "ProjectNotes")
   (action_tile
     "ProjectNotesBrowse"
-    "(HCNM_CONFIG_TEMP_SETVAR \"ProjectNotes\"(HCNM_GETPROJNOTES))(SET_TILE \"ProjectNotes\" (HCNM_CONFIG_TEMP_GETVAR \"ProjectNotes\"))"
+    "(hcnm-CONFIG_TEMP_SETVAR \"ProjectNotes\"(hcnm-GETPROJNOTES))(SET_TILE \"ProjectNotes\" (hcnm-CONFIG_TEMP_GETVAR \"ProjectNotes\"))"
   )
-  (hcnm_config_dcl_list "LayersEditor")
-  (hcnm_config_dcl_list "ProjectNotesEditor")
+  (hcnm-config_dcl_list "LayersEditor")
+  (hcnm-config_dcl_list "ProjectNotesEditor")
   (action_tile "close" "(DONE_DIALOG 2)")
   (start_dialog)
 )
 
-(defun hcnm_dcl_bubble_show (cnmdcl)
+(defun hcnm-dcl_bubble_show (cnmdcl)
   (new_dialog "HCNMBubble" cnmdcl)
   (set_tile "Title" "CNM Bubble Options")
-  (hcnm_config_set_action_tile "BubbleHooks")
-  (hcnm_config_set_action_tile "BubbleMtext")
-  (hcnm_config_set_action_tile "BubbleAreaIntegral")
-  (hcnm_config_set_action_tile "NoteTypes")
-  (hcnm_config_set_action_tile "BubbleTextLine1PromptP")
-  (hcnm_config_set_action_tile "BubbleTextLine2PromptP")
-  (hcnm_config_set_action_tile "BubbleTextLine3PromptP")
-  (hcnm_config_set_action_tile "BubbleTextLine4PromptP")
-  (hcnm_config_set_action_tile "BubbleTextLine5PromptP")
-  (hcnm_config_set_action_tile "BubbleTextLine6PromptP")
-  (hcnm_config_set_action_tile "BubbleTextLine0PromptP")
-  (hcnm_config_set_action_tile "BubbleSkipEntryPrompt")
-  (hcnm_config_set_action_tile "BubbleOffsetDropSign")
-  (hcnm_config_set_action_tile "BubbleTextPrefixLF")
-  (hcnm_config_set_action_tile "BubbleTextPrefixSF")
-  (hcnm_config_set_action_tile "BubbleTextPrefixSY")
-  (hcnm_config_set_action_tile "BubbleTextPrefixSta")
-  (hcnm_config_set_action_tile "BubbleTextPrefixOff+")
-  (hcnm_config_set_action_tile "BubbleTextPrefixOff-")
-  (hcnm_config_set_action_tile "BubbleTextPrefixN")
-  (hcnm_config_set_action_tile "BubbleTextPrefixE")
-  (hcnm_config_set_action_tile "BubbleTextPrefixZ")
-  (hcnm_config_set_action_tile "BubbleTextPostfixLF")
-  (hcnm_config_set_action_tile "BubbleTextPostfixSF")
-  (hcnm_config_set_action_tile "BubbleTextPostfixSY")
-  (hcnm_config_set_action_tile "BubbleTextPostfixSta")
-  (hcnm_config_set_action_tile "BubbleTextPostfixOff+")
-  (hcnm_config_set_action_tile "BubbleTextPostfixOff-")
-  (hcnm_config_set_action_tile "BubbleTextPostfixN")
-  (hcnm_config_set_action_tile "BubbleTextPostfixE")
-  (hcnm_config_set_action_tile "BubbleTextPostfixZ")
-  (hcnm_config_set_action_tile "BubbleTextJoinDelSta")
-  (hcnm_config_set_action_tile "BubbleTextJoinDelN")
-  (hcnm_config_set_action_tile "BubbleTextPrecisionLF")
-  (hcnm_config_set_action_tile "BubbleTextPrecisionSF")
-  (hcnm_config_set_action_tile "BubbleTextPrecisionSY")
-  (hcnm_config_set_action_tile "BubbleTextPrecisionOff+")
-  (hcnm_config_set_action_tile "BubbleTextPrecisionN")
-  (hcnm_config_set_action_tile "BubbleTextPrecisionE")
-  (hcnm_config_set_action_tile "BubbleTextPrecisionZ")
-  (hcnm_config_set_action_tile "BubbleTextPrefixPipeDia")
-  (hcnm_config_set_action_tile "BubbleTextPostfixPipeDia")
-  (hcnm_config_set_action_tile "BubbleTextPrecisionPipeDia")
-  (hcnm_config_set_action_tile "BubbleTextPrefixPipeSlope")
-  (hcnm_config_set_action_tile "BubbleTextPostfixPipeSlope")
-  (hcnm_config_set_action_tile "BubbleTextPrecisionPipeSlope")
-  (hcnm_config_set_action_tile "BubbleTextPrefixPipeLength")
-  (hcnm_config_set_action_tile "BubbleTextPostfixPipeLength")
-  (hcnm_config_set_action_tile "BubbleTextPrecisionPipeLength")
+  (hcnm-config_set_action_tile "BubbleHooks")
+  (hcnm-config_set_action_tile "BubbleMtext")
+  (hcnm-config_set_action_tile "BubbleAreaIntegral")
+  (hcnm-config_set_action_tile "NoteTypes")
+  (hcnm-config_set_action_tile "BubbleTextLine1PromptP")
+  (hcnm-config_set_action_tile "BubbleTextLine2PromptP")
+  (hcnm-config_set_action_tile "BubbleTextLine3PromptP")
+  (hcnm-config_set_action_tile "BubbleTextLine4PromptP")
+  (hcnm-config_set_action_tile "BubbleTextLine5PromptP")
+  (hcnm-config_set_action_tile "BubbleTextLine6PromptP")
+  (hcnm-config_set_action_tile "BubbleTextLine0PromptP")
+  (hcnm-config_set_action_tile "BubbleSkipEntryPrompt")
+  (hcnm-config_set_action_tile "BubbleOffsetDropSign")
+  (hcnm-config_set_action_tile "BubbleTextPrefixLF")
+  (hcnm-config_set_action_tile "BubbleTextPrefixSF")
+  (hcnm-config_set_action_tile "BubbleTextPrefixSY")
+  (hcnm-config_set_action_tile "BubbleTextPrefixSta")
+  (hcnm-config_set_action_tile "BubbleTextPrefixOff+")
+  (hcnm-config_set_action_tile "BubbleTextPrefixOff-")
+  (hcnm-config_set_action_tile "BubbleTextPrefixN")
+  (hcnm-config_set_action_tile "BubbleTextPrefixE")
+  (hcnm-config_set_action_tile "BubbleTextPrefixZ")
+  (hcnm-config_set_action_tile "BubbleTextPostfixLF")
+  (hcnm-config_set_action_tile "BubbleTextPostfixSF")
+  (hcnm-config_set_action_tile "BubbleTextPostfixSY")
+  (hcnm-config_set_action_tile "BubbleTextPostfixSta")
+  (hcnm-config_set_action_tile "BubbleTextPostfixOff+")
+  (hcnm-config_set_action_tile "BubbleTextPostfixOff-")
+  (hcnm-config_set_action_tile "BubbleTextPostfixN")
+  (hcnm-config_set_action_tile "BubbleTextPostfixE")
+  (hcnm-config_set_action_tile "BubbleTextPostfixZ")
+  (hcnm-config_set_action_tile "BubbleTextJoinDelSta")
+  (hcnm-config_set_action_tile "BubbleTextJoinDelN")
+  (hcnm-config_set_action_tile "BubbleTextPrecisionLF")
+  (hcnm-config_set_action_tile "BubbleTextPrecisionSF")
+  (hcnm-config_set_action_tile "BubbleTextPrecisionSY")
+  (hcnm-config_set_action_tile "BubbleTextPrecisionOff+")
+  (hcnm-config_set_action_tile "BubbleTextPrecisionN")
+  (hcnm-config_set_action_tile "BubbleTextPrecisionE")
+  (hcnm-config_set_action_tile "BubbleTextPrecisionZ")
+  (hcnm-config_set_action_tile "BubbleTextPrefixPipeDia")
+  (hcnm-config_set_action_tile "BubbleTextPostfixPipeDia")
+  (hcnm-config_set_action_tile "BubbleTextPrecisionPipeDia")
+  (hcnm-config_set_action_tile "BubbleTextPrefixPipeSlope")
+  (hcnm-config_set_action_tile "BubbleTextPostfixPipeSlope")
+  (hcnm-config_set_action_tile "BubbleTextPrecisionPipeSlope")
+  (hcnm-config_set_action_tile "BubbleTextPrefixPipeLength")
+  (hcnm-config_set_action_tile "BubbleTextPostfixPipeLength")
+  (hcnm-config_set_action_tile "BubbleTextPrecisionPipeLength")
   (action_tile "close" "(DONE_DIALOG 2)")
   (start_dialog)
 )
 
-(defun hcnm_dcl_key_show(cnmdcl)
+(defun hcnm-dcl_key_show(cnmdcl)
   (new_dialog "HCNMKey" cnmdcl)
   ;; Dialog Actions
   (set_tile "Title" "CNM Key Notes Table Options")
-  (hcnm_config_set_action_tile "DescriptionWrap")
-  (hcnm_config_set_action_tile "LineSpacing")
-  (hcnm_config_set_action_tile "NoteSpacing")
-  (hcnm_config_set_action_tile "ShowKeyTableTitleShapes")
-  (hcnm_config_set_action_tile "ShowKeyTableQuantities")
-  (hcnm_config_set_action_tile "ShowKeyTableGrid")
-  (hcnm_config_set_action_tile "TableWidth")
-  (hcnm_config_set_action_tile "PhaseWidthAdd")
+  (hcnm-config_set_action_tile "DescriptionWrap")
+  (hcnm-config_set_action_tile "LineSpacing")
+  (hcnm-config_set_action_tile "NoteSpacing")
+  (hcnm-config_set_action_tile "ShowKeyTableTitleShapes")
+  (hcnm-config_set_action_tile "ShowKeyTableQuantities")
+  (hcnm-config_set_action_tile "ShowKeyTableGrid")
+  (hcnm-config_set_action_tile "TableWidth")
+  (hcnm-config_set_action_tile "PhaseWidthAdd")
   (action_tile "close" "(DONE_DIALOG 2)")
   (start_dialog)
 )
 
-(defun hcnm_dcl_qt_show(cnmdcl)
+(defun hcnm-dcl_qt_show(cnmdcl)
   (new_dialog "HCNMQT" cnmdcl)
   ;; Dialog Actions
   (set_tile "Title" "CNM Quantity Take-off Table Options")
-  (hcnm_config_set_action_tile "NumberToDescriptionWidth")
-  (hcnm_config_set_action_tile "DescriptionToQuantityWidth")
-  (hcnm_config_set_action_tile "QuantityToQuantityWidth")
-  (hcnm_config_set_action_tile "QuantityToUnitsWidth")
+  (hcnm-config_set_action_tile "NumberToDescriptionWidth")
+  (hcnm-config_set_action_tile "DescriptionToQuantityWidth")
+  (hcnm-config_set_action_tile "QuantityToQuantityWidth")
+  (hcnm-config_set_action_tile "QuantityToUnitsWidth")
   (action_tile "close" "(DONE_DIALOG 2)")
   (start_dialog)
 )
 
-(defun hcnm_options_list_data ()
+(defun hcnm-options_list_data ()
   '(
     ("ProjectNotesEditor" (("text" "System Text Editor") ("csv" "System CSV (spreadsheet)") ("cnm" "CNM Pro Editor")))
     ("LayersEditor" (("notepad" "Notepad") ("cnm" "CNM Pro Editor")))
     ("InsertTablePhases" (("No" "No")("1" "1")("2" "2")("3" "3")("4" "4")("5" "5")("6" "6")("7" "7")("8" "8")("9" "9")("10" "10")))
   )
 )
-(defun hcnm_config_set_action_tile (var)
-  (set_tile var (hcnm_config_temp_getvar var))
+(defun hcnm-config_set_action_tile (var)
+  (set_tile var (hcnm-config_temp_getvar var))
   (action_tile
     var
-    (strcat "(HCNM_CONFIG_TEMP_SETVAR \"" var "\" $value)")
+    (strcat "(hcnm-CONFIG_TEMP_SETVAR \"" var "\" $value)")
   )
 )
-(defun hcnm_config_dcl_list (key /)
-  (hcnm_set_tile_list
+(defun hcnm-config_dcl_list (key /)
+  (hcnm-set_tile_list
     key
     (mapcar
       '(lambda (x) (cadr x))
-      (cadr (assoc key (hcnm_options_list_data)))
+      (cadr (assoc key (hcnm-options_list_data)))
     )
     (cadr
       (assoc
         (c:hcnm-config-getvar key)
-        (cadr (assoc key (hcnm_options_list_data)))
+        (cadr (assoc key (hcnm-options_list_data)))
       )
     )
   )
   (action_tile
     key
-    "(HCNM_CONFIG_DCL_LIST_CALLBACK $key $value)"
+    "(hcnm-CONFIG_DCL_LIST_CALLBACK $key $value)"
   )
 )
-(defun hcnm_set_tile_list (key options selected / item)
+(defun hcnm-set_tile_list (key options selected / item)
   (start_list key 3)
   (mapcar 'ADD_LIST options)
   (end_list)
@@ -8814,19 +8966,19 @@ ImportLayerSettings=No
     )
   )
 )
-(defun hcnm_config_dcl_list_callback (key value /)
-  (hcnm_config_temp_setvar
+(defun hcnm-config_dcl_list_callback (key value /)
+  (hcnm-config_temp_setvar
     key
-    (car (nth (read value) (cadr (assoc key (hcnm_options_list_data)))))
+    (car (nth (read value) (cadr (assoc key (hcnm-options_list_data)))))
   )
 )
 
 ;; Shows reactor, its data, and XDATA of a selected bubble note
-(defun hcnm_dsbr ()
-  (hcnm_debug_show_bubble_reactor_xdata)
+(defun hcnm-dsbr ()
+  (hcnm-debug_show_bubble_reactor_xdata)
   (princ)
 )
-(defun hcnm_debug_show_bubble_reactor_xdata (/ en reactors reactor data handle_bubble reactor_count hcnm_reactor)
+(defun hcnm-debug_show_bubble_reactor_xdata (/ en reactors reactor data handle_bubble reactor_count hcnm-reactor)
   (vl-load-com)
   (princ "\nSelect a bubble note: ")
   (setq en (car (entsel)))
@@ -8835,14 +8987,14 @@ ImportLayerSettings=No
       (setq handle_bubble (cdr (assoc 5 (entget en)))
             reactors (cdar (vlr-reactors :vlr-object-reactor))
             reactor_count 0
-            hcnm_reactor nil)
+            hcnm-reactor nil)
       ;; Find THE ONE HCNM reactor (there should be only one)
       (foreach reactor reactors
         (setq data (vlr-data reactor))
         (if (and (listp data) (assoc "HCNM-BUBBLE" data))
           (progn
             (setq reactor_count (1+ reactor_count)
-                  hcnm_reactor reactor)
+                  hcnm-reactor reactor)
           )
         )
       )
@@ -8856,9 +9008,9 @@ ImportLayerSettings=No
             (t
              (strcat
                "ONE HCNM-BUBBLE Reactor (correct)\n\n"
-               "Reactor object:\n" (vl-prin1-to-string hcnm_reactor) "\n\n"
-               "Reactor data (nested list for all bubbles):\n" (vl-prin1-to-string (vlr-data hcnm_reactor)) "\n\n"
-               "Reactor owners count: " (itoa (length (vlr-owners hcnm_reactor))) "\n\n"
+               "Reactor object:\n" (vl-prin1-to-string hcnm-reactor) "\n\n"
+               "Reactor data (nested list for all bubbles):\n" (vl-prin1-to-string (vlr-data hcnm-reactor)) "\n\n"
+               "Reactor owners count: " (itoa (length (vlr-owners hcnm-reactor))) "\n\n"
                "Selected bubble handle: " handle_bubble "\n\n"
                "Selected bubble XDATA:\n" (vl-prin1-to-string (assoc -3 (entget en '("HCNM-BUBBLE"))))
              ))
