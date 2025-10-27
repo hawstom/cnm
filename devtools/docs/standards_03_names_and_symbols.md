@@ -90,8 +90,18 @@ This project uses lowercase for consistency with community practice and file nam
 )
 ```
 
-### 3.1.4 Exception
+### 3.1.4 Exceptions
+**Borrowed/Vendored Code:**
 UPPERCASE or mixed case in borrowed/vendored code is acceptable. Don't force-convert external libraries.
+
+**Strings, Comments, and Quoted Symbols:**
+The following are intentionally left with their original case (often UPPERCASE):
+- **String literals** - User-facing messages, prompts, file content (e.g., `"PERIMETER"`, `"NOTETEXT"`)
+- **Comments** - Copyright notices, documentation, author names (e.g., `; Thomas Gail Haws`)
+- **Quoted symbols** - VLA property names, type constants (e.g., `'ENAME`, `'STR`, `'InnerDiameterOrWidth`)
+- **AutoCAD system variables** - Must match AutoCAD's naming (e.g., `"DIMSTYLE"`, `"AREA"`)
+
+**Schedule:** Very conservative (see S01.3)
 
 ## 3.2 Files and Folders
 
@@ -150,8 +160,7 @@ hcnm_ldrblk_auto_pipe_format_diameter
 
 ### 4.1.4 Migration Strategy
 - New code: Always use underscores
-- Refactoring: Convert hyphens to underscores incrementally
-- One symbol per commit for traceability
+- Refactoring: We aim for about half of our commits to be dedicated to refactoring one or a few symbols.
 - Update all callers atomically (see S03.2.2)
 
 ## 4.2 Files and Folders

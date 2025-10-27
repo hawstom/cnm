@@ -12,10 +12,11 @@ HAWSEDC STANDARDS VOLUME 06: ROADMAP
 # 1. QUICK START
 
 ## 1.1 Current Priorities
-1. **Complete standards volumes** (this document series)
-2. **Clean up develop/ directory** (delete redundant files)
-3. **Implement developer tools** (FAS compiler, dev mode loader)
-4. **Refactor HAWS_CONFIG** (migrate INI files to getcfg/setcfg)
+1. **Fix CNM Edit Bubble dialog chr(160) parsing bug** (IN-PROGRESS 2025-10-25)
+2. **Complete standards volumes** (this document series)
+3. **Clean up develop/ directory** (delete redundant files)
+4. **Implement developer tools** (FAS compiler, dev mode loader)
+5. **Refactor HAWS_CONFIG** (migrate INI files to getcfg/setcfg)
 
 ---
 <!-- #endregion -->
@@ -63,7 +64,36 @@ This volume tracks planned features, refactoring initiatives, and project milest
 
 ## 3.1 In Progress
 
-### 3.1.1 Standards Documentation
+### 3.1.1 CNM Edit Bubble Dialog Chr(160) Parsing Bug
+**Status:** IN-PROGRESS (2025-10-25)
+
+**Symptom:** Auto text (LF, SF) appears in prefix field in edit dialog, cannot be removed with "_" button
+
+**Root Causes Identified:**
+1. `hcnm_eb:concat_parts` conditionally omitting chr(160) delimiters
+2. `hcnm_ldrblk_adjust_format` mixing parsing logic with formatting logic
+3. Lack of field structure validation (ensuring exactly two chr(160) in all attributes)
+
+**Refactoring Completed:**
+- ✅ `hcnm_eb:concat_parts` - Always includes delimiters (minimum "§§")
+- ✅ `hcnm_ldrblk_adjust_format` - Simplified to single responsibility (format codes only)
+- ✅ `hcnm_ldrblk_adjust_formats` - Separated parsing from formatting
+- ✅ `hcnm_ldrblk_ensure_fields` - New validation/normalization layer
+- ✅ Documentation - Added comprehensive DATA FLOW comments
+
+**Testing Needed:**
+- ⚠️ Create bubble with LF/SF auto text
+- ⚠️ Edit in dialog
+- ⚠️ Verify auto text stays in auto field (not migrating to prefix)
+- ⚠️ Verify "_" button removes auto text properly
+
+**Design Principles Applied:**
+- Single responsibility (one function = one job)
+- Separation of concerns (parsing ≠ formatting)
+- Always include delimiters for consistent structure
+- Document data flow clearly
+
+### 3.1.2 Standards Documentation
 **Status:** IN-DEV
 
 **Tasks:**
@@ -73,8 +103,8 @@ This volume tracks planned features, refactoring initiatives, and project milest
 - ✅ Delete deprecated documentation files (HAWSEDC_DEVELOPER_GUIDE.md, refactoring-suggestions.md)
 - ✅ Populate Volume 06 (this document)
 
-### 3.1.2 HAWS_CONFIG Refactoring
-**Status:** PLANNED - Branch: haws-config
+### 3.1.3 HAWS_CONFIG Refactoring
+**Status:** PAUSED (waiting for bug fix) - Branch: haws-config
 
 **Goal:** Extract CNM's config system into reusable HAWS_CONFIG library for all HawsEDC apps
 
@@ -117,7 +147,20 @@ This volume tracks planned features, refactoring initiatives, and project milest
 - ✅ Removed all haws-tip-hide.lsp file dependencies
 - ✅ Documented in S05.6
 
-### 4.1.3 Standards System
+### 4.1.3 Case Convention Migration
+**FIRM:** Complete (2025-10-25)
+
+**Completed:**
+- ✅ Converted entire codebase to lowercase
+- ✅ Updated standards_03_names_and_symbols.md
+- ✅ Created conversion script (convert_to_lowercase.ps1)
+- ✅ Converted 133 .lsp files in devsource/
+- ✅ Tested successfully - all tests passed
+- ✅ Merged to master branch for colleague testing
+- ✅ Generated uppercase reports (660 lines with 8+, 2,416 with 4+, 183 quoted symbols)
+- ✅ Documented uppercase exceptions in S03.3.1.4 (strings, comments, quoted symbols)
+
+### 4.1.4 Standards System
 **FIRM:** Complete
 
 **Completed:**

@@ -5615,6 +5615,7 @@ ImportLayerSettings=No
   )
   bubble_data
 )
+;; Get input from user. ename_bubble already exists so that we can do auto text.
 (defun hcnm_ldrblk_get_bubble_data (bubble_data / attribute_list ename_bubble p1_ucs num)
   (setq
     replace_bubble_p (hcnm_ldrblk_bd_get bubble_data "REPLACE_BUBBLE_P")
@@ -5657,7 +5658,9 @@ ImportLayerSettings=No
      )
     )
   )
-  (hcnm_ldrblk_bd_set bubble_data "ATTRIBUTES" (hcnm_ldrblk_adjust_formats attribute_list))
+  ;; Save XDATA before formatting flattens the auto field
+  (hcnm-save-bubble-xdata ename_bubble attribute_list)
+  (hcnm_ldrblk_bd_set bubble_data "ATTRIBUTES" (hcnm_ldrblk_ensure_fields_and_adjust_formats attribute_list))
 )
 (defun hcnm_ldrblk_finish_bubble (bubble_data / ename_bubble ename_bubble_old ename_last ename_leader ename_temp replace_bubble_p attributes notetype)
   (setq
@@ -5671,7 +5674,7 @@ ImportLayerSettings=No
   )
   (hcnm_ldrblk_set_dynprops ename_bubble ename_bubble_old notetype replace_bubble_p)
   (if replace_bubble_p (entdel ename_bubble_old))
-  (hcnm_set_attributes ename_bubble attributes)
+  (hcnm-save-bubble ename_bubble attributes)
   ;; Use entnext to look for a leader starting from the last entity before this bubble.
   (while
     (and
@@ -5762,256 +5765,253 @@ ImportLayerSettings=No
           (list
             (strcat "NOTETXT" (itoa index))
             ""
+            ""
+            ""
           )
         )
        '(1 2 3 4 5 6 0)
      )
     attribute_list
-     (cons (list "NOTEDATA" "") attribute_list)
+     (cons (list "NOTEDATA" "" "" "") attribute_list)
     attribute_list
-     (cons (list "NOTEGAP" "") attribute_list)
+     (cons (list "NOTEGAP" "" "" "") attribute_list)
     attribute_list
-     (cons (list "NOTENUM" num) attribute_list)
+     (cons (list "NOTEPHASE" "" "" "") attribute_list)
+    attribute_list
+     (cons (list "NOTENUM" num "" "") attribute_list)
   )
   attribute_list
 )
 ;;; Save attribute value to attribute list (replaces entire value)
-(defun hcnm_ldrblk_save_attribute_to_list (tag value attribute_list / attr)
+;; Save attribute to list - works with new format (tag prefix auto postfix)
+;; If value is a string, puts it in prefix field (for compatibility)
+;; If value is a list (prefix auto postfix), uses it directly
+(defun hcnm_ldrblk_save_attribute_to_list (tag value attribute_list / attr prefix auto postfix)
   (setq attr (assoc tag attribute_list))
-  (subst (list tag value) attr attribute_list)
+  (cond
+    ;; Value is a list (prefix auto postfix)
+    ((and (listp value) (= (length value) 3))
+     (setq prefix (car value)
+           auto (cadr value)
+           postfix (caddr value))
+     (subst (list tag prefix auto postfix) attr attribute_list))
+    ;; Value is a string - put in prefix field, empty auto/postfix
+    (t
+     (subst (list tag value "" "") attr attribute_list))
+  )
 )
-;;; Save auto-generated text using search-and-replace in delimiter structure
-;;; - Gets old auto-text from "auto" field (between delimiters)
-;;; - Replaces it with new auto-text
-;;; - Preserves prefix and postfix from user edits
-;;; This allows users to add prefix/postfix text while still enabling auto-updates
-(defun hcnm_ldrblk_save_auto_to_list (tag auto_new attribute_list / attr value parts prefix postfix value_new)
+
+;; Save auto-generated text to attribute list
+;; Updates only the auto field, preserves user's prefix/postfix
+(defun hcnm_ldrblk_save_auto_to_list (tag auto_new attribute_list / attr prefix postfix)
   (setq attr (assoc tag attribute_list)
-        value (cadr attr)
-        parts (hcnm_eb:split_on_nbsp value)
-        prefix (nth 0 parts)
-        postfix (nth 2 parts)
-        value_new (hcnm_eb:concat_parts prefix auto_new postfix))
-  (subst (list tag value_new) attr attribute_list)
+        prefix (cadr attr)
+        postfix (cadddr attr))
+  (subst (list tag prefix auto_new postfix) attr attribute_list)
 )
-(defun hcnm_ldrblk_adjust_formats (attribute_list / bubblemtext txt1 txt2 txt1_raw txt2_raw
-                               gap overline underline
+;;; Ensure all bubble text attributes have proper chr(160) delimiter structure
+;;;
+;;; RESPONSIBILITY: Data validation and normalization
+;;;
+;;; CALLED BY: Wrapper around HCNM_LDRBLK_ADJUST_FORMATS
+;;;
+;;; DATA FLOW:
+;;; 1. Get attribute values
+;;; 2. Ensure each has exactly two chr(160) delimiters (minimum "§§")
+;;; 3. Detect and repair common migration mistakes:
+;;;    a. Format codes in wrong position
+;;;    b. Auto text values migrated to prefix (STA, LF, SF, SY patterns)
+;;;    c. Field codes in wrong sections
+;;; 4. Pass normalized values to ADJUST_FORMATS for format code application
+;;;
+;;; DESIGN: Separation of concerns
+;;; - This function: Parse and normalize structure
+;;; - ADJUST_FORMATS: Apply format codes to normalized data
+;;; - ADJUST_FORMAT: Strip/add individual format codes
+;;;
+(defun hcnm_ldrblk_ensure_fields_and_adjust_formats (attribute_list)
+  ;; Ensure proper structure before formatting
+  (setq attribute_list (hcnm_ldrblk_ensure_fields attribute_list))
+  ;; Apply format codes
+  (hcnm_ldrblk_adjust_formats attribute_list)
+)
+
+;;; Ensure all bubble attributes have proper 4-element list structure.
+;;;
+;;; PURPOSE: Normalize attribute_list to consistent (tag prefix auto postfix) format
+;;;          before applying format codes.
+;;;
+;;; INPUT: attribute_list from various sources:
+;;;   - hcnm_get_attributes: Returns attributes from existing bubble (may be legacy 2-element format)
+;;;   - hcnm_ldrblk_initialize_attribute_list: Returns fresh 4-element format
+;;;   - After auto-text or manual text entry: Should already be 4-element format
+;;;
+;;; RETURNS: attribute_list with ALL attributes normalized to 4-element format:
+;;;   ("NOTETXT1" prefix auto postfix)
+;;;   ("NOTENUM" value "" "")
+;;;   ("NOTEPHASE" value "" "")
+;;;   ("NOTEGAP" value "" "")
+;;;
+;;; EXAMPLES:
+;;;   Input:  (("NOTENUM" "123") ("NOTETXT1" "Storm Drain"))
+;;;   Output: (("NOTENUM" "123" "" "") ("NOTETXT1" "Storm Drain" "" ""))
+;;;
+;;;   Input:  (("NOTENUM" "123" "" "") ("NOTETXT1" "" "N=12345.67" ""))
+;;;   Output: (("NOTENUM" "123" "" "") ("NOTETXT1" "" "N=12345.67" "")) - unchanged, already correct
+;;;
+(defun hcnm_ldrblk_ensure_fields (attribute_list)
+  (mapcar
+    '(lambda (attr)
+       (cond
+         ;; Already has 4 elements - keep as is
+         ((= (length attr) 4)
+          attr
+         )
+         ;; Old 2-element format (tag value) - convert to (tag value "" "")
+         ((= (length attr) 2)
+          (list (car attr) (cadr attr) "" "")
+         )
+         (t
+          ;; Unknown format - try to preserve
+          (princ (strcat "\nWarning: Unexpected attribute format for " (car attr)))
+          attr
+         )
+       )
+     )
+    attribute_list
+  )
+)
+
+;;; Ensure single attribute string has exactly two chr(160) delimiters.
+(defun hcnm_ldrblk_ensure_field (string / sep count_sep)
+  (setq sep (chr 160))
+  (cond
+    ;; Empty string -> "§§"
+    ((= string "") (strcat sep sep))
+    ;; Count delimiters
+    (t
+     (setq count_sep (hcnm_ldrblk_count_char string sep))
+     (cond
+       ;; Two or more -> already valid
+       ((>= count_sep 2) string)
+       ;; No delimiters -> treat as prefix, add "§§". This is the known migration case.
+       ((= count_sep 0) (strcat string sep sep))
+       ;; One delimiter -> add second "§". This is not a known case. May never fire.
+       ((= count_sep 1) (strcat string sep))
+     ))
+  )
+)
+
+;;; Count occurrences of character in string
+(defun hcnm_ldrblk_count_char (string char / count pos)
+  (setq count 0)
+  (while (setq pos (vl-string-search char string))
+    (setq count (1+ count))
+    (setq string (substr string (+ pos 2)))
+  )
+  count
+)
+
+;;; Apply formatting codes to bubble text lines.
+;;;
+;;; RESPONSIBILITY: Decide which attributes need formatting and apply format codes.
+;;;                 Does NOT parse or normalize structure (that's ENSURE_FIELDS).
+;;;
+;;; ASSUMES: All inputs have proper prefix§auto§postfix structure (two chr(160))
+;;;
+;;; DATA FLOW:
+;;; 1. Get attribute values (already normalized by ENSURE_FIELDS)
+;;; 2. If line has content: apply underline (TXT1) or overline (TXT2) to entire value
+;;; 3. Handle NOTEGAP (underline + spaces if either line has content)
+;;; 4. Save formatted values back to attribute_list
+;;;
+(defun hcnm_ldrblk_adjust_formats (attribute_list / bubblemtext txt1_formatted txt2_formatted txt1_raw txt2_raw
+                               txt1_attr txt2_attr txt1_auto txt1_postfix txt2_auto txt2_postfix gap overline underline
                               )
-  ;; Adjust underlining and overlining
-  ;; Only add underline to line 1 and overline to line 2 if they have any content
+  ;; Determine format codes based on mtext vs dtext
   (setq
-    bubblemtext
-     (hcnm_ldrblk_get_mtext_string)
-    underline
-     (cond
-       ((= bubblemtext "") "%%u")
-       (t "\\L")
-     )
-    overline
-     (cond
-       ((= bubblemtext "") "%%o")
-       (t "\\O")
-     )
-    txt1_raw (cadr (assoc "NOTETXT1" attribute_list))
-    txt2_raw (cadr (assoc "NOTETXT2" attribute_list))
-    ;; Only apply formatting if line has actual content
-    txt1
-     (cond
-       ((hcnm_ldrblk_attr_has_content_p txt1_raw)
-        (hcnm_ldrblk_adjust_format txt1_raw underline)
-       )
-       (t txt1_raw)  ; No content, return as-is (could be "" or "§§")
-     )
-    txt2
-     (cond
-       ((hcnm_ldrblk_attr_has_content_p txt2_raw)
-        (hcnm_ldrblk_adjust_format txt2_raw overline)
-       )
-       (t txt2_raw)  ; No content, return as-is (could be "" or "§§")
-     )
-    ;; GAP gets underline + two spaces if either line has content
-    ;; NOTEGAP is system-controlled and goes in prefix field with delimiters
-    gap
-     (cond
-       ;; If both lines empty, gap is empty (with empty delimiter structure)
-       ((and (not (hcnm_ldrblk_attr_has_content_p txt1_raw))
-             (not (hcnm_ldrblk_attr_has_content_p txt2_raw))
-        )
-        (hcnm_eb:concat_parts "" "" "")
-       )
-       ;; Otherwise, gap is "%%u  " (underline + 2 spaces) in prefix field
-       (t 
-        (hcnm_eb:concat_parts "%%u  " "" "")
-       )
-     )
-    attribute_list
-     (hcnm_ldrblk_save_attribute_to_list
-       "NOTETXT1"
-       txt1
-       attribute_list
-     )
-    attribute_list
-     (hcnm_ldrblk_save_attribute_to_list
-       "NOTETXT2"
-       txt2
-       attribute_list
-     )
-    attribute_list
-     (hcnm_ldrblk_save_attribute_to_list
-       "NOTEGAP"
-       gap
-       attribute_list
-     )
+    bubblemtext (hcnm_ldrblk_get_mtext_string)
+    underline (cond ((= bubblemtext "") "%%u") (t "\\L"))
+    overline (cond ((= bubblemtext "") "%%o") (t "\\O"))
+    ;; Get full attributes (tag prefix auto postfix)
+    txt1_attr (assoc "NOTETXT1" attribute_list)
+    txt2_attr (assoc "NOTETXT2" attribute_list)
+    ;; Extract the three parts
+    txt1_auto (caddr txt1_attr)
+    txt1_postfix (cadddr txt1_attr)
+    txt2_auto (caddr txt2_attr)
+    txt2_postfix (cadddr txt2_attr)
+    ;; Concatenate prefix+auto+postfix for formatting decision
+    txt1_raw (strcat (cadr txt1_attr) txt1_auto txt1_postfix)
+    txt2_raw (strcat (cadr txt2_attr) txt2_auto txt2_postfix)
   )
-  ;; Strip mtext codes if not using mtext
-  ;; Disabled because LM:Unformat breaks field codes
-  ;|(COND
-    ((= bubblemtext "")
-     (setq
-       attribute_list
-        (mapcar
-          '(lambda (attribute)
-             (cond
-               ((wcmatch (cadr attribute) "*\\*")
-                (list
-                  (car attribute)
-                  (lm:unformat (cadr attribute) nil)
-                )
-               )
-               (attribute)
-             )
-           )
-          attribute_list
-        )
-     )
-    )
-  )
-  |;
+  
+  ;; Format TXT1 (underline) - adjust_format handles empty/delimiter checks and returns formatted string
+  (setq txt1_formatted (hcnm_ldrblk_adjust_format txt1_raw underline))
+  
+  ;; Format TXT2 (overline) - adjust_format handles empty/delimiter checks
+  (setq txt2_formatted (hcnm_ldrblk_adjust_format txt2_raw overline))
+  
+  ;; GAP: underline + two spaces if either line has content
+  (setq gap
+    (cond
+      ((and (not (hcnm_ldrblk_attr_has_content_p txt1_raw))
+            (not (hcnm_ldrblk_attr_has_content_p txt2_raw)))
+       "")
+      (t "%%u  ")))
+  
+  ;; Save formatted text back - put entire formatted string in prefix, keep auto/postfix empty
+  ;; (Format codes wrap the entire concatenated text, so we store it all in prefix)
+  (setq attribute_list (subst (list "NOTETXT1" txt1_formatted "" "") txt1_attr attribute_list))
+  (setq attribute_list (subst (list "NOTETXT2" txt2_formatted "" "") txt2_attr attribute_list))
+  (setq attribute_list (hcnm_ldrblk_save_attribute_to_list "NOTEGAP" gap attribute_list))
+  attribute_list
 )
 ;;; Check if attribute has actual content (not just empty or delimiters).
 ;;; Returns T if there's text content, NIL otherwise.
-(defun hcnm_ldrblk_attr_has_content_p (string / sep pos prefix auto postfix)
-  (cond
-    ;; Empty string has no content
-    ((= string "") nil)
-    ;; Check if string has delimiters
-    ((vl-string-search (setq sep (chr 160)) string)
-     ;; Parse into parts
-     (setq pos (vl-string-search sep string))
-     (setq prefix (substr string 1 pos))
-     (setq string (substr string (+ pos 2)))
-     (setq pos (vl-string-search sep string))
-     (if pos
-       (progn
-         (setq auto (substr string 1 pos))
-         (setq postfix (substr string (+ pos 2)))
-       )
-       (progn
-         (setq auto string)
-         (setq postfix "")
-       )
-     )
-     ;; Has content if any part is non-empty
-     (or (/= prefix "") (/= auto "") (/= postfix ""))
-    )
-    ;; No delimiters, has content if non-empty
-    (t t)
-  )
+(defun hcnm_ldrblk_attr_has_content_p (string)
+  (and (not (= string ""))
+       (not (= string (chr 160)))
+       (not (= string (strcat (chr 160) (chr 160)))))
 )
-;;; Underline or overline string unless it's empty.
-;;; With prefix/auto/postfix split using chr(160) as delimiter,
-;;; the format code goes in the prefix, not the auto text.
-;;; If format codes are found in the auto text, move them to prefix.
-(defun hcnm_ldrblk_adjust_format (string code / sep pos prefix auto postfix auto_has_format)
+;;; Add underline or overline format code to string (or strip if empty).
+;;;
+;;; SCOPE: Format codes only - does NOT parse prefix/auto/postfix structure.
+;;;        That's the responsibility of calling code (ADJUST_FORMATS).
+;;;
+;;; DATA FLOW:
+;;; 1. Check if string qualifies for formatting (not empty or delimiter-only)
+;;; 2. If empty: return as-is (no formatting)
+;;; 3. If non-empty: strip any existing format code, then add CODE
+;;;
+;;; ASSUMPTIONS:
+;;; - Format codes (if present) are always at the start of the string
+;;; - This handles both mtext codes (\L, \O) and dtext codes (%%u, %%o)
+;;; - We don't need to handle every edge case; false positives are visible but not fatal
+;;;
+(defun hcnm_ldrblk_adjust_format (string code)
   (cond
-    ;; If empty, do nothing
-    ((= string "") string)
-    ;; Otherwise, split by chr(160) delimiter and add format code to prefix
+    ;; Empty string or delimiter-only string - no formatting
+    ((not (hcnm_ldrblk_attr_has_content_p string))
+     string)
+    ;; Non-empty string - strip existing format and add CODE
     (t
-     (setq sep (chr 160))
-     (setq pos (vl-string-search sep string))
+     ;; Strip leading mtext format codes
      (cond
-       ;; If no delimiter, treat entire string as prefix (old-style attribute)
-       ((not pos)
-        (cond
-          ;; If already underlined or overlined, strip that. Assumes that's the first code.
-          ((wcmatch string "\\*") (strcat code (substr string 3)))
-          ((wcmatch string "%%*") (strcat code (substr string 4)))
-          ;; Otherwise just underline or overline.
-          (t (strcat code string))
-        )
-       )
-       ;; If delimiter exists, extract prefix/auto/postfix and format the prefix
-       (t
-        (setq prefix (substr string 1 pos))
-        (setq string (substr string (+ pos 2)))  ; Skip separator
-        (setq pos (vl-string-search sep string))
-        (cond
-          ;; Extract auto and postfix
-          (pos
-           (setq auto (substr string 1 pos))
-           (setq postfix (substr string (+ pos 2)))
-          )
-          ;; No second delimiter, rest is auto
-          (t
-           (setq auto string)
-           (setq postfix "")
-          )
-        )
-        ;; Check if auto text has format codes and move them to prefix
-        (setq auto_has_format nil)
-        (cond
-          ;; If auto has mtext format codes, strip them and flag
-          ((wcmatch auto "\\L*")
-           (setq auto (substr auto 3))
-           (setq auto_has_format "\\L")
-          )
-          ((wcmatch auto "\\O*")
-           (setq auto (substr auto 3))
-           (setq auto_has_format "\\O")
-          )
-          ;; If auto has dtext format codes, strip them and flag
-          ((wcmatch auto "%%u*")
-           (setq auto (substr auto 4))
-           (setq auto_has_format "%%u")
-          )
-          ((wcmatch auto "%%o*")
-           (setq auto (substr auto 4))
-           (setq auto_has_format "%%o")
-          )
-        )
-        ;; Add format code to prefix (use code from auto if found, else use CODE parameter)
-        (setq prefix
-          (cond
-            ;; If auto had format, use that instead of CODE
-            (auto_has_format
-             (cond
-               ((= prefix "") auto_has_format)
-               ((wcmatch prefix "\\*") (strcat auto_has_format (substr prefix 3)))
-               ((wcmatch prefix "%%*") (strcat auto_has_format (substr prefix 4)))
-               (t (strcat auto_has_format prefix))
-             )
-            )
-            ;; Otherwise use CODE parameter
-            (t
-             (cond
-               ((= prefix "") code)  ; Empty prefix gets just the code
-               ((wcmatch prefix "\\*") (strcat code (substr prefix 3)))
-               ((wcmatch prefix "%%*") (strcat code (substr prefix 4)))
-               (t (strcat code prefix))
-             )
-            )
-          )
-        )
-        ;; Reassemble with delimiters
-        (strcat prefix sep auto sep postfix)
-       )
+       ((wcmatch string "\\L*") (setq string (substr string 3)))
+       ((wcmatch string "\\O*") (setq string (substr string 3)))
      )
-    )
+     ;; Strip leading dtext format codes  
+     (cond
+       ((wcmatch string "%%u*") (setq string (substr string 4)))
+       ((wcmatch string "%%o*") (setq string (substr string 4)))
+     )
+     ;; Add the requested format code
+     (strcat code string))
   )
 )
 (defun hcnm_ldrblk_get_text_entry (ename_bubble line_number attribute_list /
-                               input skip_entry_p input loop-p prompt-p string tag
+                               input skip_entry_p input loop-p prompt-p string tag attr
                               )
   (setq
     loop-p t
@@ -6052,9 +6052,10 @@ ImportLayerSettings=No
             tag
             attribute_list
           )
-         string
-          (cadr (assoc tag attribute_list))
        )
+       ;; Get concatenated value (prefix + auto + postfix) for string comparison
+       (setq attr (assoc tag attribute_list)
+             string (strcat (cadr attr) (caddr attr) (cadddr attr)))
       )
       (t
        (setq
@@ -6077,7 +6078,6 @@ ImportLayerSettings=No
   )
   attribute_list
 )
-;;; bubble-data-update: I believe that this needs to also define any data reference types.
 (defun hcnm_ldrblk_get_auto_type_keys ()
   ;; Returns list of auto-text type definitions
   ;; Structure: (Input_Key Display_Type Reference_Type Requires_Coordinates)
@@ -6092,7 +6092,7 @@ ImportLayerSettings=No
     ("STa" "Sta" "AL" t)       ; Station - needs P1_WORLD for alignment query
     ("Off" "Off" "AL" t)       ; Offset - needs P1_WORLD for alignment query
     ("stAoff" "StaOff" "AL" t) ; Station+Offset - needs P1_WORLD for alignment query
-    ("Name" "AlName" "AL" nil)     ; Alignment Name - no coordinates needed
+    ("NAme" "AlName" "AL" nil)     ; Alignment Name - no coordinates needed
     ("STAName" "StaName" "AL" t)     ; Station + Alignment Name - needs P1_WORLD
     ("N" "N" nil t)            ; Northing - needs P1_WORLD for coordinate
     ("E" "E" nil t)            ; Easting - needs P1_WORLD for coordinate
@@ -6173,35 +6173,25 @@ ImportLayerSettings=No
   ;; I feel like I really should find a way to abstract the interface from this other business logic. There may be a good example in my recent subdivision tools.
   attribute_list
 )
-;; bubble-data-update: HCNM_LDRBLK_AUTO_DISPATCH is called from command line (insertion) and from edit box (editing) to get string as requested by user. It needs to get not only string, but also data (reference object and reference type).
+;; Bubble-data-update: hcnm_ldrblk_auto_dispatch is called from command line (insertion) and from edit box (editing) to get string as requested by user. It needs to get not only string, but also data (reference object and reference type).
 ;; 
 ;; This is how bubble note auto text works.
 ;; 
 ;; Bubble note creation process from inside out:
-;; HCNM_LDRBLK_AUTO_DISPATCH returns ATTRIBUTE_LIST including NOTEDATA information
-;; HCNM_LDRBLK_GET_AUTO_TYPE returns ATTRIBUTE_LIST
-;; HCNM_LDRBLK_GET_TEXT_ENTRY returns ATTRIBUTE_LIST
-;; HCNM_LDRBLK_GET_BUBBLE_DATA returns BLOCK_DATA that includes ATTRIBUTE_LIST after adjusting formatting  (overline and underline)
-;; HCNM_SET_ATTRIBUTES puts ATTRIBUTE_LIST into bubble note
+;; hcnm_ldrblk_auto_dispatch returns attribute_list including notedata information
+;; hcnm_ldrblk_get_auto_type returns attribute_list
+;; hcnm_ldrblk_get_text_entry returns attribute_list
+;; hcnm_ldrblk_get_bubble_data returns block_data that includes attribute_list after adjusting formatting  (overline and underline)
+;; hcnm_set_attributes puts attribute_list into bubble note
 ;; 
 ;; Bubble note editing process from inside out:
-;; HCNM_LDRBLK_AUTO_DISPATCH returns ATTRIBUTE_LIST including NOTEDATA information
-;; HCNM_EB:GET_TEXT modifies semi-global HCNM_EB:ATTRIBUTE_LIST after adjusting formatting (overline and underline)
-;; HCNM_EB:SAVE calls HCNM_SET_ATTRIBUTES to save semi-global HCNM_EB:ATTRIBUTE_LIST
-;; HCNM_EDIT_BUBBLE top level manages editing dialog
+;; hcnm_ldrblk_auto_dispatch returns attribute_list including notedata information
+;; hcnm_eb:get_text modifies semi-global hcnm_eb:attribute_list after adjusting formatting (overline and underline)
+;; hcnm_eb:save calls hcnm_set_attributes to save semi-global hcnm_eb:attribute_list
+;; hcnm_edit_bubble top level manages editing dialog
 ;; 
-;; Need to add these functions:
-;; 1. Get/save/return reference object and reference type
-;; 2. Get/save/return/use string from reference object, reference type, and point of interest
-;; 3. Update "NOTEDATA" block attribute to include reference object, attribute, and reference type
-;; bubble-data-update: this 
-;; We also need to update this data in the attribute list.
-;; Possibly we call a function here:
-;; (HCNM_LDRBLK_UPDATE_DATA KEY OBJECT)
-;; Since what has to be done on update varies widely, we pass the attribute list to each sub-function and let it decided what to do with it. I think we also need to pass in an indication of whether this is a refresh or a user prompt.
-;; We return the modified attribute_list.
-;; INPUT IS THE OBJECT (ENAME OR VLA-OBJECT; COULD BE STANDARDIZED) OR STRING WE NEED TO EXAMINE IF WE AREN'T ASKING THE USER FOR IT OR NIL IF WE NEED TO GET IT.
-;; Returns ATTRIBUTE_LIST with the requested auto data added.
+;; Input is the object (ename or vla-object; could be standardized) or string we need to examine if we aren't asking the user for it or nil if we need to get it.
+;; Returns attribute_list with the requested auto data added.
 (defun hcnm_ldrblk_auto_dispatch (ename_bubble attribute_list tag auto_type input / bubble_data)
     ;; bubble-data-update: Build BUBBLE_DATA and pass to subfunctions
   (setq 
@@ -6220,6 +6210,18 @@ ImportLayerSettings=No
   ;; Only calculate P1_WORLD for auto-types that require coordinates
   ;; BUT: For alignment auto-text, only calculate P1_WORLD when we have INPUT (reactor update)
   ;; When INPUT is NIL (user selection), AUTO_AL will handle viewport selection AFTER user picks alignment
+  ;;
+  ;; IMPORTANT: For N/E/NE in paper space, capture viewport transform BEFORE calculating P1_WORLD
+  ;; This is part of the "auto-text generation" user experience
+  (cond
+    ((and (not input)  ; Initial insertion, not reactor update
+          (member auto_type '("N" "E" "NE"))
+          ename_bubble
+          (not (hcnm_ldrblk_is_on_model_tab ename_bubble)))
+     ;; Capture viewport for N/E/NE coordinate types in paper space
+     (hcnm_ldrblk_capture_viewport_transform ename_bubble (getvar "CVPORT"))
+    )
+  )
   (cond
     ((and (hcnm_ldrblk_auto_type_is_coordinate_p auto_type)
           (or input  ; Reactor update - have alignment already
@@ -6362,7 +6364,7 @@ ImportLayerSettings=No
   ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
   (setq
     attribute_list
-    (hcnm_ldrblk_save_attribute_to_list 
+    (hcnm_ldrblk_save_auto_to_list 
       tag
       string
       attribute_list
@@ -6417,6 +6419,17 @@ ImportLayerSettings=No
 ;; When: Only shown for coordinate-based auto-text in paper space bubbles
 ;; TODO: Replace with dismissable tip system when implemented
 ;; Capture and store viewport transformation matrix for paper space bubble
+;; This is the ONLY function that should call hcnm_ldrblk_set_viewport_transform_xdata
+;; All viewport capture logic is centralized here to maintain architectural clarity
+;;
+;; ARCHITECTURE: Two user experiences call this function:
+;;   1. Auto-text generation (via hcnm_ldrblk_auto_al and similar dispatch-auto functions)
+;;      - When inserting bubble with coordinate-based auto-text in paper space
+;;      - When editing bubble and switching to coordinate-based auto-text  
+;;   2. Viewport linking (explicit user actions)
+;;      - "Change View" button in edit dialog
+;;      - Future: CNMCHGVPORT command for selection sets (TODO)
+;;
 ;; This captures 3 reference points to calculate rotation, scale, and translation
 ;; Returns T if successful, NIL if failed
 (defun hcnm_ldrblk_capture_viewport_transform (ename_bubble cvport / ref_ocs_1 ref_ocs_2 ref_ocs_3 ref_wcs_1 ref_wcs_2 ref_wcs_3)
@@ -6452,7 +6465,7 @@ ImportLayerSettings=No
           (hcnm_ldrblk_auto_type_is_coordinate_p auto_type))
      ;; Bubble is in paper space and auto-type is coordinate-based - show warning
      (haws_tip_show 1001 ; Unique tip ID for paper space warning
-       "IMPORTANT: Paper space bubble notes don't react to viewport changes.\n\nTo avoid causing chaos when changing viewport views, auto text for coordinates\ndoes not react to viewport view changes.\n\nYou must use the ____ command if you want to refresh the world coordinates of selected bubble notes on a viewport.")
+       "IMPORTANT: Paper space bubble notes don't react to viewport changes.\n\nTo avoid causing chaos when changing viewport views, auto text for coordinates\ndoes not react to viewport view changes.\n\nYou must use the 'Change View' button in the edit dialog (or the future CNMCHGVPORT command) if you want to refresh the viewport association and world coordinates of selected bubble notes.")
     )
   )
 )
@@ -6882,27 +6895,11 @@ ImportLayerSettings=No
      )
      ;; NOTE: Still in MSPACE at this point - capture viewport transformation if needed
      ;; Capture viewport transformation data if bubble is in paper space
+     ;; Capture viewport transformation if in paper space
+     ;; This is part of the "auto-text generation" user experience
      (cond
        ((and objalign ename_bubble (not (hcnm_ldrblk_is_on_model_tab ename_bubble)))
-        ;; Bubble is in paper space - capture transformation matrix
-        (setq cvport (getvar "CVPORT"))
-        (cond
-          ((and cvport (> cvport 1))
-           ;; We're in a viewport - capture transformation matrix
-           ;; Use 3 reference points to capture rotation, scale, and translation
-           (setq ref_ocs_1 '(0.0 0.0 0.0)    ; Origin
-                 ref_ocs_2 '(1.0 0.0 0.0)    ; X-axis unit vector
-                 ref_ocs_3 '(0.0 1.0 0.0)    ; Y-axis unit vector
-                 ref_wcs_1 (trans (trans ref_ocs_1 3 2) 2 0)
-                 ref_wcs_2 (trans (trans ref_ocs_2 3 2) 2 0)
-                 ref_wcs_3 (trans (trans ref_ocs_3 3 2) 2 0))
-           (hcnm_ldrblk_set_viewport_transform_xdata ename_bubble cvport 
-                                                       ref_ocs_1 ref_wcs_1
-                                                       ref_ocs_2 ref_wcs_2
-                                                       ref_ocs_3 ref_wcs_3)
-           (princ (strcat "\nStored viewport " (itoa cvport) " transformation matrix"))
-          )
-        )
+        (hcnm_ldrblk_capture_viewport_transform ename_bubble (getvar "CVPORT"))
        )
      )
      ;; Now calculate P1_WORLD if needed for coordinate-based types and not already in BUBBLE_DATA
@@ -6987,7 +6984,7 @@ ImportLayerSettings=No
   ;; Step 4: Save the formatted string to the attribute list and update BUBBLE_DATA
   (setq
     attribute_list
-    (hcnm_ldrblk_save_attribute_to_list 
+    (hcnm_ldrblk_save_auto_to_list 
       tag
       string
       attribute_list
@@ -7050,28 +7047,11 @@ ImportLayerSettings=No
          ;; Only prompt for viewport if transformation data doesn't already exist
          (cond
            ((not (hcnm_ldrblk_get_viewport_transform_xdata ename_bubble))
-            ;; No XDATA exists - show warning and prompt for viewport
+            ;; No XDATA exists - show warning, then prompt for viewport
             (hcnm_ldrblk_warn_pspace_coordinates ename_bubble auto_type)
             (setq avport (hcnm_ldrblk_get_target_vport))
-            ;; Capture viewport transformation data now while in MSPACE with selected viewport
-            (setq cvport avport)
-            (cond
-              ((and cvport (> cvport 1))
-               ;; We're in a viewport - capture transformation matrix
-               ;; Use 3 reference points to capture rotation, scale, and translation
-               (setq ref_ocs_1 '(0.0 0.0 0.0)    ; Origin
-                     ref_ocs_2 '(1.0 0.0 0.0)    ; X-axis unit vector
-                     ref_ocs_3 '(0.0 1.0 0.0)    ; Y-axis unit vector
-                     ref_wcs_1 (trans (trans ref_ocs_1 3 2) 2 0)
-                     ref_wcs_2 (trans (trans ref_ocs_2 3 2) 2 0)
-                     ref_wcs_3 (trans (trans ref_ocs_3 3 2) 2 0))
-               (hcnm_ldrblk_set_viewport_transform_xdata ename_bubble cvport 
-                                                           ref_ocs_1 ref_wcs_1
-                                                           ref_ocs_2 ref_wcs_2
-                                                           ref_ocs_3 ref_wcs_3)
-               (princ (strcat "\nStored viewport " (itoa cvport) " transformation matrix"))
-              )
-            )
+            ;; Capture viewport transformation - part of "auto-text generation" user experience
+            (hcnm_ldrblk_capture_viewport_transform ename_bubble avport)
            )
            (t
             ;; XDATA already exists - no need to prompt, will use stored transformation
@@ -7147,7 +7127,7 @@ ImportLayerSettings=No
   ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
   (setq
     attribute_list
-    (hcnm_ldrblk_save_attribute_to_list 
+    (hcnm_ldrblk_save_auto_to_list 
       tag
       string
       attribute_list
@@ -7180,7 +7160,7 @@ ImportLayerSettings=No
   ;; START HCNM_LDRBLK_AUTO_UPDATE SUBFUNCTION
   (setq
     attribute_list
-    (hcnm_ldrblk_save_attribute_to_list 
+    (hcnm_ldrblk_save_auto_to_list 
       tag
       (hcnm_ldrblk_auto_apology auto_type)
       attribute_list
@@ -7253,49 +7233,10 @@ ImportLayerSettings=No
 
 ;; Get viewport transformation matrix from bubble's XDATA
 ;; Returns list: (CVPORT REF_OCS_1 REF_WCS_1 REF_OCS_2 REF_WCS_2 REF_OCS_3 REF_WCS_3) or NIL
-(defun hcnm_ldrblk_get_viewport_transform_xdata (ename_bubble / xdata appname cvport points)
-  (setq appname "HCNM-BUBBLE")
-  (cond
-    ((setq xdata (assoc -3 (entget ename_bubble '("HCNM-BUBBLE"))))
-      (setq xdata (cdr (assoc appname (cdr xdata))))
-      (princ (strcat "\nDebug XDATA found: " (vl-princ-to-string xdata)))
-      ;; Check if this is new format (VPTRANS) or old format (AVPORT)
-      (cond
-        ((= (cdr (assoc 1000 xdata)) "VPTRANS")
-          ;; New format - extract transformation matrix
-          (setq points '())
-          ;; Collect all 1010 (3D point) entries
-          (foreach pair xdata
-            (cond
-              ((= (car pair) 1070) (setq cvport (cdr pair)))
-              ((= (car pair) 1010) (setq points (append points (list (cdr pair)))))
-            )
-          )
-          (cond
-            ((and cvport (= (length points) 6))
-              ;; We have CVPORT and 6 points (3 OCS + 3 WCS)
-              (princ (strcat "\nDebug transform matrix: CVPORT=" (itoa cvport) 
-                            " " (itoa (length points)) " points"))
-              (cons cvport points)  ; Return (CVPORT pt1 pt2 pt3 pt4 pt5 pt6)
-            )
-            (t
-              (princ "\nDebug: Incomplete VPTRANS data")
-              nil
-            )
-          )
-        )
-        (t
-          ;; Old format - just AVPORT integer, no transformation data
-          (princ "\nDebug: Old AVPORT format (no transform data)")
-          nil
-        )
-      )
-    )
-    (t
-      (princ "\nDebug: No XDATA found on bubble")
-      nil
-    )
-  )
+(defun hcnm_ldrblk_get_viewport_transform_xdata (ename_bubble)
+  ;; Use service layer to get viewport transform
+  ;; Returns: (cvport ref_ocs_1 ref_wcs_1 ref_ocs_2 ref_wcs_2 ref_ocs_3 ref_wcs_3) or nil
+  (hcnm-xdata-get-vptrans ename_bubble)
 )
 
 ;; DEPRECATED: Old function - use HCNM_LDRBLK_GET_VIEWPORT_TRANSFORM_XDATA instead
@@ -7314,35 +7255,35 @@ ImportLayerSettings=No
 ;; Set viewport transformation matrix in bubble's XDATA
 ;; Stores CVPORT and 3 pairs of reference points (OCS and WCS)
 ;; These 3 points define the full transformation including rotation and scale
+;; Preserves existing auto-text XDATA if present
+;;
+;; DESIGN: The following user experiences need this function:
+;;   1. Getting auto text (during insertion or editing; done through dispatch-auto)
+;;      - When user inserts bubble with N/E/NE/Sta/Off in paper space
+;;      - When user edits existing bubble and switches to coordinate-based auto-text
+;;   2. Linking a viewport (from edit dialog or separate command)
+;;      - "Change View" button in edit dialog (explicit user action)
+;;      - Future: Separate "Change Viewport" command for selection sets (TODO)
+;;
+;; IMPORTANT: This function should NEVER be called by:
+;;   - Reactor updates (they should USE existing XDATA, not create new)
+;;   - Coordinate calculation helpers (read-only operations)
+;;   - Any automatic/defensive "let me fix missing data" logic
+;;
+;; If viewport transform is missing when needed, that's a legitimate error
+;; state that should be handled gracefully (warn user, fail gracefully),
+;; not silently "fixed" by prompting during background operations.
 (defun hcnm_ldrblk_set_viewport_transform_xdata (ename_bubble cvport 
                                                    ref_ocs_1 ref_wcs_1
                                                    ref_ocs_2 ref_wcs_2
-                                                   ref_ocs_3 ref_wcs_3
-                                                   / appname xdata_new)
-  (setq appname "HCNM-BUBBLE")
-  ;; Register application if not already registered
-  (cond
-    ((not (tblsearch "APPID" appname))
-      (regapp appname)
-    )
-  )
-  ;; Create XDATA structure with transformation matrix data
-  ;; Format: (1000 "VPTRANS") (1070 CVPORT) 
-  ;;         (1010 REF_OCS_1) (1010 REF_WCS_1)
-  ;;         (1010 REF_OCS_2) (1010 REF_WCS_2)
-  ;;         (1010 REF_OCS_3) (1010 REF_WCS_3)
-  (setq xdata_new (list (cons -3 
-                          (list (cons appname 
-                                  (list (cons 1000 "VPTRANS")
-                                        (cons 1070 cvport)
-                                        (cons 1010 ref_ocs_1)
-                                        (cons 1010 ref_wcs_1)
-                                        (cons 1010 ref_ocs_2)
-                                        (cons 1010 ref_wcs_2)
-                                        (cons 1010 ref_ocs_3)
-                                        (cons 1010 ref_wcs_3)))))))
-  ;; Apply XDATA to entity
-  (entmod (append (entget ename_bubble) xdata_new))
+                                                   ref_ocs_3 ref_wcs_3)
+  ;; Build viewport data list
+  ;; Format: (cvport ref_ocs_1 ref_wcs_1 ref_ocs_2 ref_wcs_2 ref_ocs_3 ref_wcs_3)
+  (hcnm-xdata-set-vptrans ename_bubble 
+                          (list cvport 
+                                ref_ocs_1 ref_wcs_1
+                                ref_ocs_2 ref_wcs_2
+                                ref_ocs_3 ref_wcs_3))
 )
 
 ;; Clear viewport transformation XDATA from bubble
@@ -7415,36 +7356,13 @@ ImportLayerSettings=No
          (princ (strcat "\nTransformed P1_WORLD: " (vl-princ-to-string p1_world)))
        )
        (t
-         ;; No transformation data stored - user must select viewport
-         (princ "\nDebug: No transformation data - prompting for viewport selection")
-         (setq pspace_current_p (hcnm_ldrblk_space_set_model))
-         ;; Prompt user to select target viewport
-         (setq cvport_stored (hcnm_ldrblk_get_target_vport))
-         (cond
-           ((and cvport_stored (> cvport_stored 1) ename_bubble)
-            ;; User selected a viewport - capture transformation matrix and store in XDATA
-            (setq ref_ocs_1 '(0.0 0.0 0.0)    ; Origin
-                  ref_ocs_2 '(1.0 0.0 0.0)    ; X-axis unit vector
-                  ref_ocs_3 '(0.0 1.0 0.0)    ; Y-axis unit vector
-                  ref_wcs_1 (trans (trans ref_ocs_1 3 2) 2 0)
-                  ref_wcs_2 (trans (trans ref_ocs_2 3 2) 2 0)
-                  ref_wcs_3 (trans (trans ref_ocs_3 3 2) 2 0))
-            ;; Calculate P1_WORLD using TRANS
-            (setq p1_world (trans (trans p1_ocs 3 2) 2 0))
-            ;; Store transformation matrix in XDATA for future use
-            (hcnm_ldrblk_set_viewport_transform_xdata ename_bubble cvport_stored 
-                                                        ref_ocs_1 ref_wcs_1
-                                                        ref_ocs_2 ref_wcs_2
-                                                        ref_ocs_3 ref_wcs_3)
-            (princ (strcat "\nCaptured and stored viewport " (itoa cvport_stored) " transformation matrix"))
-           )
-           (t
-            ;; Not in a viewport or no bubble entity - just calculate P1_WORLD
-            (setq p1_world (trans (trans p1_ocs 3 2) 2 0))
-           )
-         )
-         (hcnm_ldrblk_space_restore pspace_current_p)
-         (princ (strcat "\nDebug P1_WORLD: " (vl-princ-to-string p1_world)))
+         ;; No transformation data stored in XDATA
+         ;; This is an error state - coordinate-based auto-text in paper space requires viewport association
+         ;; Do NOT prompt user here - this function may be called by reactors during background updates
+         (princ "\nError: Viewport transformation data missing. Cannot calculate world coordinates.")
+         (princ "\nUse 'Change View' button in edit dialog to associate bubble with a viewport.")
+         ;; Return nil to signal error - caller must handle this gracefully
+         (setq p1_world nil)
        )
      )
      p1_world
@@ -7545,17 +7463,17 @@ ImportLayerSettings=No
     ename_leader
       (hcnm_ldrblk_bubble_leader ename_bubble)
     ;; Semi-global variable. Global to the HCNM-EB: functions called from here.
-    ;; Add delimiter structure for editing
+    ;; Read attributes and XDATA to get prefix/auto/postfix structure
     hcnm_eb:attribute_list
-      (hcnm_eb:add_delimiters (hcnm_get_attributes ename_bubble t) ename_bubble)
+      (hcnm-read-bubble-data ename_bubble t)
     notetextradiocolumn "RadioNOTETXT1"
     dclfile
       (load_dialog "cnm.dcl")
     done_code 2
   )
-  ;; Show delimiter tip to help users understand the internal structure
-  (haws_tip_show 1002  ; Unique tip ID for delimiter explanation
-    "CNM uses a non-breaking space (ASCII code 160 or Alt+0160) to separate your text from auto text.\n\nKeep this in mind in the event you edit bubble notes without this editor.")
+  ;; Show XDATA tip to help users understand the new auto-text storage
+  (haws_tip_show 1002  ; Unique tip ID for XDATA explanation
+    "CNM stores auto-text separately from your text using XDATA (extended entity data).\n\nThis keeps auto-text invisible in the attributes, while preserving it for the editor.")
   (while (> done_code -1)
     (cond
       ((= done_code 0) (setq done_code (hcnm_edit_bubble_cancel)))
@@ -7597,8 +7515,7 @@ ImportLayerSettings=No
   (haws-core-restore)
   (princ)
 )
-;;; bubble-data-update: this or something below it needs to populate the NOTEDATA attribute.
-(defun hcnm_eb:get_text (ename_bubble done_code tag / auto_string auto_type parts prefix auto postfix value)
+(defun hcnm_eb:get_text (ename_bubble done_code tag / auto_string auto_type attr prefix postfix)
   (setq
     auto_type
      (cadr (assoc done_code (hcnm_edit_bubble_done_codes)))
@@ -7606,19 +7523,14 @@ ImportLayerSettings=No
   (cond
     ;; Handle ClearAuto button (code 28)
     ((= done_code 28)
-     ;; Get current value, split it, clear the auto part, and save
-     (setq value (cadr (assoc tag hcnm_eb:attribute_list))
-           parts (hcnm_eb:split_on_nbsp value)
-           prefix (nth 0 parts)
-           postfix (nth 2 parts))
+     ;; Get current attribute (tag prefix auto postfix), clear the auto part
+     (setq attr (assoc tag hcnm_eb:attribute_list)
+           prefix (cadr attr)
+           postfix (cadddr attr))
      ;; Save with empty auto field
      (setq hcnm_eb:attribute_list
        (hcnm_ldrblk_adjust_formats
-         (hcnm_ldrblk_save_attribute_to_list
-           tag
-           (hcnm_eb:concat_parts prefix "" postfix)
-           hcnm_eb:attribute_list
-         )
+         (hcnm_ldrblk_save_auto_to_list tag "" hcnm_eb:attribute_list)
        )
      )
     )
@@ -7636,8 +7548,6 @@ ImportLayerSettings=No
          )
        )
      )
-     ;; Show paper space warning if coordinate auto-text was just added
-     (hcnm_ldrblk_warn_pspace_coordinates ename_bubble auto_type)
     )
     ;; Invalid DONE_CODE - just ignore
     (t
@@ -7708,10 +7618,9 @@ ImportLayerSettings=No
 )
 ;; Save auto-text to XDATA for each attribute tag
 (defun hcnm_eb:save (ename_bubble)
-  ;; Save WITH delimiters (chr 160 non-breaking space is invisible in AutoCAD)
-  ;; This preserves prefix/auto/postfix structure for next edit
-  (hcnm_set_attributes ename_bubble hcnm_eb:attribute_list)
- -1
+  ;; Save attributes (concatenated) and XDATA (auto text only)
+  (hcnm-save-bubble ename_bubble hcnm_eb:attribute_list)
+  -1
 ) 
 (defun hcnm_edit_bubble_done_codes ( / eb_done)
   (setq eb_done t)
@@ -7772,6 +7681,29 @@ ImportLayerSettings=No
     (t value)
   )
 )
+
+;; ACTION_TILE callback: Update prefix field in attribute_list when user edits it
+(defun hcnm_eb:update_prefix (tag new_prefix / attr)
+  (setq attr (assoc tag hcnm_eb:attribute_list))
+  (setq hcnm_eb:attribute_list
+    (subst
+      (list tag new_prefix (caddr attr) (cadddr attr))
+      attr
+      hcnm_eb:attribute_list)
+  )
+)
+
+;; ACTION_TILE callback: Update postfix field in attribute_list when user edits it
+(defun hcnm_eb:update_postfix (tag new_postfix / attr)
+  (setq attr (assoc tag hcnm_eb:attribute_list))
+  (setq hcnm_eb:attribute_list
+    (subst
+      (list tag (cadr attr) (caddr attr) new_postfix)
+      attr
+      hcnm_eb:attribute_list)
+  )
+)
+
 (defun hcnm_eb:show
    (dclfile notetextradiocolumn ename_bubble / tag value parts prefix auto postfix on_model_tab_p)
   (new_dialog "HCNMEditBubble" dclfile)
@@ -7791,31 +7723,26 @@ ImportLayerSettings=No
     )
   )  
   (mode_tile "ChgView" 0)  ; Always enable
-  ;; Note attribute edit boxes - split into prefix/auto/postfix
-  ;; Migration already happened in EXPAND_VALUE during ADD_DELIMITERS
+  ;; Note attribute edit boxes - hcnm_eb:attribute_list already split into prefix/auto/postfix 
+  ;; at time of read by hcnm-read-bubble-data
   (foreach
      attribute hcnm_eb:attribute_list
     (setq tag (car attribute)
-          value (cadr attribute)
-          ;; Split by chr(1) delimiter
-          parts (hcnm_eb:split_on_nbsp value)
-          prefix (nth 0 parts)
-          auto (nth 1 parts)
-          postfix (nth 2 parts))
-    ;; Set prefix field
+          prefix (cadr attribute)
+          auto (caddr attribute)
+          postfix (cadddr attribute))
+    ;; Set prefix field to save when edited.
     (set_tile (strcat "Prefix" tag) prefix)
-    (action_tile
-      (strcat "Prefix" tag)
-      (strcat "(HCNM_EB:SAVE_PREFIX \"" tag "\" $value)")
-    )
-    ;; Set auto field (disabled, for display only)
+    (action_tile (strcat "Prefix" tag) (strcat "(hcnm_eb:update_prefix \"" tag "\" $value)"))
+    ;; Set auto field (editing is disabled, for auto text only)
+    ;; All auto text editor buttons update attribute_list directly.
+    ;; If auto text fails to save to bubble, then our assumption on the previous line is wrong.
     (set_tile (strcat "Edit" tag) auto)
-    ;; Set postfix field
+    ;; Set postfix field and enable/disable based on auto field
+    ;; Postfix only has meaning when there's auto-text to come after
     (set_tile (strcat "Postfix" tag) postfix)
-    (action_tile
-      (strcat "Postfix" tag)
-      (strcat "(HCNM_EB:SAVE_POSTFIX \"" tag "\" $value)")
-    )
+    (mode_tile (strcat "Postfix" tag) (if (and auto (/= auto "")) 0 1))  ; 0=enable, 1=disable
+    (action_tile (strcat "Postfix" tag) (strcat "(hcnm_eb:update_postfix \"" tag "\" $value)"))
   )
   ;;Radio buttons
   (set_tile
@@ -7876,68 +7803,156 @@ ImportLayerSettings=No
   (append result (list str))
 )
 
-;; Concatenate prefix/auto/postfix with chr(1) delimiter
+;; Concatenate prefix/auto/postfix with chr(160) delimiters
+;; 
+;; DATA FLOW:
+;; - Input: Three separate strings (prefix, auto, postfix) - any can be "" or nil
+;; - Output: Single string with format "prefix§auto§postfix" where § = chr(160)
+;; - Delimiters ALWAYS included, even if parts are empty, to maintain parsing structure
+;; - Minimum output: "§§" (two delimiters, all parts empty)
+;; 
+;; RATIONALE:
+;; - Consistent structure allows split_on_nbsp to always work without special cases
+;; - Empty delimited string "§§" is distinguishable from truly empty "" (old format)
+;; - Makes round-trip parsing reliable: concat(split(x)) = x
+;;
 (defun hcnm_eb:concat_parts (prefix auto postfix / nbsp)
   (setq nbsp (chr 160))  ; Non-breaking space - invisible delimiter
   (strcat 
     (if prefix prefix "")
-    (if (and prefix auto (> (strlen prefix) 0) (> (strlen auto) 0)) nbsp "")
+    nbsp
     (if auto auto "")
-    (if (and auto postfix (> (strlen auto) 0) (> (strlen postfix) 0)) nbsp "")
+    nbsp
     (if postfix postfix "")
   )
 )
+;;==============================================================================
+;; BUBBLE DATA - Read/Write with XDATA for Auto Text
+;;==============================================================================
+;; These functions handle reading and writing bubble attributes with auto text
+;; stored in XDATA (not visible in attribute display text)
 
-;; Save prefix - get current auto and postfix, then concatenate
-(defun hcnm_eb:save_prefix (tag prefix_new / attr parts auto postfix value_new updated_parts)
-  (setq attr (assoc tag hcnm_eb:attribute_list)
-        parts (hcnm_eb:split_on_nbsp (cadr attr))
-        auto (nth 1 parts)
-        postfix (nth 2 parts)
-        value_new (hcnm_eb:concat_parts prefix_new auto postfix))
-  (setq hcnm_eb:attribute_list
-    (hcnm_ldrblk_adjust_formats
-      (hcnm_ldrblk_save_attribute_to_list tag value_new hcnm_eb:attribute_list)
-    )
-  )
-  ;; Update dialog display to reflect any changes from ADJUST_FORMATS
-  (setq updated_parts (hcnm_eb:split_on_nbsp (cadr (assoc tag hcnm_eb:attribute_list))))
-  (set_tile (strcat "Prefix" tag) (nth 0 updated_parts))
-  (set_tile (strcat "Edit" tag) (nth 1 updated_parts))
-  (set_tile (strcat "Postfix" tag) (nth 2 updated_parts))
+;; Check if XDATA auto text is found within attribute string
+;; Returns T if xdata string is substring of attribute string, NIL otherwise
+(defun hcnm-xdata-found-in-attribute-p (str-attribute str-xdata)
+  (and str-xdata
+       (/= str-xdata "")
+       (vl-string-search str-xdata str-attribute))
 )
 
-;; Save postfix - get current prefix and auto, then concatenate
-(defun hcnm_eb:save_postfix (tag postfix_new / attr parts prefix auto value_new updated_parts)
-  (setq attr (assoc tag hcnm_eb:attribute_list)
-        parts (hcnm_eb:split_on_nbsp (cadr attr))
-        prefix (nth 0 parts)
-        auto (nth 1 parts)
-        value_new (hcnm_eb:concat_parts prefix auto postfix_new))
-  (setq hcnm_eb:attribute_list
-    (hcnm_ldrblk_adjust_formats
-      (hcnm_ldrblk_save_attribute_to_list tag value_new hcnm_eb:attribute_list)
-    )
-  )
-  ;; Update dialog display to reflect any changes from ADJUST_FORMATS
-  (setq updated_parts (hcnm_eb:split_on_nbsp (cadr (assoc tag hcnm_eb:attribute_list))))
-  (set_tile (strcat "Prefix" tag) (nth 0 updated_parts))
-  (set_tile (strcat "Edit" tag) (nth 1 updated_parts))
-  (set_tile (strcat "Postfix" tag) (nth 2 updated_parts))
-)
-
-(defun hcnm_eb:save_edit_box (tag input)
-  (setq
-    hcnm_eb:attribute_list
-     (hcnm_ldrblk_adjust_formats
-       (hcnm_ldrblk_save_attribute_to_list
-         tag
-         input
-         hcnm_eb:attribute_list
-       )
+;; Split attribute string by XDATA auto text substring
+;; Returns (prefix auto postfix) where auto comes from XDATA
+;; 
+;; DATA MODEL RULE:
+;; - When auto field is empty: all user text goes to prefix, postfix MUST be empty
+;; - When auto field has a value: prefix comes before auto, postfix comes after auto
+;; This prevents confusion when there's no auto-text to split on.
+;; 
+;; The only source of postfix values is the edit dialog, which disables the postfix
+;; field when auto is empty. Therefore, finding postfix without auto indicates a
+;; programming error or data corruption.
+;;
+;; SPLITTING LOGIC when reading from block attributes:
+;; - If XDATA found in attribute: split on it, extract prefix/auto/postfix
+;; - If XDATA not found: entire attribute goes to prefix, auto and postfix are empty
+;;   (Handles migration case: old blocks without XDATA, or user-edited attributes)
+(defun hcnm-split-attribute-on-xdata (str-attribute str-xdata / pos prefix postfix)
+  (cond
+    ((hcnm-xdata-found-in-attribute-p str-attribute str-xdata)
+     ;; XDATA found - split on it
+     (setq pos (vl-string-search str-xdata str-attribute)
+           prefix (substr str-attribute 1 pos)
+           postfix (substr str-attribute (+ pos (strlen str-xdata) 1)))
+     ;; Validate: if we have postfix but no auto (XDATA), that's an error
+     (cond
+       ((and postfix (/= postfix "") (or (not str-xdata) (= str-xdata "")))
+        (alert (strcat 
+          "Message from the CNM hcnm-split-attribute-on-xdata function:\n\n"
+          "Whoops! We thought that by disabling the postfix field in our\n"
+          "Bubble Note Editor when auto-text is empty, postfix would never\n"
+          "exist without auto text. But exist it does, go figure.\n\n"
+          "Attribute value: [" str-attribute "]\n"
+          "Auto text (XDATA): [" (if str-xdata str-xdata "empty") "]\n"
+          "Postfix found: [" postfix "]\n\n"
+          "So this is an unhandled exception to our thinking.\n"
+          "Kindly report this oversight to the developer.\n\n"
+          "We'll handle this by treating the entire attribute as prefix\n"
+          "(user text), but this doesn't match our design intent."))
+        (list str-attribute "" ""))  ; Fail safe: move everything to prefix
+       (t
+        (list prefix str-xdata postfix)))
      )
+    (t
+     ;; XDATA not found - entire string is prefix, auto and postfix empty
+     (list str-attribute "" ""))
   )
 )
+
+;; Read bubble data from attributes and XDATA
+;; Returns association list with prefix/auto/postfix for each field
+;; Format: (("NOTETXT0" prefix auto postfix) ("NOTETXT1" prefix auto postfix) ...)
+;; For fields without prefix/auto/postfix (NOTENUM, NOTEPHASE), returns (tag value "" "")
+(defun hcnm-read-bubble-data (ename-bubble field-code-p / 
+                                attribute-list xdata-alist xdata-raw appname
+                                ename-next etype elist obj-next
+                                tag value field-code
+                                auto-text parts xdata-pairs i)
+  (setq appname "HCNM-BUBBLE"
+        attribute-list '()
+        xdata-alist '())
+  
+  ;; Step 1: Read XDATA for auto text values and build association list
+  (cond
+    ((setq xdata-raw (assoc -3 (entget ename-bubble (list appname))))
+     (setq xdata-raw (cdr (assoc appname (cdr xdata-raw))))
+     ;; Parse XDATA pairs: (1000 "TAG") (1000 "VALUE") ...
+     ;; Convert to association list: (("TAG" . "VALUE") ...)
+     (setq i 0)
+     (while (< i (length xdata-raw))
+       (cond
+         ((and (= (car (nth i xdata-raw)) 1000)
+               (< (+ i 1) (length xdata-raw))
+               (= (car (nth (+ i 1) xdata-raw)) 1000))
+          ;; Found a tag-value pair
+          (setq xdata-alist (cons 
+                              (cons (cdr (nth i xdata-raw)) 
+                                    (cdr (nth (+ i 1) xdata-raw)))
+                              xdata-alist))
+          (setq i (+ i 2)))
+         (t (setq i (1+ i))))
+     )))
+  
+  ;; Step 2: Read attributes and split using XDATA
+  (setq ename-next ename-bubble)
+  (while (and
+           (setq ename-next (entnext ename-next))
+           (/= "SEQEND"
+               (setq etype (cdr (assoc 0 (setq elist (entget ename-next))))))
+         )
+    (cond
+      ((= etype "ATTRIB")
+       (setq tag (cdr (assoc 2 elist))
+             obj-next (vlax-ename->vla-object ename-next)
+             value (cond 
+                     ((and field-code-p (setq field-code (lm:fieldcode ename-next))) 
+                      field-code)
+                     (t (vla-get-textstring obj-next))))
+       
+       ;; Get auto text from XDATA if available
+       (setq auto-text (cdr (assoc tag xdata-alist)))
+       
+       ;; Split attribute using XDATA auto text
+       (setq parts (hcnm-split-attribute-on-xdata value auto-text))
+       
+       ;; Add to attribute list: (tag prefix auto postfix)
+       (setq attribute-list
+         (cons (cons tag parts) attribute-list))
+      )
+    )
+  )
+  attribute-list
+)
+
 ;; FIELD_CODE_P NIL SIMPLIFIES PROCESSING WHEN BLOCKS LIKE NOTEQTY ARE KNOWN NOT TO HAVE FIELD CODES IN THEM
 (defun hcnm_get_attributes (ename_block field_code_p / attribute_list elist ename_next etype field_code obj_next)
   (setq ename_next ename_block)
@@ -7993,6 +8008,271 @@ ImportLayerSettings=No
             )
         )
     )
+)
+
+;#region XDATA Service Layer
+;;==============================================================================
+;; XDATA SERVICE LAYER - HCNM-BUBBLE XDATA MANAGEMENT
+;;==============================================================================
+;; The HCNM-BUBBLE XDATA stores two types of data that must coexist:
+;; 1. Viewport transformation matrix (VPTRANS section)
+;;    - Paper space coordinate conversion for N/E/NE/Sta/Off auto-text
+;;    - Format: (1000 "VPTRANS") (1070 cvport) (1010 point)×6
+;; 2. Auto-text values (tag-value pairs)
+;;    - Stores auto field separately from concatenated display text
+;;    - Format: (1000 "TAG") (1000 "value") pairs
+;;
+;; CRITICAL DESIGN PRINCIPLE:
+;; All functions that modify HCNM-BUBBLE XDATA must preserve both sections.
+;; Think of XDATA as a shared document that multiple sub-systems are editing.
+;;==============================================================================
+
+;; Read HCNM-BUBBLE XDATA and parse into structured sections
+;; Returns: ((vptrans . viewport-data) (autotext . autotext-alist))
+;; viewport-data: (cvport ref_ocs_1 ref_wcs_1 ref_ocs_2 ref_wcs_2 ref_ocs_3 ref_wcs_3) or nil
+;; autotext-alist: (("TAG1" . "value1") ("TAG2" . "value2") ...) or nil
+(defun hcnm-xdata-read (ename-bubble / appname xdata-raw xdata-parsed 
+                        vptrans-section autotext-section
+                        cvport ref-points autotext-pairs)
+  (setq appname "HCNM-BUBBLE")
+  (setq xdata-raw (assoc -3 (entget ename-bubble (list appname))))
+  
+  (cond
+    (xdata-raw
+     (setq xdata-raw (cdr (assoc appname (cdr xdata-raw))))
+     
+     ;; Parse VPTRANS section if present
+     (cond
+       ((and xdata-raw (= (cdr (car xdata-raw)) "VPTRANS"))
+        (setq xdata-raw (cdr xdata-raw))  ; Skip marker
+        ;; Extract CVPORT (1070 code)
+        (cond
+          ((and xdata-raw (= (caar xdata-raw) 1070))
+           (setq cvport (cdar xdata-raw)
+                 xdata-raw (cdr xdata-raw))
+           ;; Extract 6 reference points (1010 codes)
+           (setq ref-points '())
+           (repeat 6
+             (cond
+               ((and xdata-raw (= (caar xdata-raw) 1010))
+                (setq ref-points (append ref-points (list (cdar xdata-raw)))
+                      xdata-raw (cdr xdata-raw)))))
+           ;; Build viewport data list
+           (cond
+             ((= (length ref-points) 6)
+              (setq vptrans-section (cons cvport ref-points))))))))
+     
+     ;; Parse auto-text pairs (remaining data)
+     (setq autotext-pairs '())
+     (while xdata-raw
+       (cond
+         ((and (= (caar xdata-raw) 1000)
+               (cdr xdata-raw)
+               (= (caadr xdata-raw) 1000))
+          ;; Found tag-value pair
+          (setq autotext-pairs (append autotext-pairs 
+                                       (list (cons (cdar xdata-raw) 
+                                                   (cdadr xdata-raw))))
+                xdata-raw (cddr xdata-raw)))
+         (t
+          ;; Invalid format, skip
+          (setq xdata-raw (cdr xdata-raw)))))
+     (cond
+       ((> (length autotext-pairs) 0)
+        (setq autotext-section autotext-pairs)))))
+  
+  ;; Return structured data
+  (list (cons 'vptrans vptrans-section)
+        (cons 'autotext autotext-section))
+)
+
+;; Write HCNM-BUBBLE XDATA from structured sections
+;; xdata-sections: ((vptrans . viewport-data) (autotext . autotext-alist))
+;; This is the ONLY function that writes XDATA - ensures atomic updates
+(defun hcnm-xdata-write (ename-bubble xdata-sections / appname xdata-list 
+                         vptrans-data autotext-data cvport ref-points)
+  (setq appname "HCNM-BUBBLE")
+  
+  ;; Register application if needed
+  (cond
+    ((not (tblsearch "APPID" appname))
+     (regapp appname)))
+  
+  (setq xdata-list '())
+  
+  ;; Build VPTRANS section if present
+  (setq vptrans-data (cdr (assoc 'vptrans xdata-sections)))
+  (cond
+    (vptrans-data
+     (setq cvport (car vptrans-data)
+           ref-points (cdr vptrans-data))
+     (cond
+       ((and cvport (= (length ref-points) 6))
+        (setq xdata-list (append xdata-list
+                                 (list (cons 1000 "VPTRANS")
+                                       (cons 1070 cvport))))
+        (foreach pt ref-points
+          (setq xdata-list (append xdata-list (list (cons 1010 pt)))))))))
+  
+  ;; Build auto-text section if present
+  (setq autotext-data (cdr (assoc 'autotext xdata-sections)))
+  (cond
+    (autotext-data
+     (foreach pair autotext-data
+       (setq xdata-list (append xdata-list
+                                (list (cons 1000 (car pair))
+                                      (cons 1000 (cdr pair))))))))
+  
+  ;; Write XDATA (replaces all HCNM-BUBBLE XDATA)
+  (cond
+    (xdata-list
+     (entmod (append (entget ename-bubble)
+                     (list (cons -3 (list (cons appname xdata-list))))))))
+  t
+)
+
+;; Update viewport transform section, preserving auto-text
+;; viewport-data: (cvport ref_ocs_1 ref_wcs_1 ... ref_wcs_3)
+(defun hcnm-xdata-set-vptrans (ename-bubble viewport-data / xdata-sections)
+  (princ "\n=== DEBUG set-vptrans START ===")
+  (princ (strcat "\nViewport data to set: " (vl-princ-to-string viewport-data)))
+  (setq xdata-sections (hcnm-xdata-read ename-bubble))
+  (princ (strcat "\nRead existing sections: " (vl-princ-to-string xdata-sections)))
+  (setq xdata-sections (subst (cons 'vptrans viewport-data) 
+                              (assoc 'vptrans xdata-sections) 
+                              xdata-sections))
+  (princ (strcat "\nSections after update: " (vl-princ-to-string xdata-sections)))
+  (hcnm-xdata-write ename-bubble xdata-sections)
+  (princ "\n=== DEBUG set-vptrans END ===")
+)
+
+;; Update auto-text section, preserving viewport transform
+;; autotext-alist: (("TAG1" . "value1") ("TAG2" . "value2") ...)
+(defun hcnm-xdata-set-autotext (ename-bubble autotext-alist / xdata-sections)
+  (princ "\n=== DEBUG set-autotext START ===")
+  (princ (strcat "\nAutotext to set: " (vl-princ-to-string autotext-alist)))
+  (setq xdata-sections (hcnm-xdata-read ename-bubble))
+  (princ (strcat "\nRead existing sections: " (vl-princ-to-string xdata-sections)))
+  (setq xdata-sections (subst (cons 'autotext autotext-alist) 
+                              (assoc 'autotext xdata-sections) 
+                              xdata-sections))
+  (princ (strcat "\nSections after update: " (vl-princ-to-string xdata-sections)))
+  (hcnm-xdata-write ename-bubble xdata-sections)
+  (princ "\n=== DEBUG set-autotext END ===")
+)
+
+;; Get viewport transform data
+;; Returns: (cvport ref_ocs_1 ref_wcs_1 ... ref_wcs_3) or nil
+(defun hcnm-xdata-get-vptrans (ename-bubble / xdata-sections)
+  (setq xdata-sections (hcnm-xdata-read ename-bubble))
+  (cdr (assoc 'vptrans xdata-sections))
+)
+
+;; Get auto-text data
+;; Returns: (("TAG1" . "value1") ("TAG2" . "value2") ...) or nil
+(defun hcnm-xdata-get-autotext (ename-bubble / xdata-sections)
+  (setq xdata-sections (hcnm-xdata-read ename-bubble))
+  (cdr (assoc 'autotext xdata-sections))
+)
+
+;;==============================================================================
+;; LEGACY WRAPPERS - Maintain existing API during transition
+;;==============================================================================
+
+;; Save only XDATA for auto-text (helper for insert path)
+;; Called before adjust_formats flattens the auto field
+;; 
+;; The HCNM-BUBBLE section of XDATA for a bubble note stores:
+;; 1. Auto-text values (separately from display attributes)
+;; 2. Viewport transformation matrix (for paper space coordinate conversion)
+;;
+;; This function preserves existing viewport transform data when updating auto-text.
+(defun hcnm-save-bubble-xdata (ename-bubble attribute-data / 
+                                 autotext-alist atag parts auto)
+  ;; Build auto-text alist from attribute data
+  ;; Format: (("TAG1" . "value1") ("TAG2" . "value2") ...)
+  (setq autotext-alist '())
+  (foreach attr-data attribute-data
+    (setq atag (car attr-data)
+          parts (cdr attr-data)
+          auto (cadr parts))  ; Get auto field from (prefix auto postfix)
+    (cond
+      ((and auto (/= auto ""))
+       (setq autotext-alist (append autotext-alist (list (cons atag auto)))))))
+  
+  ;; Use service layer to update auto-text while preserving viewport transform
+  (hcnm-xdata-set-autotext ename-bubble autotext-alist)
+)
+
+;#endregion XDATA Service Layer
+
+;; Save bubble data to attributes and XDATA
+;; Takes association list with prefix/auto/postfix for each field
+;; Format: (("NOTETXT0" prefix auto postfix) ("NOTETXT1" prefix auto postfix) ...)
+;; 
+;; The HCNM-BUBBLE section of XDATA for a bubble note stores:
+;; 1. Auto-text values (separately from display attributes)  
+;; 2. Viewport transformation matrix (for paper space coordinate conversion)
+;;
+;; This function saves concatenated text to visible attributes and auto-text to XDATA.
+;; Preserves existing viewport transform data when updating auto-text.
+(defun hcnm-save-bubble (ename-bubble attribute-data / 
+                          appname xdata-list ename-next etype elist
+                          atag obj-next parts prefix auto postfix concat-value)
+  (setq appname "HCNM-BUBBLE"
+        xdata-list '())
+  
+  ;; Register application if not already registered
+  (cond
+    ((not (tblsearch "APPID" appname))
+     (regapp appname)))
+  
+  ;; Step 1: Build XDATA list for auto text values
+  ;; Format: ((1000 "TAG1") (1000 "VALUE1") (1000 "TAG2") (1000 "VALUE2") ...)
+  (foreach attr-data attribute-data
+    (setq atag (car attr-data)
+          parts (cdr attr-data)
+          auto (cadr parts))
+    (cond
+      ((and auto (/= auto ""))
+       ;; Add tag-value pair to XDATA
+       (setq xdata-list (append xdata-list 
+                                (list (cons 1000 atag) 
+                                      (cons 1000 auto))))))
+  )
+  
+  ;; Step 2: Save XDATA to bubble
+  (cond
+    (xdata-list
+     (entmod (append 
+               (entget ename-bubble)
+               (list (cons -3 (list (cons appname xdata-list))))))))
+  
+  ;; Step 3: Save concatenated attributes (prefix + auto + postfix)
+  (setq ename-next ename-bubble)
+  (while (and
+           (setq ename-next (entnext ename-next))
+           (/= "SEQEND"
+               (setq etype (cdr (assoc 0 (setq elist (entget ename-next))))))
+         )
+    (cond
+      ((and
+         (= etype "ATTRIB")
+         (setq atag (cdr (assoc 2 elist)))
+         (setq parts (cdr (assoc atag attribute-data))))
+       ;; Found matching attribute - concatenate prefix + auto + postfix
+       (setq prefix (car parts)
+             auto (cadr parts)
+             postfix (caddr parts)
+             concat-value (strcat 
+                            (if prefix prefix "")
+                            (if auto auto "")
+                            (if postfix postfix "")))
+       (setq obj-next (vlax-ename->vla-object ename-next))
+       (vla-put-textstring obj-next concat-value)
+      )
+    )
+  )
 )
 
 (defun hcnm_set_attributes (ename_block attribute_list / atag elist ename_next etype obj_next)
@@ -8276,7 +8556,7 @@ ImportLayerSettings=No
                              ((= handle_reference "") nil)
                              (t (handent handle_reference))
                            )
-        attribute_list_old (hcnm_get_attributes ename_bubble t)
+        attribute_list_old (hcnm-read-bubble-data ename_bubble t)
         attribute_list     attribute_list_old
   )
   (cond
@@ -8299,9 +8579,12 @@ ImportLayerSettings=No
       (cond 
         ((/= attribute_list attribute_list_old)
          ;; UPDATE BLOCK INSERTION
+         ;; Save XDATA before adjust_formats flattens the auto field
+         (hcnm-save-bubble-xdata ename_bubble attribute_list)
+         ;; Save formatted attributes
          (hcnm_set_attributes 
            ename_bubble
-           (hcnm_ldrblk_adjust_formats 
+           (hcnm_ldrblk_ensure_fields_and_adjust_formats 
              attribute_list
            )
          )
@@ -8312,46 +8595,6 @@ ImportLayerSettings=No
       (princ (strcat "\nError in HCNM_LDRBLK_UPDATE_BUBBLE_TAG: BUBBLE not found"))
     )
   )
-)
-;; UPDATES A BUBBLE INSERTION. RETURNS BUBBLE WITH ATTRIBUTES REMOVED IF USER REMOVED THEM (SINCE WE DON'T YET HAVE A STRUCTURED INTERFACE THAT WOULD LET THE USER REMOVE IN REAL TIME. MAYBE IT WOULD BE EASIEST TO JUST HAVE A WAY TO DISABLE EDITING AUTO ATTRIBUTES UNLESS USER CLICKS A "MANUAL" BUTTON. I LOVE THAT. EDIT BUBBLE COULD READ THE REACTOR DATA OR EACH BUBBLE COULD HAVE A LIST IN NOTEDATA)
-;; @returns {list} Testing
-;; NOTE: This function is now deprecated in favor of HCNM_LDRBLK_UPDATE_BUBBLE_TAG but kept for reference
-(defun hcnm_ldrblk_update_bubble (lst_bubble obj_notifier / attribute_list attribute_list_old ename_bubble pt_leader_start) 
-  (setq ename_bubble       (handent (car lst_bubble))
-        attribute_list_old (hcnm_get_attributes ename_bubble t)
-        attribute_list     attribute_list_old
-  )
-  (foreach attribute (cadr lst_bubble) 
-    (cond 
-      ;; AT THE MOMENT, ONLY TOTAL ATTRIBUTE DELETION CANCELS A REACTOR.
-      ((= (cadr (assoc (car attribute) attribute_list)) "")
-       ;; I AM CURIOUS WHETHER MODIFYING BUBBLE WITHIN FOREACH WILL CAUSE A BUG. I THINK NOT SINCE IT ITERATES OVER A COPY.
-       (setq lst_bubble (vl-remove attribute lst_bubble))
-      )
-      (t
-       (setq attribute_list (hcnm_ldrblk_auto_dispatch 
-                              ename_bubble
-                              attribute_list
-                              (car attribute) ; TAG
-                              (cdr attribute) ; KEY
-                              obj_notifier ; INPUT bubble-data-update: This is not right. We need, not the notifier object (which could be a leader or an alignment or other), but the reference object. So the reactor data has to include handle, tag, ref_type, and ref_object
-                            )
-       )
-      )
-    )
-  )
-  (cond 
-    ((/= attribute_list attribute_list_old)
-     ;; UPDATE BLOCK INSERTION
-     (hcnm_set_attributes 
-       ename_bubble
-       (hcnm_ldrblk_adjust_formats 
-         attribute_list
-       )
-     )
-    )
-  )
-  lst_bubble
 )
 ;#endregion
 ;#region CNM Options dialog

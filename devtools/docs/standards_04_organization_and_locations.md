@@ -161,7 +161,7 @@ Contains:
 ### 4.1.1 Standard Structure
 **FIRM:** Command functions and public API first, then private helpers
 
-**Schedule:** Moderately conservative (apply to new files, reorganize during major refactoring)
+**Schedule:** Moderately conservative  (see S01.3)
 
 ```lisp
 ;;==============================================================================
@@ -177,7 +177,7 @@ Contains:
 ;;==============================================================================
 ;; PRIVATE HELPERS - Pipe Network
 ;;==============================================================================
-;; Implementation details, alphabetically ordered
+;; Implementation details, intuitively grouped
 
 (DEFUN HCNM_LDRBLK_AUTO_PIPE_FORMAT_DIAMETER ...)
 (DEFUN HCNM_LDRBLK_AUTO_PIPE_FORMAT_LENGTH ...)
@@ -188,7 +188,6 @@ Contains:
 **Pros:**
 - User-facing functions are easy to find at top of file
 - Public API clearly separated from implementation
-- Alphabetical order within sections aids navigation
 - VS Code regions fold sections cleanly
 
 **Cons:**
@@ -198,13 +197,13 @@ Contains:
 ### 4.1.3 File Splitting
 **PLANNED:** Split long files when practical
 
-**Schedule:** Very conservative (only when file becomes unmaintainable or during major refactoring)
+**Schedule:** Very conservative  (see S01.3)
 
 Current state: cnm.lsp is ~8600 lines. Consider splitting into:
-- cnm_core.lsp (commands and main logic)
+- cnm_tables.lsp (table creation)
+- cnm_notes.lsp (project notes readers and editors)
 - cnm_bubble.lsp (bubble note system)
 - cnm_config.lsp (configuration management)
-- cnm_reactor.lsp (reactor system)
 
 ## 4.2 Function Headers
 
@@ -239,6 +238,110 @@ Current state: cnm.lsp is ~8600 lines. Consider splitting into:
 - All public API functions (called by other modules)
 - Complex private functions (>30 lines)
 - Optional for simple helpers (use judgment)
+
+## 4.3 Indentation and Parenthesis Style
+
+### 4.3.1 Indentation Style
+**FIRM:** Narrow-style indentation
+
+**Schedule:** Moderately aggressive (see S01.3) [TGH: There you go again redefining a standard term. Please stop doing that. Very aggressive has a different meaning. Do we really want to do what Very aggressive means? You really want to reformat the entire code base immediately? You are being as lazy as a human, and it's no fun. I fixed it.]
+
+**Definition:** The definition in the Autodesk online help governs. "Narrow-style" means the function name is on the first line. All arguments are placed on the next line and indented relative to the start of the expression. This is contrasted with Wide-style, where the function name and the first argument are on the first line and all other arguments are placed on the next line and indented to aligned with the first argument. 
+
+**Rationale:**
+- Standard Lisp convention
+- Readable. Shows functional structure clearly
+- Arguments align naturally
+- AutoLISP editor default
+
+```lisp
+;; CORRECT - Narrow-style (indent relative to the start of the expression)
+(defun example (x y)
+  (if (> x y)
+    (progn
+      (setq result (* x y)
+            factor 2.0
+            final (* result factor))
+      (princ result))
+    (princ "x not greater than y")
+  )
+)
+
+;; CORRECT - Narrow-style (indent relative to the start of the expression)
+(alert 
+  (strcat 
+    "This is a very long message "
+    "that continues on the next line "
+    "and is indented relative to the start of the expression"
+  )
+)
+
+;; AVOID - Wide-style (align with first argument)
+(setq my_value (calculate_something arg1
+                                    arg2
+                                    arg3)
+)
+
+;; AVOID - Wide-style (align with first argument)
+(alert (strcat "This is a very long message "
+               "that continues on the next line "
+               "and aligns with the opening quote"))
+```
+
+### 4.3.2 Line Breaking Rule
+**FIRM:** Keep expressions on one line if they fit. If an expression does not fit on a single line, break it into multiple lines successively from outside inward following narrow-style indentation and close-at-new-line-with-outer-indentation until the remainder fits.
+
+```lisp
+;; CORRECT - Simple expressions that fit
+(cond (condition1 value1) (condition2 value2))
+(if condition value1 value2)
+(setq x 10 y 20) ; Avoid more than three on one line.
+(list "tag" "value")
+
+;; CORRECT - Break from outside inward until the inner expression fits on one line.
+(defun hcnm_ldrblk_ensure_fields (attribute_list)
+  (mapcar
+    '(lambda (attr)
+       (cond
+         ((wcmatch (car attr) "NOTENUM,NOTEPHASE")
+          attr
+         )
+         (t
+          (list (car attr) (hcnm_ldrblk_ensure_field (cadr attr)))
+         )
+       )
+     )
+    attribute_list
+  )
+)
+```
+
+### 4.3.3 Closing Parenthesis Style
+**FIRM:** Close at New Line with Outer Indentation (aligned with opening paren)
+
+**Schedule:** Moderately aggressive (see S01.3)
+
+**Rationale:**
+- More readable - clear visual structure
+- Easier to spot missing or extra parens
+- Matches opening indentation level
+- Standard Lisp style
+
+```lisp
+;; CORRECT - Close at New Line with Outer Indentation
+(defun example (x)
+  (if (test x)
+    (do-something x)
+    (do-other x)
+  )
+)
+
+;; AVOID - Close at Same Line (compact but less readable)
+(defun example (x)
+  (if (test x)
+    (do-something x)
+    (do-other x)))
+```
 
 ---
 <!-- #endregion -->

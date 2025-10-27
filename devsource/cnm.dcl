@@ -570,10 +570,12 @@ HCNMEditBubble : dialog {
 			: edit_box {
 				key = "PostfixNOTENUM";
 				label = "";
+				is_enabled = false;
 			}
 			: edit_box {
 				key = "PostfixNOTEPHASE";
 				label = "";
+				is_enabled = false;
 			}
 			: edit_box {
 				key = "PostfixNOTEGAP";
@@ -612,15 +614,15 @@ HCNMEditBubble : dialog {
 			key = "NoteTextRadioColumn";
 			fixed_width = true;
 			: text {
-				label = "-";
+				label = "Note number";
 				height = 1.55;
  			}
 			: text {
-				label = "-";
+				label = "Note phase";
 				height = 1.55;
  			}
 			: text {
-				label = "-";
+      label = "Note gap";
 				height = 1.55;
 			}
 			: radio_button {
