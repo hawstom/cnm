@@ -388,6 +388,153 @@ hcnm_ldrblk_update_bubble_tag            ; Modifies existing
 - **assure_** - Check and create if missing
 - **validate_** - Check validity
 
+## 7.3 Data Flow Functions (Source-to-Destination Pattern)
+
+### 7.3.1 Standard
+**FIRM:** For functions that move data between representations, use `source_to_destination` pattern with NO verb.
+
+**Schedule:** Moderately aggressive (apply to new data flow functions immediately, rename existing during refactoring)
+
+### 7.3.2 Purpose
+Make data flow architecturally visible. Shows exactly what data transformation is happening.
+
+### 7.3.3 Pattern Structure
+```
+<namespace>_<source>_to_<destination>
+```
+
+Where:
+- **source** - Where data comes from (lattribs, dwg, dlg, xdata, file, etc.)
+- **destination** - Where data goes to (lattribs, dwg, dlg, xdata, file, etc.)
+
+### 7.3.4 Core Terms (Building Blocks)
+See S05.7 (Architecture Glossary) for full definitions:
+- **lattribs** - In-memory association list of bubble attributes (pronounced "ela-tribs")
+- **dwg** - Drawing representation (block entity with attributes)
+- **dlg** - Dialog state
+- **xdata** - Extended entity data
+
+### 7.3.5 Examples
+
+#### Before (Ambiguous Verbs)
+```lisp
+;; Unclear direction and destination
+(defun hcnm_save_bubble (bubble_data)           ; Save to WHERE?
+  ...
+)
+
+(defun hcnm_read_bubble_data (en_bubble)        ; Read into WHAT?
+  ...
+)
+
+(defun hcnm_get_bubble_xdata (en_bubble)        ; Get into what format?
+  ...
+)
+```
+
+#### After (Explicit Data Flow)
+```lisp
+;; Crystal clear source and destination
+(defun hcnm_lattribs_to_dwg (lattribs en_bubble)      ; lattribs → drawing
+  ...
+)
+
+(defun hcnm_dwg_to_lattribs (en_bubble)               ; drawing → lattribs
+  ...
+)
+
+(defun hcnm_xdata_to_lattribs (en_bubble lattribs)    ; xdata → lattribs
+  ...
+)
+
+(defun hcnm_dlg_to_lattribs (lattribs)                ; dialog state → lattribs
+  ...
+)
+```
+
+### 7.3.6 Additional Examples
+```lisp
+;; File operations
+hcnm_file_to_lattribs              ; Import from file
+hcnm_lattribs_to_file              ; Export to file
+
+;; Cross-format conversions
+hcnm_lattribs_to_string            ; Serialize
+hcnm_string_to_lattribs            ; Deserialize
+
+;; Complex transformations
+hcnm_lattribs_to_table_data        ; Convert for table display
+hcnm_csv_to_lattribs_list          ; Bulk import
+```
+
+### 7.3.7 When to Use This Pattern
+
+#### DO Use For
+- Data transformations between representations
+- Import/export operations
+- Format conversions
+- State synchronization
+
+#### DON'T Use For
+- Operations on single representation (use verb_noun instead)
+- Calculations that don't transform representation
+- UI actions with side effects
+
+#### Examples
+```lisp
+;; CORRECT - Data flow between representations
+hcnm_lattribs_to_dwg              ; Transformation between formats
+
+;; CORRECT - Operation on single representation (verb_noun)
+hcnm_lattribs_underover_gap       ; Modifies lattribs only
+hcnm_lattribs_get                 ; Retrieves from lattribs
+hcnm_lattribs_set                 ; Stores to lattribs
+hcnm_dwg_update_display           ; Modifies drawing only
+
+;; CORRECT - Calculation (verb_noun)
+hcnm_calculate_station            ; Pure computation
+hcnm_format_diameter              ; String formatting
+```
+
+### 7.3.8 Pros and Cons
+
+**Pros:**
+- **Architecturally visible** - Data flow obvious from function name
+- **Unambiguous** - No confusion about direction or destination
+- **Scalable** - Easy to add new representations (database, network, etc.)
+- **Self-documenting** - Function name explains what it does
+- **Refactoring-friendly** - Clear boundaries for data transformations
+
+**Cons:**
+- **Longer names** - More characters than single-verb alternatives
+- **Less familiar** - Non-standard pattern initially
+- **Requires discipline** - Must agree on core term vocabulary
+
+### 7.3.9 Migration Strategy
+
+#### For New Code
+**FIRM:** Use source_to_destination pattern for all new data flow functions.
+
+#### For Existing Code
+- **Rename when refactoring** data flow operations
+- **Document with [AI: TODO]** if rename would help but isn't urgent
+- **Use scripting** for bulk renames (longest-first sorting)
+
+#### Example Migration
+```lisp
+;; OLD (before refactoring)
+(defun hcnm_save_bubble (attribute_list en_bubble)
+  ; Saves attribute list to drawing entity
+  ...
+)
+
+;; NEW (after refactoring)
+(defun hcnm_lattribs_to_dwg (lattribs en_bubble)
+  ; lattribs → drawing: Writes association list to block attributes
+  ...
+)
+```
+
 ---
 <!-- #endregion -->
 

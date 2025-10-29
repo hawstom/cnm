@@ -54,3 +54,10 @@
   (haws_tip_save_hide_list (cons tip_id (vl-remove tip_id (haws_tip_hide_list))))
   (princ (strcat "\nTip " (itoa tip_id) " will no longer be shown."))
 )
+
+;; Reset all hidden tips (opt back in to all tips) - useful for testing
+(defun haws_tip_reset () 
+  (haws_tip_save_hide_list '())
+  (princ "\nAll tips reset. You will now see all tips again.")
+  (princ)
+)

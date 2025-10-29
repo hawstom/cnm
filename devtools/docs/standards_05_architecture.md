@@ -352,12 +352,156 @@ Old system used file: `haws-tip-hide.lsp`
 ---
 <!-- #endregion -->
 
-<!-- #region 7. NOTES -->
-# 7. NOTES
+<!-- #region 7. ARCHITECTURE GLOSSARY -->
+# 7. ARCHITECTURE GLOSSARY
 
-## 7.1 Future Architecture Topics
+## 7.1 Core Building-Block Terms
 
-### 7.1.1 To Document
+### 7.1.1 Overview
+These are the notorious, hard-working terms used throughout CNM's architecture. They appear frequently in function names and should be understood as foundational concepts.
+
+### 7.1.2 Data Representations
+
+#### lattribs
+**Pronunciation:** "ela-tribs" (short for "list of attributes")
+
+**Definition:** The in-memory association list representation of a bubble's attribute data during editing and processing.
+
+**Structure:** Each element is `(TAG . VALUE)` where TAG is attribute name, VALUE is delimited string.
+
+**Example:**
+```lisp
+(("NOTENUM" . "1§§")
+ ("NOTETEXT" . "§STA 100+25.50§")
+ ("NOTEPHASE" . "A§§"))
+```
+
+**Pros and Cons:**
+- **Pro:** Short, memorable term for frequently-used concept
+- **Pro:** Distinguishes from drawing representation (dwg) and dialog state (dlg)
+- **Pro:** Lisp programmers recognize "l" prefix pattern (like lst-, el-)
+- **Con:** Not immediately obvious to new developers (requires documentation)
+
+**Related Functions:** `hcnm_lattribs_init`, `hcnm_lattribs_set`, `hcnm_lattribs_get`
+
+#### dwg
+**Definition:** The drawing representation of a bubble - the actual block entity in the AutoCAD drawing with its attributes.
+
+**Example:** Entity name or entget list of a bubble block
+
+**Pros and Cons:**
+- **Pro:** Universal abbreviation for "drawing" in CAD context
+- **Pro:** Very short for frequently-used concept
+- **Con:** Could confuse with .dwg file format (but context usually clear)
+
+**Related Functions:** `hcnm_lattribs_to_dwg`, `hcnm_dwg_to_lattribs`
+
+#### xdata
+**Definition:** Extended entity data attached to AutoCAD entities. Standard AutoCAD term.
+
+**Usage:** Stores bubble metadata (linked object IDs, auto-text type, etc.)
+
+**Note:** KEEP standard AutoCAD terminology - don't rename.
+
+### 7.1.3 UI Components
+
+#### dlg
+**Definition:** Dialog-related functions, variables, or state.
+
+**Example:** `hcnm_eb_dlg_action`, `hcnm_eb_dlg_state`
+
+**Pros and Cons:**
+- **Pro:** Standard abbreviation in UI programming
+- **Pro:** Clearly distinguishes dialog state from data representations
+- **Con:** None significant
+
+### 7.1.4 Data Operations
+
+#### underover
+**Definition:** Underline and overline formatting codes applied to attribute text.
+
+**Usage:** Describes the operation of applying format codes (prefix = underline, postfix = overline).
+
+**Example:** `hcnm_lattribs_underover_gap` applies underline to GAP field
+
+**Pros and Cons:**
+- **Pro:** Precisely describes what operation does (not vague "format")
+- **Pro:** Avoids confusion with string formatting/concatenation
+- **Con:** Longer than "format"
+- **Con:** Less familiar than "format"
+
+**Replaces:** "format" and "adjust-formats" which were ambiguous
+
+**Related Functions:** `hcnm_lattribs_underover_gap`, `hcnm_lattribs_underover_all`
+
+### 7.1.5 Unchanged Terms
+
+#### reactor
+**Definition:** AutoLISP VLR-OBJECT-REACTOR for automatic updates.
+
+**Note:** KEEP - standard AutoLISP term.
+
+#### bubble-data
+**Definition:** Complete conceptual unit of a bubble (not a building block).
+
+**Note:** KEEP - descriptive compound term, not frequently-used enough to abbreviate.
+
+## 7.2 Naming Patterns
+
+### 7.2.1 Data Flow Functions
+Functions that move data between representations use `source_to_destination` pattern:
+
+```lisp
+;; BEFORE (ambiguous direction)
+hcnm_save_bubble          ; Save to where? From what?
+hcnm_read_bubble_data     ; Read into what?
+
+;; AFTER (explicit data flow)
+hcnm_lattribs_to_dwg      ; lattribs → drawing
+hcnm_dwg_to_lattribs      ; drawing → lattribs
+hcnm_xdata_to_lattribs    ; xdata → lattribs
+hcnm_dlg_to_lattribs      ; dialog → lattribs
+```
+
+**Pros and Cons:**
+- **Pro:** Architecturally visible - shows data flow through system
+- **Pro:** Unambiguous - always clear what's happening
+- **Pro:** Scales well - can add new representations (file, database, etc.)
+- **Con:** Slightly longer than single-verb names
+- **Con:** Less familiar pattern initially
+
+**See Also:** S03.7 (Function Naming - Data Flow Pattern)
+
+## 7.3 Usage Notes
+
+### 7.3.1 When to Use Short Terms
+Use abbreviated terms (lattribs, dwg, dlg, underover) for:
+- **Frequently-used concepts** appearing in many function names
+- **Core building blocks** of the architecture
+- **Type prefixes** when clarification needed
+
+### 7.3.2 When to Use Full Terms
+Use full descriptive terms for:
+- **Composite concepts** (bubble-data, bubble-reactor)
+- **Infrequently-used concepts** 
+- **User-facing names** in dialogs or prompts
+
+### 7.3.3 Pronunciation Guide
+For team communication:
+- **lattribs:** "ela-tribs" (not "lat-ribs")
+- **dwg:** "drawing" or spell out "D-W-G"
+- **dlg:** "dialog" or spell out "D-L-G"
+- **underover:** "under-over" (two syllables each)
+
+---
+<!-- #endregion -->
+
+<!-- #region 8. NOTES -->
+# 8. NOTES
+
+## 8.1 Future Architecture Topics
+
+### 8.1.1 To Document
 [AI: Content to add in future updates]
 - Detailed reactor callback flow
 - DCL dialog architecture patterns
