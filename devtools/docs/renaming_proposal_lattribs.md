@@ -23,6 +23,7 @@ We've learned how to "say" names correctly (hyphens, prefixes). Now we choose na
 | format/adjust-format | **underover** | "under-over" | Apply/remove underline/overline codes |
 | reactor | **reactor** | (keep as-is) | Object reactor for dynamic updates |
 | bubble-data | **bubble-data** | (keep as-is) | Not a building block; clear as-is |
+| (varies) | **user** | "user" | User input from command line or prompts |
 
 ### Why These Terms?
 
@@ -74,7 +75,7 @@ Use `source-to-destination` pattern to make data flow explicit:
 
 ### Category 1: Data Flow (Major Renames)
 
-**Architecture Discovery:** Deep code reading revealed a two-level architecture:
+**Architecture Discovery:** Deep code reading revealed a two-minded architecture:
 - **Modern (4-element):** `(("TAG" prefix auto postfix) ...)` - Used throughout editing
 - **Legacy (2-element):** `(("TAG" "value") ...)` - Only 4 call sites remain
 
@@ -88,12 +89,26 @@ Use `source-to-destination` pattern to make data flow explicit:
 | `hcnm-read-bubble-data` | `hcnm-ldrblk-dwg-to-lattribs` | Explicit: dwg + xdata → 4-element lattribs |
 | `hcnm-save-bubble-xdata` | `hcnm-ldrblk-xdata-save` | Helper: Save xdata portion only |
 | `hcnm-get-attributes` | **ELIMINATE** | Replace with generic `haws-dwg-attribs-to-alist` (3 call sites) |
-| `hcnm-set-attributes` | **ELIMINATE** | Replace with `hcnm-ldrblk-lattribs-to-dwg` (1 call site) |
+| `hcnm-set-attributes` | **ELIMINATE** | Replace with `hcnm-ldrblk-lattribs-to-dwg` (1 call site) | 
 
 **New Generic Function:** Create `haws-dwg-attribs-to-alist` in edclib.lsp
 - Purpose: Generic attribute reader for non-ldrblk code (quantity take-off, reports)
 - Returns: Simple alist `(("TAG" . "value") ...)` without lattribs complexity
 - Separates concerns: lattribs is ldrblk-specific, alist is universal
+
+**DRY Architecture (TGH insight):** `hcnm-ldrblk-dwg-to-lattribs` should wrap the generic function:
+```lisp
+;; Generic reader (in edclib.lsp)
+(defun haws-dwg-attribs-to-alist (ename) ...)  ; → (("TAG" . "value") ...)
+
+;; Leader-specific (wraps generic + adds xdata splitting)
+(defun hcnm-ldrblk-dwg-to-lattribs (ename / alist xdata-list)
+  (setq alist (haws-dwg-attribs-to-alist ename))  ; Reuse generic reader!
+  (setq xdata-list (hcnm-ldrblk-xdata-get ename))
+  (hcnm-ldrblk-split-using-xdata alist xdata-list) ; Transform to 4-element
+)
+```
+This follows DRY by reusing the attribute-reading infrastructure for both generic and ldrblk-specific cases.
 
 ### Category 2: Lattribs Operations (Building Block)
 
@@ -108,7 +123,8 @@ Use `source-to-destination` pattern to make data flow explicit:
 
 | Old Name | New Name | Rationale |
 |----------|----------|-----------|
-| `hcnm-ldrblk-initialize-attribute-list` | `hcnm-ldrblk-lattribs-initialize` | Creates empty lattribs structure |
+| `hcnm-ldrblk-initialize-attribute-list` | `hcnm-ldrblk-lattribs-spec` | Schema: defines structure (tag, required, default) |
+| (new) | `hcnm-ldrblk-lattribs` | Thin constructor: validates against spec, no defaults |
 | `hcnm-ldrblk-save-attribute-to-list` | `hcnm-ldrblk-lattribs-put-element` | Puts complete 3-element (prefix auto postfix) |
 | (new) | `hcnm-ldrblk-lattribs-put-string` | Convenience: puts string to prefix, empty auto/postfix |
 | `hcnm-ldrblk-save-auto-to-list` | `hcnm-ldrblk-lattribs-put-auto` | Puts auto-text only, preserves prefix/postfix |
@@ -119,6 +135,65 @@ Use `source-to-destination` pattern to make data flow explicit:
 - Common Lisp uses `initialize-instance` for setting up new objects
 - "define" means declare symbol binding (`defun`, `defvar`)
 - "initialize" means prepare new instance with initial state
+[TGH 2025-10-28 21:58:37: I find "Consensus: Define the shape once (a “spec” or “schema”).
+Then decide whether a constructor should be thin (just validate) or thick (populate defaults)."
+;; Thin – you must supply everything
+(SETQ MY-DATA (BAR-DATA '((FOO . 42) (BAR . "hi"))))
+
+;; Thick – optional keys get defaults automatically
+(SETQ MY-DATA (BAR-DATA! '((FOO . 42))))   ; → ((FOO . 42) (BAR . :OPTIONAL) (BAZ . 0) (QUUX . ""))
+
+;; 1. Define the spec (once)
+(BAR-DATA-SPEC)   ; includes (FOO T NIL)
+
+;; 2. Decide:
+;;    • If `foo` is *required* → call thin constructor and pass it.
+;;    • If `foo` is *optional* → call thick constructor; it will insert NIL.
+
+;; Required → explicit
+(SETQ MY-BAR (BAR-DATA '((FOO . "hello"))))
+
+;; Optional → let the thick ctor fill it
+(SETQ MY-BAR (BAR-DATA! '()))   ; FOO gets NIL automatically
+
+1. Always start with a schema – it is the single source of truth for documentation and validation.
+2. Add a thin constructor if you want callers to be explicit.
+3. Add a thick constructor if you want ergonomics (defaults).
+4. Never embed defaults inside the validator – keep them in the schema.
+]
+
+**AI Response to TGH Schema Pattern:**
+
+Your schema-based design is architecturally superior! **TGH Decision: Implement as part of renaming.**
+
+Since CNM is a professional engineering tool, we prefer the thin/explicit/validator approach:
+
+```lisp
+;; 1. Define schema (single source of truth)
+(defun hcnm-ldrblk-lattribs-spec ()
+  ;; Returns: ((tag required default) ...)
+  ;; Documentation + validation rules in one place
+  '(("NOTETXT1" t "")
+    ("NOTETXT2" nil "")
+    ("GAP" nil "")
+    ...))
+
+;; 2. Thin constructor - explicit, caller provides everything
+(defun hcnm-ldrblk-lattribs (values / spec)
+  ;; Validates against spec, no magic defaults
+  ;; Caller must be explicit about all values
+  (setq spec (hcnm-ldrblk-lattribs-spec))
+  (hcnm-ldrblk-lattribs-validate-from-spec values spec)
+  values)
+```
+
+**Benefits:**
+- Schema is single source of truth (documentation + validation)
+- Thin constructor: safe, explicit, no surprises
+- Never embed defaults in validator logic
+- Professional tool priority: correctness over convenience
+
+**Not needed:** `hcnm-ldrblk-lattribs!` (thick constructor) - CNM prefers explicit validation.
 
 **Why separate put functions:**
 - **`lattribs-put-element`**: Explicit, requires caller to format correctly
@@ -348,6 +423,8 @@ The following 4 call sites use legacy functions that will be eliminated after mi
 ```
 
 **Reason:** Quantity take-off needs simple tag-value pairs, not leader-specific 4-element format.
+
+**Note:** Per TGH's DRY insight, `hcnm-ldrblk-dwg-to-lattribs` will internally call `haws-dwg-attribs-to-alist` and then transform to 4-element format. This avoids duplicating the attribute-reading logic.
 
 ### Call Site 2: Edit Bubble (Line 5463)
 **Current:**

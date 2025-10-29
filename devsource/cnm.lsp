@@ -414,7 +414,7 @@
     i -1
     aliaslist
      (mapcar '(lambda (phase) (reverse phase)) (car notelist))
-  )
+  )]
   (while (and blkss (setq blki (ssname blkss (setq i (1+ i)))))
     (setq
       en blki
