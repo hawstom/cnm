@@ -7963,7 +7963,7 @@ ImportLayerSettings=No
      (princ (strcat "\n=== DEBUG: After VPTRANS skip, xdata-raw length=" (itoa (length xdata-raw))))
      (princ (strcat "\n=== DEBUG: xdata-raw=" (vl-princ-to-string xdata-raw)))
      
-     ;; Parse remaining XDATA pairs: (1000 "TAG") (1000 "VALUE") ...
+     ;; Parse remaining XDATA pairs: (1000 "TAG") (1001 "VALUE") ...
      ;; Convert to association list: (("TAG" . "VALUE") ...)
      (setq i 0)
      (while (< i (length xdata-raw))
@@ -7971,7 +7971,7 @@ ImportLayerSettings=No
        (cond
          ((and (= (car (nth i xdata-raw)) 1000)
                (< (+ i 1) (length xdata-raw))
-               (= (car (nth (+ i 1) xdata-raw)) 1000))
+               (= (car (nth (+ i 1) xdata-raw)) 1001))
           ;; Found a tag-value pair
           (princ (strcat "\n=== DEBUG: Found pair: " (cdr (nth i xdata-raw)) " = " (cdr (nth (+ i 1) xdata-raw))))
           (setq xdata-alist (cons 
@@ -8203,8 +8203,8 @@ ImportLayerSettings=No
        (cond
          ((and (= (caar xdata-raw) 1000)
                (cdr xdata-raw)
-               (= (caadr xdata-raw) 1000))
-          ;; Found tag-value pair
+               (= (caadr xdata-raw) 1001))
+          ;; Found tag-value pair (1000=tag, 1001=value)
           (setq autotext-pairs (append autotext-pairs 
                                        (list (cons (cdar xdata-raw) 
                                                    (cdadr xdata-raw))))
@@ -8260,7 +8260,7 @@ ImportLayerSettings=No
      (foreach pair autotext-data
        (setq xdata-list (append xdata-list
                                 (list (cons 1000 (car pair))
-                                      (cons 1000 (cdr pair))))))))
+                                      (cons 1001 (cdr pair))))))))
   
   (princ (strcat "\n=== DEBUG xdata-write: final xdata-list count = " (itoa (length xdata-list))))
   (princ (strcat "\n=== DEBUG xdata-write: xdata-list = " (vl-princ-to-string xdata-list)))
