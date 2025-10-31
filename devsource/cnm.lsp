@@ -8111,25 +8111,31 @@ ImportLayerSettings=No
 
 ;; Get or create extension dictionary for bubble
 ;; Returns: ename of "HCNM" dictionary in bubble's extension dictionary
-(defun hcnm-extdict-get (ename-bubble / dict-ename hcnm-dict)
+(defun hcnm-extdict-get (ename-bubble / elist dict-ename hcnm-dict-data hcnm-ename)
+  (setq elist (entget ename-bubble))
+  
   (cond
-    ;; Get existing extension dictionary
-    ((setq dict-ename (cdr (assoc -1 (dictsearch (entget ename-bubble) "ACAD_XDICTIONARY"))))
+    ;; Check if bubble has extension dictionary (code -1)
+    ((setq dict-ename (cdr (assoc -1 elist)))
      ;; Look for our HCNM dictionary
      (cond
-       ((setq hcnm-dict (dictsearch (entget dict-ename) "HCNM"))
-        (cdr (assoc -1 hcnm-dict)))
+       ((setq hcnm-dict-data (dictsearch dict-ename "HCNM"))
+        ;; Return ename of HCNM dictionary
+        (cdr (assoc -1 hcnm-dict-data)))
        (t
-        ;; Create HCNM dictionary
-        (dictadd dict-ename "HCNM" (entmakex '((0 . "DICTIONARY") (100 . "AcDbDictionary")))))))
+        ;; Create HCNM dictionary in existing extension dict
+        (setq hcnm-ename (entmakex '((0 . "DICTIONARY") (100 . "AcDbDictionary"))))
+        (dictadd dict-ename "HCNM" hcnm-ename)
+        hcnm-ename)))
     (t
-     ;; Create extension dictionary and HCNM sub-dictionary
-     (setq dict-ename (entmakex (list (cons 0 "DICTIONARY") 
-                                      (cons 100 "AcDbDictionary")
-                                      (cons 330 ename-bubble))))
-     (entmod (append (entget ename-bubble)
-                     (list (cons -1 dict-ename))))
-     (dictadd dict-ename "HCNM" (entmakex '((0 . "DICTIONARY") (100 . "AcDbDictionary"))))))
+     ;; No extension dictionary - need to create one using VLA
+     ;; entmakex doesn't work for extension dictionaries, use VLA instead
+     (setq dict-ename (vla-getextensiondictionary (vlax-ename->vla-object ename-bubble)))
+     (setq dict-ename (vlax-vla-object->ename dict-ename))
+     ;; Create HCNM dictionary
+     (setq hcnm-ename (entmakex '((0 . "DICTIONARY") (100 . "AcDbDictionary"))))
+     (dictadd dict-ename "HCNM" hcnm-ename)
+     hcnm-ename))
 )
 
 ;; Write VPTRANS to XRECORD in extension dictionary
