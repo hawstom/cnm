@@ -5192,7 +5192,7 @@ ImportLayerSettings=No
                        )
   (princ "\nCNM version: ")
   (princ (haws-unified-version))
-  (haws_tip_show 1003 "\nIn some AutoCAD installations, CNM bubble insertion crashes the first time in each drawing session, possibly when it's the first command or the first block insertion. Please let us know if you can confirm a pattern.")
+  (haws-tip-show 1003 "\nIn some AutoCAD installations, CNM bubble insertion crashes the first time in each drawing session, possibly when it's the first command or the first block insertion. Please let us know if you can confirm a pattern.")
   (haws-vsave '("attreq" "aunits" "clayer" "cmdecho"))
   (cond
     ((and (getvar "wipeoutframe") (/= (getvar "wipeoutframe") 2))
@@ -7498,7 +7498,7 @@ ImportLayerSettings=No
           (not (hcnm-ldrblk-is-on-model-tab ename-bubble))
           (hcnm-ldrblk-auto-type-is-coordinate-p auto-type))
      ;; Bubble is in paper space and auto-type is coordinate-based - show warning
-     (haws_tip_show 1001 ; Unique tip ID for paper space warning
+     (haws-tip-show 1001 ; Unique tip ID for paper space warning
        "IMPORTANT: CNM doesn't adjust paper space bubble notes when viewports change.\n\nTo avoid causing chaos when viewports change, auto text for coordinates does not react to viewport view changes.\n\nYou must use the 'Change View' button in the edit dialog (or the future CNMCHGVPORT command) if you want to refresh the viewport association and world coordinates of selected bubble notes.")
     )
   )
@@ -8734,7 +8734,7 @@ ImportLayerSettings=No
     done-code 2
   )
   ;; Show XDATA tip to help users understand the new auto-text storage
-  (haws_tip_show 1002  ; Unique tip ID for XDATA explanation
+  (haws-tip-show 1002  ; Unique tip ID for XDATA explanation
     "CNM stores auto-text separately from your text using XDATA (extended entity data).\n\nThis keeps auto-text invisible in the attributes, while preserving it for the editor.")
   (while (> done-code -1)
     (cond
