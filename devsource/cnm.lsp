@@ -5196,7 +5196,7 @@ ImportLayerSettings=No
   (haws-vsave '("attreq" "aunits" "clayer" "cmdecho"))
   (cond
     ((and (getvar "wipeoutframe") (/= (getvar "wipeoutframe") 2))
-     (alert "Setting WIPEOUTFRAME to 2 to show but not plot")
+     (alert (princ "\nSetting WIPEOUTFRAME to 2 to show but not plot"))
      (setvar "wipeoutframe" 2)
     )
   )
@@ -5573,7 +5573,7 @@ ImportLayerSettings=No
          lattribs
           (hcnm-ldrblk-lattribs-put-element
             tag
-            string
+            (list string "" "")
             lattribs
           )
        )
@@ -5936,7 +5936,7 @@ ImportLayerSettings=No
   ;; Value must be a list (prefix auto postfix)
   (if (not (and (listp value) (= (length value) 3)))
     (progn
-      (alert (strcat "hcnm-ldrblk-lattribs-put-element: value must be 3-element list (prefix auto postfix), got: " (vl-princ-to-string value)))
+      (alert (princ (strcat "\nhcnm-ldrblk-lattribs-put-element: value must be 3-element list (prefix auto postfix), got: " (vl-princ-to-string value))))
       (exit)))
   
   (setq attr (assoc tag lattribs)
@@ -6133,10 +6133,10 @@ ImportLayerSettings=No
   ;; Fail loudly if errors found
   (cond
     (error-msgs
-     (alert (strcat "LATTRIBS SCHEMA VALIDATION FAILED:\n\n"
+     (alert (princ (strcat "\nLATTRIBS SCHEMA VALIDATION FAILED:\n\n"
                     (apply 'strcat (mapcar '(lambda (msg) (strcat msg "\n")) (reverse error-msgs)))
                     "\nThis indicates a programming error or data corruption.\n"
-                    "Operation aborted to prevent data loss."))
+                    "Operation aborted to prevent data loss.")))
      nil  ; Return NIL to indicate failure
     )
     (t
@@ -7878,8 +7878,8 @@ ImportLayerSettings=No
      ;; Validate: if we have postfix but no auto (XDATA), that's an error
      (cond
        ((and postfix (/= postfix "") (or (not str-xdata) (= str-xdata "")))
-        (alert (strcat 
-          "Message from the CNM hcnm-split-attribute-on-xdata function:\n\n"
+        (alert (princ (strcat 
+          "\nMessage from the CNM hcnm-split-attribute-on-xdata function:\n\n"
           "Whoops! We thought that by disabling the postfix field in our\n"
           "Bubble Note Editor when auto-text is empty, postfix would never\n"
           "exist without auto text. But exist it does, go figure.\n\n"
@@ -7889,7 +7889,7 @@ ImportLayerSettings=No
           "So this is an unhandled exception to our thinking.\n"
           "Kindly report this oversight to the developer.\n\n"
           "We'll handle this by treating the entire attribute as prefix\n"
-          "(user text), but this doesn't match our design intent."))
+          "(user text), but this doesn't match our design intent.")))
         (list str-attribute "" ""))  ; Fail safe: move everything to prefix
        (t
         (list prefix str-xdata postfix)))
