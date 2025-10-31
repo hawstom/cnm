@@ -7938,7 +7938,20 @@ ImportLayerSettings=No
   (cond
     ((setq xdata-raw (assoc -3 (entget ename-bubble (list appname))))
      (setq xdata-raw (cdr (assoc appname (cdr xdata-raw))))
-     ;; Parse XDATA pairs: (1000 "TAG") (1000 "VALUE") ...
+     
+     ;; Skip VPTRANS section if present (1000 "VPTRANS", 1070 cvport, 6x 1010 points)
+     (cond
+       ((and xdata-raw (= (caar xdata-raw) 1000) (= (cdar xdata-raw) "VPTRANS"))
+        (setq xdata-raw (cdr xdata-raw))  ; Skip "VPTRANS" marker
+        ;; Skip 1070 (cvport)
+        (cond ((and xdata-raw (= (caar xdata-raw) 1070))
+               (setq xdata-raw (cdr xdata-raw))))
+        ;; Skip 6 x 1010 (reference points)
+        (repeat 6
+          (cond ((and xdata-raw (= (caar xdata-raw) 1010))
+                 (setq xdata-raw (cdr xdata-raw)))))))
+     
+     ;; Parse remaining XDATA pairs: (1000 "TAG") (1000 "VALUE") ...
      ;; Convert to association list: (("TAG" . "VALUE") ...)
      (setq i 0)
      (while (< i (length xdata-raw))
