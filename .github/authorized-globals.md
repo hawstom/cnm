@@ -80,7 +80,7 @@
 - **Type:** AutoCAD entity name
 - **Set in:** `hcnm-edit-bubble`
 - **Scope:** Edit dialog session only
-- **Justification:** DCL dialog callback architecture
+- **Justification:** DCL dialog callback architecture [TGH 2025-10-31 03:28:07: I need to audit this.]
 
 ---
 

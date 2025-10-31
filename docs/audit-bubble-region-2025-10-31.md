@@ -351,17 +351,19 @@ Add local variable declarations to the 8 functions marked "Need Review" to preve
 ## Recommendations
 
 ### High Priority
-1. ❌ **Delete** `hcnm-ldrblk-lattribs-put-string` (line 5956) - unused deprecated function
-2. ⚠️ **Add local variable declarations** to 8 functions flagged in audit
+1. ✅ **COMPLETED** (2025-10-31) - Deleted `hcnm-ldrblk-lattribs-put-string` (line 5956) - unused deprecated function
+2. ✅ **COMPLETED** (2025-10-31) - Added local variable declarations to 7 functions (prevented global leaks)
+3. ✅ **COMPLETED** (2025-10-31) - Created `.github/authorized-globals.md` documenting all 6 authorized globals
+4. ✅ **COMPLETED** (2025-10-31) - Eliminated CHR(160) completely (53 lines deleted, functions simplified)
 
 ### Medium Priority
-3. 📋 **Audit callers** of `hcnm-ldrblk-underover` and plan migration
-4. 📋 **Continue CHR(160) migration** to XDATA-only approach
-5. 📝 **Add intro comments** to auto-text sections (alignment, pipe, surface)
+3. 📋 **Audit callers** of `hcnm-ldrblk-underover` and plan migration (internal use only, not urgent)
+4. ✅ **COMPLETED** (2025-10-31) - Created `docs/region-structure-map.md` (2,400+ line visual navigation guide)
+5. 📝 **Add intro comments** to auto-text sections (alignment, pipe, surface) - OPTIONAL
 
 ### Low Priority
-6. 📝 **Add context comments** to helper functions (change-arrowhead, space-set-model)
-7. 📝 **Consider adding examples** to complex coordinate transformation functions
+6. 📝 **Add context comments** to helper functions (change-arrowhead, space-set-model) - OPTIONAL
+7. 📝 **Consider adding examples** to complex coordinate transformation functions - OPTIONAL
 
 ---
 
