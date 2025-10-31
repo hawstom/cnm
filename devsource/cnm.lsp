@@ -7499,7 +7499,7 @@ ImportLayerSettings=No
           (hcnm-ldrblk-auto-type-is-coordinate-p auto-type))
      ;; Bubble is in paper space and auto-type is coordinate-based - show warning
      (haws_tip_show 1001 ; Unique tip ID for paper space warning
-       "IMPORTANT: Paper space bubble notes don't react to viewport changes.\n\nTo avoid causing chaos when changing viewport views, auto text for coordinates does not react to viewport view changes.\n\nYou must use the 'Change View' button in the edit dialog (or the future CNMCHGVPORT command) if you want to refresh the viewport association and world coordinates of selected bubble notes.")
+       "IMPORTANT: CNM doesn't adjust paper space bubble notes when viewports change.\n\nTo avoid causing chaos when viewports change, auto text for coordinates does not react to viewport view changes.\n\nYou must use the 'Change View' button in the edit dialog (or the future CNMCHGVPORT command) if you want to refresh the viewport association and world coordinates of selected bubble notes.")
     )
   )
 )
@@ -7986,6 +7986,12 @@ ImportLayerSettings=No
        
        ;; Get auto text from XDATA if available
        (setq auto-text (cdr (assoc tag xdata-alist)))
+       
+       (cond
+         ((member tag '("NOTETXT1" "NOTETXT2" "NOTETXT3" "NOTETXT4" "NOTETXT5" "NOTETXT6"))
+          (princ (strcat "\n=== DEBUG dwg-to-lattribs: tag=" tag))
+          (princ (strcat " value=[" (if value value "nil") "]"))
+          (princ (strcat " auto-text=[" (if auto-text auto-text "nil") "]"))))
        
        ;; Split attribute using XDATA auto text
        (setq parts (hcnm-split-attribute-on-xdata value auto-text))
