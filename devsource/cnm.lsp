@@ -8243,6 +8243,7 @@ ImportLayerSettings=No
   
   (cond
     (appname
+     (princ (strcat "\n=== DEBUG: appname is valid: " appname))
      ;; Build delimited string: "TAG1=value1|TAG2=value2"
      (setq xdata-str "")
      (cond
@@ -8277,7 +8278,9 @@ ImportLayerSettings=No
         
         (cond
           ((not result)
-           (alert (princ "ERROR: entmod failed when writing XDATA"))))))))
+           (alert (princ "ERROR: entmod failed when writing XDATA")))))))
+    (t
+     (princ "\n=== DEBUG: ERROR - appname is NIL, cannot write XDATA!")))
   (princ "\n=== DEBUG hcnm-xdata-write END")
   t
 )
