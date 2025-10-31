@@ -39,7 +39,7 @@ Bubble notes are simply attributed blocks with one twist: The shape is a dynamic
 
 You can create your own bubble note blocks as long as they have 
 - A dynamic block "Shape" property with values that match the types defined in CNM Project settings. CNM comes with 8 shapes: BOX, CIR, DIA, ELL, HEX, OCT, PEN, REC, SST.
-- The required attributes: NOTENUM, NOTEPHASE, NOTEGAP, NOTEDATA, NOTETXT0 through NOTETXT6.
+- The required attributes: NOTENUM, NOTEPHASE, NOTEGAP, NOTETXT0 through NOTETXT6. (Note that NOTEDATA was an internal (development team) experiment with a way to replace auto text in free-form attribute text; fortunately, neither git nor any user ever saw a block with that attribute included. XDATA serves its intended purpose.)
 - Any block name you like. 
 
 #### 1.1.3.2. Included Bubble Notes
@@ -88,7 +88,6 @@ CNM is fortunate to have few if any migration challenges from the user perspecti
 - `NOTENUM` - Bubble number (user-controlled)
 - `NOTEPHASE` - Construction phase (user-controlled)
 - `NOTEGAP` - Spacing between text lines (system-controlled)
-- `NOTEDATA` - Reference object metadata (system-controlled)
 - `NOTETXT0` through `NOTETXT6` - User/auto text lines
 
 #### 1.2.1.2. XDATA Storage (Extended Entity Data)
@@ -117,9 +116,26 @@ CNM is fortunate to have few if any migration challenges from the user perspecti
 - Viewport number in XDATA under AVPORT tag
 
 #### 1.2.1.5. Function Naming Conventions
-- `hcnm-ldrblk-*` - Leader block (bubble note) functions
-- `hcnm-config-*` - Configuration/settings functions
-- `hcnm-ldrblk-eb-*` - Edit box (dialog) functions [TGH 2025-10-31 01:27:47: I think this could be hcnm-lb-eb-*]
+
+**Namespace Architecture:** CNM uses prefixed namespaces to organize code into bounded contexts:
+
+```
+hcnm-*                    Top-level CNM functions
+├── hcnm-config-*         Configuration/settings
+├── hcnm-projnotes-*      Project Notes management
+├── hcnm-key-table-*      Key Notes Tables
+├── hcnm-qt-*             Quantity Takeoff
+└── hcnm-bubbles-*        Bubble Notes subsystem (cohesive, sandboxed)
+    ├── hcnm-bubbles-insert-*      Insertion functions
+    ├── hcnm-bubbles-eb-*          Edit box (dialog) functions
+    ├── hcnm-bubbles-reactor-*     Reactor (auto-update) functions
+    ├── hcnm-bubbles-xdata-*       XDATA management
+    └── hcnm-bubbles-lattribs-*    Attribute list transforms
+```
+
+**Why `bubbles` subsystem?** Insertion, editing, and reactors are tightly coupled (share data model, XDATA format, coordinate transforms). Keeping them under `hcnm-bubbles-*` signals this is a bounded context within CNM.
+
+**Pattern Suffixes:**
 - `*-spec` - Schema definition (pure, no side effects)
 - `*-validate` - Schema validation (strict, fails loudly)
 - `*-to-*` - Data transformation (pure functions)
@@ -128,9 +144,9 @@ CNM is fortunate to have few if any migration challenges from the user perspecti
 
 ### 1.2.3. AutoLISP Conventions
 - **Lower case symbols**: Function names, variables (except legacy UPPERCASE in strings/comments)
-- **Hyphen-separated**: `hcnm-ldrblk-auto-alignment` (not underscore)
-- **Explicit parameters**: Don't rely on dynamic scoping [TGH 2025-10-31 01:27:47: What do we mean by this?]
-- **Local variables**: Always declare all variables in `/ local1 local2` list unless we have a very good reason not to and we document that reason clearly both with an explanation comment and *global-variable* style. But this is not authorized since we have the hcnm-config system available to us. No ad hoc global variables.
+- **Hyphen-separated**: `hcnm-bubbles-auto-alignment` (not underscore)
+- **Explicit local variables**: Always declare all local variables in the `/ var1 var2` parameter list. Undeclared variables become global and cause subtle bugs (AutoLISP's dynamic scoping leak).
+- **No ad hoc globals**: Use `hcnm-config` system for persistent state. Document any global with `*asterisk-naming*` and explanation comment only if absolutely necessary.
 
 ### 1.2.4. Documentation
 - **Function headers**: Explain purpose, parameters, return values
