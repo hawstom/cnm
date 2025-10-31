@@ -8660,13 +8660,11 @@ ImportLayerSettings=No
          ;; UPDATE BLOCK INSERTION
          ;; Save XDATA before adjust-formats flattens the auto field
          (hcnm-ldrblk-xdata-save ename-bubble lattribs)
+         ;; Concatenate and format attributes for display
+         (setq lattribs (hcnm-ldrblk-underover-add lattribs))
+         (setq lattribs (hcnm-ldrblk-lattribs-concat lattribs))
          ;; Save formatted attributes
-         (hcnm-set-attributes 
-           ename-bubble
-           (hcnm-ldrblk-lattribs-validate-and-underover 
-             lattribs
-           )
-         )
+         (hcnm-set-attributes ename-bubble lattribs)
         )
       )
     )
