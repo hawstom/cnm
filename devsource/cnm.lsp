@@ -5697,7 +5697,7 @@ ImportLayerSettings=No
 
 ;; Set a value in bubble data using haws_nested_list_update
 ;; Validates key against known schema
-(defun hcnm-ldrblk-bubble-data-set (bd key val )
+(defun hcnm-ldrblk-bubble-data-set (bd key val / )
    (if (not (assoc key (hcnm-ldrblk-bubble-data-def)))
     (progn
       (princ (strcat "\nError: Invalid bubble-data key: " key))
@@ -5819,7 +5819,7 @@ ImportLayerSettings=No
     (t "")
   )
 )
-(defun hcnm-ldrblk-change-arrowhead (ename-leader)
+(defun hcnm-ldrblk-change-arrowhead (ename-leader / )
   (cond
     ((= (c:hcnm-config-getvar "BubbleArrowIntegralPending") "1")
      ;; Disable reactors during arrowhead change to prevent reactor from triggering
@@ -5941,39 +5941,6 @@ ImportLayerSettings=No
   )
 )
 
-;;; ============================================================================
-;;; DEPRECATED - UNUSED FUNCTION
-;;; ============================================================================
-
-;;; DEPRECATED: Save user-entered string to attribute (SAFETY CHECK)
-;;;
-;;; NOT CALLED ANYWHERE. Use case unclear - if user gives us string,
-;;; why not just put it in prefix using lattribs-put-element?
-;;; Safety check (fails if auto/postfix not empty) seems unnecessary.
-;;;
-;;; MARKED FOR DELETION
-;;;
-(defun hcnm-ldrblk-lattribs-put-string (tag string lattribs / attr auto postfix)
-  (setq attr (assoc tag lattribs)
-        auto (caddr attr)
-        postfix (cadddr attr))
-  
-  ;; Safety check: Fail if auto or postfix have content
-  (cond
-    ((or (hcnm-ldrblk-attr-has-content-p auto)
-         (hcnm-ldrblk-attr-has-content-p postfix))
-     (alert (strcat "ERROR: Cannot set " tag " - auto or postfix field not empty.\n"
-                    "Auto: \"" auto "\"\n"
-                    "Postfix: \"" postfix "\"\n"
-                    "Use Clear button first to remove auto-text."))
-     nil)  ; Return nil to signal failure
-    
-    ;; Safe to proceed - put string in prefix, clear auto/postfix
-    (t
-     (subst (list tag string "" "") attr lattribs))
-  )
-)
-
 ;; Save auto-generated text to attribute list
 ;; Updates only the auto field, preserves user's prefix/postfix
 (defun hcnm-ldrblk-lattribs-put-auto (tag auto-new lattribs / attr prefix postfix)
@@ -6001,7 +5968,7 @@ ImportLayerSettings=No
 ;;; - This function: Parse and normalize structure
 ;;; - underover: Apply format codes to normalized data
 ;;;
-(defun hcnm-ldrblk-lattribs-validate-and-underover (lattribs)
+(defun hcnm-ldrblk-lattribs-validate-and-underover (lattribs / )
   ;; DEPRECATED WRAPPER - Just validates now (underover removed)
   ;; TODO: Replace all calls with hcnm-ldrblk-lattribs-validate
   (hcnm-ldrblk-lattribs-validate lattribs)
@@ -6030,7 +5997,7 @@ ImportLayerSettings=No
 ;;;   Input:  (("NOTENUM" "123" "" "") ("NOTETXT1" "" "N=12345.67" ""))
 ;;;   Output: (("NOTENUM" "123" "" "") ("NOTETXT1" "" "N=12345.67" "")) - unchanged, already correct
 ;;;
-(defun hcnm-ldrblk-lattribs-validate (lattribs)
+(defun hcnm-ldrblk-lattribs-validate (lattribs / )
   (mapcar
     '(lambda (attr)
        (cond
@@ -6265,7 +6232,7 @@ ImportLayerSettings=No
     ;; If xdata exists for this tag, split using delimiter
     (cond
       (xdata-entry
-       (setq parts (hcnm-eb-split-on-nbsp (cdr xdata-entry)))
+       (setq parts (hcnm-ldrblk-eb-split-on-nbsp (cdr xdata-entry)))
        ;; Ensure 3-element result (prefix auto postfix)
        (while (< (length parts) 3)
          (setq parts (append parts (list ""))))
@@ -6507,8 +6474,8 @@ ImportLayerSettings=No
 ;; 
 ;; Bubble note editing process from inside out:
 ;; hcnm-ldrblk-auto-dispatch returns lattribs including notedata information
-;; hcnm-eb-get-text modifies semi-global hcnm-eb-lattribs after adjusting formatting (overline and underline)
-;; hcnm-eb-save calls hcnm-set-attributes to save semi-global hcnm-eb-lattribs
+;; hcnm-ldrblk-eb-get-text modifies semi-global hcnm-ldrblk-eb-lattribs after adjusting formatting (overline and underline)
+;; hcnm-ldrblk-eb-save calls hcnm-set-attributes to save semi-global hcnm-ldrblk-eb-lattribs
 ;; hcnm-edit-bubble top level manages editing dialog
 ;;
 ;; Reactor update process from inside out:
@@ -7447,7 +7414,7 @@ ImportLayerSettings=No
      (vl-cmdf "._MSPACE") 
      t))
 )
-(defun hcnm-ldrblk-space-restore (pspace-bubble-p)
+(defun hcnm-ldrblk-space-restore (pspace-bubble-p / )
   (cond 
     (pspace-bubble-p 
      (vl-cmdf "._PSPACE")))
@@ -7524,7 +7491,7 @@ ImportLayerSettings=No
 ;; This is necessary because you can't show a modal dialog from inside another modal dialog
 ;; Show paper space coordinate warning tip
 ;; Can be called from anywhere - shows tip immediately
-(defun hcnm-ldrblk-warn-pspace-coordinates (ename-bubble auto-type)
+(defun hcnm-ldrblk-warn-pspace-coordinates (ename-bubble auto-type / )
   (cond
     ((and ename-bubble 
           (not (hcnm-ldrblk-is-on-model-tab ename-bubble))
@@ -8707,7 +8674,7 @@ ImportLayerSettings=No
   (haws-core-restore)
 )
 ;;; Add delimiter structure to plain text attributes for editing
-(defun hcnm-eb-add-delimiters (lattribs ename-bubble / result)
+(defun hcnm-ldrblk-eb-add-delimiters (lattribs ename-bubble / result)
   (setq result '())
   (foreach attr lattribs
     (setq result 
@@ -8715,7 +8682,7 @@ ImportLayerSettings=No
         (list 
           (list 
             (car attr)  ; TAG
-            (hcnm-eb-expand-value-to-delimited (car attr) (cadr attr))
+            (hcnm-ldrblk-eb-expand-value-to-delimited (car attr) (cadr attr))
           )
         )
       )
@@ -8732,44 +8699,44 @@ ImportLayerSettings=No
 ;; System-controlled tags (NOTENUM, NOTEPHASE, NOTEGAP) go entirely to prefix.
 ;; Legacy format codes (%%u, %%o, \L, \O) are migrated to prefix field.
 ;; User manual text is preserved in prefix field.
-(defun hcnm-eb-expand-value-to-delimited (tag value / migrated delim-pos)
+(defun hcnm-ldrblk-eb-expand-value-to-delimited (tag value / migrated delim-pos)
   (cond
-    ((not value) (hcnm-eb-concat-parts "" "" ""))  ; NIL -> empty structure
+    ((not value) (hcnm-ldrblk-eb-concat-parts "" "" ""))  ; NIL -> empty structure
     ((vl-string-search (chr 160) value) value)  ; Already has delimiters
-    ((= value "") (hcnm-eb-concat-parts "" "" ""))  ; Empty -> empty structure
+    ((= value "") (hcnm-ldrblk-eb-concat-parts "" "" ""))  ; Empty -> empty structure
     ;; NOTENUM, NOTEPHASE, NOTEGAP are system-controlled - put in prefix, not auto
     ((member tag '("NOTENUM" "NOTEPHASE" "NOTEGAP"))
-     (hcnm-eb-concat-parts value "" "")
+     (hcnm-ldrblk-eb-concat-parts value "" "")
     )
     (t 
      ;; Try legacy format code migration
-     (setq migrated (hcnm-eb-migrate-legacy-format value))
+     (setq migrated (hcnm-ldrblk-eb-migrate-legacy-format value))
      (if (setq delim-pos (vl-string-search (chr 160) migrated))
        ;; Migration created delimiter structure: prefix?auto - split it properly
        ;; VL-STRING-SEARCH returns 0-based position, SUBSTR uses 1-based
-       (hcnm-eb-concat-parts 
+       (hcnm-ldrblk-eb-concat-parts 
          (substr migrated 1 delim-pos)  ; prefix: chars 1 through delim-pos
          (substr migrated (+ delim-pos 2))  ; auto: skip delimiter (position is 0-based, add 2 for 1-based + skip char)
          ""  ; empty postfix
        )
        ;; No format codes, put entire value in PREFIX to preserve user's manual text
        ;; (Auto field gets replaced by auto-text buttons, prefix/postfix are preserved)
-       (hcnm-eb-concat-parts value "" "")
+       (hcnm-ldrblk-eb-concat-parts value "" "")
      )
     )
   )
 )
 
 (defun hcnm-edit-bubble (ename-bubble / bubble-data dclfile
-                     ename-leader hcnm-eb-lattribs
+                     ename-leader hcnm-ldrblk-eb-lattribs
                      notetextradiocolumn return-list tag done-code
                     )
   (setq
     ename-leader
       (hcnm-ldrblk-bubble-leader ename-bubble)
-    ;; Semi-global variable. Global to the HCNM-eb- functions called from here.
+    ;; Semi-global variable. Global to the hcnm-ldrblk-eb- functions called from here.
     ;; Read attributes and XDATA to get prefix/auto/postfix structure
-    hcnm-eb-lattribs
+    hcnm-ldrblk-eb-lattribs
       (hcnm-ldrblk-dwg-to-lattribs ename-bubble t)
     notetextradiocolumn "RadioNOTETXT1"
     dclfile
@@ -8783,13 +8750,13 @@ ImportLayerSettings=No
     (cond
       ((= done-code 0) (setq done-code (hcnm-edit-bubble-cancel)))
       ((= done-code 1)
-       (setq done-code (hcnm-eb-save ename-bubble))
+       (setq done-code (hcnm-ldrblk-eb-save ename-bubble))
       )
       ((= done-code 2)
        ;; Show the CNM Bubble Note Editor dialog with the requested text line's radio button selected.
        (setq
          return-list
-          (hcnm-eb-show dclfile notetextradiocolumn ename-bubble)
+          (hcnm-ldrblk-eb-show dclfile notetextradiocolumn ename-bubble)
          done-code
           (car return-list)
          notetextradiocolumn
@@ -8815,7 +8782,7 @@ ImportLayerSettings=No
        ;; Process clicked action tile (button) other than cancel or save.
        ;; bubble-data-update: This is start point 2 of 2 of the bubble data logic. This one is for the bubble note editing process.
        ;; this is called whenever a dialog auto-text button is clicked.
-       (hcnm-eb-get-text ename-bubble done-code tag)
+       (hcnm-ldrblk-eb-get-text ename-bubble done-code tag)
        (setq done-code 2)
       )
     )
@@ -8825,7 +8792,7 @@ ImportLayerSettings=No
   (haws-core-restore)
   (princ)
 )
-(defun hcnm-eb-get-text (ename-bubble done-code tag / auto-string auto-type attr prefix postfix)
+(defun hcnm-ldrblk-eb-get-text (ename-bubble done-code tag / auto-string auto-type attr prefix postfix)
   (setq
     auto-type
      (cadr (assoc done-code (hcnm-edit-bubble-done-codes)))
@@ -8834,24 +8801,24 @@ ImportLayerSettings=No
     ;; Handle ClearAuto button (code 28)
     ((= done-code 28)
      ;; Get current attribute (tag prefix auto postfix), clear the auto part
-     (setq attr (assoc tag hcnm-eb-lattribs)
+     (setq attr (assoc tag hcnm-ldrblk-eb-lattribs)
            prefix (cadr attr)
            postfix (cadddr attr))
      ;; Save with empty auto field
-     (setq hcnm-eb-lattribs
+     (setq hcnm-ldrblk-eb-lattribs
        (hcnm-ldrblk-underover
-         (hcnm-ldrblk-lattribs-put-auto tag "" hcnm-eb-lattribs)
+         (hcnm-ldrblk-lattribs-put-auto tag "" hcnm-ldrblk-eb-lattribs)
        )
      )
     )
     ;; Handle auto-text generation buttons (only if auto-type is valid)
     ((and auto-type (not (= auto-type "")))
      ;; bubble-data-update: this is called from command line and from edit box to get string as requested by user.
-     (setq hcnm-eb-lattribs
+     (setq hcnm-ldrblk-eb-lattribs
        (hcnm-ldrblk-underover
          (hcnm-ldrblk-auto-dispatch
            ename-bubble
-           hcnm-eb-lattribs
+           hcnm-ldrblk-eb-lattribs
            tag
            auto-type
            nil  ; nil = initial creation of auto text, not reactor update
@@ -8871,7 +8838,7 @@ ImportLayerSettings=No
 )
 ;;; Remove delimiters from lattribs before saving
 ;;; Concatenates prefix+auto+postfix into plain text
-(defun hcnm-eb-remove-delimiters (lattribs / result)
+(defun hcnm-ldrblk-eb-remove-delimiters (lattribs / result)
   (setq result '())
   (foreach attr lattribs
     (setq result 
@@ -8879,7 +8846,7 @@ ImportLayerSettings=No
         (list 
           (list 
             (car attr)  ; TAG
-            (hcnm-eb-flatten-value (cadr attr))  ; Remove delimiters from VALUE
+            (hcnm-ldrblk-eb-flatten-value (cadr attr))  ; Remove delimiters from VALUE
           )
         )
       )
@@ -8890,11 +8857,11 @@ ImportLayerSettings=No
 ;;; Flatten a delimited value to plain text
 ;;; If value contains chr(160) delimiters, concatenate parts with spaces between non-empty parts
 ;;; Otherwise return as-is
-(defun hcnm-eb-flatten-value (value / parts prefix auto postfix result)
+(defun hcnm-ldrblk-eb-flatten-value (value / parts prefix auto postfix result)
   (cond
     ((not value) "")
     ((vl-string-search (chr 160) value)
-     (setq parts (hcnm-eb-split-on-nbsp value)
+     (setq parts (hcnm-ldrblk-eb-split-on-nbsp value)
            prefix (nth 0 parts)
            auto (nth 1 parts)
            postfix (nth 2 parts)
@@ -8927,9 +8894,9 @@ ImportLayerSettings=No
   )
 )
 ;; Save auto-text to XDATA for each attribute tag
-(defun hcnm-eb-save (ename-bubble)
+(defun hcnm-ldrblk-eb-save (ename-bubble / )
   ;; Save attributes (concatenated) and XDATA (auto text only)
-  (hcnm-ldrblk-lattribs-to-dwg ename-bubble hcnm-eb-lattribs)
+  (hcnm-ldrblk-lattribs-to-dwg ename-bubble hcnm-ldrblk-eb-lattribs)
   -1
 ) 
 (defun hcnm-edit-bubble-done-codes ( / eb-done)
@@ -8957,7 +8924,7 @@ ImportLayerSettings=No
 ;;; move the codes to a new prefix field and create delimiter structure.
 ;;; Returns migrated value with prefix?auto?postfix structure if codes found,
 ;;; otherwise returns VALUE unchanged.
-(defun hcnm-eb-migrate-legacy-format (value / sep format-code text)
+(defun hcnm-ldrblk-eb-migrate-legacy-format (value / sep format-code text)
   (cond
     ;; Empty or nil - return as-is
     ((or (not value) (= value "")) value)
@@ -8996,29 +8963,29 @@ ImportLayerSettings=No
 ;; NOTE: Dialog shows concatenated strings, so user edits go to prefix field
 ;; ACTION_TILE callback: Update prefix field in lattribs when user types text
 ;; User typing in prefix field replaces the entire concatenated value (by design)
-(defun hcnm-eb-update-prefix (tag new-value / attr)
-  (setq attr (assoc tag hcnm-eb-lattribs))
-  (setq hcnm-eb-lattribs
+(defun hcnm-ldrblk-eb-update-prefix (tag new-value / attr)
+  (setq attr (assoc tag hcnm-ldrblk-eb-lattribs))
+  (setq hcnm-ldrblk-eb-lattribs
     (subst
       (list tag new-value)  ; Replace with new concatenated value (2-element lattribs-cat)
       attr
-      hcnm-eb-lattribs)
+      hcnm-ldrblk-eb-lattribs)
   )
 )
 
 ;; ACTION_TILE callback: Update postfix field in lattribs when user edits it
 ;; NOTE: Postfix only visible/editable when auto-text exists
-(defun hcnm-eb-update-postfix (tag new-postfix / attr)
-  (setq attr (assoc tag hcnm-eb-lattribs))
-  (setq hcnm-eb-lattribs
+(defun hcnm-ldrblk-eb-update-postfix (tag new-postfix / attr)
+  (setq attr (assoc tag hcnm-ldrblk-eb-lattribs))
+  (setq hcnm-ldrblk-eb-lattribs
     (subst
       (list tag (cadr attr) (caddr attr) new-postfix)
       attr
-      hcnm-eb-lattribs)
+      hcnm-ldrblk-eb-lattribs)
   )
 )
 
-(defun hcnm-eb-show
+(defun hcnm-ldrblk-eb-show
    (dclfile notetextradiocolumn ename-bubble / tag value parts prefix auto postfix on-model-tab-p lst-dlg-attributes)
   (new_dialog "HCNMEditBubble" dclfile)
   (set_tile "Title" "Edit CNM Bubble Note")
@@ -9040,7 +9007,7 @@ ImportLayerSettings=No
   
   ;; ARCHITECTURE: Transform clean lattribs to dialog display format (with format codes)
   ;; This is the ONLY place we transform for display
-  (setq lst-dlg-attributes (hcnm-ldrblk-lattribs-to-dlg hcnm-eb-lattribs))
+  (setq lst-dlg-attributes (hcnm-ldrblk-lattribs-to-dlg hcnm-ldrblk-eb-lattribs))
   
   ;; Note attribute edit boxes - use formatted display strings
   (foreach
@@ -9052,7 +9019,7 @@ ImportLayerSettings=No
     
     ;; Set prefix field (contains concatenated formatted string from lattribs-to-dlg)
     (set_tile (strcat "Prefix" tag) prefix)
-    (action_tile (strcat "Prefix" tag) (strcat "(hcnm-eb-update-prefix \"" tag "\" $value)"))
+    (action_tile (strcat "Prefix" tag) (strcat "(hcnm-ldrblk-eb-update-prefix \"" tag "\" $value)"))
     
     ;; Set auto field (editing is disabled, for auto text only)
     ;; All auto text editor buttons update lattribs directly.
@@ -9062,7 +9029,7 @@ ImportLayerSettings=No
     ;; Postfix only has meaning when there's auto-text to come after
     (set_tile (strcat "Postfix" tag) postfix)
     (mode_tile (strcat "Postfix" tag) (if (and auto (/= auto "")) 0 1))  ; 0=enable, 1=disable
-    (action_tile (strcat "Postfix" tag) (strcat "(hcnm-eb-update-postfix \"" tag "\" $value)"))
+    (action_tile (strcat "Postfix" tag) (strcat "(hcnm-ldrblk-eb-update-postfix \"" tag "\" $value)"))
   )
   ;;Radio buttons
   (set_tile
@@ -9095,7 +9062,7 @@ ImportLayerSettings=No
 ;; Split string on delimiter
 ;; Keep this in case users decide to go to a free-form single-field editor later.
 ;; Returns list of substrings split on DELIM
-(defun hcnm-eb-split-string (str delim / pos result)
+(defun hcnm-ldrblk-eb-split-string (str delim / pos result)
   (setq result '())
   (while (setq pos (vl-string-search delim str))
     (setq result (append result (list (substr str 1 pos)))
@@ -9117,7 +9084,7 @@ ImportLayerSettings=No
 ;; - Empty delimited string "??" is distinguishable from truly empty "" (old format)
 ;; - Makes round-trip parsing reliable: concat(split(x)) = x
 ;;
-(defun hcnm-eb-concat-parts (prefix auto postfix / nbsp)
+(defun hcnm-ldrblk-eb-concat-parts (prefix auto postfix / nbsp)
   (setq nbsp (chr 160))  ; Non-breaking space - invisible delimiter
   (strcat 
     (if prefix prefix "")

@@ -33,7 +33,7 @@ The "Bubble insertion and editing" region demonstrates mature, well-architected 
 
 **Function Inventory:**
 - **78 `hcnm-ldrblk-*` functions** - Bubble insertion/editing core
-- **10 `hcnm-eb-*` functions** - Edit box (dialog) subsystem
+- **10 `hcnm-ldrblk-eb-*` functions** - Edit box (dialog) subsystem
 - **6 `hcnm-xdata-*` functions** - XDATA service layer
 
 **Namespace Architecture:**
@@ -46,10 +46,10 @@ hcnm-ldrblk-*           # Bubble insertion & editing (legacy name preserved)
 ├── hcnm-ldrblk-reactor-*        # Reactive updates
 └── hcnm-ldrblk-space-*          # Paper space helpers
 
-hcnm-eb-*               # Edit box (dialog) subsystem
-├── hcnm-eb-add-delimiters
-├── hcnm-eb-save
-└── hcnm-eb-*                    # Dialog helpers
+hcnm-ldrblk-eb-*               # Edit box (dialog) subsystem
+├── hcnm-ldrblk-eb-add-delimiters
+├── hcnm-ldrblk-eb-save
+└── hcnm-ldrblk-eb-*                    # Dialog helpers
 
 hcnm-xdata-*            # XDATA service layer (clean separation)
 ├── hcnm-xdata-read
@@ -188,7 +188,7 @@ The HCNM-BUBBLE XDATA stores two independent sections that must coexist:
 - `hcnm-ldrblk-auto-al-station-to-string` (line 6750) - Multiple lines
 - `hcnm-ldrblk-space-restore` (line 7450) - Has conditional
 - `hcnm-ldrblk-warn-pspace-coordinates` (line 7527) - Multiple lines
-- `hcnm-eb-save` (line 8930) - Large function, needs locals
+- `hcnm-ldrblk-eb-save` (line 8930) - Large function, needs locals
 
 **Recommendation:**  
 Add local variable declarations to the 8 functions marked "Need Review" to prevent potential global scope leaks.
@@ -227,9 +227,9 @@ Add local variable declarations to the 8 functions marked "Need Review" to preve
 - **Status:** 🔄 Being replaced by XDATA search-based parsing
 - **Progress:** XDATA service layer complete, migration in progress
 - **Functions affected:**
-  - `hcnm-eb-add-delimiters`
-  - `hcnm-eb-expand-value-to-delimited`
-  - `hcnm-eb-flatten-value`
+  - `hcnm-ldrblk-eb-add-delimiters`
+  - `hcnm-ldrblk-eb-expand-value-to-delimited`
+  - `hcnm-ldrblk-eb-flatten-value`
 - **Recommendation:** Continue migration to XDATA-only approach
 
 **Conclusion:** 📋 Deprecated functions are well-documented. Delete unused function. Continue CHR(160) migration.
