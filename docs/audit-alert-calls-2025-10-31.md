@@ -3,62 +3,100 @@
 ## Issue
 User reported: "at **every alert** you MUST use the form (alert(princ)) so that we see the alert at the prompt history."
 
-## Audit Results
+## Test Result
+User hit an error: "expected a list and got ','"
 
-### ❌ MISSING (alert (princ ...))
-These need to be fixed:
+## Root Cause Analysis
+
+### Bug 1: Wrong Argument Type (CRITICAL - This caused the error)
+**Line 5576** in `hcnm-ldrblk-get-data-prompts`:
+```autolisp
+;; BEFORE (WRONG):
+(hcnm-ldrblk-lattribs-put-element
+  tag
+  string    ; ❌ Just a string like ","
+  lattribs
+)
+
+;; AFTER (CORRECT):
+(hcnm-ldrblk-lattribs-put-element
+  tag
+  (list string "" "")  ; ✅ 3-element list (prefix auto postfix)
+  lattribs
+)
+```
+
+**Why this caused the error:**
+- User typed "," as line 1 text
+- Code passed "," as `string` directly to `lattribs-put-element`
+- That function expects a 3-element list `(prefix auto postfix)`
+- Validation at line 5939 caught it and alerted (but without princ!)
+- Then `(exit)` aborted the command
+
+### Bug 2: Missing (princ) in Alert Calls
+Four alert calls didn't use `(alert (princ ...))` pattern:
 
 1. **Line 5199** - WIPEOUTFRAME warning
-   - Current: `(alert "Setting WIPEOUTFRAME to 2 to show but not plot")`
-   - Fix: `(alert (princ "\nSetting WIPEOUTFRAME to 2 to show but not plot"))`
+2. **Line 5939** - lattribs-put-element validation (the one user hit!)
+3. **Line 6136** - LATTRIBS schema validation  
+4. **Line 7881** - Split attribute on XDATA error
 
-2. **Line 5939** - lattribs-put-element validation error
-   - Current: `(alert (strcat "hcnm-ldrblk-lattribs-put-element: value must be 3-element list...`
-   - Fix: `(alert (princ (strcat "hcnm-ldrblk-lattribs-put-element: value must be 3-element list...`
-   - **This is the error the user hit!**
+## Audit Results
+
+### ❌ FIXED (Missing princ)
+
+1. **Line 5199** - WIPEOUTFRAME warning
+   - Before: `(alert "Setting WIPEOUTFRAME to 2 to show but not plot")`
+   - After: `(alert (princ "\nSetting WIPEOUTFRAME to 2 to show but not plot"))`
+
+2. **Line 5939** - lattribs-put-element validation error ⚠️ **User hit this one!**
+   - Before: `(alert (strcat "hcnm-ldrblk-lattribs-put-element: value must be 3-element list...`
+   - After: `(alert (princ (strcat "\nhcnm-ldrblk-lattribs-put-element: value must be 3-element list...`
 
 3. **Line 6136** - LATTRIBS schema validation error
-   - Current: `(alert (strcat "LATTRIBS SCHEMA VALIDATION FAILED:\n\n"...`
-   - Fix: `(alert (princ (strcat "LATTRIBS SCHEMA VALIDATION FAILED:\n\n"...`
+   - Before: `(alert (strcat "LATTRIBS SCHEMA VALIDATION FAILED:\n\n"...`
+   - After: `(alert (princ (strcat "\nLATTRIBS SCHEMA VALIDATION FAILED:\n\n"...`
 
 4. **Line 7881** - Split attribute on XDATA error
-   - Current: `(alert (strcat ...` (multi-line)
-   - Fix: `(alert (princ (strcat ...`
+   - Before: `(alert (strcat "Message from the CNM..."...`
+   - After: `(alert (princ (strcat "\nMessage from the CNM..."...`
 
 ### ✅ ALREADY CORRECT
-These already use (alert (princ ...)):
+These already use `(alert (princ ...))`:
 
 - Line 5401 - DIMSCALE/Annotation scale warning ✅
 - Line 5433 - AutoCAD R14 compatibility warning ✅
 - Line 6930 - Alignment selection warning ✅
 - Line 7382 - Auto-apology (not implemented) ✅
-- Line 8449 - Some other alert ✅
+- Line 8449 - Various alerts ✅
 - Line 9502 - Reactor debug function ✅
 - Line 9522 - No entity selected ✅
 
-## Additional Bug Found
+## Fixes Applied (Commit 6fdbf8c)
 
-**Line 5574-5577** - Wrong argument type passed to lattribs-put-element:
+### 1. Critical Bug Fix
+✅ Line 5576: Pass 3-element list to `lattribs-put-element`, not bare string
+
+### 2. Alert Pattern Fixes
+✅ Line 5199: WIPEOUTFRAME warning - added princ
+✅ Line 5939: lattribs-put-element validation - added princ
+✅ Line 6136: LATTRIBS schema validation - added princ
+✅ Line 7881: Split attribute XDATA error - added princ
+
+All alerts now use `(alert (princ ...))` pattern to ensure messages appear in command history, not just dialog boxes.
+
+## Testing
+User should now be able to:
+1. Insert bubble note
+2. Type "," or any other text for line 1
+3. See proper error message in command history if validation fails
+4. **Most importantly**: Not hit the "expected list, got ','" error anymore
+
+## Prevention
+Going forward, all new alert calls must use:
 ```autolisp
-(hcnm-ldrblk-lattribs-put-element
-  tag
-  string    ; ❌ WRONG: This is just the input string (e.g., ",")
-  lattribs
-)
+(alert (princ "\n[your message here]"))
 ```
 
-Should be:
-```autolisp
-(hcnm-ldrblk-lattribs-put-element
-  tag
-  (list string "" "")  ; ✅ CORRECT: 3-element list (prefix auto postfix)
-  lattribs
-)
-```
+Never use bare `(alert "string")` - it won't appear in command history!
 
-This is why the user got the error: "expected a list and got ','".
-
-## Fixes Required
-
-1. Fix 4 missing `(alert (princ ...))` calls
-2. Fix line 5576 to pass 3-element list instead of bare string
