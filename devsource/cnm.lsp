@@ -2483,7 +2483,6 @@
   )
 )
 
-
 (defun hcnm-project-ini-name () "cnm.ini")
 (defun hcnm-project-link-name () "cnmproj.txt")
 
@@ -6051,6 +6050,118 @@ ImportLayerSettings=No
        )
      )
     lattribs
+  )
+)
+
+;;; ============================================================================
+;;; STRICT SCHEMA VALIDATOR (Fail Loudly)
+;;; ============================================================================
+;;; 
+;;; PHILOSOPHY: "Fail loudly" - catch data integrity violations early
+;;;             Don't silently fix problems that indicate bugs
+;;;
+;;; PURPOSE: Validate lattribs has complete schema with correct structure
+;;;
+;;; CHECKS:
+;;;   1. All required tags are present
+;;;   2. Each element is a 4-part list (tag prefix auto postfix)
+;;;   3. No duplicate tags
+;;;   4. All parts are strings (or empty string "")
+;;;
+;;; RETURNS: T if valid
+;;;          NIL with ALERT if invalid (stops execution)
+;;;
+;;; WHEN TO CALL:
+;;;   - After reading from drawing (dwg-to-lattribs)
+;;;   - Before writing to drawing (lattribs-to-dwg)
+;;;   - After dialog edits (eb-save)
+;;;   - After auto-text generation
+;;;   - Any time you want to assert data integrity
+;;;
+;;; EXAMPLE USAGE:
+;;;   (if (not (hcnm-ldrblk-lattribs-validate-schema lattribs))
+;;;     (exit))  ; Abort operation if validation fails
+;;;
+(defun hcnm-ldrblk-lattribs-validate-schema (lattribs / required-tags missing-tags tag-counts duplicate-tags attr tag parts error-msgs)
+  (setq required-tags '("NOTENUM" "NOTEPHASE" "NOTEGAP" "NOTEDATA" 
+                        "NOTETXT0" "NOTETXT1" "NOTETXT2" "NOTETXT3" 
+                        "NOTETXT4" "NOTETXT5" "NOTETXT6")
+        missing-tags '()
+        tag-counts '()
+        duplicate-tags '()
+        error-msgs '()
+  )
+  
+  ;; Check 1: All required tags present
+  (foreach tag required-tags
+    (if (not (assoc tag lattribs))
+      (setq missing-tags (cons tag missing-tags))
+    )
+  )
+  
+  ;; Check 2: Each element is 4-part list with valid structure
+  (foreach attr lattribs
+    (setq tag (car attr))
+    (cond
+      ;; Not a list
+      ((/= (type attr) 'LIST)
+       (setq error-msgs (cons (strcat tag ": Not a list structure") error-msgs))
+      )
+      ;; Wrong number of elements
+      ((/= (length attr) 4)
+       (setq error-msgs (cons (strcat tag ": Must have 4 elements (tag prefix auto postfix), has " 
+                                      (itoa (length attr))) 
+                              error-msgs))
+      )
+      ;; Check all parts are strings
+      ((not (and (= (type (nth 0 attr)) 'STR)  ; tag
+                 (= (type (nth 1 attr)) 'STR)  ; prefix
+                 (= (type (nth 2 attr)) 'STR)  ; auto
+                 (= (type (nth 3 attr)) 'STR))) ; postfix
+       (setq error-msgs (cons (strcat tag ": All parts must be strings") error-msgs))
+      )
+    )
+    
+    ;; Count tag occurrences for duplicate check
+    (if (assoc tag tag-counts)
+      (setq tag-counts (subst (cons tag (1+ (cdr (assoc tag tag-counts)))) 
+                              (assoc tag tag-counts) 
+                              tag-counts))
+      (setq tag-counts (cons (cons tag 1) tag-counts))
+    )
+  )
+  
+  ;; Check 3: No duplicate tags
+  (foreach tag-count tag-counts
+    (if (> (cdr tag-count) 1)
+      (setq duplicate-tags (cons (car tag-count) duplicate-tags))
+    )
+  )
+  
+  ;; Compile error report
+  (if missing-tags
+    (setq error-msgs (cons (strcat "MISSING REQUIRED TAGS: " 
+                                   (apply 'strcat (mapcar '(lambda (t) (strcat t " ")) missing-tags)))
+                           error-msgs))
+  )
+  (if duplicate-tags
+    (setq error-msgs (cons (strcat "DUPLICATE TAGS: " 
+                                   (apply 'strcat (mapcar '(lambda (t) (strcat t " ")) duplicate-tags)))
+                           error-msgs))
+  )
+  
+  ;; Fail loudly if errors found
+  (cond
+    (error-msgs
+     (alert (strcat "LATTRIBS SCHEMA VALIDATION FAILED:\n\n"
+                    (apply 'strcat (mapcar '(lambda (msg) (strcat msg "\n")) (reverse error-msgs)))
+                    "\nThis indicates a programming error or data corruption.\n"
+                    "Operation aborted to prevent data loss."))
+     nil  ; Return NIL to indicate failure
+    )
+    (t
+     t  ; Return T to indicate success
+    )
   )
 )
 
