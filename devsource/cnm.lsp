@@ -5706,15 +5706,9 @@ ImportLayerSettings=No
     (haws_nested_list_update bd (list key) val)
   )
 )
-;#endregion
-;#region lattribs data model
-;;==============================================================================
-;; lattribs - Core attribute list data structure
-;;==============================================================================
-;; Structure: '(("TAG" "prefix" "auto" "postfix") ...)
-;; - All 11 tags required (NOTENUM NOTEPHASE NOTEGAP NOTEDATA NOTETXT0-6)
-;; - Always 4-element lists (never 2-element legacy format)
-;; - Validation: Fail loudly on violations
+;#region Bubble data utilities
+;; Helper functions for working with bubble blocks and their properties
+;; (not lattribs-specific)
 ;;==============================================================================
 ;; Ensure p1-world is present in bubble data (computes if missing)
 (defun hcnm-ldrblk-bubble-data-ensure-p1-world (bubble-data / ename-bubble ename-leader p1-ocs p1-world)
@@ -5898,6 +5892,16 @@ ImportLayerSettings=No
     (t (lm:setdynpropvalue vlaobj-block-new "Shape" notetype))
   )
 )
+;#endregion
+;#region lattribs data model
+;;==============================================================================
+;; lattribs - Core attribute list data structure
+;;==============================================================================
+;; Structure: '(("TAG" "prefix" "auto" "postfix") ...)
+;; - All 11 tags required (NOTENUM NOTEPHASE NOTEGAP NOTETXT0-6)
+;; - Always 4-element lists (never 2-element legacy format)
+;; - Validation: Fail loudly on violations
+;;==============================================================================
 (defun hcnm-ldrblk-lattribs-spec (/ lattribs)
   ;; Pure spec - returns empty structure for all bubble attributes
   ;; To populate with values, use lattribs-put-element
@@ -6417,7 +6421,7 @@ ImportLayerSettings=No
   (hcnm-ldrblk-underover-remove dlg-lattribs)
 )
 ;#endregion
-
+;#endregion
 ;#region Auto-text
 ;; Used by multiple levels of the insertion user experience 
 ;; including the command prompts and the auto text dispatcher
@@ -7321,17 +7325,6 @@ ImportLayerSettings=No
   )
   bubble-data
 )
-(defun hcnm-ldrblk-auto-rtos (number key)
-  (strcat
-    (c:hcnm-config-getvar (strcat "BubbleTextPrefix" key))
-    (rtos
-      number
-      2
-      (atoi(c:hcnm-config-getvar (strcat "BubbleTextPrecision" key)))
-    )
-    (c:hcnm-config-getvar (strcat "BubbleTextPostfix" key))
-  )
-)
 ;#endregion
 ;#region Auto surface
 ;; Civil 3D Surface query auto-text (Z elevation)
@@ -7366,12 +7359,30 @@ ImportLayerSettings=No
   )
   bubble-data
 )
+;#endregion
+;#region Auto helpers
+;;==============================================================================
+;; SHARED AUTO-TEXT UTILITIES
+;;==============================================================================
+;; Format number with config prefix/postfix (used by all numeric auto-text types)
+(defun hcnm-ldrblk-auto-rtos (number key)
+  (strcat
+    (c:hcnm-config-getvar (strcat "BubbleTextPrefix" key))
+    (rtos
+      number
+      2
+      (atoi(c:hcnm-config-getvar (strcat "BubbleTextPrecision" key)))
+    )
+    (c:hcnm-config-getvar (strcat "BubbleTextPostfix" key))
+  )
+)
+
+;; Show apology for unimplemented auto-text types
 (defun hcnm-ldrblk-auto-apology (auto-type)
   (alert (princ (strcat "Sorry. Selection of " auto-type " is not fully programmed yet and is not anticipated to be dynamic once programmed.\n\nPlease let Tom Haws <tom.haws@gmail.com> know if you are eager for this as static text.")))
   "N/A"
 )
-;#endregion
-;#region Auto helpers
+
 ;;==============================================================================
 ;; PAPER SPACE / MODEL SPACE MANAGEMENT
 ;;==============================================================================
@@ -7984,6 +7995,35 @@ ImportLayerSettings=No
   lattribs
 )
 
+;; Set attributes on a block (used by reactors and other update paths)
+;; Takes: ename-block, lattribs in format '(("TAG" "value") ...)
+(defun hcnm-set-attributes (ename-block lattribs / atag elist ename-next etype obj-next)
+  (setq ename-next ename-block)
+  (while (and
+           (setq ename-next (entnext ename-next))
+           (/= "SEQEND"
+               (setq etype (cdr (assoc 0 (setq elist (entget ename-next)))))
+           )
+         )
+    (cond
+      ((and
+         (= etype "ATTRIB")
+         (setq atag (cdr (assoc 2 elist)))
+         (assoc atag lattribs)
+       )
+        (setq obj-next (vlax-ename->vla-object ename-next))
+        (vla-put-textstring
+          obj-next
+          (cadr (assoc atag lattribs))
+        )
+        ;; UPDATEFIELD commented out to avoid "0 field(s) found/updated" messages
+        ;; May be necessary for some bubble types - uncomment if needed
+        ;(COND ((= (hcnm-ldrblk-get-mtext-string) "")(VL-CMDF "._updatefield" ename-next "")))
+      )
+    )
+  )
+)
+
 ;; field-code-p NIL SIMPLIFIES PROCESSING WHEN BLOCKS LIKE NOTEQTY ARE KNOWN NOT TO HAVE FIELD CODES IN THEM
 (defun hcnm-get-attributes (ename-block field-code-p / lattribs elist ename-next etype field-code obj-next)
   (setq ename-next ename-block)
@@ -8263,9 +8303,6 @@ ImportLayerSettings=No
   (hcnm-xdata-set-autotext ename-bubble autotext-alist)
 )
 
-;#endregion
-;#endregion
-;#region Reactors
 ;; Save bubble data to attributes and XDATA
 ;; Takes association list with prefix/auto/postfix for each field
 ;; Format: (("NOTETXT0" prefix auto postfix) ("NOTETXT1" prefix auto postfix) ...)
@@ -8333,32 +8370,9 @@ ImportLayerSettings=No
   )
 )
 
-(defun hcnm-set-attributes (ename-block lattribs / atag elist ename-next etype obj-next)
-  (setq ename-next ename-block)
-  (while (and
-           (setq ename-next (entnext ename-next))
-           (/= "SEQEND"
-               (setq etype (cdr (assoc 0 (setq elist (entget ename-next)))))
-           )
-         )
-    (cond
-      ((and
-         (= etype "ATTRIB")
-         (setq atag (cdr (assoc 2 elist)))
-         (assoc atag lattribs)
-       ) ;_ end of and
-        (setq obj-next (vlax-ename->vla-object ename-next))
-        (vla-put-textstring
-          obj-next
-          (cadr (assoc atag lattribs))
-        )
-        ;; UPDATEFIELD commented out to avoid "0 field(s) found/updated" messages
-        ;; May be necessary for some bubble types - uncomment if needed
-        ;(COND ((= (hcnm-ldrblk-get-mtext-string) "")(VL-CMDF "._updatefield" ename-next "")))
-      )
-    )
-  )
-)
+;#endregion
+;#endregion
+;#region Reactors
 ;;; NEED TO DEFINE THE USER EVENTS THAT TRIGGER REACTOR CLEANUP. OR MAYBE THE CALLBACK DOES THE CLEANUP. CLEANUP ENTAILS THE FOLLOWING STEPS
 ;;; -	USE THE REACTOR DATA AND NOTEDATA ATTRIBUTE OF ALL BUBBLES TO FIND ATTRIBUTES THAT ARE AFFECTED BY THE REACTOR
 ;;; -	IF AN ATTRIBUTE IS EMPTY, REMOVE ITS REFERENCE IN ITS BUBBLE'S NOTEDATA AND IN THE REACTOR DATA.
