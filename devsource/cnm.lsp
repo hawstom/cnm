@@ -8201,17 +8201,21 @@ ImportLayerSettings=No
   
   ;; Build VPTRANS section if present
   (setq vptrans-data (cdr (assoc 'vptrans xdata-sections)))
+  (princ (strcat "\n=== DEBUG xdata-write: vptrans-data = " (vl-princ-to-string vptrans-data)))
   (cond
     (vptrans-data
      (setq cvport (car vptrans-data)
            ref-points (cdr vptrans-data))
+     (princ (strcat "\n=== DEBUG xdata-write: cvport = " (vl-princ-to-string cvport) " ref-points count = " (itoa (length ref-points))))
      (cond
        ((and cvport (= (length ref-points) 6))
         (setq xdata-list (append xdata-list
                                  (list (cons 1000 "VPTRANS")
                                        (cons 1070 cvport))))
         (foreach pt ref-points
-          (setq xdata-list (append xdata-list (list (cons 1010 pt)))))))))
+          (setq xdata-list (append xdata-list (list (cons 1010 pt)))))
+        (princ (strcat "\n=== DEBUG xdata-write: added VPTRANS to xdata-list, count = " (itoa (length xdata-list))))
+        ))))
   
   ;; Build auto-text section if present
   (setq autotext-data (cdr (assoc 'autotext xdata-sections)))
@@ -8221,6 +8225,9 @@ ImportLayerSettings=No
        (setq xdata-list (append xdata-list
                                 (list (cons 1000 (car pair))
                                       (cons 1000 (cdr pair))))))))
+  
+  (princ (strcat "\n=== DEBUG xdata-write: final xdata-list count = " (itoa (length xdata-list))))
+  (princ (strcat "\n=== DEBUG xdata-write: xdata-list = " (vl-princ-to-string xdata-list)))
   
   ;; Write XDATA (replaces all HCNM-BUBBLE XDATA)
   (cond
