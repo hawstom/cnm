@@ -65,10 +65,12 @@ Use `source-to-destination` pattern to make data flow explicit:
 
 ### After (Clear):
 ```lisp
-(hcnm-lattribs-to-dwg ename lattribs)      ; Write lattribs to drawing
-(hcnm-dwg-to-lattribs ename)               ; Read from drawing to lattribs
-(hcnm-lattribs-underover lattribs)         ; Apply underline/overline codes
-(hcnm-dwg-to-lattribs-raw ename)           ; Read without splitting auto-text
+(hcnm-lattribs-to-dwg ename lattribs)      ; Write lattribs to drawing, entire list at once
+(hcnm-lattribs-to-dlg ename lattribs)      ; Convert lattribs format to dialog-ready format, entire list at once
+(hcnm-dwg-to-lattribs ename)               ; Read from drawing to lattribs, entire list at once
+(hcnm-dlg-to-lattribs ename)               ; Convert from verbatim dialog format to lattribs format, entire list at once
+(hcnm-user-to-lattribs ename)              ; Convert from raw user entry format to lattribs format, one element at a time
+(hcnm-underover lattribs)         ; Apply underline/overline codes, entire list at once
 ```
 
 ## The Rosetta Stone - Function Renames
@@ -86,7 +88,7 @@ Use `source-to-destination` pattern to make data flow explicit:
 | Old Name | New Name | Rationale |
 |----------|----------|-----------|
 | `hcnm-save-bubble` | `hcnm-ldrblk-lattribs-to-dwg` | Explicit: 4-element lattribs → dwg (with underover + xdata) |
-| `hcnm-read-bubble-data` | `hcnm-ldrblk-dwg-to-lattribs` | Explicit: dwg + xdata → 4-element lattribs |
+| `hcnm-read-data` | `hcnm-ldrblk-dwg-to-lattribs` | Explicit: dwg + xdata → 4-element lattribs |
 | `hcnm-save-bubble-xdata` | `hcnm-ldrblk-xdata-save` | Helper: Save xdata portion only |
 | `hcnm-get-attributes` | **ELIMINATE** | Replace with generic `haws-dwg-attribs-to-alist` (3 call sites) |
 | `hcnm-set-attributes` | **ELIMINATE** | Replace with `hcnm-ldrblk-lattribs-to-dwg` (1 call site) | 
@@ -131,41 +133,7 @@ This follows DRY by reusing the attribute-reading infrastructure for both generi
 | `hcnm-ldrblk-ensure-fields` | `hcnm-ldrblk-lattribs-validate` | Validates structure, FAILS if invalid (not repair) |
 | `hcnm-ldrblk-ensure-fields-and-adjust-formats` | `hcnm-ldrblk-lattribs-validate-and-underover` | Validates + applies underover |
 
-**Why "initialize" not "define":**
-- Common Lisp uses `initialize-instance` for setting up new objects
-- "define" means declare symbol binding (`defun`, `defvar`)
-- "initialize" means prepare new instance with initial state
-[TGH 2025-10-28 21:58:37: I find "Consensus: Define the shape once (a “spec” or “schema”).
-Then decide whether a constructor should be thin (just validate) or thick (populate defaults)."
-;; Thin – you must supply everything
-(SETQ MY-DATA (BAR-DATA '((FOO . 42) (BAR . "hi"))))
-
-;; Thick – optional keys get defaults automatically
-(SETQ MY-DATA (BAR-DATA! '((FOO . 42))))   ; → ((FOO . 42) (BAR . :OPTIONAL) (BAZ . 0) (QUUX . ""))
-
-;; 1. Define the spec (once)
-(BAR-DATA-SPEC)   ; includes (FOO T NIL)
-
-;; 2. Decide:
-;;    • If `foo` is *required* → call thin constructor and pass it.
-;;    • If `foo` is *optional* → call thick constructor; it will insert NIL.
-
-;; Required → explicit
-(SETQ MY-BAR (BAR-DATA '((FOO . "hello"))))
-
-;; Optional → let the thick ctor fill it
-(SETQ MY-BAR (BAR-DATA! '()))   ; FOO gets NIL automatically
-
-1. Always start with a schema – it is the single source of truth for documentation and validation.
-2. Add a thin constructor if you want callers to be explicit.
-3. Add a thick constructor if you want ergonomics (defaults).
-4. Never embed defaults inside the validator – keep them in the schema.
-]
-
-**AI Response to TGH Schema Pattern:**
-
-Your schema-based design is architecturally superior! **TGH Decision: Implement as part of renaming.**
-
+**Why "spec" not "initialize":**
 Since CNM is a professional engineering tool, we prefer the thin/explicit/validator approach:
 
 ```lisp
@@ -200,7 +168,7 @@ Since CNM is a professional engineering tool, we prefer the thin/explicit/valida
 - **`lattribs-put-string`**: Clear intent (user text → prefix)
 - **`lattribs-put-auto`**: Clear intent (auto-text only, preserve user's prefix/postfix)
 
-### Category 3: Format → String (Semantic Fix)
+### Category 3: "Format" → "String" (Semantic Fix)
 
 **Key insight:** These functions convert numbers to formatted strings, NOT apply underover codes.
 
@@ -248,7 +216,7 @@ These are parameter and local variable renames (hundreds of instances):
 ```
 USER INPUT
     ↓
-[lattribs] ← hcnm-ldrblk-lattribs-initialize
+[lattribs] ← hcnm-ldrblk-lattribs-spec
     ↓
 [lattribs] ← hcnm-ldrblk-lattribs-put-string (user text → prefix)
     ↓

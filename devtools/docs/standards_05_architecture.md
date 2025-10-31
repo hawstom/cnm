@@ -32,8 +32,106 @@ HAWSEDC STANDARDS VOLUME 05: ARCHITECTURE
 - **Reactor System:** ONE VLR-OBJECT-REACTOR for all bubble notes (not one per bubble)
 ### 1.1.3 CNM Bubble Notes
 - **Reactor System:** ONE VLR-OBJECT-REACTOR for all bubble notes (not one per bubble)
-- **Delimiter System:** CHR 160 (non-breaking space) separates PREFIX§AUTO§POSTFIX
+- **XDATA Storage:** XDATA stores AUTO-text values as TAG-VALUE pairs for search/parse on read
 - **System-Controlled Attributes:** NOTENUM, NOTEPHASE, NOTEGAP always go to PREFIX field
+
+#### 1.1.3.1 Data Flow Functions
+
+**Design Principle:** All conversion functions are PURE (list → list). I/O wrappers handle AutoCAD entity reading/writing separately.
+
+**Current State vs. Goal:**
+- **CURRENT:** `dwg-to-lattribs` and `lattribs-to-dwg` mix conversion + I/O (not pure)
+- **GOAL:** Separate into pure converters + I/O wrappers for elegance and testability
+
+**Proposed Architecture:**
+
+| Layer | Function (prefixed `hcnm-ldrblk-`)    | Input              | Output      | Notes                                    |
+|-------|---------------------------------------|--------------------|-------------|------------------------------------------|
+| **I/O** | `dwg-read`                          | ename              | alist       | Pure I/O: Read attributes → alist        |
+| **Convert** | `dwg-to-lattribs`                 | alist + xdata      | lattribs    | Pure: Convert + strip format codes       |
+| **Convert** | `lattribs-to-dwg`                 | lattribs           | alist       | Pure: Convert + add format codes         |
+| **I/O** | `dwg-write`                         | ename + alist      | (side effect)| Pure I/O: Write alist → attributes      |
+| **Convert** | `lattribs-to-dlg`                 | lattribs           | dlg-list    | Pure: Display format via underover-add   |
+| **Convert** | `dlg-to-lattribs`                 | dlg-list           | lattribs    | Pure: Strip via underover-remove         |
+| **Helper** | `lattribs-put-element`             | tag + parts + list | lattribs    | Puts (prefix auto postfix) element       |
+| **Helper** | `lattribs-put-string`              | tag + string + list| lattribs    | User text → prefix, insertion safety check (won't fail in practice) |
+| **Helper** | `lattribs-put-auto`                | tag + string + list| lattribs    | Auto-text only, preserves prefix/postfix |
+| **Transform** | `lattribs-concat`               | lattribs           | lattribs-cat | Concatenates prefix+auto+postfix → single string per tag |
+| **Transform** | `lattribs-split`                | lattribs-cat + xdata | lattribs  | Splits by searching for AUTO text from XDATA in concatenated strings |
+| **Format** | `underover-add`                    | lattribs       | lattribs | Adds format codes (%%u, %%o) to prefix + sets NOTEGAP |
+| **Format** | `underover-remove`                 | lattribs       | lattribs | Strips format codes (%%u, %%o) from prefix + clears NOTEGAP |
+
+**Usage Pattern (Current - WORKING):**
+```lisp
+;; Dialog flow (CLEAN ARCHITECTURE ✓)
+(setq lattribs (hcnm-get-attributes ename))                    ; Read structured
+(setq dlg-lattribs (hcnm-ldrblk-lattribs-to-dlg lattribs))   ; Add format codes to prefix
+;; ... user edits dialog (3 separate fields map to prefix/auto/postfix) ...
+(setq lattribs (hcnm-ldrblk-dlg-to-lattribs dlg-lattribs))   ; Strip format codes from prefix
+```
+
+**Usage Pattern (Future - After dwg function refactoring):**
+```lisp
+;; Reading from drawing
+(setq lattribs-cat (hcnm-ldrblk-dwg-read ename-bubble))       ; Read concatenated strings
+(setq xdata (hcnm-ldrblk-xdata-get ename-bubble))             ; Read AUTO text values (TAG-VALUE pairs)
+(setq lattribs (hcnm-ldrblk-lattribs-split lattribs-cat xdata)) ; Split by searching for AUTO text
+(setq lattribs (hcnm-ldrblk-underover-remove lattribs))       ; Strip format codes
+
+;; Writing to drawing
+(setq lattribs (hcnm-ldrblk-underover-add lattribs))          ; Add format codes
+(setq lattribs-cat (hcnm-ldrblk-lattribs-concat lattribs))    ; Concatenate parts
+(hcnm-ldrblk-dwg-write ename-bubble lattribs-cat)             ; Write to attributes
+(hcnm-ldrblk-xdata-save ename-bubble lattribs)                ; Save AUTO text as TAG-VALUE pairs
+```
+
+**Benefits of Pure Functions:**
+- Testable without AutoCAD entities
+- Composable (can chain transformations)
+- Parallel to `lattribs-to-dlg` pattern
+- Single Responsibility Principle
+
+#### 1.1.3.2 Data Structure Terminology
+
+**lattribs** (structured):
+```lisp
+'(("NOTETXT1" "prefix" "auto" "postfix")
+  ("NOTETXT2" "prefix" "auto" "postfix")
+  ("NOTEGAP" "" "" ""))
+```
+
+**lattribs-cat** (concatenated):
+```lisp
+'(("NOTETXT1" "prefixautopostfix")
+  ("NOTETXT2" "prefixautopostfix")
+  ("NOTEGAP" ""))
+```
+
+#### 1.1.3.3 Underover Logic (Format Codes)
+
+Business logic operates on **structured lattribs**:
+- **TXT1 not empty?** → add underline formatting (%%u for dtext, \L for mtext) to prefix
+- **TXT2 not empty?** → add overline formatting (%%o for dtext, \O for mtext) to prefix  
+- **Either not empty?** → NOTEGAP = underline + two spaces (`"%%u  "` or `"\L  "`), else `""` (hide gap)
+- **Empty check:** `(= "" (strcat prefix auto postfix))`
+
+**Critical:** Underover preserves structure - adds codes to prefix, keeps auto/postfix separate.
+
+#### 1.1.3.4 Architecture Cleanup Needed
+
+**COMPLETED (2025-10-30):**
+1. ✅ **CREATED:** `lattribs-concat` - Pure transform: structured → concatenated (2-element lists)
+2. ✅ **CREATED:** `lattribs-split` - Pure transform: concatenated + xdata → structured (4-element lists)
+3. ✅ **REFACTORED:** `underover-add` - Now pure formatting (assumes input already concatenated)
+4. ✅ **REFACTORED:** `underover-remove` - Pure code stripping (assumes input concatenated)
+5. ✅ **DEPRECATED:** `underover` - Marked for deletion (not real business logic)
+6. ✅ **REFACTORED:** `lattribs-to-dlg` - Now calls concat THEN underover-add (clean separation)
+7. ✅ **REFACTORED:** `dlg-to-lattribs` - Returns lattribs-cat, not structured (user must split if needed)
+
+**REMAINING WORK:**
+1. **TODO:** Refactor `lattribs-to-dwg` to use concat + underover-add (currently duplicates logic)
+2. **TODO:** Delete `hcnm-ldrblk-underover` function entirely
+3. **TODO:** Fix `lattribs-validate-and-underover` to not call deleted function
 
 ### 1.1.4 HAWS_QT
 - **Serves CNM:** Provides "third party" (in another file) length and area quantities to CNM Bubble Notes
@@ -147,24 +245,51 @@ Every bubble attribute value has three parts:
 - **AUTO:** System-generated text (pipe diameter, station, etc.)
 - **POSTFIX:** User-controlled text (appears after auto-text)
 
-Delimiter: CHR 160 (non-breaking space) - `§` used in documentation
+**Storage:** Drawing attributes store concatenated values. XDATA stores AUTO text as TAG-VALUE pairs for search on next parse.
 
 ### 4.1.2 Storage Format
-`"PREFIX§AUTO§POSTFIX"`
+Drawing: `"prefixautopostfix"` (concatenated)  
+XDATA: `(("TAG1" . "auto1") ("TAG2" . "auto2"))` (AUTO text only, for search)
 
 Examples:
-- `"STA §100+25.50§ RT"` - Station with prefix/postfix
-- `"Ø§24§\"` - Pipe diameter
-- `"NOTE 3§§"` - Manual note (no auto-text)
+- Drawing attr: `"STA 100+25.50 RT"`  
+  XDATA: `("NOTETXT1" . "100+25.50")` ← search for this to split
+- Drawing attr: `"Ø24\""`  
+  XDATA: `("NOTETXT1" . "24")` ← search for this to split
+- Drawing attr: `"NOTE 3"`  
+  XDATA: (none) ← no AUTO text, all PREFIX
 
 ### 4.1.3 Key Functions
 ```lisp
-HCNM_EB_SPLIT_ON_NBSP     ; Splits "A§B§C" → (LIST "A" "B" "C")
-HCNM_EB_CONCAT_PARTS      ; Joins (LIST "A" "B" "C") → "A§B§C"
-HCNM_EB_EXPAND_VALUE_TO_DELIMITED ; Converts old single-value to delimited
+HCNM_LDRBLK_LATTRIBS_CONCAT   ; Concatenates (prefix auto postfix) → single string
+HCNM_LDRBLK_LATTRIBS_SPLIT    ; Searches for AUTO (from XDATA) in concat → (prefix auto postfix)
+HCNM_EB_EXPAND_VALUE_TO_DELIMITED ; Converts old single-value to delimited (migration)
 ```
 
-### 4.1.4 System-Controlled Attributes
+**Why Search Instead of Positions?**
+- User habits: Users may edit attributes directly in drawing (bypassing dialog)
+- Robustness: AUTO text acts as anchor for finding boundaries
+- No brittle position indices that could get out of sync
+
+### 4.1.4 Parsing Algorithm (Split Operation)
+
+**How It Works:**
+1. Read concatenated attribute from drawing: `"STA 100+25.50 RT"`
+2. Get AUTO text from XDATA: `"100+25.50"`
+3. Search for AUTO text position in concatenated string
+4. Split into three parts: `("STA " "100+25.50" " RT")`
+
+**Edge Cases:**
+- **No XDATA:** Entire value goes to PREFIX (manual note)
+- **AUTO not found:** User edited directly; treat as PREFIX only
+- **Multiple occurrences:** Use first match (or implement context-aware heuristics)
+
+**Benefits:**
+- **Flexible:** Survives user edits to PREFIX/POSTFIX outside dialog
+- **Robust:** No brittle position indices that desync
+- **Simple:** Search is straightforward string operation
+
+### 4.1.5 System-Controlled Attributes
 Three attributes ALWAYS put values in PREFIX (never AUTO):
 - **NOTENUM:** Bubble number
 - **NOTEPHASE:** Phase indicator

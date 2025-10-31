@@ -1,4 +1,4 @@
-;#region Header comments
+﻿;#region Header comments
 ;;; CONSTRUCTION NOTES MANAGER
 ;;;
 ;;; PHASING
@@ -5191,15 +5191,9 @@ ImportLayerSettings=No
                         ename-bubble-old replace-bubble-p
                         th
                        )
-  ;; Workaround for intermittent first-insertion crash bug:
-  ;; On first bubble insertion in a fresh drawing session, AutoCAD's command/input
-  ;; system can be uninitialized, causing crashes at GETKWORD prompts (specifically
-  ;; the dimension scale prompt). Issuing any command first initializes the system.
-  ;; Must use (COMMAND) not (VL-CMDF) - synchronous execution is required.
   (princ "\nCNM version: ")
   (princ (haws-unified-version))
   (haws_tip_show 1003 "\nIn some AutoCAD installations, CNM bubble insertion crashes the first time in each drawing session, possibly when it's the first command or the first block insertion. Please let us know if you can confirm a pattern.")
-  (command "._REDRAW")
   (haws-vsave '("attreq" "aunits" "clayer" "cmdecho"))
   (cond
     ((and (getvar "wipeoutframe") (/= (getvar "wipeoutframe") 2))
@@ -5279,6 +5273,7 @@ ImportLayerSettings=No
   (setq bubble-data (hcnm-ldrblk-draw-bubble bubble-data))
   (setq bubble-data (hcnm-ldrblk-get-bubble-data bubble-data))
   ;; Restore paper space if we switched to model space for viewport selection
+;; [TGH 2025-10-29 21:08:53: I don't like this ad hoc global. Use C:hcnm-getvar or bubble-data]
   (cond
     (*hcnm-pspace-restore-needed*
      (princ "\n=== RESTORING TO PSPACE (after auto-text selection) ===")
@@ -5459,7 +5454,7 @@ ImportLayerSettings=No
     p1-ucs (hcnm-ldrblk-bubble-data-get bubble-data "p1-ucs")
   )
   (cond
-    (ename-replace-bubble-p
+    (replace-bubble-p
      (setq lattribs (hcnm-get-attributes ename-bubble t))
     )
     (t
@@ -5476,7 +5471,9 @@ ImportLayerSettings=No
         )
        )
        (t
-        (setq lattribs (hcnm-ldrblk-lattribs-spec))
+        ;; Create empty spec and populate NOTENUM
+        (setq lattribs (hcnm-ldrblk-lattribs-spec)
+              lattribs (hcnm-ldrblk-lattribs-put-element "NOTENUM" (list num "" "") lattribs))
         (mapcar
           '(lambda (index)
              (setq
@@ -5494,9 +5491,10 @@ ImportLayerSettings=No
      )
     )
   )
-  ;; Save XDATA before formatting flattens the auto field
+  ;; Save XDATA before we add format codes (XDATA stores clean AUTO text only)
   (hcnm-ldrblk-xdata-save ename-bubble lattribs)
-  (hcnm-ldrblk-bubble-data-set bubble-data "ATTRIBUTES" (hcnm-ldrblk-lattribs-validate-and-underover lattribs))
+  ;; Validate structure, but don't apply deprecated underover function
+  (hcnm-ldrblk-bubble-data-set bubble-data "ATTRIBUTES" (hcnm-ldrblk-lattribs-validate lattribs))
 )
 (defun hcnm-ldrblk-finish-bubble (bubble-data / ename-bubble ename-bubble-old ename-last ename-leader ename-temp replace-bubble-p attributes notetype)
   (setq
@@ -5825,12 +5823,16 @@ ImportLayerSettings=No
 (defun hcnm-ldrblk-change-arrowhead (ename-leader)
   (cond
     ((= (c:hcnm-config-getvar "BubbleArrowIntegralPending") "1")
+     ;; Disable reactors during arrowhead change to prevent reactor from triggering
+     ;; and overwriting the newly saved lattribs with stale XDATA
+     (c:hcnm-config-setvar "AllowReactors" "0")
      ;; 18 is "Integral" arrowhead type.
      (vla-put-arrowheadtype
        (vlax-ename->vla-object ename-leader)
        18
      )
      (c:hcnm-config-setvar "BubbleArrowIntegralPending" "0")
+     (c:hcnm-config-setvar "AllowReactors" "1")
     )
   )
 )
@@ -5889,6 +5891,8 @@ ImportLayerSettings=No
   )
 )
 (defun hcnm-ldrblk-lattribs-spec (/ lattribs)
+  ;; Pure spec - returns empty structure for all bubble attributes
+  ;; To populate with values, use lattribs-put-element
   (setq
     lattribs
      (mapcar
@@ -5909,26 +5913,65 @@ ImportLayerSettings=No
     lattribs
      (cons (list "NOTEPHASE" "" "" "") lattribs)
     lattribs
-     (cons (list "NOTENUM" num "" "") lattribs)
+     (cons (list "NOTENUM" "" "" "") lattribs)  ; Empty, will be filled by caller
   )
   lattribs
 )
 ;;; Save attribute value to attribute list (replaces entire value)
-;; Save attribute to list - works with new format (tag prefix auto postfix)
-;; If value is a string, puts it in prefix field (for compatibility)
-;; If value is a list (prefix auto postfix), uses it directly
+;;; Replaces (tag prefix auto postfix) element in lattribs
+;;; If element doesn't exist, adds it
 (defun hcnm-ldrblk-lattribs-put-element (tag value lattribs / attr prefix auto postfix)
-  (setq attr (assoc tag lattribs))
+  ;; Value must be a list (prefix auto postfix)
+  (if (not (and (listp value) (= (length value) 3)))
+    (progn
+      (alert (strcat "hcnm-ldrblk-lattribs-put-element: value must be 3-element list (prefix auto postfix), got: " (vl-princ-to-string value)))
+      (exit)))
+  
+  (setq attr (assoc tag lattribs)
+        prefix (car value)
+        auto (cadr value)
+        postfix (caddr value))
+  
   (cond
-    ;; Value is a list (prefix auto postfix)
-    ((and (listp value) (= (length value) 3))
-     (setq prefix (car value)
-           auto (cadr value)
-           postfix (caddr value))
+    ;; Element exists - replace it
+    (attr
      (subst (list tag prefix auto postfix) attr lattribs))
-    ;; Value is a string - put in prefix field, empty auto/postfix
+    ;; Element doesn't exist - add it
     (t
-     (subst (list tag value "" "") attr lattribs))
+     (append lattribs (list (list tag prefix auto postfix))))
+  )
+)
+
+;;; ============================================================================
+;;; DEPRECATED - UNUSED FUNCTION
+;;; ============================================================================
+
+;;; DEPRECATED: Save user-entered string to attribute (SAFETY CHECK)
+;;;
+;;; NOT CALLED ANYWHERE. Use case unclear - if user gives us string,
+;;; why not just put it in prefix using lattribs-put-element?
+;;; Safety check (fails if auto/postfix not empty) seems unnecessary.
+;;;
+;;; MARKED FOR DELETION
+;;;
+(defun hcnm-ldrblk-lattribs-put-string (tag string lattribs / attr auto postfix)
+  (setq attr (assoc tag lattribs)
+        auto (caddr attr)
+        postfix (cadddr attr))
+  
+  ;; Safety check: Fail if auto or postfix have content
+  (cond
+    ((or (hcnm-ldrblk-attr-has-content-p auto)
+         (hcnm-ldrblk-attr-has-content-p postfix))
+     (alert (strcat "ERROR: Cannot set " tag " - auto or postfix field not empty.\n"
+                    "Auto: \"" auto "\"\n"
+                    "Postfix: \"" postfix "\"\n"
+                    "Use Clear button first to remove auto-text."))
+     nil)  ; Return nil to signal failure
+    
+    ;; Safe to proceed - put string in prefix, clear auto/postfix
+    (t
+     (subst (list tag string "" "") attr lattribs))
   )
 )
 
@@ -5944,7 +5987,7 @@ ImportLayerSettings=No
 ;;;
 ;;; RESPONSIBILITY: Data validation and normalization
 ;;;
-;;; CALLED BY: Wrapper around hcnm-ldrblk-lattribs-underover
+;;; CALLED BY: Wrapper around hcnm-ldrblk-underover
 ;;;
 ;;; DATA FLOW:
 ;;; 1. Get attribute values
@@ -5953,18 +5996,16 @@ ImportLayerSettings=No
 ;;;    a. Format codes in wrong position
 ;;;    b. Auto text values migrated to prefix (STA, LF, SF, SY patterns)
 ;;;    c. Field codes in wrong sections
-;;; 4. Pass normalized values to adjust-formats for format code application
+;;; 4. Pass normalized values to underover for format code application
 ;;;
 ;;; DESIGN: Separation of concerns
 ;;; - This function: Parse and normalize structure
-;;; - adjust-formats: Apply format codes to normalized data
-;;; - adjust-format: Strip/add individual format codes
+;;; - underover: Apply format codes to normalized data
 ;;;
 (defun hcnm-ldrblk-lattribs-validate-and-underover (lattribs)
-  ;; Ensure proper structure before formatting
-  (setq lattribs (hcnm-ldrblk-lattribs-validate lattribs))
-  ;; Apply format codes
-  (hcnm-ldrblk-lattribs-underover lattribs)
+  ;; DEPRECATED WRAPPER - Just validates now (underover removed)
+  ;; TODO: Replace all calls with hcnm-ldrblk-lattribs-validate
+  (hcnm-ldrblk-lattribs-validate lattribs)
 )
 
 ;;; Ensure all bubble attributes have proper 4-element list structure.
@@ -6026,89 +6067,290 @@ ImportLayerSettings=No
 ;;; 3. Handle NOTEGAP (underline + spaces if either line has content)
 ;;; 4. Save formatted values back to lattribs
 ;;;
-(defun hcnm-ldrblk-lattribs-underover (lattribs / bubblemtext txt1-formatted txt2-formatted txt1-raw txt2-raw
-                               txt1-attr txt2-attr txt1-auto txt1-postfix txt2-auto txt2-postfix gap overline underline
-                              )
-  ;; Determine format codes based on mtext vs dtext
-  (setq
-    bubblemtext (hcnm-ldrblk-get-mtext-string)
-    underline (cond ((= bubblemtext "") "%%u") (t "\\L"))
-    overline (cond ((= bubblemtext "") "%%o") (t "\\O"))
-    ;; Get full attributes (tag prefix auto postfix)
-    txt1-attr (assoc "NOTETXT1" lattribs)
-    txt2-attr (assoc "NOTETXT2" lattribs)
-    ;; Extract the three parts
-    txt1-auto (caddr txt1-attr)
-    txt1-postfix (cadddr txt1-attr)
-    txt2-auto (caddr txt2-attr)
-    txt2-postfix (cadddr txt2-attr)
-    ;; Concatenate prefix+auto+postfix for formatting decision
-    txt1-raw (strcat (cadr txt1-attr) txt1-auto txt1-postfix)
-    txt2-raw (strcat (cadr txt2-attr) txt2-auto txt2-postfix)
-  )
-  
-  ;; Format TXT1 (underline) - adjust-format handles empty/delimiter checks and returns formatted string
-  (setq txt1-formatted (hcnm-ldrblk-string-underover txt1-raw underline))
-  
-  ;; Format TXT2 (overline) - adjust-format handles empty/delimiter checks
-  (setq txt2-formatted (hcnm-ldrblk-string-underover txt2-raw overline))
-  
-  ;; GAP: underline + two spaces if either line has content
-  (setq gap
-    (cond
-      ((and (not (hcnm-ldrblk-attr-has-content-p txt1-raw))
-            (not (hcnm-ldrblk-attr-has-content-p txt2-raw)))
-       "")
-      (t "%%u  ")))
-  
-  ;; Save GAP only - DON'T flatten TXT1/TXT2 structure
-  ;; Format codes will be applied in hcnm-ldrblk-lattribs-to-dwg when concatenating
-  ;; This preserves prefix/auto/postfix for editing
-  (setq lattribs (hcnm-ldrblk-lattribs-put-element "NOTEGAP" gap lattribs))
-  lattribs
-)
 ;;; Check if attribute has actual content (not just empty or delimiters).
 ;;; Returns T if there's text content, NIL otherwise.
 (defun hcnm-ldrblk-attr-has-content-p (string)
-  (and (not (= string ""))
-       (not (= string (chr 160)))
-       (not (= string (strcat (chr 160) (chr 160)))))
+  ;; Simple check: is string non-empty?
+  (and string (/= string ""))
 )
-;;; Add underline or overline format code to string (or strip if empty).
+
+;;; ARCHITECTURE: Core underover functions (operates on FULL lattribs list)
 ;;;
-;;; SCOPE: Format codes only - does NOT parse prefix/auto/postfix structure.
-;;;        That's the responsibility of calling code (adjust-formats).
+;;; DATA FLOW PATTERN:
+;;; - hcnm-ldrblk-underover: Sets NOTEGAP based on TXT1/TXT2 content (for internal use)
+;;; - hcnm-ldrblk-underover-add: Concatenates + adds format codes (for display: dwg/dlg)
+;;; - hcnm-ldrblk-underover-remove: Strips format codes + clears GAP (for reading: dwg/dlg)
 ;;;
-;;; DATA FLOW:
-;;; 1. Check if string qualifies for formatting (not empty or delimiter-only)
-;;; 2. If empty: return as-is (no formatting)
-;;; 3. If non-empty: strip any existing format code, then add CODE
+;;; Called by:
+;;; - underover: Used internally to set NOTEGAP after lattribs changes
+;;; - underover-add: Used by lattribs-to-dwg, lattribs-to-dlg for display
+;;; - underover-remove: Used by dwg-to-lattribs, dlg-to-lattribs for reading
 ;;;
-;;; ASSUMPTIONS:
-;;; - Format codes (if present) are always at the start of the string
-;;; - This handles both mtext codes (\L, \O) and dtext codes (%%u, %%o)
-;;; - We don't need to handle every edge case; false positives are visible but not fatal
+;;; CRITICAL: These functions MUST operate on the full lattribs list because
+;;; the underover logic requires seeing TXT1 AND TXT2 together to make decisions.
+
+;;; ============================================================================
+;;; DATA STRUCTURE TRANSFORMATIONS
+;;; ============================================================================
+
+;;; Concatenate structured lattribs into flat strings
 ;;;
-(defun hcnm-ldrblk-string-underover (string code)
-  (cond
-    ;; Empty string or delimiter-only string - no formatting
-    ((not (hcnm-ldrblk-attr-has-content-p string))
-     string)
-    ;; Non-empty string - strip existing format and add CODE
-    (t
-     ;; Strip leading mtext format codes
-     (cond
-       ((wcmatch string "\\L*") (setq string (substr string 3)))
-       ((wcmatch string "\\O*") (setq string (substr string 3)))
-     )
-     ;; Strip leading dtext format codes  
-     (cond
-       ((wcmatch string "%%u*") (setq string (substr string 4)))
-       ((wcmatch string "%%o*") (setq string (substr string 4)))
-     )
-     ;; Add the requested format code
-     (strcat code string))
+;;; PURPOSE: Transform lattribs from structured (prefix/auto/postfix) to
+;;;          concatenated (single string per tag) format.
+;;;
+;;; INPUT: lattribs (structured)
+;;;   '(("NOTETXT1" "prefix" "auto" "postfix")
+;;;     ("NOTETXT2" "prefix" "auto" "postfix")
+;;;     ("NOTEGAP" "" "" ""))
+;;;
+;;; OUTPUT: lattribs-cat (concatenated)
+;;;   '(("NOTETXT1" "prefixautopostfix")
+;;;     ("NOTETXT2" "prefixautopostfix")
+;;;     ("NOTEGAP" ""))
+;;;
+;;; NOTE: This is pure data transformation, no business logic.
+;;;
+(defun hcnm-ldrblk-lattribs-concat (lattribs / result attr tag concat-value)
+  (setq result nil)
+  (foreach attr lattribs
+    (setq tag (car attr))
+    (setq concat-value
+      (cond
+        ;; If 4-element format, concatenate parts 2, 3, 4
+        ((= (length attr) 4)
+         (strcat (cadr attr) (caddr attr) (cadddr attr)))
+        ;; If 2-element format (legacy), just use the value
+        ((= (length attr) 2)
+         (cadr attr))
+        ;; Unexpected format
+        (t "")))
+    (setq result (append result (list (list tag concat-value))))
   )
+  result
+)
+
+;;; Split concatenated lattribs using xdata delimiters
+;;;
+;;; PURPOSE: Transform lattribs from concatenated (single string) back to
+;;;          structured (prefix/auto/postfix) format using xdata delimiters.
+;;;
+;;; INPUT: 
+;;;   lattribs-cat - Concatenated format '(("NOTETXT1" "prefixautopostfix") ...)
+;;;   xdata-alist - XDATA from drawing with delimiter positions
+;;;
+;;; OUTPUT: lattribs (structured)
+;;;   '(("NOTETXT1" "prefix" "auto" "postfix") ...)
+;;;
+;;; NOTE: This is pure data transformation, no business logic.
+;;;       Uses xdata to find CHR 160 delimiter positions and split.
+;;;
+(defun hcnm-ldrblk-lattribs-split (lattribs-cat xdata-alist / result attr tag concat-value xdata-entry parts)
+  (setq result nil)
+  (foreach attr lattribs-cat
+    (setq tag (car attr)
+          concat-value (cadr attr)
+          xdata-entry (assoc tag xdata-alist))
+    
+    ;; If xdata exists for this tag, split using delimiter
+    (cond
+      (xdata-entry
+       (setq parts (hcnm-eb-split-on-nbsp (cdr xdata-entry)))
+       ;; Ensure 3-element result (prefix auto postfix)
+       (while (< (length parts) 3)
+         (setq parts (append parts (list ""))))
+       (setq result (append result (list (cons tag parts)))))
+      
+      ;; No xdata, treat as single value in prefix field
+      (t
+       (setq result (append result (list (list tag concat-value "" "")))))
+    )
+  )
+  result
+)
+
+;;; ============================================================================
+;;; UNDEROVER FORMAT CODE LOGIC (Business Logic)
+;;; ============================================================================
+
+;;; Add format codes to concatenated strings
+;;;
+;;; BUSINESS LOGIC (documented 2025-10-30):
+;;; - If TXT1 has content → add underline (%%u for dtext, \L for mtext)
+;;; - If TXT2 has content → add overline (%%o for dtext, \O for mtext)
+;;; - If EITHER has content → NOTEGAP = "%%u  ", else ""
+;;;
+;;; INPUT: lattribs-cat (concatenated)
+;;;   '(("NOTETXT1" "text1") ("NOTETXT2" "text2") ("NOTEGAP" ""))
+;;;
+;;; OUTPUT: lattribs-cat (formatted)
+;;;   '(("NOTETXT1" "%%utext1") ("NOTETXT2" "%%otext2") ("NOTEGAP" "%%u  "))
+;;;
+;;; Used by: lattribs-to-dwg, lattribs-to-dlg
+;;;
+;;; Add underline/overline format codes to structured lattribs
+;;;
+;;; BUSINESS LOGIC: Check if TXT1/TXT2 have content (any of prefix/auto/postfix)
+;;;                 Add %%u to TXT1 prefix, %%o to TXT2 prefix if not empty
+;;;                 Set NOTEGAP based on emptiness
+;;;
+;;; INPUT: lattribs (structured)
+;;;   '(("NOTETXT1" "prefix" "auto" "postfix") ("NOTETXT2" "p" "a" "p") ...)
+;;;
+;;; OUTPUT: lattribs (structured with format codes in prefix)
+;;;   '(("NOTETXT1" "%%uprefix" "auto" "postfix") ("NOTETXT2" "%%op" "a" "p") ...)
+;;;
+;;; Used by: lattribs-to-dlg, lattribs-to-dwg
+;;;
+(defun hcnm-ldrblk-underover-add (lattribs / bubblemtext underline overline
+                                     txt1-attr txt2-attr 
+                                     txt1-empty-p txt2-empty-p
+                                     txt1-prefix txt2-prefix
+                                     gap-value result)
+  ;; Determine format codes based on mtext vs dtext
+  (setq bubblemtext (hcnm-ldrblk-get-mtext-string)
+        underline (cond ((= bubblemtext "") "%%u") (t "\\L"))
+        overline (cond ((= bubblemtext "") "%%o") (t "\\O")))
+  
+  ;; Get TXT1 and TXT2 attributes
+  (setq txt1-attr (assoc "NOTETXT1" lattribs)
+        txt2-attr (assoc "NOTETXT2" lattribs))
+  
+  ;; Check if empty (concat all parts and check)
+  (setq txt1-empty-p (= "" (strcat (cadr txt1-attr) (caddr txt1-attr) (cadddr txt1-attr)))
+        txt2-empty-p (= "" (strcat (cadr txt2-attr) (caddr txt2-attr) (cadddr txt2-attr))))
+  
+  ;; Add format code to prefix of TXT1 if NOT empty
+  (setq txt1-prefix 
+    (cond
+      ((not txt1-empty-p) (strcat underline (cadr txt1-attr)))
+      (t (cadr txt1-attr))))
+  
+  ;; Add format code to prefix of TXT2 if NOT empty
+  (setq txt2-prefix
+    (cond
+      ((not txt2-empty-p) (strcat overline (cadr txt2-attr)))
+      (t (cadr txt2-attr))))
+  
+  ;; Set NOTEGAP based on whether either line has content
+  (setq gap-value
+    (cond
+      ((or (not txt1-empty-p) (not txt2-empty-p)) "%%u  ")
+      (t "")))
+  
+  ;; Build result with formatted prefixes (preserve structure)
+  (setq result lattribs)
+  (setq result (subst (list "NOTETXT1" txt1-prefix (caddr txt1-attr) (cadddr txt1-attr)) 
+                      txt1-attr result))
+  (setq result (subst (list "NOTETXT2" txt2-prefix (caddr txt2-attr) (cadddr txt2-attr)) 
+                      txt2-attr result))
+  (setq result (subst (list "NOTEGAP" gap-value "") 
+                      (assoc "NOTEGAP" result) result))
+  
+  result
+)
+
+;;; Remove underline/overline format codes from structured lattribs
+;;;
+;;; BUSINESS LOGIC: Strip %%u, %%o, \L, \O codes from prefix + clear NOTEGAP
+;;;
+;;; INPUT: lattribs (structured with format codes in prefix)
+;;;   '(("NOTETXT1" "%%uprefix" "auto" "postfix") ("NOTETXT2" "%%op" "a" "p") ...)
+;;;
+;;; OUTPUT: lattribs (structured, clean)
+;;;   '(("NOTETXT1" "prefix" "auto" "postfix") ("NOTETXT2" "p" "a" "p") ...)
+;;;
+;;; Used by: dwg-to-lattribs, dlg-to-lattribs
+;;;
+(defun hcnm-ldrblk-underover-remove (lattribs / result attr tag prefix auto postfix clean-prefix)
+  (setq result nil)
+  (foreach attr lattribs
+    (setq tag (car attr))
+    
+    (cond
+      ;; Handle NOTETXT1 and NOTETXT2 (4-element lists with prefix/auto/postfix)
+      ((or (= tag "NOTETXT1") (= tag "NOTETXT2"))
+       (setq prefix (cadr attr)
+             auto (caddr attr)
+             postfix (cadddr attr)
+             clean-prefix prefix)
+       
+       ;; Strip mtext format codes (\L, \O)
+       (cond
+         ((wcmatch clean-prefix "\\L*") (setq clean-prefix (substr clean-prefix 3)))
+         ((wcmatch clean-prefix "\\O*") (setq clean-prefix (substr clean-prefix 3))))
+       
+       ;; Strip dtext format codes (%%u, %%o)
+       (cond
+         ((wcmatch clean-prefix "%%u*") (setq clean-prefix (substr clean-prefix 4)))
+         ((wcmatch clean-prefix "%%o*") (setq clean-prefix (substr clean-prefix 4))))
+       
+       (setq result (append result (list (list tag clean-prefix auto postfix)))))
+      
+      ;; Handle NOTEGAP (clear it)
+      ((= tag "NOTEGAP")
+       (setq result (append result (list (list tag "")))))
+      
+      ;; Handle all other attributes (2-element format, pass through)
+      (t
+       (setq result (append result (list attr)))))
+  )
+  result
+)
+
+;;; ============================================================================
+;;; DEPRECATED - TO BE DELETED
+;;; ============================================================================
+
+;;; Set NOTEGAP based on TXT1/TXT2 content (INTERNAL lattribs operation)
+;;;
+;;; DEPRECATED: This function is an artifact of architectural confusion.
+;;;             It sets NOTEGAP only, which isn't the real business logic.
+;;;             Real business logic is: add/remove format codes.
+;;;
+;;; DELETE THIS after refactoring lattribs-validate-and-underover call site.
+;;;
+(defun hcnm-ldrblk-underover (lattribs / txt1-attr txt2-attr txt1-concat txt2-concat gap-value)
+  ;; DEPRECATED - DO NOT USE
+  ;; This function will be deleted during architecture cleanup
+  (alert "ERROR: hcnm-ldrblk-underover called - should be refactored away")
+  lattribs
+)
+
+;;; DATA FLOW FUNCTIONS: lattribs ← → dlg
+;;;
+;;; These functions transform between clean lattribs (internal format) and
+;;; dialog display format (with format codes visible).
+
+;;; Transform lattribs to dialog display format
+;;;
+;;; INPUT: Clean lattribs with prefix/auto/postfix structure
+;;;   Example: (("NOTETXT1" "Storm " "STA 1+00" " RT") ...)
+;;;
+;;; OUTPUT: Structured lattribs with format codes added to prefix
+;;;   Example: (("NOTETXT1" "%%uStorm " "STA 1+00" " RT") ...)
+;;;
+;;; ARCHITECTURE: Just calls underover-add (preserves 3-part structure for dialog)
+;;;
+(defun hcnm-ldrblk-lattribs-to-dlg (lattribs)
+  (hcnm-ldrblk-underover-add lattribs)
+)
+
+;;; Transform dialog input back to clean lattribs
+;;;
+;;; INPUT: Dialog format (structured with format codes in prefix)
+;;;   Example: (("NOTETXT1" "%%uStorm " "STA 1+00" " RT") ...)
+;;;
+;;; OUTPUT: Clean structured lattribs (format codes stripped)
+;;;   Example: (("NOTETXT1" "Storm " "STA 1+00" " RT") ...)
+;;;
+;;; ARCHITECTURE: Just calls underover-remove (strips codes from prefix)
+;;;
+(defun hcnm-ldrblk-dlg-to-lattribs (dlg-lattribs)
+  (hcnm-ldrblk-underover-remove dlg-lattribs)
+)
+  
+  ;; Return clean lattribs
+  clean-lattribs
 )
 
 ;#region Auto text dispatcher and children
@@ -6165,9 +6407,10 @@ ImportLayerSettings=No
 ;; hcnm-ldrblk-reactor top level manages reactor update
 ;;;
 ;;; PARAMETERS:
-;; Input is the object (ename or vla-object; could be standardized) or string we need to examine if we aren't asking the user for it or nil if we need to get it.
+;; obj-target is the target object provided by the reactor callback (not used in insertion/editing)
+;; tag is the attribute tag being processed (e.g., "NOTETXT1")
 ;; Returns lattribs with the requested auto data added.
-(defun hcnm-ldrblk-auto-dispatch (ename-bubble lattribs tag auto-type input / bubble-data)
+(defun hcnm-ldrblk-auto-dispatch (ename-bubble lattribs tag auto-type obj-target / bubble-data)
     ;; bubble-data-update: Build bubble-data and pass to subfunctions
   (setq 
     bubble-data (hcnm-ldrblk-bubble-data-set bubble-data "ename-bubble" ename-bubble)
@@ -6189,72 +6432,51 @@ ImportLayerSettings=No
   (setq
     bubble-data
      (cond
-       ((= auto-type "Text") (hcnm-ldrblk-auto-es bubble-data tag auto-type input))
-       ((= auto-type "LF") (hcnm-ldrblk-auto-qty bubble-data tag auto-type "Length" "1" input))
-       ((= auto-type "SF") (hcnm-ldrblk-auto-qty bubble-data tag auto-type "Area" "1" input))
+       ((= auto-type "Text") 
+        (hcnm-ldrblk-auto-es bubble-data tag auto-type obj-target))
+       ((= auto-type "LF") 
+        (hcnm-ldrblk-auto-qty bubble-data tag auto-type "Length" "1" obj-target))
+       ((= auto-type "SF") 
+        (hcnm-ldrblk-auto-qty bubble-data tag auto-type "Area" "1" obj-target))
        ((= auto-type "SY")
-        (hcnm-ldrblk-auto-qty bubble-data tag auto-type "Area" "0.11111111" input)
-       )
-       ((= auto-type "Sta") (hcnm-ldrblk-auto-al bubble-data tag auto-type input))
-       ((= auto-type "Off") (hcnm-ldrblk-auto-al bubble-data tag auto-type input))
-       ((= auto-type "StaOff")
-        (hcnm-ldrblk-auto-al bubble-data tag auto-type input)
-       )
-       ((= auto-type "AlName") (hcnm-ldrblk-auto-al bubble-data tag auto-type input))
-       ((= auto-type "StaName") (hcnm-ldrblk-auto-al bubble-data tag auto-type input))
-       ((= auto-type "N") (hcnm-ldrblk-auto-ne bubble-data tag auto-type input))
-       ((= auto-type "E") (hcnm-ldrblk-auto-ne bubble-data tag auto-type input))
-       ((= auto-type "NE") (hcnm-ldrblk-auto-ne bubble-data tag auto-type input))
-       ((= auto-type "Z") (hcnm-ldrblk-auto-su bubble-data tag auto-type input))
-       ((= auto-type "Dia") (hcnm-ldrblk-auto-pipe bubble-data tag auto-type input))
-       ((= auto-type "Slope") (hcnm-ldrblk-auto-pipe bubble-data tag auto-type input))
-       ((= auto-type "L") (hcnm-ldrblk-auto-pipe bubble-data tag auto-type input))
+        (hcnm-ldrblk-auto-qty bubble-data tag auto-type "Area" "0.11111111" obj-target))
+       ((= auto-type "Sta") 
+        (hcnm-ldrblk-auto-al bubble-data tag auto-type obj-target))
+       ((= auto-type "Off") 
+        (hcnm-ldrblk-auto-al bubble-data tag auto-type obj-target))
+       ((= auto-type "StaOff") 
+        (hcnm-ldrblk-auto-al bubble-data tag auto-type obj-target))
+       ((= auto-type "AlName") 
+        (hcnm-ldrblk-auto-al bubble-data tag auto-type obj-target))
+       ((= auto-type "StaName") 
+        (hcnm-ldrblk-auto-al bubble-data tag auto-type obj-target))
+       ((= auto-type "N") 
+        (hcnm-ldrblk-auto-ne bubble-data tag auto-type obj-target))
+       ((= auto-type "E") 
+        (hcnm-ldrblk-auto-ne bubble-data tag auto-type obj-target))
+       ((= auto-type "NE") 
+        (hcnm-ldrblk-auto-ne bubble-data tag auto-type obj-target))
+       ((= auto-type "Z") 
+        (hcnm-ldrblk-auto-su bubble-data tag auto-type obj-target))
+       ((= auto-type "Dia") 
+        (hcnm-ldrblk-auto-pipe bubble-data tag auto-type obj-target))
+       ((= auto-type "Slope") 
+        (hcnm-ldrblk-auto-pipe bubble-data tag auto-type obj-target))
+       ((= auto-type "L") 
+        (hcnm-ldrblk-auto-pipe bubble-data tag auto-type obj-target))
      )
     lattribs (hcnm-ldrblk-bubble-data-get bubble-data "ATTRIBUTES")
   )
   lattribs
 )
 
-;;==============================================================================
-;; PAPER SPACE / MODEL SPACE MANAGEMENT
-;;==============================================================================
-;; These functions manage switching between paper space and model space during
-;; auto-text operations. They are called by different auto-text types for
-;; different purposes:
-;;
-;; CALLERS AND PURPOSE:
-;; - hcnm-ldrblk-auto-qty   : Switches to MSPACE for reference object selection
-;; - hcnm-ldrblk-auto-pipe  : Switches to MSPACE for pipe object selection  
-;; - hcnm-ldrblk-auto-al    : Switches to MSPACE for alignment object selection
-;; - hcnm-ldrblk-auto-ne    : Does NOT call (no reference object selection needed)
-;;
-;; CRITICAL DISTINCTION:
-;; This space switching is for REFERENCE OBJECT SELECTION, not viewport selection.
-;; Viewport selection (for AVPORT capture) happens separately through the gateway
-;; system (hcnm-ldrblk-gateways-to-viewport-selection-prompt) and is needed by
-;; ALL coordinate-based auto-text types including N/E/NE.
-;;
-;; WHY auto-ne DOESN'T CALL THESE:
-;; N/E/NE auto-text has no reference objects to select (it calculates coordinates
-;; directly from p1-world). It still needs viewport transform for paper space
-;; coordinate conversion, but that's handled by the gateway system.
-;;==============================================================================
 
-(defun hcnm-ldrblk-space-set-model ()
-  (c:hcnm-config-setvar "AllowReactors" "0")
-  (cond ((= (getvar "CVPORT") 1) (vl-cmdf "._MSPACE") t))
-)
-(defun hcnm-ldrblk-space-restore (pspace-bubble-p)
-  (cond (pspace-bubble-p (vl-cmdf "._PSPACE")))
-  (c:hcnm-config-setvar "AllowReactors" "1")
-)
-
-(defun hcnm-ldrblk-auto-es (bubble-data tag auto-type input / ename lattribs) 
+(defun hcnm-ldrblk-auto-es (bubble-data tag auto-type obj-target / ename lattribs) 
   (setq
     lattribs (hcnm-ldrblk-bubble-data-get bubble-data "ATTRIBUTES")
     ename
     (cond
-      (input)
+       (obj-target)
       (t (car (nentsel (strcat "\nSelect object with " auto-type ": "))))
     )     
   )
@@ -6274,12 +6496,15 @@ ImportLayerSettings=No
   )
   bubble-data
 )
-(defun hcnm-ldrblk-auto-qty (bubble-data tag auto-type qt-type factor input / 
+(defun hcnm-ldrblk-auto-qty (bubble-data tag auto-type qt-type factor obj-target / 
                               lattribs str-backslash input1 pspace-bubble-p
                               ss-p string)
   (setq lattribs (hcnm-ldrblk-bubble-data-get bubble-data "ATTRIBUTES"))
   (cond
-    ((setq string input))
+    (obj-target
+      (setq string "Programming error. See command line.")
+      (princ (strcat "\nProgramming error: " auto-type " auto text uses AutoCAD fields, which don't need to be updated by CNM. But hcnm-ldrblk-auto-qty was given an an obj-target to update."))
+    )
     (t  
       (cond
         ((and
@@ -6307,7 +6532,7 @@ ImportLayerSettings=No
               (load "HAWS-QT")
             )
             (haws-qt-new "ldrblk")
-            (haws-qt-set-property "ldrblk" "type" (strcase qt-type t))
+            (haws-qt-set-property "ldrblk" "type" (strcase qt-type t)) ; "length" or "area"
             (haws-qt-set-property "ldrblk" "factor" (read factor))
             (haws-qt-set-property
               "ldrblk"
@@ -6333,7 +6558,7 @@ ImportLayerSettings=No
                 :vlax-false
               )
               ">%)."
-              qt-type
+              qt-type ; "Length" or "Area"
               " \\f \"%lu2%pr"
               (c:hcnm-config-getvar
                 (strcat "BubbleTextPrecision" auto-type)
@@ -6365,6 +6590,7 @@ ImportLayerSettings=No
   )
   bubble-data
 )
+;#region Auto alignment
 ;;==============================================================================
 ;; ALIGNMENT AUTO-TEXT (Sta/Off/StaOff)
 ;;==============================================================================
@@ -6460,7 +6686,269 @@ ImportLayerSettings=No
     )
   )
 )
-
+;; Main alignment auto-text function (backward compatible)
+;; Orchestrates: get alignment ? calculate ? format ? attach reactor
+;; Arguments:
+;;   bubble-data - Bubble data alist
+;;   TAG - Attribute tag to update
+;;   auto-type - "Sta", "Off", "StaOff", "AlName", or "StaName"
+;;   obj-target - Optional: Pre-selected alignment object (used by reactor updates)
+;; Returns: Updated bubble-data with new attribute value
+(defun hcnm-ldrblk-auto-al (bubble-data tag auto-type obj-target / 
+                             alignment-name lattribs ename-bubble ename-leader 
+                             sta-off-pair drawstation offset obj-align p1-world 
+                             pspace-bubble-p sta-string off-string string cvport 
+                             ref-ocs-1 ref-ocs-2 ref-ocs-3 ref-wcs-1 ref-wcs-2 ref-wcs-3)
+  (setq 
+    lattribs (hcnm-ldrblk-bubble-data-get bubble-data "ATTRIBUTES")
+    ename-bubble (hcnm-ldrblk-bubble-data-get bubble-data "ename-bubble")
+    ename-leader (hcnm-ldrblk-bubble-data-get bubble-data "ename-leader")
+    p1-world (hcnm-ldrblk-bubble-data-get bubble-data "p1-world")
+  )
+  
+  ;; STEP 1: Get alignment object (user selection or provided obj-target)
+  (cond 
+    (obj-target
+     ;; Reactor callback - for coordinate types, just recalculate p1-world from current leader
+     ;; No gateway call needed - gate 3 (not-reactor) will be closed
+     (setq obj-align obj-target)
+     (cond
+       ((or (= auto-type "Sta") (= auto-type "Off") (= auto-type "StaOff") (= auto-type "StaName"))
+        (setq bubble-data (hcnm-ldrblk-bubble-data-ensure-p1-world bubble-data)
+              p1-world (hcnm-ldrblk-bubble-data-get bubble-data "p1-world"))
+       )
+     )
+    )
+    (t
+     ;; Initial creation - get alignment from user (they're picking it NOW or reusing previous)
+     (setq pspace-bubble-p (hcnm-ldrblk-space-set-model)
+           obj-align       (hcnm-ldrblk-auto-al-get-alignment ename-bubble tag auto-type)
+     )
+     
+     ;; Now calculate p1-world if needed for coordinate-based types
+     (cond
+       ((or (= auto-type "Sta") (= auto-type "Off") (= auto-type "StaOff") (= auto-type "StaName"))
+        (setq bubble-data (hcnm-ldrblk-bubble-data-ensure-p1-world bubble-data)
+              p1-world (hcnm-ldrblk-bubble-data-get bubble-data "p1-world"))
+       )
+     )
+     ;; Attach reactor to watch for alignment/leader changes
+     (hcnm-ldrblk-assure-auto-text-has-reactor obj-align ename-bubble ename-leader tag auto-type)
+     ;; Now restore space after everything is done
+     (hcnm-ldrblk-space-restore pspace-bubble-p)
+    )
+  )
+  
+  ;; STEP 2: Calculate station and offset (only needed for coordinate-based types)
+  (cond
+    ((or (= auto-type "Sta") (= auto-type "Off") (= auto-type "StaOff") (= auto-type "StaName"))
+     (setq sta-off-pair (hcnm-ldrblk-auto-alignment-calculate obj-align p1-world))
+    )
+  )
+  
+  ;; STEP 3: Format the result based on auto-type
+  (cond 
+    ((= auto-type "AlName")
+     ;; Alignment name only - no coordinates needed
+     (cond
+       (obj-align
+        (setq string (vl-catch-all-apply 'VLAX-GET-PROPERTY (list obj-align 'NAME)))
+        (cond
+          ((vl-catch-all-error-p string)
+           (setq string "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
+          )
+        )
+       )
+       (t
+        (setq string "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
+       )
+     )
+    )
+    (sta-off-pair
+     ;; Calculation succeeded - extract and format
+     (setq drawstation (car sta-off-pair)
+           offset      (cdr sta-off-pair)
+           sta-string  (hcnm-ldrblk-auto-al-station-to-string obj-align drawstation)
+           off-string  (hcnm-ldrblk-auto-al-offset-to-string offset)
+           string
+           (cond 
+             ((= auto-type "Sta") sta-string)
+             ((= auto-type "Off") off-string)
+             ((= auto-type "StaOff")
+              (strcat 
+                sta-string
+                (c:hcnm-config-getvar "BubbleTextJoinDelSta")
+                off-string
+              )
+             )
+             ((= auto-type "StaName")
+              ;; Station + alignment name
+              (setq string (vl-catch-all-apply 'VLAX-GET-PROPERTY (list obj-align 'NAME)))
+              (cond
+                ((vl-catch-all-error-p string)
+                 (setq string sta-string)  ; If name fails, just use station
+                )
+                (t
+                 (setq string (strcat sta-string " " string))
+                )
+              )
+              string
+             )
+           )  ; End inner COND for STRING
+     )  ; End SETQ
+    )  ; End first branch of outer COND
+    (t 
+     ;; Calculation failed - couldn't get coordinates or invalid alignment
+     (setq string "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
+    )
+  )  ; End outer COND
+  
+  ;; Step 4: Save the formatted string to the attribute list and update bubble-data
+  (setq
+    lattribs
+    (hcnm-ldrblk-lattribs-put-auto 
+      tag
+      string
+      lattribs
+    )
+    bubble-data (hcnm-ldrblk-bubble-data-set bubble-data "ATTRIBUTES" lattribs)
+  )
+  bubble-data
+)
+(defun hcnm-ldrblk-auto-al-get-alignment
+   (ename-bubble tag auto-type / avport cvport es-align name obj-align obj-align-old 
+    ref-ocs-1 ref-ocs-2 ref-ocs-3 ref-wcs-1 ref-wcs-2 ref-wcs-3 )
+  (setq
+    obj-align-old
+     (c:hcnm-config-getvar "BubbleCurrentAlignment")
+    name
+     (cond
+       ((and (= (type obj-align-old) 'VLA-OBJECT) 
+             (not (vl-catch-all-error-p (vl-catch-all-apply 'VLAX-GET-PROPERTY (list obj-align-old 'NAME)))))
+        (vl-catch-all-apply 'VLAX-GET-PROPERTY (list obj-align-old 'NAME))
+       )
+       (t (setq obj-align-old nil) "")
+     )
+    es-align
+     (nentsel
+       (strcat
+         "\nSelect alignment"
+         (cond
+           ((= name "") ": ")
+           (t (strcat " or <" name ">: "))
+         )
+       )
+     )
+  )
+  (hcnm-ldrblk-gateways-to-viewport-selection-prompt 
+    ename-bubble 
+    auto-type 
+    nil                              ; obj-target=nil for initial creation
+    (if es-align "PICKED" "REUSED")  ; Based on whether user selected something
+    nil)                             ; Normal auto-text flow (not super-clearance)
+  (cond
+    ((and
+       es-align
+       (= (cdr (assoc 0 (entget (car es-align)))) "AECC_ALIGNMENT")
+     )
+     (setq obj-align (vlax-ename->vla-object (car es-align)))
+     (c:hcnm-config-setvar "BubbleCurrentAlignment" obj-align)
+    )
+    (es-align 
+      (alert (princ "\nSelected object is not an alignment. Keeping previous alignment."))
+      (setq obj-align obj-align-old)
+    )
+    (t 
+      (princ "\nNo object selected. Keeping previous alignment.")
+      (setq obj-align obj-align-old)
+    )
+  )
+  
+  obj-align  ; Return the alignment object
+)
+;#endregion
+;#region Auto NE
+(defun hcnm-ldrblk-auto-ne (bubble-data tag auto-type obj-target / 
+                             lattribs e ename-bubble ename-leader n ne 
+                             p1-ocs p1-world reactor-update-p string)
+  (setq 
+    lattribs (hcnm-ldrblk-bubble-data-get bubble-data "ATTRIBUTES")
+    ename-bubble (hcnm-ldrblk-bubble-data-get bubble-data "ename-bubble")
+    ename-leader (hcnm-ldrblk-bubble-data-get bubble-data "ename-leader")
+    ;; obj-target = NIL means initial creation
+    ;; obj-target = T means reactor update for coordinate types (sentinel value)
+    ;; obj-target = VLA-OBJECT means reactor update with reference object (not used for N/E/NE)
+    reactor-update-p (and obj-target (or (= obj-target t) (= (type obj-target) 'VLA-OBJECT)))
+  )
+  
+  ;; Ensure viewport transform is captured if needed (gateway architecture)
+  ;; MUST happen BEFORE p1-world calculation below, which depends on viewport transform
+  (hcnm-ldrblk-gateways-to-viewport-selection-prompt 
+    ename-bubble 
+    auto-type 
+    obj-target 
+    "NO-OBJECT"  ; N/E/NE don't use reference objects
+    nil)         ; Normal auto-text flow (not super-clearance)
+  
+  ;; Calculate or get p1-world
+  (cond
+    (reactor-update-p
+     ;; Reactor update - recalculate p1-world from current leader position using stored transformation
+     (setq p1-ocs (hcnm-ldrblk-p1-ocs ename-leader))
+     (setq p1-world (hcnm-ldrblk-p1-world ename-leader p1-ocs ename-bubble))
+    )
+    (t
+     ;; Initial creation - ensure p1-world is calculated (now that viewport transform is in XDATA)
+     (setq bubble-data (hcnm-ldrblk-bubble-data-ensure-p1-world bubble-data)
+           p1-world (hcnm-ldrblk-bubble-data-get bubble-data "p1-world"))
+    )
+  )
+  ;; Calculate coordinates from p1-world
+  (cond
+    (p1-world
+      (setq
+        n  (hcnm-ldrblk-auto-rtos (cadr p1-world) "N")
+        e  (hcnm-ldrblk-auto-rtos (car p1-world) "E")
+        ne (strcat
+            n
+            (c:hcnm-config-getvar (strcat "BubbleTextJoinDel" "N"))
+            e
+          )
+      )
+      (setq string
+        (cond
+          ((= auto-type "N") n)
+          ((= auto-type "E") e)
+          ((= auto-type "NE") ne)
+        )
+      )
+    )
+    (t
+      ;; p1-world is NIL - couldn't get world coordinates
+      (setq string "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
+    )
+  )
+  ;; Attach reactor to leader for coordinate updates (only on initial creation, not reactor updates)
+  (cond
+    ((not reactor-update-p)
+     (hcnm-ldrblk-assure-auto-text-has-reactor nil ename-bubble ename-leader tag auto-type)
+    )
+  )
+  ;; END hcnm-ldrblk-auto-get-input SUBFUNCTION
+  ;; START hcnm-ldrblk-auto-update SUBFUNCTION
+  (setq
+    lattribs
+    (hcnm-ldrblk-lattribs-put-auto 
+      tag
+      string
+      lattribs
+    )
+    bubble-data (hcnm-ldrblk-bubble-data-set bubble-data "ATTRIBUTES" lattribs)
+  )
+  bubble-data
+)
+;#endregion
+;#region Auto pipe
 ;; ============================================================================
 ;; Civil 3D Pipe Network Auto-Text Functions
 ;; ============================================================================
@@ -6679,13 +7167,13 @@ ImportLayerSettings=No
 ;;   bubble-data - Bubble data alist (required)
 ;;   TAG - Attribute tag to update (required)
 ;;   auto-type - Property type: "Dia", "Slope", or "L" (required)
-;;   INPUT - Pre-selected pipe VLA-OBJECT (optional, for reactor callbacks)
+;;   obj-target - Pre-selected pipe VLA-OBJECT (optional, for reactor callbacks)
 ;;
 ;; Returns:
 ;;   Updated bubble-data with new attribute value
 ;;
 ;; Side Effects:
-;;   - Prompts user for pipe selection if INPUT is NIL
+;;   - Prompts user for pipe selection if obj-target is NIL
 ;;   - Attaches VLR-OBJECT-REACTOR to pipe for automatic updates
 ;;   - Switches to model space temporarily if bubble is in paper space
 ;;   - Updates lattribs within bubble-data
@@ -6702,7 +7190,7 @@ ImportLayerSettings=No
 ;;     (hcnm-ldrblk-auto-pipe bubble-data "NOTETXT1" "Dia" NIL)
 ;;   )
 ;;==============================================================================
-(defun hcnm-ldrblk-auto-pipe (bubble-data tag auto-type input / lattribs ename-bubble ename-leader obj-pipe pspace-bubble-p string)
+(defun hcnm-ldrblk-auto-pipe (bubble-data tag auto-type obj-target / lattribs ename-bubble ename-leader obj-pipe pspace-bubble-p string)
   (setq 
     lattribs (hcnm-ldrblk-bubble-data-get bubble-data "ATTRIBUTES")
     ename-bubble (hcnm-ldrblk-bubble-data-get bubble-data "ename-bubble")
@@ -6713,9 +7201,9 @@ ImportLayerSettings=No
   ;; At this point, coordinate-based auto-text functions get world coordinates
   ;; and the associated viewport as needed (via gateway + p1-world helpers).
   
-  ;; STEP 1: Get pipe object (user selection or provided input)
+  ;; STEP 1: Get pipe object (user selection or provided obj-target)
   (cond 
-    ((setq obj-pipe input)
+    ((setq obj-pipe obj-target)
      ;; Pipe provided (reactor update or programmatic call)
     )
     (t
@@ -6765,266 +7253,6 @@ ImportLayerSettings=No
   )
   bubble-data
 )
-
-;; Main alignment auto-text function (backward compatible)
-;; Orchestrates: get alignment ? calculate ? format ? attach reactor
-;; Arguments:
-;;   bubble-data - Bubble data alist
-;;   TAG - Attribute tag to update
-;;   auto-type - "Sta", "Off", "StaOff", "AlName", or "StaName"
-;;   INPUT - Optional: Pre-selected alignment object (used by reactor updates)
-;; Returns: Updated bubble-data with new attribute value
-(defun hcnm-ldrblk-auto-al (bubble-data tag auto-type input / 
-                             alignment-name lattribs ename-bubble ename-leader 
-                             sta-off-pair drawstation offset obj-align p1-world 
-                             pspace-bubble-p sta-string off-string string cvport 
-                             ref-ocs-1 ref-ocs-2 ref-ocs-3 ref-wcs-1 ref-wcs-2 ref-wcs-3)
-  (setq 
-    lattribs (hcnm-ldrblk-bubble-data-get bubble-data "ATTRIBUTES")
-    ename-bubble (hcnm-ldrblk-bubble-data-get bubble-data "ename-bubble")
-    ename-leader (hcnm-ldrblk-bubble-data-get bubble-data "ename-leader")
-    p1-world (hcnm-ldrblk-bubble-data-get bubble-data "p1-world")
-  )
-  
-  ;; STEP 1: Get alignment object (user selection or provided input)
-  (cond 
-    (input
-     ;; Reactor callback - for coordinate types, just recalculate p1-world from current leader
-     ;; No gateway call needed - gate 3 (not-reactor) will be closed
-     (setq obj-align input)
-     (cond
-       ((or (= auto-type "Sta") (= auto-type "Off") (= auto-type "StaOff") (= auto-type "StaName"))
-        (setq bubble-data (hcnm-ldrblk-bubble-data-ensure-p1-world bubble-data)
-              p1-world (hcnm-ldrblk-bubble-data-get bubble-data "p1-world"))
-       )
-     )
-    )
-    (t
-     ;; Initial creation - get alignment from user (they're picking it NOW or reusing previous)
-     (setq pspace-bubble-p (hcnm-ldrblk-space-set-model)
-           obj-align       (hcnm-ldrblk-auto-al-get-alignment ename-bubble tag auto-type)
-     )
-     
-     ;; Now calculate p1-world if needed for coordinate-based types
-     (cond
-       ((or (= auto-type "Sta") (= auto-type "Off") (= auto-type "StaOff") (= auto-type "StaName"))
-        (setq bubble-data (hcnm-ldrblk-bubble-data-ensure-p1-world bubble-data)
-              p1-world (hcnm-ldrblk-bubble-data-get bubble-data "p1-world"))
-       )
-     )
-     ;; Attach reactor to watch for alignment/leader changes
-     (hcnm-ldrblk-assure-auto-text-has-reactor obj-align ename-bubble ename-leader tag auto-type)
-     ;; Now restore space after everything is done
-     (hcnm-ldrblk-space-restore pspace-bubble-p)
-    )
-  )
-  
-  ;; STEP 2: Calculate station and offset (only needed for coordinate-based types)
-  (cond
-    ((or (= auto-type "Sta") (= auto-type "Off") (= auto-type "StaOff") (= auto-type "StaName"))
-     (setq sta-off-pair (hcnm-ldrblk-auto-alignment-calculate obj-align p1-world))
-    )
-  )
-  
-  ;; STEP 3: Format the result based on auto-type
-  (cond 
-    ((= auto-type "AlName")
-     ;; Alignment name only - no coordinates needed
-     (cond
-       (obj-align
-        (setq string (vl-catch-all-apply 'VLAX-GET-PROPERTY (list obj-align 'NAME)))
-        (cond
-          ((vl-catch-all-error-p string)
-           (setq string "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
-          )
-        )
-       )
-       (t
-        (setq string "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
-       )
-     )
-    )
-    (sta-off-pair
-     ;; Calculation succeeded - extract and format
-     (setq drawstation (car sta-off-pair)
-           offset      (cdr sta-off-pair)
-           sta-string  (hcnm-ldrblk-auto-al-station-to-string obj-align drawstation)
-           off-string  (hcnm-ldrblk-auto-al-offset-to-string offset)
-           string
-           (cond 
-             ((= auto-type "Sta") sta-string)
-             ((= auto-type "Off") off-string)
-             ((= auto-type "StaOff")
-              (strcat 
-                sta-string
-                (c:hcnm-config-getvar "BubbleTextJoinDelSta")
-                off-string
-              )
-             )
-             ((= auto-type "StaName")
-              ;; Station + alignment name
-              (setq string (vl-catch-all-apply 'VLAX-GET-PROPERTY (list obj-align 'NAME)))
-              (cond
-                ((vl-catch-all-error-p string)
-                 (setq string sta-string)  ; If name fails, just use station
-                )
-                (t
-                 (setq string (strcat sta-string " " string))
-                )
-              )
-              string
-             )
-           )  ; End inner COND for STRING
-     )  ; End SETQ
-    )  ; End first branch of outer COND
-    (t 
-     ;; Calculation failed - couldn't get coordinates or invalid alignment
-     (setq string "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
-    )
-  )  ; End outer COND
-  
-  ;; Step 4: Save the formatted string to the attribute list and update bubble-data
-  (setq
-    lattribs
-    (hcnm-ldrblk-lattribs-put-auto 
-      tag
-      string
-      lattribs
-    )
-    bubble-data (hcnm-ldrblk-bubble-data-set bubble-data "ATTRIBUTES" lattribs)
-  )
-  bubble-data
-)
-(defun hcnm-ldrblk-auto-al-get-alignment
-   (ename-bubble tag auto-type / avport cvport es-align name obj-align obj-align-old 
-    ref-ocs-1 ref-ocs-2 ref-ocs-3 ref-wcs-1 ref-wcs-2 ref-wcs-3 )
-  (setq
-    obj-align-old
-     (c:hcnm-config-getvar "BubbleCurrentAlignment")
-    name
-     (cond
-       ((and (= (type obj-align-old) 'VLA-OBJECT) 
-             (not (vl-catch-all-error-p (vl-catch-all-apply 'VLAX-GET-PROPERTY (list obj-align-old 'NAME)))))
-        (vl-catch-all-apply 'VLAX-GET-PROPERTY (list obj-align-old 'NAME))
-       )
-       (t (setq obj-align-old nil) "")
-     )
-    es-align
-     (nentsel
-       (strcat
-         "\nSelect alignment"
-         (cond
-           ((= name "") ": ")
-           (t (strcat " or <" name ">: "))
-         )
-       )
-     )
-  )
-  (hcnm-ldrblk-gateways-to-viewport-selection-prompt 
-    ename-bubble 
-    auto-type 
-    nil                              ; input=nil for initial creation
-    (if es-align "PICKED" "REUSED")  ; Based on whether user selected something
-    nil)                             ; Normal auto-text flow (not super-clearance)
-  (cond
-    ((and
-       es-align
-       (= (cdr (assoc 0 (entget (car es-align)))) "AECC_ALIGNMENT")
-     )
-     (setq obj-align (vlax-ename->vla-object (car es-align)))
-     (c:hcnm-config-setvar "BubbleCurrentAlignment" obj-align)
-    )
-    (es-align 
-      (alert (princ "\nSelected object is not an alignment. Keeping previous alignment."))
-      (setq obj-align obj-align-old)
-    )
-    (t 
-      (princ "\nNo object selected. Keeping previous alignment.")
-      (setq obj-align obj-align-old)
-    )
-  )
-  
-  obj-align  ; Return the alignment object
-)
-(defun hcnm-ldrblk-auto-ne (bubble-data tag auto-type input / 
-                             lattribs e ename-bubble ename-leader n ne 
-                             p1-ocs p1-world reactor-update-p string)
-  (setq 
-    lattribs (hcnm-ldrblk-bubble-data-get bubble-data "ATTRIBUTES")
-    ename-bubble (hcnm-ldrblk-bubble-data-get bubble-data "ename-bubble")
-    ename-leader (hcnm-ldrblk-bubble-data-get bubble-data "ename-leader")
-    ;; INPUT = NIL means initial creation
-    ;; INPUT = T means reactor update for coordinate types (sentinel value)
-    ;; INPUT = VLA-OBJECT means reactor update with reference object (not used for N/E/NE)
-    reactor-update-p (and input (or (= input t) (= (type input) 'VLA-OBJECT)))
-  )
-  
-  ;; Ensure viewport transform is captured if needed (gateway architecture)
-  ;; MUST happen BEFORE p1-world calculation below, which depends on viewport transform
-  (hcnm-ldrblk-gateways-to-viewport-selection-prompt 
-    ename-bubble 
-    auto-type 
-    input 
-    "NO-OBJECT"  ; N/E/NE don't use reference objects
-    nil)         ; Normal auto-text flow (not super-clearance)
-  
-  ;; Calculate or get p1-world
-  (cond
-    (reactor-update-p
-     ;; Reactor update - recalculate p1-world from current leader position using stored transformation
-     (setq p1-ocs (hcnm-ldrblk-p1-ocs ename-leader))
-     (setq p1-world (hcnm-ldrblk-p1-world ename-leader p1-ocs ename-bubble))
-    )
-    (t
-     ;; Initial creation - ensure p1-world is calculated (now that viewport transform is in XDATA)
-     (setq bubble-data (hcnm-ldrblk-bubble-data-ensure-p1-world bubble-data)
-           p1-world (hcnm-ldrblk-bubble-data-get bubble-data "p1-world"))
-    )
-  )
-  ;; Calculate coordinates from p1-world
-  (cond
-    (p1-world
-      (setq
-        n  (hcnm-ldrblk-auto-rtos (cadr p1-world) "N")
-        e  (hcnm-ldrblk-auto-rtos (car p1-world) "E")
-        ne (strcat
-            n
-            (c:hcnm-config-getvar (strcat "BubbleTextJoinDel" "N"))
-            e
-          )
-      )
-      (setq string
-        (cond
-          ((= auto-type "N") n)
-          ((= auto-type "E") e)
-          ((= auto-type "NE") ne)
-        )
-      )
-    )
-    (t
-      ;; p1-world is NIL - couldn't get world coordinates
-      (setq string "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
-    )
-  )
-  ;; Attach reactor to leader for coordinate updates (only on initial creation, not reactor updates)
-  (cond
-    ((not reactor-update-p)
-     (hcnm-ldrblk-assure-auto-text-has-reactor nil ename-bubble ename-leader tag auto-type)
-    )
-  )
-  ;; END hcnm-ldrblk-auto-get-input SUBFUNCTION
-  ;; START hcnm-ldrblk-auto-update SUBFUNCTION
-  (setq
-    lattribs
-    (hcnm-ldrblk-lattribs-put-auto 
-      tag
-      string
-      lattribs
-    )
-    bubble-data (hcnm-ldrblk-bubble-data-set bubble-data "ATTRIBUTES" lattribs)
-  )
-  bubble-data
-)
 (defun hcnm-ldrblk-auto-rtos (number key)
   (strcat
     (c:hcnm-config-getvar (strcat "BubbleTextPrefix" key))
@@ -7036,20 +7264,21 @@ ImportLayerSettings=No
     (c:hcnm-config-getvar (strcat "BubbleTextPostfix" key))
   )
 )
+;#endregion
+;#region Auto surface
 ;; Civil 3D Surface query auto-text (Z elevation)
 ;; Currently unimplemented - returns apology message
-(defun hcnm-ldrblk-auto-su (bubble-data tag auto-type input / lattribs ename-bubble)
+(defun hcnm-ldrblk-auto-su (bubble-data tag auto-type obj-target / lattribs ename-bubble)
   (setq 
     lattribs (hcnm-ldrblk-bubble-data-get bubble-data "ATTRIBUTES")
     ename-bubble (hcnm-ldrblk-bubble-data-get bubble-data "ename-bubble")
   )
-  
   ;; Ensure viewport transform is captured if needed (gateway architecture)
   ;; TODO: When Z elevation is implemented, this will be needed for coordinate calculations
   (hcnm-ldrblk-gateways-to-viewport-selection-prompt 
     ename-bubble 
     auto-type 
-    input 
+    obj-target 
     "NO-OBJECT"  ; Z elevation doesn't use reference objects
     nil)         ; Normal auto-text flow (not super-clearance)
   
@@ -7072,6 +7301,46 @@ ImportLayerSettings=No
 (defun hcnm-ldrblk-auto-apology (auto-type)
   (alert (princ (strcat "Sorry. Selection of " auto-type " is not fully programmed yet and is not anticipated to be dynamic once programmed.\n\nPlease let Tom Haws <tom.haws@gmail.com> know if you are eager for this as static text.")))
   "N/A"
+)
+;#endregion
+;#region Auto helpers
+;;==============================================================================
+;; PAPER SPACE / MODEL SPACE MANAGEMENT
+;;==============================================================================
+;; These functions manage switching between paper space and model space during
+;; auto-text operations. They are called by different auto-text types for
+;; different purposes:
+;;
+;; CALLERS AND PURPOSE:
+;; - hcnm-ldrblk-auto-qty   : Switches to MSPACE for reference object selection
+;; - hcnm-ldrblk-auto-pipe  : Switches to MSPACE for pipe object selection  
+;; - hcnm-ldrblk-auto-al    : Switches to MSPACE for alignment object selection
+;; - hcnm-ldrblk-auto-ne    : Does NOT call (no reference object selection needed)
+;;
+;; CRITICAL DISTINCTION:
+;; This space switching is for REFERENCE OBJECT SELECTION, not viewport selection.
+;; Viewport selection (for AVPORT capture) happens separately through the gateway
+;; system (hcnm-ldrblk-gateways-to-viewport-selection-prompt) and is needed by
+;; ALL coordinate-based auto-text types including N/E/NE.
+;;
+;; WHY auto-ne DOESN'T CALL THESE:
+;; N/E/NE auto-text has no reference objects to select (it calculates coordinates
+;; directly from p1-world). It still needs viewport transform for paper space
+;; coordinate conversion, but that's handled by the gateway system.
+;;==============================================================================
+
+(defun hcnm-ldrblk-space-set-model ()
+  (c:hcnm-config-setvar "AllowReactors" "0")
+  (cond 
+    ((= (getvar "CVPORT") 1) 
+     (vl-cmdf "._MSPACE") 
+     t))
+)
+(defun hcnm-ldrblk-space-restore (pspace-bubble-p)
+  (cond 
+    (pspace-bubble-p 
+     (vl-cmdf "._PSPACE")))
+  (c:hcnm-config-setvar "AllowReactors" "1")
 )
 ;#endregion
 ;#region Auto text user experience interruptions
@@ -7170,7 +7439,7 @@ ImportLayerSettings=No
 ;; PARAMETERS:
 ;;   ename-bubble - Entity name of bubble block reference
 ;;   auto-type - String: "N", "E", "NE", "Sta", "Off", etc. (for gateway 1 check and warning)
-;;   input - Object reference (alignment) or nil
+;;   obj-target - Object reference (alignment) or nil
 ;;   object-reference-status - String indicating how object was obtained:
 ;;     "NO-OBJECT" - No object needed/used (N/E/NE)
 ;;     "PICKED" - User just picked object in this session
@@ -7187,7 +7456,7 @@ ImportLayerSettings=No
 ;; RETURNS: nil (this is a procedure with side effects, not a value-returning function)
 ;;
 (defun hcnm-ldrblk-gateways-to-viewport-selection-prompt 
-       (ename-bubble auto-type input object-reference-status request-type /
+       (ename-bubble auto-type obj-target object-reference-status request-type /
         avport-coordinates-gateway-open-p
         avport-paperspace-gateway-open-p
         avport-reactor-gateway-open-p
@@ -7210,12 +7479,12 @@ ImportLayerSettings=No
   (princ (strcat "\n  Gateway 2 (paperspace): " 
                  (if avport-paperspace-gateway-open-p "OPEN" "CLOSED")))
   
-  ;; Gateway 3: Not a reactor update (input is nil during insertion/editing)
+  ;; Gateway 3: Not a reactor update  (obj-target is nil during insertion/editing)
   (setq avport-reactor-gateway-open-p
-        (not input))
+        (not obj-target))
   (princ (strcat "\n  Gateway 3 (not-reactor): " 
                  (if avport-reactor-gateway-open-p "OPEN" "CLOSED")
-                 " [input=" (if input "exists" "nil") "]"))
+                 " [input=" (if obj-target "exists" "nil") "]"))
   
   ;; Gateway 4: No existing viewport XDATA
   (setq avport-xdata-gateway-open-p
@@ -7488,22 +7757,6 @@ ImportLayerSettings=No
   )
 )
 ;#endregion
-;; bubble-data-update: 2025-10-15 update: I think NOTEDATA (new attribute for this reactor project) may be repurposed to hold information about whether each bubble line is auto text (and what kind) or manual.
-;; Placeholder. Does nothing . Needs to adjust the NOTEDATA element of lattribs to contain DATA.
-;; Steps:
-;; 1. Delete any references whose STRING has been deleted by user.
-;; 2. Delete any objects that are no longer needed in object list. Renumber references as needed.
-;; 3. Add object to object list if needed. Otherwise, find its index value.
-;; 4. Add reference to reference list.
-;; 5. Update string in appropriate attribute of list.
-;; Returns update attribute list.
-(defun hcnm-ldrblk-adjust-notedata (data lattribs / tag value)
-  (setq
-    tag   (car data)
-    value (cadddr data)
-  )
-  (hcnm-ldrblk-lattribs-put-element tag value lattribs)
-)
 ;#region XDATA
 ;;==============================================================================
 ;; BUBBLE DATA - Read/Write with XDATA for Auto Text
@@ -7567,6 +7820,27 @@ ImportLayerSettings=No
   )
 )
 
+;;; Strip underover format codes from lattribs parts (prefix auto postfix)
+;;; Returns cleaned parts list with format codes removed from prefix
+;;; ARCHITECTURE: lattribs must be clean - no format codes
+(defun hcnm-ldrblk-strip-format-codes-from-parts (parts / prefix auto postfix)
+  (setq prefix (car parts)
+        auto (cadr parts)
+        postfix (caddr parts))
+  
+  ;; Strip mtext format codes
+  (cond
+    ((wcmatch prefix "\\L*") (setq prefix (substr prefix 3)))
+    ((wcmatch prefix "\\O*") (setq prefix (substr prefix 3))))
+  
+  ;; Strip dtext format codes
+  (cond
+    ((wcmatch prefix "%%u*") (setq prefix (substr prefix 4)))
+    ((wcmatch prefix "%%o*") (setq prefix (substr prefix 4))))
+  
+  (list prefix auto postfix)
+)
+
 ;; Read bubble data from attributes and XDATA
 ;; Returns association list with prefix/auto/postfix for each field
 ;; Format: (("NOTETXT0" prefix auto postfix) ("NOTETXT1" prefix auto postfix) ...)
@@ -7622,6 +7896,15 @@ ImportLayerSettings=No
        
        ;; Split attribute using XDATA auto text
        (setq parts (hcnm-split-attribute-on-xdata value auto-text))
+       
+       ;; ARCHITECTURE: lattribs must be clean - strip format codes and clear NOTEGAP
+       ;; Strip underover format codes from prefix if present
+       (cond
+         ((member tag '("NOTETXT1" "NOTETXT2"))
+          (setq parts (hcnm-ldrblk-strip-format-codes-from-parts parts)))
+         ((= tag "NOTEGAP")
+          ;; NOTEGAP should always be empty in lattribs
+          (setq parts '("" "" ""))))
        
        ;; Add to attribute list: (tag prefix auto postfix)
        (setq lattribs
@@ -7912,7 +8195,7 @@ ImportLayerSettings=No
 )
 
 ;#endregion
-
+;#endregion
 ;; Save bubble data to attributes and XDATA
 ;; Takes association list with prefix/auto/postfix for each field
 ;; Format: (("NOTETXT0" prefix auto postfix) ("NOTETXT1" prefix auto postfix) ...)
@@ -7925,15 +8208,9 @@ ImportLayerSettings=No
 ;; Preserves existing viewport transform data when updating auto-text.
 (defun hcnm-ldrblk-lattribs-to-dwg (ename-bubble lattribs / 
                           appname xdata-list ename-next etype elist
-                          atag obj-next parts prefix auto postfix concat-value
-                          bubblemtext underline overline format-code)
+                          atag obj-next lattribs-formatted lattribs-cat concat-value)
   (setq appname "HCNM-BUBBLE"
         xdata-list '())
-  
-  ;; Determine format codes based on mtext vs dtext
-  (setq bubblemtext (hcnm-ldrblk-get-mtext-string)
-        underline (cond ((= bubblemtext "") "%%u") (t "\\L"))
-        overline (cond ((= bubblemtext "") "%%o") (t "\\O")))
   
   ;; Register application if not already registered
   (cond
@@ -7944,8 +8221,7 @@ ImportLayerSettings=No
   ;; Format: ((1000 "TAG1") (1000 "VALUE1") (1000 "TAG2") (1000 "VALUE2") ...)
   (foreach attr-data lattribs
     (setq atag (car attr-data)
-          parts (cdr attr-data)
-          auto (cadr parts))
+          auto (caddr attr-data))  ; auto is 3rd element in structured lattribs
     (cond
       ((and auto (/= auto ""))
        ;; Add tag-value pair to XDATA
@@ -7961,7 +8237,13 @@ ImportLayerSettings=No
                (entget ename-bubble)
                (list (cons -3 (list (cons appname xdata-list))))))))
   
-  ;; Step 3: Save concatenated attributes with format codes
+  ;; Step 3: Add format codes to prefix (beautifully-architected underover-add!)
+  (setq lattribs-formatted (hcnm-ldrblk-underover-add lattribs))
+  
+  ;; Step 4: Concatenate parts for storage
+  (setq lattribs-cat (hcnm-ldrblk-lattribs-concat lattribs-formatted))
+  
+  ;; Step 5: Write concatenated values to drawing attributes
   (setq ename-next ename-bubble)
   (while (and
            (setq ename-next (entnext ename-next))
@@ -7972,40 +8254,8 @@ ImportLayerSettings=No
       ((and
          (= etype "ATTRIB")
          (setq atag (cdr (assoc 2 elist)))
-         (setq parts (cdr (assoc atag lattribs))))
-       ;; Found matching attribute - concatenate prefix + auto + postfix
-       (setq prefix (car parts)
-             auto (cadr parts)
-             postfix (caddr parts)
-             concat-value (strcat 
-                            (if prefix prefix "")
-                            (if auto auto "")
-                            (if postfix postfix "")))
-       
-       ;; Strip any existing format codes from concat-value
-       (cond
-         ((wcmatch concat-value "\\L*") (setq concat-value (substr concat-value 3)))
-         ((wcmatch concat-value "\\O*") (setq concat-value (substr concat-value 3)))
-       )
-       (cond
-         ((wcmatch concat-value "%%u*") (setq concat-value (substr concat-value 4)))
-         ((wcmatch concat-value "%%o*") (setq concat-value (substr concat-value 4)))
-       )
-       
-       ;; Apply format codes to TXT1 and TXT2
-       (cond
-         ((= atag "NOTETXT1")
-          (setq format-code underline))
-         ((= atag "NOTETXT2")
-          (setq format-code overline))
-         (t (setq format-code nil)))
-       
-       ;; Add format code if applicable and content exists
-       (cond
-         ((and format-code 
-               (hcnm-ldrblk-attr-has-content-p concat-value))
-          (setq concat-value (strcat format-code concat-value))))
-       
+         (setq concat-value (cadr (assoc atag lattribs-cat))))
+       ;; Write concatenated value to attribute
        (setq obj-next (vlax-ename->vla-object ename-next))
        (vla-put-textstring obj-next concat-value)
       )
@@ -8311,7 +8561,7 @@ ImportLayerSettings=No
           lattribs
           tag
           auto-type
-          objref  ; Pass the reference object as INPUT, or T for coordinate-only reactor updates
+          objref  ; Pass the reference object as obj-target, or T for coordinate-only reactor updates
         )
       )
       (cond 
@@ -8477,7 +8727,7 @@ ImportLayerSettings=No
            postfix (cadddr attr))
      ;; Save with empty auto field
      (setq hcnm-eb-lattribs
-       (hcnm-ldrblk-lattribs-underover
+       (hcnm-ldrblk-underover
          (hcnm-ldrblk-lattribs-put-auto tag "" hcnm-eb-lattribs)
        )
      )
@@ -8486,13 +8736,13 @@ ImportLayerSettings=No
     ((and auto-type (not (= auto-type "")))
      ;; bubble-data-update: this is called from command line and from edit box to get string as requested by user.
      (setq hcnm-eb-lattribs
-       (hcnm-ldrblk-lattribs-underover
+       (hcnm-ldrblk-underover
          (hcnm-ldrblk-auto-dispatch
            ename-bubble
            hcnm-eb-lattribs
            tag
            auto-type
-           nil  ; NIL = prompt user to select/confirm alignment
+           nil  ; nil = initial creation of auto text, not reactor update
          )
        )
      )
@@ -8631,17 +8881,21 @@ ImportLayerSettings=No
 )
 
 ;; ACTION_TILE callback: Update prefix field in lattribs when user edits it
-(defun hcnm-eb-update-prefix (tag new-prefix / attr)
+;; NOTE: Dialog shows concatenated strings, so user edits go to prefix field
+;; ACTION_TILE callback: Update prefix field in lattribs when user types text
+;; User typing in prefix field replaces the entire concatenated value (by design)
+(defun hcnm-eb-update-prefix (tag new-value / attr)
   (setq attr (assoc tag hcnm-eb-lattribs))
   (setq hcnm-eb-lattribs
     (subst
-      (list tag new-prefix (caddr attr) (cadddr attr))
+      (list tag new-value)  ; Replace with new concatenated value (2-element lattribs-cat)
       attr
       hcnm-eb-lattribs)
   )
 )
 
 ;; ACTION_TILE callback: Update postfix field in lattribs when user edits it
+;; NOTE: Postfix only visible/editable when auto-text exists
 (defun hcnm-eb-update-postfix (tag new-postfix / attr)
   (setq attr (assoc tag hcnm-eb-lattribs))
   (setq hcnm-eb-lattribs
@@ -8653,7 +8907,7 @@ ImportLayerSettings=No
 )
 
 (defun hcnm-eb-show
-   (dclfile notetextradiocolumn ename-bubble / tag value parts prefix auto postfix on-model-tab-p)
+   (dclfile notetextradiocolumn ename-bubble / tag value parts prefix auto postfix on-model-tab-p lst-dlg-attributes)
   (new_dialog "HCNMEditBubble" dclfile)
   (set_tile "Title" "Edit CNM Bubble Note")
   ;; Check if bubble is in paper space
@@ -8671,21 +8925,27 @@ ImportLayerSettings=No
     )
   )  
   (mode_tile "ChgView" 0)  ; Always enable
-  ;; Note attribute edit boxes - hcnm-eb-lattribs already split into prefix/auto/postfix 
-  ;; at time of read by hcnm-ldrblk-dwg-to-lattribs
+  
+  ;; ARCHITECTURE: Transform clean lattribs to dialog display format (with format codes)
+  ;; This is the ONLY place we transform for display
+  (setq lst-dlg-attributes (hcnm-ldrblk-lattribs-to-dlg hcnm-eb-lattribs))
+  
+  ;; Note attribute edit boxes - use formatted display strings
   (foreach
-     attribute hcnm-eb-lattribs
+     attribute lst-dlg-attributes
     (setq tag (car attribute)
           prefix (cadr attribute)
           auto (caddr attribute)
           postfix (cadddr attribute))
-    ;; Set prefix field to save when edited.
+    
+    ;; Set prefix field (contains concatenated formatted string from lattribs-to-dlg)
     (set_tile (strcat "Prefix" tag) prefix)
     (action_tile (strcat "Prefix" tag) (strcat "(hcnm-eb-update-prefix \"" tag "\" $value)"))
+    
     ;; Set auto field (editing is disabled, for auto text only)
     ;; All auto text editor buttons update lattribs directly.
-    ;; If auto text fails to save to bubble, then our assumption on the previous line is wrong.
     (set_tile (strcat "Edit" tag) auto)
+    
     ;; Set postfix field and enable/disable based on auto field
     ;; Postfix only has meaning when there's auto-text to come after
     (set_tile (strcat "Postfix" tag) postfix)
@@ -8719,29 +8979,10 @@ ImportLayerSettings=No
   (action_tile "cancel" "(DONE_DIALOG 0)")
   (list (start_dialog) notetextradiocolumn)
 )
-;; Split value on chr(1) delimiter into (prefix auto postfix)
-;; Returns list of three strings, using "" for missing parts
-(defun hcnm-eb-split-on-nbsp (value / nbsp parts)
-  (setq nbsp (chr 160))  ; Non-breaking space - invisible delimiter
-  (cond
-    ((not value) '("" "" ""))
-    ((not (vl-string-search nbsp value))
-     ;; No separator - treat entire value as PREFIX (preserves user manual text)
-     (list value "" ""))
-    (t
-     ;; Split on NBSP
-     (setq parts (hcnm-eb-split-string value nbsp))
-     (cond
-       ((= (length parts) 3) parts)
-       ((= (length parts) 2) (append parts '("")))
-       ((= (length parts) 1) (append '("") parts '("")))
-       (t '("" "" ""))
-     )
-    )
-  )
-)
 
 ;; Split string on delimiter
+;; Keep this in case users decide to go to a free-form single-field editor later.
+;; Returns list of substrings split on DELIM
 (defun hcnm-eb-split-string (str delim / pos result)
   (setq result '())
   (while (setq pos (vl-string-search delim str))
