@@ -11,19 +11,19 @@
 ### Configuration & State Management
 
 **`*hcnm-config*`**
-- **Purpose:** Cached configuration settings from CNM.INI
+- **Purpose:** Cached configuration settings from CNM.INI. This is the canonical global for the CNM app.
 - **Type:** Association list `'((var . value) ...)`
 - **Set in:** `hcnm-config-read-all-project` (line 3588, 3590)
 - **Read in:** Throughout codebase via `c:hcnm-config-getvar`
 - **Justification:** Performance - avoid repeated INI file reads
-- **Lifetime:** AutoCAD session (cleared by `hcnm-projinit`)
+- **Lifetime:** AutoCAD session (cleared at every by `hcnm-projinit` after every user pause because a third-party editor was acting as a CNM Options editor. When we replace that editor (we have the author's blessing) we can extend the lifetime of this canonical global)
 
 **`*hcnm-config-temp*`**
 - **Purpose:** Temporary configuration changes before save
 - **Type:** Association list `'((var val) ...)`
 - **Set in:** `hcnm-config-temp-setvar` (line 3380)
 - **Cleared in:** `hcnm-config-temp-clear` (line 3408)
-- **Justification:** Dialog workflow - accumulate changes, save or cancel
+- **Justification:** Dialog workflow - accumulate changes, save or cancel. Possibly could be a semi-global as done for the bubble note edit dialog.
 - **Lifetime:** Single dialog session
 
 **`*hcnm-cnmprojectroot*`**
@@ -31,7 +31,7 @@
 - **Type:** String path
 - **Set in:** `hcnm-proj` (line 2547)
 - **Read in:** Project management functions
-- **Justification:** Performance - avoid repeated folder resolution
+- **Justification:** It is superordinate to *hcnm-config*, I think (TGH). But we need to be more rigorous about this one. Performance - avoid repeated folder resolution [TGH 2025-10-31 03:28:07: I think this is a little weasely. We need to steel-man the case for localizing this or incorporating it into `*hcnm-config*`]
 - **Lifetime:** AutoCAD session (cleared by `hcnm-projinit`)
 
 **`*hcnm-cnmprojectnotes*`**
@@ -39,7 +39,7 @@
 - **Type:** Complex nested list `'((0 . "comment") (1 "var" "val1") (3 "type" "num" "unit" "count" "text"))`
 - **Set in:** `hcnm-readcfcsv` (line 4256), `hcnm-readcftxt2` (line 4112)
 - **Read in:** Key Notes Table, Quantity Takeoff, bubble insertion
-- **Justification:** Performance - avoid repeated file parsing
+- **Justification:** Performance - avoid repeated file parsing [TGH 2025-10-31 03:28:07: Would there be value in trying to incorporate this into `*hcnm-config*`?]
 - **Lifetime:** AutoCAD session (cleared by `hcnm-projinit`)
 
 **`*hcnm-dimstyleold*`**
@@ -47,7 +47,7 @@
 - **Type:** String (dimension style name)
 - **Set in:** `hcnm-set-dimstyle` (line 3632)
 - **Restored in:** `hcnm-restore-dimstyle`
-- **Justification:** User environment restoration
+- **Justification:** User environment restoration [TGH 2025-10-31 03:28:07: I think this is a little weasely. We need to steel-man the case for localizing this or incorporating it into `*hcnm-config*`]
 - **Lifetime:** Single command execution
 
 ---

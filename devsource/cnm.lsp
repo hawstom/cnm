@@ -8697,33 +8697,20 @@ ImportLayerSettings=No
 ;; Expand plain attribute value to delimited structure for editing.
 ;; Returns value with CHR 160 delimiters: prefix?auto?postfix
 ;; System-controlled tags (NOTENUM, NOTEPHASE, NOTEGAP) go entirely to prefix.
-;; Legacy format codes (%%u, %%o, \L, \O) are migrated to prefix field.
-;; User manual text is preserved in prefix field.
-(defun hcnm-ldrblk-eb-expand-value-to-delimited (tag value / migrated delim-pos)
+;; Expand a single value string to 3-element list structure (prefix auto postfix).
+;; For system-controlled tags (NOTENUM, NOTEPHASE, NOTEGAP), put value in prefix.
+;; For user text, preserve entire value in prefix field.
+(defun hcnm-ldrblk-eb-expand-value-to-delimited (tag value / )
   (cond
-    ((not value) (hcnm-ldrblk-eb-concat-parts "" "" ""))  ; NIL -> empty structure
-    ((vl-string-search (chr 160) value) value)  ; Already has delimiters
-    ((= value "") (hcnm-ldrblk-eb-concat-parts "" "" ""))  ; Empty -> empty structure
+    ((not value) (list "" "" ""))  ; NIL -> empty structure
+    ((= value "") (list "" "" ""))  ; Empty -> empty structure
     ;; NOTENUM, NOTEPHASE, NOTEGAP are system-controlled - put in prefix, not auto
     ((member tag '("NOTENUM" "NOTEPHASE" "NOTEGAP"))
-     (hcnm-ldrblk-eb-concat-parts value "" "")
+     (list value "" "")
     )
-    (t 
-     ;; Try legacy format code migration
-     (setq migrated (hcnm-ldrblk-eb-migrate-legacy-format value))
-     (if (setq delim-pos (vl-string-search (chr 160) migrated))
-       ;; Migration created delimiter structure: prefix?auto - split it properly
-       ;; VL-STRING-SEARCH returns 0-based position, SUBSTR uses 1-based
-       (hcnm-ldrblk-eb-concat-parts 
-         (substr migrated 1 delim-pos)  ; prefix: chars 1 through delim-pos
-         (substr migrated (+ delim-pos 2))  ; auto: skip delimiter (position is 0-based, add 2 for 1-based + skip char)
-         ""  ; empty postfix
-       )
-       ;; No format codes, put entire value in PREFIX to preserve user's manual text
-       ;; (Auto field gets replaced by auto-text buttons, prefix/postfix are preserved)
-       (hcnm-ldrblk-eb-concat-parts value "" "")
-     )
-    )
+    ;; All other values: put entire value in PREFIX to preserve user's manual text
+    ;; (Auto field gets replaced by auto-text buttons, prefix/postfix are preserved)
+    (t (list value "" ""))
   )
 )
 
@@ -8854,17 +8841,17 @@ ImportLayerSettings=No
   )
   result
 )
-;;; Flatten a delimited value to plain text
-;;; If value contains chr(160) delimiters, concatenate parts with spaces between non-empty parts
-;;; Otherwise return as-is
-(defun hcnm-ldrblk-eb-flatten-value (value / parts prefix auto postfix result)
+;;; Flatten a 3-element list (prefix auto postfix) to plain concatenated text.
+;;; Concatenate parts with spaces between non-empty parts.
+(defun hcnm-ldrblk-eb-flatten-value (value / prefix auto postfix result)
   (cond
     ((not value) "")
-    ((vl-string-search (chr 160) value)
-     (setq parts (hcnm-ldrblk-eb-split-on-nbsp value)
-           prefix (nth 0 parts)
-           auto (nth 1 parts)
-           postfix (nth 2 parts)
+    ((atom value) value)  ; If it's a string, return as-is
+    (t
+     ;; It's a list: (prefix auto postfix)
+     (setq prefix (nth 0 value)
+           auto (nth 1 value)
+           postfix (nth 2 value)
            result "")
      ;; Add prefix
      (if (and prefix (/= prefix ""))
@@ -8890,7 +8877,6 @@ ImportLayerSettings=No
      )
      result
     )
-    (t value)
   )
 )
 ;; Save auto-text to XDATA for each attribute tag
@@ -8918,45 +8904,6 @@ ImportLayerSettings=No
     (26 "Slope" eb-done)
     (27 "L" eb-done)
    )
-)
-;;; Migrate legacy format codes from auto field to prefix field.
-;;; If VALUE doesn't have delimiters but starts with format codes,
-;;; move the codes to a new prefix field and create delimiter structure.
-;;; Returns migrated value with prefix?auto?postfix structure if codes found,
-;;; otherwise returns VALUE unchanged.
-(defun hcnm-ldrblk-eb-migrate-legacy-format (value / sep format-code text)
-  (cond
-    ;; Empty or nil - return as-is
-    ((or (not value) (= value "")) value)
-    ;; Already has delimiters - no migration needed
-    ((vl-string-search (chr 160) value) value)
-    ;; Check for mtext underline
-    ((wcmatch value "\\L*")
-     (setq format-code "\\L"
-           text (substr value 3))
-     (strcat format-code (chr 160) text)
-    )
-    ;; Check for mtext overline
-    ((wcmatch value "\\O*")
-     (setq format-code "\\O"
-           text (substr value 3))
-     (strcat format-code (chr 160) text)
-    )
-    ;; Check for dtext underline
-    ((wcmatch value "%%u*")
-     (setq format-code "%%u"
-           text (substr value 4))
-     (strcat format-code (chr 160) text)
-    )
-    ;; Check for dtext overline
-    ((wcmatch value "%%o*")
-     (setq format-code "%%o"
-           text (substr value 4))
-     (strcat format-code (chr 160) text)
-    )
-    ;; No format codes - return as-is
-    (t value)
-  )
 )
 
 ;; ACTION_TILE callback: Update prefix field in lattribs when user edits it
@@ -9071,26 +9018,12 @@ ImportLayerSettings=No
   (append result (list str))
 )
 
-;; Concatenate prefix/auto/postfix with chr(160) delimiters
-;; 
-;; DATA FLOW:
-;; - Input: Three separate strings (prefix, auto, postfix) - any can be "" or nil
-;; - Output: Single string with format "prefix?auto?postfix" where ? = chr(160)
-;; - Delimiters ALWAYS included, even if parts are empty, to maintain parsing structure
-;; - Minimum output: "??" (two delimiters, all parts empty)
-;; 
-;; RATIONALE:
-;; - Consistent structure allows split-on-nbsp to always work without special cases
-;; - Empty delimited string "??" is distinguishable from truly empty "" (old format)
-;; - Makes round-trip parsing reliable: concat(split(x)) = x
-;;
-(defun hcnm-ldrblk-eb-concat-parts (prefix auto postfix / nbsp)
-  (setq nbsp (chr 160))  ; Non-breaking space - invisible delimiter
-  (strcat 
+;; Concatenate prefix, auto, and postfix into a 3-element list structure.
+;; This replaces the old CHR(160) delimiter approach with clean list structure.
+(defun hcnm-ldrblk-eb-concat-parts (prefix auto postfix / )
+  (list 
     (if prefix prefix "")
-    nbsp
     (if auto auto "")
-    nbsp
     (if postfix postfix "")
   )
 )
