@@ -5707,6 +5707,15 @@ ImportLayerSettings=No
   )
 )
 ;#endregion
+;#region lattribs data model
+;;==============================================================================
+;; lattribs - Core attribute list data structure
+;;==============================================================================
+;; Structure: '(("TAG" "prefix" "auto" "postfix") ...)
+;; - All 11 tags required (NOTENUM NOTEPHASE NOTEGAP NOTEDATA NOTETXT0-6)
+;; - Always 4-element lists (never 2-element legacy format)
+;; - Validation: Fail loudly on violations
+;;==============================================================================
 ;; Ensure p1-world is present in bubble data (computes if missing)
 (defun hcnm-ldrblk-bubble-data-ensure-p1-world (bubble-data / ename-bubble ename-leader p1-ocs p1-world)
   (and
@@ -6375,25 +6384,6 @@ ImportLayerSettings=No
   result
 )
 
-;;; ============================================================================
-;;; DEPRECATED - TO BE DELETED
-;;; ============================================================================
-
-;;; Set NOTEGAP based on TXT1/TXT2 content (INTERNAL lattribs operation)
-;;;
-;;; DEPRECATED: This function is an artifact of architectural confusion.
-;;;             It sets NOTEGAP only, which isn't the real business logic.
-;;;             Real business logic is: add/remove format codes.
-;;;
-;;; DELETE THIS after refactoring lattribs-validate-and-underover call site.
-;;;
-(defun hcnm-ldrblk-underover (lattribs / txt1-attr txt2-attr txt1-concat txt2-concat gap-value)
-  ;; DEPRECATED - DO NOT USE
-  ;; This function will be deleted during architecture cleanup
-  (alert "ERROR: hcnm-ldrblk-underover called - should be refactored away")
-  lattribs
-)
-
 ;;; DATA FLOW FUNCTIONS: lattribs ← → dlg
 ;;;
 ;;; These functions transform between clean lattribs (internal format) and
@@ -6426,12 +6416,9 @@ ImportLayerSettings=No
 (defun hcnm-ldrblk-dlg-to-lattribs (dlg-lattribs)
   (hcnm-ldrblk-underover-remove dlg-lattribs)
 )
-  
-  ;; Return clean lattribs
-  clean-lattribs
-)
+;#endregion
 
-;#region Auto text dispatcher and children
+;#region Auto-text
 ;; Used by multiple levels of the insertion user experience 
 ;; including the command prompts and the auto text dispatcher
 ;; Returns list of auto-text type definitions
@@ -6548,7 +6535,7 @@ ImportLayerSettings=No
   lattribs
 )
 
-
+;#region Auto text/mtext
 (defun hcnm-ldrblk-auto-es (bubble-data tag auto-type obj-target / ename lattribs) 
   (setq
     lattribs (hcnm-ldrblk-bubble-data-get bubble-data "ATTRIBUTES")
@@ -6574,6 +6561,8 @@ ImportLayerSettings=No
   )
   bubble-data
 )
+;#endregion
+;#region Auto quantity (LF/SF/SY)
 (defun hcnm-ldrblk-auto-qty (bubble-data tag auto-type qt-type factor obj-target / 
                               lattribs str-backslash input1 pspace-bubble-p
                               ss-p string)
@@ -6668,6 +6657,7 @@ ImportLayerSettings=No
   )
   bubble-data
 )
+;#endregion
 ;#region Auto alignment
 ;;==============================================================================
 ;; ALIGNMENT AUTO-TEXT (Sta/Off/StaOff)
@@ -7503,6 +7493,7 @@ ImportLayerSettings=No
   )
 )
 ;#endregion
+;#endregion
 ;#region Associate viewport
 ;; hcnm-ldrblk-gateways-to-viewport-selection-prompt - Gateway architecture for AVPORT prompting
 ;;
@@ -8274,6 +8265,7 @@ ImportLayerSettings=No
 
 ;#endregion
 ;#endregion
+;#region Reactors
 ;; Save bubble data to attributes and XDATA
 ;; Takes association list with prefix/auto/postfix for each field
 ;; Format: (("NOTETXT0" prefix auto postfix) ("NOTETXT1" prefix auto postfix) ...)
@@ -8663,7 +8655,6 @@ ImportLayerSettings=No
   )
 )
 ;#endregion
-;#endregion
 ;#region Bubble note editor dialog
 (defun c:hcnm-edit-bubbles ()
   (haws-core-init 337)
@@ -9028,6 +9019,7 @@ ImportLayerSettings=No
   )
 )
 ;#endregion
+;#endregion
 ;#region CNM Options dialog
 (defun c:hcnm-cnmoptions (/ cnmdcl done-code retn)
   (haws-core-init 210)
@@ -9301,7 +9293,6 @@ ImportLayerSettings=No
   )
   (princ)
 )
-;#endregion
 ;#endregion
 (load "ini-edit")
 ;|?Visual LISP? Format Options?
