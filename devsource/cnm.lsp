@@ -8111,27 +8111,19 @@ ImportLayerSettings=No
 
 ;; Get or create extension dictionary for bubble
 ;; Returns: ename of "HCNM" dictionary in bubble's extension dictionary
-(defun hcnm-extdict-get (ename-bubble / elist dict-ename hcnm-dict-data hcnm-ename)
-  (setq elist (entget ename-bubble))
+(defun hcnm-extdict-get (ename-bubble / vla-obj vla-extdict dict-ename hcnm-dict-data hcnm-ename)
+  (setq vla-obj (vlax-ename->vla-object ename-bubble))
   
+  ;; Get or create extension dictionary (VLA method creates if needed)
+  (setq vla-extdict (vla-getextensiondictionary vla-obj))
+  (setq dict-ename (vlax-vla-object->ename vla-extdict))
+  
+  ;; Look for our HCNM dictionary
   (cond
-    ;; Check if bubble has extension dictionary (code -1)
-    ((setq dict-ename (cdr (assoc -1 elist)))
-     ;; Look for our HCNM dictionary
-     (cond
-       ((setq hcnm-dict-data (dictsearch dict-ename "HCNM"))
-        ;; Return ename of HCNM dictionary
-        (cdr (assoc -1 hcnm-dict-data)))
-       (t
-        ;; Create HCNM dictionary in existing extension dict
-        (setq hcnm-ename (entmakex '((0 . "DICTIONARY") (100 . "AcDbDictionary"))))
-        (dictadd dict-ename "HCNM" hcnm-ename)
-        hcnm-ename)))
+    ((setq hcnm-dict-data (dictsearch dict-ename "HCNM"))
+     ;; Return ename of existing HCNM dictionary
+     (cdr (assoc -1 hcnm-dict-data)))
     (t
-     ;; No extension dictionary - need to create one using VLA
-     ;; entmakex doesn't work for extension dictionaries, use VLA instead
-     (setq dict-ename (vla-getextensiondictionary (vlax-ename->vla-object ename-bubble)))
-     (setq dict-ename (vlax-vla-object->ename dict-ename))
      ;; Create HCNM dictionary
      (setq hcnm-ename (entmakex '((0 . "DICTIONARY") (100 . "AcDbDictionary"))))
      (dictadd dict-ename "HCNM" hcnm-ename)
@@ -8168,26 +8160,8 @@ ImportLayerSettings=No
 (defun hcnm-vptrans-read (ename-bubble / dict-ename vptrans-rec cvport ref-points)
   (setq dict-ename (hcnm-extdict-get ename-bubble))
   
-  (cond
-    ((and dict-ename (setq vptrans-rec (dictsearch (entget dict-ename) "VPTRANS")))
-     (setq vptrans-rec (entget (cdr (assoc -1 vptrans-rec))))
-     
-     ;; Extract cvport (code 70)
-     (setq cvport (cdr (assoc 70 vptrans-rec)))
-     
-     ;; Extract all points (code 10)
-     (setq ref-points '())
-     (foreach item vptrans-rec
-       (cond
-         ((= (car item) 10)
-          (setq ref-points (append ref-points (list (cdr item)))))))
-     
-     ;; Return viewport data
-     (cond
-       ((and cvport (= (length ref-points) 6))
-        (cons cvport ref-points))
-       (t nil)))
-    (t nil))
+  
+  
 )
 
 ;#region XDATA Service Layer
