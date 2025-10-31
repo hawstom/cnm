@@ -8176,7 +8176,8 @@ ImportLayerSettings=No
 
 ;; Read HCNM-BUBBLE XDATA (autotext only)
 ;; Returns: (("TAG1" . "value1") ("TAG2" . "value2") ...) or nil
-(defun hcnm-xdata-read (ename-bubble / appname xdata-raw autotext-pairs)
+;; Parses delimited format: "TAG1=value1|TAG2=value2|..."
+(defun hcnm-xdata-read (ename-bubble / appname xdata-raw xdata-str pairs pair-strs pair-parts)
   (setq appname "HCNM-BUBBLE")
   (setq xdata-raw (assoc -3 (entget ename-bubble (list appname))))
   
@@ -8184,49 +8185,64 @@ ImportLayerSettings=No
     (xdata-raw
      (setq xdata-raw (cdr (assoc appname (cdr xdata-raw))))
      
-     ;; Parse auto-text pairs: (1000 "TAG") (1001 "value") ...
-     (setq autotext-pairs '())
-     (while xdata-raw
-       (cond
-         ((and (= (caar xdata-raw) 1000)
-               (cdr xdata-raw)
-               (= (caadr xdata-raw) 1001))
-          ;; Found tag-value pair (1000=tag, 1001=value)
-          (setq autotext-pairs (append autotext-pairs 
-                                       (list (cons (cdar xdata-raw) 
-                                                   (cdadr xdata-raw))))
-                xdata-raw (cddr xdata-raw)))
-         (t
-          ;; Invalid format, skip
-          (setq xdata-raw (cdr xdata-raw)))))
-     autotext-pairs))
+     ;; Extract first 1000 string
+     (cond
+       ((and xdata-raw (= (caar xdata-raw) 1000))
+        (setq xdata-str (cdar xdata-raw))
+        
+        ;; Parse delimited string
+        (setq pairs '())
+        (cond
+          ((and xdata-str (> (strlen xdata-str) 0))
+           ;; Split by "|" to get pairs
+           (setq pair-strs (haws_string_split xdata-str "|"))
+           (foreach pair-str pair-strs
+             (cond
+               ;; Split by "=" to get tag and value
+               ((setq pair-parts (haws_string_split pair-str "="))
+                (cond
+                  ((= (length pair-parts) 2)
+                   (setq pairs (append pairs 
+                                       (list (cons (car pair-parts) (cadr pair-parts))))))))))))
+        pairs)))
 )
 
 ;; Write HCNM-BUBBLE XDATA (autotext only)
 ;; autotext-alist: (("TAG1" . "value1") ("TAG2" . "value2") ...)
-(defun hcnm-xdata-write (ename-bubble autotext-alist / appname xdata-list)
+;; Uses delimiter format: "TAG1=value1|TAG2=value2|..."
+(defun hcnm-xdata-write (ename-bubble autotext-alist / appname xdata-str result)
   (setq appname "HCNM-BUBBLE")
   
   ;; Register application if needed
   (cond
     ((not (tblsearch "APPID" appname))
-     (regapp appname)))
+     (setq result (regapp appname))
+     (cond
+       ((not result)
+        (alert (princ (strcat "ERROR: Failed to register application " appname)))
+        (setq appname nil)))))
   
-  (setq xdata-list '())
-  
-  ;; Build auto-text section
   (cond
-    (autotext-alist
-     (foreach pair autotext-alist
-       (setq xdata-list (append xdata-list
-                                (list (cons 1000 (car pair))
-                                      (cons 1001 (cdr pair))))))))
-  
-  ;; Write XDATA (replaces all HCNM-BUBBLE XDATA)
-  (cond
-    (xdata-list
-     (entmod (append (entget ename-bubble '("*"))
-                     (list (cons -3 (list (cons appname xdata-list))))))))
+    (appname
+     ;; Build delimited string: "TAG1=value1|TAG2=value2"
+     (setq xdata-str "")
+     (cond
+       (autotext-alist
+        (foreach pair autotext-alist
+          (cond
+            ((> (strlen xdata-str) 0)
+             (setq xdata-str (strcat xdata-str "|"))))
+          (setq xdata-str (strcat xdata-str (car pair) "=" (cdr pair))))))
+     
+     ;; Write XDATA as single 1000 string
+     (cond
+       ((> (strlen xdata-str) 0)
+        (setq result (entmod (append (entget ename-bubble '("*"))
+                                     (list (cons -3 (list (cons appname 
+                                                                 (list (cons 1000 xdata-str)))))))))
+        (cond
+          ((not result)
+           (alert (princ "ERROR: entmod failed when writing XDATA"))))))))
   t
 )
 
