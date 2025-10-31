@@ -7984,14 +7984,17 @@ ImportLayerSettings=No
                       field-code)
                      (t (vla-get-textstring obj-next))))
        
+       (princ (strcat "\n=== DEBUG dwg-to-lattribs: Reading tag=" tag))
+       
        ;; Get auto text from XDATA if available
        (setq auto-text (cdr (assoc tag xdata-alist)))
        
        (cond
          ((member tag '("NOTETXT1" "NOTETXT2" "NOTETXT3" "NOTETXT4" "NOTETXT5" "NOTETXT6"))
-          (princ (strcat "\n=== DEBUG dwg-to-lattribs: tag=" tag))
-          (princ (strcat " value=[" (if value value "nil") "]"))
-          (princ (strcat " auto-text=[" (if auto-text auto-text "nil") "]"))))
+          (princ (strcat "\n    value=[" (if value value "nil") "]"))
+          (princ (strcat "\n    auto-text=[" (if auto-text auto-text "nil") "]"))
+          (princ (strcat "\n    xdata-alist=" (vl-princ-to-string xdata-alist)))
+          ))
        
        ;; Split attribute using XDATA auto text
        (setq parts (hcnm-split-attribute-on-xdata value auto-text))
