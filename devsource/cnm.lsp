@@ -7942,24 +7942,32 @@ ImportLayerSettings=No
      ;; Skip VPTRANS section if present (1000 "VPTRANS", 1070 cvport, 6x 1010 points)
      (cond
        ((and xdata-raw (= (caar xdata-raw) 1000) (= (cdar xdata-raw) "VPTRANS"))
+        (princ "\n=== DEBUG: Skipping VPTRANS section")
         (setq xdata-raw (cdr xdata-raw))  ; Skip "VPTRANS" marker
         ;; Skip 1070 (cvport)
         (cond ((and xdata-raw (= (caar xdata-raw) 1070))
+               (princ (strcat "\n=== DEBUG: Skipping cvport=" (itoa (cdar xdata-raw))))
                (setq xdata-raw (cdr xdata-raw))))
         ;; Skip 6 x 1010 (reference points)
         (repeat 6
           (cond ((and xdata-raw (= (caar xdata-raw) 1010))
+                 (princ "\n=== DEBUG: Skipping ref point")
                  (setq xdata-raw (cdr xdata-raw)))))))
+     
+     (princ (strcat "\n=== DEBUG: After VPTRANS skip, xdata-raw length=" (itoa (length xdata-raw))))
+     (princ (strcat "\n=== DEBUG: xdata-raw=" (vl-princ-to-string xdata-raw)))
      
      ;; Parse remaining XDATA pairs: (1000 "TAG") (1000 "VALUE") ...
      ;; Convert to association list: (("TAG" . "VALUE") ...)
      (setq i 0)
      (while (< i (length xdata-raw))
+       (princ (strcat "\n=== DEBUG: Parse loop i=" (itoa i) " element=" (vl-princ-to-string (nth i xdata-raw))))
        (cond
          ((and (= (car (nth i xdata-raw)) 1000)
                (< (+ i 1) (length xdata-raw))
                (= (car (nth (+ i 1) xdata-raw)) 1000))
           ;; Found a tag-value pair
+          (princ (strcat "\n=== DEBUG: Found pair: " (cdr (nth i xdata-raw)) " = " (cdr (nth (+ i 1) xdata-raw))))
           (setq xdata-alist (cons 
                               (cons (cdr (nth i xdata-raw)) 
                                     (cdr (nth (+ i 1) xdata-raw)))
