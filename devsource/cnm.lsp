@@ -8213,14 +8213,20 @@ ImportLayerSettings=No
 (defun hcnm-xdata-write (ename-bubble autotext-alist / appname xdata-str result)
   (setq appname "HCNM-BUBBLE")
   
+  (princ (strcat "\n=== DEBUG hcnm-xdata-write START, appname=" appname))
+  
   ;; Register application if needed
   (cond
     ((not (tblsearch "APPID" appname))
+     (princ (strcat "\n=== DEBUG: App not registered, calling regapp"))
      (setq result (regapp appname))
+     (princ (strcat "\n=== DEBUG: regapp returned " (vl-princ-to-string result)))
      (cond
        ((not result)
         (alert (princ (strcat "ERROR: Failed to register application " appname)))
-        (setq appname nil)))))
+        (setq appname nil))))
+    (t
+     (princ (strcat "\n=== DEBUG: App already registered"))))
   
   (cond
     (appname
@@ -8234,15 +8240,20 @@ ImportLayerSettings=No
              (setq xdata-str (strcat xdata-str "|"))))
           (setq xdata-str (strcat xdata-str (car pair) "=" (cdr pair))))))
      
+     (princ (strcat "\n=== DEBUG: xdata-str=[" xdata-str "]"))
+     
      ;; Write XDATA as single 1000 string
      (cond
        ((> (strlen xdata-str) 0)
+        (princ (strcat "\n=== DEBUG: Writing XDATA..."))
         (setq result (entmod (append (entget ename-bubble '("*"))
                                      (list (cons -3 (list (cons appname 
                                                                  (list (cons 1000 xdata-str)))))))))
+        (princ (strcat "\n=== DEBUG: entmod returned " (vl-princ-to-string result)))
         (cond
           ((not result)
            (alert (princ "ERROR: entmod failed when writing XDATA"))))))))
+  (princ "\n=== DEBUG hcnm-xdata-write END")
   t
 )
 
