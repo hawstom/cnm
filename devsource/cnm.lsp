@@ -7937,7 +7937,13 @@ ImportLayerSettings=No
   ;; Step 1: Read XDATA for auto text values and build association list
   (cond
     ((setq xdata-raw (assoc -3 (entget ename-bubble (list appname))))
+     (princ (strcat "\n=== DEBUG dwg-to-lattribs: Got xdata-raw, length before extract = " 
+                    (itoa (length xdata-raw))))
      (setq xdata-raw (cdr (assoc appname (cdr xdata-raw))))
+     (princ (strcat "\n=== DEBUG dwg-to-lattribs: After extract, xdata-raw length = " 
+                    (itoa (length xdata-raw))))
+     (princ (strcat "\n=== DEBUG dwg-to-lattribs: xdata-raw BEFORE skip = " 
+                    (vl-princ-to-string xdata-raw)))
      
      ;; Skip VPTRANS section if present (1000 "VPTRANS", 1070 cvport, 6x 1010 points)
      (cond
@@ -8263,7 +8269,13 @@ ImportLayerSettings=No
   (cond
     (xdata-list
      (entmod (append (entget ename-bubble '("*"))
-                     (list (cons -3 (list (cons appname xdata-list))))))))
+                     (list (cons -3 (list (cons appname xdata-list))))))
+     ;; Verify what was written
+     (setq verify-xdata (assoc -3 (entget ename-bubble (list appname))))
+     (princ (strcat "\n=== DEBUG xdata-write: VERIFY after entmod, xdata length = " 
+                    (itoa (length (cdr (assoc appname (cdr verify-xdata)))))))
+     (princ (strcat "\n=== DEBUG xdata-write: VERIFY xdata = " 
+                    (vl-princ-to-string (cdr (assoc appname (cdr verify-xdata))))))))
   t
 )
 
