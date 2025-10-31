@@ -236,14 +236,22 @@
 (haws-autoload "misc"     '("haws-ffa" "haws-pgpedit" "haws-user"))
 (haws-autoload "loadandrun"       '("haws-LoadAndRun"))
 ;-------------MODIFY THE ABOVE--------------------------------------
-;;; Load legacy library
-;; LISPUTIL.LSP has library functions for legacy routines some legacy users have.
-(if (not haws-errdef) (load "lisputil"))
-;;; Load Haws and CNM libraries
-(setq c:hcnm-cnm nil)
+;#region Required libraries
+;;; edclib is the common core library for HawsEDC and CNM.
+;;; It must be loaded before any other HawsEDC or CNM routines are loaded.
 (load "edclib")
-(if (not c:hcnm-cnm) (load "cnm"))
-(if (not lm:isannotative) (load "lee-mac"))
+(load "lee-mac")
+
+;;; Load HAWS-CONFIG library (Issue #11 - Multi-app config system)
+(load "haws-config")
+
+;;; Load CNM main file to get config definitions
+;;; Register CNM with HAWS-CONFIG system (must happen BEFORE edclib loads)
+;;; Hoping to remove these in the haws-config refactoring project
+(load "cnm")
+(if (and HAWS-CONFIG:REGISTER-APP (not (assoc "CNM" *HAWS-CONFIG:DEFINITIONS*)))
+  (HAWS-CONFIG:REGISTER-APP "CNM" (hcnm-config-definitions))
+)
 
 ;;;Load aliases
 ;;;CNMALIAS.LSP has short names for all the commands.
@@ -253,13 +261,19 @@
   )
   (t (princ "\nSkipping cnmalias.lsp command aliases.  Already loaded."))
 )
+;#endregion
+;#region Very old legacy
+;;; Load legacy library
+;; LISPUTIL.LSP has library functions for legacy routines some legacy users have.
+(if (not haws-errdef) (load "lisputil"))
+
 ;;;The following line loads user.lsp if found.
 (if (setq temp(findfile "user.lsp"))(load temp))
 ;;;You can put personally preferred routines in user.lsp.
 ;;;It is suggested that you keep a user.lsp in a reserved user support files folder
 ;;;added to AutoCAD's Support Files Search Path.
 ;;;Keep user.lsp out of the program folder or it may be deleted.
-
+;@endregion
 ;;; Place the CNM pulldown to the left of the last pulldown already loaded
 ;;;     Created 2/21/97 by Dominic Panholzer
 

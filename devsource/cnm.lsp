@@ -3409,98 +3409,43 @@ ImportLayerSettings=No
 )
 
 ;;;Sets a variable in the global lisp list and in CNM.INI
-(defun c:hcnm-config-setvar (var val)
-  (setq
-    *hcnm-config*
-     (cond
-       ((assoc var *hcnm-config*)
-        (subst
-          (list var val)
-          (assoc var *hcnm-config*)
-          *hcnm-config*
-        )
-       )
-       (t (cons (list var val) *hcnm-config*))
-     )
+;;; UPDATED: Now uses HAWS-CONFIG library (Issue #11)
+(defun c:hcnm-config-setvar (var val / scope-code)
+  ;; Determine scope code for this variable
+  (setq scope-code (hcnm-config-entry-scope-code
+                     (assoc var (cdr (assoc "Var" (hcnm-config-definitions))))))
+  
+  ;; Call HAWS-CONFIG with appropriate parameters
+  (HAWS-CONFIG:SETVAR 
+    "CNM"                              ; app
+    var                                 ; var
+    val                                 ; val
+    scope-code                          ; scope-code
+    (hcnm-ini-name (hcnm-proj))        ; ini-path for Project scope
+    "CNM"                               ; section for Project scope
   )
-  (cond
-    ((hcnm-config-scope-eq var "User")
-     (hcnm-config-write-user var val)
-    )
-    ((hcnm-config-scope-eq var "Project")
-     (ini_writeentry (hcnm-ini-name (hcnm-proj)) "CNM" var val)
-    )
-    ((hcnm-config-scope-eq var "Session")
-     (hcnm-config-write-session var val)
-    )
-  )
-  val
 )
 
 
 ;;; c:hcnm-config-getvar
 ;;; Var is case sensitive
-(defun c:hcnm-config-getvar
-   (var / setvar-p define-configs dir ini projroot config val)
-  (setq setvar-p t)
-  (cond
-    ;; Initialize configs as needed
-    ((not (assoc var *hcnm-config*))
-     (cond
-       ((hcnm-config-scope-eq var "Project")
-        (setq
-          *hcnm-config*
-           (append
-             *hcnm-config*
-             ;; If one project var is missing, all project vars are missing
-             (hcnm-config-read-all-project)
-           )
-        )
-       )
-       ((hcnm-config-scope-eq var "User")
-        (setq
-          *hcnm-config*
-           (append
-             *hcnm-config*
-             ;; If one user var is missing, all user vars are missing
-             (hcnm-config-read-all-user)
-           )
-        )
-       )
-       ((hcnm-config-scope-eq var "Session")
-        (setq
-          *hcnm-config*
-           (append
-             *hcnm-config*
-             ;; If one session var is missing, all session vars are missing
-             (hcnm-config-read-all-session)
-           )
-        )
-       )       
-     )
+;;; UPDATED: Now uses HAWS-CONFIG library (Issue #11)
+(defun c:hcnm-config-getvar (var / scope-code val)
+  ;; Determine scope code for this variable
+  (setq scope-code (hcnm-config-entry-scope-code
+                     (assoc var (cdr (assoc "Var" (hcnm-config-definitions))))))
+  
+  ;; Call HAWS-CONFIG with appropriate parameters
+  (setq val
+    (HAWS-CONFIG:GETVAR 
+      "CNM"                            ; app
+      var                               ; var
+      scope-code                        ; scope-code
+      (hcnm-ini-name (hcnm-proj))      ; ini-path for Project scope
+      "CNM"                             ; section for Project scope
     )
   )
-  (cond
-    ;;Try getting from list
-    ((setq val (cadr (assoc var *hcnm-config*)))
-     (setq setvar-p nil)
-    )
-    ;;Use default if there is one
-    ((setq val (hcnm-config-get-default var)))
-    ;;Otherwise fail.
-    (t
-     (alert
-       (strcat
-         "Fatal error in CNM:\nCould not initialize the variable\n"
-         (haws-prin1-to-string var)
-       )
-     )
-     (setq setvar-p nil)
-    )
-  )
-  (if setvar-p
-    (c:hcnm-config-setvar var val)
-  )
+  
   val
 )
 

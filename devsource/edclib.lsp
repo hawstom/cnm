@@ -1834,7 +1834,7 @@
 
 ;;;HAWS-GETDISTX
 ;;;Returns a distance
-(vl-acad-defun 'HAWS-GETDISTX)
+;;(vl-acad-defun 'HAWS-GETDISTX)
 (defun haws-getdistx (gx-point1 gx-prompt gx-defaultvalue gx-initialvalue / gx-arcmode)
   (car
     (haws-getdistpoint
@@ -1849,7 +1849,7 @@
 ;;;HAWS-GETDISTPOINT
 ;;;Returns a distance, the endpoint of the distance, and the bulge used for the distance.
 ;;;'(distance endpoint bulge)
-(vl-acad-defun 'HAWS-GETDISTPOINT)
+;;(vl-acad-defun 'HAWS-GETDISTPOINT)
 (defun haws-getdistpoint (gx-point1 gx-prompt gx-defaultvalue
                       gx-initialvalue gx-arcmode-p / gx-point2 gx-point3 gx-bulge
                       gx-distance
@@ -1947,7 +1947,7 @@
   )
 )
 
-(vl-acad-defun 'HAWS-GETDN)
+;;(vl-acad-defun 'HAWS-GETDN)
 (defun haws-getdn (/ dn)
   (setq dn (getvar "dwgname"))
   (if (wcmatch (strcase dn) "*`.DWG")
@@ -1959,7 +1959,7 @@
   dn
 )
 
-(vl-acad-defun 'HAWS-GETDNPATH)
+;;(vl-acad-defun 'HAWS-GETDNPATH)
 (defun haws-getdnpath (/ dnpath)
   (setq dnpath (getvar "dwgname"))
   (if (wcmatch (strcase dnpath) "*`.DWG")
@@ -2003,7 +2003,7 @@
 
 ;;HAWS-GETINTX
 ;;Provided for legacy compatability and user experience.
-(vl-acad-defun 'HAWS-GETINTX)
+;;(vl-acad-defun 'HAWS-GETINTX)
 (defun haws-getintx (gx-prompt gx-defaultvalue gx-initialvalue)
   (haws-getintxx gx-prompt gx-defaultvalue gx-initialvalue 0)
 )
@@ -2014,7 +2014,7 @@
 ;;;2. If no default is supplied and MODE is 0, the first prompt is for standard input, with fallback to selecting value from drawing text.
 ;;;3. If no default is supplied and MODE is 1, the first prompt is for drawing text selection, with fallback to standard input.
 ;;;Returns an INT or nil if nothing provided.
-(vl-acad-defun 'HAWS-GETINTXX)
+;;(vl-acad-defun 'HAWS-GETINTXX)
 (defun haws-getintxx (gx-prompt gx-defaultvalue gx-initialvalue
                   gx-promptmode / gx-response
                  )
@@ -2165,7 +2165,7 @@
 
 ;;HAWS-GETREALX
 ;;Provided for legacy compatability and user experience.
-(vl-acad-defun 'HAWS-GETREALX)
+;;(vl-acad-defun 'HAWS-GETREALX)
 (defun haws-getrealx (gx-prompt gx-defaultvalue gx-initialvalue)
   (haws-getrealxx gx-prompt gx-defaultvalue gx-initialvalue 0)
 )
@@ -2176,7 +2176,7 @@
 ;;;2. If no default is supplied and MODE is 0, the first prompt is for standard input, with fallback to selecting value from drawing text.
 ;;;3. If no default is supplied and MODE is 1, the first prompt is for drawing text selection, with fallback to standard input.
 ;;;Returns an REAL or nil if nothing provided.
-(vl-acad-defun 'HAWS-GETREALXX)
+;;(vl-acad-defun 'HAWS-GETREALXX)
 (defun haws-getrealxx (gx-prompt gx-defaultvalue gx-initialvalue
                    gx-promptmode / gx-response
                   )
@@ -2326,7 +2326,7 @@
 )
 
 ;;;HAWSGETPOINTX
-(vl-acad-defun 'HAWS-GETPOINTX)
+;;(vl-acad-defun 'HAWS-GETPOINTX)
 (defun haws-getpointx (gx-startingpoint gx-prompt gx-defaultvalue
                    gx-initialvalue / gx-input
                   )
@@ -2364,7 +2364,7 @@
   )
 )
 
-(vl-acad-defun 'HAWS-GETSTRINGX)
+;;(vl-acad-defun 'HAWS-GETSTRINGX)
 (defun haws-getstringx
    (gx-prompt gx-defaultvalue gx-initialvalue / gx-input)
   (setq
@@ -2399,7 +2399,7 @@
 ;;Type 0 tries to match the wild cards with text preceding a number.
 ;;Type 1 tries to match the wild cards with text following a number
 ;;Returns 0.0 if search unsuccesful
-(vl-acad-defun 'HAWS-ATOFX)
+;;(vl-acad-defun 'HAWS-ATOFX)
 (defun haws-atofx (s wc opt / x)
   (setq x (cadr (haws-extractx s wc opt)))
   (if x
@@ -2415,7 +2415,7 @@
 ;;Type 0 tries to match the wild cards with text preceding a number.
 ;;Type 1 tries to match the wild cards with text following a number
 ;;Returns nil if search unsuccesful
-(vl-acad-defun 'HAWS-DISTOFX)
+;;(vl-acad-defun 'HAWS-DISTOFX)
 (defun haws-distofx (s wc opt / x)
   (setq x (cadr (haws-extractx s wc opt)))
   (if x
@@ -2429,14 +2429,14 @@
 ;; Endstr returns a substring of s starting with the ith to last
 ;; character
 ;;and continuing l characters.
-(vl-acad-defun 'HAWS-ENDSTR)
+;;(vl-acad-defun 'HAWS-ENDSTR)
 (defun haws-endstr (s i l)
   (substr s (1+ (- (max (strlen s) 1) i)) l)
 )
 
 ;;Extract used to extract numerical info from a text string.
 ;;Ignores commas in numbers.  Not international compatible.
-(vl-acad-defun 'HAWS-EXTRACT)
+;;(vl-acad-defun 'HAWS-EXTRACT)
 (defun haws-extract (s / c i prefix number suffix)
   (setq
     i 0
@@ -2481,7 +2481,7 @@
 ;; Extractx used to extract numerical info from a text string with
 ;; extended
 ;; options.
-(vl-acad-defun 'HAWS-EXTRACTX)
+;;(vl-acad-defun 'HAWS-EXTRACTX)
 (defun haws-extractx (s wc opt / c done i pre prei number suf sufi)
   (setq
     i (if (= opt 0)
@@ -2585,7 +2585,7 @@
 ;;;
 ;;;Tests whether intellicad behavior is current.
 ;;;Bricscad has advanced to the point we no longer have to use a special mode for it.
-(vl-acad-defun 'C:haws-icad-p)
+;;(vl-acad-defun 'C:haws-icad-p)
 (defun c:haws-icad-p ()
   (or *haws-icadmode*
       (setq *haws-icadmode* (wcmatch (getvar "acadver") "*i"))
@@ -2599,7 +2599,7 @@
 ;;
 ;; CAUTION: May not return the same value as vl-file-copy.
 ;;
-(vl-acad-defun 'HAWS-FILE-COPY)
+;;(vl-acad-defun 'HAWS-FILE-COPY)
 (defun haws-file-copy (source destination / rdlin return)
   (setq return t)
   (cond
@@ -2631,7 +2631,7 @@
 ;;
 ;; Intellicad substitute for vl-filename-base.
 ;;
-(vl-acad-defun 'HAWS-FILENAME-BASE)
+;;(vl-acad-defun 'HAWS-FILENAME-BASE)
 (defun haws-filename-base (filename / base)
   (cond
     ((haws-vlisp-p) (vl-filename-base filename))
@@ -2670,7 +2670,7 @@
 ;;
 ;; Intellicad substitute for vl-filename-directory. 
 ;;
-(vl-acad-defun 'HAWS-FILENAME-DIRECTORY)
+;;(vl-acad-defun 'HAWS-FILENAME-DIRECTORY)
 (defun haws-filename-directory (filename / directory)
   (cond
     ((haws-vlisp-p) (vl-filename-directory filename))
@@ -2704,7 +2704,7 @@
 ;;; Trims everything up to but excluding last dot from file name.
 ;;;
 ;;; Returns extension including dot.
-(vl-acad-defun 'HAWS-FILENAME-EXTENSION)
+;;(vl-acad-defun 'HAWS-FILENAME-EXTENSION)
 (defun haws-filename-extension (filename / extension)
   (cond
     ((and
@@ -2797,7 +2797,7 @@
 )
 ;;; HAWS-LOG
 ;;; Writes a message to a log file including the username and timestamp
-(vl-acad-defun 'HAWS-LOG)
+;;(vl-acad-defun 'HAWS-LOG)
 (defun haws-log (message)
             ;|
   (setq
@@ -2825,7 +2825,7 @@
 )
 ;;; HAWS-MILEPOST
 ;;; Echos a progress message depending on debug level.
-(vl-acad-defun 'HAWS-MILEPOST)
+;;(vl-acad-defun 'HAWS-MILEPOST)
 (defun haws-milepost (messagestring)
   (if (> *haws-debuglevel* 0)
     (princ (strcat "\nHawsEDC debug message: " messagestring))
@@ -3008,7 +3008,7 @@
   )
 )
 ;;;  HAWS-FLATTEN
-(vl-acad-defun 'HAWS-FLATTEN)
+;;(vl-acad-defun 'HAWS-FLATTEN)
 (defun haws-flatten (pnt)
 ;;;Returns flattened coordinates of a 3d point
   (list (car pnt) (cadr pnt) 0.0)
@@ -3028,7 +3028,7 @@
 ;;;Tests
 ;;;(HAWS-LSTTOSTR '("1" "2" "3") "," "\"")
 ;;;(HAWS-LSTTOSTR '("1" "2\""" "3") "," "\"")
-(vl-acad-defun 'HAWS-LSTTOSTR)
+;;(vl-acad-defun 'HAWS-LSTTOSTR)
 
 (defun haws-lsttostr (inputlist fieldseparator textdelimiter / currentfield
                   outputstring
@@ -3092,7 +3092,7 @@
 ;;         [string to place into a field]
 ;;         [uniform field width or field delimiter character]
 ;;       )
-(vl-acad-defun 'HAWS-MKFLD)
+;;(vl-acad-defun 'HAWS-MKFLD)
 (defun haws-mkfld (string format / char i mkfld_field mkfld_literal)
   (cond
     ((= (type format) 'STR)
@@ -3165,7 +3165,7 @@
   )
   (setq f3 (close f3))
 )
-(vl-acad-defun 'HAWS-GETLAYR)
+;;(vl-acad-defun 'HAWS-GETLAYR)
 (defun haws-getlayr (key / temp)
   (if (or (not *haws:layers*)
           (cond
@@ -3191,7 +3191,7 @@
     )
   )
 )
-(vl-acad-defun 'HAWS-MKLAYR)
+;;(vl-acad-defun 'HAWS-MKLAYR)
 (defun haws-mklayr (laopt / laname lacolr laltyp ltfile ltfiles temp)
   ;;(princ "\nHAWS-MKLAYR in edclib")
   (if (= 'STR (type laopt))
@@ -3300,7 +3300,7 @@
 ;;; ======================================================================
 
 
-(vl-acad-defun 'HAWS-DWGSCALE)
+;;(vl-acad-defun 'HAWS-DWGSCALE)
 (defun haws-dwgscale ()
   (cond
     ((or (= (getvar "DIMANNO") 1) (= (getvar "DIMSCALE") 0))
@@ -3318,7 +3318,7 @@
   (* (getvar "DIMTXT") (haws-dwgscale))
 )
 
-(vl-acad-defun 'HAWS-MKTEXT)
+;;(vl-acad-defun 'HAWS-MKTEXT)
 (defun haws-mktext (j i h r s / ent jx jy)
   (setq
     i  (trans
@@ -3410,7 +3410,7 @@
   )
 )
 
-(vl-acad-defun 'HAWS-MKLINE)
+;;(vl-acad-defun 'HAWS-MKLINE)
 (defun haws-mkline (pt1 pt2)
   (setq
     pt1 (if (= 2 (length pt1))
@@ -3437,7 +3437,7 @@
 ;; leaving only the unique branches.
 ;; Useful for relating paths.
 ;;
-(vl-acad-defun 'HAWS-PATH-CHOP-TRUNK)
+;;(vl-acad-defun 'HAWS-PATH-CHOP-TRUNK)
 (defun haws-path-chop-trunk (trees case-sensitive-p / length-common)
   (setq
     tree-common
@@ -3479,7 +3479,7 @@
 ;; Converts an absolute path to a relative path if possible
 ;; given path and comparison path, both including filename.
 ;;
-(vl-acad-defun 'HAWS-PATH-RELATE)
+;;(vl-acad-defun 'HAWS-PATH-RELATE)
 (defun haws-path-relate (path-absolute path-compare case-sensitive-p / branch-absolute branch-compare branches list-absolute list-compare relative-path)
   (setq
     ;; Parse to lists.
@@ -3525,7 +3525,7 @@
 ;; Converts a relative path to an absolute path
 ;; given path and comparison path, both including filename.
 ;;
-(vl-acad-defun 'HAWS-PATH-UNRELATE)
+;;(vl-acad-defun 'HAWS-PATH-UNRELATE)
 (defun haws-path-unrelate
    (path-relative path-compare / list-compare list-relative)
   (setq
@@ -3564,7 +3564,7 @@
 ;; VL-PRIN1-TO-STRING
 ;; substitute
 ;;
-(vl-acad-defun 'HAWS-PRIN1-TO-STRING)
+;;(vl-acad-defun 'HAWS-PRIN1-TO-STRING)
 (defun haws-prin1-to-string (atomx / f1 f2 string)
   (cond
     ((haws-vlisp-p) (vl-prin1-to-string atomx))
@@ -3610,7 +3610,7 @@
 ;;;
 ;;;
 ;;;
-(vl-acad-defun 'HAWS-3PTTOBULGE)
+;;(vl-acad-defun 'HAWS-3PTTOBULGE)
 (defun haws-3pttobulge
    (pnt1 pnt2 pnt3 / ang1 ang2 ang3 bulge chord delta delta1 r)
 ;;;Returns the bulge of an arc defined by three points, PNT1, PNT2, and PNT3
@@ -3667,7 +3667,7 @@
 
 
 ;;;  HAWS-SEGMENT-LENGTH
-(vl-acad-defun 'HAWS-SEGMENT-LENGTH)
+;;(vl-acad-defun 'HAWS-SEGMENT-LENGTH)
 (defun haws-segment-length
 ;;;  Returns curve or straight length of a segment.
                        (2dpnt1 2dpnt2 bulge / d delta dover2 l r)
@@ -3714,7 +3714,7 @@
 ;;;Tests
 ;;;(alert (apply 'strcat (mapcar '(lambda (x) (strcat "\n----\n" x)) (haws-strtolst "1 John,\"2 2\"\" pipe,\nheated\",3 the end,,,,," "," "\"" nil))))
 ;;;(alert (apply 'strcat (mapcar '(lambda (x) (strcat "\n----\n" x)) (haws-strtolst "1 John,\"2 2\"\" pipe,\nheated\",3 the end,,,,," "," "\"" T))))
-(vl-acad-defun 'HAWS-STRTOLST)
+;;(vl-acad-defun 'HAWS-STRTOLST)
 (defun haws-strtolst (inputstring fieldseparatorwc textdelimiter
                   emptyfieldsdocount / charactercounter conversionisdone
                   currentcharacter currentfield currentfieldisdone
@@ -3864,7 +3864,7 @@
 ;;;       )
 ;;;Tests
 ;;;(haws-rdfld 3 "1 John,\"2 2\"\" pipe,\nheated\",3 the end,,,,," "," 1))))
-(vl-acad-defun 'HAWS-RDFLD)
+;;(vl-acad-defun 'HAWS-RDFLD)
 (defun haws-rdfld (fieldno inputstring fieldseparator opt / atomcounter
                atomy atomx emptyfieldsdocount ischrislong parsedlist
                textdelimiter fieldseparatorwc ischr islong
@@ -3950,7 +3950,7 @@
 )
 
 ;;Strip white space from beginning and end of a string
-(vl-acad-defun 'HAWS-RDFLD-UNPAD)
+;;(vl-acad-defun 'HAWS-RDFLD-UNPAD)
 (defun haws-rdfld-unpad (str)
   (while (wcmatch (substr str 1 1) " ,\t")
     (setq str (substr str 2))
@@ -3962,7 +3962,7 @@
 )
 
 ;;Returns nil if in ICAD mode
-(vl-acad-defun 'HAWS-REGISTRY-READ)
+;;(vl-acad-defun 'HAWS-REGISTRY-READ)
 (defun haws-registry-read (reg-key val-name)
   (cond
     ((c:haws-icad-p) nil)
@@ -3971,7 +3971,7 @@
 )
 
 ;;Returns nil if in ICAD mode
-(vl-acad-defun 'HAWS-REGISTRY-WRITE)
+;;(vl-acad-defun 'HAWS-REGISTRY-WRITE)
 (defun haws-registry-write (reg-key val-name val-data)
   (cond
     ((c:haws-icad-p) nil)
@@ -3981,7 +3981,7 @@
 
 
 ;;Remove an element from a list
-(vl-acad-defun 'HAWS-REMOVE)
+;;(vl-acad-defun 'HAWS-REMOVE)
 (defun haws-remove (element lst)
   (append
     (reverse (cdr (member element (reverse lst))))
@@ -3990,7 +3990,7 @@
 )
 
 ;;Convert a radian angle to a presentation quality bearing.
-(vl-acad-defun 'HAWS-RTOB)
+;;(vl-acad-defun 'HAWS-RTOB)
 (defun haws-rtob (rad au / b i)
   (setq b (angtos rad au))
   (if (wcmatch b "*d*")
@@ -4027,7 +4027,7 @@
 
 ;; RTOSTA sub-function converts a real number to a base 100 road
 ;; station.
-(vl-acad-defun 'HAWS-RTOSTA)
+;;(vl-acad-defun 'HAWS-RTOSTA)
 (defun haws-rtosta (sta lup / isneg after before)
   (setq
     lup
@@ -4071,13 +4071,13 @@
 )
 
 ;;;  Trig functions not included with AutoLISP
-(vl-acad-defun 'HAWS-ASIN)
+;;(vl-acad-defun 'HAWS-ASIN)
 (defun haws-asin (x) (atan x (sqrt (- 1 (* x x)))))
-(vl-acad-defun 'HAWS-ACOS)
+;;(vl-acad-defun 'HAWS-ACOS)
 (defun haws-acos (x) (atan (sqrt (- 1 (* x x))) x))
-(vl-acad-defun 'TAN)
+;;(vl-acad-defun 'TAN)
 (defun haws-tan (x) (/ (sin x) (cos x)))
-(vl-acad-defun 'HAWS-VSET)
+;;(vl-acad-defun 'HAWS-VSET)
 (defun haws-vset (vlst)
   (foreach
      v vlst
@@ -4087,7 +4087,7 @@
   )
 )
 
-(vl-acad-defun 'HAWS-VTOG)
+;;(vl-acad-defun 'HAWS-VTOG)
 (defun haws-vtog (vlst)
   (foreach
      v vlst
@@ -4105,12 +4105,12 @@
   (princ)
 )
 
-(vl-acad-defun 'HAWS-VSAVE)
+;;(vl-acad-defun 'HAWS-VSAVE)
 (defun haws-vsave (vlst)
   (setq *haws-vstr* (mapcar '(lambda (v) (list v (getvar v))) vlst))
 )
 
-(vl-acad-defun 'HAWS-VRSTOR)
+;;(vl-acad-defun 'HAWS-VRSTOR)
 (defun haws-vrstor ()
   (mapcar '(lambda (v) (setvar (car v) (cadr v))) *haws-vstr*)
 )
@@ -4124,7 +4124,7 @@
 ;;characters are stripped.
 ;;Example: (wrap "Go home, eat dinner, comb, brush, sleep" 15 ",")
 ;;Returns  ("Go home" "eat dinner" "comb, brush" "sleep")
-(vl-acad-defun 'HAWS-WRAP)
+;;(vl-acad-defun 'HAWS-WRAP)
 (defun haws-wrap (strng1 maxlen char / first i lstrni stripc strips strng2
               strngi temp wlist
              )
@@ -4195,7 +4195,7 @@
 ;;Functions for oo, selstyle, and le
 
 ;;Selcerob--Selects a certain type of object. Returns entsel list.
-(vl-acad-defun 'HAWS-SELCEROB)
+;;(vl-acad-defun 'HAWS-SELCEROB)
 (defun haws-selcerob (prmpt serch / e elst enm ok)
   (while (not ok)
     (while (not (setq e (entsel prmpt))))
@@ -4213,7 +4213,7 @@
 ;;
 ;; For Intellicad compatibility
 ;;
-(vl-acad-defun 'HAWS-TXLEN)
+;;(vl-acad-defun 'HAWS-TXLEN)
 (defun haws-txlen (string height)
   (if (c:haws-icad-p)
     (* height (strlen string) 0.80)
@@ -4225,7 +4225,7 @@
 ;; HAWS-VLISP-P
 ;;
 ;;Tests whether visual lisp functions are available.
-(vl-acad-defun 'HAWS-VLISP-P)
+;;(vl-acad-defun 'HAWS-VLISP-P)
 (defun haws-vlisp-p ()
   (not (< (atof (getvar "acadver")) 15))
 )
@@ -4354,7 +4354,8 @@
 (haws-checkstoredstrings)
 (if (/=(haws-use-get-local-log-string)(haws-use-initialize-log-string))(haws-use-log-remote))
 
-;#endregion(PROMPT "loaded.")
+;#endregion
+(PROMPT "loaded.")
  ;|�Visual LISP� Format Options�
 (72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil t)
 ;*** DO NOT add text below the comment! ***|;
