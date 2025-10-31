@@ -7880,38 +7880,8 @@ ImportLayerSettings=No
         xdata-alist '())
   
   ;; Step 1: Read XDATA for auto text values and build association list
-  (cond
-    ((setq xdata-raw (assoc -3 (entget ename-bubble (list appname))))
-     (setq xdata-raw (cdr (assoc appname (cdr xdata-raw))))
-     
-     ;; Skip VPTRANS section if present (1000 "VPTRANS", 1070 cvport, 6x 1010 points)
-     (cond
-       ((and xdata-raw (= (caar xdata-raw) 1000) (= (cdar xdata-raw) "VPTRANS"))
-        (setq xdata-raw (cdr xdata-raw))  ; Skip "VPTRANS" marker
-        ;; Skip 1070 (cvport)
-        (cond ((and xdata-raw (= (caar xdata-raw) 1070))
-               (setq xdata-raw (cdr xdata-raw))))
-        ;; Skip 6 x 1010 (reference points)
-        (repeat 6
-          (cond ((and xdata-raw (= (caar xdata-raw) 1010))
-                 (setq xdata-raw (cdr xdata-raw)))))))
-     
-     ;; Parse remaining XDATA pairs: (1000 "TAG") (1000 "VALUE") ...
-     ;; Convert to association list: (("TAG" . "VALUE") ...)
-     (setq i 0)
-     (while (< i (length xdata-raw))
-       (cond
-         ((and (= (car (nth i xdata-raw)) 1000)
-               (< (+ i 1) (length xdata-raw))
-               (= (car (nth (+ i 1) xdata-raw)) 1000))
-          ;; Found a tag-value pair
-          (setq xdata-alist (cons 
-                              (cons (cdr (nth i xdata-raw)) 
-                                    (cdr (nth (+ i 1) xdata-raw)))
-                              xdata-alist))
-          (setq i (+ i 2)))
-         (t (setq i (1+ i))))
-     )))
+  ;; Step 1: Read XDATA for auto-text values
+  (setq xdata-alist (hcnm-xdata-read ename-bubble))
   
   ;; Step 2: Read attributes and split using XDATA
   (setq ename-next ename-bubble)
@@ -8076,30 +8046,102 @@ ImportLayerSettings=No
 )
 
 
-;#region XDATA Service Layer
+;#region Extension Dictionary Service Layer
 ;;==============================================================================
-;; XDATA SERVICE LAYER - HCNM-BUBBLE XDATA MANAGEMENT
+;; EXTENSION DICTIONARY - HCNM-BUBBLE PERSISTENT DATA
 ;;==============================================================================
-;; The HCNM-BUBBLE XDATA stores two types of data that must coexist:
-;; 1. Viewport transformation matrix (VPTRANS section)
-;;    - Paper space coordinate conversion for N/E/NE/Sta/Off auto-text
-;;    - Format: (1000 "VPTRANS") (1070 cvport) (1010 point)?6
-;; 2. Auto-text values (tag-value pairs)
-;;    - Stores auto field separately from concatenated display text
-;;    - Format: (1000 "TAG") (1000 "value") pairs
-;;
-;; CRITICAL DESIGN PRINCIPLE:
-;; All functions that modify HCNM-BUBBLE XDATA must preserve both sections.
-;; Think of XDATA as a shared document that multiple sub-systems are editing.
+;; Uses XRECORD in extension dictionary for large/permanent data (VPTRANS)
+;; Uses XDATA for small/dynamic data (autotext tag-value pairs)
 ;;==============================================================================
 
-;; Read HCNM-BUBBLE XDATA and parse into structured sections
-;; Returns: ((vptrans . viewport-data) (autotext . autotext-alist))
-;; viewport-data: (cvport ref-ocs-1 ref-wcs-1 ref-ocs-2 ref-wcs-2 ref-ocs-3 ref-wcs-3) or nil
-;; autotext-alist: (("TAG1" . "value1") ("TAG2" . "value2") ...) or nil
-(defun hcnm-xdata-read (ename-bubble / appname xdata-raw xdata-parsed 
-                        vptrans-section autotext-section
-                        cvport ref-points autotext-pairs)
+;; Get or create extension dictionary for bubble
+;; Returns: ename of "HCNM" dictionary in bubble's extension dictionary
+(defun hcnm-extdict-get (ename-bubble / dict-ename hcnm-dict)
+  (cond
+    ;; Get existing extension dictionary
+    ((setq dict-ename (cdr (assoc -1 (dictsearch (entget ename-bubble) "ACAD_XDICTIONARY"))))
+     ;; Look for our HCNM dictionary
+     (cond
+       ((setq hcnm-dict (dictsearch (entget dict-ename) "HCNM"))
+        (cdr (assoc -1 hcnm-dict)))
+       (t
+        ;; Create HCNM dictionary
+        (dictadd dict-ename "HCNM" (entmakex '((0 . "DICTIONARY") (100 . "AcDbDictionary")))))))
+    (t
+     ;; Create extension dictionary and HCNM sub-dictionary
+     (setq dict-ename (entmakex (list (cons 0 "DICTIONARY") 
+                                      (cons 100 "AcDbDictionary")
+                                      (cons 330 ename-bubble))))
+     (entmod (append (entget ename-bubble)
+                     (list (cons -1 dict-ename))))
+     (dictadd dict-ename "HCNM" (entmakex '((0 . "DICTIONARY") (100 . "AcDbDictionary"))))))
+)
+
+;; Write VPTRANS to XRECORD in extension dictionary
+;; viewport-data: (cvport ref-ocs-1 ref-wcs-1 ref-ocs-2 ref-wcs-2 ref-ocs-3 ref-wcs-3)
+(defun hcnm-vptrans-write (ename-bubble viewport-data / dict-ename xrec-data cvport ref-points)
+  (setq dict-ename (hcnm-extdict-get ename-bubble))
+  
+  (cond
+    (viewport-data
+     (setq cvport (car viewport-data)
+           ref-points (cdr viewport-data))
+     
+     ;; Build XRECORD data list with labeled fields
+     (setq xrec-data (list '(0 . "XRECORD")
+                           '(100 . "AcDbXrecord")
+                           (cons 70 cvport)))  ; 70 = short integer for cvport
+     
+     ;; Add all 6 reference points as 3D points (code 10)
+     (foreach pt ref-points
+       (setq xrec-data (append xrec-data (list (cons 10 pt)))))
+     
+     ;; Create or update VPTRANS xrecord
+     (dictadd dict-ename "VPTRANS" (entmakex xrec-data))
+     t)
+    (t nil))
+)
+
+;; Read VPTRANS from XRECORD in extension dictionary  
+;; Returns: (cvport ref-ocs-1 ref-wcs-1 ... ref-wcs-3) or nil
+(defun hcnm-vptrans-read (ename-bubble / dict-ename vptrans-rec cvport ref-points)
+  (setq dict-ename (hcnm-extdict-get ename-bubble))
+  
+  (cond
+    ((and dict-ename (setq vptrans-rec (dictsearch (entget dict-ename) "VPTRANS")))
+     (setq vptrans-rec (entget (cdr (assoc -1 vptrans-rec))))
+     
+     ;; Extract cvport (code 70)
+     (setq cvport (cdr (assoc 70 vptrans-rec)))
+     
+     ;; Extract all points (code 10)
+     (setq ref-points '())
+     (foreach item vptrans-rec
+       (cond
+         ((= (car item) 10)
+          (setq ref-points (append ref-points (list (cdr item)))))))
+     
+     ;; Return viewport data
+     (cond
+       ((and cvport (= (length ref-points) 6))
+        (cons cvport ref-points))
+       (t nil)))
+    (t nil))
+)
+
+;#region XDATA Service Layer
+;;==============================================================================
+;; XDATA SERVICE LAYER - HCNM-BUBBLE AUTO-TEXT STORAGE
+;;==============================================================================
+;; XDATA now only stores auto-text tag-value pairs for quick read/write access.
+;; Format: (1000 "TAG") (1001 "value") pairs
+;; 
+;; VPTRANS moved to XRECORD in extension dictionary (see above functions).
+;;==============================================================================
+
+;; Read HCNM-BUBBLE XDATA (autotext only)
+;; Returns: (("TAG1" . "value1") ("TAG2" . "value2") ...) or nil
+(defun hcnm-xdata-read (ename-bubble / appname xdata-raw autotext-pairs)
   (setq appname "HCNM-BUBBLE")
   (setq xdata-raw (assoc -3 (entget ename-bubble (list appname))))
   
@@ -8107,35 +8149,14 @@ ImportLayerSettings=No
     (xdata-raw
      (setq xdata-raw (cdr (assoc appname (cdr xdata-raw))))
      
-     ;; Parse VPTRANS section if present
-     (cond
-       ((and xdata-raw (= (cdr (car xdata-raw)) "VPTRANS"))
-        (setq xdata-raw (cdr xdata-raw))  ; Skip marker
-        ;; Extract CVPORT (1070 code)
-        (cond
-          ((and xdata-raw (= (caar xdata-raw) 1070))
-           (setq cvport (cdar xdata-raw)
-                 xdata-raw (cdr xdata-raw))
-           ;; Extract 6 reference points (1010 codes)
-           (setq ref-points '())
-           (repeat 6
-             (cond
-               ((and xdata-raw (= (caar xdata-raw) 1010))
-                (setq ref-points (append ref-points (list (cdar xdata-raw)))
-                      xdata-raw (cdr xdata-raw)))))
-           ;; Build viewport data list
-           (cond
-             ((= (length ref-points) 6)
-              (setq vptrans-section (cons cvport ref-points))))))))
-     
-     ;; Parse auto-text pairs (remaining data)
+     ;; Parse auto-text pairs: (1000 "TAG") (1001 "value") ...
      (setq autotext-pairs '())
      (while xdata-raw
        (cond
          ((and (= (caar xdata-raw) 1000)
                (cdr xdata-raw)
-               (= (caadr xdata-raw) 1000))
-          ;; Found tag-value pair
+               (= (caadr xdata-raw) 1001))
+          ;; Found tag-value pair (1000=tag, 1001=value)
           (setq autotext-pairs (append autotext-pairs 
                                        (list (cons (cdar xdata-raw) 
                                                    (cdadr xdata-raw))))
@@ -8143,20 +8164,12 @@ ImportLayerSettings=No
          (t
           ;; Invalid format, skip
           (setq xdata-raw (cdr xdata-raw)))))
-     (cond
-       ((> (length autotext-pairs) 0)
-        (setq autotext-section autotext-pairs)))))
-  
-  ;; Return structured data
-  (list (cons 'vptrans vptrans-section)
-        (cons 'autotext autotext-section))
+     autotext-pairs))
 )
 
-;; Write HCNM-BUBBLE XDATA from structured sections
-;; xdata-sections: ((vptrans . viewport-data) (autotext . autotext-alist))
-;; This is the ONLY function that writes XDATA - ensures atomic updates
-(defun hcnm-xdata-write (ename-bubble xdata-sections / appname xdata-list 
-                         vptrans-data autotext-data cvport ref-points)
+;; Write HCNM-BUBBLE XDATA (autotext only)
+;; autotext-alist: (("TAG1" . "value1") ("TAG2" . "value2") ...)
+(defun hcnm-xdata-write (ename-bubble autotext-alist / appname xdata-list)
   (setq appname "HCNM-BUBBLE")
   
   ;; Register application if needed
@@ -8166,35 +8179,13 @@ ImportLayerSettings=No
   
   (setq xdata-list '())
   
-  ;; Build VPTRANS section if present
-  (setq vptrans-data (cdr (assoc 'vptrans xdata-sections)))
-  (princ (strcat "\n=== DEBUG xdata-write: vptrans-data = " (vl-princ-to-string vptrans-data)))
+  ;; Build auto-text section
   (cond
-    (vptrans-data
-     (setq cvport (car vptrans-data)
-           ref-points (cdr vptrans-data))
-     (princ (strcat "\n=== DEBUG xdata-write: cvport = " (vl-princ-to-string cvport) " ref-points count = " (itoa (length ref-points))))
-     (cond
-       ((and cvport (= (length ref-points) 6))
-        (setq xdata-list (append xdata-list
-                                 (list (cons 1000 "VPTRANS")
-                                       (cons 1070 cvport))))
-        (foreach pt ref-points
-          (setq xdata-list (append xdata-list (list (cons 1010 pt)))))
-        (princ (strcat "\n=== DEBUG xdata-write: added VPTRANS to xdata-list, count = " (itoa (length xdata-list))))
-        ))))
-  
-  ;; Build auto-text section if present
-  (setq autotext-data (cdr (assoc 'autotext xdata-sections)))
-  (cond
-    (autotext-data
-     (foreach pair autotext-data
+    (autotext-alist
+     (foreach pair autotext-alist
        (setq xdata-list (append xdata-list
                                 (list (cons 1000 (car pair))
-                                      (cons 1000 (cdr pair))))))))
-  
-  (princ (strcat "\n=== DEBUG xdata-write: final xdata-list count = " (itoa (length xdata-list))))
-  (princ (strcat "\n=== DEBUG xdata-write: xdata-list = " (vl-princ-to-string xdata-list)))
+                                      (cons 1001 (cdr pair))))))))
   
   ;; Write XDATA (replaces all HCNM-BUBBLE XDATA)
   (cond
@@ -8204,48 +8195,28 @@ ImportLayerSettings=No
   t
 )
 
-;; Update viewport transform section, preserving auto-text
+;; Update viewport transform (now uses XRECORD)
 ;; viewport-data: (cvport ref-ocs-1 ref-wcs-1 ... ref-wcs-3)
-(defun hcnm-xdata-set-vptrans (ename-bubble viewport-data / xdata-sections)
-  (princ "\n=== DEBUG set-vptrans START ===")
-  (princ (strcat "\nViewport data to set: " (vl-princ-to-string viewport-data)))
-  (setq xdata-sections (hcnm-xdata-read ename-bubble))
-  (princ (strcat "\nRead existing sections: " (vl-princ-to-string xdata-sections)))
-  (setq xdata-sections (subst (cons 'vptrans viewport-data) 
-                              (assoc 'vptrans xdata-sections) 
-                              xdata-sections))
-  (princ (strcat "\nSections after update: " (vl-princ-to-string xdata-sections)))
-  (hcnm-xdata-write ename-bubble xdata-sections)
-  (princ "\n=== DEBUG set-vptrans END ===")
+(defun hcnm-xdata-set-vptrans (ename-bubble viewport-data)
+  (hcnm-vptrans-write ename-bubble viewport-data)
 )
 
-;; Update auto-text section, preserving viewport transform
+;; Update auto-text (uses XDATA)
 ;; autotext-alist: (("TAG1" . "value1") ("TAG2" . "value2") ...)
-(defun hcnm-xdata-set-autotext (ename-bubble autotext-alist / xdata-sections)
-  (princ "\n=== DEBUG set-autotext START ===")
-  (princ (strcat "\nAutotext to set: " (vl-princ-to-string autotext-alist)))
-  (setq xdata-sections (hcnm-xdata-read ename-bubble))
-  (princ (strcat "\nRead existing sections: " (vl-princ-to-string xdata-sections)))
-  (setq xdata-sections (subst (cons 'autotext autotext-alist) 
-                              (assoc 'autotext xdata-sections) 
-                              xdata-sections))
-  (princ (strcat "\nSections after update: " (vl-princ-to-string xdata-sections)))
-  (hcnm-xdata-write ename-bubble xdata-sections)
-  (princ "\n=== DEBUG set-autotext END ===")
+(defun hcnm-xdata-set-autotext (ename-bubble autotext-alist)
+  (hcnm-xdata-write ename-bubble autotext-alist)
 )
 
-;; Get viewport transform data
+;; Get viewport transform data (now from XRECORD)
 ;; Returns: (cvport ref-ocs-1 ref-wcs-1 ... ref-wcs-3) or nil
-(defun hcnm-xdata-get-vptrans (ename-bubble / xdata-sections)
-  (setq xdata-sections (hcnm-xdata-read ename-bubble))
-  (cdr (assoc 'vptrans xdata-sections))
+(defun hcnm-xdata-get-vptrans (ename-bubble)
+  (hcnm-vptrans-read ename-bubble)
 )
 
-;; Get auto-text data
+;; Get auto-text data (from XDATA)
 ;; Returns: (("TAG1" . "value1") ("TAG2" . "value2") ...) or nil
-(defun hcnm-xdata-get-autotext (ename-bubble / xdata-sections)
-  (setq xdata-sections (hcnm-xdata-read ename-bubble))
-  (cdr (assoc 'autotext xdata-sections))
+(defun hcnm-xdata-get-autotext (ename-bubble)
+  (hcnm-xdata-read ename-bubble)
 )
 
 ;;==============================================================================
