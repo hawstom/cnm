@@ -8225,7 +8225,7 @@ ImportLayerSettings=No
   ;; Write XDATA (replaces all HCNM-BUBBLE XDATA)
   (cond
     (xdata-list
-     (entmod (append (entget ename-bubble)
+     (entmod (append (entget ename-bubble '("*"))
                      (list (cons -3 (list (cons appname xdata-list))))))))
   t
 )
