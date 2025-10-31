@@ -8216,6 +8216,7 @@ ImportLayerSettings=No
 ;; autotext-alist: (("TAG1" . "value1") ("TAG2" . "value2") ...)
 ;; Uses delimiter format: "TAG1=value1|TAG2=value2|..."
 (defun hcnm-xdata-write (ename-bubble autotext-alist / appname xdata-str result)
+  (princ "\n=== DEBUG hcnm-xdata-write ENTRY (FIRST LINE)") (princ)
   (setq appname "HCNM-BUBBLE")
   
   (princ (strcat "\n=== DEBUG hcnm-xdata-write START, appname=" appname))
