@@ -8696,6 +8696,7 @@ ImportLayerSettings=No
   )
 )
 ;#endregion
+;#endregion
 ;#region Bubble note editor dialog
 (defun c:hcnm-edit-bubbles ()
   (haws-core-init 337)
@@ -9401,7 +9402,7 @@ ImportLayerSettings=No
   (princ)
 )
 ;#endregion
-
+;#endregion
 (load "ini-edit")
 ;|?Visual LISP? Format Options?
 (72 2 40 2 nil "end of " 100 2 2 2 1 nil nil nil t)
