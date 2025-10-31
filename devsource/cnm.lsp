@@ -7773,7 +7773,7 @@ ImportLayerSettings=No
                           (list (cons appname 
                                   (list (cons 1000 "AVPORT")
                                         (cons 1070 avport)))))))
-  (entmod (append (entget ename-bubble) xdata_new))
+  (entmod (append (entget ename-bubble '("*")) xdata_new))
 )
 ;; RETURNS p1-world GIVEN p1-ocs
 ;; Uses viewport transformation data from bubble's XDATA if available
@@ -8341,7 +8341,7 @@ ImportLayerSettings=No
   (cond
     (xdata-list
      (entmod (append 
-               (entget ename-bubble)
+               (entget ename-bubble '("*"))
                (list (cons -3 (list (cons appname xdata-list))))))))
   
   ;; Step 3: Add format codes to prefix (beautifully-architected underover-add!)
