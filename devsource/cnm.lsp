@@ -5634,7 +5634,7 @@ ImportLayerSettings=No
         lattribs
          (hcnm-ldrblk-lattribs-put-element
            tag
-           "ENtry"
+           (list "ENtry" "" "")
            lattribs
          )
       )
