@@ -1,3 +1,22 @@
+# Quick Start for AI
+
+**What is CNM?** Civil engineering tool for managing construction notes on AutoCAD drawings.
+
+**My role as AI?** Help maintain 20-year-old codebase with strict data integrity requirements.
+
+**Key principles:**
+- Don't break code or cause regressions
+- Make it gradually more maintainable and readable
+- Fail loudly (strict validation); do not handle errors silently. It is better not to handle an error than to mask it.
+- Respect user edits (users bypass our dialogs)
+
+**Read these first:**
+- Section 1.1.1: Core workflow (what engineers do)
+- Section 1.2.1: Data model (lattribs structure) (for bubble notes area only) 
+- Section 1.6: Communication tips
+
+---
+
 # 1. GitHub Copilot Instructions for CNM Project
 
 ## 1.1. Project Context
@@ -71,6 +90,25 @@ CNM comes with insertion and editing tools for bubble notes.
         - that they can't have multiple auto text fields with identical values in the same bubble note line and have them all update correctly.
 2. **Data Persistence**: Auto-generated text must be stored separately (in XDATA) from user-editable prefix/postfix text
 We provide users free-form editing capabilities, so we must store auto-generated text in a way that allows us to reliably identify and update it without overwriting user edits. This is achieved by storing verbatim auto text in bubble note XDATA and doing search-and-replace in the complete attribute text on updates.
+
+###### 1.1.3.3.2.1.1. Example: Free-form Edit Scenario
+
+**User places bubble with auto text:**
+- Attribute text: `"STA 10+25.50"`
+- XDATA: `'(("NOTETXT1" . "STA 10+25.50"))`
+
+**User manually edits attribute in AutoCAD:**
+- Attribute text: `"Storm Drain STA 10+25.50 RT"`
+- XDATA unchanged: `'(("NOTETXT1" . "STA 10+25.50"))`
+
+**Alignment shifts, reactor fires:**
+1. Search for `"STA 10+25.50"` in `"Storm Drain STA 10+25.50 RT"`
+2. Split: `("Storm Drain " "STA 10+25.50" " RT")`
+3. Update: `("Storm Drain " "STA 11+00.00" " RT")`
+4. Concatenate: `"Storm Drain STA 11+00.00 RT"`
+
+**Result:** User's prefix/postfix preserved, auto text updated ✅
+
 3. **Legacy Migration**: 20+ years of customer drawings with evolving data formats
 CNM is fortunate to have few if any migration challenges from the user perspective. From the programmer perspective, the code base is evolving. But we are free to improve the data formats used internally to better approach long term maintainability as long as we maintain compatibility with elements of the greater CNM application (Project Notes, Key Notes Table, and Quantity Take-off) that are outside the scope of the Reactive auto text project. This means working with the legacy block attributes and their names as they exist in customer drawings.
 

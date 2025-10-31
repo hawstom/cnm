@@ -5174,19 +5174,19 @@ ImportLayerSettings=No
 ;#endregion
 ;#region Bubble insertion and editing
 ;#region Bubble note insertion commands main and loops
-(defun c:haws-boxl () (haws-core-init 198) (hcnm-ldrblk-dynamic "BOX"))
-(defun c:haws-cirl () (haws-core-init 199) (hcnm-ldrblk-dynamic "CIR"))
-(defun c:haws-dial () (haws-core-init 200) (hcnm-ldrblk-dynamic "DIA"))
-(defun c:haws-elll () (haws-core-init 201) (hcnm-ldrblk-dynamic "ELL"))
-(defun c:haws-hexl () (haws-core-init 202) (hcnm-ldrblk-dynamic "HEX"))
-(defun c:haws-octl () (haws-core-init 203) (hcnm-ldrblk-dynamic "OCT"))
-(defun c:haws-penl () (haws-core-init 204) (hcnm-ldrblk-dynamic "PEN"))
-(defun c:haws-recl () (haws-core-init 205) (hcnm-ldrblk-dynamic "REC"))
-(defun c:haws-sstl () (haws-core-init 206) (hcnm-ldrblk-dynamic "SST"))
-(defun c:haws-tril () (haws-core-init 207) (hcnm-ldrblk-dynamic "TRI"))
-(defun c:hcnm-replace-bubble () (haws-core-init 338) (hcnm-ldrblk-dynamic nil))
+(defun c:haws-boxl () (haws-core-init 198) (hcnm-ldrblk-insert "BOX"))
+(defun c:haws-cirl () (haws-core-init 199) (hcnm-ldrblk-insert "CIR"))
+(defun c:haws-dial () (haws-core-init 200) (hcnm-ldrblk-insert "DIA"))
+(defun c:haws-elll () (haws-core-init 201) (hcnm-ldrblk-insert "ELL"))
+(defun c:haws-hexl () (haws-core-init 202) (hcnm-ldrblk-insert "HEX"))
+(defun c:haws-octl () (haws-core-init 203) (hcnm-ldrblk-insert "OCT"))
+(defun c:haws-penl () (haws-core-init 204) (hcnm-ldrblk-insert "PEN"))
+(defun c:haws-recl () (haws-core-init 205) (hcnm-ldrblk-insert "REC"))
+(defun c:haws-sstl () (haws-core-init 206) (hcnm-ldrblk-insert "SST"))
+(defun c:haws-tril () (haws-core-init 207) (hcnm-ldrblk-insert "TRI"))
+(defun c:hcnm-replace-bubble () (haws-core-init 338) (hcnm-ldrblk-insert nil))
 
-(defun hcnm-ldrblk-dynamic (notetype / blockname bubble-data bubblehooks
+(defun hcnm-ldrblk-insert (notetype / blockname bubble-data bubblehooks
                         ename-bubble-old replace-bubble-p
                         th
                        )
