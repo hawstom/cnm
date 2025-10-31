@@ -8220,12 +8220,20 @@ ImportLayerSettings=No
   
   (princ (strcat "\n=== DEBUG hcnm-xdata-write START, appname=" appname))
   
+  ;; Check if app is registered
+  (princ (strcat "\n=== DEBUG: Checking tblsearch APPID " appname))
+  (setq result (tblsearch "APPID" appname))
+  (princ (strcat "\n=== DEBUG: tblsearch returned " (vl-princ-to-string result)))
+  
   ;; Register application if needed
   (cond
-    ((not (tblsearch "APPID" appname))
+    ((not result)
      (princ (strcat "\n=== DEBUG: App not registered, calling regapp"))
      (setq result (regapp appname))
      (princ (strcat "\n=== DEBUG: regapp returned " (vl-princ-to-string result)))
+     ;; Verify registration worked
+     (setq result (tblsearch "APPID" appname))
+     (princ (strcat "\n=== DEBUG: After regapp, tblsearch returned " (vl-princ-to-string result)))
      (cond
        ((not result)
         (alert (princ (strcat "ERROR: Failed to register application " appname)))
