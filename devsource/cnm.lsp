@@ -8181,12 +8181,16 @@ ImportLayerSettings=No
   (setq appname "HCNM-BUBBLE")
   (setq xdata-raw (assoc -3 (entget ename-bubble (list appname))))
   
+  (princ (strcat "\n=== DEBUG hcnm-xdata-read: xdata-raw=" (vl-princ-to-string xdata-raw)))
+  
   (cond
     (xdata-raw
      (setq xdata-raw (cdr (assoc appname (cdr xdata-raw))))
+     (princ (strcat "\n=== DEBUG hcnm-xdata-read: extracted list=" (vl-princ-to-string xdata-raw)))
      
      ;; Get the 1000 data string directly
      (setq xdata-str (cdr (assoc 1000 xdata-raw)))
+     (princ (strcat "\n=== DEBUG hcnm-xdata-read: xdata-str=[" (if xdata-str xdata-str "nil") "]"))
      
      ;; Parse delimited string
      (setq pairs '())
@@ -8194,14 +8198,17 @@ ImportLayerSettings=No
        ((and xdata-str (> (strlen xdata-str) 0))
         ;; Split by "|" to get pairs
         (setq pair-strs (haws_string_split xdata-str "|"))
+        (princ (strcat "\n=== DEBUG hcnm-xdata-read: pair-strs=" (vl-princ-to-string pair-strs)))
         (foreach pair-str pair-strs
           (cond
             ;; Split by "=" to get tag and value
             ((setq pair-parts (haws_string_split pair-str "="))
+             (princ (strcat "\n=== DEBUG hcnm-xdata-read: pair-parts=" (vl-princ-to-string pair-parts)))
              (cond
                ((= (length pair-parts) 2)
                 (setq pairs (append pairs 
                                     (list (cons (car pair-parts) (cadr pair-parts))))))))))))
+     (princ (strcat "\n=== DEBUG hcnm-xdata-read: final pairs=" (vl-princ-to-string pairs)))
      pairs))
 )
 
@@ -8244,12 +8251,22 @@ ImportLayerSettings=No
      (cond
        ((> (strlen xdata-str) 0)
         (princ (strcat "\n=== DEBUG: Writing XDATA..."))
+        (princ (strcat "\n=== DEBUG: Building XDATA list structure..."))
+        (princ (strcat "\n=== DEBUG: Will write: appname=" appname))
+        (princ (strcat "\n=== DEBUG: Will write: (1001 . " appname ")"))
+        (princ (strcat "\n=== DEBUG: Will write: (1000 . \"" xdata-str "\")"))
+        
         ;; XDATA must start with 1001 containing the registered app name
         (setq result (entmod (append (entget ename-bubble '("*"))
                                      (list (cons -3 (list (cons appname 
                                                                  (list (cons 1001 appname)  ; App name in 1001
                                                                        (cons 1000 xdata-str))))))))) ; Data in 1000
         (princ (strcat "\n=== DEBUG: entmod returned " (vl-princ-to-string result)))
+        
+        ;; Verify what was written
+        (setq verify-xdata (assoc -3 (entget ename-bubble (list appname))))
+        (princ (strcat "\n=== DEBUG: VERIFY - read back XDATA: " (vl-princ-to-string verify-xdata)))
+        
         (cond
           ((not result)
            (alert (princ "ERROR: entmod failed when writing XDATA"))))))))
