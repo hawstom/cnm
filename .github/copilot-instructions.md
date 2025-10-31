@@ -198,6 +198,7 @@ hcnm-*                    Top-level CNM functions
 - **Function headers**: Explain purpose, parameters, return values
 - **Architecture comments**: Explain WHY, not just WHAT
 - **Data flow**: Document transformations clearly
+- **Alerts to history**: All alerts must enclose a princ. `(alert (princ "Hello world"))`
 
 ### 1.2.5. Error Handling
 - **Fail loudly**: Use `(alert ...)` for schema violations

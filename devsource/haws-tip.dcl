@@ -4,5 +4,38 @@ haws_tip : dialog {
   : row {
     : toggle { key = "opt_in"; label = "Keep showing this tip"; value = "1"; }
   }
-  ok_cancel;
+  spacer;
+  : row {
+    : text { label = "Or snooze for:"; }
+    : popup_list {
+      key = "snooze_dropdown";
+      width = 20;
+      list = "7 days\n30 days\n180 days\nForever\nNo snooze";
+      value = "4";
+    }
+  }
+  spacer;
+  : row {
+//    : spacer { width = 1; }
+    : button {    // defines the OK button
+      label = "OK";
+      is_default = true;
+      key = "accept";
+      width = 8;
+      fixed_width = true;
+    }
+    : button {    // defines the Cancel button
+        label = "Cancel";
+        is_cancel = true;
+        key = "cancel";
+        width = 8;
+        fixed_width = true;
+    }
+//    : spacer { width = 1;}
+    : button { 
+      key = "resurrect_btn"; 
+      label = "Show All Tips"; 
+      width = 8; 
+    }
+  }
 }
