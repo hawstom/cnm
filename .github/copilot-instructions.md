@@ -10,10 +10,18 @@
 - Fail loudly (strict validation); do not handle errors silently. It is better not to handle an error than to mask it.
 - Respect user edits (users bypass our dialogs)
 
+**AI Collaboration Workflow:**
+- When working on GitHub issues, create/update planning doc in `.ai-plans/issue-{number}-{short-name}.md`
+- Use phased approach: Plan → Execute Phase → Validate → Next Phase
+- Update progress log as you work
+- Ask clarifying questions in Questions section
+- See Section 1.7 for full workflow
+
 **Read these first:**
 - Section 1.1.1: Core workflow (what engineers do)
-- Section 1.2.1: Data model (lattribs structure) (for bubble notes area only) 
+- Section 1.2.1: Data model (lattribs structure) (for bubble notes area only)
 - Section 1.6: Communication tips
+- Section 1.7: AI collaboration workflow with planning documents
 
 ---
 
@@ -243,3 +251,114 @@ AutoLISP lacks standard testing frameworks. Current approach:
 - Assuming modern language features (no closures, limited list processing)
 - Complex abstractions (keep it simple for AutoLISP)
 - Breaking changes without migration path
+
+## 1.7. AI Collaboration Workflow with Planning Documents
+
+### 1.7.1. When to Use Planning Documents
+
+**ALWAYS create a planning document for:**
+- GitHub issues (use `.ai-plans/issue-{number}-{short-name}.md`)
+- Features requiring multiple steps or phases
+- Complex refactorings affecting multiple files
+- Anything that needs human validation between steps
+
+**DON'T create planning documents for:**
+- Simple bug fixes (< 5 lines changed)
+- Documentation-only changes
+- Trivial formatting/style fixes
+- One-shot exploratory tasks
+
+### 1.7.2. Planning Document Workflow
+
+#### Step 1: Create Planning Document
+When starting work on a GitHub issue:
+1. Copy `.ai-plans/TEMPLATE.md` to `.ai-plans/issue-{number}-{short-name}.md`
+2. Fill in executive summary, phases, and tasks
+3. Ask human for clarification if needed (use Questions section)
+4. Wait for human approval of plan before proceeding
+
+#### Step 2: Execute Phases
+For each phase:
+1. Mark phase as "in-progress" in planning doc
+2. Complete all tasks for that phase
+3. Update progress log with timestamps
+4. Mark phase as "completed"
+5. **ASK HUMAN to validate phase completion** before proceeding to next phase
+
+#### Step 3: Keep Planning Doc Current
+As you work:
+- ✅ Update task checkboxes as you complete them
+- ✅ Log significant progress in Progress Log section
+- ✅ Document technical decisions as they're made
+- ✅ Add new questions as they arise
+- ✅ Update "Files Changed" lists
+- ❌ Don't let planning doc get stale
+
+#### Step 4: Handle Interruptions
+If conversation is interrupted or VS Code crashes:
+- Planning doc preserves all context
+- Human can say "Continue working on issue-{number}"
+- You pick up where you left off
+
+#### Step 5: Feature Complete
+When all phases done:
+1. Complete the test plan
+2. Update status to "completed"
+3. Ask human to review
+4. Human will attach planning doc to GitHub issue
+5. Human closes issue
+
+### 1.7.3. Planning Document Best Practices
+
+**Phases should be:**
+- Small enough to validate (30 min - 2 hours of work)
+- Self-contained (can be validated independently)
+- Ordered by dependencies (Phase N requires Phase N-1)
+
+**Progress logs should:**
+- Use ISO timestamps: `2025-10-31 14:30`
+- Be concise but specific: "Completed lattribs-validate function" not "Made progress"
+- Record human validation: "Phase 1 COMPLETE - validated by Tom"
+
+**Questions should:**
+- Be specific and actionable
+- Include context (why you're asking)
+- Propose options when possible
+- Get marked as "Resolved" with answer and date
+
+### 1.7.4. Multiple Concurrent Features (Advanced)
+
+For working on multiple features simultaneously:
+- Each feature gets its own planning document
+- Each feature gets its own git branch
+- Optional: Use git worktrees for separate VS Code instances
+- Planning docs let you context-switch cleanly
+
+### 1.7.5. Integration with Git
+
+**Commit strategy:**
+- Commit after completing each phase
+- Mention phase in commit message: "feat(bubbles): Phase 2 - Add reactor callbacks (issue #X)"
+- Planning doc stays in `.ai-plans/` (gitignored)
+- Planning doc attached to GitHub issue when feature complete
+
+**Branch naming:**
+- `feat-{short-name}` for features
+- `fix-{short-name}` for bugs
+- `refactor-{short-name}` for refactorings
+
+### 1.7.6. Summary Documents vs Planning Documents
+
+**Planning documents** (`.ai-plans/issue-X-name.md`):
+- Created at START of work
+- Updated continuously during work
+- Track phases, progress, questions
+- Gitignored (attached to issue when done)
+
+**Summary documents** (optional, in `docs/`):
+- Created at END of work if requested
+- Explain completed work for future reference
+- Go into version control
+- Examples: architecture decisions, region reorganization summaries
+
+**Default behavior**: Create planning docs for GitHub issues. Only create summary docs if explicitly requested.

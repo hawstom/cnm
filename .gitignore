@@ -7,6 +7,10 @@ Devmenu/VS-DLL/
 *#
 *.mnr
 
+# AI Planning Documents (phased feature planning, not committed)
+# See .github/copilot-instructions.md for AI collaboration workflow
+.ai-plans/
+
 # Active planning documents (work in progress, not for version control)
 # See .planning/README.md for workflow explanation
 .planning/
