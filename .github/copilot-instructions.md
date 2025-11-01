@@ -142,6 +142,83 @@ We provide users free-form editing capabilities, so we must store auto-generated
 
 **Status:** Under discussion (2025-11-01)
 
+**DECISION MADE (2025-11-01):** YES - Pivot to free-form 2-element architecture now.
+
+###### 1.1.3.3.2.1.3. Free-Form 2-Element Architecture (NEW)
+
+**Data Model:**
+- **lattribs:** `(("TAG" "full-text") ...)` - Single string per attribute
+- **XDATA:** `(("TAG" ("auto1" "auto2" ...)) ...)` - List of auto-text values for search
+- **Dialog:** Single text field per line (like native AutoCAD attribute editor)
+
+**MVC Layer Separation:**
+
+**VIEW LAYER (Dialog/UI):**
+```autolisp
+;; Tells controller: "User entered this text, mark as auto or free"
+(hcnm-ldrblk-set-text tag text auto-type-or-nil)
+  ;; auto-type-or-nil: nil for free text, "ALIGN", "PIPE", "SURF", etc. for auto
+```
+
+**CONTROLLER LAYER (Routing):**
+```autolisp
+(defun hcnm-ldrblk-set-text (tag text auto-type / )
+  (cond
+    (auto-type (hcnm-ldrblk-model-set-auto-text tag text auto-type))
+    (t (hcnm-ldrblk-model-set-free-text tag text))))
+```
+
+**MODEL LAYER (Data Persistence):**
+```autolisp
+(defun hcnm-ldrblk-model-set-auto-text (tag text auto-type / )
+  ;; 1. Update lattribs (in-memory): (("TAG" "new-value") ...)
+  ;; 2. Save XDATA: Mark as auto-text with verbatim value for search
+  ;; 3. Attach reactor: If coords-based, also store viewport/transform
+  ;; 4. Store reference: Object handle for reactor lookup
+  )
+
+(defun hcnm-ldrblk-model-set-free-text (tag text / )
+  ;; 1. Update lattribs (in-memory): (("TAG" "new-value") ...)
+  ;; 2. Clear XDATA: Remove auto-text markers for this tag
+  ;; 3. No reactor: User text doesn't update automatically
+  )
+```
+
+**Auto-Text Insertion with Delimiter:**
+
+**User Delimiter:** `|||` (triple pipe) marks insertion point
+
+**Insertion Logic:**
+```autolisp
+(defun hcnm-insert-auto-text (text auto-value / pos)
+  (cond
+    ;; If delimiter exists, replace first occurrence
+    ((setq pos (vl-string-search "|||" text))
+     (strcat (substr text 1 pos)
+             auto-value
+             (substr text (+ pos 4))))  ; Skip "|||"
+    ;; Otherwise append (graceful fallback - teaches quietly)
+    (t (strcat text " " auto-value))))
+```
+
+**User Workflow:**
+1. Dialog shows single text field per line
+2. Tip message: "Use ||| to mark where auto-text should insert"
+3. User types: `"Storm Drain ||| RT, |||"`
+4. User clicks Station button → finds first `|||` → `"Storm Drain STA 10+25 RT, |||"`
+5. User clicks Diameter button → finds second `|||` → `"Storm Drain STA 10+25 RT, Ø24"`
+6. If no `|||` found, append with space (graceful, non-angry fallback)
+
+**Future Enhancements:**
+- Configurable delimiter choices (|||, ZZZ, ,,,, etc.)
+- Cursor position detection (insert at cursor instead of delimiter)
+- Multiple delimiter types (user preference per project)
+
+**Philosophy:**
+- **Fail gracefully in UX** - Append if no delimiter (don't anger users)
+- **Fail loudly in data** - Invalid lattribs structure = alert and exit
+- **Teach quietly** - Appending shows delimiter would be better
+
 3. **Legacy Migration**: 20+ years of customer drawings with evolving data formats
 CNM is fortunate to have few if any migration challenges from the user perspective. From the programmer perspective, the code base is evolving. But we are free to improve the data formats used internally to better approach long term maintainability as long as we maintain compatibility with elements of the greater CNM application (Project Notes, Key Notes Table, and Quantity Take-off) that are outside the scope of the Reactive auto text project. This means working with the legacy block attributes and their names as they exist in customer drawings.
 
@@ -151,26 +228,25 @@ CNM is fortunate to have few if any migration challenges from the user perspecti
 
 #### 1.2.1.1. Data Model: lattribs (Attribute List)
 
-**⚠️ ARCHITECTURE UNDER REVIEW - MAY CHANGE TO 2-ELEMENT FREE-FORM**
-See Section 1.1.3.3.2.1.2 for pending architectural decision.
+**NEW ARCHITECTURE (2025-11-01): Free-Form 2-Element**
+See Section 1.1.3.3.2.1.3 for full architecture details.
 
 **CRITICAL FOR AI: NO BACKWARD COMPATIBILITY REQUIRED**
 - lattribs is purely internal (users never see it)
-- No migration needed (old 2-element format deprecated, not in production)
-- **FAIL LOUDLY on any schema violations** - do not normalize or fix
-- If data is corrupt, alert and exit - masking errors causes bugs
+- No migration needed (old formats deprecated, not in production)
+- **FAIL LOUDLY on data schema violations** - alert and exit
+- **FAIL GRACEFULLY on UX issues** - append if no delimiter (teach quietly)
 
-**Current Structure (4-element, may be simplified):** `'(("TAG" "prefix" "auto" "postfix") ...)`
-- **Always 4-element lists**: `("TAG" "string" "string" "string")`
+**Structure:** `'(("TAG" "full-text") ...)`
+- **Always 2-element lists**: `("TAG" "string")`
 - **Never nil**: All values MUST be strings, use `""` for empty
-- **Never 2-element or 3-element**: Strict 4-element only
 - **All required tags present**: Missing tag = corruption
 
 **Required Tags**:
 - `NOTENUM` - Bubble number (user-controlled)
 - `NOTEPHASE` - Construction phase (user-controlled)
 - `NOTEGAP` - Spacing between text lines (system-controlled)
-- `NOTETXT0` through `NOTETXT6` - User/auto text lines
+- `NOTETXT0` through `NOTETXT6` - User/auto text lines (free-form)
 
 **What Users Care About** (must maintain compatibility):
 - Block attribute names and values (visible in AutoCAD)
