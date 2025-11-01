@@ -8690,7 +8690,7 @@ ImportLayerSettings=No
   (haws-core-init 337)
   (princ "\nCNM version: ")
   (princ (haws-unified-version))
-  (princ " [XDATA-FIX-16]") ; Issue progress tracker
+  (princ " [XDATA-FIX-17]") ; Issue progress tracker
   (if (not haws-editall)(load "editall"))
   (haws-editall t)
   (haws-core-restore)
@@ -9019,6 +9019,13 @@ ImportLayerSettings=No
           prefix (cadr attribute)
           auto (caddr attribute)
           postfix (cadddr attribute))
+    
+    ;; CRITICAL: Ensure all values are strings (not nil) for set_tile
+    (if (not prefix) (setq prefix ""))
+    (if (not auto) (setq auto ""))
+    (if (not postfix) (setq postfix ""))
+    
+    (princ (strcat "\n=== DEBUG: Setting tiles for " tag))
     
     ;; Set prefix field (contains concatenated formatted string from lattribs-to-dlg)
     (set_tile (strcat "Prefix" tag) prefix)
