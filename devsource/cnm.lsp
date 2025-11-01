@@ -8281,9 +8281,19 @@ ImportLayerSettings=No
        ((> (length xdata-list) 1) ; More than just the 1001 app name
         (princ (strcat "\n=== DEBUG: Writing XDATA via entmod..."))
         
-        ;; XDATA must start with 1001 containing the registered app name
-        (setq result (entmod (append (entget ename-bubble '("*"))
-                                     (list (cons -3 (list (cons appname xdata-list)))))))
+        ;; Build the entity list with XDATA
+        (setq ent-list (entget ename-bubble '("*")))
+        (princ (strcat "\n=== DEBUG: Original entity has " (itoa (length ent-list)) " items"))
+        
+        ;; Build XDATA structure: (-3 (appname xdata-list))
+        (setq xdata-struct (list (cons -3 (list (cons appname xdata-list)))))
+        (princ (strcat "\n=== DEBUG: XDATA structure=" (vl-princ-to-string xdata-struct)))
+        
+        ;; Append and modify
+        (setq new-ent (append ent-list xdata-struct))
+        (princ (strcat "\n=== DEBUG: New entity has " (itoa (length new-ent)) " items"))
+        
+        (setq result (entmod new-ent))
         (princ (strcat "\n=== DEBUG: entmod returned " (vl-princ-to-string result)))
         
         ;; Verify what was written
