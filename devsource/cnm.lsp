@@ -7954,17 +7954,8 @@ ImportLayerSettings=No
                       field-code)
                      (t (vla-get-textstring obj-next))))
        
-       (princ (strcat "\n=== DEBUG dwg-to-lattribs: Reading tag=" tag))
-       
        ;; Get auto text from XDATA if available
        (setq auto-text (cdr (assoc tag xdata-alist)))
-       
-       (cond
-         ((member tag '("NOTETXT1" "NOTETXT2" "NOTETXT3" "NOTETXT4" "NOTETXT5" "NOTETXT6"))
-          (princ (strcat "\n    value=[" (if value value "nil") "]"))
-          (princ (strcat "\n    auto-text=[" (if auto-text auto-text "nil") "]"))
-          (princ (strcat "\n    xdata-alist=" (vl-princ-to-string xdata-alist)))
-          ))
        
        ;; Split attribute using XDATA auto text
        (setq parts (hcnm-split-attribute-on-xdata value auto-text))
@@ -8199,12 +8190,9 @@ ImportLayerSettings=No
   (setq appname "HCNM-BUBBLE")
   (setq xdata-raw (assoc -3 (entget ename-bubble (list appname))))
   
-  (princ (strcat "\n=== DEBUG hcnm-xdata-read: xdata-raw=" (vl-princ-to-string xdata-raw)))
-  
   (cond
     (xdata-raw
      (setq xdata-raw (cdr (assoc appname (cdr xdata-raw))))
-     (princ (strcat "\n=== DEBUG hcnm-xdata-read: extracted list=" (vl-princ-to-string xdata-raw)))
      
      ;; Parse alternating TAG/VALUE from 1000 codes
      ;; Format: (1000 . "TAG1") (1000 . "value1") (1000 . "TAG2") (1000 . "value2") ...
@@ -8216,106 +8204,68 @@ ImportLayerSettings=No
           (cond
             ;; If no current tag, this is a tag
             ((not current-tag)
-             (setq current-tag (cdr item))
-             (princ (strcat "\n=== DEBUG hcnm-xdata-read: found tag=[" current-tag "]")))
+             (setq current-tag (cdr item)))
             ;; If have current tag, this is the value
             (t
-             (princ (strcat "\n=== DEBUG hcnm-xdata-read: found value=[" (cdr item) "]"))
              (setq pairs (append pairs (list (cons current-tag (cdr item)))))
              (setq current-tag nil))))))
      
-     (princ (strcat "\n=== DEBUG hcnm-xdata-read: final pairs=" (vl-princ-to-string pairs)))
      pairs))
 )
 
 ;; Write HCNM-BUBBLE XDATA (autotext only)
 ;; autotext-alist: (("TAG1" . "value1") ("TAG2" . "value2") ...)
 ;; Uses multiple 1000 codes: (1000 . "TAG1") (1000 . "value1") ...
-(defun hcnm-xdata-write (ename-bubble autotext-alist / appname xdata-list result pair)
-  (princ "\n=== DEBUG hcnm-xdata-write ENTRY (FIRST LINE)") (princ)
+(defun hcnm-xdata-write (ename-bubble autotext-alist / appname xdata-list result pair ent-list has-xdata xdata-struct new-ent)
   (setq appname "HCNM-BUBBLE")
   
-  (princ (strcat "\n=== DEBUG hcnm-xdata-write START, appname=" appname))
-  
   ;; Check if app is registered
-  (princ (strcat "\n=== DEBUG: Checking tblsearch APPID " appname))
   (setq result (tblsearch "APPID" appname))
-  (princ (strcat "\n=== DEBUG: tblsearch returned " (vl-princ-to-string result)))
   
   ;; Register application if needed
   (cond
     ((not result)
-     (princ (strcat "\n=== DEBUG: App not registered, calling regapp"))
      (setq result (regapp appname))
-     (princ (strcat "\n=== DEBUG: regapp returned " (vl-princ-to-string result)))
      ;; Verify registration worked
      (setq result (tblsearch "APPID" appname))
-     (princ (strcat "\n=== DEBUG: After regapp, tblsearch returned " (vl-princ-to-string result)))
      (cond
        ((not result)
         (alert (princ (strcat "ERROR: Failed to register application " appname)))
-        (setq appname nil))))
-    (t
-     (princ (strcat "\n=== DEBUG: App already registered"))))
+        (setq appname nil)))))
   
   (cond
     (appname
-     (princ (strcat "\n=== DEBUG: appname is valid: " appname))
      ;; Build list of alternating TAG/VALUE as 1000 codes
      ;; Format: (1000 . "TAG1") (1000 . "value1") (1000 . "TAG2") (1000 . "value2")
      ;; NOTE: Do NOT include 1001 - appname goes as key, not in data list
      (setq xdata-list '())
      (cond
        (autotext-alist
-        (princ (strcat "\n=== DEBUG: Building XDATA from " (itoa (length autotext-alist)) " pairs"))
         (foreach pair autotext-alist
-          (princ (strcat "\n=== DEBUG: Adding pair: " (car pair) " = " (cdr pair)))
           ;; Add tag as 1000
           (setq xdata-list (append xdata-list (list (cons 1000 (car pair)))))
           ;; Add value as 1000
           (setq xdata-list (append xdata-list (list (cons 1000 (cdr pair))))))))
      
-     (princ (strcat "\n=== DEBUG: Final xdata-list=" (vl-princ-to-string xdata-list)))
-     
      ;; Write XDATA
      (cond
        ((> (length xdata-list) 0) ; Have data to write
-        (princ (strcat "\n=== DEBUG: Writing XDATA via entmod..."))
-        
         ;; Get entity WITHOUT existing XDATA first (important for updates!)
         (setq ent-list (entget ename-bubble))
-        (princ (strcat "\n=== DEBUG: Original entity has " (itoa (length ent-list)) " items"))
-        
-        ;; Check if there's existing -3 (XDATA)
-        (setq has-xdata (assoc -3 ent-list))
-        (princ (strcat "\n=== DEBUG: Has existing XDATA: " (if has-xdata "YES" "NO")))
         
         ;; Remove any existing -3 to avoid conflicts
         (setq ent-list (vl-remove-if '(lambda (x) (= (car x) -3)) ent-list))
-        (princ (strcat "\n=== DEBUG: After removing -3, entity has " (itoa (length ent-list)) " items"))
         
         ;; Build XDATA structure: (-3 . ((appname xdata-list)))
-        ;; Note the DOT after -3 is critical!
         (setq xdata-struct (list (cons -3 (list (cons appname xdata-list)))))
-        (princ (strcat "\n=== DEBUG: XDATA structure=" (vl-princ-to-string xdata-struct)))
         
         ;; Append and modify
         (setq new-ent (append ent-list xdata-struct))
-        (princ (strcat "\n=== DEBUG: New entity has " (itoa (length new-ent)) " items"))
-        
         (setq result (entmod new-ent))
-        (princ (strcat "\n=== DEBUG: entmod returned " (vl-princ-to-string result)))
-        
-        ;; Verify what was written
-        (setq verify-xdata (assoc -3 (entget ename-bubble (list appname))))
-        (princ (strcat "\n=== DEBUG: VERIFY - read back XDATA: " (vl-princ-to-string verify-xdata)))
         
         (cond
           ((not result)
-           (alert (princ "ERROR: entmod failed when writing XDATA")))))))
-    (t
-     (princ "\n=== DEBUG: ERROR - appname is NIL, cannot write XDATA!")))
-  (princ "\n=== DEBUG hcnm-xdata-write END")
+           (alert (princ "ERROR: entmod failed when writing XDATA"))))))))
   t
 )
 
@@ -8741,7 +8691,7 @@ ImportLayerSettings=No
   (haws-core-init 337)
   (princ "\nCNM version: ")
   (princ (haws-unified-version))
-  (princ " [XDATA-FIX-13]") ; Issue progress tracker
+  (princ " [XDATA-FIX-14]") ; Issue progress tracker
   (if (not haws-editall)(load "editall"))
   (haws-editall t)
   (haws-core-restore)
