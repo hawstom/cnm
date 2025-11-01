@@ -8690,7 +8690,7 @@ ImportLayerSettings=No
   (haws-core-init 337)
   (princ "\nCNM version: ")
   (princ (haws-unified-version))
-  (princ " [XDATA-FIX-15]") ; Issue progress tracker
+  (princ " [XDATA-FIX-16]") ; Issue progress tracker
   (if (not haws-editall)(load "editall"))
   (haws-editall t)
   (haws-core-restore)
@@ -8740,6 +8740,7 @@ ImportLayerSettings=No
                      ename-leader hcnm-ldrblk-eb-lattribs
                      notetextradiocolumn return-list tag done-code
                     )
+  (princ "\n=== DEBUG: Entering hcnm-edit-bubble")
   (setq
     ename-leader
       (hcnm-ldrblk-bubble-leader ename-bubble)
@@ -8752,19 +8753,36 @@ ImportLayerSettings=No
       (load_dialog "cnm.dcl")
     done-code 2
   )
-  ;; Show tip about auto-text editing expectations
-  (haws-tip-show 1002  ; Unique tip ID for auto-text explanation
-    (strcat
-      "About Auto Text and Editing\n\n"
-      "CNM currently gives you a structured edit box that allows for a single auto text plus prefix and postfix. "
-      "Future versions may give you free-form user edits with the following understandings:\n\n"
-      "  - Any text you add remains intact, and any auto text you respect updates correctly.\n"
-      "  - If you change CNM Project settings that affect auto text format, the next update reflects those changes as long as you do not change individual auto text manually.\n"
-      "  - If you completely delete (or fat-finger-corrupt) auto text or change its format (eg. adding prefixes/suffixes), it does not get acted on or restored at the next update.\n"
-      "  - You can't have multiple auto text fields with identical values in the same bubble note line and have them all update correctly."
-    )
-  )
-  (while (> done-code -1)
+  (princ (strcat "\n=== DEBUG: lattribs read, count=" (itoa (length hcnm-ldrblk-eb-lattribs))))
+  (princ (strcat "\n=== DEBUG: dclfile=" (if dclfile (itoa dclfile) "FAILED")))
+  
+  ;; Validate lattribs before proceeding
+  (cond
+    ((not hcnm-ldrblk-eb-lattribs)
+     (alert (princ "\nERROR: Failed to read bubble attributes"))
+     (haws-core-restore)
+     (princ))
+    ((not dclfile)
+     (alert (princ "\nERROR: Failed to load cnm.dcl dialog file"))
+     (haws-core-restore)
+     (princ))
+    (t
+     ;; Continue with dialog
+     (princ "\n=== DEBUG: Showing tip...")
+     ;; Show tip about auto-text editing expectations
+     (haws-tip-show 1002  ; Unique tip ID for auto-text explanation
+       (strcat
+         "About Auto Text and Editing\n\n"
+         "CNM currently gives you a structured edit box that allows for a single auto text plus prefix and postfix. "
+         "Future versions may give you free-form user edits with the following understandings:\n\n"
+         "  - Any text you add remains intact, and any auto text you respect updates correctly.\n"
+         "  - If you change CNM Project settings that affect auto text format, the next update reflects those changes as long as you do not change individual auto text manually.\n"
+         "  - If you completely delete (or fat-finger-corrupt) auto text or change its format (eg. adding prefixes/suffixes), it does not get acted on or restored at the next update.\n"
+         "  - You can't have multiple auto text fields with identical values in the same bubble note line and have them all update correctly."
+       )
+     )
+     (princ "\n=== DEBUG: Entering dialog loop...")
+     (while (> done-code -1)
     (cond
       ((= done-code 0) (setq done-code (hcnm-edit-bubble-cancel)))
       ((= done-code 1)
@@ -8807,6 +8825,8 @@ ImportLayerSettings=No
   )
   ;; Change its arrowhead if needed.
   (hcnm-ldrblk-change-arrowhead ename-leader)
+  (princ "\n=== DEBUG: Dialog loop complete, cleaning up...")
+  ))  ;; Close the validation cond
   (haws-core-restore)
   (princ)
 )
@@ -8965,7 +8985,9 @@ ImportLayerSettings=No
 
 (defun hcnm-ldrblk-eb-show
    (dclfile notetextradiocolumn ename-bubble / tag value parts prefix auto postfix on-model-tab-p lst-dlg-attributes)
+  (princ "\n=== DEBUG: hcnm-ldrblk-eb-show ENTRY")
   (new_dialog "HCNMEditBubble" dclfile)
+  (princ "\n=== DEBUG: new_dialog successful")
   (set_tile "Title" "Edit CNM Bubble Note")
   ;; Check if bubble is in paper space
   (setq on-model-tab-p (or (not ename-bubble) (hcnm-ldrblk-is-on-model-tab ename-bubble)))
@@ -8983,11 +9005,14 @@ ImportLayerSettings=No
   )  
   (mode_tile "ChgView" 0)  ; Always enable
   
+  (princ "\n=== DEBUG: About to call lattribs-to-dlg...")
   ;; ARCHITECTURE: Transform clean lattribs to dialog display format (with format codes)
   ;; This is the ONLY place we transform for display
   (setq lst-dlg-attributes (hcnm-ldrblk-lattribs-to-dlg hcnm-ldrblk-eb-lattribs))
+  (princ (strcat "\n=== DEBUG: lattribs-to-dlg returned " (itoa (length lst-dlg-attributes)) " items"))
   
   ;; Note attribute edit boxes - use formatted display strings
+  (princ "\n=== DEBUG: Setting dialog tiles...")
   (foreach
      attribute lst-dlg-attributes
     (setq tag (car attribute)
