@@ -8160,8 +8160,26 @@ ImportLayerSettings=No
 (defun hcnm-vptrans-read (ename-bubble / dict-ename vptrans-rec cvport ref-points)
   (setq dict-ename (hcnm-extdict-get ename-bubble))
   
-  
-  
+  (cond
+    ((and dict-ename (setq vptrans-rec (dictsearch dict-ename "VPTRANS")))
+     (setq vptrans-rec (entget (cdr (assoc -1 vptrans-rec))))
+     
+     ;; Extract cvport (code 70)
+     (setq cvport (cdr (assoc 70 vptrans-rec)))
+     
+     ;; Extract all points (code 10)
+     (setq ref-points '())
+     (foreach item vptrans-rec
+       (cond
+         ((= (car item) 10)
+          (setq ref-points (append ref-points (list (cdr item)))))))
+     
+     ;; Return viewport data
+     (cond
+       ((and cvport (= (length ref-points) 6))
+        (cons cvport ref-points))
+       (t nil)))
+    (t nil))
 )
 
 ;#region XDATA Service Layer
