@@ -8392,22 +8392,41 @@ ImportLayerSettings=No
 ;#endregion
 ;#endregion
 ;#region Reactors
-;;; NEED TO DEFINE THE USER EVENTS THAT TRIGGER REACTOR CLEANUP. OR MAYBE THE CALLBACK DOES THE CLEANUP. CLEANUP ENTAILS THE FOLLOWING STEPS
-;;; -	USE THE REACTOR DATA AND NOTEDATA ATTRIBUTE OF ALL BUBBLES TO FIND ATTRIBUTES THAT ARE AFFECTED BY THE REACTOR
-;;; -	IF AN ATTRIBUTE IS EMPTY, REMOVE ITS REFERENCE IN ITS BUBBLE'S NOTEDATA AND IN THE REACTOR DATA.
-;;; -	IF THE BUBBLE HAS NO NOTEDATA LEFT FOR THE OWNER OBJECT THAT TRIGGERED THE REACTOR, REMOVE THE BUBBLE FROM THE REACTOR DATA.
-;;; 
-;;; NEED TO CHECK FOR REACTOR BEFORE ATTACHING ONE
-;;; CHECK THE DATA (VLR-DATA REACTOR) OF ALL REACTORS (VLR-REACTORS :VLR-OBJECT-REACTOR) OR (VLR-PERS-LIST) TO SEE IF THIS OBJECT IS ALREADY ATTACHED. IF SO, DON'T ADD. SEE ALSO OBJECTS (VLR-OWNERS REACTOR) AND CALLBACKS (VLR-REACTIONS REACTOR)
-;;; 
-;;; IF THE REACTOR ALREADY EXISTS:
-;;; 1.	(VLR-DATA-SET) OVERWRITES THE DATA (Integer, Real, String, List, VLA-object, Safearray, Variant, T, or nil) ADDED BY MY APPLICATION TO THE REACTOR.
-;;; 2.	(vlr-owner-add) ADDS AN OBJECT AS AN OWNER ON THE REACTOR. (vlr-owner-remove) REMOVES ONE 
-;;; 3.	(vlr-remove) DISABLES A REACTOR. (vlr-remove-all) DISABLES ALL OF SPECIFIED TYPE. (vlr-add) ENABLES A DISABLED REACTOR.
-;;; 
-;;; ABOUT MODIFYING REACTORS: https://help.autodesk.com/view/ACDLT/2025/ENU/?guid=GUID-F6B719E4-537B-42C2-8D22-9A313FE900A0
-;;; You can add and remove owners (objects) of a reactor.
-;;; You can reset the data of a reactor.
+
+;; Check and cleanup reactor proliferation
+;; Returns: T if cleanup occurred, NIL if no problems found
+;; Should be called at start of any bubble operation and on drawing open
+(defun hcnm-check-reactor-proliferation ( / hcnm-reactors reactor-count)
+  (setq hcnm-reactors
+    (vl-remove-if-not
+      '(lambda (r)
+         (and (listp (vlr-data r))
+              (assoc "HCNM-BUBBLE" (vlr-data r)))
+       )
+      (cdar (vlr-reactors :vlr-object-reactor))
+    )
+    reactor-count (length hcnm-reactors)
+  )
+  (cond
+    ((> reactor-count 1)
+     ;; FATAL: Multiple HCNM-BUBBLE reactors found
+     (vlr-remove-all :vlr-object-reactor)
+     (alert (princ (strcat
+       "\n*** PROGRAMMING ERROR DETECTED ***\n\n"
+       "Found " (itoa reactor-count) " HCNM-BUBBLE reactors.\n"
+       "There should be exactly ONE reactor for all bubbles.\n\n"
+       "All reactors have been removed to prevent data corruption.\n"
+       "New reactors will be created as needed.\n\n"
+       "This can happen if the drawing was saved with development versions\n"
+       "of CNM that had reactor bugs. The cleanup is automatic.\n\n"
+       "GitHub: https://github.com/hawstom/cnm/issues"
+     )))
+     (princ (strcat "\n*** REACTOR CLEANUP: Removed " (itoa reactor-count) " duplicate reactors ***"))
+     t  ; Return T to indicate cleanup occurred
+    )
+    (t nil)  ; Return NIL if no problems
+  )
+)
 
 ;;Playing with reactors
 (defun hcnm-ldrblk-list-reactors ( / reactors)
@@ -8449,41 +8468,21 @@ ImportLayerSettings=No
         keys            (list key-app handle-reference handle-bubble tag)
         reactor-old     nil  ; Initialize to nil
   )
-  ;; Check for reactor proliferation (FATAL CONDITION)
+  
+  ;; Check for reactor proliferation FIRST - cleanup if needed
+  (hcnm-check-reactor-proliferation)
+  
+  ;; Get the single HCNM-BUBBLE reactor (if it exists after cleanup)
   (setq hcnm-reactors
     (vl-remove-if-not
       '(lambda (r)
          (and (listp (vlr-data r))
               (assoc key-app (vlr-data r)))
        )
-      reactors-old
+      (cdar(vlr-reactors :vlr-object-reactor))  ; Re-query after potential cleanup
     )
     reactor-count (length hcnm-reactors)
-  )
-  ;; Handle reactor proliferation
-  (cond
-    ((> reactor-count 1)
-     ;; FATAL: Multiple HCNM-BUBBLE reactors found - this is a programming error
-     (vlr-remove-all :vlr-object-reactor)
-     (alert (princ (strcat
-       "\n*** PROGRAMMING ERROR DETECTED ***\n\n"
-       "Found " (itoa reactor-count) " HCNM-BUBBLE reactors.\n"
-       "There should be exactly ONE reactor for all bubbles.\n\n"
-       "All reactors have been removed to prevent data corruption.\n"
-       "The current bubble will get a new reactor and should be reactive.\n"
-       "All later bubbles should also be reactive to leader or reference object changes.\n\n"
-       "Please report this bug with details about what operations\n"
-       "you performed before this error occurred.\n\n"
-       "GitHub: https://github.com/hawstom/cnm/issues"
-     )))
-     (princ "\n*** REACTOR PROLIFERATION ERROR - All reactors removed, creating new reactor for current bubble ***")
-     ;; Set reactor-old to NIL so we create a fresh reactor below
-     (setq reactor-old nil)
-    )
-    (t
-     ;; Normal operation - 0 or 1 reactor
-     (setq reactor-old (car hcnm-reactors))
-    )
+    reactor-old (car hcnm-reactors)  ; Should be 0 or 1 after cleanup
   )
   ;; Now handle reactor attachment/creation based on reactor-old
   (cond 
@@ -8691,7 +8690,7 @@ ImportLayerSettings=No
   (haws-core-init 337)
   (princ "\nCNM version: ")
   (princ (haws-unified-version))
-  (princ " [XDATA-FIX-14]") ; Issue progress tracker
+  (princ " [XDATA-FIX-15]") ; Issue progress tracker
   (if (not haws-editall)(load "editall"))
   (haws-editall t)
   (haws-core-restore)
@@ -8753,9 +8752,18 @@ ImportLayerSettings=No
       (load_dialog "cnm.dcl")
     done-code 2
   )
-  ;; Show XDATA tip to help users understand the new auto-text storage
-  (haws-tip-show 1002  ; Unique tip ID for XDATA explanation
-    "CNM stores auto-text separately from your text using XDATA (extended entity data).\n\nThis keeps auto-text invisible in the attributes, while preserving it for the editor.")
+  ;; Show tip about auto-text editing expectations
+  (haws-tip-show 1002  ; Unique tip ID for auto-text explanation
+    (strcat
+      "About Auto Text and Editing\n\n"
+      "CNM currently gives you a structured edit box that allows for a single auto text plus prefix and postfix. "
+      "Future versions may give you free-form user edits with the following understandings:\n\n"
+      "  - Any text you add remains intact, and any auto text you respect updates correctly.\n"
+      "  - If you change CNM Project settings that affect auto text format, the next update reflects those changes as long as you do not change individual auto text manually.\n"
+      "  - If you completely delete (or fat-finger-corrupt) auto text or change its format (eg. adding prefixes/suffixes), it does not get acted on or restored at the next update.\n"
+      "  - You can't have multiple auto text fields with identical values in the same bubble note line and have them all update correctly."
+    )
+  )
   (while (> done-code -1)
     (cond
       ((= done-code 0) (setq done-code (hcnm-edit-bubble-cancel)))

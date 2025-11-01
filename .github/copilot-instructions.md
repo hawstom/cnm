@@ -90,13 +90,7 @@ CNM comes with insertion and editing tools for bubble notes.
 ###### 1.1.3.3.2.1. Key Technical Challenges
 1. **Paper Space Complexity**: Bubbles in paper space viewports require coordinate transformation from paper space DCS (represented by paper space object OCS) to model space WCS.
 2. **Free-form User Edits**: Users can edit bubble note attributes directly in AutoCAD, bypassing CNM dialogs. Need robust parsing to separate auto-generated text from user edits.
-- Users can reasonably expect:
-        - that any text they add remains intact while auto text updates correctly.
-        - that if they add text around auto text, it remains intact while auto text updates correctly.
-        - that if they change CNM Project settings that affect auto text format, the next update reflects those changes as long as the auto text itself remains uncorrupted and thus identical to what we store for our search and replace on update.
-        - that if they completely delete (or fat-finger-corrupt) auto text or change its format (eg. adding prefixes/suffixes), it does not get acted on or restored at the next update.
-        - that they can't have multiple auto text fields with identical values in the same bubble note line and have them all update correctly.
-2. **Data Persistence**: Auto-generated text must be stored separately (in XDATA) from user-editable prefix/postfix text
+- Users can reasonably expect:2. **Data Persistence**: Auto-generated text must be stored separately (in XDATA) from user-editable prefix/postfix text
 We provide users free-form editing capabilities, so we must store auto-generated text in a way that allows us to reliably identify and update it without overwriting user edits. This is achieved by storing verbatim auto text in bubble note XDATA and doing search-and-replace in the complete attribute text on updates.
 
 ###### 1.1.3.3.2.1.1. Example: Free-form Edit Scenario
