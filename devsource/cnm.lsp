@@ -8194,8 +8194,8 @@ ImportLayerSettings=No
 
 ;; Read HCNM-BUBBLE XDATA (autotext only)
 ;; Returns: (("TAG1" . "value1") ("TAG2" . "value2") ...) or nil
-;; Parses delimited format: "TAG1=value1|TAG2=value2|..."
-(defun hcnm-xdata-read (ename-bubble / appname xdata-raw xdata-str pairs pair-strs pair-parts)
+;; Parses multiple 1000 codes: (1000 . "TAG1") (1000 . "value1") ...
+(defun hcnm-xdata-read (ename-bubble / appname xdata-raw pairs current-tag item)
   (setq appname "HCNM-BUBBLE")
   (setq xdata-raw (assoc -3 (entget ename-bubble (list appname))))
   
@@ -8206,34 +8206,32 @@ ImportLayerSettings=No
      (setq xdata-raw (cdr (assoc appname (cdr xdata-raw))))
      (princ (strcat "\n=== DEBUG hcnm-xdata-read: extracted list=" (vl-princ-to-string xdata-raw)))
      
-     ;; Get the 1000 data string directly
-     (setq xdata-str (cdr (assoc 1000 xdata-raw)))
-     (princ (strcat "\n=== DEBUG hcnm-xdata-read: xdata-str=[" (if xdata-str xdata-str "nil") "]"))
-     
-     ;; Parse delimited string
+     ;; Parse alternating TAG/VALUE from 1000 codes
+     ;; Format: (1000 . "TAG1") (1000 . "value1") (1000 . "TAG2") (1000 . "value2") ...
      (setq pairs '())
-     (cond
-       ((and xdata-str (> (strlen xdata-str) 0))
-        ;; Split by "|" to get pairs
-        (setq pair-strs (haws_string_split xdata-str "|"))
-        (princ (strcat "\n=== DEBUG hcnm-xdata-read: pair-strs=" (vl-princ-to-string pair-strs)))
-        (foreach pair-str pair-strs
+     (setq current-tag nil)
+     (foreach item xdata-raw
+       (cond
+         ((= (car item) 1000)
           (cond
-            ;; Split by "=" to get tag and value
-            ((setq pair-parts (haws_string_split pair-str "="))
-             (princ (strcat "\n=== DEBUG hcnm-xdata-read: pair-parts=" (vl-princ-to-string pair-parts)))
-             (cond
-               ((= (length pair-parts) 2)
-                (setq pairs (append pairs 
-                                    (list (cons (car pair-parts) (cadr pair-parts))))))))))))
+            ;; If no current tag, this is a tag
+            ((not current-tag)
+             (setq current-tag (cdr item))
+             (princ (strcat "\n=== DEBUG hcnm-xdata-read: found tag=[" current-tag "]")))
+            ;; If have current tag, this is the value
+            (t
+             (princ (strcat "\n=== DEBUG hcnm-xdata-read: found value=[" (cdr item) "]"))
+             (setq pairs (append pairs (list (cons current-tag (cdr item)))))
+             (setq current-tag nil))))))
+     
      (princ (strcat "\n=== DEBUG hcnm-xdata-read: final pairs=" (vl-princ-to-string pairs)))
      pairs))
 )
 
 ;; Write HCNM-BUBBLE XDATA (autotext only)
 ;; autotext-alist: (("TAG1" . "value1") ("TAG2" . "value2") ...)
-;; Uses delimiter format: "TAG1=value1|TAG2=value2|..."
-(defun hcnm-xdata-write (ename-bubble autotext-alist / appname xdata-str result)
+;; Uses multiple 1000 codes: (1000 . "TAG1") (1000 . "value1") ...
+(defun hcnm-xdata-write (ename-bubble autotext-alist / appname xdata-list result pair)
   (princ "\n=== DEBUG hcnm-xdata-write ENTRY (FIRST LINE)") (princ)
   (setq appname "HCNM-BUBBLE")
   
@@ -8263,32 +8261,29 @@ ImportLayerSettings=No
   (cond
     (appname
      (princ (strcat "\n=== DEBUG: appname is valid: " appname))
-     ;; Build delimited string: "TAG1=value1|TAG2=value2"
-     (setq xdata-str "")
+     ;; Build list of alternating TAG/VALUE as 1000 codes
+     ;; Format: (1000 . "TAG1") (1000 . "value1") (1000 . "TAG2") (1000 . "value2")
+     (setq xdata-list (list (cons 1001 appname))) ; Start with app name
      (cond
        (autotext-alist
+        (princ (strcat "\n=== DEBUG: Building XDATA from " (itoa (length autotext-alist)) " pairs"))
         (foreach pair autotext-alist
-          (cond
-            ((> (strlen xdata-str) 0)
-             (setq xdata-str (strcat xdata-str "|"))))
-          (setq xdata-str (strcat xdata-str (car pair) "=" (cdr pair))))))
+          (princ (strcat "\n=== DEBUG: Adding pair: " (car pair) " = " (cdr pair)))
+          ;; Add tag as 1000
+          (setq xdata-list (append xdata-list (list (cons 1000 (car pair)))))
+          ;; Add value as 1000
+          (setq xdata-list (append xdata-list (list (cons 1000 (cdr pair))))))))
      
-     (princ (strcat "\n=== DEBUG: xdata-str=[" xdata-str "]"))
+     (princ (strcat "\n=== DEBUG: Final xdata-list=" (vl-princ-to-string xdata-list)))
      
-     ;; Write XDATA as single 1000 string
+     ;; Write XDATA
      (cond
-       ((> (strlen xdata-str) 0)
-        (princ (strcat "\n=== DEBUG: Writing XDATA..."))
-        (princ (strcat "\n=== DEBUG: Building XDATA list structure..."))
-        (princ (strcat "\n=== DEBUG: Will write: appname=" appname))
-        (princ (strcat "\n=== DEBUG: Will write: (1001 . " appname ")"))
-        (princ (strcat "\n=== DEBUG: Will write: (1000 . \"" xdata-str "\")"))
+       ((> (length xdata-list) 1) ; More than just the 1001 app name
+        (princ (strcat "\n=== DEBUG: Writing XDATA via entmod..."))
         
         ;; XDATA must start with 1001 containing the registered app name
         (setq result (entmod (append (entget ename-bubble '("*"))
-                                     (list (cons -3 (list (cons appname 
-                                                                 (list (cons 1001 appname)  ; App name in 1001
-                                                                       (cons 1000 xdata-str))))))))) ; Data in 1000
+                                     (list (cons -3 (list (cons appname xdata-list)))))))
         (princ (strcat "\n=== DEBUG: entmod returned " (vl-princ-to-string result)))
         
         ;; Verify what was written
