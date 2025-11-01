@@ -8263,7 +8263,8 @@ ImportLayerSettings=No
      (princ (strcat "\n=== DEBUG: appname is valid: " appname))
      ;; Build list of alternating TAG/VALUE as 1000 codes
      ;; Format: (1000 . "TAG1") (1000 . "value1") (1000 . "TAG2") (1000 . "value2")
-     (setq xdata-list (list (cons 1001 appname))) ; Start with app name
+     ;; NOTE: Do NOT include 1001 - appname goes as key, not in data list
+     (setq xdata-list '())
      (cond
        (autotext-alist
         (princ (strcat "\n=== DEBUG: Building XDATA from " (itoa (length autotext-alist)) " pairs"))
@@ -8278,7 +8279,7 @@ ImportLayerSettings=No
      
      ;; Write XDATA
      (cond
-       ((> (length xdata-list) 1) ; More than just the 1001 app name
+       ((> (length xdata-list) 0) ; Have data to write
         (princ (strcat "\n=== DEBUG: Writing XDATA via entmod..."))
         
         ;; Get entity WITHOUT existing XDATA first (important for updates!)
@@ -8293,7 +8294,8 @@ ImportLayerSettings=No
         (setq ent-list (vl-remove-if '(lambda (x) (= (car x) -3)) ent-list))
         (princ (strcat "\n=== DEBUG: After removing -3, entity has " (itoa (length ent-list)) " items"))
         
-        ;; Build XDATA structure: (-3 (appname xdata-list))
+        ;; Build XDATA structure: (-3 . ((appname xdata-list)))
+        ;; Note the DOT after -3 is critical!
         (setq xdata-struct (list (cons -3 (list (cons appname xdata-list)))))
         (princ (strcat "\n=== DEBUG: XDATA structure=" (vl-princ-to-string xdata-struct)))
         
@@ -8739,6 +8741,7 @@ ImportLayerSettings=No
   (haws-core-init 337)
   (princ "\nCNM version: ")
   (princ (haws-unified-version))
+  (princ " [XDATA-FIX-13]") ; Issue progress tracker
   (if (not haws-editall)(load "editall"))
   (haws-editall t)
   (haws-core-restore)
