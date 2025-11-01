@@ -29,7 +29,7 @@
 
 ## 1.1. Project Context
 
-**CNM (Construction Notes Manager)** is an AutoCAD add-on written in AutoLISP that helps civil engineers manage construction notes on drawings using "bubble notes" (leader annotations with dynamic text).
+**CNM (Construction Notes Manager)** is an AutoCAD add-on written in AutoLISP that helps civil engineers manage construction notes on drawings using "bubble notes" (leader annotations with attribute text).
 
 ### 1.1.1. Core Use Case
 
@@ -90,7 +90,13 @@ CNM comes with insertion and editing tools for bubble notes.
 ###### 1.1.3.3.2.1. Key Technical Challenges
 1. **Paper Space Complexity**: Bubbles in paper space viewports require coordinate transformation from paper space DCS (represented by paper space object OCS) to model space WCS.
 2. **Free-form User Edits**: Users can edit bubble note attributes directly in AutoCAD, bypassing CNM dialogs. Need robust parsing to separate auto-generated text from user edits.
-- Users can reasonably expect:2. **Data Persistence**: Auto-generated text must be stored separately (in XDATA) from user-editable prefix/postfix text
+- Users can reasonably expect:
+        - that any text they add remains intact while auto text updates correctly.
+        - that if they add text around auto text, it remains intact while auto text updates correctly.
+        - that if they change CNM Project settings that affect auto text format, the next update reflects those changes as long as the auto text itself remains uncorrupted and thus identical to what we store for our search and replace on update.
+        - that if they completely delete (or fat-finger-corrupt) auto text or change its format (eg. adding prefixes/suffixes), it does not get acted on or restored at the next update.
+        - that they can't have multiple auto text fields with identical values in the same bubble note line and have them all update correctly.
+2. **Data Persistence**: Auto-generated text must be stored separately (in XDATA) from user-editable prefix/postfix text
 We provide users free-form editing capabilities, so we must store auto-generated text in a way that allows us to reliably identify and update it without overwriting user edits. This is achieved by storing verbatim auto text in bubble note XDATA and doing search-and-replace in the complete attribute text on updates.
 
 ###### 1.1.3.3.2.1.1. Example: Free-form Edit Scenario
@@ -119,16 +125,37 @@ CNM is fortunate to have few if any migration challenges from the user perspecti
 ### 1.2.1. Bubble Notes Insertion and Editing Tools
 
 #### 1.2.1.1. Data Model: lattribs (Attribute List)
+
+**CRITICAL FOR AI: NO BACKWARD COMPATIBILITY REQUIRED**
+- lattribs is purely internal (users never see it)
+- No migration needed (old 2-element format deprecated, not in production)
+- **FAIL LOUDLY on any schema violations** - do not normalize or fix
+- If data is corrupt, alert and exit - masking errors causes bugs
+
 **Structure**: `'(("TAG" "prefix" "auto" "postfix") ...)`
-- **Always complete**: All required tags must be present (no partial structures)
-- **4-element lists**: Even if auto/postfix empty, keep structure: `("TAG" "value" "" "")`
-- **Validation**: Fail loudly on schema violations (strict validator)
+- **Always 4-element lists**: `("TAG" "string" "string" "string")`
+- **Never nil**: All values MUST be strings, use `""` for empty
+- **Never 2-element or 3-element**: Strict 4-element only
+- **All required tags present**: Missing tag = corruption
 
 **Required Tags**:
 - `NOTENUM` - Bubble number (user-controlled)
 - `NOTEPHASE` - Construction phase (user-controlled)
 - `NOTEGAP` - Spacing between text lines (system-controlled)
 - `NOTETXT0` through `NOTETXT6` - User/auto text lines
+
+**What Users Care About** (must maintain compatibility):
+- Block attribute names and values (visible in AutoCAD)
+- Project Notes file format
+- Key Notes Table format
+- Quantity Takeoff format
+
+**What Users DON'T Care About** (internal, change freely):
+- lattribs structure (internal list representation)
+- XDATA format (hidden extended data)
+- Reactor implementation (internal event system)
+- NOTEDATA attribute (legacy experiment, never used)
+- Dialog field names (DCL implementation detail)
 
 #### 1.2.1.2. XDATA Storage (Extended Entity Data)
 **Purpose**: Store auto-generated text separately from concatenated display text

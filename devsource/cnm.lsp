@@ -6010,27 +6010,16 @@ ImportLayerSettings=No
 ;;;   Input:  (("NOTENUM" "123" "" "") ("NOTETXT1" "" "N=12345.67" ""))
 ;;;   Output: (("NOTENUM" "123" "" "") ("NOTETXT1" "" "N=12345.67" "")) - unchanged, already correct
 ;;;
+;;; ARCHITECTURE: NO BACKWARD COMPATIBILITY - Fail loudly on violations
+;;;               This is a wrapper around lattribs-validate-schema for consistency
+;;;
 (defun hcnm-ldrblk-lattribs-validate (lattribs / )
-  (mapcar
-    '(lambda (attr)
-       (cond
-         ;; Already has 4 elements - keep as is
-         ((= (length attr) 4)
-          attr
-         )
-         ;; Old 2-element format (tag value) - convert to (tag value "" "")
-         ((= (length attr) 2)
-          (list (car attr) (cadr attr) "" "")
-         )
-         (t
-          ;; Unknown format - try to preserve
-          (princ (strcat "\nWarning: Unexpected attribute format for " (car attr)))
-          attr
-         )
-       )
-     )
-    lattribs
-  )
+  ;; Strict validation - fail loudly on any schema violations
+  (if (not (hcnm-ldrblk-lattribs-validate-schema lattribs))
+    (progn
+      (alert (princ "\nCRITICAL: lattribs-validate failed - invalid schema"))
+      nil)  ; Return nil to indicate failure
+    lattribs)  ; Return validated lattribs
 )
 
 ;;; ============================================================================
@@ -6063,7 +6052,7 @@ ImportLayerSettings=No
 ;;;     (exit))  ; Abort operation if validation fails
 ;;;
 (defun hcnm-ldrblk-lattribs-validate-schema (lattribs / required-tags missing-tags tag-counts duplicate-tags attr tag parts error-msgs)
-  (setq required-tags '("NOTENUM" "NOTEPHASE" "NOTEGAP" "NOTEDATA" 
+  (setq required-tags '("NOTENUM" "NOTEPHASE" "NOTEGAP"
                         "NOTETXT0" "NOTETXT1" "NOTETXT2" "NOTETXT3" 
                         "NOTETXT4" "NOTETXT5" "NOTETXT6")
         missing-tags '()
@@ -6334,7 +6323,7 @@ ImportLayerSettings=No
                       txt1-attr result))
   (setq result (subst (list "NOTETXT2" txt2-prefix (caddr txt2-attr) (cadddr txt2-attr)) 
                       txt2-attr result))
-  (setq result (subst (list "NOTEGAP" gap-value "") 
+  (setq result (subst (list "NOTEGAP" gap-value "" "") 
                       (assoc "NOTEGAP" result) result))
   
   result
@@ -7890,13 +7879,15 @@ ImportLayerSettings=No
           "Kindly report this oversight to the developer.\n\n"
           "We'll handle this by treating the entire attribute as prefix\n"
           "(user text), but this doesn't match our design intent.")))
-        (list str-attribute "" ""))  ; Fail safe: move everything to prefix
+        (list (if str-attribute str-attribute "") "" ""))  ; Fail safe: move everything to prefix
        (t
-        (list prefix str-xdata postfix)))
+        (list (if prefix prefix "") 
+              (if str-xdata str-xdata "") 
+              (if postfix postfix ""))))
      )
     (t
      ;; XDATA not found - entire string is prefix, auto and postfix empty
-     (list str-attribute "" ""))
+     (list (if str-attribute str-attribute "") "" ""))
   )
 )
 
@@ -7975,7 +7966,13 @@ ImportLayerSettings=No
       )
     )
   )
-  lattribs
+  
+  ;; ARCHITECTURE: Validate before returning - fail loudly on corruption
+  (if (not (hcnm-ldrblk-lattribs-validate-schema lattribs))
+    (progn
+      (alert (princ "\nCRITICAL: dwg-to-lattribs produced invalid lattribs structure"))
+      nil)  ; Return nil on validation failure
+    lattribs)  ; Return validated lattribs
 )
 
 ;; Set attributes on a block (used by reactors and other update paths)
@@ -8690,7 +8687,7 @@ ImportLayerSettings=No
   (haws-core-init 337)
   (princ "\nCNM version: ")
   (princ (haws-unified-version))
-  (princ " [XDATA-FIX-17]") ; Issue progress tracker
+  (princ " [XDATA-FIX-18]") ; Issue progress tracker
   (if (not haws-editall)(load "editall"))
   (haws-editall t)
   (haws-core-restore)
@@ -9019,11 +9016,6 @@ ImportLayerSettings=No
           prefix (cadr attribute)
           auto (caddr attribute)
           postfix (cadddr attribute))
-    
-    ;; CRITICAL: Ensure all values are strings (not nil) for set_tile
-    (if (not prefix) (setq prefix ""))
-    (if (not auto) (setq auto ""))
-    (if (not postfix) (setq postfix ""))
     
     (princ (strcat "\n=== DEBUG: Setting tiles for " tag))
     
