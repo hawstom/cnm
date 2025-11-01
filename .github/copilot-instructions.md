@@ -117,6 +117,31 @@ We provide users free-form editing capabilities, so we must store auto-generated
 
 **Result:** User's prefix/postfix preserved, auto text updated ✅
 
+###### 1.1.3.3.2.1.2. CRITICAL ARCHITECTURAL DECISION PENDING
+
+**PROBLEM:** Current 4-element lattribs structure limits users to ONE auto-text per line.
+
+**User request:** "I want `Storm Drain STA 10+25 RT, Ø24"` (TWO auto-texts: station AND diameter)
+
+**Current limitation:**
+- lattribs: `(("TAG" "prefix" "auto" "postfix") ...)` ← Only ONE auto field
+- Dialog: 3 separate fields (Prefix | Auto | Postfix) ← Awkward UX
+- Reality: Reactor already handles multiple auto-texts via search/replace in full string
+
+**Better architecture (free-form 2-element):**
+- lattribs: `(("TAG" "full-text") ...)` ← No structural limits
+- XDATA: `(("TAG" ("auto1" "auto2" ...)) ...)` ← List of auto-texts
+- Dialog: Single text field per line ← Natural UX like native AutoCAD
+- Reactor: Search/replace each auto-text needle independently ← Already works!
+
+**DECISION NEEDED:** Pivot to free-form 2-element before broad release?
+- **NOW:** feat-sunrise branch, not released, perfect time to change
+- **LATER:** Users expect 3-column editor, harder to change
+- **COST:** Rewrite lattribs structure, dialog, validation (medium effort)
+- **BENEFIT:** Unlimited auto-texts per line, simpler code, better UX
+
+**Status:** Under discussion (2025-11-01)
+
 3. **Legacy Migration**: 20+ years of customer drawings with evolving data formats
 CNM is fortunate to have few if any migration challenges from the user perspective. From the programmer perspective, the code base is evolving. But we are free to improve the data formats used internally to better approach long term maintainability as long as we maintain compatibility with elements of the greater CNM application (Project Notes, Key Notes Table, and Quantity Take-off) that are outside the scope of the Reactive auto text project. This means working with the legacy block attributes and their names as they exist in customer drawings.
 
@@ -126,13 +151,16 @@ CNM is fortunate to have few if any migration challenges from the user perspecti
 
 #### 1.2.1.1. Data Model: lattribs (Attribute List)
 
+**⚠️ ARCHITECTURE UNDER REVIEW - MAY CHANGE TO 2-ELEMENT FREE-FORM**
+See Section 1.1.3.3.2.1.2 for pending architectural decision.
+
 **CRITICAL FOR AI: NO BACKWARD COMPATIBILITY REQUIRED**
 - lattribs is purely internal (users never see it)
 - No migration needed (old 2-element format deprecated, not in production)
 - **FAIL LOUDLY on any schema violations** - do not normalize or fix
 - If data is corrupt, alert and exit - masking errors causes bugs
 
-**Structure**: `'(("TAG" "prefix" "auto" "postfix") ...)`
+**Current Structure (4-element, may be simplified):** `'(("TAG" "prefix" "auto" "postfix") ...)`
 - **Always 4-element lists**: `("TAG" "string" "string" "string")`
 - **Never nil**: All values MUST be strings, use `""` for empty
 - **Never 2-element or 3-element**: Strict 4-element only
