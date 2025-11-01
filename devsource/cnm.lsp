@@ -8281,9 +8281,17 @@ ImportLayerSettings=No
        ((> (length xdata-list) 1) ; More than just the 1001 app name
         (princ (strcat "\n=== DEBUG: Writing XDATA via entmod..."))
         
-        ;; Build the entity list with XDATA
-        (setq ent-list (entget ename-bubble '("*")))
+        ;; Get entity WITHOUT existing XDATA first (important for updates!)
+        (setq ent-list (entget ename-bubble))
         (princ (strcat "\n=== DEBUG: Original entity has " (itoa (length ent-list)) " items"))
+        
+        ;; Check if there's existing -3 (XDATA)
+        (setq has-xdata (assoc -3 ent-list))
+        (princ (strcat "\n=== DEBUG: Has existing XDATA: " (if has-xdata "YES" "NO")))
+        
+        ;; Remove any existing -3 to avoid conflicts
+        (setq ent-list (vl-remove-if '(lambda (x) (= (car x) -3)) ent-list))
+        (princ (strcat "\n=== DEBUG: After removing -3, entity has " (itoa (length ent-list)) " items"))
         
         ;; Build XDATA structure: (-3 (appname xdata-list))
         (setq xdata-struct (list (cons -3 (list (cons appname xdata-list)))))
