@@ -30,7 +30,7 @@
 
 ## 1.1. Project Context
 
-**CNM (Construction Notes Manager)** is an AutoCAD add-on written in AutoLISP that helps civil engineers manage construction notes on drawings using "bubble notes" (leader annotations with dynamic text).
+**CNM (Construction Notes Manager)** is an AutoCAD add-on written in AutoLISP that helps civil engineers manage construction notes on drawings using "bubble notes" (leader annotations with attribute text).
 
 ### 1.1.1. Core Use Case
 
@@ -118,6 +118,108 @@ We provide users free-form editing capabilities, so we must store auto-generated
 
 **Result:** User's prefix/postfix preserved, auto text updated ✅
 
+###### 1.1.3.3.2.1.2. CRITICAL ARCHITECTURAL DECISION PENDING
+
+**PROBLEM:** Current 4-element lattribs structure limits users to ONE auto-text per line.
+
+**User request:** "I want `Storm Drain STA 10+25 RT, Ø24"` (TWO auto-texts: station AND diameter)
+
+**Current limitation:**
+- lattribs: `(("TAG" "prefix" "auto" "postfix") ...)` ← Only ONE auto field
+- Dialog: 3 separate fields (Prefix | Auto | Postfix) ← Awkward UX
+- Reality: Reactor already handles multiple auto-texts via search/replace in full string
+
+**Better architecture (free-form 2-element):**
+- lattribs: `(("TAG" "full-text") ...)` ← No structural limits
+- XDATA: `(("TAG" ("auto1" "auto2" ...)) ...)` ← List of auto-texts
+- Dialog: Single text field per line ← Natural UX like native AutoCAD
+- Reactor: Search/replace each auto-text needle independently ← Already works!
+
+**DECISION NEEDED:** Pivot to free-form 2-element before broad release?
+- **NOW:** feat-sunrise branch, not released, perfect time to change
+- **LATER:** Users expect 3-column editor, harder to change
+- **COST:** Rewrite lattribs structure, dialog, validation (medium effort)
+- **BENEFIT:** Unlimited auto-texts per line, simpler code, better UX
+
+**Status:** Under discussion (2025-11-01)
+
+**DECISION MADE (2025-11-01):** YES - Pivot to free-form 2-element architecture now.
+
+###### 1.1.3.3.2.1.3. Free-Form 2-Element Architecture (NEW)
+
+**Data Model:**
+- **lattribs:** `(("TAG" "full-text") ...)` - Single string per attribute
+- **XDATA:** `(("TAG" ("auto1" "auto2" ...)) ...)` - List of auto-text values for search
+- **Dialog:** Single text field per line (like native AutoCAD attribute editor)
+
+**MVC Layer Separation:**
+
+**VIEW LAYER (Dialog/UI):**
+```autolisp
+;; Tells controller: "User entered this text, mark as auto or free"
+(hcnm-ldrblk-set-text tag text auto-type-or-nil)
+  ;; auto-type-or-nil: nil for free text, "ALIGN", "PIPE", "SURF", etc. for auto
+```
+
+**CONTROLLER LAYER (Routing):**
+```autolisp
+(defun hcnm-ldrblk-set-text (tag text auto-type / )
+  (cond
+    (auto-type (hcnm-ldrblk-model-set-auto-text tag text auto-type))
+    (t (hcnm-ldrblk-model-set-free-text tag text))))
+```
+
+**MODEL LAYER (Data Persistence):**
+```autolisp
+(defun hcnm-ldrblk-model-set-auto-text (tag text auto-type / )
+  ;; 1. Update lattribs (in-memory): (("TAG" "new-value") ...)
+  ;; 2. Save XDATA: Mark as auto-text with verbatim value for search
+  ;; 3. Attach reactor: If coords-based, also store viewport/transform
+  ;; 4. Store reference: Object handle for reactor lookup
+  )
+
+(defun hcnm-ldrblk-model-set-free-text (tag text / )
+  ;; 1. Update lattribs (in-memory): (("TAG" "new-value") ...)
+  ;; 2. Clear XDATA: Remove auto-text markers for this tag
+  ;; 3. No reactor: User text doesn't update automatically
+  )
+```
+
+**Auto-Text Insertion with Delimiter:**
+
+**User Delimiter:** `|||` (triple pipe) marks insertion point
+
+**Insertion Logic:**
+```autolisp
+(defun hcnm-insert-auto-text (text auto-value / pos)
+  (cond
+    ;; If delimiter exists, replace first occurrence
+    ((setq pos (vl-string-search "|||" text))
+     (strcat (substr text 1 pos)
+             auto-value
+             (substr text (+ pos 4))))  ; Skip "|||"
+    ;; Otherwise append (graceful fallback - teaches quietly)
+    (t (strcat text " " auto-value))))
+```
+
+**User Workflow:**
+1. Dialog shows single text field per line
+2. Tip message: "Use ||| to mark where auto-text should insert"
+3. User types: `"Storm Drain ||| RT, |||"`
+4. User clicks Station button → finds first `|||` → `"Storm Drain STA 10+25 RT, |||"`
+5. User clicks Diameter button → finds second `|||` → `"Storm Drain STA 10+25 RT, Ø24"`
+6. If no `|||` found, append with space (graceful, non-angry fallback)
+
+**Future Enhancements:**
+- Configurable delimiter choices (|||, ZZZ, ,,,, etc.)
+- Cursor position detection (insert at cursor instead of delimiter)
+- Multiple delimiter types (user preference per project)
+
+**Philosophy:**
+- **Fail gracefully in UX** - Append if no delimiter (don't anger users)
+- **Fail loudly in data** - Invalid lattribs structure = alert and exit
+- **Teach quietly** - Appending shows delimiter would be better
+
 3. **Legacy Migration**: 20+ years of customer drawings with evolving data formats
 CNM is fortunate to have few if any migration challenges from the user perspective. From the programmer perspective, the code base is evolving. But we are free to improve the data formats used internally to better approach long term maintainability as long as we maintain compatibility with elements of the greater CNM application (Project Notes, Key Notes Table, and Quantity Take-off) that are outside the scope of the Reactive auto text project. This means working with the legacy block attributes and their names as they exist in customer drawings.
 
@@ -126,16 +228,39 @@ CNM is fortunate to have few if any migration challenges from the user perspecti
 ### 1.2.1. Bubble Notes Insertion and Editing Tools
 
 #### 1.2.1.1. Data Model: lattribs (Attribute List)
-**Structure**: `'(("TAG" "prefix" "auto" "postfix") ...)`
-- **Always complete**: All required tags must be present (no partial structures)
-- **4-element lists**: Even if auto/postfix empty, keep structure: `("TAG" "value" "" "")`
-- **Validation**: Fail loudly on schema violations (strict validator)
+
+**NEW ARCHITECTURE (2025-11-01): Free-Form 2-Element**
+See Section 1.1.3.3.2.1.3 for full architecture details.
+
+**CRITICAL FOR AI: NO BACKWARD COMPATIBILITY REQUIRED**
+- lattribs is purely internal (users never see it)
+- No migration needed (old formats deprecated, not in production)
+- **FAIL LOUDLY on data schema violations** - alert and exit
+- **FAIL GRACEFULLY on UX issues** - append if no delimiter (teach quietly)
+
+**Structure:** `'(("TAG" "full-text") ...)`
+- **Always 2-element lists**: `("TAG" "string")`
+- **Never nil**: All values MUST be strings, use `""` for empty
+- **All required tags present**: Missing tag = corruption
 
 **Required Tags**:
 - `NOTENUM` - Bubble number (user-controlled)
 - `NOTEPHASE` - Construction phase (user-controlled)
 - `NOTEGAP` - Spacing between text lines (system-controlled)
-- `NOTETXT0` through `NOTETXT6` - User/auto text lines
+- `NOTETXT0` through `NOTETXT6` - User/auto text lines (free-form)
+
+**What Users Care About** (must maintain compatibility):
+- Block attribute names and values (visible in AutoCAD)
+- Project Notes file format
+- Key Notes Table format
+- Quantity Takeoff format
+
+**What Users DON'T Care About** (internal, change freely):
+- lattribs structure (internal list representation)
+- XDATA format (hidden extended data)
+- Reactor implementation (internal event system)
+- NOTEDATA attribute (legacy experiment, never used)
+- Dialog field names (DCL implementation detail)
 
 #### 1.2.1.2. XDATA Storage (Extended Entity Data)
 **Purpose**: Store auto-generated text separately from concatenated display text

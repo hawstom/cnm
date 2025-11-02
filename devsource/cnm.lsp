@@ -5955,27 +5955,16 @@ ImportLayerSettings=No
 ;;;   Input:  (("NOTENUM" "123" "" "") ("NOTETXT1" "" "N=12345.67" ""))
 ;;;   Output: (("NOTENUM" "123" "" "") ("NOTETXT1" "" "N=12345.67" "")) - unchanged, already correct
 ;;;
+;;; ARCHITECTURE: NO BACKWARD COMPATIBILITY - Fail loudly on violations
+;;;               This is a wrapper around lattribs-validate-schema for consistency
+;;;
 (defun hcnm-ldrblk-lattribs-validate (lattribs / )
-  (mapcar
-    '(lambda (attr)
-       (cond
-         ;; Already has 4 elements - keep as is
-         ((= (length attr) 4)
-          attr
-         )
-         ;; Old 2-element format (tag value) - convert to (tag value "" "")
-         ((= (length attr) 2)
-          (list (car attr) (cadr attr) "" "")
-         )
-         (t
-          ;; Unknown format - try to preserve
-          (princ (strcat "\nWarning: Unexpected attribute format for " (car attr)))
-          attr
-         )
-       )
-     )
-    lattribs
-  )
+  ;; Strict validation - fail loudly on any schema violations
+  (if (not (hcnm-ldrblk-lattribs-validate-schema lattribs))
+    (progn
+      (alert (princ "\nCRITICAL: lattribs-validate failed - invalid schema"))
+      nil)  ; Return nil to indicate failure
+    lattribs)  ; Return validated lattribs
 )
 
 ;;; ============================================================================
@@ -6008,7 +5997,7 @@ ImportLayerSettings=No
 ;;;     (exit))  ; Abort operation if validation fails
 ;;;
 (defun hcnm-ldrblk-lattribs-validate-schema (lattribs / required-tags missing-tags tag-counts duplicate-tags attr tag parts error-msgs)
-  (setq required-tags '("NOTENUM" "NOTEPHASE" "NOTEGAP" "NOTEDATA" 
+  (setq required-tags '("NOTENUM" "NOTEPHASE" "NOTEGAP"
                         "NOTETXT0" "NOTETXT1" "NOTETXT2" "NOTETXT3" 
                         "NOTETXT4" "NOTETXT5" "NOTETXT6")
         missing-tags '()
@@ -6279,7 +6268,7 @@ ImportLayerSettings=No
                       txt1-attr result))
   (setq result (subst (list "NOTETXT2" txt2-prefix (caddr txt2-attr) (cadddr txt2-attr)) 
                       txt2-attr result))
-  (setq result (subst (list "NOTEGAP" gap-value "") 
+  (setq result (subst (list "NOTEGAP" gap-value "" "") 
                       (assoc "NOTEGAP" result) result))
   
   result
@@ -7835,13 +7824,15 @@ ImportLayerSettings=No
           "Kindly report this oversight to the developer.\n\n"
           "We'll handle this by treating the entire attribute as prefix\n"
           "(user text), but this doesn't match our design intent.")))
-        (list str-attribute "" ""))  ; Fail safe: move everything to prefix
+        (list (if str-attribute str-attribute "") "" ""))  ; Fail safe: move everything to prefix
        (t
-        (list prefix str-xdata postfix)))
+        (list (if prefix prefix "") 
+              (if str-xdata str-xdata "") 
+              (if postfix postfix ""))))
      )
     (t
      ;; XDATA not found - entire string is prefix, auto and postfix empty
-     (list str-attribute "" ""))
+     (list (if str-attribute str-attribute "") "" ""))
   )
 )
 
@@ -7899,17 +7890,8 @@ ImportLayerSettings=No
                       field-code)
                      (t (vla-get-textstring obj-next))))
        
-       (princ (strcat "\n=== DEBUG dwg-to-lattribs: Reading tag=" tag))
-       
        ;; Get auto text from XDATA if available
        (setq auto-text (cdr (assoc tag xdata-alist)))
-       
-       (cond
-         ((member tag '("NOTETXT1" "NOTETXT2" "NOTETXT3" "NOTETXT4" "NOTETXT5" "NOTETXT6"))
-          (princ (strcat "\n    value=[" (if value value "nil") "]"))
-          (princ (strcat "\n    auto-text=[" (if auto-text auto-text "nil") "]"))
-          (princ (strcat "\n    xdata-alist=" (vl-princ-to-string xdata-alist)))
-          ))
        
        ;; Split attribute using XDATA auto text
        (setq parts (hcnm-split-attribute-on-xdata value auto-text))
@@ -7929,7 +7911,13 @@ ImportLayerSettings=No
       )
     )
   )
-  lattribs
+  
+  ;; ARCHITECTURE: Validate before returning - fail loudly on corruption
+  (if (not (hcnm-ldrblk-lattribs-validate-schema lattribs))
+    (progn
+      (alert (princ "\nCRITICAL: dwg-to-lattribs produced invalid lattribs structure"))
+      nil)  ; Return nil on validation failure
+    lattribs)  ; Return validated lattribs
 )
 
 ;; Set attributes on a block (used by reactors and other update paths)
@@ -8056,25 +8044,23 @@ ImportLayerSettings=No
 
 ;; Get or create extension dictionary for bubble
 ;; Returns: ename of "HCNM" dictionary in bubble's extension dictionary
-(defun hcnm-extdict-get (ename-bubble / dict-ename hcnm-dict)
+(defun hcnm-extdict-get (ename-bubble / vla-obj vla-extdict dict-ename hcnm-dict-data hcnm-ename)
+  (setq vla-obj (vlax-ename->vla-object ename-bubble))
+  
+  ;; Get or create extension dictionary (VLA method creates if needed)
+  (setq vla-extdict (vla-getextensiondictionary vla-obj))
+  (setq dict-ename (vlax-vla-object->ename vla-extdict))
+  
+  ;; Look for our HCNM dictionary
   (cond
-    ;; Get existing extension dictionary
-    ((setq dict-ename (cdr (assoc -1 (dictsearch (entget ename-bubble) "ACAD_XDICTIONARY"))))
-     ;; Look for our HCNM dictionary
-     (cond
-       ((setq hcnm-dict (dictsearch (entget dict-ename) "HCNM"))
-        (cdr (assoc -1 hcnm-dict)))
-       (t
-        ;; Create HCNM dictionary
-        (dictadd dict-ename "HCNM" (entmakex '((0 . "DICTIONARY") (100 . "AcDbDictionary")))))))
+    ((setq hcnm-dict-data (dictsearch dict-ename "HCNM"))
+     ;; Return ename of existing HCNM dictionary
+     (cdr (assoc -1 hcnm-dict-data)))
     (t
-     ;; Create extension dictionary and HCNM sub-dictionary
-     (setq dict-ename (entmakex (list (cons 0 "DICTIONARY") 
-                                      (cons 100 "AcDbDictionary")
-                                      (cons 330 ename-bubble))))
-     (entmod (append (entget ename-bubble)
-                     (list (cons -1 dict-ename))))
-     (dictadd dict-ename "HCNM" (entmakex '((0 . "DICTIONARY") (100 . "AcDbDictionary"))))))
+     ;; Create HCNM dictionary
+     (setq hcnm-ename (entmakex '((0 . "DICTIONARY") (100 . "AcDbDictionary"))))
+     (dictadd dict-ename "HCNM" hcnm-ename)
+     hcnm-ename))
 )
 
 ;; Write VPTRANS to XRECORD in extension dictionary
@@ -8108,7 +8094,7 @@ ImportLayerSettings=No
   (setq dict-ename (hcnm-extdict-get ename-bubble))
   
   (cond
-    ((and dict-ename (setq vptrans-rec (dictsearch (entget dict-ename) "VPTRANS")))
+    ((and dict-ename (setq vptrans-rec (dictsearch dict-ename "VPTRANS")))
      (setq vptrans-rec (entget (cdr (assoc -1 vptrans-rec))))
      
      ;; Extract cvport (code 70)
@@ -8141,7 +8127,8 @@ ImportLayerSettings=No
 
 ;; Read HCNM-BUBBLE XDATA (autotext only)
 ;; Returns: (("TAG1" . "value1") ("TAG2" . "value2") ...) or nil
-(defun hcnm-xdata-read (ename-bubble / appname xdata-raw autotext-pairs)
+;; Parses multiple 1000 codes: (1000 . "TAG1") (1000 . "value1") ...
+(defun hcnm-xdata-read (ename-bubble / appname xdata-raw pairs current-tag item)
   (setq appname "HCNM-BUBBLE")
   (setq xdata-raw (assoc -3 (entget ename-bubble (list appname))))
   
@@ -8149,49 +8136,78 @@ ImportLayerSettings=No
     (xdata-raw
      (setq xdata-raw (cdr (assoc appname (cdr xdata-raw))))
      
-     ;; Parse auto-text pairs: (1000 "TAG") (1001 "value") ...
-     (setq autotext-pairs '())
-     (while xdata-raw
+     ;; Parse alternating TAG/VALUE from 1000 codes
+     ;; Format: (1000 . "TAG1") (1000 . "value1") (1000 . "TAG2") (1000 . "value2") ...
+     (setq pairs '())
+     (setq current-tag nil)
+     (foreach item xdata-raw
        (cond
-         ((and (= (caar xdata-raw) 1000)
-               (cdr xdata-raw)
-               (= (caadr xdata-raw) 1001))
-          ;; Found tag-value pair (1000=tag, 1001=value)
-          (setq autotext-pairs (append autotext-pairs 
-                                       (list (cons (cdar xdata-raw) 
-                                                   (cdadr xdata-raw))))
-                xdata-raw (cddr xdata-raw)))
-         (t
-          ;; Invalid format, skip
-          (setq xdata-raw (cdr xdata-raw)))))
-     autotext-pairs))
+         ((= (car item) 1000)
+          (cond
+            ;; If no current tag, this is a tag
+            ((not current-tag)
+             (setq current-tag (cdr item)))
+            ;; If have current tag, this is the value
+            (t
+             (setq pairs (append pairs (list (cons current-tag (cdr item)))))
+             (setq current-tag nil))))))
+     
+     pairs))
 )
 
 ;; Write HCNM-BUBBLE XDATA (autotext only)
 ;; autotext-alist: (("TAG1" . "value1") ("TAG2" . "value2") ...)
-(defun hcnm-xdata-write (ename-bubble autotext-alist / appname xdata-list)
+;; Uses multiple 1000 codes: (1000 . "TAG1") (1000 . "value1") ...
+(defun hcnm-xdata-write (ename-bubble autotext-alist / appname xdata-list result pair ent-list has-xdata xdata-struct new-ent)
   (setq appname "HCNM-BUBBLE")
+  
+  ;; Check if app is registered
+  (setq result (tblsearch "APPID" appname))
   
   ;; Register application if needed
   (cond
-    ((not (tblsearch "APPID" appname))
-     (regapp appname)))
+    ((not result)
+     (setq result (regapp appname))
+     ;; Verify registration worked
+     (setq result (tblsearch "APPID" appname))
+     (cond
+       ((not result)
+        (alert (princ (strcat "ERROR: Failed to register application " appname)))
+        (setq appname nil)))))
   
-  (setq xdata-list '())
-  
-  ;; Build auto-text section
   (cond
-    (autotext-alist
-     (foreach pair autotext-alist
-       (setq xdata-list (append xdata-list
-                                (list (cons 1000 (car pair))
-                                      (cons 1001 (cdr pair))))))))
-  
-  ;; Write XDATA (replaces all HCNM-BUBBLE XDATA)
-  (cond
-    (xdata-list
-     (entmod (append (entget ename-bubble '("*"))
-                     (list (cons -3 (list (cons appname xdata-list))))))))
+    (appname
+     ;; Build list of alternating TAG/VALUE as 1000 codes
+     ;; Format: (1000 . "TAG1") (1000 . "value1") (1000 . "TAG2") (1000 . "value2")
+     ;; NOTE: Do NOT include 1001 - appname goes as key, not in data list
+     (setq xdata-list '())
+     (cond
+       (autotext-alist
+        (foreach pair autotext-alist
+          ;; Add tag as 1000
+          (setq xdata-list (append xdata-list (list (cons 1000 (car pair)))))
+          ;; Add value as 1000
+          (setq xdata-list (append xdata-list (list (cons 1000 (cdr pair))))))))
+     
+     ;; Write XDATA
+     (cond
+       ((> (length xdata-list) 0) ; Have data to write
+        ;; Get entity WITHOUT existing XDATA first (important for updates!)
+        (setq ent-list (entget ename-bubble))
+        
+        ;; Remove any existing -3 to avoid conflicts
+        (setq ent-list (vl-remove-if '(lambda (x) (= (car x) -3)) ent-list))
+        
+        ;; Build XDATA structure: (-3 . ((appname xdata-list)))
+        (setq xdata-struct (list (cons -3 (list (cons appname xdata-list)))))
+        
+        ;; Append and modify
+        (setq new-ent (append ent-list xdata-struct))
+        (setq result (entmod new-ent))
+        
+        (cond
+          ((not result)
+           (alert (princ "ERROR: entmod failed when writing XDATA"))))))))
   t
 )
 
@@ -8318,22 +8334,41 @@ ImportLayerSettings=No
 ;#endregion
 ;#endregion
 ;#region Reactors
-;;; NEED TO DEFINE THE USER EVENTS THAT TRIGGER REACTOR CLEANUP. OR MAYBE THE CALLBACK DOES THE CLEANUP. CLEANUP ENTAILS THE FOLLOWING STEPS
-;;; -	USE THE REACTOR DATA AND NOTEDATA ATTRIBUTE OF ALL BUBBLES TO FIND ATTRIBUTES THAT ARE AFFECTED BY THE REACTOR
-;;; -	IF AN ATTRIBUTE IS EMPTY, REMOVE ITS REFERENCE IN ITS BUBBLE'S NOTEDATA AND IN THE REACTOR DATA.
-;;; -	IF THE BUBBLE HAS NO NOTEDATA LEFT FOR THE OWNER OBJECT THAT TRIGGERED THE REACTOR, REMOVE THE BUBBLE FROM THE REACTOR DATA.
-;;; 
-;;; NEED TO CHECK FOR REACTOR BEFORE ATTACHING ONE
-;;; CHECK THE DATA (VLR-DATA REACTOR) OF ALL REACTORS (VLR-REACTORS :VLR-OBJECT-REACTOR) OR (VLR-PERS-LIST) TO SEE IF THIS OBJECT IS ALREADY ATTACHED. IF SO, DON'T ADD. SEE ALSO OBJECTS (VLR-OWNERS REACTOR) AND CALLBACKS (VLR-REACTIONS REACTOR)
-;;; 
-;;; IF THE REACTOR ALREADY EXISTS:
-;;; 1.	(VLR-DATA-SET) OVERWRITES THE DATA (Integer, Real, String, List, VLA-object, Safearray, Variant, T, or nil) ADDED BY MY APPLICATION TO THE REACTOR.
-;;; 2.	(vlr-owner-add) ADDS AN OBJECT AS AN OWNER ON THE REACTOR. (vlr-owner-remove) REMOVES ONE 
-;;; 3.	(vlr-remove) DISABLES A REACTOR. (vlr-remove-all) DISABLES ALL OF SPECIFIED TYPE. (vlr-add) ENABLES A DISABLED REACTOR.
-;;; 
-;;; ABOUT MODIFYING REACTORS: https://help.autodesk.com/view/ACDLT/2025/ENU/?guid=GUID-F6B719E4-537B-42C2-8D22-9A313FE900A0
-;;; You can add and remove owners (objects) of a reactor.
-;;; You can reset the data of a reactor.
+
+;; Check and cleanup reactor proliferation
+;; Returns: T if cleanup occurred, NIL if no problems found
+;; Should be called at start of any bubble operation and on drawing open
+(defun hcnm-check-reactor-proliferation ( / hcnm-reactors reactor-count)
+  (setq hcnm-reactors
+    (vl-remove-if-not
+      '(lambda (r)
+         (and (listp (vlr-data r))
+              (assoc "HCNM-BUBBLE" (vlr-data r)))
+       )
+      (cdar (vlr-reactors :vlr-object-reactor))
+    )
+    reactor-count (length hcnm-reactors)
+  )
+  (cond
+    ((> reactor-count 1)
+     ;; FATAL: Multiple HCNM-BUBBLE reactors found
+     (vlr-remove-all :vlr-object-reactor)
+     (alert (princ (strcat
+       "\n*** PROGRAMMING ERROR DETECTED ***\n\n"
+       "Found " (itoa reactor-count) " HCNM-BUBBLE reactors.\n"
+       "There should be exactly ONE reactor for all bubbles.\n\n"
+       "All reactors have been removed to prevent data corruption.\n"
+       "New reactors will be created as needed.\n\n"
+       "This can happen if the drawing was saved with development versions\n"
+       "of CNM that had reactor bugs. The cleanup is automatic.\n\n"
+       "GitHub: https://github.com/hawstom/cnm/issues"
+     )))
+     (princ (strcat "\n*** REACTOR CLEANUP: Removed " (itoa reactor-count) " duplicate reactors ***"))
+     t  ; Return T to indicate cleanup occurred
+    )
+    (t nil)  ; Return NIL if no problems
+  )
+)
 
 ;;Playing with reactors
 (defun hcnm-ldrblk-list-reactors ( / reactors)
@@ -8375,41 +8410,21 @@ ImportLayerSettings=No
         keys            (list key-app handle-reference handle-bubble tag)
         reactor-old     nil  ; Initialize to nil
   )
-  ;; Check for reactor proliferation (FATAL CONDITION)
+  
+  ;; Check for reactor proliferation FIRST - cleanup if needed
+  (hcnm-check-reactor-proliferation)
+  
+  ;; Get the single HCNM-BUBBLE reactor (if it exists after cleanup)
   (setq hcnm-reactors
     (vl-remove-if-not
       '(lambda (r)
          (and (listp (vlr-data r))
               (assoc key-app (vlr-data r)))
        )
-      reactors-old
+      (cdar(vlr-reactors :vlr-object-reactor))  ; Re-query after potential cleanup
     )
     reactor-count (length hcnm-reactors)
-  )
-  ;; Handle reactor proliferation
-  (cond
-    ((> reactor-count 1)
-     ;; FATAL: Multiple HCNM-BUBBLE reactors found - this is a programming error
-     (vlr-remove-all :vlr-object-reactor)
-     (alert (princ (strcat
-       "\n*** PROGRAMMING ERROR DETECTED ***\n\n"
-       "Found " (itoa reactor-count) " HCNM-BUBBLE reactors.\n"
-       "There should be exactly ONE reactor for all bubbles.\n\n"
-       "All reactors have been removed to prevent data corruption.\n"
-       "The current bubble will get a new reactor and should be reactive.\n"
-       "All later bubbles should also be reactive to leader or reference object changes.\n\n"
-       "Please report this bug with details about what operations\n"
-       "you performed before this error occurred.\n\n"
-       "GitHub: https://github.com/hawstom/cnm/issues"
-     )))
-     (princ "\n*** REACTOR PROLIFERATION ERROR - All reactors removed, creating new reactor for current bubble ***")
-     ;; Set reactor-old to NIL so we create a fresh reactor below
-     (setq reactor-old nil)
-    )
-    (t
-     ;; Normal operation - 0 or 1 reactor
-     (setq reactor-old (car hcnm-reactors))
-    )
+    reactor-old (car hcnm-reactors)  ; Should be 0 or 1 after cleanup
   )
   ;; Now handle reactor attachment/creation based on reactor-old
   (cond 
@@ -8617,6 +8632,7 @@ ImportLayerSettings=No
   (haws-core-init 337)
   (princ "\nCNM version: ")
   (princ (haws-unified-version))
+  (princ " [XDATA-FIX-18]") ; Issue progress tracker
   (if (not haws-editall)(load "editall"))
   (haws-editall t)
   (haws-core-restore)
@@ -8666,6 +8682,7 @@ ImportLayerSettings=No
                      ename-leader hcnm-ldrblk-eb-lattribs
                      notetextradiocolumn return-list tag done-code
                     )
+  (princ "\n=== DEBUG: Entering hcnm-edit-bubble")
   (setq
     ename-leader
       (hcnm-ldrblk-bubble-leader ename-bubble)
@@ -8678,10 +8695,36 @@ ImportLayerSettings=No
       (load_dialog "cnm.dcl")
     done-code 2
   )
-  ;; Show XDATA tip to help users understand the new auto-text storage
-  (haws-tip-show 1002  ; Unique tip ID for XDATA explanation
-    "CNM stores auto-text separately from your text using XDATA (extended entity data).\n\nThis keeps auto-text invisible in the attributes, while preserving it for the editor.")
-  (while (> done-code -1)
+  (princ (strcat "\n=== DEBUG: lattribs read, count=" (itoa (length hcnm-ldrblk-eb-lattribs))))
+  (princ (strcat "\n=== DEBUG: dclfile=" (if dclfile (itoa dclfile) "FAILED")))
+  
+  ;; Validate lattribs before proceeding
+  (cond
+    ((not hcnm-ldrblk-eb-lattribs)
+     (alert (princ "\nERROR: Failed to read bubble attributes"))
+     (haws-core-restore)
+     (princ))
+    ((not dclfile)
+     (alert (princ "\nERROR: Failed to load cnm.dcl dialog file"))
+     (haws-core-restore)
+     (princ))
+    (t
+     ;; Continue with dialog
+     (princ "\n=== DEBUG: Showing tip...")
+     ;; Show tip about auto-text editing expectations
+     (haws-tip-show 1002  ; Unique tip ID for auto-text explanation
+       (strcat
+         "About Auto Text and Editing\n\n"
+         "CNM currently gives you a structured edit box that allows for a single auto text plus prefix and postfix. "
+         "Future versions may give you free-form user edits with the following understandings:\n\n"
+         "  - Any text you add remains intact, and any auto text you respect updates correctly.\n"
+         "  - If you change CNM Project settings that affect auto text format, the next update reflects those changes as long as you do not change individual auto text manually.\n"
+         "  - If you completely delete (or fat-finger-corrupt) auto text or change its format (eg. adding prefixes/suffixes), it does not get acted on or restored at the next update.\n"
+         "  - You can't have multiple auto text fields with identical values in the same bubble note line and have them all update correctly."
+       )
+     )
+     (princ "\n=== DEBUG: Entering dialog loop...")
+     (while (> done-code -1)
     (cond
       ((= done-code 0) (setq done-code (hcnm-edit-bubble-cancel)))
       ((= done-code 1)
@@ -8724,6 +8767,8 @@ ImportLayerSettings=No
   )
   ;; Change its arrowhead if needed.
   (hcnm-ldrblk-change-arrowhead ename-leader)
+  (princ "\n=== DEBUG: Dialog loop complete, cleaning up...")
+  ))  ;; Close the validation cond
   (haws-core-restore)
   (princ)
 )
@@ -8882,7 +8927,9 @@ ImportLayerSettings=No
 
 (defun hcnm-ldrblk-eb-show
    (dclfile notetextradiocolumn ename-bubble / tag value parts prefix auto postfix on-model-tab-p lst-dlg-attributes)
+  (princ "\n=== DEBUG: hcnm-ldrblk-eb-show ENTRY")
   (new_dialog "HCNMEditBubble" dclfile)
+  (princ "\n=== DEBUG: new_dialog successful")
   (set_tile "Title" "Edit CNM Bubble Note")
   ;; Check if bubble is in paper space
   (setq on-model-tab-p (or (not ename-bubble) (hcnm-ldrblk-is-on-model-tab ename-bubble)))
@@ -8900,17 +8947,22 @@ ImportLayerSettings=No
   )  
   (mode_tile "ChgView" 0)  ; Always enable
   
+  (princ "\n=== DEBUG: About to call lattribs-to-dlg...")
   ;; ARCHITECTURE: Transform clean lattribs to dialog display format (with format codes)
   ;; This is the ONLY place we transform for display
   (setq lst-dlg-attributes (hcnm-ldrblk-lattribs-to-dlg hcnm-ldrblk-eb-lattribs))
+  (princ (strcat "\n=== DEBUG: lattribs-to-dlg returned " (itoa (length lst-dlg-attributes)) " items"))
   
   ;; Note attribute edit boxes - use formatted display strings
+  (princ "\n=== DEBUG: Setting dialog tiles...")
   (foreach
      attribute lst-dlg-attributes
     (setq tag (car attribute)
           prefix (cadr attribute)
           auto (caddr attribute)
           postfix (cadddr attribute))
+    
+    (princ (strcat "\n=== DEBUG: Setting tiles for " tag))
     
     ;; Set prefix field (contains concatenated formatted string from lattribs-to-dlg)
     (set_tile (strcat "Prefix" tag) prefix)
