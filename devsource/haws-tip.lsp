@@ -5,6 +5,7 @@
 ;; Get snooze until value for a tip ID
 ;; tip-id: Can be integer or string
 ;; Returns nil if not snoozed, 0 if snoozed forever, or snooze-until (real number)
+(princ "\nHaws-Tip functions ... ")
 (defun haws-tip-get-snooze (tip-id / key-path snooze-str tip-id-str)
   (setq tip-id-str (if (numberp tip-id) (itoa tip-id) (vl-princ-to-string tip-id)))
   (setq key-path (list "HawsEDC" (strcat "Tip" tip-id-str "Snooze")))
@@ -326,3 +327,5 @@
   (haws-writecfg (list "HawsEDC" "TipsHidden") "")
   (princ)
 )
+(princ "loaded.")
+(princ)

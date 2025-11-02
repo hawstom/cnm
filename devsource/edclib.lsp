@@ -1,4 +1,5 @@
 ﻿;#region HEAD
+(princ "\nHawsEDC library functions loading ... ")
 ;;;
 ;;; ICAD compatibility issues:
 ;;;
@@ -29,20 +30,23 @@
 ;;; 20050831 1.05   TGH Changed CNM to version 4.2.00.  Recompiled
 ;;; (legacy)
 ;;; lisputil.lsp
-(prompt "\nHawsEDC library functions...")
-(load "haws-tip")
-;;;This is the current version of HawsEDC and CNM
 (defun haws-unified-version ()
   "5.5.18"
-)
-(defun haws-copyright ()
-  "Copyright 2025 Thomas Gail Haws"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 (setq *haws-debuglevel* 0)
 ;;This function returns the current setting of nagmode.
 ;;Elizabeth asked me to give her a version with no nag mode (direct to fail).
 (defun haws-nagmode-p () t)
+;;;This is the current version of HawsEDC and CNM
+;;; Load HAWS-CONFIG library (Issue #11 - Multi-app config system)
+(load "haws-config")
+(load "haws-tip")
+(load "lee-mac")
+
+(defun haws-copyright ()
+  "Copyright 2025 Thomas Gail Haws"
+)
 ;; Returns a random CNM evangelism message for tips/prompts (sharing-focused)
 (defun haws_evangel_msg (/ big_date msgs idx)
   (setq msgs (list
@@ -66,6 +70,8 @@
   (setq idx  (rem (fix (* 10000 (- big_date (fix big_date)))) (length msgs)))
   (nth idx msgs)
 )
+
+
 (defun c:hcnm-about ()
 (haws-core-init 216) (c:haws-about))
 (defun c:haws-about (/ licensereport)
@@ -3074,7 +3080,7 @@
     ((vl-catch-all-error-p
        (vl-catch-all-apply
          'LOAD
-         (list (princ (strcat (c:hcnm-config-getvar "AppFolder") "\\" filename)))
+         (list (princ (strcat (haws-config-getvar "HAWS" "AppFolder" 0 nil nil) "\\" filename)))
        )
      )
      (princ
@@ -3169,8 +3175,11 @@
 (defun haws-getlayr (key / temp)
   (if (or (not *haws:layers*)
           (cond
-            ((= (c:hcnm-config-getvar "ImportLayerSettings") "Yes")
-             (c:hcnm-config-setvar "ImportLayerSettings" "No")
+            ;; This logic was added to interact with CNMEdit.exe, a third-party project notes editor
+            ;; that undertook to edit cnm.ini project settings and layers.dat layer settings.
+            ;; Per the author of CNMEdit.exe, it is time to replace it with something else.
+            ((= (haws-config-getvar "HAWS" "ImportLayerSettings" 2 (hcnm-ini-name (hcnm-proj)) "HAWS") "Yes")
+             (haws-config-setvar "HAWS" "ImportLayerSettings" "No" 2 (hcnm-ini-name (hcnm-proj)) "HAWS")
              t
             )
           )
@@ -3264,6 +3273,8 @@
   laopt
 )
 
+;; This function has two undocumented semi-globals, laltyp and ltfile
+;; TGH: I don't know the effect of those semi-globals, but they are woeking in legacy code.
 (defun haws-load-linetype (ltype / i ltfiles)
   (setq
     ltfiles
@@ -4355,7 +4366,36 @@
 (if (/=(haws-use-get-local-log-string)(haws-use-initialize-log-string))(haws-use-log-remote))
 
 ;#endregion
-(PROMPT "loaded.")
+
+;; HAWS app configuration definitions
+;; These are shared HawsEDC configuration variables used by edclib.lsp and cnmaliaslib.lsp
+;;; This defun is at the bottom to be near the other haws-config function.
+(defun haws-config-definitions ()
+  (list
+    (list "Scope"
+     (list "Session" 0)
+     (list "Drawing" 1)
+     (list "Project" 2)
+     (list "App" 3)
+     (list "User" 4)
+    )
+    (list "Var"
+     (list "AppFolder" (haws-filename-directory (findfile "cnm.mnl")) 0)  ; Session scope - set at load time
+     (list "ImportLayerSettings" "YES" 2)  ; Project scope - INI file
+     (list "CNMAliasActivation" "2" 4)  ; User scope - Registry
+    )
+  )
+)
+
+;;; Register HAWS app with shared HawsEDC config (Issue #11)
+;;; This allows edclib.lsp and cnmaliaslib.lsp to use HAWS-CONFIG without depending on CNM
+;;; This is run-on-load code, so it has to be at the end of the file where everything is defined.
+(if (and haws-config-register-app (not (assoc "HAWS" *haws-config-definitions*)))
+  (haws-config-register-app "HAWS" (haws-config-definitions))
+)
+
+(princ "\nHawsEDC library functions loaded.")
+(princ)
  ;|�Visual LISP� Format Options�
 (72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil t)
 ;*** DO NOT add text below the comment! ***|;

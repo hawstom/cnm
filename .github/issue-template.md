@@ -20,7 +20,7 @@ Find the original scope specification here to read, copy, edit, document, then d
 
 - [File to modify: e.g., "devsource/cnm.lsp"]
 - [File to modify: e.g., "devsource/edclib.lsp"]
-- [File to create: e.g., "devsource/haws-config.lsp"]
+- [File to create (beyond internal docs): e.g., "devsource/haws-config.lsp"]
 
 ## Questions or Concerns
 

@@ -1,4 +1,4 @@
-﻿
+﻿(princ "\nConstruction Notes Manager menu utilities ... ")
 ;;; ============================================================================
 ;;; HOW TO ADD A NEW CNM/HAWSEDC COMMAND
 ;;; ============================================================================
@@ -238,20 +238,8 @@
 ;-------------MODIFY THE ABOVE--------------------------------------
 ;#region Required libraries
 ;;; edclib is the common core library for HawsEDC and CNM.
-;;; It must be loaded before any other HawsEDC or CNM routines are loaded.
+;;; It must be loaded after CNM so CNM config is available.
 (load "edclib")
-(load "lee-mac")
-
-;;; Load HAWS-CONFIG library (Issue #11 - Multi-app config system)
-(load "haws-config")
-
-;;; Load CNM main file to get config definitions
-;;; Register CNM with HAWS-CONFIG system (must happen BEFORE edclib loads)
-;;; Hoping to remove these in the haws-config refactoring project
-(load "cnm")
-(if (and HAWS-CONFIG:REGISTER-APP (not (assoc "CNM" *HAWS-CONFIG:DEFINITIONS*)))
-  (HAWS-CONFIG:REGISTER-APP "CNM" (hcnm-config-definitions))
-)
 
 ;;;Load aliases
 ;;;CNMALIAS.LSP has short names for all the commands.
@@ -295,5 +283,5 @@
 )
 
 (if (not(c:haws-icad-p))(hcnm-placecnmmenu)) ;Do it if not in icad
-(princ "\nConstruction Notes Manager menu utilities loaded.")
+(princ "loaded.")
 (princ)

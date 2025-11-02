@@ -360,8 +360,7 @@
   (setq laname (car laopt) lacolr (cadr laopt) laltyp (caddr laopt) ltfile "acad")
   (if (not (or (= laltyp "")(tblsearch "LTYPE" laltyp)))
     (progn (vl-cmdf "._linetype" "l" laltyp "acad")(vl-cmdf)(vl-cmdf "._linetype" "l" laltyp "hawsedc")(vl-cmdf))
-  )
-  (while (not (or (= laltyp "")(tblsearch "LTYPE" laltyp)))
+  )(while (not (or (= laltyp "")(tblsearch "LTYPE" laltyp)))
     (alert
       (strcat
         "AutoCAD could not find "
@@ -378,6 +377,7 @@
     )
     (vl-cmdf "._linetype" "l" laltyp ltfile)(vl-cmdf)
   )
+  
   (vl-cmdf "._layer")
   (if(not(tblsearch "LAYER" laname))
     (vl-cmdf "m" laname)

@@ -3415,8 +3415,8 @@ ImportLayerSettings=No
   (setq scope-code (hcnm-config-entry-scope-code
                      (assoc var (cdr (assoc "Var" (hcnm-config-definitions))))))
   
-  ;; Call HAWS-CONFIG with appropriate parameters
-  (HAWS-CONFIG:SETVAR 
+  ;; Call haws-config with appropriate parameters
+  (haws-config-setvar 
     "CNM"                              ; app
     var                                 ; var
     val                                 ; val
@@ -3435,9 +3435,9 @@ ImportLayerSettings=No
   (setq scope-code (hcnm-config-entry-scope-code
                      (assoc var (cdr (assoc "Var" (hcnm-config-definitions))))))
   
-  ;; Call HAWS-CONFIG with appropriate parameters
+  ;; Call haws-config with appropriate parameters
   (setq val
-    (HAWS-CONFIG:GETVAR 
+    (haws-config-getvar 
       "CNM"                            ; app
       var                               ; var
       scope-code                        ; scope-code
@@ -9467,6 +9467,13 @@ ImportLayerSettings=No
   (princ)
 )
 ;#endregion
+
+;;; Register CNM with HAWS-CONFIG system (Issue #11)
+;;; This allows CNM config to work independently when CNM is loaded
+(if (and haws-config-register-app (not (assoc "CNM" *haws-config-definitions*)))
+  (haws-config-register-app "CNM" (hcnm-config-definitions))
+)
+
 (load "ini-edit")
 ;|?Visual LISP? Format Options?
 (72 2 40 2 nil "end of " 100 2 2 2 1 nil nil nil t)

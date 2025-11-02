@@ -22,6 +22,7 @@
 - Section 1.2.1: Data model (lattribs structure) (for bubble notes area only)
 - Section 1.6: Communication tips
 - Section 1.7: AI collaboration workflow with planning documents
+- Section 1.8: Document structure guidelines (how to write effective docs for AI)
 
 ---
 
@@ -190,9 +191,9 @@ hcnm-*                    Top-level CNM functions
 
 ### 1.2.3. AutoLISP Conventions
 - **Lower case symbols**: Function names, variables (except legacy UPPERCASE in strings/comments)
-- **Hyphen-separated**: `hcnm-bubbles-auto-alignment` (not underscore)
+- **Hyphen-separated**: `hcnm-bubbles-auto-alignment` (not underscore or colon)
 - **Explicit local variables**: Always declare all local variables in the `/ var1 var2` parameter list. Undeclared variables become global and cause subtle bugs (AutoLISP's dynamic scoping leak).
-- **No ad hoc globals**: Use `hcnm-config` system for persistent state. Document any global with `*asterisk-naming*` and explanation comment only if absolutely necessary.
+- **No ad hoc globals**: Use `haws-config` system for persistent state. Document any global with `*asterisk-naming*` and explanation comment only if absolutely necessary.
 
 ### 1.2.4. Documentation
 - **Function headers**: Explain purpose, parameters, return values
@@ -363,3 +364,88 @@ For working on multiple features simultaneously:
 - Examples: architecture decisions, region reorganization summaries
 
 **Default behavior**: Create planning docs for GitHub issues. Only create summary docs if explicitly requested.
+
+---
+
+## 1.8. Document Length and Structure Guidelines (For AI Performance)
+
+**See Section 1.8 for details on effective document structure.**
+
+### 1.8.1. Context Window and Attention
+
+**Technical limits:**
+- AI context window: ~1 million tokens (~750,000 words)
+- Single request context: ~200,000 tokens
+- This file (copilot-instructions.md): ~15,000 tokens
+
+**Attention behavior:**
+- **HIGH attention**: Start of documents, end of documents, recent conversation
+- **LOWER attention**: Middle of long documents
+- **HIGHEST attention**: Recent messages in current conversation
+
+### 1.8.2. Structure Matters More Than Length
+
+**Good structure (easy for AI):**
+- ✅ Table of contents with section numbers
+- ✅ Clear hierarchical headings (##, ###, ####)
+- ✅ Executive summaries at document top
+- ✅ Examples showing "good vs bad"
+- ✅ Bullet points and short paragraphs
+- ✅ Code blocks with syntax highlighting
+
+**Poor structure (hard for AI):**
+- ❌ Wall of text without breaks
+- ❌ No headings or organization
+- ❌ Important info buried in middle
+- ❌ No examples or concrete illustrations
+
+### 1.8.3. Optimal Document Lengths
+
+**Single-purpose documents**: 100-500 lines
+- Examples: issue-template.md, lattribs-schema.md
+- Perfect length for quick reference
+
+**Reference documents**: 500-2000 lines
+- Examples: copilot-instructions.md, API documentation
+- Still effective with good structure (like this file)
+
+**Over 2000 lines**: Consider splitting
+- Use multiple focused documents
+- Link between them
+- Or ensure exceptional organization
+
+### 1.8.4. Writing for AI Readers
+
+**Key principles:**
+
+1. **Put critical info at top or bottom**
+   - Executive summary at start
+   - Quick reference at end
+   - Don't bury essentials in middle
+
+2. **Use section references**
+   - "See Section 1.2.3" helps AI locate info
+   - Better than "see above" or "as mentioned earlier"
+
+3. **Repeat critical constraints**
+   - If something must NOT break, say it multiple times
+   - In executive summary, in relevant sections, in examples
+
+4. **Provide concrete examples**
+   - Show actual code, not just descriptions
+   - Real examples from codebase (like Issue #11)
+   - "Good vs Bad" comparisons
+
+5. **Update as you learn**
+   - This document evolves
+   - Add lessons learned
+   - Remove obsolete information
+
+### 1.8.5. This Document's Structure (Meta)
+
+This file (copilot-instructions.md) follows its own advice:
+
+- **Quick Start** at top: Most important info in first 20 lines
+- **Section numbers**: Easy to reference (1.1, 1.2.3, etc.)
+- **Examples throughout**: Real code and scenarios
+- **Meta-section at end**: Document about the document (you're reading it)

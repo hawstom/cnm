@@ -1,3 +1,4 @@
+(princ "\nHaws-config functions ... ")
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; HAWS-CONFIG - Generic Multi-Application Configuration System
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -15,25 +16,25 @@
 ;;; 4 - User:     User profile folder (Windows Registry or %APPDATA%)
 ;;;
 ;;; ARCHITECTURE:
-;;; - Multi-app cache: *HAWS-CONFIG:CACHE* stores config for all registered apps
+;;; - Multi-app cache: *haws-config-cache* stores config for all registered apps
 ;;; - Fallback chain: Memory → INI file → Defaults
 ;;; - App registration: Each app registers its config schema on load
 ;;;
 ;;; PUBLIC API:
-;;; (HAWS-CONFIG:REGISTER-APP app definitions) - Register an application
-;;; (HAWS-CONFIG:GETVAR app var scope defaults) - Get config value
-;;; (HAWS-CONFIG:SETVAR app var val scope) - Set config value
+;;; (haws-config-register-app app definitions) - Register an application
+;;; (haws-config-getvar app var scope defaults) - Get config value
+;;; (haws-config-setvar app var val scope) - Set config value
 ;;;
 ;;; USAGE EXAMPLE:
 ;;; ;; Register app
-;;; (HAWS-CONFIG:REGISTER-APP "CNM" (hcnm-config-definitions))
+;;; (haws-config-register-app "CNM" (hcnm-config-definitions))
 ;;;
 ;;; ;; Get/Set values
-;;; (SETQ val (HAWS-CONFIG:GETVAR "CNM" "BubbleTextPrefixSta" 2 "STA "))
-;;; (HAWS-CONFIG:SETVAR "CNM" "BubbleTextPrefixSta" "STATION " 2)
+;;; (SETQ val (haws-config-getvar "CNM" "BubbleTextPrefixSta" 2 "STA "))
+;;; (haws-config-setvar "CNM" "BubbleTextPrefixSta" "STATION " 2)
 ;;;
 ;;; CONVENTIONS:
-;;; - All public functions use HAWS-CONFIG: namespace prefix
+;;; - All public functions use haws-config- prefix (lowercase with hyphens)
 ;;; - All private/helper functions use haws-config- prefix (lowercase)
 ;;; - All local variables explicitly declared in function parameter list
 ;;; - Follows .github/copilot-instructions.md Section 1.2.3
@@ -47,19 +48,19 @@
 ;;; GLOBAL VARIABLES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;; *HAWS-CONFIG:CACHE* - Multi-app configuration cache
+;;; *haws-config-cache* - Multi-app configuration cache
 ;;; Structure: '(("APP1" (("var1" "val1") ("var2" "val2") ...))
 ;;;              ("APP2" (("varA" "valA") ...)))
-(if (not *HAWS-CONFIG:CACHE*) (setq *HAWS-CONFIG:CACHE* '()))
+(if (not *haws-config-cache*) (setq *haws-config-cache* '()))
 
-;;; *HAWS-CONFIG:DEFINITIONS* - Registered app definitions
+;;; *haws-config-definitions* - Registered app definitions
 ;;; Structure: '(("APP1" . <definitions-list>)
 ;;;              ("APP2" . <definitions-list>))
-(if (not *HAWS-CONFIG:DEFINITIONS*) (setq *HAWS-CONFIG:DEFINITIONS* '()))
+(if (not *haws-config-definitions*) (setq *haws-config-definitions* '()))
 
-;;; *HAWS-CONFIG:SESSION* - Session-scope cache (scope 0)
+;;; *haws-config-session* - Session-scope cache (scope 0)
 ;;; Structure: Same as CACHE, but for session-only variables
-(if (not *HAWS-CONFIG:SESSION*) (setq *HAWS-CONFIG:SESSION* '()))
+(if (not *haws-config-session*) (setq *haws-config-session* '()))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; CACHE MANAGEMENT FUNCTIONS
@@ -72,7 +73,7 @@
 ;;; Returns:
 ;;;   Value string if found, nil otherwise
 (defun haws-config-cache-get (app var / app-cache)
-  (setq app-cache (assoc app *HAWS-CONFIG:CACHE*))
+  (setq app-cache (assoc app *haws-config-cache*))
   (if app-cache
     (cadr (assoc var (cdr app-cache)))
     nil
@@ -87,7 +88,7 @@
 ;;; Returns:
 ;;;   The value that was set
 (defun haws-config-cache-set (app var val / app-cache var-entry new-app-cache)
-  (setq app-cache (assoc app *HAWS-CONFIG:CACHE*))
+  (setq app-cache (assoc app *haws-config-cache*))
   (cond
     (app-cache
      ;; App exists in cache, update or add variable
@@ -109,17 +110,17 @@
         )
      )
      (setq
-       *HAWS-CONFIG:CACHE*
-        (subst new-app-cache app-cache *HAWS-CONFIG:CACHE*)
+       *haws-config-cache*
+        (subst new-app-cache app-cache *haws-config-cache*)
      )
     )
     (t
      ;; App doesn't exist in cache, create it
      (setq
-       *HAWS-CONFIG:CACHE*
+       *haws-config-cache*
         (cons
           (list app (list var val))
-          *HAWS-CONFIG:CACHE*
+          *haws-config-cache*
         )
      )
     )
@@ -133,7 +134,7 @@
 ;;; Returns:
 ;;;   List of (var val) pairs for app, or nil
 (defun haws-config-cache-get-app (app / app-cache)
-  (setq app-cache (assoc app *HAWS-CONFIG:CACHE*))
+  (setq app-cache (assoc app *haws-config-cache*))
   (if app-cache
     (cdr app-cache)
     nil
@@ -150,7 +151,7 @@
 ;;; Returns:
 ;;;   Definitions list for app, or nil if not registered
 (defun haws-config-get-definitions (app / )
-  (cdr (assoc app *HAWS-CONFIG:DEFINITIONS*))
+  (cdr (assoc app *haws-config-definitions*))
 )
 
 ;;; haws-config-scope-code - Convert scope name to numeric code
@@ -312,7 +313,7 @@
 ;;; Returns:
 ;;;   Value from session cache, or nil if not found
 (defun haws-config-read-session (app var / app-session)
-  (setq app-session (assoc app *HAWS-CONFIG:SESSION*))
+  (setq app-session (assoc app *haws-config-session*))
   (if app-session
     (cadr (assoc var (cdr app-session)))
     nil
@@ -327,7 +328,7 @@
 ;;; Returns:
 ;;;   Value that was written
 (defun haws-config-write-session (app var val / app-session var-entry new-app-session)
-  (setq app-session (assoc app *HAWS-CONFIG:SESSION*))
+  (setq app-session (assoc app *haws-config-session*))
   (cond
     (app-session
      ;; App exists in session, update or add variable
@@ -349,17 +350,17 @@
         )
      )
      (setq
-       *HAWS-CONFIG:SESSION*
-        (subst new-app-session app-session *HAWS-CONFIG:SESSION*)
+       *haws-config-session*
+        (subst new-app-session app-session *haws-config-session*)
      )
     )
     (t
      ;; App doesn't exist in session, create it
      (setq
-       *HAWS-CONFIG:SESSION*
+       *haws-config-session*
         (cons
           (list app (list var val))
-          *HAWS-CONFIG:SESSION*
+          *haws-config-session*
         )
      )
     )
@@ -446,48 +447,48 @@
 ;;; PUBLIC API FUNCTIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;; HAWS-CONFIG:REGISTER-APP - Register an application with the config system
+;;; haws-config-register-app - Register an application with the config system
 ;;; Arguments:
 ;;;   app - Application identifier (string, e.g. "CNM", "HAWS-QT")
 ;;;   definitions - Config definitions list (same format as hcnm-config-definitions)
 ;;; Returns:
 ;;;   T on success
 ;;; Side Effects:
-;;;   Stores definitions in *HAWS-CONFIG:DEFINITIONS*
-;;;   Initializes app entry in *HAWS-CONFIG:CACHE*
-(defun HAWS-CONFIG:REGISTER-APP (app definitions / )
+;;;   Stores definitions in *haws-config-definitions*
+;;;   Initializes app entry in *haws-config-cache*
+(defun haws-config-register-app (app definitions / )
   ;; Store definitions
   (setq
-    *HAWS-CONFIG:DEFINITIONS*
+    *haws-config-definitions*
      (cons
        (cons app definitions)
-       *HAWS-CONFIG:DEFINITIONS*
+       *haws-config-definitions*
      )
   )
   ;; Initialize app cache if not exists
-  (if (not (assoc app *HAWS-CONFIG:CACHE*))
+  (if (not (assoc app *haws-config-cache*))
     (setq
-      *HAWS-CONFIG:CACHE*
+      *haws-config-cache*
        (cons
          (list app)  ; Empty var list initially
-         *HAWS-CONFIG:CACHE*
+         *haws-config-cache*
        )
     )
   )
   ;; Initialize app session cache if not exists
-  (if (not (assoc app *HAWS-CONFIG:SESSION*))
+  (if (not (assoc app *haws-config-session*))
     (setq
-      *HAWS-CONFIG:SESSION*
+      *haws-config-session*
        (cons
          (list app)  ; Empty var list initially
-         *HAWS-CONFIG:SESSION*
+         *haws-config-session*
        )
     )
   )
   T
 )
 
-;;; HAWS-CONFIG:GETVAR - Get configuration variable value
+;;; haws-config-getvar - Get configuration variable value
 ;;; Arguments:
 ;;;   app - Application identifier (string)
 ;;;   var - Variable name (string)
@@ -501,7 +502,7 @@
 ;;;   2. If not in cache, read from scope storage
 ;;;   3. If not in storage, use default from definitions
 ;;;   4. Store in cache and return
-(defun HAWS-CONFIG:GETVAR (app var scope-code ini-path section / val setvar-p)
+(defun haws-config-getvar (app var scope-code ini-path section / val setvar-p)
   (setq setvar-p t)
   
   ;; Try getting from cache first
@@ -582,7 +583,7 @@
   val
 )
 
-;;; HAWS-CONFIG:SETVAR - Set configuration variable value
+;;; haws-config-setvar - Set configuration variable value
 ;;; Arguments:
 ;;;   app - Application identifier (string)
 ;;;   var - Variable name (string)
@@ -595,7 +596,7 @@
 ;;; Side Effects:
 ;;;   Updates cache
 ;;;   Writes to appropriate scope storage (Registry, INI file, or session memory)
-(defun HAWS-CONFIG:SETVAR (app var val scope-code ini-path section / )
+(defun haws-config-setvar (app var val scope-code ini-path section / )
   ;; Always update cache
   (haws-config-cache-set app var val)
   
@@ -625,5 +626,5 @@
 ;;; END OF HAWS-CONFIG LIBRARY
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(princ "\nHAWS-CONFIG library loaded")
+(princ "loaded.")
 (princ)
