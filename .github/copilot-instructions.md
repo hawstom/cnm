@@ -153,64 +153,113 @@ We provide users free-form editing capabilities, so we must store auto-generated
 
 **MVC Layer Separation:**
 
-**VIEW LAYER (Dialog/UI):**
+**MVC Call Flow Examples:**
+
+**INSERTION (from command line):**
 ```autolisp
-;; Tells controller: "User entered this text, mark as auto or free"
-(hcnm-ldrblk-set-text tag text auto-type-or-nil)
-  ;; auto-type-or-nil: nil for free text, "ALIGN", "PIPE", "SURF", etc. for auto
+;; User runs CNM bubble insertion command, clicks auto-text button
+;; 1. VIEW: Auto-text button clicked
+(hcnm-bubbles-insert-auto-button tag)
+  ;; 2. CONTROLLER: Route to appropriate auto-text handler
+  (hcnm-bubbles-controller-add-auto tag auto-type)
+    ;; 3. MODEL: Generate auto-text, store XDATA, attach reactor
+    (hcnm-bubbles-model-set-auto tag text auto-type)
+      ;; - Update lattribs (in-memory): (("TAG" "text-with-auto") ...)
+      ;; - Store XDATA: Verbatim auto-text for search
+      ;; - Attach reactor: If coords-based, store viewport/transform
 ```
 
-**CONTROLLER LAYER (Routing):**
+**EDITING (from dialog):**
 ```autolisp
-(defun hcnm-ldrblk-set-text (tag text auto-type / )
-  (cond
-    (auto-type (hcnm-ldrblk-model-set-auto-text tag text auto-type))
-    (t (hcnm-ldrblk-model-set-free-text tag text))))
+;; User opens existing bubble, modifies text, clicks Save
+;; Dialog operates on IN-MEMORY copy until Save clicked
+
+;; 1. Dialog opens - loads current state
+(hcnm-bubbles-eb-open ename)
+  ;; Loads lattribs + XDATA into dialog fields (read-only snapshot)
+
+;; 2. User types free text or clicks auto-text button
+;;    Auto-button only updates dialog field (no XDATA writes yet!)
+(hcnm-bubbles-eb-auto-button tag auto-type)
+  ;; Generates auto-text, inserts at ``` or appends
+  ;; Updates dialog field only (in-memory)
+  ;; Marks field as "pending auto-text write"
+
+;; 3. User clicks SAVE - atomic write of ALL changes
+(hcnm-bubbles-eb-save ename)
+  ;; CONTROLLER: Process each modified field
+  (foreach field modified-fields
+    (if (field-has-auto-text? field)
+      ;; MODEL: Write auto-text (lattribs + XDATA + reactor)
+      (hcnm-bubbles-model-set-auto tag text auto-type)
+      ;; MODEL: Write free text (lattribs only, clear XDATA)
+      (hcnm-bubbles-model-set-free tag text)))
+  ;; Atomically write all lattribs to block attributes
+  (hcnm-set-attributes ename lattribs)
+
+;; 4. User clicks CANCEL - discard all changes
+(hcnm-bubbles-eb-cancel)
+  ;; No XDATA writes happened (safe rollback)
+  ;; No lattribs writes happened (safe rollback)
+  ;; Dialog just closes, entity unchanged
 ```
+
+**Key Architectural Decisions:**
+- **Auto-text buttons during dialog = IN-MEMORY only** (no XDATA writes)
+- **Save button = ATOMIC write** (lattribs + XDATA + reactors all at once)
+- **Cancel button = SAFE** (no writes happened, nothing to rollback)
+- **Auto-type keys**: "STa", "Off", "stAoff", "N", "E", "NE", "Dia", "SLope", "L", etc.
+  (See `hcnm-ldrblk-get-auto-type-keys` for complete list)
 
 **MODEL LAYER (Data Persistence):**
 ```autolisp
-(defun hcnm-ldrblk-model-set-auto-text (tag text auto-type / )
+;; Used by both insertion and editing
+(defun hcnm-bubbles-model-set-auto (tag text auto-type)
   ;; 1. Update lattribs (in-memory): (("TAG" "new-value") ...)
-  ;; 2. Save XDATA: Mark as auto-text with verbatim value for search
+  ;; 2. Store XDATA: Mark as auto-text with verbatim value for search
   ;; 3. Attach reactor: If coords-based, also store viewport/transform
   ;; 4. Store reference: Object handle for reactor lookup
   )
 
-(defun hcnm-ldrblk-model-set-free-text (tag text / )
+(defun hcnm-bubbles-model-set-free (tag text)
   ;; 1. Update lattribs (in-memory): (("TAG" "new-value") ...)
   ;; 2. Clear XDATA: Remove auto-text markers for this tag
-  ;; 3. No reactor: User text doesn't update automatically
+  ;; 3. Remove reactor: User text doesn't update automatically
   )
 ```
 
 **Auto-Text Insertion with Delimiter:**
 
-**User Delimiter:** `|||` (triple pipe) marks insertion point
+**User Delimiter:** ` ``` ` (triple backtick) marks insertion point
+- **Why backticks?** No shift key on most keyboards, visually distinct, won't accumulate confusingly like `,,,` → `,,,,`
+- **Alternatives considered:** `|||` (needs shift), `,,,` (can pile up), `[[[` (needs shift)
 
 **Insertion Logic:**
 ```autolisp
 (defun hcnm-insert-auto-text (text auto-value / pos)
   (cond
     ;; If delimiter exists, replace first occurrence
-    ((setq pos (vl-string-search "|||" text))
+    ((setq pos (vl-string-search "```" text))
      (strcat (substr text 1 pos)
              auto-value
-             (substr text (+ pos 4))))  ; Skip "|||"
+             (substr text (+ pos 3))))  ; Skip "```"
     ;; Otherwise append (graceful fallback - teaches quietly)
+    ;; INTENTIONAL EXCEPTION TO "FAIL LOUDLY": This is UX convenience, not data corruption.
+    ;; Fail loudly on DATA integrity, fail gracefully on UX convenience.
+    ;; Appending without delimiter teaches users the feature exists.
     (t (strcat text " " auto-value))))
 ```
 
 **User Workflow:**
 1. Dialog shows single text field per line
-2. Tip message: "Use ||| to mark where auto-text should insert"
-3. User types: `"Storm Drain ||| RT, |||"`
-4. User clicks Station button → finds first `|||` → `"Storm Drain STA 10+25 RT, |||"`
-5. User clicks Diameter button → finds second `|||` → `"Storm Drain STA 10+25 RT, Ø24"`
-6. If no `|||` found, append with space (graceful, non-angry fallback)
+2. Tip message: "Use ``` to mark where auto-text should insert"
+3. User types: `"Storm Drain ``` RT, ```"`
+4. User clicks Station button → finds first ` ``` ` → `"Storm Drain STA 10+25 RT, ```"`
+5. User clicks Diameter button → finds second ` ``` ` → `"Storm Drain STA 10+25 RT, Ø24"`
+6. If no ` ``` ` found, append with space (graceful, non-angry fallback)
 
 **Future Enhancements:**
-- Configurable delimiter choices (|||, ZZZ, ,,,, etc.)
+- Configurable delimiter choices (```, ..., +++, etc.)
 - Cursor position detection (insert at cursor instead of delimiter)
 - Multiple delimiter types (user preference per project)
 

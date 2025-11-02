@@ -3407,7 +3407,7 @@ ImportLayerSettings=No
 (defun hcnm-config-temp-clear ()
   (setq *hcnm-config-temp* nil)
 )
-
+tgh
 ;;;Sets a variable in the global lisp list and in CNM.INI
 (defun c:hcnm-config-setvar (var val)
   (setq
@@ -5470,9 +5470,9 @@ ImportLayerSettings=No
         )
        )
        (t
-        ;; Create empty spec and populate NOTENUM
+        ;; Create empty spec and populate NOTENUM (2-element lattribs)
         (setq lattribs (hcnm-ldrblk-lattribs-spec)
-              lattribs (hcnm-ldrblk-lattribs-put-element "NOTENUM" (list num "" "") lattribs))
+              lattribs (hcnm-ldrblk-lattribs-put-element "NOTENUM" num lattribs))
         (mapcar
           '(lambda (index)
              (setq
@@ -5563,9 +5563,9 @@ ImportLayerSettings=No
             lattribs
           )
        )
-       ;; Get concatenated value (prefix + auto + postfix) for string comparison
+       ;; Get text value for string comparison (2-element lattribs)
        (setq attr (assoc tag lattribs)
-             string (strcat (cadr attr) (caddr attr) (cadddr attr)))
+             string (cadr attr))
       )
       (t
        (setq
@@ -5573,7 +5573,7 @@ ImportLayerSettings=No
          lattribs
           (hcnm-ldrblk-lattribs-put-element
             tag
-            (list string "" "")
+            string
             lattribs
           )
        )
@@ -5634,7 +5634,7 @@ ImportLayerSettings=No
         lattribs
          (hcnm-ldrblk-lattribs-put-element
            tag
-           (list "ENtry" "" "")
+           "ENtry"
            lattribs
          )
       )
@@ -5903,7 +5903,7 @@ ImportLayerSettings=No
 ;; - Validation: Fail loudly on violations
 ;;==============================================================================
 (defun hcnm-ldrblk-lattribs-spec (/ lattribs)
-  ;; Pure spec - returns empty structure for all bubble attributes
+  ;; Pure spec - returns empty 2-element structure for all bubble attributes
   ;; To populate with values, use lattribs-put-element
   (setq
     lattribs
@@ -5912,55 +5912,57 @@ ImportLayerSettings=No
           (list
             (strcat "NOTETXT" (itoa index))
             ""
-            ""
-            ""
           )
         )
        '(1 2 3 4 5 6 0)
      )
     lattribs
-     (cons (list "NOTEDATA" "" "" "") lattribs)
+     (cons (list "NOTEDATA" "") lattribs)
     lattribs
-     (cons (list "NOTEGAP" "" "" "") lattribs)
+     (cons (list "NOTEGAP" "") lattribs)
     lattribs
-     (cons (list "NOTEPHASE" "" "" "") lattribs)
+     (cons (list "NOTEPHASE" "") lattribs)
     lattribs
-     (cons (list "NOTENUM" "" "" "") lattribs)  ; Empty, will be filled by caller
+     (cons (list "NOTENUM" "") lattribs)  ; Empty, will be filled by caller
   )
   lattribs
 )
 ;;; Save attribute value to attribute list (replaces entire value)
 ;;; Replaces (tag prefix auto postfix) element in lattribs
 ;;; If element doesn't exist, adds it
-(defun hcnm-ldrblk-lattribs-put-element (tag value lattribs / attr prefix auto postfix)
-  ;; Value must be a list (prefix auto postfix)
-  (if (not (and (listp value) (= (length value) 3)))
+(defun hcnm-ldrblk-lattribs-put-element (tag value lattribs / attr)
+  ;; Value must be a string in 2-element architecture
+  (if (not (= (type value) 'STR))
     (progn
-      (alert (princ (strcat "\nhcnm-ldrblk-lattribs-put-element: value must be 3-element list (prefix auto postfix), got: " (vl-princ-to-string value))))
+      (alert (princ (strcat "\nhcnm-ldrblk-lattribs-put-element: value must be string, got: " (vl-princ-to-string value))))
       (exit)))
   
-  (setq attr (assoc tag lattribs)
-        prefix (car value)
-        auto (cadr value)
-        postfix (caddr value))
+  (setq attr (assoc tag lattribs))
   
   (cond
     ;; Element exists - replace it
     (attr
-     (subst (list tag prefix auto postfix) attr lattribs))
+     (subst (list tag value) attr lattribs))
     ;; Element doesn't exist - add it
     (t
-     (append lattribs (list (list tag prefix auto postfix))))
+     (append lattribs (list (list tag value))))
   )
 )
 
-;; Save auto-generated text to attribute list
-;; Updates only the auto field, preserves user's prefix/postfix
-(defun hcnm-ldrblk-lattribs-put-auto (tag auto-new lattribs / attr prefix postfix)
-  (setq attr (assoc tag lattribs)
-        prefix (cadr attr)
-        postfix (cadddr attr))
-  (subst (list tag prefix auto-new postfix) attr lattribs)
+;;; Update auto-text value in lattribs (2-element architecture)
+;;; In 2-element architecture, this just replaces the full text value
+;;; XDATA storage is handled separately by model layer
+;;; NOTE: This is a transitional function - ultimately will be replaced by model layer
+(defun hcnm-ldrblk-lattribs-put-auto (tag auto-new lattribs / attr)
+  ;; In 2-element, just replace the text value with the auto-text
+  ;; (Prefix/postfix handling will come later via delimiter insertion)
+  (setq attr (assoc tag lattribs))
+  (cond
+    (attr
+     (subst (list tag auto-new) attr lattribs))
+    (t
+     (append lattribs (list (list tag auto-new))))
+  )
 )
 ;;; Ensure all bubble text attributes have proper chr(160) delimiter structure
 ;;;
@@ -5997,18 +5999,18 @@ ImportLayerSettings=No
 ;;;   - hcnm-ldrblk-lattribs-spec: Returns fresh 4-element format
 ;;;   - After auto-text or manual text entry: Should already be 4-element format
 ;;;
-;;; RETURNS: lattribs with ALL attributes normalized to 4-element format:
-;;;   ("NOTETXT1" prefix auto postfix)
-;;;   ("NOTENUM" value "" "")
-;;;   ("NOTEPHASE" value "" "")
-;;;   ("NOTEGAP" value "" "")
+;;; RETURNS: lattribs with ALL attributes in 2-element format:
+;;;   ("NOTETXT1" "full text value")
+;;;   ("NOTENUM" "123")
+;;;   ("NOTEPHASE" "phase text")
+;;;   ("NOTEGAP" "0.25")
 ;;;
 ;;; EXAMPLES:
-;;;   Input:  (("NOTENUM" "123") ("NOTETXT1" "Storm Drain"))
-;;;   Output: (("NOTENUM" "123" "" "") ("NOTETXT1" "Storm Drain" "" ""))
+;;;   Input:  (("NOTENUM" "123") ("NOTETXT1" "Storm Drain STA 10+25 RT"))
+;;;   Output: (("NOTENUM" "123") ("NOTETXT1" "Storm Drain STA 10+25 RT")) - unchanged, valid
 ;;;
-;;;   Input:  (("NOTENUM" "123" "" "") ("NOTETXT1" "" "N=12345.67" ""))
-;;;   Output: (("NOTENUM" "123" "" "") ("NOTETXT1" "" "N=12345.67" "")) - unchanged, already correct
+;;;   Input:  (("NOTENUM" "123" "" "") ("NOTETXT1" "Storm Drain"))  ; OLD 4-element
+;;;   Output: NIL with ALERT - invalid schema (migration needed)
 ;;;
 ;;; ARCHITECTURE: NO BACKWARD COMPATIBILITY - Fail loudly on violations
 ;;;               This is a wrapper around lattribs-validate-schema for consistency
@@ -6029,13 +6031,13 @@ ImportLayerSettings=No
 ;;; PHILOSOPHY: "Fail loudly" - catch data integrity violations early
 ;;;             Don't silently fix problems that indicate bugs
 ;;;
-;;; PURPOSE: Validate lattribs has complete schema with correct structure
+;;; PURPOSE: Validate lattribs has complete schema with correct 2-element structure
 ;;;
 ;;; CHECKS:
 ;;;   1. All required tags are present
-;;;   2. Each element is a 4-part list (tag prefix auto postfix)
+;;;   2. Each element is a 2-part list (tag text)
 ;;;   3. No duplicate tags
-;;;   4. All parts are strings (or empty string "")
+;;;   4. Both parts are strings (never nil, use "" for empty)
 ;;;
 ;;; RETURNS: T if valid
 ;;;          NIL with ALERT if invalid (stops execution)
@@ -6068,7 +6070,7 @@ ImportLayerSettings=No
     )
   )
   
-  ;; Check 2: Each element is 4-part list with valid structure
+  ;; Check 2: Each element is 2-part list with valid structure
   (foreach attr lattribs
     (setq tag (car attr))
     (cond
@@ -6077,17 +6079,15 @@ ImportLayerSettings=No
        (setq error-msgs (cons (strcat tag ": Not a list structure") error-msgs))
       )
       ;; Wrong number of elements
-      ((/= (length attr) 4)
-       (setq error-msgs (cons (strcat tag ": Must have 4 elements (tag prefix auto postfix), has " 
+      ((/= (length attr) 2)
+       (setq error-msgs (cons (strcat tag ": Must have 2 elements (tag text), has " 
                                       (itoa (length attr))) 
                               error-msgs))
       )
-      ;; Check all parts are strings
+      ;; Check both parts are strings
       ((not (and (= (type (nth 0 attr)) 'STR)  ; tag
-                 (= (type (nth 1 attr)) 'STR)  ; prefix
-                 (= (type (nth 2 attr)) 'STR)  ; auto
-                 (= (type (nth 3 attr)) 'STR))) ; postfix
-       (setq error-msgs (cons (strcat tag ": All parts must be strings") error-msgs))
+                 (= (type (nth 1 attr)) 'STR))) ; text
+       (setq error-msgs (cons (strcat tag ": Both parts must be strings (never nil)") error-msgs))
       )
     )
     
@@ -6190,23 +6190,13 @@ ImportLayerSettings=No
 ;;;
 ;;; NOTE: This is pure data transformation, no business logic.
 ;;;
+;;; DEPRECATED - No longer needed in 2-element architecture
+;;; Concatenate 4-element structured lattribs to 2-element format
+;;; This function is obsolete now that lattribs is always 2-element
 (defun hcnm-ldrblk-lattribs-concat (lattribs / result attr tag concat-value)
-  (setq result nil)
-  (foreach attr lattribs
-    (setq tag (car attr))
-    (setq concat-value
-      (cond
-        ;; If 4-element format, concatenate parts 2, 3, 4
-        ((= (length attr) 4)
-         (strcat (cadr attr) (caddr attr) (cadddr attr)))
-        ;; If 2-element format (legacy), just use the value
-        ((= (length attr) 2)
-         (cadr attr))
-        ;; Unexpected format
-        (t "")))
-    (setq result (append result (list (list tag concat-value))))
-  )
-  result
+  (alert (princ "\nDEPRECATED: lattribs-concat called but no longer needed in 2-element architecture"))
+  ;; Return as-is (already 2-element)
+  lattribs
 )
 
 ;;; Split concatenated lattribs using xdata delimiters
@@ -6224,28 +6214,13 @@ ImportLayerSettings=No
 ;;; NOTE: This is pure data transformation, no business logic.
 ;;;       Uses xdata to find CHR 160 delimiter positions and split.
 ;;;
+;;; DEPRECATED - No longer needed in 2-element architecture
+;;; Split concatenated lattribs using xdata delimiters (CHR 160 based)
+;;; This function is obsolete now that we use search-based XDATA parsing
 (defun hcnm-ldrblk-lattribs-split (lattribs-cat xdata-alist / result attr tag concat-value xdata-entry parts)
-  (setq result nil)
-  (foreach attr lattribs-cat
-    (setq tag (car attr)
-          concat-value (cadr attr)
-          xdata-entry (assoc tag xdata-alist))
-    
-    ;; If xdata exists for this tag, split using delimiter
-    (cond
-      (xdata-entry
-       (setq parts (hcnm-ldrblk-eb-split-on-nbsp (cdr xdata-entry)))
-       ;; Ensure 3-element result (prefix auto postfix)
-       (while (< (length parts) 3)
-         (setq parts (append parts (list ""))))
-       (setq result (append result (list (cons tag parts)))))
-      
-      ;; No xdata, treat as single value in prefix field
-      (t
-       (setq result (append result (list (list tag concat-value "" "")))))
-    )
-  )
-  result
+  (alert (princ "\nDEPRECATED: lattribs-split called but no longer needed - use split-attribute-on-xdata instead"))
+  ;; Return as-is (already 2-element)
+  lattribs-cat
 )
 
 ;;; ============================================================================
@@ -6284,7 +6259,7 @@ ImportLayerSettings=No
 (defun hcnm-ldrblk-underover-add (lattribs / bubblemtext underline overline
                                      txt1-attr txt2-attr 
                                      txt1-empty-p txt2-empty-p
-                                     txt1-prefix txt2-prefix
+                                     txt1-value txt2-value
                                      gap-value result)
   ;; Determine format codes based on mtext vs dtext
   (setq bubblemtext (hcnm-ldrblk-get-mtext-string)
@@ -6295,18 +6270,18 @@ ImportLayerSettings=No
   (setq txt1-attr (assoc "NOTETXT1" lattribs)
         txt2-attr (assoc "NOTETXT2" lattribs))
   
-  ;; Check if empty (concat all parts and check)
-  (setq txt1-empty-p (= "" (strcat (cadr txt1-attr) (caddr txt1-attr) (cadddr txt1-attr)))
-        txt2-empty-p (= "" (strcat (cadr txt2-attr) (caddr txt2-attr) (cadddr txt2-attr))))
+  ;; Check if empty (2-element: just check text value)
+  (setq txt1-empty-p (or (not txt1-attr) (= "" (cadr txt1-attr)))
+        txt2-empty-p (or (not txt2-attr) (= "" (cadr txt2-attr))))
   
-  ;; Add format code to prefix of TXT1 if NOT empty
-  (setq txt1-prefix 
+  ;; Add format code to text value if NOT empty
+  (setq txt1-value 
     (cond
       ((not txt1-empty-p) (strcat underline (cadr txt1-attr)))
       (t (cadr txt1-attr))))
   
-  ;; Add format code to prefix of TXT2 if NOT empty
-  (setq txt2-prefix
+  ;; Add format code to text value if NOT empty
+  (setq txt2-value
     (cond
       ((not txt2-empty-p) (strcat overline (cadr txt2-attr)))
       (t (cadr txt2-attr))))
@@ -6317,54 +6292,52 @@ ImportLayerSettings=No
       ((or (not txt1-empty-p) (not txt2-empty-p)) "%%u  ")
       (t "")))
   
-  ;; Build result with formatted prefixes (preserve structure)
+  ;; Build result with formatted values (2-element structure)
   (setq result lattribs)
-  (setq result (subst (list "NOTETXT1" txt1-prefix (caddr txt1-attr) (cadddr txt1-attr)) 
+  (setq result (subst (list "NOTETXT1" txt1-value) 
                       txt1-attr result))
-  (setq result (subst (list "NOTETXT2" txt2-prefix (caddr txt2-attr) (cadddr txt2-attr)) 
+  (setq result (subst (list "NOTETXT2" txt2-value) 
                       txt2-attr result))
-  (setq result (subst (list "NOTEGAP" gap-value "" "") 
+  (setq result (subst (list "NOTEGAP" gap-value) 
                       (assoc "NOTEGAP" result) result))
   
   result
 )
 
-;;; Remove underline/overline format codes from structured lattribs
+;;; Remove underline/overline format codes from 2-element lattribs
 ;;;
-;;; BUSINESS LOGIC: Strip %%u, %%o, \L, \O codes from prefix + clear NOTEGAP
+;;; BUSINESS LOGIC: Strip %%u, %%o, \L, \O codes from text values + clear NOTEGAP
 ;;;
-;;; INPUT: lattribs (structured with format codes in prefix)
-;;;   '(("NOTETXT1" "%%uprefix" "auto" "postfix") ("NOTETXT2" "%%op" "a" "p") ...)
+;;; INPUT: lattribs (2-element with format codes)
+;;;   '(("NOTETXT1" "%%utext value") ("NOTETXT2" "%%otext value") ...)
 ;;;
-;;; OUTPUT: lattribs (structured, clean)
-;;;   '(("NOTETXT1" "prefix" "auto" "postfix") ("NOTETXT2" "p" "a" "p") ...)
+;;; OUTPUT: lattribs (2-element, clean)
+;;;   '(("NOTETXT1" "text value") ("NOTETXT2" "text value") ...)
 ;;;
-;;; Used by: dwg-to-lattribs, dlg-to-lattribs
+;;; Used by: dwg-to-lattribs (already strips during read)
 ;;;
-(defun hcnm-ldrblk-underover-remove (lattribs / result attr tag prefix auto postfix clean-prefix)
+(defun hcnm-ldrblk-underover-remove (lattribs / result attr tag value clean-value)
   (setq result nil)
   (foreach attr lattribs
     (setq tag (car attr))
     
     (cond
-      ;; Handle NOTETXT1 and NOTETXT2 (4-element lists with prefix/auto/postfix)
+      ;; Handle NOTETXT1 and NOTETXT2 (2-element lists with text value)
       ((or (= tag "NOTETXT1") (= tag "NOTETXT2"))
-       (setq prefix (cadr attr)
-             auto (caddr attr)
-             postfix (cadddr attr)
-             clean-prefix prefix)
+       (setq value (cadr attr)
+             clean-value value)
        
        ;; Strip mtext format codes (\L, \O)
        (cond
-         ((wcmatch clean-prefix "\\L*") (setq clean-prefix (substr clean-prefix 3)))
-         ((wcmatch clean-prefix "\\O*") (setq clean-prefix (substr clean-prefix 3))))
+         ((wcmatch clean-value "\\L*") (setq clean-value (substr clean-value 3)))
+         ((wcmatch clean-value "\\O*") (setq clean-value (substr clean-value 3))))
        
        ;; Strip dtext format codes (%%u, %%o)
        (cond
-         ((wcmatch clean-prefix "%%u*") (setq clean-prefix (substr clean-prefix 4)))
-         ((wcmatch clean-prefix "%%o*") (setq clean-prefix (substr clean-prefix 4))))
+         ((wcmatch clean-value "%%u*") (setq clean-value (substr clean-value 4)))
+         ((wcmatch clean-value "%%o*") (setq clean-value (substr clean-value 4))))
        
-       (setq result (append result (list (list tag clean-prefix auto postfix)))))
+       (setq result (append result (list (list tag clean-value)))))
       
       ;; Handle NOTEGAP (clear it)
       ((= tag "NOTEGAP")
@@ -7913,23 +7886,21 @@ ImportLayerSettings=No
 )
 
 ;; Read bubble data from attributes and XDATA
-;; Returns association list with prefix/auto/postfix for each field
-;; Format: (("NOTETXT0" prefix auto postfix) ("NOTETXT1" prefix auto postfix) ...)
-;; For fields without prefix/auto/postfix (NOTENUM, NOTEPHASE), returns (tag value "" "")
+;; Returns association list in 2-element format: (("TAG" "full-text") ...)
+;; XDATA stores auto-text values separately for search/replace during updates
+;; Format: (("NOTETXT0" "text") ("NOTETXT1" "text") ("NOTENUM" "123") ...)
 (defun hcnm-ldrblk-dwg-to-lattribs (ename-bubble field-code-p / 
                                 lattribs xdata-alist xdata-raw appname
                                 ename-next etype elist obj-next
-                                tag value field-code
-                                auto-text parts xdata-pairs i)
+                                tag value field-code)
   (setq appname "HCNM-BUBBLE"
         lattribs '()
         xdata-alist '())
   
-  ;; Step 1: Read XDATA for auto text values and build association list
-  ;; Step 1: Read XDATA for auto-text values
+  ;; Step 1: Read XDATA for auto-text values (stored separately from display text)
   (setq xdata-alist (hcnm-xdata-read ename-bubble))
   
-  ;; Step 2: Read attributes and split using XDATA
+  ;; Step 2: Read attributes - just store full text value
   (setq ename-next ename-bubble)
   (while (and
            (setq ename-next (entnext ename-next))
@@ -7945,24 +7916,24 @@ ImportLayerSettings=No
                       field-code)
                      (t (vla-get-textstring obj-next))))
        
-       ;; Get auto text from XDATA if available
-       (setq auto-text (cdr (assoc tag xdata-alist)))
-       
-       ;; Split attribute using XDATA auto text
-       (setq parts (hcnm-split-attribute-on-xdata value auto-text))
-       
-       ;; ARCHITECTURE: lattribs must be clean - strip format codes and clear NOTEGAP
-       ;; Strip underover format codes from prefix if present
+       ;; ARCHITECTURE: lattribs is clean - strip format codes
        (cond
          ((member tag '("NOTETXT1" "NOTETXT2"))
-          (setq parts (hcnm-ldrblk-strip-format-codes-from-parts parts)))
+          ;; Strip underover format codes if present
+          (cond
+            ((wcmatch value "\\L*") (setq value (substr value 3)))
+            ((wcmatch value "\\O*") (setq value (substr value 3)))
+            ((wcmatch value "%%u*") (setq value (substr value 4)))
+            ((wcmatch value "%%o*") (setq value (substr value 4))))
+         )
          ((= tag "NOTEGAP")
-          ;; NOTEGAP should always be empty in lattribs
-          (setq parts '("" "" ""))))
+          ;; NOTEGAP should always be empty in lattribs (calculated on write)
+          (setq value ""))
+       )
        
-       ;; Add to attribute list: (tag prefix auto postfix)
+       ;; Add to lattribs: 2-element (tag text)
        (setq lattribs
-         (cons (cons tag parts) lattribs))
+         (cons (list tag (if value value "")) lattribs))
       )
     )
   )
@@ -8331,7 +8302,7 @@ ImportLayerSettings=No
 ;; Preserves existing viewport transform data when updating auto-text.
 (defun hcnm-ldrblk-lattribs-to-dwg (ename-bubble lattribs / 
                           appname xdata-list ename-next etype elist
-                          atag obj-next lattribs-formatted lattribs-cat concat-value)
+                          atag obj-next lattribs-formatted text-value)
   (setq appname "HCNM-BUBBLE"
         xdata-list '())
   
@@ -8340,33 +8311,16 @@ ImportLayerSettings=No
     ((not (tblsearch "APPID" appname))
      (regapp appname)))
   
-  ;; Step 1: Build XDATA list for auto text values
+  ;; Step 1: Build XDATA list for auto-text values
+  ;; XDATA stores verbatim auto-text for search/replace during updates
+  ;; Managed by model layer functions (set-auto, set-free)
   ;; Format: ((1000 "TAG1") (1000 "VALUE1") (1000 "TAG2") (1000 "VALUE2") ...)
-  (foreach attr-data lattribs
-    (setq atag (car attr-data)
-          auto (caddr attr-data))  ; auto is 3rd element in structured lattribs
-    (cond
-      ((and auto (/= auto ""))
-       ;; Add tag-value pair to XDATA
-       (setq xdata-list (append xdata-list 
-                                (list (cons 1000 atag) 
-                                      (cons 1000 auto))))))
-  )
+  ;; NOTE: This function writes lattribs only. XDATA is managed separately.
   
-  ;; Step 2: Save XDATA to bubble
-  (cond
-    (xdata-list
-     (entmod (append 
-               (entget ename-bubble '("*"))
-               (list (cons -3 (list (cons appname xdata-list))))))))
-  
-  ;; Step 3: Add format codes to prefix (beautifully-architected underover-add!)
+  ;; Step 2: Add format codes to text lines (beautifully-architected underover-add!)
   (setq lattribs-formatted (hcnm-ldrblk-underover-add lattribs))
   
-  ;; Step 4: Concatenate parts for storage
-  (setq lattribs-cat (hcnm-ldrblk-lattribs-concat lattribs-formatted))
-  
-  ;; Step 5: Write concatenated values to drawing attributes
+  ;; Step 3: Write formatted values to drawing attributes
   (setq ename-next ename-bubble)
   (while (and
            (setq ename-next (entnext ename-next))
@@ -8377,10 +8331,10 @@ ImportLayerSettings=No
       ((and
          (= etype "ATTRIB")
          (setq atag (cdr (assoc 2 elist)))
-         (setq concat-value (cadr (assoc atag lattribs-cat))))
-       ;; Write concatenated value to attribute
+         (setq text-value (cadr (assoc atag lattribs-formatted))))
+       ;; Write text value to attribute
        (setq obj-next (vlax-ename->vla-object ename-next))
-       (vla-put-textstring obj-next concat-value)
+       (vla-put-textstring obj-next text-value)
       )
     )
   )
@@ -8666,12 +8620,11 @@ ImportLayerSettings=No
       (cond 
         ((/= lattribs lattribs-old)
          ;; UPDATE BLOCK INSERTION
-         ;; Save XDATA before adjust-formats flattens the auto field
+         ;; Save XDATA before formatting (stores clean auto-text for search)
          (hcnm-ldrblk-xdata-save ename-bubble lattribs)
-         ;; Concatenate and format attributes for display
+         ;; Format attributes for display (adds underline/overline)
          (setq lattribs (hcnm-ldrblk-underover-add lattribs))
-         (setq lattribs (hcnm-ldrblk-lattribs-concat lattribs))
-         ;; Save formatted attributes
+         ;; Save formatted attributes (2-element lattribs, no concat needed)
          (hcnm-set-attributes ename-bubble lattribs)
         )
       )
@@ -8827,7 +8780,7 @@ ImportLayerSettings=No
   (haws-core-restore)
   (princ)
 )
-(defun hcnm-ldrblk-eb-get-text (ename-bubble done-code tag / auto-string auto-type attr prefix postfix)
+(defun hcnm-ldrblk-eb-get-text (ename-bubble done-code tag / auto-string auto-type attr)
   (setq
     auto-type
      (cadr (assoc done-code (hcnm-edit-bubble-done-codes)))
@@ -8835,19 +8788,17 @@ ImportLayerSettings=No
   (cond
     ;; Handle ClearAuto button (code 28)
     ((= done-code 28)
-     ;; Get current attribute (tag prefix auto postfix), clear the auto part
-     (setq attr (assoc tag hcnm-ldrblk-eb-lattribs)
-           prefix (cadr attr)
-           postfix (cadddr attr))
-     ;; Save with empty auto field
-     (setq hcnm-ldrblk-eb-lattribs
-       (hcnm-ldrblk-underover
-         (hcnm-ldrblk-lattribs-put-auto tag "" hcnm-ldrblk-eb-lattribs)
-       )
-     )
+     ;; Clear auto-text: remove XDATA and keep only user text
+     ;; NOTE: In 2-element architecture, auto-text is stored in XDATA
+     ;; Dialog shows full concatenated text, XDATA stores search needles
+     ;; Clearing auto means: keep display text as-is, remove XDATA
+     (setq attr (assoc tag hcnm-ldrblk-eb-lattribs))
+     ;; For now, just keep the text as-is (XDATA will be cleared on save)
+     ;; TODO: Implement XDATA clearing in model layer
     )
     ;; Handle auto-text generation buttons (only if auto-type is valid)
     ((and auto-type (not (= auto-type "")))
+     ;; Generate auto-text and update lattribs
      ;; bubble-data-update: this is called from command line and from edit box to get string as requested by user.
      (setq hcnm-ldrblk-eb-lattribs
        (hcnm-ldrblk-underover
@@ -8954,30 +8905,23 @@ ImportLayerSettings=No
    )
 )
 
-;; ACTION_TILE callback: Update prefix field in lattribs when user edits it
-;; NOTE: Dialog shows concatenated strings, so user edits go to prefix field
-;; ACTION_TILE callback: Update prefix field in lattribs when user types text
-;; User typing in prefix field replaces the entire concatenated value (by design)
+;; ACTION_TILE callback: Update text value in lattribs when user types (2-element)
+;; User typing replaces the entire text value
 (defun hcnm-ldrblk-eb-update-prefix (tag new-value / attr)
   (setq attr (assoc tag hcnm-ldrblk-eb-lattribs))
   (setq hcnm-ldrblk-eb-lattribs
     (subst
-      (list tag new-value)  ; Replace with new concatenated value (2-element lattribs-cat)
+      (list tag new-value)  ; Replace with new text value (2-element lattribs)
       attr
       hcnm-ldrblk-eb-lattribs)
   )
 )
 
-;; ACTION_TILE callback: Update postfix field in lattribs when user edits it
-;; NOTE: Postfix only visible/editable when auto-text exists
+;;; DEPRECATED - No postfix field in 2-element architecture
+;;; Postfix was only needed in 4-element (prefix auto postfix) structure
 (defun hcnm-ldrblk-eb-update-postfix (tag new-postfix / attr)
-  (setq attr (assoc tag hcnm-ldrblk-eb-lattribs))
-  (setq hcnm-ldrblk-eb-lattribs
-    (subst
-      (list tag (cadr attr) (caddr attr) new-postfix)
-      attr
-      hcnm-ldrblk-eb-lattribs)
-  )
+  (alert (princ "\nDEPRECATED: eb-update-postfix called - no postfix in 2-element lattribs"))
+  ;; Do nothing - no postfix field exists
 )
 
 (defun hcnm-ldrblk-eb-show
@@ -9008,30 +8952,21 @@ ImportLayerSettings=No
   (setq lst-dlg-attributes (hcnm-ldrblk-lattribs-to-dlg hcnm-ldrblk-eb-lattribs))
   (princ (strcat "\n=== DEBUG: lattribs-to-dlg returned " (itoa (length lst-dlg-attributes)) " items"))
   
-  ;; Note attribute edit boxes - use formatted display strings
+  ;; Note attribute edit boxes - use formatted display strings (2-element lattribs)
   (princ "\n=== DEBUG: Setting dialog tiles...")
   (foreach
      attribute lst-dlg-attributes
     (setq tag (car attribute)
-          prefix (cadr attribute)
-          auto (caddr attribute)
-          postfix (cadddr attribute))
+          value (cadr attribute))  ; Just one text value in 2-element architecture
     
     (princ (strcat "\n=== DEBUG: Setting tiles for " tag))
     
-    ;; Set prefix field (contains concatenated formatted string from lattribs-to-dlg)
-    (set_tile (strcat "Prefix" tag) prefix)
+    ;; Set text field (contains formatted string from lattribs-to-dlg)
+    (set_tile (strcat "Prefix" tag) value)  ; DCL field still named "Prefix" for now
     (action_tile (strcat "Prefix" tag) (strcat "(hcnm-ldrblk-eb-update-prefix \"" tag "\" $value)"))
     
-    ;; Set auto field (editing is disabled, for auto text only)
-    ;; All auto text editor buttons update lattribs directly.
-    (set_tile (strcat "Edit" tag) auto)
-    
-    ;; Set postfix field and enable/disable based on auto field
-    ;; Postfix only has meaning when there's auto-text to come after
-    (set_tile (strcat "Postfix" tag) postfix)
-    (mode_tile (strcat "Postfix" tag) (if (and auto (/= auto "")) 0 1))  ; 0=enable, 1=disable
-    (action_tile (strcat "Postfix" tag) (strcat "(hcnm-ldrblk-eb-update-postfix \"" tag "\" $value)"))
+    ;; TODO: In new architecture, we'll have single text field + delimiter insertion
+    ;; For now, keep old DCL layout but only use prefix field
   )
   ;;Radio buttons
   (set_tile
