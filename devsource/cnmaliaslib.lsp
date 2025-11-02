@@ -1,9 +1,7 @@
 ﻿(setq
   *hcnm-activation-preference*
    (atoi
-     (c:hcnm-config-getvar
-       "CNMAliasActivation"
-     )
+     (haws-config-getvar "HAWS" "CNMAliasActivation" 4 nil nil)
    )
 )
  
@@ -132,7 +130,7 @@
   (setq
     activation-preference
      (atoi
-       (c:hcnm-config-getvar "CNMAliasActivation")
+       (haws-config-getvar "HAWS" "CNMAliasActivation" 4 nil nil)
      )
   )
   (foreach
@@ -189,9 +187,13 @@
           )
          
        )
-       (c:hcnm-config-setvar
+       (haws-config-setvar
+         "HAWS"
          "CNMAliasActivation"
          (itoa activation-preference)
+         4
+         nil
+         nil
        )
       )
     )

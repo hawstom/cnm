@@ -1,4 +1,4 @@
-﻿
+﻿(princ "\nConstruction Notes Manager menu utilities ... ")
 ;;; ============================================================================
 ;;; HOW TO ADD A NEW CNM/HAWSEDC COMMAND
 ;;; ============================================================================
@@ -236,14 +236,10 @@
 (haws-autoload "misc"     '("haws-ffa" "haws-pgpedit" "haws-user"))
 (haws-autoload "loadandrun"       '("haws-LoadAndRun"))
 ;-------------MODIFY THE ABOVE--------------------------------------
-;;; Load legacy library
-;; LISPUTIL.LSP has library functions for legacy routines some legacy users have.
-(if (not haws-errdef) (load "lisputil"))
-;;; Load Haws and CNM libraries
-(setq c:hcnm-cnm nil)
+;#region Required libraries
+;;; edclib is the common core library for HawsEDC and CNM.
+;;; It must be loaded after CNM so CNM config is available.
 (load "edclib")
-(if (not c:hcnm-cnm) (load "cnm"))
-(if (not lm:isannotative) (load "lee-mac"))
 
 ;;;Load aliases
 ;;;CNMALIAS.LSP has short names for all the commands.
@@ -253,13 +249,19 @@
   )
   (t (princ "\nSkipping cnmalias.lsp command aliases.  Already loaded."))
 )
+;#endregion
+;#region Very old legacy
+;;; Load legacy library
+;; LISPUTIL.LSP has library functions for legacy routines some legacy users have.
+(if (not haws-errdef) (load "lisputil"))
+
 ;;;The following line loads user.lsp if found.
 (if (setq temp(findfile "user.lsp"))(load temp))
 ;;;You can put personally preferred routines in user.lsp.
 ;;;It is suggested that you keep a user.lsp in a reserved user support files folder
 ;;;added to AutoCAD's Support Files Search Path.
 ;;;Keep user.lsp out of the program folder or it may be deleted.
-
+;@endregion
 ;;; Place the CNM pulldown to the left of the last pulldown already loaded
 ;;;     Created 2/21/97 by Dominic Panholzer
 
@@ -281,5 +283,5 @@
 )
 
 (if (not(c:haws-icad-p))(hcnm-placecnmmenu)) ;Do it if not in icad
-(princ "\nConstruction Notes Manager menu utilities loaded.")
+(princ "loaded.")
 (princ)
