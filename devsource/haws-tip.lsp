@@ -2,49 +2,123 @@
 ;;; See devtools/docs/standards_03_names_and_symbols.md for naming conventions
 ;;; See devtools/docs/standards_05_architecture.md S05.6 for tip system architecture
 
+(princ "\nHaws-tip functions ... ")
+
+;;; ============================================================================
+;;; HAWS-CONFIG REGISTRATION
+;;; ============================================================================
+;; Register TIP app with haws-config
+;; Storage: Windows Registry (scope 4 = User)
+;; Format: Single assoc list for all tip states
+;;         '((tip-id . "timestamp-or-0") ...)
+;;         where "0" = hidden forever, timestamp = snoozed until date
+(haws-config-register-app "TIP"
+  '(("SnoozeData" "" 4))   ; All tip snooze/hide data in one variable
+)
+
+;;; ============================================================================
+;;; INTERNAL HELPER FUNCTIONS
+;;; ============================================================================
+
+;; Get all snooze data as assoc list
+;; Returns: '((1002 . "12345.67890") (1005 . "0") ...) or nil
+(defun haws-tip-get-all-snooze (/ data-str)
+  (setq data-str (haws-config-getvar "TIP" "SnoozeData" nil nil))
+  (if (and data-str (/= data-str ""))
+    (read data-str)
+    nil
+  )
+)
+
+;; Save all snooze data from assoc list
+;; snooze-alist: '((tip-id . "value") ...)
+(defun haws-tip-set-all-snooze (snooze-alist)
+  (haws-config-setvar "TIP" "SnoozeData" 
+    (if snooze-alist
+      (vl-prin1-to-string snooze-alist)
+      ""
+    )
+    nil nil
+  )
+  snooze-alist
+)
+
+;;; ============================================================================
+;;; PUBLIC API FUNCTIONS
+;;; ============================================================================
+
 ;; Get snooze until value for a tip ID
 ;; tip-id: Can be integer or string
 ;; Returns nil if not snoozed, 0 if snoozed forever, or snooze-until (real number)
-(princ "\nHaws-tip functions ... ")
-(defun haws-tip-get-snooze (tip-id / key-path snooze-str tip-id-str)
-  (setq tip-id-str (if (numberp tip-id) (itoa tip-id) (vl-princ-to-string tip-id)))
-  (setq key-path (list "HawsEDC" (strcat "Tip" tip-id-str "Snooze")))
-  (setq snooze-str (haws-readcfg key-path))
-  (cond
-    ((or (not snooze-str) (= snooze-str ""))
-      nil  ; Not snoozed
+(defun haws-tip-get-snooze (tip-id / tip-id-num snooze-alist pair snooze-str)
+  (setq tip-id-num (if (numberp tip-id) tip-id (atoi (vl-princ-to-string tip-id))))
+  (setq snooze-alist (haws-tip-get-all-snooze))
+  (setq pair (assoc tip-id-num snooze-alist))
+  (if pair
+    (progn
+      (setq snooze-str (cdr pair))
+      (cond
+        ((or (not snooze-str) (= snooze-str ""))
+          nil  ; Not snoozed
+        )
+        ((= snooze-str "0")
+          0  ; Snoozed forever
+        )
+        (t
+          (atof snooze-str)  ; Return snooze-until as real number
+        )
+      )
     )
-    ((= snooze-str "0")
-      0  ; Snoozed forever
-    )
-    (t
-      (atof snooze-str)  ; Return snooze-until as real number
-    )
+    nil  ; Not in list = not snoozed
   )
 )
 
 ;; Set snooze for a tip ID
 ;; tip-id: Can be integer or string
 ;; snooze-days: number of days to snooze, or 0 for forever
-(defun haws-tip-set-snooze (tip-id snooze-days / key-path snooze-until tip-id-str)
-  (setq tip-id-str (if (numberp tip-id) (itoa tip-id) (vl-princ-to-string tip-id)))
-  (setq key-path (list "HawsEDC" (strcat "Tip" tip-id-str "Snooze")))
-  (if (= snooze-days 0)
-    (haws-writecfg key-path "0")  ; Forever
-    (progn
-      (setq snooze-until (+ (getvar "DATE") snooze-days))
-      (haws-writecfg key-path (rtos snooze-until 2 8))
+(defun haws-tip-set-snooze (tip-id snooze-days / tip-id-num snooze-alist snooze-until snooze-str pair)
+  (setq tip-id-num (if (numberp tip-id) tip-id (atoi (vl-princ-to-string tip-id))))
+  (setq snooze-alist (haws-tip-get-all-snooze))
+  
+  ;; Calculate snooze value
+  (setq snooze-str
+    (if (= snooze-days 0)
+      "0"  ; Forever
+      (progn
+        (setq snooze-until (+ (getvar "DATE") snooze-days))
+        (rtos snooze-until 2 8)
+      )
     )
   )
+  
+  ;; Update or add to assoc list
+  (setq pair (assoc tip-id-num snooze-alist))
+  (if pair
+    ;; Update existing
+    (setq snooze-alist (subst (cons tip-id-num snooze-str) pair snooze-alist))
+    ;; Add new
+    (setq snooze-alist (cons (cons tip-id-num snooze-str) snooze-alist))
+  )
+  
+  ;; Save and return
+  (haws-tip-set-all-snooze snooze-alist)
   snooze-days
 )
 
 ;; Clear snooze for a tip ID (resurrect it)
 ;; tip-id: Can be integer or string
-(defun haws-tip-clear-snooze (tip-id / key-path tip-id-str)
-  (setq tip-id-str (if (numberp tip-id) (itoa tip-id) (vl-princ-to-string tip-id)))
-  (setq key-path (list "HawsEDC" (strcat "Tip" tip-id-str "Snooze")))
-  (haws-writecfg key-path "")  ; Empty string means not snoozed
+(defun haws-tip-clear-snooze (tip-id / tip-id-num snooze-alist pair)
+  (setq tip-id-num (if (numberp tip-id) tip-id (atoi (vl-princ-to-string tip-id))))
+  (setq snooze-alist (haws-tip-get-all-snooze))
+  
+  ;; Remove from assoc list
+  (setq pair (assoc tip-id-num snooze-alist))
+  (if pair
+    (progn
+      (setq snooze-alist (vl-remove pair snooze-alist))
+      (haws-tip-set-all-snooze snooze-alist)
+    )
+  )
   nil
 )
 
@@ -66,25 +140,39 @@
 )
 
 ;; Legacy functions for backward compatibility (deprecated)
-(defun haws-tip-hide-list (/ hide-list-str hide-list)
-  (setq hide-list-str (haws-readcfg (list "HawsEDC" "TipsHidden")))
-  (cond
-    ((and
-        hide-list-str  ; key exists from getcfg (not nil)
-        (/= hide-list-str "") ; value is not empty
-      )
-      (setq hide-list (read hide-list-str))
+;; These existed to support a separate "hidden" list, but now
+;; hidden tips are just snooze = 0 in the main SnoozeData
+(defun haws-tip-hide-list (/ snooze-alist result)
+  ;; Return list of tip IDs that are hidden forever (snooze = "0")
+  (setq snooze-alist (haws-tip-get-all-snooze))
+  (setq result '())
+  (foreach pair snooze-alist
+    (if (equal (cdr pair) "0")
+      (setq result (cons (car pair) result))
     )
   )
-  hide-list  ; returns nil if not set, which is equivalent to '()
+  result
 )
 
-(defun haws-tip-save-hide-list (lst)
-  (haws-writecfg (list "HawsEDC" "TipsHidden") (vl-prin1-to-string lst))
+(defun haws-tip-save-hide-list (lst / snooze-alist pair)
+  ;; Convert list of tip IDs to snooze = "0" entries
+  ;; First, remove all existing "0" entries
+  (setq snooze-alist (haws-tip-get-all-snooze))
+  (foreach pair snooze-alist
+    (if (equal (cdr pair) "0")
+      (setq snooze-alist (vl-remove pair snooze-alist))
+    )
+  )
+  ;; Then add new "0" entries for provided list
+  (foreach tip-id lst
+    (setq snooze-alist (cons (cons tip-id "0") snooze-alist))
+  )
+  (haws-tip-set-all-snooze snooze-alist)
   lst
 )
 ;; Show a tip if not snoozed. TIP-ID is a unique integer or string, MSG is the tip string.
-(defun haws-tip-show (tip-id msg / is-snoozed) 
+;; This is the main public API function
+(defun haws-tip (tip-id msg / is-snoozed) 
   ;; Show tip if not snoozed
   (setq is-snoozed (haws-tip-is-snoozed tip-id))
   (if (not is-snoozed)
@@ -92,6 +180,11 @@
       (haws-tip-dialog tip-id msg)
     )
   )
+)
+
+;; Backward compatibility alias
+(defun haws-tip-show (tip-id msg)
+  (haws-tip tip-id msg)
 )
 
 ;; Show tip dialog with snooze options using DCL
@@ -102,7 +195,7 @@
     (progn
       ;; Initialize state
       (setq opt-in-val "1")
-      (setq snooze-choice "4")  ; Default to "No snooze" (index 4)
+      (setq snooze-choice "5")  ; Default to "No snooze" (index 5)
       (setq done-code 2)  ; 2 = show dialog initially
       
       ;; Dialog loop - keeps showing until done-code = -1
@@ -122,8 +215,8 @@
                 ;; Snooze dropdown action  
                 (action_tile "snooze_dropdown" "(setq snooze-choice $value)")
                 
-                ;; Set dropdown value - DCL default is already "4" so only set if different
-                (if (/= snooze-choice "4")
+                ;; Set dropdown value - DCL default is already "5" so only set if different
+                (if (/= snooze-choice "5")
                   (set_tile "snooze_dropdown" snooze-choice)
                 )
                 
@@ -154,7 +247,7 @@
               )
             )
             ;; Reset dialog state before showing again
-            (setq snooze-choice "4")  ; Reset to "No snooze"
+            (setq snooze-choice "5")  ; Reset to "No snooze"
             (setq opt-in-val "1")     ; Reset to checked
             (setq done-code 2)  ; Return to dialog
           )
@@ -219,18 +312,10 @@
 )
 
 ;; Resurrect all tips by clearing all snooze settings
-;; This function scans for Tip*Snooze keys and clears them
-(defun haws-tip-resurrect-all (/ tip-id)
-  ;; Clear snooze for tip IDs 1-999 (reasonable range)
-  (setq tip-id 1)
-  (while (<= tip-id 9999)
-    (if (haws-tip-get-snooze tip-id)
-      (haws-tip-clear-snooze tip-id)
-    )
-    (setq tip-id (1+ tip-id))
-  )
-  ;; Also clear legacy TipsHidden list for complete reset
-  (haws-writecfg (list "HawsEDC" "TipsHidden") "")
+;; NEW: Simply clear the single storage variable (MUCH more efficient!)
+(defun haws-tip-resurrect-all (/)
+  ;; Clear all snooze data (includes both timed snoozes and hidden tips)
+  (haws-config-setvar "TIP" "SnoozeData" "" nil nil)
   (princ)
 ) 
 (princ "loaded.")

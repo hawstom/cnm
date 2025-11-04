@@ -97,27 +97,33 @@ CNM comes with insertion and editing tools for bubble notes.
 - **Current issues:** Some regressions preventing full functionality, addressing bugs one-by-one
 
 ###### 1.1.3.3.2.1. Key Technical Challenges (BEING ADDRESSED)
-1. **Paper Space Complexity**: Bubbles in paper space viewports require coordinate transformation from paper space DCS (represented by paper space object OCS) to model space WCS.
-   - **Implementation:** VPTRANS XDATA stores 3-point correspondence for affine transformation
-   - **Status:** Implemented, testing in progress
-   
-2. **Free-form User Edits**: Users edit bubble note attributes directly in AutoCAD, bypassing CNM dialogs. Robust parsing separates auto-generated text from user edits.
-   - **Implementation:** XDATA stores verbatim auto-text as search needles for search-and-replace updates
-   - **Status:** Implemented, handling edge cases
-   
-3. **Data Persistence**: Auto-generated text is stored separately (in XDATA) from user-editable prefix/postfix text
-   - **Implementation:** Search-and-replace approach preserves user text while updating auto-text
-   - **Status:** Implemented, testing various user edit scenarios
-- Users can reasonably expect:
-        - that any text they add remains intact while auto text updates correctly.
-        - that if they add text around auto text, it remains intact while auto text updates correctly.
-        - that if they change CNM Project settings that affect auto text format, the next update reflects those changes as long as the auto text itself remains uncorrupted and thus identical to what we store for our search and replace on update.
-        - that if they completely delete (or fat-finger-corrupt) auto text or change its format (eg. adding prefixes/suffixes), it does not get acted on or restored at the next update.
-        - that they can't have multiple auto text fields with identical values in the same bubble note line and have them all update correctly.
-2. **Data Persistence**: Auto-generated text must be stored separately (in XDATA) from user-editable prefix/postfix text
-We provide users free-form editing capabilities, so we must store auto-generated text in a way that allows us to reliably identify and update it without overwriting user edits. This is achieved by storing verbatim auto text in bubble note XDATA and doing search-and-replace in the complete attribute text on updates.
 
-###### 1.1.3.3.2.1.1. Example: Free-form Edit Scenario
+**1. Paper Space Complexity**
+
+Bubbles in paper space viewports require coordinate transformation from paper space DCS (represented by paper space object OCS) to model space WCS.
+
+- **Implementation:** VPTRANS XDATA stores 3-point correspondence for affine transformation
+- **Status:** Implemented, testing in progress
+
+**2. Free-form User Edits**
+
+Users edit bubble note attributes directly in AutoCAD, bypassing CNM dialogs. Robust parsing separates auto-generated text from user edits. We provide free-form editing capabilities, so we must store auto-generated text in a way that allows us to reliably identify and update it without overwriting user edits.
+
+- **Implementation:** XDATA stores verbatim auto-text as search needles for search-and-replace updates
+- **Status:** Implemented, handling edge cases
+
+Users can reasonably expect:
+- Any text they add remains intact while auto text updates correctly
+- Text added around auto text remains intact while auto text updates correctly
+- If they change CNM Project settings that affect auto text format, the next update reflects those changes (as long as the auto text itself remains uncorrupted and identical to what we store)
+- If they completely delete (or fat-finger-corrupt) auto text or change its format (e.g., adding prefixes/suffixes), it does not get acted on or restored at the next update
+- They can't have multiple auto text fields with identical values in the same bubble note line and have them all update correctly (known limitation)
+
+**3. Legacy Migration**
+
+20+ years of customer drawings with evolving data formats. CNM is fortunate to have few migration challenges from the user perspective. From the programmer perspective, the code base is evolving. But we are free to improve the data formats used internally as long as we maintain compatibility with block attributes and their names as they exist in customer drawings.
+
+###### 1.1.3.3.2.2. Example: Free-form Edit Scenario
 
 **User places bubble with auto text:**
 - Attribute text: `"STA 10+25.50"`
@@ -135,7 +141,7 @@ We provide users free-form editing capabilities, so we must store auto-generated
 
 **Result:** User's prefix/postfix preserved, auto text updated ✅
 
-###### 1.1.3.3.2.1.2. CRITICAL ARCHITECTURAL DECISION (IMPLEMENTED)
+###### 1.1.3.3.2.3. Architecture Decision: Free-Form 2-Element (IMPLEMENTED)
 
 **PROBLEM:** Previous 4-element lattribs structure limited users to ONE auto-text per line.
 
@@ -154,7 +160,7 @@ We provide users free-form editing capabilities, so we must store auto-generated
 **Decision made:** 2025-11-01 - Pivoted to free-form 2-element architecture.
 **Status:** Implemented, testing in progress on feat-sunrise branch.
 
-###### 1.1.3.3.2.1.3. Free-Form 2-Element Architecture (NEW)
+###### 1.1.3.3.2.4. Free-Form 2-Element Architecture Implementation
 
 **Data Model:**
 - **lattribs:** `(("TAG" "full-text") ...)` - Single string per attribute
@@ -516,6 +522,13 @@ hcnm-*                    Top-level CNM functions
 - **Hyphen-separated**: `hcnm-bubbles-auto-alignment` (not underscore or colon)
 - **Explicit local variables**: Always declare all local variables in the `/ var1 var2` parameter list. Undeclared variables become global and cause subtle bugs (AutoLISP's dynamic scoping leak).
 - **No ad hoc globals**: Use `haws-config` system for persistent state. Document any global with `*asterisk-naming*` and explanation comment only if absolutely necessary.
+
+**Code Style:**
+- **Formatting**: Use AutoLISP Extension auto-formatter (VS Code command)
+- **No closing comments**: Don't add comments like `;end defun` or `;end cond`
+- **AI editing**: Match existing indentation exactly when making small changes
+- **Deep nesting (3+ levels)**: AI has known limitation with parentheses - ask human to verify after editing
+- **Always run `get_errors`** before claiming code is fixed
 
 ### 1.2.4. Documentation
 - **Function headers**: Explain purpose, parameters, return values
