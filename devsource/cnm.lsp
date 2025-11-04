@@ -5137,7 +5137,7 @@ tgh
                        )
   (princ "\nCNM version: ")
   (princ (haws-unified-version))
-  (haws-tip-show 1003 "\nIn some AutoCAD installations, CNM bubble insertion crashes the first time in each drawing session, possibly when it's the first command or the first block insertion. Please let us know if you can confirm a pattern.")
+  (haws-tip-show 1 "\nIn some AutoCAD installations, CNM bubble insertion crashes the first time in each drawing session, possibly when it's the first command or the first block insertion. Please let us know if you can confirm a pattern.")
   (haws-vsave '("attreq" "aunits" "clayer" "cmdecho"))
   (cond
     ((and (getvar "wipeoutframe") (/= (getvar "wipeoutframe") 2))
@@ -5894,20 +5894,73 @@ tgh
   )
 )
 
+;;; Smart search/replace for auto-text updates
+;;; Preserves user's manual text (prefix/postfix) while updating auto-generated portion
+;;; Used by both dialog path (eb-get-text) and reactor path (update-bubble-tag)
+;;;
+;;; PARAMETERS:
+;;;   current-text - Full text from attribute (may include format codes like %%u or %%o)
+;;;   old-auto-text - Previous auto-text value from XDATA (nil if first time)
+;;;   new-auto-text - New auto-text value to insert
+;;;   ename-bubble - Entity name (for XDATA reading if needed)
+;;;
+;;; RETURNS:
+;;;   New text with auto-text replaced, manual text preserved
+;;;
+;;; SEARCH PRIORITY:
+;;;   1. Delimiter ``` in clean text - REPLACE delimiter
+;;;   2. Old auto-text from XDATA in clean text - REPLACE old value
+;;;   3. Fallback - APPEND WITHOUT SPACE (user must use delimiter for control)
+;;;
+;;; SIDE EFFECTS: None (pure function)
+(defun hcnm-ldrblk-smart-replace-auto (current-text old-auto-text new-auto-text / clean-current-text pos new-text)
+  ;; Strip format codes from current text for clean searching
+  (setq clean-current-text current-text)
+  (cond
+    ((wcmatch clean-current-text "\\L*") (setq clean-current-text (substr clean-current-text 3)))
+    ((wcmatch clean-current-text "\\O*") (setq clean-current-text (substr clean-current-text 3))))
+  (cond
+    ((wcmatch clean-current-text "%%u*") (setq clean-current-text (substr clean-current-text 4)))
+    ((wcmatch clean-current-text "%%o*") (setq clean-current-text (substr clean-current-text 4))))
+  
+  ;; Search priority: 1) Delimiter, 2) Old XDATA value, 3) Append (no space)
+  (setq new-text
+    (cond
+      ;; Priority 1: If delimiter found, replace it
+      ((setq pos (vl-string-search "```" clean-current-text))
+       (strcat 
+         (substr clean-current-text 1 pos)
+         new-auto-text
+         (if (> (strlen clean-current-text) (+ pos 3))  ; Skip "```" (3 chars)
+           (substr clean-current-text (+ pos 4))        ; +4 to skip delimiter
+           "")))
+      ;; Priority 2: If old auto-text found in XDATA, replace it
+      ((and old-auto-text (setq pos (vl-string-search old-auto-text clean-current-text)))
+       (strcat 
+         (substr clean-current-text 1 pos)
+         new-auto-text
+         (if (> (strlen clean-current-text) (+ pos (strlen old-auto-text)))
+           (substr clean-current-text (+ pos (strlen old-auto-text) 1))
+           "")))
+      ;; Priority 3: Empty field - just use auto-text
+      ((= clean-current-text "") new-auto-text)
+      ;; Fallback: append WITHOUT space (user must add space or use delimiter)
+      (t (strcat clean-current-text new-auto-text))))
+  
+  new-text
+)
+
 ;;; Update auto-text value in lattribs (2-element architecture)
-;;; In 2-element architecture, this just replaces the full text value
-;;; XDATA storage is handled separately by model layer
-;;; NOTE: This is a transitional function - ultimately will be replaced by model layer
-(defun hcnm-ldrblk-lattribs-put-auto (tag auto-new lattribs / attr)
-  ;; In 2-element, just replace the text value with the auto-text
-  ;; (Prefix/postfix handling will come later via delimiter insertion)
+;;; SIMPLE REPLACEMENT - just sets the tag value
+;;; Smart search/replace is handled by CALLER (eb-get-text for dialog, update-bubble-tag for reactor)
+(defun hcnm-ldrblk-lattribs-put-auto (tag auto-new lattribs ename-bubble / attr)
+  ;; Simple replacement - caller handles search/replace logic
   (setq attr (assoc tag lattribs))
   (cond
     (attr
      (subst (list tag auto-new) attr lattribs))
     (t
-     (append lattribs (list (list tag auto-new))))
-  )
+     (append lattribs (list (list tag auto-new)))))
 )
 ;;; Ensure all bubble text attributes have proper chr(160) delimiter structure
 ;;;
@@ -6102,13 +6155,11 @@ tgh
 ;;; ARCHITECTURE: Core underover functions (operates on FULL lattribs list)
 ;;;
 ;;; DATA FLOW PATTERN:
-;;; - hcnm-ldrblk-underover: Sets NOTEGAP based on TXT1/TXT2 content (for internal use)
-;;; - hcnm-ldrblk-underover-add: Concatenates + adds format codes (for display: dwg/dlg)
-;;; - hcnm-ldrblk-underover-remove: Strips format codes + clears GAP (for reading: dwg/dlg)
+;;; - hcnm-ldrblk-underover-add: Adds format codes (%%u, %%o) and sets NOTEGAP (for display: dwg/dlg)
+;;; - hcnm-ldrblk-underover-remove: Strips format codes and clears NOTEGAP (for reading: dwg/dlg)
 ;;;
 ;;; Called by:
-;;; - underover: Used internally to set NOTEGAP after lattribs changes
-;;; - underover-add: Used by lattribs-to-dwg, lattribs-to-dlg for display
+;;; - underover-add: Used by lattribs-to-dwg, lattribs-to-dlg, and after auto-text generation
 ;;; - underover-remove: Used by dwg-to-lattribs, dlg-to-lattribs for reading
 ;;;
 ;;; CRITICAL: These functions MUST operate on the full lattribs list because
@@ -6204,8 +6255,12 @@ tgh
 (defun hcnm-ldrblk-underover-add (lattribs / bubblemtext underline overline
                                      txt1-attr txt2-attr 
                                      txt1-empty-p txt2-empty-p
-                                     txt1-value txt2-value
+                                     txt1-value txt2-value txt1-clean txt2-clean
                                      gap-value result)
+  ;; CRITICAL: Strip any existing format codes first to prevent proliferation
+  ;; This handles the case where lattribs already has format codes from a previous pass
+  (setq lattribs (hcnm-ldrblk-underover-remove lattribs))
+  
   ;; Determine format codes based on mtext vs dtext
   (setq bubblemtext (hcnm-ldrblk-get-mtext-string)
         underline (cond ((= bubblemtext "") "%%u") (t "\\L"))
@@ -6447,8 +6502,9 @@ tgh
 )
 
 ;#region Auto text/mtext
-(defun hcnm-ldrblk-auto-es (bubble-data tag auto-type obj-target / ename lattribs) 
+(defun hcnm-ldrblk-auto-es (bubble-data tag auto-type obj-target / ename lattribs ename-bubble) 
   (setq
+    ename-bubble (hcnm-ldrblk-bubble-data-get bubble-data "ename-bubble")
     lattribs (hcnm-ldrblk-bubble-data-get bubble-data "ATTRIBUTES")
     ename
     (cond
@@ -6467,6 +6523,7 @@ tgh
          (t "")
        )
        lattribs
+       ename-bubble
      )
     bubble-data (hcnm-ldrblk-bubble-data-set bubble-data "ATTRIBUTES" lattribs)
   )
@@ -6476,8 +6533,11 @@ tgh
 ;#region Auto quantity (LF/SF/SY)
 (defun hcnm-ldrblk-auto-qty (bubble-data tag auto-type qt-type factor obj-target / 
                               lattribs str-backslash input1 pspace-bubble-p
-                              ss-p string)
-  (setq lattribs (hcnm-ldrblk-bubble-data-get bubble-data "ATTRIBUTES"))
+                              ss-p string ename-bubble)
+  (setq 
+    ename-bubble (hcnm-ldrblk-bubble-data-get bubble-data "ename-bubble")
+    lattribs (hcnm-ldrblk-bubble-data-get bubble-data "ATTRIBUTES")
+  )
   (cond
     (obj-target
       (setq string "Programming error. See command line.")
@@ -6563,6 +6623,7 @@ tgh
       tag
       string
       lattribs
+      ename-bubble
     )
     bubble-data (hcnm-ldrblk-bubble-data-set bubble-data "ATTRIBUTES" lattribs)
   )
@@ -6789,6 +6850,7 @@ tgh
       tag
       string
       lattribs
+      ename-bubble
     )
     bubble-data (hcnm-ldrblk-bubble-data-set bubble-data "ATTRIBUTES" lattribs)
   )
@@ -6921,6 +6983,7 @@ tgh
       tag
       string
       lattribs
+      ename-bubble
     )
     bubble-data (hcnm-ldrblk-bubble-data-set bubble-data "ATTRIBUTES" lattribs)
   )
@@ -7227,6 +7290,7 @@ tgh
       tag
       string
       lattribs
+      ename-bubble
     )
     bubble-data (hcnm-ldrblk-bubble-data-set bubble-data "ATTRIBUTES" lattribs)
   )
@@ -7261,6 +7325,7 @@ tgh
       tag
       (hcnm-ldrblk-auto-apology auto-type)
       lattribs
+      ename-bubble
     )
     bubble-data (hcnm-ldrblk-bubble-data-set bubble-data "ATTRIBUTES" lattribs)
   )
@@ -7399,13 +7464,29 @@ tgh
 ;; This is necessary because you can't show a modal dialog from inside another modal dialog
 ;; Show paper space coordinate warning tip
 ;; Can be called from anywhere - shows tip immediately
-(defun hcnm-ldrblk-warn-pspace-coordinates (ename-bubble auto-type / )
+(defun hcnm-ldrblk-tip-explain-avport-selection (ename-bubble auto-type / )
   (cond
     ((and ename-bubble 
           (not (hcnm-ldrblk-is-on-model-tab ename-bubble))
           (hcnm-ldrblk-auto-type-is-coordinate-p auto-type))
      ;; Bubble is in paper space and auto-type is coordinate-based - show warning
-     (haws-tip-show 1001 ; Unique tip ID for paper space warning
+     (haws-tip-show 4 ; Unique tip ID for AVPORT selection explanation
+       "You must now tell CNM which viewport this bubble note belongs to. Every new bubble note with a coordinate-based auto-text needs this action when you choose to use the previous reference object.\n\nThis is a little faster than selecting the reference object again because you don't need to pay close attention.")
+    )
+  )
+)
+
+;; Queue a paper space coordinate warning tip to be shown after any modal dialogs close
+;; This is necessary because you can't show a modal dialog from inside another modal dialog
+;; Show paper space coordinate warning tip
+;; Can be called from anywhere - shows tip immediately
+(defun hcnm-ldrblk-tip-warn-pspace-no-react (ename-bubble auto-type / )
+  (cond
+    ((and ename-bubble 
+          (not (hcnm-ldrblk-is-on-model-tab ename-bubble))
+          (hcnm-ldrblk-auto-type-is-coordinate-p auto-type))
+     ;; Bubble is in paper space and auto-type is coordinate-based - show warning
+     (haws-tip-show 2 ; Unique tip ID for paper space warning
        "IMPORTANT: CNM doesn't adjust paper space bubble notes when viewports change.\n\nTo avoid causing chaos when viewports change, auto text for coordinates does not react to viewport view changes.\n\nYou must use the 'Change View' button in the edit dialog (or the future CNMCHGVPORT command) if you want to refresh the viewport association and world coordinates of selected bubble notes.")
     )
   )
@@ -7499,8 +7580,9 @@ tgh
     ;; Path 1: Super clearance - always prompt
     (has-super-clearance-p
      (princ "\n  >>> DECISION: Prompt for viewport (super clearance)")
-     (hcnm-ldrblk-warn-pspace-coordinates ename-bubble auto-type)
+     (hcnm-ldrblk-tip-explain-avport-selection ename-bubble auto-type)
      (hcnm-ldrblk-capture-viewport-transform ename-bubble (hcnm-ldrblk-get-target-vport))
+     (hcnm-ldrblk-tip-warn-pspace-no-react ename-bubble auto-type)
     )
     
     ;; Path 2: All gates open - prompt user
@@ -7510,8 +7592,9 @@ tgh
           avport-xdata-gateway-open-p
           avport-object-gateway-open-p)
      (princ "\n  >>> DECISION: Prompt for viewport (all gates open)")
-     (hcnm-ldrblk-warn-pspace-coordinates ename-bubble auto-type)
+     (hcnm-ldrblk-tip-explain-avport-selection ename-bubble auto-type)
      (hcnm-ldrblk-capture-viewport-transform ename-bubble (hcnm-ldrblk-get-target-vport))
+     (hcnm-ldrblk-tip-warn-pspace-no-react ename-bubble auto-type)
     )
     
     ;; Path 3: Only object gateway closed - use CVPORT without prompting
@@ -7536,7 +7619,7 @@ tgh
   (princ) ; Return nil with clean output (this is a side-effect procedure)
 )
 ;; Gets the target viewport from user. This would only be called because we needed it before we could determine it automatically or when user clicks the button to change association.
-;; NOTE: Warning should be shown BEFORE calling this function (via hcnm-ldrblk-warn-pspace-coordinates)
+;; NOTE: Warning should be shown BEFORE calling this function (via hcnm-ldrblk-tip-warn-pspace-no-react)
 ;; NOTE: This function does NOT restore space - caller must handle that after capturing transformation matrix
 (defun hcnm-ldrblk-get-target-vport ( / input pspace-before-p)
   ;; Check if we're in paper space before switching
@@ -8219,17 +8302,27 @@ tgh
 ;;
 ;; This function preserves existing viewport transform data when updating auto-text.
 (defun hcnm-ldrblk-xdata-save (ename-bubble lattribs / 
-                                 autotext-alist atag parts auto)
+                                 autotext-alist atag text-value tag-handles)
   ;; Build auto-text alist from attribute data
-  ;; Format: (("TAG1" . "value1") ("TAG2" . "value2") ...)
-  (setq autotext-alist '())
-  (foreach attr-data lattribs
-    (setq atag (car attr-data)
-          parts (cdr attr-data)
-          auto (cadr parts))  ; Get auto field from (prefix auto postfix)
+  ;; Format for handle-based: (("TAG1" ((handle1 . "auto1") (handle2 . "auto2"))) ...)
+  ;; Format for simple (fallback): (("TAG1" . "full-text-value") ...)
+  
+  ;; Check if we have handle associations from dialog (semi-global hcnm-ldrblk-eb-auto-handles)
+  (setq autotext-alist
     (cond
-      ((and auto (/= auto ""))
-       (setq autotext-alist (append autotext-alist (list (cons atag auto)))))))
+      ;; If handle associations exist, use them (from dialog path)
+      ((and (boundp 'hcnm-ldrblk-eb-auto-handles) hcnm-ldrblk-eb-auto-handles)
+       hcnm-ldrblk-eb-auto-handles)
+      ;; Otherwise fallback to full text value (from reactor path or old code)
+      (t
+       (setq autotext-alist '())
+       (foreach attr-data lattribs
+         (setq atag (car attr-data)
+               text-value (cadr attr-data))  ; Get text value from 2-element list
+         (cond
+           ((and text-value (/= text-value ""))
+            (setq autotext-alist (append autotext-alist (list (cons atag text-value)))))))
+       autotext-alist)))
   
   ;; Use service layer to update auto-text while preserving viewport transform
   (hcnm-xdata-set-autotext ename-bubble autotext-alist)
@@ -8305,19 +8398,14 @@ tgh
   )
   (cond
     ((> reactor-count 1)
-     ;; FATAL: Multiple HCNM-BUBBLE reactors found
-     (vlr-remove-all :vlr-object-reactor)
-     (alert (princ (strcat
-       "\n*** PROGRAMMING ERROR DETECTED ***\n\n"
-       "Found " (itoa reactor-count) " HCNM-BUBBLE reactors.\n"
-       "There should be exactly ONE reactor for all bubbles.\n\n"
-       "All reactors have been removed to prevent data corruption.\n"
-       "New reactors will be created as needed.\n\n"
-       "This can happen if the drawing was saved with development versions\n"
-       "of CNM that had reactor bugs. The cleanup is automatic.\n\n"
-       "GitHub: https://github.com/hawstom/cnm/issues"
-     )))
-     (princ (strcat "\n*** REACTOR CLEANUP: Removed " (itoa reactor-count) " duplicate reactors ***"))
+     ;; Multiple HCNM-BUBBLE reactors found - make extras transient (die at session end)
+     ;; NEVER use vlr-remove on persistent reactors - they become ghosts in the DWG!
+     (foreach reactor (cdr hcnm-reactors)  ; Keep first, release rest
+       (if (vlr-pers-p reactor)
+         (vlr-pers-release reactor)
+       )
+     )
+     (princ (strcat "\n*** REACTOR CLEANUP: Released " (itoa (1- reactor-count)) " duplicate reactors (will disappear next session) ***\n"))
      t  ; Return T to indicate cleanup occurred
     )
     (t nil)  ; Return NIL if no problems
@@ -8365,21 +8453,29 @@ tgh
         reactor-old     nil  ; Initialize to nil
   )
   
-  ;; Check for reactor proliferation FIRST - cleanup if needed
-  (hcnm-check-reactor-proliferation)
-  
-  ;; Get the single HCNM-BUBBLE reactor (if it exists after cleanup)
+  ;; Get the single HCNM-BUBBLE reactor (should be 0 or 1)
   (setq hcnm-reactors
     (vl-remove-if-not
       '(lambda (r)
          (and (listp (vlr-data r))
               (assoc key-app (vlr-data r)))
        )
-      (cdar(vlr-reactors :vlr-object-reactor))  ; Re-query after potential cleanup
+      (cdar(vlr-reactors :vlr-object-reactor))
     )
     reactor-count (length hcnm-reactors)
-    reactor-old (car hcnm-reactors)  ; Should be 0 or 1 after cleanup
+    reactor-old (car hcnm-reactors)
   )
+  
+  ;; FAIL LOUDLY if multiple reactors (should never happen after CNM load cleanup)
+  (if (> reactor-count 1)
+    (alert (princ (strcat
+      "\n*** PROGRAMMING ERROR ***\n\n"
+      "Found " (itoa reactor-count) " HCNM-BUBBLE reactors.\n"
+      "This should never happen!\n\n"
+      "Please report this to GitHub with steps to reproduce.\n"
+    )))
+  )
+  
   ;; Now handle reactor attachment/creation based on reactor-old
   (cond 
     (reactor-old
@@ -8535,7 +8631,7 @@ tgh
 )
 ;; Updates a specific tag in a bubble based on reactor notification
 ;; Called when either the leader moves or the reference object changes
-(defun hcnm-ldrblk-update-bubble-tag (handle-bubble tag auto-type handle-reference / ename-bubble ename-reference lattribs lattribs-old objref)
+(defun hcnm-ldrblk-update-bubble-tag (handle-bubble tag auto-type handle-reference / ename-bubble ename-reference lattribs lattribs-old objref attr current-text old-auto-text auto-new new-text xdata-alist tag-xdata)
   (setq ename-bubble       (handent handle-bubble)
         ;; Handle empty string for N/E/NE which have no reference object
         ename-reference    (cond 
@@ -8547,6 +8643,27 @@ tgh
   )
   (cond
     (ename-bubble
+      ;; STEP 1: Save current text BEFORE auto-dispatch modifies it
+      (setq attr (assoc tag lattribs))
+      (setq current-text (if attr (cadr attr) ""))
+      
+      ;; STEP 2: Get old auto-text from XDATA using handle lookup
+      (setq xdata-alist (hcnm-xdata-read ename-bubble))
+      (setq tag-xdata (cdr (assoc tag xdata-alist)))
+      
+      ;; Check if tag-xdata is handle-based (list of cons) or simple (string)
+      (setq old-auto-text
+        (cond
+          ;; Handle-based XDATA: ((handle1 . "auto1") (handle2 . "auto2") ...)
+          ((and tag-xdata (listp tag-xdata) (listp (car tag-xdata)))
+           (cdr (assoc handle-reference tag-xdata)))
+          ;; Simple XDATA: just a string (fallback for old format)
+          ((and tag-xdata (atom tag-xdata))
+           tag-xdata)
+          ;; No XDATA
+          (t nil)))
+      
+      ;; STEP 3: Generate new auto-text via auto-dispatch
       ;; For reactor updates, use a special marker for coordinate types (no reference object)
       ;; This allows auto-text functions to distinguish between initial creation (NIL) and reactor update (T)
       (setq objref (cond 
@@ -8562,6 +8679,20 @@ tgh
           objref  ; Pass the reference object as obj-target, or T for coordinate-only reactor updates
         )
       )
+      
+      ;; STEP 4: Extract the generated auto-text (plain text, no format codes)
+      (setq attr (assoc tag lattribs))
+      (setq auto-new (if attr (cadr attr) ""))
+      
+      ;; STEP 5: Do smart search/replace using shared function to preserve manual text
+      (setq new-text (hcnm-ldrblk-smart-replace-auto current-text old-auto-text auto-new))
+      
+      ;; STEP 6: Update lattribs with the smartly-replaced text
+      (setq lattribs
+        (cond
+          (attr (subst (list tag new-text) attr lattribs))
+          (t (append lattribs (list (list tag new-text))))))
+      
       (cond 
         ((/= lattribs lattribs-old)
          ;; UPDATE BLOCK INSERTION
@@ -8590,49 +8721,9 @@ tgh
   (haws-editall t)
   (haws-core-restore)
 )
-;;; Add delimiter structure to plain text attributes for editing
-(defun hcnm-ldrblk-eb-add-delimiters (lattribs ename-bubble / result)
-  (setq result '())
-  (foreach attr lattribs
-    (setq result 
-      (append result 
-        (list 
-          (list 
-            (car attr)  ; TAG
-            (hcnm-ldrblk-eb-expand-value-to-delimited (car attr) (cadr attr))
-          )
-        )
-      )
-    )
-  )
-  result
-)
-;;; Expand plain text value to delimiter structure using XDATA if available
-;;; If value doesn't have chr(160) delimiters, try to parse using XDATA auto-text
-;;; Otherwise migrate legacy format codes (%%u, %%o, \L, \O) to prefix field
-;;; Special handling for NOTENUM, NOTEPHASE, NOTEGAP - these go to prefix field
-;; Expand plain attribute value to delimited structure for editing.
-;; Returns value with CHR 160 delimiters: prefix?auto?postfix
-;; System-controlled tags (NOTENUM, NOTEPHASE, NOTEGAP) go entirely to prefix.
-;; Expand a single value string to 3-element list structure (prefix auto postfix).
-;; For system-controlled tags (NOTENUM, NOTEPHASE, NOTEGAP), put value in prefix.
-;; For user text, preserve entire value in prefix field.
-(defun hcnm-ldrblk-eb-expand-value-to-delimited (tag value / )
-  (cond
-    ((not value) (list "" "" ""))  ; NIL -> empty structure
-    ((= value "") (list "" "" ""))  ; Empty -> empty structure
-    ;; NOTENUM, NOTEPHASE, NOTEGAP are system-controlled - put in prefix, not auto
-    ((member tag '("NOTENUM" "NOTEPHASE" "NOTEGAP"))
-     (list value "" "")
-    )
-    ;; All other values: put entire value in PREFIX to preserve user's manual text
-    ;; (Auto field gets replaced by auto-text buttons, prefix/postfix are preserved)
-    (t (list value "" ""))
-  )
-)
 
 (defun hcnm-edit-bubble (ename-bubble / bubble-data dclfile
-                     ename-leader hcnm-ldrblk-eb-lattribs
+                     ename-leader hcnm-ldrblk-eb-lattribs hcnm-ldrblk-eb-auto-handles
                      notetextradiocolumn return-list tag done-code
                     )
   (princ "\n=== DEBUG: Entering hcnm-edit-bubble")
@@ -8643,6 +8734,10 @@ tgh
     ;; Read attributes and XDATA to get prefix/auto/postfix structure
     hcnm-ldrblk-eb-lattribs
       (hcnm-ldrblk-dwg-to-lattribs ename-bubble t)
+    ;; Semi-global: Track handle associations for auto-texts
+    ;; Format: (("TAG" ((handle1 . "auto-text1") (handle2 . "auto-text2"))) ...)
+    hcnm-ldrblk-eb-auto-handles
+      '()
     notetextradiocolumn "RadioNOTETXT1"
     dclfile
       (load_dialog "cnm.dcl")
@@ -8665,18 +8760,23 @@ tgh
      ;; Continue with dialog
      (princ "\n=== DEBUG: Showing tip...")
      ;; Show tip about auto-text editing expectations
-     (haws-tip-show 1002  ; Unique tip ID for auto-text explanation
+     (haws-tip-show 3  ; Unique tip ID for auto-text editing explanation
        (strcat
-         "About Auto Text and Editing\n\n"
-         "CNM currently gives you a structured edit box that allows for a single auto text plus prefix and postfix. "
-         "Future versions may give you free-form user edits with the following understandings:\n\n"
+         "About Editing with Auto Text and Delimiters\n\n"
+         "CNM does its best to keep your existing auto text straight if you don't touch it. It adds new auto text at the end of your free form text unless you indicate the desired insertion location with \"```\" (three backquotes usually on the same key as ~ tilde).\n\n"
+       )
+     )
+      (haws-tip-show 5  ; Unique tip ID for auto-text editing explanation
+       (strcat
+         "Understanding each other: CNM gives you free-form user edits with the following reasonable expectations:\n\n"
+         "  - CNM keeps a separate hidden copy of your auto text in your bubble note's XDATA and uses it to identify your auto text for updates in the event your reference object or your arrowhead changes.\n"
          "  - Any text you add remains intact, and any auto text you respect updates correctly.\n"
          "  - If you change CNM Project settings that affect auto text format, the next update reflects those changes as long as you do not change individual auto text manually.\n"
          "  - If you completely delete (or fat-finger-corrupt) auto text or change its format (eg. adding prefixes/suffixes), it does not get acted on or restored at the next update.\n"
          "  - You can't have multiple auto text fields with identical values in the same bubble note line and have them all update correctly."
        )
      )
-     (princ "\n=== DEBUG: Entering dialog loop...")
+    (princ "\n=== DEBUG: Entering dialog loop...")
      (while (> done-code -1)
     (cond
       ((= done-code 0) (setq done-code (hcnm-edit-bubble-cancel)))
@@ -8725,7 +8825,62 @@ tgh
   (haws-core-restore)
   (princ)
 )
-(defun hcnm-ldrblk-eb-get-text (ename-bubble done-code tag / auto-string auto-type attr)
+
+;;; Extract handle from reactor data for a specific tag
+;;; Used to track handle associations during dialog editing
+;;; Returns: handle string or "" if not found/not applicable
+(defun hcnm-ldrblk-get-reactor-handle-for-tag (ename-bubble tag / hcnm-reactors reactor reactor-data handle-bubble handle-ref bubble-entries bubble-entry bubble-handle tag-entries found-handle)
+  (setq handle-bubble (cdr (assoc 5 (entget ename-bubble)))
+        found-handle nil)  ; Initialize return value
+  
+  ;; Find the HCNM-BUBBLE reactor
+  (setq hcnm-reactors
+    (vl-remove-if-not
+      '(lambda (r)
+         (and (listp (vlr-data r))
+              (assoc "HCNM-BUBBLE" (vlr-data r)))
+       )
+      (cdar(vlr-reactors :vlr-object-reactor))
+    )
+    reactor (car hcnm-reactors)
+  )
+  
+  (cond
+    (reactor
+     (setq reactor-data (vlr-data reactor))
+     ;; Navigate nested structure: ("HCNM-BUBBLE" (handle-ref (handle-bubble (tag . auto-type))))
+     ;; We need to find the entry where handle-bubble and tag match, then extract handle-ref
+     (setq reactor-data (cdr (assoc "HCNM-BUBBLE" reactor-data)))
+     ;; Now reactor-data is: ((handle-ref1 (handle-bubble1 (tag1 . auto-type1))) ...)
+     (foreach handle-entry reactor-data
+       (setq handle-ref (car handle-entry)
+             bubble-entries (cdr handle-entry))
+       ;; bubble-entries is: ((handle-bubble1 (tag1 . auto-type1)) ...)
+       (foreach bubble-entry bubble-entries
+         (setq bubble-handle (car bubble-entry)
+               tag-entries (cdr bubble-entry))
+         ;; Check if this is our bubble
+         (cond
+           ((= bubble-handle handle-bubble)
+            ;; tag-entries is: ((tag1 . auto-type1) ...)
+            (cond
+              ((assoc tag tag-entries)
+               ;; Found our tag! Save the handle-ref from outer loop
+               (setq found-handle handle-ref)
+              )
+            )
+           )
+         )
+       )
+     )
+     ;; Return the found handle (or "" if not found)
+     (if found-handle found-handle "")
+    )
+    (t "")  ; No reactor found - return empty string
+  )
+)
+
+(defun hcnm-ldrblk-eb-get-text (ename-bubble done-code tag / auto-string auto-type attr current-text old-auto-text new-text xdata-alist handle-ref tag-handles)
   (setq
     auto-type
      (cadr (assoc done-code (hcnm-edit-bubble-done-codes)))
@@ -8743,17 +8898,58 @@ tgh
     )
     ;; Handle auto-text generation buttons (only if auto-type is valid)
     ((and auto-type (not (= auto-type "")))
-     ;; Generate auto-text and update lattribs
+     ;; STEP 1: Save current text BEFORE auto-dispatch modifies it
+     (setq attr (assoc tag hcnm-ldrblk-eb-lattribs))
+     (setq current-text (if attr (cadr attr) ""))
+     
+     ;; STEP 2: Get old auto-text from XDATA
+     (setq xdata-alist (hcnm-xdata-read ename-bubble))
+     (setq old-auto-text (cdr (assoc tag xdata-alist)))
+     
+     ;; STEP 3: Generate new auto-text via auto-dispatch
+     ;; NOTE: auto-dispatch REPLACES the entire tag value with just auto-text
      ;; bubble-data-update: this is called from command line and from edit box to get string as requested by user.
      (setq hcnm-ldrblk-eb-lattribs
-       (hcnm-ldrblk-underover
-         (hcnm-ldrblk-auto-dispatch
-           ename-bubble
-           hcnm-ldrblk-eb-lattribs
-           tag
-           auto-type
-           nil  ; nil = initial creation of auto text, not reactor update
-         )
+       (hcnm-ldrblk-auto-dispatch
+         ename-bubble
+         hcnm-ldrblk-eb-lattribs
+         tag
+         auto-type
+         nil  ; nil = initial creation of auto text, not reactor update
+       )
+     )
+     
+     ;; STEP 4: Extract just the auto-text that was generated (plain text, no format codes)
+     (setq attr (assoc tag hcnm-ldrblk-eb-lattribs))
+     (setq auto-string (if attr (cadr attr) ""))
+     
+     ;; STEP 4.5: Extract handle from reactor and store association
+     ;; This tracks which auto-text came from which reference object (alignment, pipe, etc.)
+     (setq handle-ref (hcnm-ldrblk-get-reactor-handle-for-tag ename-bubble tag))
+     (cond
+       ((not handle-ref) (setq handle-ref ""))  ; Safety check
+       ((not (= (type handle-ref) 'STR)) (setq handle-ref ""))  ; Must be string
+     )
+     
+     ;; Add to semi-global handle associations
+     ;; Format: (("TAG" ((handle1 . "auto1") (handle2 . "auto2"))) ...)
+     (setq tag-handles (cdr (assoc tag hcnm-ldrblk-eb-auto-handles)))
+     (setq tag-handles (append tag-handles (list (cons handle-ref auto-string))))
+     (setq hcnm-ldrblk-eb-auto-handles
+       (cond
+         ((assoc tag hcnm-ldrblk-eb-auto-handles)
+          (subst (cons tag tag-handles) (assoc tag hcnm-ldrblk-eb-auto-handles) hcnm-ldrblk-eb-auto-handles))
+         (t (append hcnm-ldrblk-eb-auto-handles (list (cons tag tag-handles))))))
+     
+     ;; STEP 5: Do smart search/replace using shared function
+     (setq new-text (hcnm-ldrblk-smart-replace-auto current-text old-auto-text auto-string))
+     
+     ;; STEP 6: Update lattribs with the combined CLEAN text (format codes will be added by lattribs-to-dlg)
+     (setq hcnm-ldrblk-eb-lattribs
+       (subst
+         (list tag new-text)
+         attr
+         hcnm-ldrblk-eb-lattribs
        )
      )
     )
@@ -8852,7 +9048,8 @@ tgh
 
 ;; ACTION_TILE callback: Update text value in lattribs when user types (2-element)
 ;; User typing replaces the entire text value
-(defun hcnm-ldrblk-eb-update-prefix (tag new-value / attr)
+;; Update text value when user types in dialog field
+(defun hcnm-ldrblk-eb-update-text (tag new-value / attr)
   (setq attr (assoc tag hcnm-ldrblk-eb-lattribs))
   (setq hcnm-ldrblk-eb-lattribs
     (subst
@@ -8877,16 +9074,15 @@ tgh
   (set_tile "Title" "Edit CNM Bubble Note")
   ;; Check if bubble is in paper space
   (setq on-model-tab-p (or (not ename-bubble) (hcnm-ldrblk-is-on-model-tab ename-bubble)))
-  ;; Show/hide paper space disclaimer and Chg View button
-  ;; Always show paper space warning above OKCancel
+  ;; Show delimiter tip and paper space warning if applicable
   ;; EXECUTIVE: The general disclaimer in the edit dialog is sufficient.
   ;; When user actually adds coordinate auto-text (Sta/Off/etc), they get
-  ;; the detailed dismissable tip via hcnm-ldrblk-warn-pspace-coordinates.
+  ;; the detailed dismissable tip via hcnm-ldrblk-tip-warn-pspace-no-react.
   (set_tile 
     "Message"         
     (strcat 
-      "Note: Paper space bubbles don't react to viewport changes."
-     (haws_evangel_msg)
+      "Tip: Use ``` (triple backtick) to mark where auto-text should insert."
+      (haws_evangel_msg)
     )
   )  
   (mode_tile "ChgView" 0)  ; Always enable
@@ -8906,12 +9102,9 @@ tgh
     
     (princ (strcat "\n=== DEBUG: Setting tiles for " tag))
     
-    ;; Set text field (contains formatted string from lattribs-to-dlg)
-    (set_tile (strcat "Prefix" tag) value)  ; DCL field still named "Prefix" for now
-    (action_tile (strcat "Prefix" tag) (strcat "(hcnm-ldrblk-eb-update-prefix \"" tag "\" $value)"))
-    
-    ;; TODO: In new architecture, we'll have single text field + delimiter insertion
-    ;; For now, keep old DCL layout but only use prefix field
+    ;; Set text field (single-column DCL with free-form editing)
+    (set_tile tag value)
+    (action_tile tag (strcat "(hcnm-ldrblk-eb-update-text \"" tag "\" $value)"))
   )
   ;;Radio buttons
   (set_tile
@@ -9460,6 +9653,11 @@ tgh
 (if (and haws-config-register-app (not (assoc "CNM" *haws-config-definitions*)))
   (haws-config-register-app "CNM" (hcnm-config-definitions))
 )
+
+;;; Clean up reactor proliferation on CNM load (Issue #X)
+;;; Persistent reactors can accumulate across drawing saves/loads
+;;; This ensures we start with a clean slate
+(hcnm-check-reactor-proliferation)
 
 (load "ini-edit")
 ;|?Visual LISP? Format Options?

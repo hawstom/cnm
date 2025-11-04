@@ -28,6 +28,7 @@
              "cnm-bubble-*"
            )
        )
+       (if (not hcnm-edit-bubble)(load "cnm"))
        (hcnm-edit-bubble obj1)
       )
       ((and (= etype "INSERT") (cdr (assoc 66 e)))

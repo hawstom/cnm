@@ -474,184 +474,88 @@ HCNMEditBubble : dialog {
 	: row {
 		: column {
 			: edit_box {
-				key = "PrefixNOTENUM";
-				label = "";
+				key = "NOTENUM";
+				label = "Note number";
 			}
 			: edit_box {
-				key = "PrefixNOTEPHASE";
-				label = "";
+				key = "NOTEPHASE";
+				label = "Note phase";
 			}
 			: edit_box {
-				key = "PrefixNOTEGAP";
-				label = "";
+				key = "NOTEGAP";
+				label = "Note gap";
 			}
 			: edit_box {
-				key = "PrefixNOTETXT1";
-				label = "";
+				key = "NOTETXT1";
+				label = "Line 1 text";
 			}
 			: edit_box {
-				key = "PrefixNOTETXT2";
-				label = "";
+				key = "NOTETXT2";
+				label = "Line 2 text";
 			}
 			: edit_box {
-				key = "PrefixNOTETXT3";
-				label = "";
+				key = "NOTETXT3";
+				label = "Line 3 text";
 			}
 			: edit_box {
-				key = "PrefixNOTETXT4";
-				label = "";
+				key = "NOTETXT4";
+				label = "Line 4 text";
 			}
 			: edit_box {
-				key = "PrefixNOTETXT5";
-				label = "";
+				key = "NOTETXT5";
+				label = "Line 5 text";
 			}
 			: edit_box {
-				key = "PrefixNOTETXT6";
-				label = "";
+				key = "NOTETXT6";
+				label = "Line 6 text";
 			}
 			: edit_box {
-				key = "PrefixNOTETXT0";
-				label = "";
-			}
-		}
-		: column {	
-			: edit_box {
-				key = "EditNOTENUM";
-				label = "";
-				is_enabled = false;
-			}
-			: edit_box {
-				key = "EditNOTEPHASE";
-				label = "";
-				is_enabled = false;
-			}
-			: edit_box {
-				key = "EditNOTEGAP";
-				label = "";
-				is_enabled = false;
-			}
-			: edit_box {
-				key = "EditNOTETXT1";
-				label = "";
-				is_enabled = false;
-			}
-			: edit_box {
-				key = "EditNOTETXT2";
-				label = "";
-				is_enabled = false;
-			}
-			: edit_box {
-				key = "EditNOTETXT3";
-				label = "";
-				is_enabled = false;
-			}
-			: edit_box {
-				key = "EditNOTETXT4";
-				label = "";
-				is_enabled = false;
-			}
-			: edit_box {
-				key = "EditNOTETXT5";
-				label = "";
-				is_enabled = false;
-			}
-			: edit_box {
-				key = "EditNOTETXT6";
-				label = "";
-				is_enabled = false;
-			}
-			: edit_box {
-				key = "EditNOTETXT0";
-				label = "";
-				is_enabled = false;
-			}
-		}
-		: column {
-			: edit_box {
-				key = "PostfixNOTENUM";
-				label = "";
-				is_enabled = false;
-			}
-			: edit_box {
-				key = "PostfixNOTEPHASE";
-				label = "";
-				is_enabled = false;
-			}
-			: edit_box {
-				key = "PostfixNOTEGAP";
-				label = "";
-			}
-			: edit_box {
-				key = "PostfixNOTETXT1";
-				label = "";
-			}
-			: edit_box {
-				key = "PostfixNOTETXT2";
-				label = "";
-			}
-			: edit_box {
-				key = "PostfixNOTETXT3";
-				label = "";
-			}
-			: edit_box {
-				key = "PostfixNOTETXT4";
-				label = "";
-			}
-			: edit_box {
-				key = "PostfixNOTETXT5";
-				label = "";
-			}
-			: edit_box {
-				key = "PostfixNOTETXT6";
-				label = "";
-			}
-			: edit_box {
-				key = "PostfixNOTETXT0";
-				label = "";
+				key = "NOTETXT0";
+				label = "Line 0 text (hidden)";
 			}
 		}
 		: radio_column {
 			key = "NoteTextRadioColumn";
 			fixed_width = true;
 			: text {
-				label = "Note number";
+				label = "";
 				height = 1.55;
  			}
 			: text {
-				label = "Note phase";
+				label = "";
 				height = 1.55;
  			}
 			: text {
-      label = "Note gap";
+				label = "";
 				height = 1.55;
 			}
 			: radio_button {
 				key = "RadioNOTETXT1";
-				label = "Line 1 text";
+				label = "";
 			}
 			: radio_button {
 				key = "RadioNOTETXT2";
-				label = "Line 2 text";
+				label = "";
 			}
 			: radio_button {
 				key = "RadioNOTETXT3";
-				label = "Line 3 text";
+				label = "";
 			}
 			: radio_button {
 				key = "RadioNOTETXT4";
-				label = "Line 4 text";
+				label = "";
 			}
 			: radio_button {
 				key = "RadioNOTETXT5";
-				label = "Line 5 text";
+				label = "";
 			}
 			: radio_button {
 				key = "RadioNOTETXT6";
-				label = "Line 6 text";
+				label = "";
 			}
 			: radio_button {
 				key = "RadioNOTETXT0";
-				label = "Line 0 text";
+				label = "";
 			}
 		}
 	}
@@ -683,8 +587,8 @@ HCNMEditBubble : dialog {
 	: row {
 		: text {
 			key = "Message";
-			label = "";
-      height = 2;
+			label = "Tip: Use ``` (triple backtick) to mark where auto-text should insert";
+			height = 2;
 		}
 	}
 	ok_cancel;	

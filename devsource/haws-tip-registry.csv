@@ -4,7 +4,7 @@
 #
 # VISION:
 # You have a reasonable expectation that each of your tips can avoid collision
-# with others of your and others' tips.
+# with the tips of other applications.
 #
 # MISSION:
 # Provide a single place to reserve and log sequentially incrementing tip ids.
@@ -50,11 +50,11 @@
 # ============================================================================
 
 tip-id	reservation	note
-1	CNM	
-2	CNM	
-3	CNM	
-4	CNM	
-5	CNM	
+1	CNM	Bubble insertion crash warning (first time in session)
+2	CNM	Paper space coordinates warning
+3	CNM	Auto-text and delimiter explanation
+4	CNM	AVPORT selection explanation
+5	CNM	Editor expectations
 6	CNM	
 7	CNM	
 8	CNM	

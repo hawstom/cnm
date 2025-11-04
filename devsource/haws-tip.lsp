@@ -5,7 +5,7 @@
 ;; Get snooze until value for a tip ID
 ;; tip-id: Can be integer or string
 ;; Returns nil if not snoozed, 0 if snoozed forever, or snooze-until (real number)
-(princ "\nHaws-Tip functions ... ")
+(princ "\nHaws-tip functions ... ")
 (defun haws-tip-get-snooze (tip-id / key-path snooze-str tip-id-str)
   (setq tip-id-str (if (numberp tip-id) (itoa tip-id) (vl-princ-to-string tip-id)))
   (setq key-path (list "HawsEDC" (strcat "Tip" tip-id-str "Snooze")))
@@ -65,110 +65,6 @@
   )
 )
 
-;;; ============================================================================
-;;; TIP REGISTRY - Universal tip ID collision prevention
-;;; ============================================================================
-
-;; Normalize tip ID to lowercase string for case-insensitive comparison
-;; Accepts: integer or string
-;; Returns: lowercase string
-(defun haws-tip-normalize-id (tip-id)
-  (strcase 
-    (if (numberp tip-id)
-      (itoa tip-id)
-      (vl-princ-to-string tip-id)
-    )
-    T  ; T = convert to lowercase
-  )
-)
-
-;; Load tip registry from CSV file
-;; Returns: List of (normalized-id . note) pairs, or nil if file doesn't exist
-;; File format: tip-id,note (CSV with optional header and comments starting with #)
-(defun haws-tip-registry-load (/ registry-file file line-str parts id note result)
-  (setq registry-file (findfile "haws-tip-registry.csv"))
-  (if registry-file
-    (progn
-      (setq file (open registry-file "r"))
-      (if file
-        (progn
-          (setq result nil)
-          ;; Read each line from file
-          (while (setq line-str (read-line file))
-            ;; Skip comments, empty lines, and header row
-            (if (and
-                  line-str
-                  (/= line-str "")
-                  (/= (substr line-str 1 1) "#")
-                  (/= (strcase line-str) "TIP-ID,NOTE")
-                )
-              (progn
-                ;; Split on comma
-                (setq parts (haws-tip-split-csv line-str))
-                (if (>= (length parts) 1)
-                  (progn
-                    (setq id (haws-tip-normalize-id (car parts)))
-                    (setq note (if (>= (length parts) 2) (cadr parts) ""))
-                    (setq result (cons (cons id note) result))
-                  )
-                )
-              )
-            )
-          )
-          (close file)
-          (reverse result)  ; Return in file order
-        )
-        nil  ; File couldn't be opened
-      )
-    )
-    nil  ; File not found
-  )
-)
-
-;; Split CSV line on comma (simple implementation, doesn't handle quoted commas)
-;; Returns: list of strings
-(defun haws-tip-split-csv (line-str / comma-pos parts)
-  (setq parts nil)
-  (while (setq comma-pos (vl-string-search "," line-str))
-    (setq parts (cons (substr line-str 1 comma-pos) parts))
-    (setq line-str (substr line-str (+ comma-pos 2)))
-  )
-  (setq parts (cons line-str parts))
-  (reverse parts)
-)
-
-;; Check if tip ID exists in registry (case-insensitive)
-;; registry: List of (id . note) pairs from haws-tip-registry-load
-;; Returns: Note string if found, nil if not found
-(defun haws-tip-registry-find (tip-id registry / normalized-id entry)
-  (setq normalized-id (haws-tip-normalize-id tip-id))
-  (setq entry (assoc normalized-id registry))
-  (if entry
-    (cdr entry)
-    nil
-  )
-)
-
-;; Check if tip ID is registered and warn if not
-;; This is called by haws-tip-show to provide collision prevention
-;; Returns: T if registered or registry not available, nil never (always continues)
-(defun haws-tip-check-registry (tip-id / registry note)
-  (setq registry (haws-tip-registry-load))
-  (if registry
-    (progn
-      (setq note (haws-tip-registry-find tip-id registry))
-      (if note
-        (princ (strcat "\nTip ID " (haws-tip-normalize-id tip-id) " registered: " note))
-        (princ (strcat "\nWARNING: Tip ID " (haws-tip-normalize-id tip-id) " is not registered in haws-tip-registry.csv"))
-      )
-    )
-    ;; Registry file not found - silently continue
-    (princ (strcat "\nNote: Tip registry not found (optional)"))
-  )
-  T  ; Always return T to allow tip to continue
-)
-
-
 ;; Legacy functions for backward compatibility (deprecated)
 (defun haws-tip-hide-list (/ hide-list-str hide-list)
   (setq hide-list-str (haws-readcfg (list "HawsEDC" "TipsHidden")))
@@ -188,11 +84,10 @@
   lst
 )
 ;; Show a tip if not snoozed. TIP-ID is a unique integer or string, MSG is the tip string.
-(defun haws-tip-show (tip-id msg) 
-  ;; Check registry for collision prevention (optional, warns only)
-  (haws-tip-check-registry tip-id)
+(defun haws-tip-show (tip-id msg / is-snoozed) 
   ;; Show tip if not snoozed
-  (if (not (haws-tip-is-snoozed tip-id))
+  (setq is-snoozed (haws-tip-is-snoozed tip-id))
+  (if (not is-snoozed)
     (progn 
       (haws-tip-dialog tip-id msg)
     )
@@ -272,12 +167,13 @@
                 (haws-tip-set-snooze tip-id 0)
               )
               ;; If snooze selected (not "No snooze"), apply duration
-              ((/= snooze-choice "4")  ; "No snooze" is now index 4
+              ((/= snooze-choice "5")  ; "No snooze" is now index 5
                 (cond
-                  ((= snooze-choice "0") (haws-tip-set-snooze tip-id 7))
-                  ((= snooze-choice "1") (haws-tip-set-snooze tip-id 30))
-                  ((= snooze-choice "2") (haws-tip-set-snooze tip-id 180))
-                  ((= snooze-choice "3") (haws-tip-set-snooze tip-id 0))  ; Forever
+                  ((= snooze-choice "0") (haws-tip-set-snooze tip-id 1))
+                  ((= snooze-choice "1") (haws-tip-set-snooze tip-id 7))
+                  ((= snooze-choice "2") (haws-tip-set-snooze tip-id 30))
+                  ((= snooze-choice "3") (haws-tip-set-snooze tip-id 180)) 
+                  ((= snooze-choice "4") (haws-tip-set-snooze tip-id 0))  ; Forever
                 )
               )
             )
@@ -305,6 +201,16 @@
   (princ (strcat "\nTip " tip-id-str " will no longer be shown."))
 )
 
+;; Command: Clear snooze for a specific tip (resurrect one tip)
+(defun c:haws-tip-show-1002 ()
+  (princ "\n=== Clearing snooze for tip 1002...")
+  (princ (strcat "\n=== Before: snoozed=" (vl-princ-to-string (haws-tip-is-snoozed 1002))))
+  (haws-tip-clear-snooze 1002)
+  (princ (strcat "\n=== After: snoozed=" (vl-princ-to-string (haws-tip-is-snoozed 1002))))
+  (princ "\nTip 1002 (Auto Text and Editing) has been re-enabled.")
+  (princ)
+)
+
 ;; Reset all snoozed tips (resurrect all tips)
 (defun haws-tip-reset () 
   (haws-tip-resurrect-all)
@@ -317,7 +223,7 @@
 (defun haws-tip-resurrect-all (/ tip-id)
   ;; Clear snooze for tip IDs 1-999 (reasonable range)
   (setq tip-id 1)
-  (while (<= tip-id 999)
+  (while (<= tip-id 9999)
     (if (haws-tip-get-snooze tip-id)
       (haws-tip-clear-snooze tip-id)
     )
@@ -326,6 +232,6 @@
   ;; Also clear legacy TipsHidden list for complete reset
   (haws-writecfg (list "HawsEDC" "TipsHidden") "")
   (princ)
-)
+) 
 (princ "loaded.")
 (princ)

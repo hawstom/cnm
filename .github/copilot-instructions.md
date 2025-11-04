@@ -1,4 +1,9 @@
-# Quick Start for AI
+# 1. Quick Start for AI
+
+## 1.1. General instructions
+1. When a human tell you to note something, it means to revise .github\copilot-instructions.md to include that information.
+2. Tell the truth! Be transparent about what you know. Qualify your statements with clear certainty estimates, especially when it comes to statements about the state of the code or our work. Don't say things like "Perfect", "Fixed", or "Done" when what you really mean is "Please test" or "I added/revised/removed this. Please test it".
+3. This project is primarily written in AutoLISP for AutoCAD. This development environment has the AutoLISP Extension installed. You have the get_errors tool. Use it to check for syntax errors after code changes. Fix errors before reporting.
 
 **What is CNM?** Civil engineering tool for managing construction notes on AutoCAD drawings.
 
@@ -239,15 +244,71 @@ We provide users free-form editing capabilities, so we must store auto-generated
 ```autolisp
 (defun hcnm-insert-auto-text (text auto-value / pos)
   (cond
-    ;; If delimiter exists, replace first occurrence
+    ;; If delimiter exists, replace FIRST occurrence (user learns this intuitively)
     ((setq pos (vl-string-search "```" text))
      (strcat (substr text 1 pos)
              auto-value
              (substr text (+ pos 3))))  ; Skip "```"
-    ;; Otherwise append (graceful fallback - teaches quietly)
+    ;; Otherwise append WITHOUT SPACE (user controls spacing)
     ;; INTENTIONAL EXCEPTION TO "FAIL LOUDLY": This is UX convenience, not data corruption.
     ;; Fail loudly on DATA integrity, fail gracefully on UX convenience.
-    ;; Appending without delimiter teaches users the feature exists.
+    (t (strcat text auto-value))))  ; Append directly - no space padding
+```
+
+**TIP for Users:** When clicking multiple auto-text buttons, CNM replaces the **first** delimiter found. This convention is intuitive: type multiple delimiters in order, click buttons in order, each replaces the next delimiter. If no delimiter is found, auto-text appends at the end without adding spaces.
+
+**CRITICAL DESIGN DECISION - No Automatic Spacing:**
+
+**CNM NEVER adds spaces around auto-text.** Spacing is fully user-controlled.
+
+This is an **atypical design** that is appropriate for CNM because users expect fine-grained control over text formatting. Users must manually add spaces or use delimiters to control placement.
+
+**Fallback behavior:**
+- If delimiter(s) present: Insert auto-text at **first** delimiter
+- Otherwise: Append auto-text **without space padding**
+
+**Example workflows:**
+```
+User types: "Storm ``` , Sanitary ``` "
+Click Station (Storm): "Storm STA 10+25.00 , Sanitary ``` "
+Click Station (Sanitary): "Storm STA 10+25.00 , Sanitary STA 8+45.00"
+
+User types: "N"
+Click E button: "NE 878838.54"  ← NO SPACE between N and E
+User should have typed: "N ``` " to get "N E 878838.54"
+```
+
+**Handle-Based XDATA Architecture:**
+
+Multiple auto-texts per line are supported via handle-based associations:
+
+**XDATA Format:** `(("TAG" ((handle1 . "auto1") (handle2 . "auto2"))) ...)`
+
+Each auto-text is associated with its reference object handle:
+- Alignment handle for station/offset auto-texts
+- Pipe handle for diameter/slope/length auto-texts  
+- Empty string `""` for coordinate-based (N/E/NE) auto-texts
+
+**Example:**
+```
+Display: "Storm STA 10+25.00, Sanitary STA 8+45.00"
+XDATA: (("NOTETXT1" ((handle-storm . "STA 10+25.00") 
+                     (handle-sanitary . "STA 8+45.00"))))
+```
+
+This allows:
+- Multiple auto-texts of same type in one line (e.g., two "Sta")
+- Each linked to different reference objects (different alignments)
+- Reactor updates only affect the specific auto-text that changed
+
+**LIMITATION - One auto-text per reference per tag:**
+Current architecture stores `(handle . "auto-text")` dotted pairs, which means you can only have **one auto-text from each reference object per attribute line**. For example:
+- ✅ **Allowed**: "Storm STA 10+25.00, Sanitary STA 8+45.00" (two alignments, different handles)
+- ❌ **Not supported**: "STA 10+25.00 OFF 5.0' RT" from same alignment (same handle, two auto-texts)
+
+**TIP for Users:** If you need multiple auto-texts from the same reference (e.g., station AND offset from same alignment), click the auto-button once and CNM generates both in one auto-text field. The format is controlled by the auto-type ("Sta" vs "Off" vs "StaOff").
+
+**Future Enhancement:** Could support multiple auto-texts per reference by changing `(handle . "auto")` to `(handle ("auto1" "auto2" ...))`. This would require XDATA reader/writer updates but is architecturally straightforward.
     (t (strcat text " " auto-value))))
 ```
 
@@ -361,7 +422,90 @@ hcnm-*                    Top-level CNM functions
 - `*-validate` - Schema validation (strict, fails loudly)
 - `*-to-*` - Data transformation (pure functions)
 
+#### 1.2.1.6. Reactor Performance Considerations
+
+**Known Performance Considerations:**
+- **XDATA read/write operations**: Frequent XDATA access on every reactor callback
+- **Nested loops in handle lookup**: `hcnm-ldrblk-get-reactor-handle-for-tag` has nested loops
+- **Multiple reactor callbacks**: Each leader move can trigger multiple object reactors
+- **Debug output removed**: All `princ` statements removed from hot paths for production
+
+**Optimization Suggestions (Future Work):**
+1. **Reactor data reorganization**:
+   - Current: `(ref (bubble (tag . auto-type)))`
+   - Proposed: `(bubble (ref (tag . auto-type)))` - Bubble at higher level
+   - Benefits: Foreach bubble in list, for this reference, loop tags (may reduce searches)
+
+2. **Batch updates instead of update-inside-loop**:
+   - Current: Update bubble attributes immediately in loop (cnm.lsp line ~8626)
+   - Proposed: Build list of updates, then apply all at once
+   - Benefits: Reduce XDATA write operations, fewer AutoCAD entity modifications
+
+3. **Cache reactor handle lookups**:
+   - If same bubble/tag queried multiple times, cache result
+   - Clear cache on reactor attachment/detachment
+
+4. **Profile operations**:
+   - Measure XDATA read/write frequency and duration
+   - Measure handle lookup execution time
+   - Identify actual bottlenecks before optimizing
+
+**Status**: Debug output removed (2025-11-01). Further optimization pending user feedback on production performance.
+
 ### 1.2.2. Code Style
+
+#### 1.2.2.1. Indentation Standards
+**STRICT REQUIREMENT**: All AutoLISP code uses **2-space indentation** (universal standard, no exceptions).
+
+**Common Issues:**
+- ❌ Lazy indentation: Line doesn't align with parent scope
+- ❌ Inconsistent spacing: Mixing tabs and spaces
+- ❌ No conventional nuances: `cond`, `setq`, etc. follow same 2-space rule
+
+**Example (correct):**
+```autolisp
+(defun example (x / y)
+  (setq y (* x 2))  ; 2 spaces from defun
+  (cond
+    ((> y 10)       ; 4 spaces from defun (2 spaces from cond)
+     (alert "Big")) ; 5 spaces from defun (1 space from condition)
+    (t
+     (alert "Small"))))
+```
+
+**When working on any function, audit its indentation and correct to 2-space standard.**
+
+#### 1.2.2.2. Using VS Code's AutoLISP Extension
+**CRITICAL**: The Autodesk AutoLISP Extension (autodesk.autolispext) is installed in this workspace.
+
+**HUMANS SEE ERRORS AUTOMATICALLY via syntax highlighting colors (red parentheses, etc.). YOU MUST USE `get_errors` TO ACCESS THE SAME INFORMATION.**
+
+**This gives you an ADVANTAGE over humans - you can check errors programmatically before making changes. Use it.**
+
+**Workflow for AutoLISP edits:**
+1. **Before editing**: Run `get_errors` to check current state (MANDATORY)
+2. **Make changes**: Edit the file using `replace_string_in_file`
+3. **After editing**: Run `get_errors` immediately to validate (MANDATORY)
+4. **Fix issues**: If errors found, fix them before proceeding
+
+**Example:**
+```
+<get_errors filePaths="['c:\\path\\to\\cnm.lsp']" />
+// Make edits
+<get_errors filePaths="['c:\\path\\to\\cnm.lsp']" />
+```
+
+**CRITICAL - Tell the truth:**
+- ❌ **NEVER say**: "File loads successfully" (you cannot test in AutoCAD)
+- ✅ **INSTEAD say**: "VS Code shows no errors" or "AutoLISP extension reports no diagnostics"
+- ❌ **NEVER say**: "Parentheses are balanced" (without running `get_errors`)
+- ✅ **INSTEAD say**: "Running get_errors to verify..." then report results
+- ❌ **NEVER claim** you tested something you didn't
+- ✅ **ALWAYS be explicit** about what you verified vs. what requires human testing
+
+**Humans struggle with truth-telling. You must be better than humans at this.**
+
+**Note**: Even with no VS Code errors, user should still test in AutoCAD, as the extension may not catch all runtime issues.
 
 ### 1.2.3. AutoLISP Conventions
 - **Lower case symbols**: Function names, variables (except legacy UPPERCASE in strings/comments)
@@ -416,6 +560,8 @@ AutoLISP lacks standard testing frameworks. Current approach:
 - **"Fail loudly"** → Strict validation with clear alerts
 - **"Obsolete architecture"** → CHR(160) delimiters, old 2-element lists
 - **"The reactor"** → VLR-OBJECT-REACTOR for auto-updating bubble text
+- **"Command [name]"** → Always means AutoLISP command function `c:[name]`, not regular function
+- **"Please note"** → Revise this copilot-instructions.md file to include that information
 
 ### 1.6.2. What helps
 - Ask clarifying questions about Civil 3D API specifics
@@ -623,3 +769,4 @@ This file (copilot-instructions.md) follows its own advice:
 - **Section numbers**: Easy to reference (1.1, 1.2.3, etc.)
 - **Examples throughout**: Real code and scenarios
 - **Meta-section at end**: Document about the document (you're reading it)
+haws-ti

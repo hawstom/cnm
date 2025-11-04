@@ -85,7 +85,7 @@
 (haws-autoload "cnm"   '("haws-boxl" "haws-cirl" "haws-dial" "haws-elll"
                         "haws-hexl" "haws-octl" "haws-penl" "haws-recl"
                         "haws-sstl" "haws-tcg" "haws-tril" "haws-txtl"
-	                      "hcnm-replace-bubble" "hcnm-edit-bubble"
+	                      "hcnm-replace-bubble" "hcnm-edit-bubbles"
                         "hcnm-cnmoptions"
                          "hcnm-cnm" "hcnm-cnmkt" "hcnm-cnmkti" "hcnm-cnmqt"
                         "hcnm-linkproj" "hcnm-changeprojnotes" "hcnm-noteseditor"
@@ -240,6 +240,10 @@
 ;;; edclib is the common core library for HawsEDC and CNM.
 ;;; It must be loaded after CNM so CNM config is available.
 (load "edclib")
+
+;;; haws-tip is the tip/evangelism system for HAWS/EDC/CNM.
+;;; It must be loaded before any tips are shown.
+(load "haws-tip")
 
 ;;;Load aliases
 ;;;CNMALIAS.LSP has short names for all the commands.

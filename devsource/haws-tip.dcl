@@ -10,7 +10,7 @@ haws_tip : dialog {
     : popup_list {
       key = "snooze_dropdown";
       width = 20;
-      list = "7 days\n30 days\n180 days\nForever\nNo snooze";
+      list = "1 day\n7 days\n30 days\n180 days\nForever\nNo snooze";
       value = "4";
     }
   }
