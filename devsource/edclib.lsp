@@ -813,18 +813,16 @@
   (list "HawsEDC" "UseLog" "UseString")
 )
 
+;;; MIGRATED: Now uses haws-config instead of haws-readcfg
 (defun haws-use-get-local-log-string ()
-  (cond
-    ((haws-readcfg (haws-use-local-location)))
-    ("")
-  )
+  (haws-config-getvar "HAWS" "UseString" nil nil)
 )
 
+;;; MIGRATED: Now uses haws-config instead of haws-writecfg
 (defun haws-use-log-local (command-id / log-string)
-  (haws-writecfg
-    (haws-use-local-location)
+  (haws-config-setvar "HAWS" "UseString"
     (haws-use-command-id-to-log-string command-id (haws-use-get-local-log-string))
-  )
+    nil nil)
 )
 
 ;;; The ASCII code of each character of the log string (one for each command) represents the number of times the command has been used this session. This implies that we count only up to 255 uses per session.
@@ -867,7 +865,8 @@
      )
      (princ (strcat "\nInvalid request: " url))
     )
-    (t (haws-writecfg (haws-use-local-location) (haws-use-initialize-log-string)))
+    ;; MIGRATED: Now uses haws-config instead of haws-writecfg
+    (t (haws-config-setvar "HAWS" "UseString" (haws-use-initialize-log-string) nil nil))
   )
   (vlax-release-object http)
   (princ)
@@ -2168,7 +2167,7 @@
     ((vl-catch-all-error-p
        (vl-catch-all-apply
          'LOAD
-         (list (princ (strcat (haws-config-getvar "HAWS" "AppFolder" 0 nil nil) "\\" filename)))
+         (list (princ (strcat (haws-config-getvar "HAWS" "AppFolder" nil nil) "\\" filename)))
        )
      )
      (princ
@@ -2266,8 +2265,8 @@
             ;; This logic was added to interact with CNMEdit.exe, a third-party project notes editor
             ;; that undertook to edit cnm.ini project settings and layers.dat layer settings.
             ;; Per the author of CNMEdit.exe, it is time to replace it with something else.
-            ((= (haws-config-getvar "HAWS" "ImportLayerSettings" 2 (hcnm-ini-name (hcnm-proj)) "HAWS") "Yes")
-             (haws-config-setvar "HAWS" "ImportLayerSettings" "No" 2 (hcnm-ini-name (hcnm-proj)) "HAWS")
+            ((= (haws-config-getvar "HAWS" "ImportLayerSettings" (hcnm-ini-name (hcnm-proj)) "HAWS") "Yes")
+             (haws-config-setvar "HAWS" "ImportLayerSettings" "No" (hcnm-ini-name (hcnm-proj)) "HAWS")
              t
             )
           )
@@ -3333,154 +3332,40 @@
 ;;end sub-functions
 
 ;#endregion
-;#region USE_LOG
-;;; Verify/Check values of stored authorization strings at
-;;; load-time
-;;; against computer name and bios date.
-;;; Delete registry entry if invalid for this computer.
-;;; New scheme 2007-09:
-;;; Getting a little more lax.
-;;; If (HAWS-READCFG "/HawsEDC/Modules/package/OrderString") "",
-;;; we assume quite trustingly that the application has never yet been tried.
-(defun haws-checkstoredstrings (/ authlist authstring deleteall temp)
-  (haws-milepost "Entering HAWS-CHECKSTOREDSTRINGS")
-  (foreach
-     package '(0 3)
-    (setq authstring (haws-readauthcode package))
-    (cond
-      (;;If
-       (and
-         ;;Authstring is present
-         authstring
-         (/= authstring "aaaaaaaaaaaa")
-         (haws-milepost
-           "Authstring is present and isn't the dummy string.  Now checking that it's for the right computer to delete it if not."
-         )
-         ;;and
-         (or ;; it either is invalid,
-             (/= (strlen authstring) 12)
-             ;;for the wrong computer,
-             (not
-               (equal
-                 (cdr
-                   (cdddr (setq authlist (haws-authtolist authstring)))
-                 )
-                 (cons (haws-getshortcomputername) (haws-getbiosdate))
-               )
-             )
-             ;;or
-             ;;it's for the wrong package,
-             (/= package (caddr authlist))
-         )
-       )
-       ;;Then flag to delete all order strings and auth strings from storage.
-       (haws-milepost
-         (strcat "Package " (itoa package) "codes are wrong")
-       )
-       (setq deleteall t)
-      )
-      ((not authstring)
-       (haws-milepost
-         ";;Else if there is no stored string
-       "
-       )
-       ;|
-      (t
-       (haws-milepost ";;Always give a new free trial (for testing only)
-       ;; by storing order and auth strings for a trial
-       ")
-      |;
-       (haws-milepost
-         ";;Assume it's a virgin installation,
-       ;; and give a free trial by storing order and auth strings
-       ;; for
-       ;; a 30 day trial
-       "
-       )
-       (haws-writepackagecode
-         package
-         "OrderString"
-         (haws-binarytouser
-           (haws-encryptorderstring
-             (haws-listtobinary
-               (setq
-                 temp
-                  (cons
-                    (fix (getvar "date"))
-                    (cons
-                      0
-                      (cons
-                        package
-                        (cons
-                          0
-                          (cons
-                            (haws-getshortcomputername)
-                            (haws-getbiosdate)
-                          )
-                        )
-                      )
-                    )
-                  )
-               )
-             )
-           )
-         )
-       )
-       (haws-writepackagecode
-         package
-         "AuthString"
-         (haws-binarytouser
-           (haws-encryptauthstring
-             ;;Trial length
-             (haws-listtobinary (cons (+ (car temp) 30) (cdr temp)))
-           )
-         )
-       )
-      )
-    )
-  )
-  (cond
-    (deleteall
-     (foreach
-        package '(0 3)
-       (haws-writepackagecode package "OrderString" "aaaaaaaaaaaa")
-       (haws-writepackagecode package "AuthString" "aaaaaaaaaaaa")
-     )
-    )
-  )
-  (haws-milepost "Finished HAWS-CHECKSTOREDSTRINGS")
-)
-(haws-checkstoredstrings)
-(if (/=(haws-use-get-local-log-string)(haws-use-initialize-log-string))(haws-use-log-remote))
-
-;#endregion
 
 ;; HAWS app configuration definitions
 ;; These are shared HawsEDC configuration variables used by edclib.lsp and cnmaliaslib.lsp
-;;; This defun is at the bottom to be near the other haws-config function.
+;;; MOVED UP: Must be defined BEFORE USE_LOG section uses it
 (defun haws-config-definitions ()
   (list
-    (list "Scope"
-     (list "Session" 0)
-     (list "Drawing" 1)
-     (list "Project" 2)
-     (list "App" 3)
-     (list "User" 4)
-    )
-    (list "Var"
-     (list "AppFolder" (haws-filename-directory (findfile "cnm.mnl")) 0)  ; Session scope - set at load time
-     (list "ImportLayerSettings" "YES" 2)  ; Project scope - INI file
-     (list "CNMAliasActivation" "2" 4)  ; User scope - Registry
-    )
+   (list "AppFolder" (haws-filename-directory (findfile "cnm.mnl")) 0)  ; Session scope - set at load time
+   (list "ImportLayerSettings" "YES" 2)  ; Project scope - INI file
+   (list "CNMAliasActivation" "2" 4)  ; User scope - Registry
+   (list "UseString" "" 4)  ; User scope - Registry (usage telemetry)
   )
 )
 
 ;;; Register HAWS app with shared HawsEDC config (Issue #11)
 ;;; This allows edclib.lsp and cnmaliaslib.lsp to use HAWS-CONFIG without depending on CNM
-;;; This is run-on-load code, so it has to be at the end of the file where everything is defined.
-(if (and haws-config-register-app (not (assoc "HAWS" *haws-config-definitions*)))
+;;; MOVED UP: Must register BEFORE USE_LOG section calls haws-config-getvar
+(if haws-config-register-app
   (haws-config-register-app "HAWS" (haws-config-definitions))
 )
+
+;#region USE_LOG
+(if (/=(haws-use-get-local-log-string)(haws-use-initialize-log-string))(haws-use-log-remote))
+
+;; Migration: Clear old getcfg location (one-time cleanup)
+;; Old location: AppData/HawsEDC/UseLog/UseString
+;; New location: HKEY_CURRENT_USER\Software\HawsEDC\HAWS\UseString
+(if (getcfg "AppData/HawsEDC/UseLog/UseString")
+  (progn
+    (setcfg "AppData/HawsEDC/UseLog/UseString" "")
+    (princ "\n[Migration] Cleared old USE_LOG location (AppData → Registry)")
+  )
+)
+
+;#endregion
 
 (princ "\nHawsEDC library functions loaded.")
 (princ)

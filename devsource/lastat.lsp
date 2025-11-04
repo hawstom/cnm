@@ -85,11 +85,11 @@
 
 (defun c:haws-offx ()
   (prompt (strcat "\n" (haws_evangel_msg)))
+  (haws-core-init 233)
   (haws-nlstat "off")
   (princ))
 
 (defun haws-nlstat (lopera / nested)
-  (haws-core-init 233)
   (haws-vsave '("EXPERT"))
   (setvar "EXPERT" 5)
   (if (and

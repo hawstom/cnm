@@ -8,30 +8,36 @@
 ;;; Supports multiple applications sharing a common config infrastructure with
 ;;; app-specific INI files and settings isolation.
 ;;;
-;;; SCOPE SYSTEM:
+;;; SCOPE SYSTEM (Built-in, no longer app-defined):
 ;;; 0 - Session:  In-memory only (current AutoCAD session)
 ;;; 1 - Drawing:  Stored in drawing file (NOT YET IMPLEMENTED)
 ;;; 2 - Project:  Project-level INI file (e.g., cnm.ini)
 ;;; 3 - App:      Application install folder (NOT YET IMPLEMENTED)
 ;;; 4 - User:     User profile folder (Windows Registry or %APPDATA%)
 ;;;
+;;; See "SCOPE DEFINITIONS (CANONICAL REFERENCE)" section below for detailed
+;;; explanations of when to use each scope.
+;;;
 ;;; ARCHITECTURE:
 ;;; - Multi-app cache: *haws-config-cache* stores config for all registered apps
 ;;; - Fallback chain: Memory → INI file → Defaults
-;;; - App registration: Each app registers its config schema on load
+;;; - App registration: Each app registers its variable list on load
 ;;;
 ;;; PUBLIC API:
-;;; (haws-config-register-app app definitions) - Register an application
-;;; (haws-config-getvar app var scope defaults) - Get config value
-;;; (haws-config-setvar app var val scope) - Set config value
+;;; (haws-config-register-app app var-list) - Register an application
+;;; (haws-config-getvar app var ini-path section) - Get config value
+;;; (haws-config-setvar app var val ini-path section) - Set config value
 ;;;
 ;;; USAGE EXAMPLE:
-;;; ;; Register app
-;;; (haws-config-register-app "CNM" (hcnm-config-definitions))
+;;; ;; Register app with variable definitions only (no boilerplate!)
+;;; (haws-config-register-app "MyApp"
+;;;   '(("UserSetting1" "A" 4)      ; User scope (Registry)
+;;;     ("AppVersion" "1.0" 0)))    ; Session scope (Memory)
 ;;;
-;;; ;; Get/Set values
-;;; (SETQ val (haws-config-getvar "CNM" "BubbleTextPrefixSta" 2 "STA "))
-;;; (haws-config-setvar "CNM" "BubbleTextPrefixSta" "STATION " 2)
+;;; ;; Get/Set values (scope auto-looked-up from definitions)
+;;; (setq val (haws-config-getvar "MyApp" "UserSetting1" nil nil))  ; User scope
+;;; (haws-config-setvar "MyApp" "UserSetting1" "B" nil nil)         ; User scope
+;;; (setq val (haws-config-getvar "MyApp" "ProjectVar" (my-ini-path) "MyApp"))  ; Project scope
 ;;;
 ;;; CONVENTIONS:
 ;;; - All public functions use haws-config- prefix (lowercase with hyphens)
@@ -41,6 +47,8 @@
 ;;;
 ;;; HISTORY:
 ;;; 2025-10-31 - Initial extraction from cnm.lsp HCNM-CONFIG system (Issue #11)
+;;; 2025-11-03 - Removed redundant "Scope" section, scope codes now built-in
+;;; 2025-11-03 - Auto-lookup scope from definitions (eliminated scope parameter)
 ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -48,19 +56,158 @@
 ;;; GLOBAL VARIABLES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;; *haws-config-cache* - Multi-app configuration cache
-;;; Structure: '(("APP1" (("var1" "val1") ("var2" "val2") ...))
-;;;              ("APP2" (("varA" "valA") ...)))
-(if (not *haws-config-cache*) (setq *haws-config-cache* '()))
+;;; *haws-config* - Unified configuration data structure
+;;; Structure:
+;;;   '(("Definitions"  ; App variable schemas
+;;;      ("APP1" (("var1" "default1" scope-code) ...))
+;;;      ("APP2" (...)))
+;;;     ("Cache"        ; Runtime value cache (all scopes)
+;;;      ("APP1" (("var1" "value1") ...))
+;;;      ("APP2" (...)))
+;;;     ("Session"      ; Session-scope storage (scope=0 only)
+;;;      ("APP1" (("sessionvar1" "value1") ...))
+;;;      ("APP2" (...))))
+;;;
+;;; SCOPE CODES (use integer literals with comments):
+;;;   0 = Session  (in-memory only, current AutoCAD session)
+;;;   1 = Drawing  (stored in drawing file - NOT YET IMPLEMENTED)
+;;;   2 = Project  (project-level INI file)
+;;;   3 = App      (application install folder - NOT YET IMPLEMENTED)
+;;;   4 = User     (user profile - Windows Registry or %APPDATA%)
+;;;
+;;; See "SCOPE DEFINITIONS (CANONICAL REFERENCE)" section below for detailed
+;;; explanations of when to use each scope.
+;;;
+(if (not *haws-config*)
+  (setq *haws-config*
+    (list
+      (list "Definitions")  ; App variable schemas
+      (list "Cache")        ; Runtime cache
+      (list "Session")))    ; Session-scope storage
+)
 
-;;; *haws-config-definitions* - Registered app definitions
-;;; Structure: '(("APP1" . <definitions-list>)
-;;;              ("APP2" . <definitions-list>))
-(if (not *haws-config-definitions*) (setq *haws-config-definitions* '()))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; SCOPE DEFINITIONS (CANONICAL REFERENCE)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; SCOPE 0 - SESSION (In-Memory Only)
+;;;   Storage:     *haws-config* "Session" section (memory only)
+;;;   Lifetime:    Current AutoCAD session only
+;;;   Persistence: Lost when AutoCAD closes
+;;;   Use cases:   - Runtime calculated values (app version, app folder path)
+;;;                - Temporary flags or state
+;;;                - Performance caches that don't need persistence
+;;;   Example:     (list "AppVersion" "1.0.0" 0)
+;;;   Notes:       Fastest access (no disk/registry I/O)
+;;;
+;;; SCOPE 1 - DRAWING (NOT YET IMPLEMENTED)
+;;;   Storage:     Drawing file extended data (XDATA)
+;;;   Lifetime:    Saved with drawing
+;;;   Persistence: Travels with the .dwg file
+;;;   Use cases:   - Drawing-specific settings
+;;;                - Per-drawing layer/style preferences
+;;;                - Settings that should follow the drawing
+;;;   Status:      Not implemented, reserved for future use
+;;;
+;;; SCOPE 2 - PROJECT (INI File)
+;;;   Storage:     Project INI file (e.g., cnm.ini in project folder)
+;;;   Lifetime:    Project lifetime (shared across all project drawings)
+;;;   Persistence: Saved to disk in project folder
+;;;   Use cases:   - Project-wide settings (all drawings in project)
+;;;                - Team-shared configuration (if project folder is shared)
+;;;                - Template paths, default layers, project standards
+;;;   Example:     (list "TemplateFile" "standard.dwt" 2)
+;;;   Notes:       Requires ini-path and section parameters in getvar/setvar
+;;;                Location managed by app-specific project system
+;;;
+;;; SCOPE 3 - APP (NOT YET IMPLEMENTED)
+;;;   Storage:     Application install folder (read-only for users)
+;;;   Lifetime:    Application installation lifetime
+;;;   Persistence: Saved with application (typically read-only)
+;;;   Use cases:   - Factory defaults
+;;;                - Vendor-provided templates
+;;;                - System-wide settings (all users on machine)
+;;;   Status:      Not implemented, reserved for future use
+;;;
+;;; SCOPE 4 - USER (Windows Registry)
+;;;   Storage:     HKEY_CURRENT_USER\Software\HawsEDC\{app}
+;;;   Lifetime:    User profile lifetime (persists across sessions)
+;;;   Persistence: Windows Registry (per-user, per-machine)
+;;;   Use cases:   - User preferences (UI settings, defaults)
+;;;                - Per-user customizations
+;;;                - Settings that persist across all projects
+;;;   Example:     (list "ShowWelcome" "YES" 4)
+;;;   Notes:       Uses vl-registry-read/write functions
+;;;                Separate from project/drawing settings
+;;;
+;;; CHOOSING A SCOPE:
+;;;   Ask: "Should this setting persist?"
+;;;     NO  → Session (0)  - Calculated at runtime, temporary state
+;;;     YES → Continue...
+;;;   
+;;;   Ask: "Should this setting travel with the drawing file?"
+;;;     YES → Drawing (1)  - NOT YET IMPLEMENTED
+;;;     NO  → Continue...
+;;;   
+;;;   Ask: "Is this setting specific to one project?"
+;;;     YES → Project (2)  - Shared by team, project-specific
+;;;     NO  → Continue...
+;;;   
+;;;   Ask: "Is this a user preference or system-wide?"
+;;;     USER   → User (4)     - Personal preference, all projects
+;;;     SYSTEM → App (3)      - NOT YET IMPLEMENTED (factory defaults)
+;;;
+;;; STORAGE MECHANISM SUMMARY:
+;;;   Scope 0 (Session):  *haws-config* global variable (memory)
+;;;   Scope 1 (Drawing):  Not implemented (would use XDATA)
+;;;   Scope 2 (Project):  INI file via ini_readsection/ini_writeentry
+;;;   Scope 3 (App):      Not implemented (would use app folder INI)
+;;;   Scope 4 (User):     Windows Registry via vl-registry-read/write
+;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;; *haws-config-session* - Session-scope cache (scope 0)
-;;; Structure: Same as CACHE, but for session-only variables
-(if (not *haws-config-session*) (setq *haws-config-session* '()))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; SECTION ACCESS HELPERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;; haws-config-get-section - Get a top-level section from *haws-config*
+;;; Arguments:
+;;;   section-name - Section name: "Definitions", "Cache", or "Session"
+;;; Returns:
+;;;   Section contents (list of app entries), or nil if not found
+(defun haws-config-get-section (section-name / )
+  (cdr (assoc section-name *haws-config*))
+)
+
+;;; haws-config-set-section - Update a top-level section in *haws-config*
+;;; Arguments:
+;;;   section-name - Section name: "Definitions", "Cache", or "Session"
+;;;   new-contents - New contents for the section (list of app entries)
+;;; Returns:
+;;;   The new contents
+;;; Side Effects:
+;;;   Updates *haws-config* global
+(defun haws-config-set-section (section-name new-contents / old-section)
+  (setq old-section (assoc section-name *haws-config*))
+  (cond
+    (old-section
+     ;; Section exists, replace it
+     (setq *haws-config*
+       (subst
+         (cons section-name new-contents)
+         old-section
+         *haws-config*))
+    )
+    (t
+     ;; Section doesn't exist, add it
+     (setq *haws-config*
+       (cons
+         (cons section-name new-contents)
+         *haws-config*))
+    )
+  )
+  new-contents
+)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; CACHE MANAGEMENT FUNCTIONS
@@ -72,8 +219,9 @@
 ;;;   var - Variable name (string)
 ;;; Returns:
 ;;;   Value string if found, nil otherwise
-(defun haws-config-cache-get (app var / app-cache)
-  (setq app-cache (assoc app *haws-config-cache*))
+(defun haws-config-cache-get (app var / cache app-cache)
+  (setq cache (haws-config-get-section "Cache"))
+  (setq app-cache (assoc app cache))
   (if app-cache
     (cadr (assoc var (cdr app-cache)))
     nil
@@ -87,8 +235,9 @@
 ;;;   val - Value to store (string)
 ;;; Returns:
 ;;;   The value that was set
-(defun haws-config-cache-set (app var val / app-cache var-entry new-app-cache)
-  (setq app-cache (assoc app *haws-config-cache*))
+(defun haws-config-cache-set (app var val / cache app-cache var-entry new-app-cache new-cache)
+  (setq cache (haws-config-get-section "Cache"))
+  (setq app-cache (assoc app cache))
   (cond
     (app-cache
      ;; App exists in cache, update or add variable
@@ -109,22 +258,14 @@
           )
         )
      )
-     (setq
-       *haws-config-cache*
-        (subst new-app-cache app-cache *haws-config-cache*)
-     )
+     (setq new-cache (subst new-app-cache app-cache cache))
     )
     (t
      ;; App doesn't exist in cache, create it
-     (setq
-       *haws-config-cache*
-        (cons
-          (list app (list var val))
-          *haws-config-cache*
-        )
-     )
+     (setq new-cache (cons (list app (list var val)) cache))
     )
   )
+  (haws-config-set-section "Cache" new-cache)
   val
 )
 
@@ -133,8 +274,9 @@
 ;;;   app - Application identifier (string)
 ;;; Returns:
 ;;;   List of (var val) pairs for app, or nil
-(defun haws-config-cache-get-app (app / app-cache)
-  (setq app-cache (assoc app *haws-config-cache*))
+(defun haws-config-cache-get-app (app / cache app-cache)
+  (setq cache (haws-config-get-section "Cache"))
+  (setq app-cache (assoc app cache))
   (if app-cache
     (cdr app-cache)
     nil
@@ -145,29 +287,15 @@
 ;;; SCOPE HELPER FUNCTIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;; haws-config-get-definitions - Get definitions for specific app
+;;; haws-config-get-definitions - Get variable definitions for specific app
 ;;; Arguments:
 ;;;   app - Application identifier (string)
 ;;; Returns:
-;;;   Definitions list for app, or nil if not registered
-(defun haws-config-get-definitions (app / )
-  (cdr (assoc app *haws-config-definitions*))
-)
-
-;;; haws-config-scope-code - Convert scope name to numeric code
-;;; Arguments:
-;;;   app - Application identifier (string)
-;;;   scope-key - Scope name: "Session" "Drawing" "Project" "App" "User"
-;;; Returns:
-;;;   Numeric scope code (0-4)
-(defun haws-config-scope-code (app scope-key / definitions)
-  (setq definitions (haws-config-get-definitions app))
-  (cadr
-    (assoc
-      scope-key
-      (cdr (assoc "Scope" definitions))
-    )
-  )
+;;;   Variable list for app: '(("var1" "default1" scope-code) ...)
+;;;   Returns nil if not registered
+(defun haws-config-get-definitions (app / definitions)
+  (setq definitions (haws-config-get-section "Definitions"))
+  (cdr (assoc app definitions))
 )
 
 ;;; haws-config-entry-var - Extract variable name from config entry
@@ -210,15 +338,15 @@
 ;;; Arguments:
 ;;;   app - Application identifier (string)
 ;;;   var - Variable name (string)
-;;;   scope-key - Scope name: "Session" "Drawing" "Project" "App" "User"
+;;;   scope-code - Numeric scope code (0-4)
 ;;; Returns:
 ;;;   T if variable is in specified scope, nil otherwise
-(defun haws-config-scope-eq (app var scope-key / definitions var-entry)
+(defun haws-config-scope-eq (app var scope-code / definitions var-entry)
   (setq definitions (haws-config-get-definitions app))
-  (setq var-entry (assoc var (cdr (assoc "Var" definitions))))
+  (setq var-entry (assoc var definitions))
   (=
     (haws-config-entry-scope-code var-entry)
-    (haws-config-scope-code app scope-key)
+    scope-code
   )
 )
 
@@ -228,32 +356,37 @@
 ;;;   var - Variable name (string)
 ;;; Returns:
 ;;;   Default value (string) or nil
-(defun haws-config-get-default (app var / definitions defaults)
+(defun haws-config-get-default (app var / definitions)
   (setq definitions (haws-config-get-definitions app))
-  (setq
-    defaults
-     (mapcar
-       'haws-config-entry-strip-scope
-       (cdr (assoc "Var" definitions))
-     )
+  (haws-config-entry-val (assoc var definitions))
+)
+
+;;; haws-config-get-scope - Get scope code for variable from definitions
+;;; Arguments:
+;;;   app - Application identifier (string)
+;;;   var - Variable name (string)
+;;; Returns:
+;;;   Scope code (integer 0-4) or nil if not found
+(defun haws-config-get-scope (app var / definitions var-entry)
+  (setq definitions (haws-config-get-definitions app))
+  (setq var-entry (assoc var definitions))
+  (if var-entry
+    (haws-config-entry-scope-code var-entry)
+    nil
   )
-  (haws-config-entry-val (assoc var defaults))
 )
 
 ;;; haws-config-defaults-single-scope - Get all defaults for one scope
 ;;; Arguments:
 ;;;   app - Application identifier (string)
-;;;   scope-key - Scope name: "Session" "Drawing" "Project" "App" "User"
+;;;   scope-code - Numeric scope code (0-4)
 ;;; Returns:
 ;;;   List of (var default) pairs for specified scope
-(defun haws-config-defaults-single-scope (app scope-key / scope-code scope-list definitions entry)
-  (setq
-    scope-code (haws-config-scope-code app scope-key)
-    definitions (haws-config-get-definitions app)
-  )
+(defun haws-config-defaults-single-scope (app scope-code / scope-list definitions entry)
+  (setq definitions (haws-config-get-definitions app))
   (foreach
     entry
-     (cdr (assoc "Var" definitions))
+     definitions
     (cond
       ((= (haws-config-entry-scope-code entry) scope-code)
        (setq
@@ -312,8 +445,9 @@
 ;;;   var - Variable name (string)
 ;;; Returns:
 ;;;   Value from session cache, or nil if not found
-(defun haws-config-read-session (app var / app-session)
-  (setq app-session (assoc app *haws-config-session*))
+(defun haws-config-read-session (app var / session app-session)
+  (setq session (haws-config-get-section "Session"))
+  (setq app-session (assoc app session))
   (if app-session
     (cadr (assoc var (cdr app-session)))
     nil
@@ -327,8 +461,9 @@
 ;;;   val - Value to write (string)
 ;;; Returns:
 ;;;   Value that was written
-(defun haws-config-write-session (app var val / app-session var-entry new-app-session)
-  (setq app-session (assoc app *haws-config-session*))
+(defun haws-config-write-session (app var val / session app-session var-entry new-app-session new-session)
+  (setq session (haws-config-get-section "Session"))
+  (setq app-session (assoc app session))
   (cond
     (app-session
      ;; App exists in session, update or add variable
@@ -349,22 +484,14 @@
           )
         )
      )
-     (setq
-       *haws-config-session*
-        (subst new-app-session app-session *haws-config-session*)
-     )
+     (setq new-session (subst new-app-session app-session session))
     )
     (t
      ;; App doesn't exist in session, create it
-     (setq
-       *haws-config-session*
-        (cons
-          (list app (list var val))
-          *haws-config-session*
-        )
-     )
+     (setq new-session (cons (list app (list var val)) session))
     )
   )
+  (haws-config-set-section "Session" new-session)
   val
 )
 
@@ -382,7 +509,7 @@
        )
        (list var val)
      )
-    (haws-config-defaults-single-scope app "User")
+    (haws-config-defaults-single-scope app 4)  ; 4 = User scope
   )
 )
 
@@ -400,7 +527,7 @@
        )
        (list var val)
      )
-    (haws-config-defaults-single-scope app "Session")
+    (haws-config-defaults-single-scope app 0)  ; 0 = Session scope
   )
 )
 
@@ -425,7 +552,7 @@
        )
        (list var val)
      )
-    (haws-config-defaults-single-scope app "Project")
+    (haws-config-defaults-single-scope app 2)  ; 2 = Project scope
   )
 )
 
@@ -450,51 +577,57 @@
 ;;; haws-config-register-app - Register an application with the config system
 ;;; Arguments:
 ;;;   app - Application identifier (string, e.g. "CNM", "HAWS-QT")
-;;;   definitions - Config definitions list (same format as hcnm-config-definitions)
+;;;   definitions - List of variable definitions: '(("var1" "default1" scope-code) ...)
+;;;                 Each entry is (name default-value scope-code)
+;;;                 Scope codes: 0=Session, 2=Project, 4=User
 ;;; Returns:
-;;;   T on success
+;;;   T on success, nil if already registered
 ;;; Side Effects:
-;;;   Stores definitions in *haws-config-definitions*
-;;;   Initializes app entry in *haws-config-cache*
-(defun haws-config-register-app (app definitions / )
-  ;; Store definitions
-  (setq
-    *haws-config-definitions*
-     (cons
-       (cons app definitions)
-       *haws-config-definitions*
-     )
-  )
-  ;; Initialize app cache if not exists
-  (if (not (assoc app *haws-config-cache*))
-    (setq
-      *haws-config-cache*
-       (cons
-         (list app)  ; Empty var list initially
-         *haws-config-cache*
-       )
+;;;   Stores definitions in *haws-config* "Definitions" section
+;;;   Initializes app entry in "Cache" and "Session" sections
+;;;
+;;; EXAMPLE:
+;;;   (haws-config-register-app "MyApp"
+;;;     '(("UserSetting1" "A" 4)      ; 4=User (Registry)
+;;;       ("AppVersion" "1.0" 0)))    ; 0=Session (Memory)
+;;;
+;;; NOTE: Safe to call multiple times - checks if already registered
+(defun haws-config-register-app (app definitions / defs-section cache-section session-section)
+  ;; Check if already registered
+  (setq defs-section (haws-config-get-section "Definitions"))
+  (cond
+    ((assoc app defs-section)
+     ;; Already registered, return nil
+     nil
+    )
+    (t
+     ;; Not registered, proceed with registration
+     (setq cache-section (haws-config-get-section "Cache"))
+     (setq session-section (haws-config-get-section "Session"))
+     
+     ;; Store variable definitions
+     (setq defs-section (cons (cons app definitions) defs-section))
+     (haws-config-set-section "Definitions" defs-section)
+     
+     ;; Initialize app cache
+     (setq cache-section (cons (list app) cache-section))
+     (haws-config-set-section "Cache" cache-section)
+     
+     ;; Initialize app session cache
+     (setq session-section (cons (list app) session-section))
+     (haws-config-set-section "Session" session-section)
+     
+     T
     )
   )
-  ;; Initialize app session cache if not exists
-  (if (not (assoc app *haws-config-session*))
-    (setq
-      *haws-config-session*
-       (cons
-         (list app)  ; Empty var list initially
-         *haws-config-session*
-       )
-    )
-  )
-  T
 )
 
 ;;; haws-config-getvar - Get configuration variable value
 ;;; Arguments:
 ;;;   app - Application identifier (string)
 ;;;   var - Variable name (string)
-;;;   scope-code - Scope code (0=Session, 1=Drawing, 2=Project, 3=App, 4=User)
-;;;   ini-path - For Project scope: full path to INI file (optional for other scopes)
-;;;   section - For Project scope: INI section name (optional for other scopes)
+;;;   ini-path - For Project scope: full path to INI file (nil for Session/User scopes)
+;;;   section - For Project scope: INI section name (nil for Session/User scopes)
 ;;; Returns:
 ;;;   Variable value (string), or default if not found
 ;;; Fallback Chain:
@@ -502,8 +635,26 @@
 ;;;   2. If not in cache, read from scope storage
 ;;;   3. If not in storage, use default from definitions
 ;;;   4. Store in cache and return
-(defun haws-config-getvar (app var scope-code ini-path section / val setvar-p)
+;;; Notes:
+;;;   Scope is auto-looked-up from variable definitions (no longer passed as parameter)
+(defun haws-config-getvar (app var ini-path section / val setvar-p scope-code)
   (setq setvar-p t)
+  
+  ;; Auto-lookup scope from definitions
+  (setq scope-code (haws-config-get-scope app var))
+  (if (not scope-code)
+    (progn
+      (alert
+        (princ
+          (strcat
+            "Fatal error in HAWS-CONFIG-GETVAR:\nVariable not registered\n"
+            "App: " app "\nVar: " var
+          )
+        )
+      )
+      (setq scope-code 0)  ; Fallback to Session to avoid crash
+    )
+  )
   
   ;; Try getting from cache first
   (setq val (haws-config-cache-get app var))
@@ -588,15 +739,32 @@
 ;;;   app - Application identifier (string)
 ;;;   var - Variable name (string)
 ;;;   val - Value to set (string)
-;;;   scope-code - Scope code (0=Session, 1=Drawing, 2=Project, 3=App, 4=User)
-;;;   ini-path - For Project scope: full path to INI file (optional for other scopes)
-;;;   section - For Project scope: INI section name (optional for other scopes)
+;;;   ini-path - For Project scope: full path to INI file (nil for Session/User scopes)
+;;;   section - For Project scope: INI section name (nil for Session/User scopes)
 ;;; Returns:
 ;;;   The value that was set
 ;;; Side Effects:
 ;;;   Updates cache
 ;;;   Writes to appropriate scope storage (Registry, INI file, or session memory)
-(defun haws-config-setvar (app var val scope-code ini-path section / )
+;;; Notes:
+;;;   Scope is auto-looked-up from variable definitions (no longer passed as parameter)
+(defun haws-config-setvar (app var val ini-path section / scope-code)
+  ;; Auto-lookup scope from definitions
+  (setq scope-code (haws-config-get-scope app var))
+  (if (not scope-code)
+    (progn
+      (alert
+        (princ
+          (strcat
+            "Fatal error in HAWS-CONFIG-SETVAR:\nVariable not registered\n"
+            "App: " app "\nVar: " var
+          )
+        )
+      )
+      (setq scope-code 0)  ; Fallback to Session to avoid crash
+    )
+  )
+  
   ;; Always update cache
   (haws-config-cache-set app var val)
   

@@ -2,6 +2,7 @@ retired/
 sandbox/
 Devmenu/VS-DLL/
 *.bak*
+*.backup
 *.dll
 *._??
 *#

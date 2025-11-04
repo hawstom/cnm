@@ -90,12 +90,24 @@ CNM comes with insertion and editing tools for bubble notes.
 - **Civil 3D Surfaces** (elevations)
 - Edit Bubble Note: Opens dialog to edit bubble note attributes and optionally add automatic text.
 
-##### 1.1.3.3.2. Functionality Under Development
-- Reactive auto text. Associate auto text with its reference object where appropriate. Update auto text as appropriate when reference object or bubble arrowhead point changes. Any auto text in bubble notes stays synchronized with source objects and follows their own leader arrowheads via VLR reactors (AutoLISP object event listeners).
+##### 1.1.3.3.2. Reactive Auto-Text Implementation (DEBUGGING)
+- **Status:** Implemented on feat-sunrise branch, currently debugging regressions
+- **What it does:** Auto text in bubble notes stays synchronized with source objects and follows leader arrowheads via VLR reactors (AutoLISP object event listeners)
+- **Architecture:** Free-form 2-element lattribs with handle-based XDATA for multiple auto-texts per line
+- **Current issues:** Some regressions preventing full functionality, addressing bugs one-by-one
 
-###### 1.1.3.3.2.1. Key Technical Challenges
+###### 1.1.3.3.2.1. Key Technical Challenges (BEING ADDRESSED)
 1. **Paper Space Complexity**: Bubbles in paper space viewports require coordinate transformation from paper space DCS (represented by paper space object OCS) to model space WCS.
-2. **Free-form User Edits**: Users can edit bubble note attributes directly in AutoCAD, bypassing CNM dialogs. Need robust parsing to separate auto-generated text from user edits.
+   - **Implementation:** VPTRANS XDATA stores 3-point correspondence for affine transformation
+   - **Status:** Implemented, testing in progress
+   
+2. **Free-form User Edits**: Users edit bubble note attributes directly in AutoCAD, bypassing CNM dialogs. Robust parsing separates auto-generated text from user edits.
+   - **Implementation:** XDATA stores verbatim auto-text as search needles for search-and-replace updates
+   - **Status:** Implemented, handling edge cases
+   
+3. **Data Persistence**: Auto-generated text is stored separately (in XDATA) from user-editable prefix/postfix text
+   - **Implementation:** Search-and-replace approach preserves user text while updating auto-text
+   - **Status:** Implemented, testing various user edit scenarios
 - Users can reasonably expect:
         - that any text they add remains intact while auto text updates correctly.
         - that if they add text around auto text, it remains intact while auto text updates correctly.
@@ -123,32 +135,24 @@ We provide users free-form editing capabilities, so we must store auto-generated
 
 **Result:** User's prefix/postfix preserved, auto text updated ✅
 
-###### 1.1.3.3.2.1.2. CRITICAL ARCHITECTURAL DECISION PENDING
+###### 1.1.3.3.2.1.2. CRITICAL ARCHITECTURAL DECISION (IMPLEMENTED)
 
-**PROBLEM:** Current 4-element lattribs structure limits users to ONE auto-text per line.
+**PROBLEM:** Previous 4-element lattribs structure limited users to ONE auto-text per line.
 
 **User request:** "I want `Storm Drain STA 10+25 RT, Ø24"` (TWO auto-texts: station AND diameter)
 
-**Current limitation:**
+**Previous limitation:**
 - lattribs: `(("TAG" "prefix" "auto" "postfix") ...)` ← Only ONE auto field
 - Dialog: 3 separate fields (Prefix | Auto | Postfix) ← Awkward UX
-- Reality: Reactor already handles multiple auto-texts via search/replace in full string
 
-**Better architecture (free-form 2-element):**
+**Implemented architecture (free-form 2-element):**
 - lattribs: `(("TAG" "full-text") ...)` ← No structural limits
 - XDATA: `(("TAG" ("auto1" "auto2" ...)) ...)` ← List of auto-texts
 - Dialog: Single text field per line ← Natural UX like native AutoCAD
-- Reactor: Search/replace each auto-text needle independently ← Already works!
+- Reactor: Search/replace each auto-text needle independently ✅
 
-**DECISION NEEDED:** Pivot to free-form 2-element before broad release?
-- **NOW:** feat-sunrise branch, not released, perfect time to change
-- **LATER:** Users expect 3-column editor, harder to change
-- **COST:** Rewrite lattribs structure, dialog, validation (medium effort)
-- **BENEFIT:** Unlimited auto-texts per line, simpler code, better UX
-
-**Status:** Under discussion (2025-11-01)
-
-**DECISION MADE (2025-11-01):** YES - Pivot to free-form 2-element architecture now.
+**Decision made:** 2025-11-01 - Pivoted to free-form 2-element architecture.
+**Status:** Implemented, testing in progress on feat-sunrise branch.
 
 ###### 1.1.3.3.2.1.3. Free-Form 2-Element Architecture (NEW)
 
