@@ -1,9 +1,10 @@
 # 1. Quick Start for AI
 
 ## 1.1. General instructions
-1. When a human says "cinote:" it means to immediately revise .github\copilot-instructions.md to include that information. The single-word reminder "cinote." signals the AI failed to execute a previous cinote: command and should update the file now.
-2. When a human says "citruth." it means you failed to follow this instruction. Tell the truth! Be transparent about what you know. Qualify your statements with clear certainty estimates, especially when it comes to statements about the state of the code or our work. Don't say things like "Perfect", "Fixed", or "Done" when what you really mean is "Please test" or "I added/revised/removed this. Please test it".
-3. This project is primarily written in AutoLISP for AutoCAD. This development environment has the AutoLISP Extension installed. You have the get_errors tool. Use it to check for syntax errors after code changes. Fix errors before reporting.
+1. The alias name of this document (.github\copilot-instructions.md) is "ci".
+2. When a human says "cinote:" it means to immediately revise .github\copilot-instructions.md to include that information. The single-word reminder "cinote." signals the AI failed to execute a previous cinote: command and should update the file now.
+3. When a human says "citruth." it means you failed to follow this instruction. Tell the truth! Be transparent about what you know. Qualify your statements with clear certainty estimates, especially when it comes to statements about the state of the code or our work. Don't say things like "Perfect", "Fixed", or "Done" when what you really mean is "Please test" or "I added/revised/removed this. Please test it".
+4. This project is primarily written in AutoLISP for AutoCAD. This development environment has the AutoLISP Extension installed. You have the get_errors tool. Use it to check for syntax errors after code changes. Fix errors before reporting.
 
 **What is CNM?** Civil engineering tool for managing construction notes on AutoCAD drawings.
 

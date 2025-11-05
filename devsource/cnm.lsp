@@ -7846,9 +7846,9 @@ tgh
      (hcnm-ldrblk-assure-auto-text-has-reactor
        nil ename-bubble ename-leader tag auto-type
       )
-     ;; Write initial XDATA in handle-based format (reactor updates need this)
+     ;; Write initial XDATA in composite key format (reactor updates need this)
      ;; Reference handle is "" for coordinate-based auto-text (no reference object)
-     (hcnm-ldrblk-xdata-update-one ename-bubble tag "" string)
+     (hcnm-ldrblk-xdata-update-one ename-bubble tag auto-type "" string)
     )
   )
   ;; END hcnm-ldrblk-auto-get-input SUBFUNCTION
@@ -9478,7 +9478,8 @@ tgh
 ;; Returns: (("TAG1" . "value1") ("TAG2" . "value2") ...) or nil
 ;; Parses multiple 1000 codes: (1000 . "TAG1") (1000 . "value1") ...
 (defun hcnm-xdata-read
-   (ename-bubble / appname xdata-raw pairs current-tag item values all-values idx)
+   (ename-bubble / appname xdata-raw pairs current-tag item values all-values idx
+    values-copy composite-pairs auto-type handle auto-text)
   (setq appname "HCNM-BUBBLE")
   (setq xdata-raw (assoc -3 (entget ename-bubble (list appname))))
   (cond
@@ -9519,26 +9520,31 @@ tgh
          ((= (length values) 1)
           (setq pairs (append pairs (list (cons current-tag (car values)))))
          )
-         ;; Multiple values - handle-based format (pairs of handle/auto)
+         ;; Multiple values - composite key format (triplets of auto-type/handle/auto-text)
          ((> (length values) 1)
-          (setq handle-pairs '())
+          (setq composite-pairs '())
           (setq values-copy values)
           (while values-copy
             (cond
-              ((>= (length values-copy) 2)
-               (setq handle-pairs 
-                 (append handle-pairs 
-                   (list (cons (car values-copy) (cadr values-copy)))))
-               (setq values-copy (cddr values-copy))
+              ;; Need at least 3 values for a triplet
+              ((>= (length values-copy) 3)
+               (setq auto-type (car values-copy))
+               (setq handle (cadr values-copy))
+               (setq auto-text (caddr values-copy))
+               ;; Build composite key: ((auto-type . handle) . auto-text)
+               (setq composite-pairs 
+                 (append composite-pairs 
+                   (list (cons (cons auto-type handle) auto-text))))
+               (setq values-copy (cdddr values-copy))
               )
               (t
-               (setq values-copy nil)  ; Odd number, skip last
+               ;; Not enough values for triplet, skip remaining
+               (setq values-copy nil)
               )
             )
           )
-          ;; Use (cons tag handle-pairs) so (cdr) extracts handle-pairs directly
-          ;; NOT (list tag handle-pairs) which would require (cadr)
-          (setq pairs (append pairs (list (cons current-tag handle-pairs))))
+          ;; Use (cons tag composite-pairs) so (cdr) extracts composite-pairs directly
+          (setq pairs (append pairs (list (cons current-tag composite-pairs))))
          )
          ;; No values - empty (shouldn't happen but handle gracefully)
          (t
@@ -9556,6 +9562,7 @@ tgh
 ;; Uses multiple 1000 codes: (1000 . "TAG1") (1000 . "value1") ...
 (defun hcnm-xdata-write (ename-bubble autotext-alist / appname xdata-list
                      result pair ent-list has-xdata xdata-struct new-ent
+                     composite-key auto-text
                     )
   (setq appname "HCNM-BUBBLE")
   ;; Check if app is registered
@@ -9607,16 +9614,18 @@ tgh
              (append xdata-list (list (cons 1000 (car pair))))
           )
           ;; Add value(s) as 1000
-          ;; Handle both simple format (string) and handle-based format (list of pairs)
+          ;; Handle both simple format (string) and composite key format (list of pairs)
           (cond
-            ;; Handle-based format: ((handle . "auto") ...)
+            ;; Composite key format: (((auto-type . handle) . "auto-text") ...)
             ((and (listp (cdr pair)) (listp (car (cdr pair))))
              (foreach
                 handle-pair (cdr pair)
-               ;; Add handle as 1000
-               (setq xdata-list (append xdata-list (list (cons 1000 (car handle-pair)))))
-               ;; Add auto-text as 1000
-               (setq xdata-list (append xdata-list (list (cons 1000 (cdr handle-pair)))))
+               (setq composite-key (car handle-pair))  ; (auto-type . handle)
+               (setq auto-text (cdr handle-pair))      ; "auto-text"
+               ;; Write triplet: auto-type, handle, auto-text
+               (setq xdata-list (append xdata-list (list (cons 1000 (car composite-key)))))  ; auto-type
+               (setq xdata-list (append xdata-list (list (cons 1000 (cdr composite-key)))))  ; handle
+               (setq xdata-list (append xdata-list (list (cons 1000 auto-text))))            ; auto-text
              )
             )
             ;; Simple format: just a string
@@ -10768,43 +10777,46 @@ tgh
 ;;
 ;; Why This Exists:
 ;;   hcnm-ldrblk-xdata-save uses fallback simple format when called from reactor
-;;   (hcnm-ldrblk-eb-auto-handles not bound). This function maintains handle-based
+;;   (hcnm-ldrblk-eb-auto-handles not bound). This function maintains composite key
 ;;   format by reading existing XDATA, updating one entry, and writing back.
 ;;
 ;; Example:
-;;   (hcnm-ldrblk-xdata-update-one ename-bubble "NOTETXT1" "" "N 1234.56 E 5678.90")
+;;   (hcnm-ldrblk-xdata-update-one ename-bubble "NOTETXT1" "StaOff" "" "N 1234.56 E 5678.90")
 ;;==============================================================================
-(defun hcnm-ldrblk-xdata-update-one (ename-bubble tag handle-reference auto-text / 
-                                     xdata-alist tag-xdata handle-entry tag-entry
+(defun hcnm-ldrblk-xdata-update-one (ename-bubble tag auto-type handle-reference auto-text / 
+                                     xdata-alist tag-xdata composite-key composite-entry tag-entry
                                     )
   (setq xdata-alist (hcnm-xdata-read ename-bubble))
   (setq tag-entry (assoc tag xdata-alist))
   (setq tag-xdata (cdr tag-entry))
   
+  ;; Build composite key
+  (setq composite-key (cons auto-type handle-reference))
+  
   (cond
-    ;; Tag exists with handle-based format
+    ;; Tag exists with composite key format
     ((and tag-xdata (listp tag-xdata) (listp (car tag-xdata)))
-     (setq handle-entry (assoc handle-reference tag-xdata))
+     (setq composite-entry (assoc composite-key tag-xdata))
      (cond
-       ;; Update existing handle
-       (handle-entry
-        (setq tag-xdata (subst (cons handle-reference auto-text) handle-entry tag-xdata))
+       ;; Update existing composite key
+       (composite-entry
+        (setq tag-xdata (subst (cons composite-key auto-text) composite-entry tag-xdata))
        )
-       ;; Add new handle
+       ;; Add new composite key
        (t
-        (setq tag-xdata (append tag-xdata (list (cons handle-reference auto-text))))
+        (setq tag-xdata (append tag-xdata (list (cons composite-key auto-text))))
        )
      )
      ;; Replace tag in alist - use (cons tag tag-xdata) for dotted pair
      ;; (cdr) will extract tag-xdata directly without extra nesting
      (setq xdata-alist (subst (cons tag tag-xdata) tag-entry xdata-alist))
     )
-    ;; Tag doesn't exist or is simple format - create handle-based
+    ;; Tag doesn't exist or is simple format - create composite key format
     (t
-     (setq tag-xdata (list (cons handle-reference auto-text)))
+     (setq tag-xdata (list (cons composite-key auto-text)))
      (cond
        (tag-entry
-        ;; Replace existing simple format with handle-based
+        ;; Replace existing simple format with composite key format
         ;; Use (cons tag tag-xdata) for dotted pair
         (setq xdata-alist (subst (cons tag tag-xdata) tag-entry xdata-alist))
        )
@@ -11010,9 +11022,9 @@ tgh
      ;; collect all returned lattribs and write once after processing all auto-entries.
      (cond
        ((/= lattribs lattribs-old)
-        ;; Update XDATA for this specific handle (preserves other auto-text entries)
-        ;; This maintains handle-based format for reactor updates
-        (hcnm-ldrblk-xdata-update-one ename-bubble tag handle-reference auto-new)
+        ;; Update XDATA for this specific composite key (preserves other auto-text entries)
+        ;; This maintains composite key format for reactor updates
+        (hcnm-ldrblk-xdata-update-one ename-bubble tag auto-type handle-reference auto-new)
         ;; Format for display (adds underline/overline codes)
         (setq lattribs (hcnm-ldrblk-underover-add lattribs))
         ;; Write formatted attributes (uses VLA methods, not entmod)
