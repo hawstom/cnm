@@ -141,6 +141,16 @@ Users can reasonably expect:
 
 20+ years of customer drawings with evolving data formats. CNM is fortunate to have few migration challenges from the user perspective. From the programmer perspective, the code base is evolving. But we are free to improve the data formats used internally as long as we maintain compatibility with block attributes and their names as they exist in customer drawings.
 
+**4. AllowReactors Flag Self-Healing**
+
+The `AllowReactors` config flag can get stuck at "0" if user hits Escape or an error occurs between `hcnm-ldrblk-space-set-model` (sets "0" during MSPACE/PSPACE transitions) and `hcnm-ldrblk-space-restore` (sets "1" after). When stuck at "0", all reactor updates are blocked by Gateway 1.
+
+**Solution (IMPLEMENTED):**
+- **Reactor callback end** (cnm.lsp): Always sets `AllowReactors="1"` after callback completes. Self-healing: if blocked by Gateway 1, next reactor event will work.
+- **Error handler** (edclib.lsp `haws-core-stperr`): Restores `AllowReactors="1"` on any CNM command error/cancel. Applies to all CNM commands using `haws-core-init`.
+
+**Philosophy:** User (or CNM) just did something we ignored. If they do it again, we should NOT ignore it. Better to allow one extra update than to permanently block all updates.
+
 ###### 1.1.3.3.2.2. Example: Free-form Edit Scenario
 
 **User places bubble with auto text:**
@@ -540,6 +550,7 @@ hcnm-*                    Top-level CNM functions
 - **Hyphen-separated**: `hcnm-bubbles-auto-alignment` (not underscore or colon)
 - **Explicit local variables**: Always declare all local variables in the `/ var1 var2` parameter list. Undeclared variables become global and cause subtle bugs (AutoLISP's dynamic scoping leak).
 - **No ad hoc globals**: Use `haws-config` system for persistent state. Document any global with `*asterisk-naming*` and explanation comment only if absolutely necessary.
+- **Dotted pairs vs lists**: Avoid mixing dotted pairs `(cons 1 2)` and proper lists `(list 1 2)` in the same data structure. `(cdr (cons 1 2))` returns atom `2`, but `(cdr (list 1 2))` returns list `(2)`. Prefer proper lists for consistency unless dotted pairs are specifically required (e.g., association lists where the distinction is semantically meaningful).
 
 **Code Style:**
 - **Formatting**: Use AutoLISP Extension auto-formatter (VS Code command)

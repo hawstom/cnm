@@ -217,6 +217,14 @@
   (if errosm
     (setvar "osmode" errosm)
   )
+  
+  ;; CNM: Re-enable reactors if they were disabled during operation
+  ;; Prevents AllowReactors from getting stuck at "0" due to user cancel/error
+  (if (and (fboundp 'c:hcnm-config-getvar)
+           (= (c:hcnm-config-getvar "AllowReactors") "0"))
+    (c:hcnm-config-setvar "AllowReactors" "1")
+  )
+  
   (setq
     ucsp nil
     ucspp nil

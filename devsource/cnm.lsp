@@ -5469,17 +5469,6 @@ tgh
   (setq bubble-data (hcnm-ldrblk-get-p2-data bubble-data))
   (setq bubble-data (hcnm-ldrblk-draw-bubble bubble-data))
   (setq bubble-data (hcnm-ldrblk-get-bubble-data bubble-data))
-  ;; Restore paper space if we switched to model space for viewport selection
-  ;; [TGH 2025-10-29 21:08:53: I don't like this ad hoc global. Use C:hcnm-getvar or bubble-data]
-  (cond
-    (*hcnm-pspace-restore-needed*
-     (princ
-       "\n=== RESTORING TO PSPACE (after auto-text selection) ==="
-     )
-     (vl-cmdf "._PSPACE")
-     (setq *hcnm-pspace-restore-needed* nil) ; Clear the flag
-    )
-  )
   (hcnm-ldrblk-finish-bubble bubble-data)
   (hcnm-restore-dimstyle)
   (haws-vrstor)
@@ -5895,6 +5884,17 @@ tgh
             tag
             lattribs
           )
+       )
+       ;; Restore PSPACE if auto-text selection switched to MSPACE for viewport selection
+       ;; This ensures subsequent prompts (Line 2, etc.) happen in correct space
+       (cond
+         (*hcnm-pspace-restore-needed*
+          (princ
+            "\n=== RESTORING TO PSPACE (after auto-text selection) ==="
+          )
+          (vl-cmdf "._PSPACE")
+          (setq *hcnm-pspace-restore-needed* nil) ; Clear the flag
+         )
        )
        ;; Get text value for string comparison (2-element lattribs)
        (setq
@@ -7564,6 +7564,12 @@ tgh
      (hcnm-ldrblk-assure-auto-text-has-reactor
        obj-align ename-bubble ename-leader tag auto-type
       )
+     ;; Write initial XDATA in handle-based format (reactor updates need this)
+     ;; Reference handle is alignment handle (will be written after we generate string below)
+     ;; Note: This is called before string is calculated, so we need to update XDATA 
+     ;; again after lattribs-put-auto. For now, skip initial write here - the subsequent
+     ;; hcnm-ldrblk-xdata-save will write it in simple format, then first reactor will fix it.
+     ;; TODO: Refactor to write handle-based XDATA after string generation
      ;; Now restore space after everything is done
      (hcnm-ldrblk-space-restore pspace-bubble-p)
     )
@@ -7843,6 +7849,9 @@ tgh
      (hcnm-ldrblk-assure-auto-text-has-reactor
        nil ename-bubble ename-leader tag auto-type
       )
+     ;; Write initial XDATA in handle-based format (reactor updates need this)
+     ;; Reference handle is "" for coordinate-based auto-text (no reference object)
+     (hcnm-ldrblk-xdata-update-one ename-bubble tag "" string)
     )
   )
   ;; END hcnm-ldrblk-auto-get-input SUBFUNCTION
@@ -9463,32 +9472,71 @@ tgh
 ;; Returns: (("TAG1" . "value1") ("TAG2" . "value2") ...) or nil
 ;; Parses multiple 1000 codes: (1000 . "TAG1") (1000 . "value1") ...
 (defun hcnm-xdata-read
-   (ename-bubble / appname xdata-raw pairs current-tag item)
+   (ename-bubble / appname xdata-raw pairs current-tag item values all-values idx)
   (setq appname "HCNM-BUBBLE")
   (setq xdata-raw (assoc -3 (entget ename-bubble (list appname))))
   (cond
     (xdata-raw
      (setq xdata-raw (cdr (assoc appname (cdr xdata-raw))))
-     ;; Parse alternating TAG/VALUE from 1000 codes
-     ;; Format: (1000 . "TAG1") (1000 . "value1") (1000 . "TAG2") (1000 . "value2") ...
-     (setq pairs '())
-     (setq current-tag nil)
-     (foreach
-        item xdata-raw
+     ;; Extract all 1000 code values
+     (setq all-values '())
+     (foreach item xdata-raw
        (cond
          ((= (car item) 1000)
-          (cond
-            ;; If no current tag, this is a tag
-            ((not current-tag) (setq current-tag (cdr item)))
-            ;; If have current tag, this is the value
-            (t
-             (setq
-               pairs
-                (append pairs (list (cons current-tag (cdr item))))
-             )
-             (setq current-tag nil)
+          (setq all-values (append all-values (list (cdr item))))
+         )
+       )
+     )
+     
+     ;; Parse values: first is always tag, then determine format by next tag position
+     (setq pairs '())
+     (setq idx 0)
+     (while (< idx (length all-values))
+       (setq current-tag (nth idx all-values))
+       (setq idx (1+ idx))
+       
+       ;; Find next tag (attribute tags are in our known set)
+       ;; Tags: NOTENUM, NOTEPHASE, NOTEGAP, NOTETXT0-6
+       (setq values '())
+       (while (and (< idx (length all-values))
+                   (not (member (nth idx all-values) 
+                                '("NOTENUM" "NOTEPHASE" "NOTEGAP" 
+                                  "NOTETXT0" "NOTETXT1" "NOTETXT2" "NOTETXT3" 
+                                  "NOTETXT4" "NOTETXT5" "NOTETXT6"))))
+         (setq values (append values (list (nth idx all-values))))
+         (setq idx (1+ idx))
+       )
+       
+       ;; Create entry based on value count
+       (cond
+         ;; Single value - simple format
+         ((= (length values) 1)
+          (setq pairs (append pairs (list (cons current-tag (car values)))))
+         )
+         ;; Multiple values - handle-based format (pairs of handle/auto)
+         ((> (length values) 1)
+          (setq handle-pairs '())
+          (setq values-copy values)
+          (while values-copy
+            (cond
+              ((>= (length values-copy) 2)
+               (setq handle-pairs 
+                 (append handle-pairs 
+                   (list (cons (car values-copy) (cadr values-copy)))))
+               (setq values-copy (cddr values-copy))
+              )
+              (t
+               (setq values-copy nil)  ; Odd number, skip last
+              )
             )
           )
+          ;; Use (cons tag handle-pairs) so (cdr) extracts handle-pairs directly
+          ;; NOT (list tag handle-pairs) which would require (cadr)
+          (setq pairs (append pairs (list (cons current-tag handle-pairs))))
+         )
+         ;; No values - empty (shouldn't happen but handle gracefully)
+         (t
+          (setq pairs (append pairs (list (cons current-tag ""))))
          )
        )
      )
@@ -9534,15 +9582,41 @@ tgh
        (autotext-alist
         (foreach
            pair autotext-alist
+          ;; DEBUG: Show what we're processing
+          (princ (strcat "\n    [XDATA-WRITE] pair: " (vl-prin1-to-string pair)))
+          (princ (strcat "\n    [XDATA-WRITE] (cdr pair): " (vl-prin1-to-string (cdr pair))))
+          (princ (strcat "\n    [XDATA-WRITE] (listp (cdr pair)): " (vl-prin1-to-string (listp (cdr pair)))))
+          (cond
+            ((and (listp (cdr pair)) (listp (car (cdr pair))))
+             (princ "\n    [XDATA-WRITE] Using handle-based format")
+            )
+            (t
+             (princ "\n    [XDATA-WRITE] Using simple format")
+            )
+          )
+          
           ;; Add tag as 1000
           (setq
             xdata-list
              (append xdata-list (list (cons 1000 (car pair))))
           )
-          ;; Add value as 1000
-          (setq
-            xdata-list
-             (append xdata-list (list (cons 1000 (cdr pair))))
+          ;; Add value(s) as 1000
+          ;; Handle both simple format (string) and handle-based format (list of pairs)
+          (cond
+            ;; Handle-based format: ((handle . "auto") ...)
+            ((and (listp (cdr pair)) (listp (car (cdr pair))))
+             (foreach
+                handle-pair (cdr pair)
+               ;; Add handle as 1000
+               (setq xdata-list (append xdata-list (list (cons 1000 (car handle-pair)))))
+               ;; Add auto-text as 1000
+               (setq xdata-list (append xdata-list (list (cons 1000 (cdr handle-pair)))))
+             )
+            )
+            ;; Simple format: just a string
+            (t
+             (setq xdata-list (append xdata-list (list (cons 1000 (cdr pair)))))
+            )
           )
         )
        )
@@ -10207,6 +10281,96 @@ tgh
   )
 )
 ;;==============================================================================
+;; REACTOR GATEWAY CHECKS
+;;==============================================================================
+;; Gateway functions determine if reactor callback should process updates.
+;; Each returns T if gate is OPEN (allow processing), NIL if BLOCKED.
+;;==============================================================================
+
+;;------------------------------------------------------------------------------
+;; hcnm-ldrblk-reactor-gateway-check-enabled
+;;------------------------------------------------------------------------------
+;; Purpose: Check if reactors are enabled (AllowReactors flag)
+;; Returns: T if enabled, NIL if disabled
+;; Why: AllowReactors="0" during space transitions and internal updates
+;;      to prevent infinite loops and spurious events
+;;------------------------------------------------------------------------------
+(defun hcnm-ldrblk-reactor-gateway-check-enabled (/)
+  (princ (strcat "\n  Gateway 1: AllowReactors=" (c:hcnm-config-getvar "AllowReactors")))
+  (cond
+    ((= (c:hcnm-config-getvar "AllowReactors") "1")
+     (princ "\n  Gateway 1: PASSED")
+     T
+    )
+    (t
+     (princ "\n  Gateway 1: BLOCKED (reactors disabled)")
+     nil
+    )
+  )
+)
+
+;;------------------------------------------------------------------------------
+;; hcnm-ldrblk-reactor-gateway-check-notifier-exists
+;;------------------------------------------------------------------------------
+;; Purpose: Check if notifier object still exists (not erased)
+;; Arguments: obj-notifier - VLA-OBJECT that triggered callback
+;; Returns: T if exists, NIL if erased/invalid
+;; Why: Object erasure triggers callback but accessing erased objects throws errors
+;;      Wrap vla-get-handle in error handler for safe checking
+;;------------------------------------------------------------------------------
+(defun hcnm-ldrblk-reactor-gateway-check-notifier-exists (obj-notifier /)
+  (princ "\n  Gateway 2: Checking if notifier object exists...")
+  (cond
+    ((vl-catch-all-error-p 
+       (vl-catch-all-apply 'vla-get-handle (list obj-notifier)))
+     (princ "\n  Gateway 2: BLOCKED (notifier object erased/invalid)")
+     nil
+    )
+    (t
+     (princ "\n  Gateway 2: PASSED")
+     T
+    )
+  )
+)
+
+;;------------------------------------------------------------------------------
+;; hcnm-ldrblk-reactor-gateway-check-notifier-in-data
+;;------------------------------------------------------------------------------
+;; Purpose: Check if notifier exists in reactor data structure
+;; Arguments: 
+;;   notifier-entry - Result of (assoc handle-notifier owner-list)
+;;   handle-notifier - Handle string of notifier object
+;;   data - Reactor data structure
+;; Returns: T if found, NIL if not found
+;; Why: Defensive check for data integrity - should always pass unless corruption
+;;      See Gateway 3 explanation in callback header for full details
+;;------------------------------------------------------------------------------
+(defun hcnm-ldrblk-reactor-gateway-check-notifier-in-data (notifier-entry handle-notifier data /)
+  (princ (strcat "\n  Gateway 3 check:"))
+  (princ (strcat "\n    handle-notifier: " handle-notifier))
+  (princ (strcat "\n    notifier-entry: " (vl-prin1-to-string notifier-entry)))
+  (cond
+    (notifier-entry
+     (princ "\n  Gateway 3: PASSED")
+     T
+    )
+    (t
+     (princ "\n  Gateway 3: FAILED - Notifier not found")
+     (princ 
+       (strcat 
+         "\nWarning: Notifier "
+         handle-notifier
+         " not found in reactor data"
+         "\nReactor data structure: "
+         (vl-prin1-to-string data)
+       )
+     )
+     nil
+    )
+  )
+)
+
+;;==============================================================================
 ;; hcnm-ldrblk-reactor-callback
 ;;==============================================================================
 ;; Purpose:
@@ -10289,36 +10453,19 @@ tgh
 ;;   → Updates all bubbles with "StaOff" auto-text from that alignment
 ;;==============================================================================
 (defun hcnm-ldrblk-reactor-callback (obj-notifier obj-reactor parameter-list / 
-                                     continue-p key-app data-old data handle-notifier 
+                                     key-app data-old data handle-notifier 
                                      owner-list notifier-entry
                                     ) 
-  ;; Initialize continue flag (gates below may set to NIL)
-  (setq continue-p T)
+  ;; DEBUG: Print that callback fired
+  (princ "\n=== REACTOR CALLBACK FIRED ===")
   
-  ;; GATEWAY 1: Check if reactors are enabled
-  ;; AllowReactors="0" during space transitions and other sensitive operations
-  (cond 
-    ((= (c:hcnm-config-getvar "AllowReactors") "0")
-     (setq continue-p nil)
-    )
-  )
-  
-  ;; GATEWAY 2: Check if notifier object still exists (not erased)
-  ;; Wrap in error handler because erased objects throw errors on property access
-  (cond 
-    ((and 
-       continue-p
-       (vl-catch-all-error-p 
-         (vl-catch-all-apply 'vla-get-handle (list obj-notifier))
-       )
+  ;; Check all gateways - early exit if any blocked
+  (cond
+    ;; All gates must pass to proceed with update
+    ((and
+       (hcnm-ldrblk-reactor-gateway-check-enabled)
+       (hcnm-ldrblk-reactor-gateway-check-notifier-exists obj-notifier)
      )
-     (setq continue-p nil)
-    )
-  )
-  
-  ;; MAIN PROCESSING: All gates passed, proceed with update
-  (cond 
-    (continue-p
      ;; Extract reactor data and find notifier entry
      (setq 
        key-app "HCNM-BUBBLE"
@@ -10329,39 +10476,37 @@ tgh
        notifier-entry (assoc handle-notifier owner-list)
      )
      
-     ;; GATEWAY 3: Verify notifier exists in data structure
-     (cond 
-       (notifier-entry
-        ;; Update all bubbles dependent on this notifier
+     ;; Gateway 3: Verify notifier exists in data structure
+     (cond
+       ((hcnm-ldrblk-reactor-gateway-check-notifier-in-data notifier-entry handle-notifier data)
+        ;; All gates passed - update all bubbles dependent on this notifier
+        (princ "\n  Gateway 3: PASSED - Calling reactor-notifier-update")
         (hcnm-ldrblk-reactor-notifier-update notifier-entry handle-notifier)
-       )
-       (t
-        ;; This should never happen - indicates data structure corruption
-        (princ 
-          (strcat 
-            "\nWarning: Notifier "
-            handle-notifier
-            " not found in reactor data"
-            "\nReactor data structure: "
-            (vl-prin1-to-string data)
+        
+        ;; POST-PROCESSING: Cleanup and maintenance
+        (cond 
+          ;; If notifier has no remaining bubbles, remove it as owner
+          ((not (cadr notifier-entry))
+           (vlr-owner-remove obj-reactor obj-notifier)
+          )
+        )
+        (cond
+          ;; If data structure changed, persist the changes
+          ((not (equal data data-old))
+           (vlr-data-set obj-reactor data)
           )
         )
        )
      )
-     
-     ;; POST-PROCESSING: Cleanup and maintenance
-     (cond 
-       ;; If notifier has no remaining bubbles, remove it as owner
-       ((and notifier-entry (not (cadr notifier-entry)))
-        (vlr-owner-remove obj-reactor obj-notifier)
-       )
-       ;; If data structure changed, persist the changes
-       ((not (equal data data-old))
-        (vlr-data-set obj-reactor data)
-       )
-     )
     )
   )
+  
+  ;; SELF-HEALING: Always re-enable reactors at end of callback
+  ;; If reactors were disabled (Gateway 1 blocked), this means user or CNM 
+  ;; just did something that we ignored. If they do it again, we should not 
+  ;; ignore it. This prevents AllowReactors from getting stuck at "0" due to
+  ;; user hitting Escape or errors during space transitions.
+  (c:hcnm-config-setvar "AllowReactors" "1")
 )
 ;;==============================================================================
 ;; hcnm-ldrblk-reactor-notifier-update
@@ -10399,11 +10544,20 @@ tgh
 ;;   )
 ;;==============================================================================
 (defun hcnm-ldrblk-reactor-notifier-update (notifier-entry handle-notifier / bubble-list handle-bubble tag-list)
+  ;; DEBUG: Confirm function called
+  (princ "\n  >>> reactor-notifier-update CALLED")
+  (princ (strcat "\n      notifier-entry: " (vl-prin1-to-string notifier-entry)))
+  
   ;; Extract data from notifier entry
   (setq
     handle-notifier (car notifier-entry)
     bubble-list (cadr notifier-entry)
   )
+  
+  ;; DEBUG: Show what we extracted
+  (princ (strcat "\n      handle-notifier: " handle-notifier))
+  (princ (strcat "\n      bubble-list length: " (itoa (length bubble-list))))
+  
   ;; Temporarily disable reactors to prevent infinite loop during updates
   (c:hcnm-config-setvar "AllowReactors" "0")
   ;; Process each bubble that depends on this notifier
@@ -10577,6 +10731,77 @@ tgh
 )
 
 ;;==============================================================================
+;; hcnm-ldrblk-xdata-update-one
+;;==============================================================================
+;; Purpose:
+;;   Updates a single auto-text entry in bubble's XDATA without affecting other entries.
+;;   Preserves handle-based XDATA format for reactor updates.
+;;
+;; Arguments:
+;;   ename-bubble - Entity name of bubble
+;;   tag - Attribute tag (e.g., "NOTETXT1")
+;;   handle-reference - Handle of reference object or "" for coordinates
+;;   auto-text - New auto-text value to store
+;;
+;; Returns:
+;;   T if successful, NIL otherwise
+;;
+;; Why This Exists:
+;;   hcnm-ldrblk-xdata-save uses fallback simple format when called from reactor
+;;   (hcnm-ldrblk-eb-auto-handles not bound). This function maintains handle-based
+;;   format by reading existing XDATA, updating one entry, and writing back.
+;;
+;; Example:
+;;   (hcnm-ldrblk-xdata-update-one ename-bubble "NOTETXT1" "" "N 1234.56 E 5678.90")
+;;==============================================================================
+(defun hcnm-ldrblk-xdata-update-one (ename-bubble tag handle-reference auto-text / 
+                                     xdata-alist tag-xdata handle-entry tag-entry
+                                    )
+  (setq xdata-alist (hcnm-xdata-read ename-bubble))
+  (setq tag-entry (assoc tag xdata-alist))
+  (setq tag-xdata (cdr tag-entry))
+  
+  (cond
+    ;; Tag exists with handle-based format
+    ((and tag-xdata (listp tag-xdata) (listp (car tag-xdata)))
+     (setq handle-entry (assoc handle-reference tag-xdata))
+     (cond
+       ;; Update existing handle
+       (handle-entry
+        (setq tag-xdata (subst (cons handle-reference auto-text) handle-entry tag-xdata))
+       )
+       ;; Add new handle
+       (t
+        (setq tag-xdata (append tag-xdata (list (cons handle-reference auto-text))))
+       )
+     )
+     ;; Replace tag in alist - use (cons tag tag-xdata) for dotted pair
+     ;; (cdr) will extract tag-xdata directly without extra nesting
+     (setq xdata-alist (subst (cons tag tag-xdata) tag-entry xdata-alist))
+    )
+    ;; Tag doesn't exist or is simple format - create handle-based
+    (t
+     (setq tag-xdata (list (cons handle-reference auto-text)))
+     (cond
+       (tag-entry
+        ;; Replace existing simple format with handle-based
+        ;; Use (cons tag tag-xdata) for dotted pair
+        (setq xdata-alist (subst (cons tag tag-xdata) tag-entry xdata-alist))
+       )
+       (t
+        ;; Add new tag - use (cons tag tag-xdata) for dotted pair
+        (setq xdata-alist (append xdata-alist (list (cons tag tag-xdata))))
+       )
+     )
+    )
+  )
+  
+  ;; Write updated XDATA
+  (hcnm-xdata-set-autotext ename-bubble xdata-alist)
+  T
+)
+
+;;==============================================================================
 ;; hcnm-ldrblk-generate-new-auto-text
 ;;==============================================================================
 ;; Purpose:
@@ -10704,6 +10929,14 @@ tgh
      (setq old-auto-text 
        (hcnm-ldrblk-extract-old-auto-text ename-bubble tag handle-reference)
      )
+     ;; DEBUG OUTPUT
+     (princ (strcat "\n=== DEBUG update-bubble-tag ==="
+                    "\n  Tag: " tag
+                    "\n  Auto-type: " auto-type
+                    "\n  Handle-reference: " (if (= handle-reference "") "(empty string)" handle-reference)
+                    "\n  Old auto-text: " (if old-auto-text old-auto-text "NIL")
+                    "\n  XDATA alist: " (vl-prin1-to-string (hcnm-xdata-read ename-bubble))
+     ))
      
      ;; STEP 3: Generate new auto-text via auto-dispatch
      (setq lattribs 
@@ -10722,6 +10955,11 @@ tgh
      (setq new-text
        (hcnm-ldrblk-smart-replace-auto current-text old-auto-text auto-new)
      )
+     ;; DEBUG OUTPUT
+     (princ (strcat "\n  Current text: " current-text
+                    "\n  New auto: " auto-new
+                    "\n  Result text: " new-text
+     ))
      
      ;; STEP 6: Update lattribs with smartly-replaced text
      (setq lattribs
@@ -10738,8 +10976,15 @@ tgh
      ;; collect all returned lattribs and write once after processing all auto-entries.
      (cond
        ((/= lattribs lattribs-old)
-        ;; Save XDATA before formatting (stores clean auto-text)
-        (hcnm-ldrblk-xdata-save ename-bubble lattribs)
+        ;; Update XDATA for this specific handle (preserves other auto-text entries)
+        ;; This maintains handle-based format for reactor updates
+        (princ (strcat "\n  >>> Writing XDATA: tag=" tag 
+                       " handle=" (if (= handle-reference "") "(empty)" handle-reference)
+                       " auto-new=" auto-new))
+        (hcnm-ldrblk-xdata-update-one ename-bubble tag handle-reference auto-new)
+        ;; DEBUG: Verify XDATA was written
+        (princ (strcat "\n  >>> XDATA after write: " 
+                       (vl-prin1-to-string (hcnm-xdata-read ename-bubble))))
         ;; Format for display (adds underline/overline codes)
         (setq lattribs (hcnm-ldrblk-underover-add lattribs))
         ;; Write formatted attributes (uses VLA methods, not entmod)
