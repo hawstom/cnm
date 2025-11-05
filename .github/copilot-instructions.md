@@ -2,7 +2,7 @@
 
 ## 1.1. General instructions
 1. When a human says "cinote:" it means to immediately revise .github\copilot-instructions.md to include that information. The single-word reminder "cinote." signals the AI failed to execute a previous cinote: command and should update the file now.
-2. Tell the truth! Be transparent about what you know. Qualify your statements with clear certainty estimates, especially when it comes to statements about the state of the code or our work. Don't say things like "Perfect", "Fixed", or "Done" when what you really mean is "Please test" or "I added/revised/removed this. Please test it".
+2. When a human says "citruth." it means you failed to follow this instruction. Tell the truth! Be transparent about what you know. Qualify your statements with clear certainty estimates, especially when it comes to statements about the state of the code or our work. Don't say things like "Perfect", "Fixed", or "Done" when what you really mean is "Please test" or "I added/revised/removed this. Please test it".
 3. This project is primarily written in AutoLISP for AutoCAD. This development environment has the AutoLISP Extension installed. You have the get_errors tool. Use it to check for syntax errors after code changes. Fix errors before reporting.
 
 **What is CNM?** Civil engineering tool for managing construction notes on AutoCAD drawings.
@@ -141,15 +141,20 @@ Users can reasonably expect:
 
 20+ years of customer drawings with evolving data formats. CNM is fortunate to have few migration challenges from the user perspective. From the programmer perspective, the code base is evolving. But we are free to improve the data formats used internally as long as we maintain compatibility with block attributes and their names as they exist in customer drawings.
 
-**4. AllowReactors Flag Self-Healing**
+**4. IgnoreReactorOnce Flag Self-Healing**
 
-The `AllowReactors` config flag can get stuck at "0" if user hits Escape or an error occurs between `hcnm-ldrblk-space-set-model` (sets "0" during MSPACE/PSPACE transitions) and `hcnm-ldrblk-space-restore` (sets "1" after). When stuck at "0", all reactor updates are blocked by Gateway 1.
+The `IgnoreReactorOnce` config flag can get stuck at "1" if user hits Escape or an error occurs between `hcnm-ldrblk-space-set-model` (sets "1" during MSPACE/PSPACE transitions) and `hcnm-ldrblk-space-restore` (sets "0" after). When stuck at "1", all reactor updates are blocked by Gateway 1.
 
 **Solution (IMPLEMENTED):**
-- **Reactor callback end** (cnm.lsp): Always sets `AllowReactors="1"` after callback completes. Self-healing: if blocked by Gateway 1, next reactor event will work.
-- **Error handler** (edclib.lsp `haws-core-stperr`): Restores `AllowReactors="1"` on any CNM command error/cancel. Applies to all CNM commands using `haws-core-init`.
+- **Reactor callback end** (cnm.lsp): Always sets `IgnoreReactorOnce="0"` after callback completes. Self-healing: if blocked by Gateway 1, next reactor event will work.
+- **Error handler** (edclib.lsp `haws-core-stperr`): Restores `IgnoreReactorOnce="0"` on any CNM command error/cancel. Applies to all CNM commands using `haws-core-init`.
 
 **Philosophy:** User (or CNM) just did something we ignored. If they do it again, we should NOT ignore it. Better to allow one extra update than to permanently block all updates.
+
+**Semantics:** 
+- "0" = Normal operation (process reactor events)
+- "1" = Ignore next reactor event (self-clearing)
+- Inverted from old AllowReactors ("0"=block, "1"=allow) for clearer intent
 
 ###### 1.1.3.3.2.2. Example: Free-form Edit Scenario
 
@@ -347,6 +352,35 @@ Current architecture stores `(handle . "auto-text")` dotted pairs, which means y
 **TIP for Users:** If you need multiple auto-texts from the same reference (e.g., station AND offset from same alignment), click the auto-button once and CNM generates both in one auto-text field. The format is controlled by the auto-type ("Sta" vs "Off" vs "StaOff").
 
 **Future Enhancement:** Could support multiple auto-texts per reference by changing `(handle . "auto")` to `(handle ("auto1" "auto2" ...))`. This would require XDATA reader/writer updates but is architecturally straightforward.
+
+**Terminology - Semantic Hierarchy (CRITICAL):**
+
+**OWNER** = General term for any object attached to reactor (reference OR leader)
+**NOTIFIER** = Specific owner that triggered THIS callback event
+**REFERENCE** = Specific owner that provides calculation data (always reference object, never leader)
+
+**Lookup Pattern:**
+1. Search **owner-list** to find **notifier-entry** (which owner triggered this event?)
+2. Drill down through bubbles/tags to find **reference** handles (where's the data?)
+
+**Why This Matters:**
+- Data structure uses `handle-owner` as keys (any owner at rest)
+- Callback receives `obj-notifier` parameter (specific owner in motion)
+- Deep leaf nodes store `handle-reference` (always data source, never leader)
+
+**Leader Path Example:**
+- User places NE bubble, clicks alignment for StaOff auto-text
+- `handle-owner` = leader (we track arrowhead moves)
+- `handle-reference` = alignment (we get station/offset from here)
+- When leader moves: recalculate StaOff using NEW position on SAME alignment
+
+**Direct Path Example:**
+- User places StaOff bubble, clicks alignment (no leader involved)
+- `handle-owner` = alignment (we track alignment changes)
+- `handle-reference` = alignment (same object - we get data from what we track)
+- When alignment moves: recalculate StaOff using alignment geometry
+
+**Code was already semantically correct - documentation now crystal clear (2025-11-05).**
     (t (strcat text " " auto-value))))
 ```
 

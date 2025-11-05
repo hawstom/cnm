@@ -199,8 +199,7 @@
   )
   ;; End undo group
   (if vstr
-    (haws-vrstor)
-  )
+    (haws-vrstor))
   ;; Restore variables to previous values
   (if ucsp
     (vl-cmdf "._UCS" "_P")
@@ -218,11 +217,11 @@
     (setvar "osmode" errosm)
   )
   
-  ;; CNM: Re-enable reactors if they were disabled during operation
-  ;; Prevents AllowReactors from getting stuck at "0" due to user cancel/error
+  ;; CNM: Clear reactor ignore flag if set during operation
+  ;; Prevents IgnoreReactorOnce from getting stuck at "1" due to user cancel/error
   (if (and (fboundp 'c:hcnm-config-getvar)
-           (= (c:hcnm-config-getvar "AllowReactors") "0"))
-    (c:hcnm-config-setvar "AllowReactors" "1")
+           (= (c:hcnm-config-getvar "IgnoreReactorOnce") "1"))
+    (c:hcnm-config-setvar "IgnoreReactorOnce" "0")
   )
   
   (setq
@@ -813,6 +812,7 @@
      (337 1 "hcnm-edit-bubbles")
      (338 1 "hcnm-replace-bubble")
      (339 -1 "haws_label")
+     ;; Add new commands here
      (1000 1 "untracked")
    )
 )
@@ -1931,6 +1931,35 @@
   (if (> *haws-debuglevel* 0)
     (princ (strcat "\nHawsEDC debug message: " messagestring))
     messagestring
+  )
+)
+
+;;------------------------------------------------------------------------------
+;; haws-debug - Conditional debug output with flexible formatting
+;;------------------------------------------------------------------------------
+;; Purpose: Print debug messages only when debug flag enabled
+;; Arguments:
+;;   enabled - T to print, NIL to skip (typically a global like *hcnm-debug*)
+;;   messages - List of strings to concatenate and print
+;;              OR single string (auto-wrapped in list)
+;; Usage:
+;;   (haws-debug *hcnm-debug* '("Gateway 1: " "PASSED"))
+;;   (haws-debug *hcnm-debug* "Simple message")
+;;   (haws-debug nil "Never prints")
+;;------------------------------------------------------------------------------
+(defun haws-debug (enabled messages / output)
+  (cond
+    (enabled
+     ;; Convert single string to list for consistent processing
+     (if (= (type messages) 'STR)
+       (setq messages (list messages))
+     )
+     ;; Concatenate all strings with newline prefix
+     (setq output (apply 'strcat (cons "\n" messages)))
+     (princ output)
+     output  ; Return the output string
+    )
+    (t nil)  ; Return nil when disabled
   )
 )
 
