@@ -10439,8 +10439,10 @@ tgh
 ;;
 ;; Performance Notes:
 ;;   - Iterates tags/auto-entries in nested loops (unavoidable - must process all)
-;;   - Each update-bubble-tag call writes XDATA + attributes (INEFFICIENCY!)
+;;   - Each update-bubble-tag call writes XDATA + attributes (BAD DESIGN - non-atomic!)
 ;;   - TODO: Accumulate changes and write once per bubble
+;;     Solution: Pass accumulator alist to update-bubble-tag, return updated accumulator,
+;;     write accumulated lattribs + XDATA once after all foreach loops complete
 ;;
 ;; Data Format Migration:
 ;;   - NEW: auto-list = (("StaOff" "1D235") ("Sta" "1D235"))
@@ -10479,6 +10481,8 @@ tgh
                handle-reference (cadr auto-entry)  ; Second element, not cdr
              )
              ;; TODO PERFORMANCE: Accumulate updates, write once per bubble
+             ;; Solution: Return updated lattribs instead of writing. Accumulate across
+             ;; all auto-entries, then write once after foreach loops complete.
              (hcnm-ldrblk-update-bubble-tag
                handle-bubble
                tag
@@ -10635,8 +10639,11 @@ tgh
 ;;
 ;; Performance Issues:
 ;;   - Called ONCE PER AUTO-TEXT ENTRY (can be multiple per tag)
-;;   - Each call writes XDATA + attributes (INEFFICIENT!)
+;;   - Each call writes XDATA + attributes (BAD DESIGN - non-atomic!)
 ;;   - TODO: Accumulate updates at bubble-update level, write once
+;;     Solution: Change signature to (update-bubble-tag ... lattribs-accumulator),
+;;     return updated accumulator instead of writing. Move write to bubble-update
+;;     after all foreach loops complete. Ensures atomic update of all tags.
 ;;
 ;; Smart Replace Logic:
 ;;   Current: "Storm STA 10+25.50 RT"
@@ -10725,8 +10732,10 @@ tgh
      )
      
      ;; STEP 7: Write to drawing if changed
-     ;; PERFORMANCE NOTE: This writes XDATA + attributes for EACH call
+     ;; PERFORMANCE NOTE: This writes XDATA + attributes for EACH call (BAD DESIGN)
      ;; TODO: Accumulate changes at bubble level, write once
+     ;; Solution: Remove this write block. Return lattribs instead. Let bubble-update
+     ;; collect all returned lattribs and write once after processing all auto-entries.
      (cond
        ((/= lattribs lattribs-old)
         ;; Save XDATA before formatting (stores clean auto-text)
