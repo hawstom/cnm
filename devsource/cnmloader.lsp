@@ -245,6 +245,28 @@
 ;;; It must be loaded before any tips are shown.
 (load "haws-tip")
 
+;;;===========================================================================
+;;; REACTOR CALLBACK AUTOLOADER
+;;;===========================================================================
+;;; CNM bubble notes use persistent VLR-OBJECT-REACTORs that survive between
+;;; drawing sessions. When a drawing opens with existing reactors, AutoCAD
+;;; restores them and may fire callbacks BEFORE cnm.lsp loads via autoload.
+;;;
+;;; This stub function ensures cnm.lsp loads on first reactor callback,
+;;; then calls the real callback. After first call, the real function
+;;; replaces this stub in memory (self-replacing autoloader pattern).
+;;;
+;;; This is NOT a command (no C: prefix) because it's called by AutoCAD
+;;; event system, not by users. Therefore it doesn't use haws-autoload.
+;;;===========================================================================
+(defun hcnm-ldrblk-reactor-callback (obj-notifier obj-reactor parameter-list)
+  (princ "\nAutoloading CNM reactor callback support...")
+  (c:haws-load-from-app-dir "cnm")
+  (princ " done.")
+  ;; Now call the real function (which just loaded)
+  (hcnm-ldrblk-reactor-callback obj-notifier obj-reactor parameter-list)
+)
+
 ;;;Load aliases
 ;;;CNMALIAS.LSP has short names for all the commands.
 (cond

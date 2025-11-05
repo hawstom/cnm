@@ -9893,16 +9893,98 @@ tgh
   ;; Return cleaned data
   (list (list key-app cleaned-owner-list))
 )
-;; Helper: Add or update (auto-type reference-handle) entry in tag's auto-list
-;; Uses haws_nested_list_update to add auto-type entry at proper path
+;;==============================================================================
+;; hcnm-ldrblk-reactor-add-auto
+;;==============================================================================
+;; Purpose:
+;;   Helper function to add or update auto-text entry in reactor data structure.
+;;   Wraps haws_nested_list_update for cleaner API.
+;;
+;; Arguments:
+;;   data - Current reactor data structure (or NIL to create new)
+;;   handle-owner - Handle of owner object (reference or leader)
+;;   handle-bubble - Handle of bubble block
+;;   tag - Attribute tag (e.g., "NOTETXT1")
+;;   auto-type - Auto-text type (e.g., "StaOff", "Dia")
+;;   handle-reference - Handle of actual reference object (stored at leaf)
+;;
+;; Returns:
+;;   Updated data structure with new entry added
+;;
+;; Path Structure:
+;;   ("HCNM-BUBBLE" owner bubble tag auto-type) → reference-handle
+;;
+;; Why Two Handles:
+;;   handle-owner = Who triggers the reactor (alignment OR leader)
+;;   handle-reference = Who provides the data (always alignment, even for leader path)
+;;
+;; Example:
+;;   (hcnm-ldrblk-reactor-add-auto 
+;;     data "1D235" "62880" "NOTETXT1" "StaOff" "1D235"
+;;   )
+;;==============================================================================
 (defun hcnm-ldrblk-reactor-add-auto (data handle-owner handle-bubble tag auto-type handle-reference)
-  ;; Path: ("HCNM-BUBBLE" owner bubble tag auto-type) -> reference-handle
   (haws_nested_list_update
     data
     (list "HCNM-BUBBLE" handle-owner handle-bubble tag auto-type)
     handle-reference
   )
 )
+
+;;==============================================================================
+;; hcnm-ldrblk-assure-auto-text-has-reactor
+;;==============================================================================
+;; Purpose:
+;;   Ensures a bubble's auto-text is tracked by the persistent reactor.
+;;   Creates reactor if needed, attaches owners, updates data structure.
+;;
+;; Arguments:
+;;   objref - VLA-OBJECT of reference (alignment/pipe) or NIL for N/E/NE
+;;   ename-bubble - Entity name of bubble block
+;;   ename-leader - Entity name of leader (or NIL if none)
+;;   tag - Attribute tag to track (e.g., "NOTETXT1")
+;;   auto-type - Auto-text type (e.g., "StaOff", "Dia", "N")
+;;
+;; Call Flow:
+;;   auto-dispatch → THIS FUNCTION → reactor-add-auto (builds data structure)
+;;
+;; Architecture:
+;;   CNM uses ONE persistent reactor per drawing (not per bubble).
+;;   Reactor tracks multiple reference objects (alignments, pipes, leaders).
+;;   Data structure maps: owner → bubble → tag → auto-type → reference-handle
+;;
+;; Owner Attachment Logic:
+;;   - If objref is NIL (N/E/NE): attach leader only
+;;   - If coordinate-dependent (Sta/Off/StaOff/N/E/NE/Z): attach both objref AND leader
+;;   - Otherwise: attach objref only
+;;
+;; Data Structure Symmetry:
+;;   For coordinate-dependent types, BOTH paths store same reference-handle:
+;;     ("1D235" (("62880" (("TAG" (("StaOff" "1D235"))))))) ← alignment path
+;;     ("6287B" (("62880" (("TAG" (("StaOff" "1D235"))))))) ← leader path
+;;   This lets callback extract reference-handle from either path.
+;;
+;; Performance Notes:
+;;   - Filters reactor list once (vl-remove-if-not)
+;;   - Fails loudly if multiple reactors found (corruption check)
+;;   - Cleans up stale data before adding new entries
+;;
+;; Side Effects:
+;;   - Creates persistent reactor if none exists (via vlr-pers)
+;;   - Attaches owners to reactor (via vlr-owner-add)
+;;   - Updates reactor data structure (via vlr-data-set)
+;;   - Prints debug output (can be disabled)
+;;
+;; Gotchas:
+;;   - Multiple reactors = programming error (should never happen)
+;;   - Cleanup may remove stale bubble entries (intentional)
+;;   - Debug output shows final data structure (useful for troubleshooting)
+;;
+;; Example:
+;;   (hcnm-ldrblk-assure-auto-text-has-reactor 
+;;     vla-alignment ename-bubble ename-leader "NOTETXT1" "StaOff"
+;;   )
+;;==============================================================================
 (defun hcnm-ldrblk-assure-auto-text-has-reactor (objref ename-bubble
                                              ename-leader tag auto-type
                                              / callbacks data data-old
@@ -10124,22 +10206,105 @@ tgh
     data
   )
 )
+;;==============================================================================
+;; hcnm-ldrblk-reactor-callback
+;;==============================================================================
+;; Purpose:
+;;   Main VLR-OBJECT-REACTOR callback - fires when any tracked reference object
+;;   (alignment, pipe, surface) or leader is modified. Updates all dependent
+;;   bubble notes with fresh auto-text.
+;;
+;; CRITICAL - AUTOLOADER STUB:
+;;   This function has an autoloader stub defined in cnmloader.lsp that ensures
+;;   cnm.lsp loads before first callback fires. The stub intercepts the call,
+;;   loads cnm.lsp, then calls this real function. This solves the problem of
+;;   persistent reactors firing before cnm.lsp autoloads via user commands.
+;;
+;; Arguments:
+;;   obj-notifier - VLA-OBJECT that was modified (trigger object)
+;;   obj-reactor - The persistent reactor object (contains data structure)
+;;   parameter-list - Event parameters (unused)
+;;
+;; Call Flow:
+;;   AutoCAD event → (stub in cnmloader.lsp) → THIS FUNCTION → notifier-update → bubble-update → update-bubble-tag
+;;
+;; Data Structure (stored in reactor):
+;;   ("HCNM-BUBBLE" (
+;;     (handle-notifier (
+;;       (handle-bubble (
+;;         (tag (
+;;           ("auto-type" "handle-reference")
+;;           ...
+;;         ))
+;;       ))
+;;     ))
+;;   ))
+;;
+;; Performance:
+;;   - Uses continue-p pattern for early exits (fail-fast)
+;;   - Direct assoc lookup for notifier (O(1) instead of foreach)
+;;   - Respects AllowReactors flag to prevent recursion
+;;
+;; Gateways (must all pass to continue):
+;;   1. AllowReactors = "1" (not disabled during other updates)
+;;   2. Object not erased (error-safe check via vl-catch-all-apply)
+;;   3. Notifier found in reactor data (valid tracked object)
+;;
+;;      GATEWAY 3 EXPLANATION: This is a defensive/debug check for data integrity.
+;;      
+;;      EXPECTED BEHAVIOR: The notifier IS in our data structure because we added
+;;      it when user created auto-text via hcnm-ldrblk-assure-auto-text-has-reactor.
+;;      
+;;      WHEN THIS CHECK FAILS (should be rare):
+;;      - Data structure corruption (programming bugs)
+;;      - Race conditions during undo/redo operations
+;;      - Manual reactor data manipulation (advanced debugging)
+;;      - Reactor ownership cleanup left orphaned callback registrations
+;;      
+;;      RESPONSE: Print warning (for debugging) and skip update gracefully.
+;;      We DON'T crash AutoCAD over potentially transient state issues.
+;;      
+;;      This is "fail gracefully on UX convenience" not "fail loudly on data
+;;      corruption" because the reactor system is self-healing (cleanup runs
+;;      on next successful update).
+;;
+;; Side Effects:
+;;   - Calls notifier-update which modifies bubble attributes
+;;   - May remove notifier from reactor if no bubbles remain
+;;   - Updates reactor data if structure changes
+;;
+;; Error Handling:
+;;   - Wraps vla-get-handle in error handler (erased objects throw errors)
+;;   - Prints warning if notifier not in data (should never happen - see Gateway 3)
+;;   - Silently skips if reactors disabled or object erased
+;;
+;; Gotchas:
+;;   - AllowReactors="0" during space transitions (prevents spurious events)
+;;   - Reactor data may have stale entries (cleanup removes them)
+;;   - Object erasure triggers callback (must check before accessing)
+;;
+;; Example Event:
+;;   User stretches alignment → obj-notifier = alignment VLA-OBJECT
+;;   → Finds alignment handle in data structure
+;;   → Updates all bubbles with "StaOff" auto-text from that alignment
+;;==============================================================================
 (defun hcnm-ldrblk-reactor-callback (obj-notifier obj-reactor parameter-list / 
                                      continue-p key-app data-old data handle-notifier 
-                                     owner-list owner-entry handle-owner bubble-list 
-                                     handle-bubble tag-list object-erased-p
+                                     owner-list notifier-entry
                                     ) 
-  ;; Debug: Log that callback fired
-  ;; (princ "\n>>> REACTOR CALLBACK FIRED <<<")
+  ;; Initialize continue flag (gates below may set to NIL)
   (setq continue-p T)
-  ;; Skip reactor processing during space transitions to avoid spurious modification events
+  
+  ;; GATEWAY 1: Check if reactors are enabled
+  ;; AllowReactors="0" during space transitions and other sensitive operations
   (cond 
     ((= (c:hcnm-config-getvar "AllowReactors") "0")
-     ;; (princ "\n>>> Reactors disabled, skipping <<<")
      (setq continue-p nil)
     )
   )
-  ;; Check if object is erased (wrap in error handler)
+  
+  ;; GATEWAY 2: Check if notifier object still exists (not erased)
+  ;; Wrap in error handler because erased objects throw errors on property access
   (cond 
     ((and 
        continue-p
@@ -10148,28 +10313,30 @@ tgh
        )
      )
      (setq continue-p nil)
-     ;; (princ "\nReactor fired on erased object - ignoring")
     )
   )
+  
+  ;; MAIN PROCESSING: All gates passed, proceed with update
   (cond 
     (continue-p
-     ;; Normal reactor processing - object is valid
-     (setq key-app         "HCNM-BUBBLE"
-           data-old        (vlr-data obj-reactor)
-           data            data-old
-           handle-notifier (vla-get-handle obj-notifier)
-           owner-list      (cadr (assoc key-app data))
-           notifier-entry     (assoc handle-notifier owner-list)
+     ;; Extract reactor data and find notifier entry
+     (setq 
+       key-app "HCNM-BUBBLE"
+       data-old (vlr-data obj-reactor)
+       data data-old
+       handle-notifier (vla-get-handle obj-notifier)
+       owner-list (cadr (assoc key-app data))
+       notifier-entry (assoc handle-notifier owner-list)
      )
-     ;; Process the notifier (if found in data)
+     
+     ;; GATEWAY 3: Verify notifier exists in data structure
      (cond 
        (notifier-entry
-        (hcnm-ldrblk-reactor-notifier-update 
-          notifier-entry
-          handle-notifier
-        )
+        ;; Update all bubbles dependent on this notifier
+        (hcnm-ldrblk-reactor-notifier-update notifier-entry handle-notifier)
        )
        (t
+        ;; This should never happen - indicates data structure corruption
         (princ 
           (strcat 
             "\nWarning: Notifier "
@@ -10181,13 +10348,14 @@ tgh
         )
        )
      )
+     
+     ;; POST-PROCESSING: Cleanup and maintenance
      (cond 
-       ;; DETACH THE NOTIFIER IF USER REMOVED ALL ITS DEPENDENT AUTO-TEXT FROM ALL BUBBLES.
-       ;; Check if notifier entry has no remaining bubbles
+       ;; If notifier has no remaining bubbles, remove it as owner
        ((and notifier-entry (not (cadr notifier-entry)))
         (vlr-owner-remove obj-reactor obj-notifier)
        )
-       ;; UPDATE THE REACTOR DATA IF USER REMOVED SOME OF ITS DEPENDENT AUTO-TEXT
+       ;; If data structure changed, persist the changes
        ((not (equal data data-old))
         (vlr-data-set obj-reactor data)
        )
@@ -10195,44 +10363,109 @@ tgh
     )
   )
 )
-(defun hcnm-ldrblk-reactor-notifier-update (notifier-entry handle-notifier / bubble-list handle-bubble handle-owner tag-list)
-  ;; Extract data from owner entry
+;;==============================================================================
+;; hcnm-ldrblk-reactor-notifier-update
+;;==============================================================================
+;; Purpose:
+;;   Updates all bubbles that depend on a modified reference object (notifier).
+;;   Called by reactor callback when an alignment, pipe, or leader changes.
+;;
+;; Arguments:
+;;   notifier-entry - Data structure entry for this notifier
+;;                    Format: (handle-notifier ((handle-bubble tag-list) ...))
+;;   handle-notifier - Handle string of modified object (for consistency)
+;;
+;; Call Flow:
+;;   reactor-callback → THIS FUNCTION → bubble-update → update-bubble-tag
+;;
+;; Performance Notes:
+;;   - Temporarily disables reactors to prevent infinite loops during updates
+;;   - Processes ALL bubbles for this notifier in one pass
+;;   - Each bubble gets ONE combined attribute update (not per-tag)
+;;
+;; Side Effects:
+;;   - Sets AllowReactors="0" during updates, restores to "1" after
+;;   - Modifies bubble attributes via bubble-update function
+;;
+;; Data Structure:
+;;   notifier-entry = (handle-notifier bubble-list)
+;;   bubble-list = ((handle-bubble tag-list) ...)
+;;   tag-list = ((tag auto-list) ...)
+;;
+;; Example:
+;;   (hcnm-ldrblk-reactor-notifier-update 
+;;     '("1D235" (("62880" (("NOTETXT1" (("StaOff" "1D235")))))))
+;;     "1D235"
+;;   )
+;;==============================================================================
+(defun hcnm-ldrblk-reactor-notifier-update (notifier-entry handle-notifier / bubble-list handle-bubble tag-list)
+  ;; Extract data from notifier entry
   (setq
-    handle-notifier
-     (car notifier-entry)
-    bubble-list
-     (cadr notifier-entry)
+    handle-notifier (car notifier-entry)
+    bubble-list (cadr notifier-entry)
   )
-  ;; This notifier was modified - update all bubbles dependent on this notifier
-  ;; (princ (strcat "\nNotifier modified: " handle-notifier))
   ;; Temporarily disable reactors to prevent infinite loop during updates
   (c:hcnm-config-setvar "AllowReactors" "0")
-  ;; (princ (strcat "\nDEBUG: Processing " (itoa (length bubble-list)) " bubbles..."))
+  ;; Process each bubble that depends on this notifier
   (foreach
      bubble bubble-list
     (setq
-      handle-bubble
-       (car bubble)
-      tag-list
-       (cadr bubble)
+      handle-bubble (car bubble)
+      tag-list (cadr bubble)
     )
-    ;; (princ (strcat "\nDEBUG: About to update bubble " handle-bubble))
+    ;; Update this bubble (accumulates all tag changes, single write)
     (hcnm-ldrblk-reactor-bubble-update handle-bubble handle-notifier tag-list)
-    ;; (princ (strcat "\nDEBUG: Finished bubble " handle-bubble))
   )
-  ;; Re-enable reactors after updates complete
-  ;; (princ "\nDEBUG: Re-enabling reactors...")
+  ;; Re-enable reactors after all updates complete
   (c:hcnm-config-setvar "AllowReactors" "1")
-  ;; (princ "\nDEBUG: Reactors re-enabled")
 )
-(defun hcnm-ldrblk-reactor-bubble-update (handle-bubble handle-owner tag-list / tag auto-list auto-entry auto-type handle-reference)
+;;==============================================================================
+;; hcnm-ldrblk-reactor-bubble-update
+;;==============================================================================
+;; Purpose:
+;;   Updates all auto-text tags in a single bubble after its reference object
+;;   (or leader) changes. Handles both new and old data formats.
+;;
+;; Arguments:
+;;   handle-bubble - Handle string of bubble to update
+;;   handle-notifier - Handle of modified object (alignment/pipe/leader)
+;;   tag-list - List of tags with auto-text entries
+;;              Format: ((tag auto-list) ...)
+;;              where auto-list = (("auto-type" "handle-ref") ...) for new format
+;;              or auto-list = "auto-type" for old format (deprecated)
+;;
+;; Call Flow:
+;;   reactor-callback → notifier-update → THIS FUNCTION → update-bubble-tag (per entry)
+;;
+;; Performance Notes:
+;;   - Iterates tags/auto-entries in nested loops (unavoidable - must process all)
+;;   - Each update-bubble-tag call writes XDATA + attributes (INEFFICIENCY!)
+;;   - TODO: Accumulate changes and write once per bubble
+;;
+;; Data Format Migration:
+;;   - NEW: auto-list = (("StaOff" "1D235") ("Sta" "1D235"))
+;;   - OLD: auto-list = "StaOff" (string, uses handle-notifier as reference)
+;;   - Prints warning for old format, continues with degraded functionality
+;;
+;; Side Effects:
+;;   - Calls update-bubble-tag which modifies bubble attributes
+;;   - Prints warnings for old format or unexpected data
+;;
+;; Example:
+;;   (hcnm-ldrblk-reactor-bubble-update 
+;;     "62880" 
+;;     "1D235"
+;;     '(("NOTETXT1" (("StaOff" "1D235"))))
+;;   )
+;;==============================================================================
+(defun hcnm-ldrblk-reactor-bubble-update (handle-bubble handle-notifier tag-list / tag auto-list auto-entry auto-type handle-reference)
   ;; Skip if bubble no longer exists (erased or in undo/redo)
   (if (handent handle-bubble)
     (progn
       (foreach
          tag-data tag-list
         (setq
-          tag       (car tag-data)
+          tag (car tag-data)
           auto-list (cadr tag-data)  ; List of (auto-type reference-handle) 2-element lists
         )
         ;; Check if this is old format (string) or new format (list of 2-element lists)
@@ -10245,6 +10478,7 @@ tgh
                auto-type (car auto-entry)
                handle-reference (cadr auto-entry)  ; Second element, not cdr
              )
+             ;; TODO PERFORMANCE: Accumulate updates, write once per bubble
              (hcnm-ldrblk-update-bubble-tag
                handle-bubble
                tag
@@ -10253,14 +10487,14 @@ tgh
              )
            )
           )
-          ;; Old format: just auto-type string, use handle-owner as reference
+          ;; Old format: just auto-type string, use handle-notifier as reference
           ((atom auto-list)
            (princ "\nWARNING: Old reactor data format detected - please re-insert bubble")
            (hcnm-ldrblk-update-bubble-tag
              handle-bubble
              tag
              auto-list  ; auto-type
-             handle-owner  ; Use owner as reference (may be wrong for leaders)
+             handle-notifier  ; Use notifier as reference (may be wrong for leaders)
            )
           )
           (t
@@ -10293,26 +10527,142 @@ tgh
   (setq layout-name (cdr (assoc 410 (entget ename))))
   (= (strcase layout-name) "MODEL")
 )
-;; Updates a specific tag in a bubble based on reactor notification
-;; Called when either the leader moves or the reference object changes
-(defun hcnm-ldrblk-update-bubble-tag (handle-bubble tag auto-type
-                                  handle-reference / ename-bubble
-                                  ename-reference lattribs lattribs-old
-                                  objref attr current-text old-auto-text
-                                  auto-new new-text xdata-alist
-                                  tag-xdata
-                                 )
-  ;; DEBUG: Echo to command line
-  ;; (princ
-  ;;   (strcat
-  ;;     "\nDEBUG: Updating bubble "
-  ;;     handle-bubble
-  ;;     " tag "
-  ;;     tag
-  ;;   )
-  ;; )
+
+;;==============================================================================
+;; hcnm-ldrblk-extract-old-auto-text
+;;==============================================================================
+;; Purpose:
+;;   Extracts the old auto-text value from bubble's XDATA for a specific tag
+;;   and reference handle. This is the "search needle" for smart replace.
+;;
+;; Arguments:
+;;   ename-bubble - Entity name of bubble
+;;   tag - Attribute tag (e.g., "NOTETXT1")
+;;   handle-reference - Handle of reference object (alignment/pipe) or ""
+;;
+;; Returns:
+;;   String: Old auto-text value, or NIL if not found
+;;
+;; Data Format:
+;;   Handle-based XDATA: (("TAG" ((handle . "auto") ...)) ...)
+;;   Simple XDATA (fallback): (("TAG" . "auto") ...)
+;;
+;; Why This Matters:
+;;   Users can edit bubble text directly in AutoCAD. We store verbatim auto-text
+;;   in XDATA so we can find and replace it without corrupting user edits.
+;;
+;; Example:
+;;   User text: "Storm STA 10+25.50 RT"
+;;   XDATA: "STA 10+25.50"
+;;   New auto: "STA 11+00.00"
+;;   Result: "Storm STA 11+00.00 RT" (user prefix/postfix preserved)
+;;==============================================================================
+(defun hcnm-ldrblk-extract-old-auto-text (ename-bubble tag handle-reference / xdata-alist tag-xdata)
+  (setq xdata-alist (hcnm-xdata-read ename-bubble))
+  (setq tag-xdata (cdr (assoc tag xdata-alist)))
+  (cond
+    ;; Handle-based XDATA: ((handle1 . "auto1") (handle2 . "auto2") ...)
+    ((and tag-xdata (listp tag-xdata) (listp (car tag-xdata)))
+     (cdr (assoc handle-reference tag-xdata))
+    )
+    ;; Simple XDATA: just a string (fallback for old format)
+    ((and tag-xdata (atom tag-xdata)) tag-xdata)
+    ;; No XDATA found
+    (t nil)
+  )
+)
+
+;;==============================================================================
+;; hcnm-ldrblk-generate-new-auto-text
+;;==============================================================================
+;; Purpose:
+;;   Generates fresh auto-text by calling auto-dispatch with reference object.
+;;   Returns updated lattribs with new auto-text value (plain, no format codes).
+;;
+;; Arguments:
+;;   ename-bubble - Entity name of bubble
+;;   ename-reference - Entity name of reference object (or NIL for N/E/NE)
+;;   lattribs - Current lattribs (2-element format)
+;;   tag - Attribute tag to update
+;;   auto-type - Auto-type string (e.g., "StaOff", "Dia", "N")
+;;
+;; Returns:
+;;   Updated lattribs with new auto-text value in specified tag
+;;
+;; Special Cases:
+;;   - For N/E/NE (no reference), passes T as sentinel to auto-dispatch
+;;   - For reactor updates, auto-dispatch knows not to prompt user
+;;
+;; Side Effects:
+;;   - May read viewport transform data from XDATA
+;;   - Does NOT modify drawing (returns data only)
+;;==============================================================================
+(defun hcnm-ldrblk-generate-new-auto-text (ename-bubble ename-reference lattribs tag auto-type / objref)
+  ;; Convert entity to VLA object, or use T sentinel for coordinate-only types
+  (setq
+    objref
+     (cond
+       (ename-reference (vlax-ename->vla-object ename-reference))
+       (t t)  ; Sentinel for N/E/NE reactor updates (no reference object)
+     )
+  )
+  ;; Call auto-dispatch to generate new auto-text
+  (hcnm-ldrblk-auto-dispatch ename-bubble lattribs tag auto-type objref)
+)
+
+;;==============================================================================
+;; hcnm-ldrblk-update-bubble-tag
+;;==============================================================================
+;; Purpose:
+;;   Updates a specific auto-text tag in a bubble after reference object changes.
+;;   Core reactor update function - handles text replacement and drawing writes.
+;;
+;; Arguments:
+;;   handle-bubble - Handle string of bubble to update
+;;   tag - Attribute tag (e.g., "NOTETXT1")
+;;   auto-type - Auto-type string (e.g., "StaOff", "Dia", "N")
+;;   handle-reference - Handle of reference object, or "" for N/E/NE
+;;
+;; Call Flow:
+;;   reactor-callback → notifier-update → bubble-update → THIS FUNCTION
+;;
+;; Algorithm:
+;;   1. Read current attribute text (may include user edits)
+;;   2. Extract old auto-text from XDATA (search needle)
+;;   3. Generate new auto-text via auto-dispatch
+;;   4. Smart replace: find old auto in current text, replace with new
+;;   5. Write XDATA (updated auto-text) + attributes (full text with format codes)
+;;
+;; Performance Issues:
+;;   - Called ONCE PER AUTO-TEXT ENTRY (can be multiple per tag)
+;;   - Each call writes XDATA + attributes (INEFFICIENT!)
+;;   - TODO: Accumulate updates at bubble-update level, write once
+;;
+;; Smart Replace Logic:
+;;   Current: "Storm STA 10+25.50 RT"
+;;   Old XDATA: "STA 10+25.50"
+;;   New auto: "STA 11+00.00"
+;;   Result: "Storm STA 11+00.00 RT" ← User text preserved
+;;
+;; Side Effects:
+;;   - Writes XDATA via hcnm-ldrblk-xdata-save
+;;   - Writes formatted attributes via hcnm-set-attributes
+;;   - May alert if bubble not found (error condition)
+;;
+;; Gotchas:
+;;   - If user corrupts auto-text, smart replace fails silently (by design)
+;;   - Multiple identical auto-texts in same tag only updates first occurrence
+;;
+;; Example:
+;;   (hcnm-ldrblk-update-bubble-tag "62880" "NOTETXT1" "StaOff" "1D235")
+;;==============================================================================
+(defun hcnm-ldrblk-update-bubble-tag (handle-bubble tag auto-type handle-reference / 
+                                      ename-bubble ename-reference lattribs lattribs-old
+                                      attr current-text old-auto-text auto-new new-text
+                                     )
   (setq ename-bubble (handent handle-bubble))
-  ;; DEBUG: Check if bubble entity exists
+  
+  ;; EARLY EXIT: Bubble no longer exists
   (cond
     ((not ename-bubble)
      (alert
@@ -10327,102 +10677,63 @@ tgh
      ;; TODO: Remove this handle from reactor data
      nil
     )
+    
+    ;; MAIN PROCESSING: Bubble exists, proceed with update
     (t
-     ;; Bubble exists - proceed with update
-     ;; Handle empty string for N/E/NE which have no reference object
+     ;; STEP 1: Read current state
      (setq
        ename-reference
         (cond
           ((= handle-reference "") nil)
           (t (handent handle-reference))
         )
-       lattribs-old
-        (hcnm-ldrblk-dwg-to-lattribs ename-bubble t)
+       lattribs-old (hcnm-ldrblk-dwg-to-lattribs ename-bubble t)
        lattribs lattribs-old
+       attr (assoc tag lattribs)
+       current-text (if attr (cadr attr) "")
      )
-     ;; STEP 1: Save current text BEFORE auto-dispatch modifies it
-     (setq attr (assoc tag lattribs))
-     (setq
-       current-text
-        (if attr
-          (cadr attr)
-          ""
-        )
+     
+     ;; STEP 2: Extract old auto-text from XDATA (search needle)
+     (setq old-auto-text 
+       (hcnm-ldrblk-extract-old-auto-text ename-bubble tag handle-reference)
      )
-     ;; STEP 2: Get old auto-text from XDATA using handle lookup
-     (setq xdata-alist (hcnm-xdata-read ename-bubble))
-     (setq tag-xdata (cdr (assoc tag xdata-alist)))
-     ;; Check if tag-xdata is handle-based (list of cons) or simple (string)
-     (setq
-       old-auto-text
-        (cond
-          ;; Handle-based XDATA: ((handle1 . "auto1") (handle2 . "auto2") ...)
-          ((and
-             tag-xdata
-             (listp tag-xdata)
-             (listp (car tag-xdata))
-           )
-           (cdr (assoc handle-reference tag-xdata))
-          )
-          ;; Simple XDATA: just a string (fallback for old format)
-          ((and tag-xdata (atom tag-xdata)) tag-xdata)
-          ;; No XDATA
-          (t nil)
-        )
-     )
+     
      ;; STEP 3: Generate new auto-text via auto-dispatch
-     ;; For reactor updates, use a special marker for coordinate types (no reference object)
-     ;; This allows auto-text functions to distinguish between initial creation (NIL) and reactor update (T)
-     (setq
-       objref
-        (cond
-          (ename-reference
-           (vlax-ename->vla-object ename-reference)
-          )
-          (t t)                         ; Use T as sentinel value for reactor updates with no reference object
-        )
+     (setq lattribs 
+       (hcnm-ldrblk-generate-new-auto-text 
+         ename-bubble ename-reference lattribs tag auto-type
+       )
      )
+     
+     ;; STEP 4: Extract generated auto-text (plain, no format codes)
      (setq
-       lattribs
-        (hcnm-ldrblk-auto-dispatch
-          ename-bubble lattribs tag auto-type objref
-                                        ; Pass the reference object as obj-target, or T for coordinate-only reactor updates
-         )
+       attr (assoc tag lattribs)
+       auto-new (if attr (cadr attr) "")
      )
-     ;; STEP 4: Extract the generated auto-text (plain text, no format codes)
-     (setq attr (assoc tag lattribs))
-     (setq
-       auto-new
-        (if attr
-          (cadr attr)
-          ""
-        )
+     
+     ;; STEP 5: Smart replace - preserve user edits around auto-text
+     (setq new-text
+       (hcnm-ldrblk-smart-replace-auto current-text old-auto-text auto-new)
      )
-     ;; STEP 5: Do smart search/replace using shared function to preserve manual text
-     (setq
-       new-text
-        (hcnm-ldrblk-smart-replace-auto
-          current-text
-          old-auto-text
-          auto-new
-        )
+     
+     ;; STEP 6: Update lattribs with smartly-replaced text
+     (setq lattribs
+       (cond
+         (attr (subst (list tag new-text) attr lattribs))
+         (t (append lattribs (list (list tag new-text))))
+       )
      )
-     ;; STEP 6: Update lattribs with the smartly-replaced text
-     (setq
-       lattribs
-        (cond
-          (attr (subst (list tag new-text) attr lattribs))
-          (t (append lattribs (list (list tag new-text))))
-        )
-     )
+     
+     ;; STEP 7: Write to drawing if changed
+     ;; PERFORMANCE NOTE: This writes XDATA + attributes for EACH call
+     ;; TODO: Accumulate changes at bubble level, write once
      (cond
        ((/= lattribs lattribs-old)
-        ;; UPDATE BLOCK INSERTION
-        ;; Save XDATA before formatting (stores clean auto-text for search)
+        ;; Save XDATA before formatting (stores clean auto-text)
         (hcnm-ldrblk-xdata-save ename-bubble lattribs)
-        ;; Format attributes for display (adds underline/overline)
+        ;; Format for display (adds underline/overline codes)
         (setq lattribs (hcnm-ldrblk-underover-add lattribs))
-        ;; Save formatted attributes (2-element lattribs, no concat needed)
+        ;; Write formatted attributes (uses VLA methods, not entmod)
         (hcnm-set-attributes ename-bubble lattribs)
        )
      )

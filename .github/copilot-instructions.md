@@ -1,7 +1,7 @@
 # 1. Quick Start for AI
 
 ## 1.1. General instructions
-1. When a human tell you to note something, it means to revise .github\copilot-instructions.md to include that information.
+1. When a human says "cinote:" it means to immediately revise .github\copilot-instructions.md to include that information. The single-word reminder "cinote." signals the AI failed to execute a previous cinote: command and should update the file now.
 2. Tell the truth! Be transparent about what you know. Qualify your statements with clear certainty estimates, especially when it comes to statements about the state of the code or our work. Don't say things like "Perfect", "Fixed", or "Done" when what you really mean is "Please test" or "I added/revised/removed this. Please test it".
 3. This project is primarily written in AutoLISP for AutoCAD. This development environment has the AutoLISP Extension installed. You have the get_errors tool. Use it to check for syntax errors after code changes. Fix errors before reporting.
 
@@ -64,6 +64,24 @@ A CNM Project is a cnm.ini file. All drawings (.dwg) in the same folder with tha
 
 #### 1.1.2.2. Settings
 CNM Project settings are stored in the cnm.ini project file using standard INI format. A cnm.ini file is a CNM Project. There is a template cnm.ini in the CNM application folder that is automatically copied to seed a default Project and settings whenever CNM is used in a new folder. There is a CNM Options dialog that lets you edit project settings easily.
+
+#### 1.1.2.3. Loading Architecture
+CNM loads automatically when AutoCAD starts via this sequence:
+
+1. **cnm.cuix** (AutoCAD menu file) - Entry point, loads with AutoCAD
+2. **cnm.mnl** (menu LISP file) - Checks for `haws-mklayr`, loads CNMloader if not present
+3. **CNMloader.lsp** (initialization file) - Loads immediately and:
+   - Defines `haws-autoload` function (creates command stubs)
+   - Loads core libraries immediately: `edclib.lsp`, `haws-tip.lsp`, `cnmalias.lsp`
+   - Defines autoloader stub for `hcnm-ldrblk-reactor-callback` (persistent reactor support)
+   - Sets up command autoloaders for `cnm.lsp` functions (lazy loading)
+4. **cnm.lsp** - Main CNM functionality, lazy-loaded when user runs first CNM command
+
+**Key Points:**
+- Core libraries (edclib, haws-tip, cnmalias) load immediately via CNMloader.lsp
+- CNM commands use `haws-autoload` pattern: stub loads file on first use
+- Reactor callback has special autoloader stub (reactors fire before commands run)
+- This is NOT the place to load cnm.lsp eagerly - that would defeat lazy loading pattern
 
 ### 1.1.3. Bubble Notes
 
