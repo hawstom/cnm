@@ -20,9 +20,8 @@
 - Respect user edits (users bypass our dialogs)
 
 ### 1.4. AI Collaboration Workflow
-- GitHub issues → create planning doc in `.ai-plans/issue-{number}-{short-name}.md`
-- Phased approach: Plan → Execute Phase → Validate → Next Phase
-- See Section 5.2 for full workflow
+
+See Section 5.2 for planning document workflow and [standards-02-ai-human-collaboration.md](../devtools/docs/standards-02-ai-human-collaboration.md) for general AI collaboration patterns.
 
 ### 1.5. Read These Sections First
 
@@ -599,8 +598,14 @@ Additional tools following command reference and cnmloader categories. Developer
 
 ### 4.1. Function Naming Conventions
 
-**Namespace Architecture:** CNM uses prefixed namespaces to organize into bounded contexts:
+See [standards-03-style.md, Sections 3-7](../devtools/docs/standards-03-style.md) for comprehensive naming conventions including:
+- Case conventions (lowercase)
+- Delimiter style (hyphens)
+- Type prefixes (obj-, en-, -p suffix)
+- Function naming patterns (verb-noun)
+- Data flow functions (source-to-destination pattern)
 
+**CNM namespace architecture** (for quick reference):
 ```
 hcnm-*                    Top-level CNM functions
 ├── hcnm-config-*         Configuration/settings
@@ -615,31 +620,13 @@ hcnm-*                    Top-level CNM functions
     └── hcnm-bubbles-lattribs-*    Attribute list transforms
 ```
 
-**Why `bubbles` subsystem?** Insertion, editing, and reactors are tightly coupled (share data model, XDATA format, coordinate transforms). Keeping under `hcnm-bubbles-*` signals bounded context.
-
-**Pattern suffixes:**
-- `*-spec` - Schema definition (pure, no side effects)
-- `*-validate` - Schema validation (strict, fails loudly)
-- `*-to-*` - Data transformation (pure functions)
-
 ### 4.2. Code Style
 
 #### 4.2.1. Indentation Standards
 
-**STRICT REQUIREMENT:** All AutoLISP code uses **2-space indentation** (universal standard, no exceptions).
+See [standards-03-style.md, Section 1.1.1](../devtools/docs/standards-03-style.md#111-indentation-and-whitespace) for complete indentation rules.
 
-Example (correct):
-```autolisp
-(defun example (x / y)
-  (setq y (* x 2))  ; 2 spaces from defun
-  (cond
-    ((> y 10)       ; 4 spaces from defun (2 spaces from cond)
-     (alert "Big")) ; 5 spaces from defun (1 space from condition)
-    (t
-     (alert "Small"))))
-```
-
-**When working on any function, audit its indentation and correct to 2-space standard.**
+**Quick reference:** 2-space indentation, no tabs, weakly allow cond exception.
 
 #### 4.2.2. AutoLISP Extension Usage
 
@@ -663,107 +650,26 @@ Example (correct):
 
 #### 4.2.3. AutoLISP Idioms
 
-**Naming conventions:**
-- **Lower case symbols:** Function names, variables (except legacy UPPERCASE in strings/comments)
-- **Hyphen-separated:** `hcnm-bubbles-auto-alignment` (not underscore or colon)
-- **Explicit local variables:** Always declare in `/ var1 var2` parameter list. Undeclared become global (AutoLISP's dynamic scoping leak)
-- **No ad hoc globals:** Use `haws-config` system. Document any global with `*asterisk-naming*` and explanation comment if absolutely necessary
+See [standards-03-style.md, Sections 3-6](../devtools/docs/standards-03-style.md) for complete naming conventions, including:
+- Lower case symbols (section 3.1)
+- Hyphen delimiters (section 4.1)
+- Type prefixes: obj-, en-, es-, eg-, lst-, -p suffix (section 5)
+- Name length guidelines (section 6)
 
 **Code style:**
 - **Formatting:** Use AutoLISP Extension auto-formatter (VS Code command)
 - **No closing comments:** Don't add `;end defun` or `;end cond`
-- **AI editing:** Match existing indentation exactly for small changes
+- **Explicit local variables:** Always declare in `/ var1 var2` parameter list
+- **No ad hoc globals:** Use `haws-config` system
+- **AI editing:** Follow standards strictly. Verify with `get_errors` after edits.
 - **Deep nesting (3+ levels):** AI has known limitation with parentheses - ask human to verify after editing
-- **Always run `get_errors`** before claiming code is fixed
+- **Always run `get_errors`** Don't claim code is fixed without verification
 
 #### 4.2.4. Dotted Pairs vs Lists
 
-**The problem:** AutoLISP has two list construction primitives with different behavior:
-- `(cons 1 2)` → Dotted pair: `(1 . 2)`
-- `(list 1 2)` → Proper list: `(1 2)` = `(1 . (2 . nil))`
+See [standards-03-style.md, Section 12](../devtools/docs/standards-03-style.md) for complete guidance on when to use dotted pairs vs proper lists in AutoLISP.
 
-```autolisp
-(cdr (cons 1 2))   ; Returns atom: 2
-(cdr (list 1 2))   ; Returns list: (2)
-```
-
-Mixing in same data structure causes bugs (functions expecting atoms get lists or vice versa).
-
-**When to use dotted pairs:**
-
-1. **Association lists (alists)** - Semantic key-value pairs
-```autolisp
-(setq config-alist '(("Name" . "John") ("Age" . 30)))
-(cdr (assoc "Name" config-alist))  ; Returns atom: "John" ✅
-```
-
-2. **DXF code pairs** - AutoCAD entity data format
-```autolisp
-(cons 8 "LAYER-NAME")  ; Returns: (8 . "LAYER-NAME") ✅
-```
-
-**When to use proper lists:**
-
-1. **Collections** - Lists to iterate
-```autolisp
-(setq tags '("NOTETXT1" "NOTETXT2" "NOTETXT3"))
-(foreach tag tags ...)  ; Clean iteration ✅
-```
-
-2. **Function arguments**
-```autolisp
-(hcnm-some-function (list tag text auto))  ; Multiple values ✅
-```
-
-3. **Nested data structures**
-```autolisp
-'(("NOTETXT1" "text") ("NOTETXT2" "text"))  ; lattribs ✅
-```
-
-**CNM-specific patterns:**
-
-Dotted pairs (alists):
-```autolisp
-;; XDATA (key-value pairs)
-'(("NOTETXT1" . "auto-text") ("NOTETXT2" . "auto-text"))
-
-;; Config settings
-'(("BlockReactors" . "0") ("DebugReactors" . "0"))
-```
-
-Proper lists:
-```autolisp
-;; lattribs (tag + text, 2-element lists)
-'(("NOTETXT1" "text") ("NOTETXT2" "text"))
-
-;; Reactor data (nested collections)
-'(("HCNM-BUBBLE" (("owner-handle" (("bubble-handle" ...))))))
-```
-
-**Common pitfall:**
-```autolisp
-;; WRONG: cons creates dotted pair, not 2-element list
-(cons "TAG" "value")  ; ("TAG" . "value")
-(cadr '("TAG" . "value"))  ; ERROR: cdr returns atom "value"!
-
-;; CORRECT: Use list for 2-element lists
-(list "TAG" "value")  ; ("TAG" "value")
-(cadr '("TAG" "value"))  ; Returns: "value" ✅
-```
-
-**Decision tree:**
-```
-Is this key-value mapping with semantic meaning?
-├─ YES → Use dotted pairs (alist)
-│   Examples: XDATA, config, DXF codes
-└─ NO → Use proper lists
-    Is this collection to iterate?
-    ├─ YES → Proper lists
-    │   Examples: lattribs, tags list, bubble-list
-    └─ NO → Still prefer proper lists (consistency)
-```
-
-**Rule of thumb:** If `assoc` is primary accessor, use dotted pairs. Otherwise, use proper lists.
+**Quick reference:** Use dotted pairs for alists (key-value with `assoc`), proper lists for everything else.
 
 ### 4.3. Documentation Standards
 
@@ -918,65 +824,11 @@ Is this key-value mapping with semantic meaning?
 
 ### 5.3. Document Structure Guidelines
 
-#### Context Window and Attention
+See [standards-02-ai-human-collaboration.md](../devtools/docs/standards-02-ai-human-collaboration.md) for comprehensive documentation standards:
+- Section 3: Document Standards (structure, numbering, naming)
+- Section 5: AI Agent Instructions (reading docs, editing docs, embeddings)
 
-**Technical limits:**
-- AI context window: ~1 million tokens (~750,000 words)
-- Single request context: ~200,000 tokens
-- This file: ~15,000 tokens
-
-**Attention behavior:**
-- HIGH: Start/end of documents, recent conversation
-- LOWER: Middle of long documents
-- HIGHEST: Recent messages in current conversation
-
-#### Structure Over Length
-
-**Good structure (easy for AI):**
-- ✅ Table of contents with section numbers
-- ✅ Clear hierarchical headings (##, ###, ####)
-- ✅ Executive summaries at top
-- ✅ Examples showing "good vs bad"
-- ✅ Bullet points, short paragraphs
-- ✅ Code blocks with syntax highlighting
-
-**Poor structure (hard for AI):**
-- ❌ Wall of text without breaks
-- ❌ No headings or organization
-- ❌ Important info buried in middle
-- ❌ No examples or illustrations
-
-#### Optimal Document Lengths
-
-**Single-purpose:** 100-500 lines (perfect for quick reference)
-**Reference docs:** 500-2000 lines (effective with good structure)
-**Over 2000 lines:** Consider splitting or ensure exceptional organization
-
-#### Writing for AI Readers
-
-**Key principles:**
-
-1. **Put critical info at top or bottom**
-   - Executive summary at start, quick reference at end
-   - Don't bury essentials in middle
-
-2. **Use section references**
-   - "See Section 1.2.3" helps AI locate info
-   - Better than "see above" or "as mentioned earlier"
-
-3. **Repeat critical constraints**
-   - If something must NOT break, say it multiple times
-   - In summary, in sections, in examples
-
-4. **Provide concrete examples**
-   - Show actual code, not just descriptions
-   - Real examples from codebase
-   - "Good vs Bad" comparisons
-
-5. **Update as you learn**
-   - This document evolves
-   - Add lessons learned
-   - Remove obsolete information
+**Key principle for CNM docs:** Use hierarchical numbering (1.2.3), clear headings, concrete examples, and section references ("See Section X.Y.Z") for AI comprehension.
 
 ### 5.4. Testing Strategy
 
