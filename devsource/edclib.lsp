@@ -182,6 +182,16 @@
   (while (< 0 (getvar "cmdactive"))
     (vl-cmdf)
   )
+  
+  ;; CRITICAL: Restore BlockReactors flag on error/cancel
+  ;; If error occurs during reactor callback, flag could be stuck at "1"
+  ;; This would permanently block all reactor updates until drawing reload
+  ;; Self-healing: Always restore to "0" on any CNM command error
+  (if (and (= (type c:hcnm-config-setvar) 'SUBR)
+           (c:hcnm-config-setvar "BlockReactors" "0"))
+    (princ "\n[ERROR HANDLER] Restored BlockReactors=0 (self-healing)")
+  )
+  
   (if (= (type f1) (quote file))
     (setq f1 (close f1))
   )

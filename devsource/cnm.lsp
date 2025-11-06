@@ -3384,7 +3384,7 @@ ImportLayerSettings=No
     (list "BubbleTextPrecisionPipeSlope" "2" 4)
     (list "BubbleTextPrecisionPipeLength" "2" 4)
     (list "BubbleCurrentAlignment" "" 0)
-    (list "IgnoreReactorOnce" "0" 0)  ; "0"=normal, "1"=ignore next reactor event
+    (list "BlockReactors" "0" 0)  ; "0"=normal, "1"=block (at arrowhead style change and nested callbacks)
     (list "BubbleArrowIntegralPending" "0" 0)
   )
 )
@@ -6205,14 +6205,14 @@ tgh
     ((= (c:hcnm-config-getvar "BubbleArrowIntegralPending") "1")
      ;; Disable reactors during arrowhead change to prevent reactor from triggering
      ;; and overwriting the newly saved lattribs with stale XDATA
-     (c:hcnm-config-setvar "AllowReactors" "0")
+     (c:hcnm-config-setvar "BlockReactors" "1")
      ;; 18 is "Integral" arrowhead type.
      (vla-put-arrowheadtype
        (vlax-ename->vla-object ename-leader)
        18
      )
      (c:hcnm-config-setvar "BubbleArrowIntegralPending" "0")
-     (c:hcnm-config-setvar "AllowReactors" "1")
+     (c:hcnm-config-setvar "BlockReactors" "0")
     )
   )
 )
@@ -8338,12 +8338,10 @@ tgh
 ;;==============================================================================
 
 (defun hcnm-ldrblk-space-set-model ()
-  (c:hcnm-config-setvar "IgnoreReactorOnce" "1")  ; Ignore events during space transition
   (cond ((= (getvar "CVPORT") 1) (vl-cmdf "._MSPACE") t))
 )
 (defun hcnm-ldrblk-space-restore (pspace-bubble-p /)
   (cond (pspace-bubble-p (vl-cmdf "._PSPACE")))
-  (c:hcnm-config-setvar "IgnoreReactorOnce" "0")  ; Resume normal reactor operation
 )
 ;#endregion
 ;#region Auto text user experience interruptions
@@ -8464,7 +8462,7 @@ tgh
      ;; Bubble is in paper space and auto-type is coordinate-based - show warning
      (haws-tip
        2                                ; Unique tip ID for paper space warning
-       "IMPORTANT: CNM doesn't adjust paper space bubble notes when viewports change.\n\nTo avoid causing chaos when viewports change, auto text for coordinates does not react to viewport view changes.\n\nYou must use the 'Change View' button in the edit dialog (or the future CNMCHGVPORT command) if you want to refresh the viewport association and world coordinates of selected bubble notes."
+       "ALERT: CNM doesn't adjust paper space bubble notes when viewports change.\n\nTo avoid causing chaos when viewports change, auto text for coordinates does not react to viewport view changes.\n\nYou must use the 'Change View' button in the edit dialog (or the future CNMCHGVPORT command) if you want to refresh the viewport association and world coordinates of selected bubble notes."
      )
     )
   )
@@ -10403,12 +10401,37 @@ tgh
 ;; Performance:
 ;;   - Uses continue-p pattern for early exits (fail-fast)
 ;;   - Direct assoc lookup for notifier (O(1) instead of foreach)
-;;   - Respects IgnoreReactorOnce flag to prevent recursion
+;;   - Blocks nested callbacks to prevent dangerous recursion (Autodesk guideline)
 ;;
 ;; Gateways (must all pass to continue):
-;;   1. IgnoreReactorOnce = "0" (normal operation, not ignoring events)
+;;   1. BlockReactors = "0" (normal operation, blocking disabled for various reasons)
 ;;   2. Object not erased (error-safe check via vl-catch-all-apply)
 ;;   3. Notifier found in reactor data (valid tracked object)
+;;
+;;      GATEWAY 1 EXPLANATION: General-purpose reactor blocking flag.
+;;      
+;;      USAGE SCENARIOS where BlockReactors="1" blocks callbacks:
+;;      1. NESTED CALLBACKS: Inside this callback when modifying bubble attributes
+;;         - Problem: Modifying bubble triggers :vlr-modified on associated leader
+;;         - Solution: Set flag="1" at callback entry, restore="0" at exit
+;;         - Prevents infinite recursion (Autodesk guideline violation)
+;;      
+;;      2. ARROWHEAD STYLE CHANGES: During hcnm-ldrblk-change-arrowhead operations
+;;         - Problem: Changing leader arrowhead style triggers callbacks during lattribs update
+;;         - Solution: Block reactors during arrowhead property changes
+;;         - Prevents stale XDATA from overwriting newly saved lattribs
+;;      
+;;      3. FUTURE USES: Any operation that needs to modify owners without triggering callbacks
+;;      
+;;      AUTODESK GUIDELINE: Do NOT modify reactor-monitored objects inside callbacks.
+;;      Nested callbacks can cause infinite recursion, unpredictable ordering, and crashes.
+;;      
+;;      SOLUTION: Set BlockReactors="1" at callback entry (before any modifications).
+;;      Nested callbacks see flag="1" and exit immediately at Gateway 1.
+;;      Restore to "0" at callback end (allows next user action to process normally).
+;;      
+;;      This implements "outsmart the danger" pattern - we prevent recursion by
+;;      temporarily disabling nested reactors during our update operation.
 ;;
 ;;      GATEWAY 3 EXPLANATION: This is a defensive/debug check for data integrity.
 ;;      
@@ -10429,17 +10452,21 @@ tgh
 ;;      on next successful update).
 ;;
 ;; Side Effects:
+;;   - Sets BlockReactors="1" to prevent nested callbacks during updates
 ;;   - Calls notifier-update which modifies bubble attributes
 ;;   - May remove notifier from reactor if no bubbles remain
 ;;   - Updates reactor data if structure changes
+;;   - Restores BlockReactors to original value at callback end
 ;;
 ;; Error Handling:
 ;;   - Wraps vla-get-handle in error handler (erased objects throw errors)
 ;;   - Prints warning if notifier not in data (should never happen - see Gateway 3)
-;;   - Silently skips if reactors disabled or object erased
+;;   - Silently skips if reactors blocked or object erased
+;;   - haws-core-stperr also restores BlockReactors="0" on any CNM command error
 ;;
 ;; Gotchas:
-;;   - IgnoreReactorOnce="1" during space transitions (prevents spurious events)
+;;   - BlockReactors="1" during space transitions (prevents spurious events)
+;;   - BlockReactors="1" during this callback (prevents nested recursion)
 ;;   - Reactor data may have stale entries (cleanup removes them)
 ;;   - Object erasure triggers callback (must check before accessing)
 ;;
@@ -10450,18 +10477,34 @@ tgh
 ;;==============================================================================
 (defun hcnm-ldrblk-reactor-callback (obj-notifier obj-reactor parameter-list / 
                                      key-app data-old data handle-notifier 
-                                     owner-list notifier-entry
+                                     owner-list notifier-entry block-reactors-current
                                     ) 
+  ;; CRITICAL: Prevent nested/recursive callbacks (Autodesk guideline)
+  ;; Problem: Bubble updates within callback trigger :vlr-modified on leader
+  ;; Solution: Block all nested callbacks by setting flag at entry, restore at exit
+  ;; Save current blocker state to honor parent-level blocks
+  (setq block-reactors-current (c:hcnm-config-getvar "BlockReactors"))
+  
+  ;; DEBUG: Show callback entry with blocker state
+  (princ (strcat "\n[CALLBACK START] BlockReactors=" block-reactors-current))
+  
   ;; Check all gateways - early exit if any blocked
   (cond
-    ;; All gates must pass to proceed with update
+    ;; Gateway 1: Honor parent-level reactor blocker (prevents nested callbacks)
+    ((= block-reactors-current "1")
+     (princ "\n[REACTOR BLOCKED] Gateway1=1 (nested callback blocked by parent)")
+    )
+    
+    ;; All other gates must pass to proceed with update
     ((and
-       ;; Gateway 1: IgnoreReactorOnce flag = "0" (not ignoring events)
-       (= (c:hcnm-config-getvar "IgnoreReactorOnce") "0")
        ;; Gateway 2: Notifier object still exists (not erased)
        (not (vl-catch-all-error-p 
               (vl-catch-all-apply 'vla-get-handle (list obj-notifier))))
      )
+     ;; BLOCK NESTED CALLBACKS: Set flag to prevent recursion
+     ;; Any bubble modifications below will trigger leader :vlr-modified
+     ;; But nested callbacks will hit Gateway 1 and exit immediately
+     (c:hcnm-config-setvar "BlockReactors" "1")
      ;; Extract reactor data and find notifier entry
      (setq 
        key-app "HCNM-BUBBLE"
@@ -10471,12 +10514,24 @@ tgh
        owner-list (cadr (assoc key-app data))
        notifier-entry (assoc handle-notifier owner-list)
      )
+     ;; DEBUG: Show what triggered this callback
+     (princ (strcat "\n[REACTOR FIRED] Notifier handle: " handle-notifier 
+                    " Type: " (vla-get-objectname obj-notifier)))
      
      ;; Gateway 3: Verify notifier exists in data structure (defensive check)
      (cond
        (notifier-entry
         ;; All gates passed - update all bubbles dependent on this notifier
-        (hcnm-ldrblk-reactor-notifier-update notifier-entry handle-notifier)
+        ;; Returns cleaned notifier-entry (may have removed deleted bubbles)
+        (setq notifier-entry 
+          (hcnm-ldrblk-reactor-notifier-update notifier-entry handle-notifier))
+        
+        ;; Rebuild owner-list with cleaned notifier-entry
+        (setq owner-list
+          (subst notifier-entry (assoc handle-notifier owner-list) owner-list))
+        
+        ;; Update data structure
+        (setq data (list (list key-app owner-list)))
         
         ;; POST-PROCESSING: Cleanup and maintenance
         (cond 
@@ -10506,14 +10561,18 @@ tgh
        )
      )
     )
+    ;; Gateway 2 blocked (object erased)
+    (t
+     (princ "\n[REACTOR BLOCKED] Gateway2 failed (object erased or inaccessible)")
+    )
   )
   
-  ;; SELF-HEALING: Always clear ignore flag at end of callback
-  ;; If flag was "1" (Gateway 1 blocked), this means user or CNM just did 
-  ;; something that we ignored. If they do it again, we should NOT ignore it.
-  ;; This prevents IgnoreReactorOnce from getting stuck at "1" due to user 
-  ;; hitting Escape or errors during space transitions.
-  (c:hcnm-config-setvar "IgnoreReactorOnce" "0")
+  ;; SELF-HEALING: Always restore blocker to parent state
+  ;; Rationale: If Gateway 1 blocked (nested callback), we just exit cleanly
+  ;;            If we processed updates, we set flag="1" to block children
+  ;;            Now restore to parent's original state for next user action
+  (princ (strcat "\n[CALLBACK END] Restoring BlockReactors=" block-reactors-current))
+  (c:hcnm-config-setvar "BlockReactors" block-reactors-current)
 )
 ;;==============================================================================
 ;; hcnm-ldrblk-reactor-notifier-update
@@ -10535,13 +10594,13 @@ tgh
 ;;   reactor-callback → THIS FUNCTION → bubble-update → update-bubble-tag
 ;;
 ;; Performance Notes:
-;;   - Temporarily ignores reactors to prevent infinite loops during updates
+;;   - Parent callback already set BlockReactors="1" (nested callbacks blocked)
 ;;   - Processes ALL bubbles for this notifier in one pass
 ;;   - Each bubble gets ONE combined attribute update (not per-tag)
 ;;
 ;; Side Effects:
-;;   - Sets IgnoreReactorOnce="1" during updates, restores to "0" after
 ;;   - Modifies bubble attributes via bubble-update function
+;;   - No flag management (parent callback handles BlockReactors lifecycle)
 ;;
 ;; Data Structure:
 ;;   notifier-entry = (handle-notifier bubble-list)
@@ -10555,15 +10614,19 @@ tgh
 ;;   )
 ;;==============================================================================
 (defun hcnm-ldrblk-reactor-notifier-update (notifier-entry handle-notifier / 
-                                            bubble-list handle-bubble tag-list)
+                                            bubble-list handle-bubble tag-list updated-any
+                                            deleted-handles update-result cleaned-bubble-list)
   ;; Extract data from notifier entry
   (setq
     handle-notifier (car notifier-entry)
     bubble-list (cadr notifier-entry)
+    updated-any nil  ; Track if we actually updated any bubble
+    deleted-handles nil  ; Track bubbles that no longer exist
   )
   
-  ;; Temporarily ignore reactors to prevent infinite loop during updates
-  (c:hcnm-config-setvar "IgnoreReactorOnce" "1")
+  ;; NOTE: No flag setting here - parent callback already set BlockReactors="1"
+  ;; This blocks ALL nested callbacks (leader modifications triggered by attribute updates)
+  
   ;; Process each bubble that depends on this notifier
   (foreach
      bubble bubble-list
@@ -10571,11 +10634,35 @@ tgh
       handle-bubble (car bubble)
       tag-list (cadr bubble)
     )
-    ;; Update this bubble (accumulates all tag changes, single write)
-    (hcnm-ldrblk-reactor-bubble-update handle-bubble handle-notifier tag-list)
+    ;; Update this bubble
+    ;; Returns: T (modified), nil (skipped), "DELETED" (erased)
+    (setq update-result (hcnm-ldrblk-reactor-bubble-update handle-bubble handle-notifier tag-list))
+    (cond
+      ((equal update-result "DELETED")
+       ;; Bubble erased - add to cleanup list
+       (setq deleted-handles (cons handle-bubble deleted-handles)))
+      (update-result
+       ;; Bubble modified successfully
+       (setq updated-any T))
+    )
   )
-  ;; Resume normal reactor operation after all updates complete
-  (c:hcnm-config-setvar "IgnoreReactorOnce" "0")
+  
+  ;; CLEANUP: Remove deleted bubbles from notifier entry by rebuilding list
+  (cond
+    (deleted-handles
+     (princ (strcat "\n[NOTIFIER-UPDATE] Removing " (itoa (length deleted-handles)) " deleted bubble(s) from reactor data"))
+     ;; Filter out deleted bubbles - returns new cleaned list
+     (setq cleaned-bubble-list
+       (vl-remove-if
+         '(lambda (bubble) (member (car bubble) deleted-handles))
+         bubble-list))
+     ;; Return cleaned notifier entry (handle . cleaned-bubble-list)
+     ;; Caller will use this to rebuild owner-list
+     (list handle-notifier cleaned-bubble-list)
+    )
+    ;; No cleanup needed - return original
+    (t notifier-entry)
+  )
 )
 ;;==============================================================================
 ;; hcnm-ldrblk-reactor-bubble-update
@@ -10633,52 +10720,67 @@ tgh
 ;;                    ("Dia" "1D235"))))          ; multiple auto-texts per tag
 ;;   )
 ;;==============================================================================
-(defun hcnm-ldrblk-reactor-bubble-update (handle-bubble handle-notifier tag-list / tag auto-list auto-entry auto-type handle-reference)
-  ;; Skip if bubble no longer exists (erased or in undo/redo)
-  (if (handent handle-bubble)
-    (progn
-      (foreach
-         tag-data tag-list
-        (setq
-          tag (car tag-data)
-          auto-list (cadr tag-data)  ; List of (auto-type reference-handle) 2-element lists
-        )
-        ;; Check if this is old format (string) or new format (list of 2-element lists)
-        (cond
-          ;; New format: list of 2-element lists (auto-type reference-handle)
-          ((and (listp auto-list) (listp (car auto-list)))
-           (foreach
-              auto-entry auto-list
-             (setq
-               auto-type (car auto-entry)
-               handle-reference (cadr auto-entry)  ; Second element, not cdr
-             )
-             ;; TODO PERFORMANCE: Accumulate updates, write once per bubble
-             ;; Solution: Return updated lattribs instead of writing. Accumulate across
-             ;; all auto-entries, then write once after foreach loops complete.
-             (hcnm-ldrblk-update-bubble-tag
-               handle-bubble
-               tag
-               auto-type
-               handle-reference
-             )
-           )
+(defun hcnm-ldrblk-reactor-bubble-update (handle-bubble handle-notifier tag-list / tag auto-list auto-entry auto-type handle-reference updated-any ename-bubble)
+  ;; Check if bubble is active (not erased)
+  ;; Active bubble: (entget (handent handle)) returns entity data
+  ;; Erased bubble: (entget (handent handle)) returns nil
+  (setq ename-bubble (handent handle-bubble))
+  (cond
+    ;; If entget returns nil, bubble was erased - return "DELETED" for cleanup
+    ((not (entget ename-bubble))
+     (princ (strcat "\n[REACTOR CLEANUP] Bubble handle " handle-bubble " erased (removing from reactor data)"))
+     "DELETED"
+    )
+    ;; Bubble is active - process updates
+    (t
+     (setq updated-any nil)  ; Track if we actually modified anything
+     (foreach
+        tag-data tag-list
+       (setq
+         tag (car tag-data)
+         auto-list (cadr tag-data)  ; List of (auto-type reference-handle) 2-element lists
+       )
+       ;; Check if this is old format (string) or new format (list of 2-element lists)
+       (cond
+         ;; New format: list of 2-element lists (auto-type reference-handle)
+         ((and (listp auto-list) (listp (car auto-list)))
+          (foreach
+             auto-entry auto-list
+            (setq
+              auto-type (car auto-entry)
+              handle-reference (cadr auto-entry)  ; Second element, not cdr
+            )
+            ;; TODO PERFORMANCE: Accumulate updates, write once per bubble
+            ;; Solution: Return updated lattribs instead of writing. Accumulate across
+            ;; all auto-entries, then write once after foreach loops complete.
+            (if (hcnm-ldrblk-update-bubble-tag
+                  handle-bubble
+                  tag
+                  auto-type
+                  handle-reference
+                )
+              (setq updated-any T)  ; Tag was updated
+            )
           )
-          ;; Old format: just auto-type string, use handle-notifier as reference
-          ((atom auto-list)
-           (princ "\nWARNING: Old reactor data format detected - please re-insert bubble")
-           (hcnm-ldrblk-update-bubble-tag
-             handle-bubble
-             tag
-             auto-list  ; auto-type
-             handle-notifier  ; Use notifier as reference (may be wrong for leaders)
-           )
+         )
+         ;; Old format: just auto-type string, use handle-notifier as reference
+         ((atom auto-list)
+          (princ "\nWARNING: Old reactor data format detected - please re-insert bubble")
+          (if (hcnm-ldrblk-update-bubble-tag
+                handle-bubble
+                tag
+                auto-list  ; auto-type
+                handle-notifier  ; Use notifier as reference (may be wrong for leaders)
+              )
+            (setq updated-any T)
           )
-          (t
-           (princ (strcat "\nERROR: Unexpected reactor data format for tag " tag))
-          )
-        )
-      )
+         )
+         (t
+          (princ (strcat "\nERROR: Unexpected reactor data format for tag " tag))
+         )
+       )
+     )
+     updated-any  ; Return T if anything was modified, NIL otherwise
     )
   )
 )
@@ -10744,13 +10846,14 @@ tgh
 ;;   New auto: "STA 11+00.00"
 ;;   Result: "Storm STA 11+00.00 RT" (user prefix/postfix preserved)
 ;;==============================================================================
-(defun hcnm-ldrblk-extract-old-auto-text (ename-bubble tag handle-reference / xdata-alist tag-xdata)
+(defun hcnm-ldrblk-extract-old-auto-text (ename-bubble tag auto-type handle-reference / xdata-alist tag-xdata composite-key)
   (setq xdata-alist (hcnm-xdata-read ename-bubble))
   (setq tag-xdata (cdr (assoc tag xdata-alist)))
   (cond
-    ;; Handle-based XDATA: ((handle1 . "auto1") (handle2 . "auto2") ...)
+    ;; Handle-based XDATA: (((auto-type . handle) . "auto1") ...)
     ((and tag-xdata (listp tag-xdata) (listp (car tag-xdata)))
-     (cdr (assoc handle-reference tag-xdata))
+     (setq composite-key (cons auto-type handle-reference))
+     (cdr (assoc composite-key tag-xdata))
     )
     ;; Simple XDATA: just a string (fallback for old format)
     ((and tag-xdata (atom tag-xdata)) tag-xdata)
@@ -10943,20 +11046,31 @@ tgh
   ;; EARLY EXIT: Bubble no longer exists
   (cond
     ((not ename-bubble)
-     (alert
-       (princ
-         (strcat
-           "\nDEBUG: Bubble handle "
-           handle-bubble
-           " not found - entity may have been deleted"
-         )
+     (princ
+       (strcat
+         "\n[REACTOR CLEANUP] Bubble handle "
+         handle-bubble
+         " not found - will be removed from reactor data"
        )
      )
-     ;; TODO: Remove this handle from reactor data
-     nil
+     nil  ; Return nil - parent function detects via handent check
     )
     
-    ;; MAIN PROCESSING: Bubble exists, proceed with update
+    ;; Gateway 6: Entity read check - skip if entity can't be read
+    ((not (entget ename-bubble))
+     (princ
+       (strcat
+         "\n[REACTOR SKIPPED] Bubble handle "
+         handle-bubble
+         " Gateway 6 (entity-readable): CLOSED [entget returned nil]"
+         "\n  This can happen during UNDO/REDO or rapid consecutive modifications."
+         "\n  Skipping this update to prevent corruption."
+       )
+     )
+     nil  ; Skip this update
+    )
+    
+    ;; MAIN PROCESSING: Bubble exists and is readable, proceed with update
     (t
      ;; STEP 1: Read current state
      (setq
@@ -10973,7 +11087,7 @@ tgh
      
      ;; STEP 2: Extract old auto-text from XDATA (search needle)
      (setq old-auto-text 
-       (hcnm-ldrblk-extract-old-auto-text ename-bubble tag handle-reference)
+       (hcnm-ldrblk-extract-old-auto-text ename-bubble tag auto-type handle-reference)
      )
      ;; DEBUG OUTPUT
      (princ (strcat "\n=== DEBUG update-bubble-tag ==="
@@ -11029,6 +11143,10 @@ tgh
         (setq lattribs (hcnm-ldrblk-underover-add lattribs))
         ;; Write formatted attributes (uses VLA methods, not entmod)
         (hcnm-set-attributes ename-bubble lattribs)
+        T  ; Return T to indicate modification occurred
+       )
+       (t
+        nil  ; Return nil if no changes
        )
      )
     )
@@ -11063,9 +11181,10 @@ tgh
     hcnm-ldrblk-eb-lattribs
      (hcnm-ldrblk-dwg-to-lattribs ename-bubble t)
     ;; Semi-global: Track handle associations for auto-texts
-    ;; Format: (("TAG" ((handle1 . "auto-text1") (handle2 . "auto-text2"))) ...)
+    ;; Format: (("TAG" (((auto-type . handle) . "auto-text") ...)) ...)
+    ;; Initialize from existing XDATA to preserve across dialog reopen
     hcnm-ldrblk-eb-auto-handles
-     '()
+     (hcnm-xdata-read ename-bubble)
     notetextradiocolumn "RadioNOTETXT1"
     dclfile
      (load_dialog "cnm.dcl")
@@ -11260,7 +11379,8 @@ tgh
 
 (defun hcnm-ldrblk-eb-get-text (ename-bubble done-code tag / auto-string
                             auto-type attr current-text old-auto-text
-                            new-text xdata-alist handle-ref tag-handles
+                            new-text handle-ref tag-handles composite-key
+                            existing-entry
                            )
   (setq
     auto-type
@@ -11288,9 +11408,25 @@ tgh
           ""
         )
      )
-     ;; STEP 2: Get old auto-text from XDATA
-     (setq xdata-alist (hcnm-xdata-read ename-bubble))
-     (setq old-auto-text (cdr (assoc tag xdata-alist)))
+     ;; STEP 2: Get old auto-text from XDATA using composite key
+     ;; First need handle-ref to build composite key
+     (setq
+       handle-ref
+        (hcnm-ldrblk-get-reactor-handle-for-tag
+          ename-bubble
+          tag
+        )
+     )
+     (cond
+       ((not handle-ref) (setq handle-ref "")) ; Safety check
+       ((not (= (type handle-ref) 'str)) (setq handle-ref ""))
+     )
+     ;; Now search semi-global for existing auto-text with this composite key
+     (setq composite-key (cons auto-type handle-ref))
+     (setq tag-handles (cdr (assoc tag hcnm-ldrblk-eb-auto-handles)))
+     (setq existing-entry (assoc composite-key tag-handles))
+     (setq old-auto-text (if existing-entry (cdr existing-entry) nil))
+     
      ;; STEP 3: Generate new auto-text via auto-dispatch
      ;; NOTE: auto-dispatch REPLACES the entire tag value with just auto-text
      ;; bubble-data-update: this is called from command line and from edit box to get string as requested by user.
@@ -11310,43 +11446,23 @@ tgh
           ""
         )
      )
-     ;; STEP 4.5: Extract handle from reactor and store association
-     ;; This tracks which auto-text came from which reference object (alignment, pipe, etc.)
-     (setq
-       handle-ref
-        (hcnm-ldrblk-get-reactor-handle-for-tag
-          ename-bubble
-          tag
-        )
-     )
-     (cond
-       ((not handle-ref) (setq handle-ref "")) ; Safety check
-       ((not (= (type handle-ref) 'str)) (setq handle-ref ""))
-                                        ; Must be string
-     )
-     ;; Add to semi-global handle associations
-     ;; Format: (("TAG" ((handle1 . "auto1") (handle2 . "auto2"))) ...)
+     ;; STEP 4.5: Store in semi-global using composite key
+     ;; Replace existing entry or append new one
+     (setq composite-key (cons auto-type handle-ref))
      (setq tag-handles (cdr (assoc tag hcnm-ldrblk-eb-auto-handles)))
-     (setq
-       tag-handles
-        (append
-          tag-handles
-          (list (cons handle-ref auto-string))
-        )
-     )
+     (cond
+       (existing-entry  ; Found - REPLACE
+        (setq tag-handles (subst (cons composite-key auto-string) existing-entry tag-handles)))
+       (t  ; Not found - APPEND
+        (setq tag-handles (append tag-handles (list (cons composite-key auto-string))))))
+     
      (setq
        hcnm-ldrblk-eb-auto-handles
         (cond
-          ((assoc
-             tag
-             hcnm-ldrblk-eb-auto-handles
-           )
+          ((assoc tag hcnm-ldrblk-eb-auto-handles)
            (subst
              (cons tag tag-handles)
-             (assoc
-               tag
-               hcnm-ldrblk-eb-auto-handles
-             )
+             (assoc tag hcnm-ldrblk-eb-auto-handles)
              hcnm-ldrblk-eb-auto-handles
            )
           )
