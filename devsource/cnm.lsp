@@ -5473,6 +5473,11 @@ tgh
   (hcnm-restore-dimstyle)
   (haws-vrstor)
   (vl-cmdf "._undo" "_e")
+  
+  ;; DEFENSIVE: Reset BlockReactors flag after insertion completes
+  ;; Ensures stuck flags don't persist across user actions
+  (c:hcnm-config-setvar "BlockReactors" "0")
+  
   (haws-core-restore)
   (princ)
 )
@@ -11295,6 +11300,11 @@ tgh
     )
   )
   ;; Close the validation cond
+  
+  ;; DEFENSIVE: Reset BlockReactors flag after dialog completes
+  ;; Ensures stuck flags don't persist across user actions
+  (c:hcnm-config-setvar "BlockReactors" "0")
+  
   (haws-core-restore)
   (princ)
 )
