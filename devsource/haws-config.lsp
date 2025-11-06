@@ -1,4 +1,8 @@
 (princ "\nHaws-config functions ... ")
+
+;; Reset configuration cache on load (clean slate for testing)
+(setq *haws-config-cache* nil)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; HAWS-CONFIG - Generic Multi-Application Configuration System
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

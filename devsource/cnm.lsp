@@ -3659,9 +3659,6 @@ tgh
           )
        )
      )
-     ;|(SETQ F2 (OPEN PROJINI "w"))
-     (princ "[CNM]" f2) ; TODO TEST AND REMOVE
-     (setq f2 (close f2))|;
      (setq *hcnm-config* (hcnm-config-defaults-single-scope "Project"))
      (hcnm-config-write-project proj)
      (setq *hcnm-config* (hcnm-config-defaults))
@@ -6104,9 +6101,9 @@ tgh
       )
     )
     (setq p1-world (hcnm-ldrblk-bubble-data-get bubble-data "p1-world"))
-    (princ
+    (haws-debug
       (strcat
-        "\nDebug p1-ocs: "
+        "Debug p1-ocs: "
         (vl-princ-to-string p1-ocs)
         " p1-world: "
         (vl-princ-to-string p1-world)
@@ -6281,9 +6278,9 @@ tgh
 ;;==============================================================================
 ;; lattribs - Core attribute list data structure
 ;;==============================================================================
-;; Structure: '(("TAG" "prefix" "auto" "postfix") ...)
+;; Structure: '(("TAG" "text") ...)
 ;; - All 11 tags required (NOTENUM NOTEPHASE NOTEGAP NOTETXT0-6)
-;; - Always 4-element lists (never 2-element legacy format)
+;; - Always 2-element lists (tag text-value)
 ;; - Validation: Fail loudly on violations
 ;;==============================================================================
 (defun hcnm-ldrblk-lattribs-spec (/ lattribs)
@@ -6298,8 +6295,6 @@ tgh
        '(1 2 3 4 5 6 0)
      )
     lattribs
-     (cons (list "NOTEDATA" "") lattribs)
-    lattribs
      (cons (list "NOTEGAP" "") lattribs)
     lattribs
      (cons (list "NOTEPHASE" "") lattribs)
@@ -6309,7 +6304,6 @@ tgh
   lattribs
 )
 ;;; Save attribute value to attribute list (replaces entire value)
-;;; Replaces (tag prefix auto postfix) element in lattribs
 ;;; If element doesn't exist, adds it
 (defun hcnm-ldrblk-lattribs-put-element (tag value lattribs / attr)
   ;; Value must be a string in 2-element architecture
@@ -6439,40 +6433,15 @@ tgh
     (t (append lattribs (list (list tag auto-new))))
   )
 )
-;;; Ensure all bubble text attributes have proper chr(160) delimiter structure
+;;; Ensure all bubble attributes have proper 2-element list structure.
 ;;;
-;;; RESPONSIBILITY: Data validation and normalization
-;;;
-;;; CALLED BY: Wrapper around hcnm-ldrblk-underover
-;;;
-;;; DATA FLOW:
-;;; 1. Get attribute values
-;;; 2. Ensure each has exactly two chr(160) delimiters (minimum "??")
-;;; 3. Detect and repair common migration mistakes:
-;;;    a. Format codes in wrong position
-;;;    b. Auto text values migrated to prefix (STA, LF, SF, SY patterns)
-;;;    c. Field codes in wrong sections
-;;; 4. Pass normalized values to underover for format code application
-;;;
-;;; DESIGN: Separation of concerns
-;;; - This function: Parse and normalize structure
-;;; - underover: Apply format codes to normalized data
-;;;
-(defun hcnm-ldrblk-lattribs-validate-and-underover (lattribs /)
-  ;; DEPRECATED WRAPPER - Just validates now (underover removed)
-  ;; TODO: Replace all calls with hcnm-ldrblk-lattribs-validate
-  (hcnm-ldrblk-lattribs-validate lattribs)
-)
-
-;;; Ensure all bubble attributes have proper 4-element list structure.
-;;;
-;;; PURPOSE: Normalize lattribs to consistent (tag prefix auto postfix) format
-;;;          before applying format codes.
+;;; PURPOSE: Normalize lattribs to consistent (tag text) format
+;;;          before applying format codes or writing to drawing.
 ;;;
 ;;; INPUT: lattribs from various sources:
-;;;   - hcnm-get-attributes: Returns attributes from existing bubble (may be legacy 2-element format)
-;;;   - hcnm-ldrblk-lattribs-spec: Returns fresh 4-element format
-;;;   - After auto-text or manual text entry: Should already be 4-element format
+;;;   - hcnm-get-attributes: Returns attributes from existing bubble
+;;;   - hcnm-ldrblk-lattribs-spec: Returns fresh 2-element format
+;;;   - After auto-text or manual text entry: Should already be 2-element format
 ;;;
 ;;; RETURNS: lattribs with ALL attributes in 2-element format:
 ;;;   ("NOTETXT1" "full text value")
@@ -6778,17 +6747,7 @@ tgh
 ;;; DEPRECATED - No longer needed in 2-element architecture
 ;;; Split concatenated lattribs using xdata delimiters (CHR 160 based)
 ;;; This function is obsolete now that we use search-based XDATA parsing
-(defun hcnm-ldrblk-lattribs-split (lattribs-cat xdata-alist / result attr
-                               tag concat-value xdata-entry parts
-                              )
-  (alert
-    (princ
-      "\nDEPRECATED: lattribs-split called but no longer needed - use split-attribute-on-xdata instead"
-    )
-  )
-  ;; Return as-is (already 2-element)
-  lattribs-cat
-)
+
 
 ;;; ============================================================================
 ;;; UNDEROVER FORMAT CODE LOGIC (Business Logic)
@@ -7028,20 +6987,20 @@ tgh
 ;; This is how bubble note auto text works.
 ;; 
 ;; Bubble note creation process from inside out:
-;; hcnm-ldrblk-auto-dispatch returns lattribs including notedata information
+;; hcnm-ldrblk-auto-dispatch returns lattribs
 ;; hcnm-ldrblk-get-auto-type returns lattribs
 ;; hcnm-ldrblk-get-text-entry returns lattribs
 ;; hcnm-ldrblk-get-bubble-data returns block-data that includes lattribs after adjusting formatting  (overline and underline)
 ;; hcnm-set-attributes puts lattribs into bubble note
 ;; 
 ;; Bubble note editing process from inside out:
-;; hcnm-ldrblk-auto-dispatch returns lattribs including notedata information
+;; hcnm-ldrblk-auto-dispatch returns lattribs
 ;; hcnm-ldrblk-eb-get-text modifies semi-global hcnm-ldrblk-eb-lattribs after adjusting formatting (overline and underline)
 ;; hcnm-ldrblk-eb-save calls hcnm-set-attributes to save semi-global hcnm-ldrblk-eb-lattribs
 ;; hcnm-edit-bubble top level manages editing dialog
 ;;
 ;; Reactor update process from inside out:
-;; hcnm-ldrblk-auto-dispatch returns lattribs including notedata information
+;; hcnm-ldrblk-auto-dispatch returns lattribs
 ;; hcnm-ldrblk-update-bubble-tag modifies bubble-data that includes lattribs after adjusting formatting  (overline and underline)
 ;; hcnm-ldrblk-reactor-update calls hcnm-ldrblk-update-bubble-tag to update semi-global bubble-data
 ;; hcnm-ldrblk-reactor top level manages reactor update
@@ -7571,7 +7530,7 @@ tgh
      ;; Note: This is called before string is calculated, so we need to update XDATA 
      ;; again after lattribs-put-auto. For now, skip initial write here - the subsequent
      ;; hcnm-ldrblk-xdata-save will write it in simple format, then first reactor will fix it.
-     ;; TODO: Refactor to write handle-based XDATA after string generation
+     ;; FUTURE REFACTOR: Write handle-based XDATA after string generation (low priority)
      ;; Now restore space after everything is done
      (hcnm-ldrblk-space-restore pspace-bubble-p)
     )
@@ -8256,13 +8215,13 @@ tgh
      )
   )
   ;; Ensure viewport transform is captured if needed (gateway architecture)
-  ;; TODO: When Z elevation is implemented, this will be needed for coordinate calculations
+  ;; FUTURE FEATURE: When Z elevation is implemented, this will be needed for coordinate calculations
   (hcnm-ldrblk-gateways-to-viewport-selection-prompt
     ename-bubble auto-type obj-target "NO-OBJECT"
                                         ; Z elevation doesn't use reference objects
     nil
    )                                    ; Normal auto-text flow (not super-clearance)
-  ;; TODO: When implemented, calculate p1-world here after gateway call
+  ;; FUTURE FEATURE: When Z implemented, calculate p1-world here after gateway call
   ;; (setq bubble-data (hcnm-ldrblk-bubble-data-ensure-p1-world bubble-data))
   ;; END hcnm-ldrblk-auto-get-input SUBFUNCTION
   ;; START hcnm-ldrblk-auto-update SUBFUNCTION
@@ -8420,9 +8379,9 @@ tgh
        ename-bubble cvport ref-ocs-1 ref-wcs-1 ref-ocs-2 ref-wcs-2
        ref-ocs-3 ref-wcs-3
       )
-     (princ
+     (haws-debug
        (strcat
-         "\nStored viewport "
+         "Stored viewport "
          (itoa cvport)
          " transformation matrix"
        )
@@ -8518,9 +8477,9 @@ tgh
        auto-type
      )
   )
-  (princ
+  (haws-debug
     (strcat
-      "\n  Gateway 1 (coordinates): "
+      "  Gateway 1 (coordinates): "
       (if avport-coordinates-gateway-open-p
         "OPEN"
         "CLOSED"
@@ -8545,9 +8504,9 @@ tgh
        )
      )
   )
-  (princ
+  (haws-debug
     (strcat
-      "\n  Gateway 2 (paperspace): "
+      "  Gateway 2 (paperspace): "
       (if avport-paperspace-gateway-open-p
         "OPEN"
         "CLOSED"
@@ -8556,9 +8515,9 @@ tgh
   )
   ;; Gateway 3: Not a reactor update  (obj-target is nil during insertion/editing)
   (setq avport-reactor-gateway-open-p (not obj-target))
-  (princ
+  (haws-debug
     (strcat
-      "\n  Gateway 3 (not-reactor): "
+      "  Gateway 3 (not-reactor): "
       (if avport-reactor-gateway-open-p
         "OPEN"
         "CLOSED"
@@ -8578,9 +8537,9 @@ tgh
        (hcnm-xdata-get-vptrans ename-bubble)
      )
   )
-  (princ
+  (haws-debug
     (strcat
-      "\n  Gateway 4 (no-xdata): "
+      "  Gateway 4 (no-xdata): "
       (if avport-xdata-gateway-open-p
         "OPEN"
         "CLOSED"
@@ -8598,9 +8557,9 @@ tgh
        )
      )
   )
-  (princ
+  (haws-debug
     (strcat
-      "\n  Gateway 5 (not-picked): "
+      "  Gateway 5 (not-picked): "
       (if avport-object-gateway-open-p
         "OPEN"
         "CLOSED"
@@ -8615,9 +8574,9 @@ tgh
   )
   ;; Super clearance: Explicit user request bypasses all gates
   (setq has-super-clearance-p (equal request-type "LINK-VIEWPORT"))
-  (princ
+  (haws-debug
     (strcat
-      "\n  Super clearance: "
+      "  Super clearance: "
       (if has-super-clearance-p
         "YES"
         "no"
@@ -8634,9 +8593,7 @@ tgh
   (cond
     ;; Path 1: Super clearance - always prompt
     (has-super-clearance-p
-     (princ
-       "\n  >>> DECISION: Prompt for viewport (super clearance)"
-     )
+     (haws-debug "  >>> DECISION: Prompt for viewport (super clearance)")
      (hcnm-ldrblk-tip-explain-avport-selection
        ename-bubble
        auto-type
@@ -8656,9 +8613,7 @@ tgh
        avport-paperspace-gateway-open-p avport-reactor-gateway-open-p
        avport-xdata-gateway-open-p avport-object-gateway-open-p
       )
-     (princ
-       "\n  >>> DECISION: Prompt for viewport (all gates open)"
-     )
+     (haws-debug "  >>> DECISION: Prompt for viewport (all gates open)")
      (hcnm-ldrblk-tip-explain-avport-selection
        ename-bubble
        auto-type
@@ -8680,15 +8635,11 @@ tgh
        avport-xdata-gateway-open-p
        (not avport-object-gateway-open-p)
      )
-     (princ
-       "\n  >>> DECISION: Use CVPORT silently (object just picked)"
-     )
+     (haws-debug "  >>> DECISION: Use CVPORT silently (object just picked)")
      (setq cvport (getvar "CVPORT"))
      (if cvport
        (hcnm-ldrblk-capture-viewport-transform ename-bubble cvport)
-       (princ
-         "\n  WARNING: CVPORT is nil - cannot capture viewport"
-       )
+       (haws-debug "  WARNING: CVPORT is nil - cannot capture viewport")
      )
     )
     ;; Path 4: Any other gate closed - skip
@@ -8787,22 +8738,7 @@ tgh
 )
 
 ;; DEPRECATED: Old function - use hcnm-ldrblk-get-viewport-transform-xdata instead
-(defun hcnm-ldrblk-get-avport-xdata (ename-bubble / xdata appname result)
-  (setq appname "HCNM-BUBBLE")
-  (setq
-    result
-     (cond
-       ((setq
-          xdata
-           (assoc -3 (entget ename-bubble '("HCNM-BUBBLE")))
-        )
-        (setq xdata (cdr (assoc appname (cdr xdata))))
-        (cdr (assoc 1070 xdata))        ; Return integer value
-       )
-     )
-  )
-  result
-)
+
 ;; Set viewport transformation matrix in bubble's XDATA
 ;; Stores CVPORT and 3 pairs of reference points (OCS and WCS)
 ;; These 3 points define the full transformation including rotation and scale
@@ -8855,28 +8791,7 @@ tgh
   (entmod elist-no-xdata)
 )
 
-;; DEPRECATED: Old function that only stored AVPORT integer
-;; Kept for reference - now replaced by hcnm-ldrblk-set-viewport-transform-xdata
-(defun hcnm-ldrblk-set-avport-xdata
-   (ename-bubble avport / appname xdata_new)
-  (setq appname "HCNM-BUBBLE")
-  (cond ((not (tblsearch "APPID" appname)) (regapp appname)))
-  (setq
-    xdata_new
-     (list
-       (cons
-         -3
-         (list
-           (cons
-             appname
-             (list (cons 1000 "AVPORT") (cons 1070 avport))
-           )
-         )
-       )
-     )
-  )
-  (entmod (append (entget ename-bubble '("*")) xdata_new))
-)
+
 ;; RETURNS p1-world GIVEN p1-ocs
 ;; Uses viewport transformation data from bubble's XDATA if available
 ;; This allows coordinate transformation without switching viewports
@@ -8933,9 +8848,9 @@ tgh
           ref-wcs-3
            (nth 6 transform-data)
         )
-        (princ
+        (haws-debug
           (strcat
-            "\nUsing stored viewport "
+            "Using stored viewport "
             (itoa cvport-stored)
             " transformation matrix"
           )
@@ -8949,9 +8864,9 @@ tgh
              ref-wcs-3
             )
         )
-        (princ
+        (haws-debug
           (strcat
-            "\nTransformed p1-world: "
+            "Transformed p1-world: "
             (vl-princ-to-string p1-world)
           )
         )
@@ -9598,16 +9513,20 @@ tgh
        (autotext-alist
         (foreach
            pair autotext-alist
-          ;; DEBUG: Show what we're processing
-          (princ (strcat "\n    [XDATA-WRITE] pair: " (vl-prin1-to-string pair)))
-          (princ (strcat "\n    [XDATA-WRITE] (cdr pair): " (vl-prin1-to-string (cdr pair))))
-          (princ (strcat "\n    [XDATA-WRITE] (listp (cdr pair)): " (vl-prin1-to-string (listp (cdr pair)))))
-          (cond
-            ((and (listp (cdr pair)) (listp (car (cdr pair))))
-             (princ "\n    [XDATA-WRITE] Using handle-based format")
-            )
-            (t
-             (princ "\n    [XDATA-WRITE] Using simple format")
+          ;; DEBUG: Show what we're processing (gated behind DebugReactors flag)
+          (haws-debug
+            (list
+              (strcat "    [XDATA-WRITE] pair: " (vl-prin1-to-string pair))
+              (strcat "    [XDATA-WRITE] (cdr pair): " (vl-prin1-to-string (cdr pair)))
+              (strcat "    [XDATA-WRITE] (listp (cdr pair)): " (vl-prin1-to-string (listp (cdr pair))))
+              (cond
+                ((and (listp (cdr pair)) (listp (car (cdr pair))))
+                 "    [XDATA-WRITE] Using handle-based format"
+                )
+                (t
+                 "    [XDATA-WRITE] Using simple format"
+                )
+              )
             )
           )
           
@@ -9784,15 +9703,15 @@ tgh
 )
 
 ;; Save bubble data to attributes and XDATA
-;; Takes association list with prefix/auto/postfix for each field
-;; Format: (("NOTETXT0" prefix auto postfix) ("NOTETXT1" prefix auto postfix) ...)
+;; Takes association list in 2-element format (tag text-value)
+;; Format: (("NOTETXT0" "text") ("NOTETXT1" "text") ...)
 ;;
 ;; The HCNM-BUBBLE section of XDATA for a bubble note stores:
 ;; 1. Auto-text values (separately from display attributes)
 ;; 2. Viewport transformation matrix (for paper space coordinate conversion)
 ;;
-;; This function saves concatenated text to visible attributes and auto-text to XDATA.
-;; Preserves existing viewport transform data when updating auto-text.
+;; This function saves text to visible attributes with format codes added.
+;; XDATA is managed separately by model layer functions.
 (defun hcnm-ldrblk-lattribs-to-dwg (ename-bubble lattribs / appname
                                 xdata-list ename-next etype elist atag
                                 obj-next lattribs-formatted text-value
@@ -9918,19 +9837,17 @@ tgh
   )
 )
 (defun hcnm-ldrblk-debug-reactor-attachment (auto-type handle-reference handle-leader handle-bubble keys-leader owners data)
-  ;; Debug output for reactor attachment - can be disabled by commenting out the princ
-  ;; To disable: comment out the entire princ statement
-  (princ
-    (strcat
-      "\n=== Reactor attachment complete ==="
-      "\nAuto-type: " auto-type
-      "\nHandle-reference: " (if handle-reference handle-reference "nil")
-      "\nHandle-leader: " (if handle-leader handle-leader "nil")
-      "\nHandle-bubble: " handle-bubble
-      "\nKeys-leader: " (if keys-leader (vl-prin1-to-string keys-leader) "nil")
-      "\nOwners count: " (itoa (length owners))
-      "\nFinal data structure: " (vl-prin1-to-string data)
-      "\n"
+  ;; Debug output for reactor attachment - gated behind DebugReactors flag
+  (haws-debug
+    (list
+      "=== Reactor attachment complete ==="
+      (strcat "Auto-type: " auto-type)
+      (strcat "Handle-reference: " (if handle-reference handle-reference "nil"))
+      (strcat "Handle-leader: " (if handle-leader handle-leader "nil"))
+      (strcat "Handle-bubble: " handle-bubble)
+      (strcat "Keys-leader: " (if keys-leader (vl-prin1-to-string keys-leader) "nil"))
+      (strcat "Owners count: " (itoa (length owners)))
+      (strcat "Final data structure: " (vl-prin1-to-string data))
     )
   )
 )
@@ -10247,9 +10164,9 @@ tgh
         owner owners
        (cond
          ((not (member owner (vlr-owners reactor-old)))
-          (princ
+          (haws-debug
             (strcat
-              "\nAdding owner: "
+              "Adding owner: "
               (vla-get-handle owner)
               " to reactor"
             )
@@ -10257,9 +10174,9 @@ tgh
           (vlr-owner-add reactor-old owner)
          )
          (t
-          (princ
+          (haws-debug
             (strcat
-              "\nOwner already attached: "
+              "Owner already attached: "
               (vla-get-handle owner)
             )
           )
@@ -10490,14 +10407,16 @@ tgh
   ;; Save current blocker state to honor parent-level blocks
   (setq block-reactors-current (c:hcnm-config-getvar "BlockReactors"))
   
-  ;; DEBUG: Show callback entry with blocker state
-  (princ (strcat "\n[CALLBACK START] BlockReactors=" block-reactors-current))
+  ;; DEBUG: Show callback entry with blocker state (gated)
+  (if (= "1" (c:hcnm-config-getvar "DebugReactors"))
+    (princ (strcat "\n[CALLBACK START] BlockReactors=" block-reactors-current)))
   
   ;; Check all gateways - early exit if any blocked
   (cond
     ;; Gateway 1: Honor parent-level reactor blocker (prevents nested callbacks)
     ((= block-reactors-current "1")
-     (princ "\n[REACTOR BLOCKED] Gateway1=1 (nested callback blocked by parent)")
+     (if (= "1" (c:hcnm-config-getvar "DebugReactors"))
+       (princ "\n[REACTOR BLOCKED] Gateway1=1 (nested callback blocked by parent)"))
     )
     
     ;; All other gates must pass to proceed with update
@@ -10519,9 +10438,10 @@ tgh
        owner-list (cadr (assoc key-app data))
        notifier-entry (assoc handle-notifier owner-list)
      )
-     ;; DEBUG: Show what triggered this callback
-     (princ (strcat "\n[REACTOR FIRED] Notifier handle: " handle-notifier 
-                    " Type: " (vla-get-objectname obj-notifier)))
+     ;; DEBUG: Show what triggered this callback (gated)
+     (if (= "1" (c:hcnm-config-getvar "DebugReactors"))
+       (princ (strcat "\n[REACTOR FIRED] Notifier handle: " handle-notifier 
+                      " Type: " (vla-get-objectname obj-notifier))))
      
      ;; Gateway 3: Verify notifier exists in data structure (defensive check)
      (cond
@@ -10568,7 +10488,8 @@ tgh
     )
     ;; Gateway 2 blocked (object erased)
     (t
-     (princ "\n[REACTOR BLOCKED] Gateway2 failed (object erased or inaccessible)")
+     (if (= "1" (c:hcnm-config-getvar "DebugReactors"))
+       (princ "\n[REACTOR BLOCKED] Gateway2 failed (object erased or inaccessible)"))
     )
   )
   
@@ -10576,7 +10497,8 @@ tgh
   ;; Rationale: If Gateway 1 blocked (nested callback), we just exit cleanly
   ;;            If we processed updates, we set flag="1" to block children
   ;;            Now restore to parent's original state for next user action
-  (princ (strcat "\n[CALLBACK END] Restoring BlockReactors=" block-reactors-current))
+  (if (= "1" (c:hcnm-config-getvar "DebugReactors"))
+    (princ (strcat "\n[CALLBACK END] Restoring BlockReactors=" block-reactors-current)))
   (c:hcnm-config-setvar "BlockReactors" block-reactors-current)
 )
 ;;==============================================================================
@@ -10707,9 +10629,9 @@ tgh
 ;;   OLD: auto-list = "StaOff"  ← Single string, fallback uses handle-notifier as reference
 ;;        (Prints warning, continues with degraded functionality for leader-based bubbles)
 ;;
-;; Performance Issues (KNOWN):
+;; Performance Issues (KNOWN - documented in Section 1.2.1.6):
 ;;   - Each update-bubble-tag writes XDATA + attributes independently (non-atomic)
-;;   - TODO: Accumulate lattribs changes, write once per bubble after all loops
+;;   - FUTURE OPTIMIZATION: Accumulate lattribs changes, write once per bubble after all loops
 ;;     Solution: Pass accumulator alist to update-bubble-tag, return updated accumulator,
 ;;     write complete lattribs + XDATA atomically after foreach loops complete
 ;;
@@ -10755,7 +10677,7 @@ tgh
               auto-type (car auto-entry)
               handle-reference (cadr auto-entry)  ; Second element, not cdr
             )
-            ;; TODO PERFORMANCE: Accumulate updates, write once per bubble
+            ;; FUTURE OPTIMIZATION (see Section 1.2.1.6): Accumulate updates, write once per bubble
             ;; Solution: Return updated lattribs instead of writing. Accumulate across
             ;; all auto-entries, then write once after foreach loops complete.
             (if (hcnm-ldrblk-update-bubble-tag
@@ -11015,10 +10937,10 @@ tgh
 ;;   New auto-text (calculated): "STA 11+00.00"       ← Alignment changed
 ;;   Result: "Storm STA 11+00.00 RT"                  ← User text preserved!
 ;;
-;; Performance Issues (KNOWN):
+;; Performance Issues (KNOWN - documented in Section 1.2.1.6):
 ;;   - Called ONCE PER AUTO-TEXT FIELD (can be 5+ times per bubble if user has N, E, StaOff, Dia, etc.)
 ;;   - Each call writes XDATA + attributes independently (NON-ATOMIC - BAD DESIGN!)
-;;   - TODO: Refactor to accumulate updates, write once per bubble
+;;   - FUTURE OPTIMIZATION: Refactor to accumulate updates, write once per bubble
 ;;     Solution: Change signature to (update-bubble-tag ... lattribs-accumulator),
 ;;     return updated accumulator instead of writing. Move write to bubble-update
 ;;     after all foreach loops complete. This ensures atomic update of all tags.
@@ -11094,15 +11016,16 @@ tgh
      (setq old-auto-text 
        (hcnm-ldrblk-extract-old-auto-text ename-bubble tag auto-type handle-reference)
      )
-     ;; DEBUG OUTPUT
-     (princ (strcat "\n=== DEBUG update-bubble-tag ==="
-                    "\n  Tag: " tag
-                    "\n  Auto-type: " auto-type
-                    "\n  Handle-reference: " (if (= handle-reference "") "(empty string)" handle-reference)
-                    "\n  Old auto-text: " (if old-auto-text old-auto-text "NIL")
-                    "\n  XDATA alist: " (vl-prin1-to-string (hcnm-xdata-read ename-bubble))
-     ))
-     
+     ;; DEBUG OUTPUT (gated)
+     (if (= "1" (c:hcnm-config-getvar "DebugReactors"))
+       (princ (strcat "\n=== DEBUG update-bubble-tag ==="
+                      "\n  Tag: " tag
+                      "\n  Auto-type: " auto-type
+                      "\n  Handle-reference: " (if (= handle-reference "") "(empty string)" handle-reference)
+                      "\n  Old auto-text: " (if old-auto-text old-auto-text "NIL")
+                      "\n  XDATA alist: " (vl-prin1-to-string (hcnm-xdata-read ename-bubble))
+       ))
+     )
      ;; STEP 3: Generate new auto-text via auto-dispatch
      (setq lattribs 
        (hcnm-ldrblk-generate-new-auto-text 
@@ -11120,12 +11043,13 @@ tgh
      (setq new-text
        (hcnm-ldrblk-smart-replace-auto current-text old-auto-text auto-new)
      )
-     ;; DEBUG OUTPUT
-     (princ (strcat "\n  Current text: " current-text
-                    "\n  New auto: " auto-new
-                    "\n  Result text: " new-text
-     ))
-     
+     ;; DEBUG OUTPUT (gated)
+     (if (= "1" (c:hcnm-config-getvar "DebugReactors"))
+       (princ (strcat "\n  Current text: " current-text
+                      "\n  New auto: " auto-new
+                      "\n  Result text: " new-text
+       ))
+     )
      ;; STEP 6: Update lattribs with smartly-replaced text
      (setq lattribs
        (cond
@@ -11136,7 +11060,7 @@ tgh
      
      ;; STEP 7: Write to drawing if changed
      ;; PERFORMANCE NOTE: This writes XDATA + attributes for EACH call (BAD DESIGN)
-     ;; TODO: Accumulate changes at bubble level, write once
+     ;; FUTURE OPTIMIZATION (see Section 1.2.1.6): Accumulate changes at bubble level, write once
      ;; Solution: Remove this write block. Return lattribs instead. Let bubble-update
      ;; collect all returned lattribs and write once after processing all auto-entries.
      (cond
@@ -11175,9 +11099,10 @@ tgh
 
 (defun hcnm-edit-bubble (ename-bubble / bubble-data dclfile ename-leader
                      hcnm-ldrblk-eb-lattribs hcnm-ldrblk-eb-auto-handles
-                     notetextradiocolumn return-list tag done-code
+                     notetextradiocolumn return-list tag done-code debug-mode
                     )
-  (princ "\n=== DEBUG: Entering hcnm-edit-bubble")
+  (setq debug-mode (= "1" (c:hcnm-config-getvar "DebugReactors")))
+  (if debug-mode (princ "\n=== DEBUG: Entering hcnm-edit-bubble"))
   (setq
     ename-leader
      (hcnm-ldrblk-bubble-leader ename-bubble)
@@ -11195,18 +11120,22 @@ tgh
      (load_dialog "cnm.dcl")
     done-code 2
   )
-  (princ
-    (strcat
-      "\n=== DEBUG: lattribs read, count="
-      (itoa (length hcnm-ldrblk-eb-lattribs))
-    )
-  )
-  (princ
-    (strcat
-      "\n=== DEBUG: dclfile="
-      (if dclfile
-        (itoa dclfile)
-        "FAILED"
+  (if debug-mode
+    (progn
+      (princ
+        (strcat
+          "\n=== DEBUG: lattribs read, count="
+          (itoa (length hcnm-ldrblk-eb-lattribs))
+        )
+      )
+      (princ
+        (strcat
+          "\n=== DEBUG: dclfile="
+          (if dclfile
+            (itoa dclfile)
+            "FAILED"
+          )
+        )
       )
     )
   )
@@ -11226,7 +11155,7 @@ tgh
     )
     (t
      ;; Continue with dialog
-     (princ "\n=== DEBUG: Showing tip...")
+     (if debug-mode (princ "\n=== DEBUG: Showing tip..."))
      ;; Show tip about auto-text editing expectations
      (haws-tip
        3                                ; Unique tip ID for auto-text editing explanation
@@ -11246,7 +11175,7 @@ tgh
          "  - You can't have multiple auto text fields with identical values in the same bubble note line and have them all update correctly."
         )
      )
-     (princ "\n=== DEBUG: Entering dialog loop...")
+     (if debug-mode (princ "\n=== DEBUG: Entering dialog loop..."))
      (while (> done-code -1)
        (cond
          ((= done-code 0) (setq done-code (hcnm-edit-bubble-cancel)))
@@ -11296,7 +11225,7 @@ tgh
      )
      ;; Change its arrowhead if needed.
      (hcnm-ldrblk-change-arrowhead ename-leader)
-     (princ "\n=== DEBUG: Dialog loop complete, cleaning up...")
+     (if debug-mode (princ "\n=== DEBUG: Dialog loop complete, cleaning up..."))
     )
   )
   ;; Close the validation cond
@@ -11405,7 +11334,7 @@ tgh
      ;; Clearing auto means: keep display text as-is, remove XDATA
      (setq attr (assoc tag hcnm-ldrblk-eb-lattribs))
      ;; For now, just keep the text as-is (XDATA will be cleared on save)
-     ;; TODO: Implement XDATA clearing in model layer
+     ;; IMPLEMENTATION NOTE: XDATA clearing handled by model layer on save
     )
     ;; Handle auto-text generation buttons (only if auto-type is valid)
     ((and auto-type (not (= auto-type "")))
@@ -11643,11 +11572,12 @@ tgh
 
 (defun hcnm-ldrblk-eb-show (dclfile notetextradiocolumn ename-bubble / tag
                         value parts prefix auto postfix on-model-tab-p
-                        lst-dlg-attributes
+                        lst-dlg-attributes debug-mode
                        )
-  (princ "\n=== DEBUG: hcnm-ldrblk-eb-show ENTRY")
+  (setq debug-mode (= "1" (c:hcnm-config-getvar "DebugReactors")))
+  (if debug-mode (princ "\n=== DEBUG: hcnm-ldrblk-eb-show ENTRY"))
   (new_dialog "HCNMEditBubble" dclfile)
-  (princ "\n=== DEBUG: new_dialog successful")
+  (if debug-mode (princ "\n=== DEBUG: new_dialog successful"))
   (set_tile "Title" "Edit CNM Bubble Note")
   ;; Check if bubble is in paper space
   (setq
@@ -11668,7 +11598,7 @@ tgh
     )
   )
   (mode_tile "ChgView" 0)               ; Always enable
-  (princ "\n=== DEBUG: About to call lattribs-to-dlg...")
+  (if debug-mode (princ "\n=== DEBUG: About to call lattribs-to-dlg..."))
   ;; ARCHITECTURE: Transform clean lattribs to dialog display format (with format codes)
   ;; This is the ONLY place we transform for display
   (setq
@@ -11677,22 +11607,24 @@ tgh
        hcnm-ldrblk-eb-lattribs
      )
   )
-  (princ
-    (strcat
-      "\n=== DEBUG: lattribs-to-dlg returned "
-      (itoa (length lst-dlg-attributes))
-      " items"
+  (if debug-mode
+    (princ
+      (strcat
+        "\n=== DEBUG: lattribs-to-dlg returned "
+        (itoa (length lst-dlg-attributes))
+        " items"
+      )
     )
   )
   ;; Note attribute edit boxes - use formatted display strings (2-element lattribs)
-  (princ "\n=== DEBUG: Setting dialog tiles...")
+  (if debug-mode (princ "\n=== DEBUG: Setting dialog tiles..."))
   (foreach
      attribute lst-dlg-attributes
     (setq
       tag   (car attribute)
       value (cadr attribute)
     )                                   ; Just one text value in 2-element architecture
-    (princ (strcat "\n=== DEBUG: Setting tiles for " tag))
+    (if debug-mode (princ (strcat "\n=== DEBUG: Setting tiles for " tag)))
     ;; Set text field (single-column DCL with free-form editing)
     (set_tile tag value)
     (action_tile

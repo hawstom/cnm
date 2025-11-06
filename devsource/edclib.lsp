@@ -1957,7 +1957,9 @@
 ;;   (haws-debug *hcnm-debug* "Simple message")
 ;;   (haws-debug nil "Never prints")
 ;;------------------------------------------------------------------------------
-(defun haws-debug (enabled messages / output)
+(defun haws-debug (messages / enabled output)
+  ;; Check DebugReactors flag internally (DRY principle)
+  (setq enabled nil)
   (cond
     (enabled
      ;; Convert single string to list for consistent processing

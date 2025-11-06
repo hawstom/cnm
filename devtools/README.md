@@ -1,5 +1,7 @@
 # HawsEDC Developer Tools
 
+**Not Implemented. Do not read.**
+
 This directory contains developer-only tools for HawsEDC/CNM development.
 
 ## Setup
