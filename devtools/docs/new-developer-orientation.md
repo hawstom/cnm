@@ -65,3 +65,9 @@ git push # This is short for git push origin test-[your initials]-1
 5. Submit a pull request to hawstom.
 
 a. I have never done this. Fingers crossed.
+
+# Git cheat sheet
+Search logs
+```
+git log --grep='underscore'
+```

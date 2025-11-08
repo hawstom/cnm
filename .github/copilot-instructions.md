@@ -151,6 +151,14 @@ CNM ships with bubble notes using block name pattern: `cnm-bubble-[m?]#-[dir]`
 - Opens dialog to edit bubble attributes
 - Add automatic text via buttons
 
+**Replace Bubble:**
+- Command: `c:hcnm-replace-bubble` (also called via notetype=nil path in hcnm-ldrblk-insert)
+- Copies existing bubble to new location using same block definition
+- Preserves all attribute text from source bubble
+- **Legacy mode:** Works with bubbles created before reactive auto-text system
+- **Current limitation:** Does not update reactor data structures or XDATA/XRECORD for auto-text bubbles
+- **Planned upgrade:** See `.ai-plans/copy-replace-bubble-upgrade.md` for reactor/XDATA handling
+
 ##### 3.2.2.2. Reactive Auto-Text System
 **Status:** Implemented on feat-sunrise branch, debugging regressions
 
