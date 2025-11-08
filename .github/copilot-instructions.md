@@ -21,7 +21,7 @@
 
 ### 1.4. AI Collaboration Workflow
 
-See Section 5.2 for planning document workflow and [standards-02-ai-human-collaboration.md](../devtools/docs/standards-02-ai-human-collaboration.md) for general AI collaboration patterns.
+See Section 5.2 for planning document workflow and [standards-02-ai-human-collaboration.md](../devtools/docs/standards/02-ai-human-collaboration.md) for general AI collaboration patterns.
 
 ### 1.5. Read These Sections First
 
@@ -58,6 +58,25 @@ Engineers use CNM in this sequence:
 - If Project Notes specifies quantity line (e.g., LINE4), that bubble line accepts quantities (7 LF, 280 SY, 8 EA)
 - CNM ignores units, reads only numeric value, uses units from Project Notes
 - Built from attributed blocks (easily customizable)
+
+**Customer Problem Solved:**
+Civil engineers annotate drawings with dynamic data (station/offset along alignments, pipe diameters/slopes, coordinates, elevations). Manual entry is error-prone. Alignment changes break notes. Updating 50 notes individually is tedious. Copy-paste mistakes show wrong values.
+
+**CNM Solution:**
+- Engineer clicks toolbar, places leader, selects alignment/pipe/surface
+- CNM queries Civil 3D automatically, calculates station/offset
+- Stores reference in XDATA, attaches VLR reactor
+- When alignment shifts, CNM updates all bubble notes automatically
+- No user intervention needed
+
+**Customer Impact (20+ years of feedback):**
+- 80% reduction in note updating time
+- Eliminates manual transcription errors
+- Encourages design iteration (changes are cheap)
+- "CNM paid for itself on the first project"
+
+**Mix Auto + Manual Text:**
+Engineers add context: "Storm Drain STA 10+25.50 RT" where "Storm Drain" and "RT" are user prefix/postfix, "STA 10+25.50" is auto-text. CNM stores auto separately in XDATA so updates don't corrupt user edits.
 
 #### 2.2.3. Make Key Notes Table
 - CNM reads Project Notes, generates Key Notes Table for current sheet
@@ -606,7 +625,7 @@ Additional tools following command reference and cnmloader categories. Developer
 
 ### 4.1. Function Naming Conventions
 
-See [standards-03-style.md, Sections 3-7](../devtools/docs/standards-03-style.md) for comprehensive naming conventions including:
+See [standards-03-style.md, Sections 3-7](../devtools/docs/standards/03-style.md) for comprehensive naming conventions including:
 - Case conventions (lowercase)
 - Delimiter style (hyphens)
 - Type prefixes (obj-, en-, -p suffix)
@@ -632,7 +651,7 @@ hcnm-*                    Top-level CNM functions
 
 #### 4.2.1. Indentation Standards
 
-See [standards-03-style.md, Section 1.1.1](../devtools/docs/standards-03-style.md#111-indentation-and-whitespace) for complete indentation rules.
+See [standards-03-style.md, Section 1.1.1](../devtools/docs/standards/03-style.md#111-indentation-and-whitespace) for complete indentation rules.
 
 **Quick reference:** 2-space indentation, no tabs, weakly allow cond exception.
 
@@ -658,7 +677,7 @@ See [standards-03-style.md, Section 1.1.1](../devtools/docs/standards-03-style.m
 
 #### 4.2.3. AutoLISP Idioms
 
-See [standards-03-style.md, Sections 3-6](../devtools/docs/standards-03-style.md) for complete naming conventions, including:
+See [standards-03-style.md, Sections 3-6](../devtools/docs/standards/03-style.md) for complete naming conventions, including:
 - Lower case symbols (section 3.1)
 - Hyphen delimiters (section 4.1)
 - Type prefixes: obj-, en-, es-, eg-, lst-, -p suffix (section 5)
@@ -675,7 +694,7 @@ See [standards-03-style.md, Sections 3-6](../devtools/docs/standards-03-style.md
 
 #### 4.2.4. Dotted Pairs vs Lists
 
-See [standards-03-style.md, Section 12](../devtools/docs/standards-03-style.md) for complete guidance on when to use dotted pairs vs proper lists in AutoLISP.
+See [standards-03-style.md, Section 12](../devtools/docs/standards/03-style.md) for complete guidance on when to use dotted pairs vs proper lists in AutoLISP.
 
 **Quick reference:** Use dotted pairs for alists (key-value with `assoc`), proper lists for everything else.
 
@@ -832,7 +851,7 @@ See [standards-03-style.md, Section 12](../devtools/docs/standards-03-style.md) 
 
 ### 5.3. Document Structure Guidelines
 
-See [standards-02-ai-human-collaboration.md](../devtools/docs/standards-02-ai-human-collaboration.md) for comprehensive documentation standards:
+See [standards-02-ai-human-collaboration.md](../devtools/docs/standards/02-ai-human-collaboration.md) for comprehensive documentation standards:
 - Section 3: Document Standards (structure, numbering, naming)
 - Section 5: AI Agent Instructions (reading docs, editing docs, embeddings)
 
