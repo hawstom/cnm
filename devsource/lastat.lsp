@@ -1,7 +1,7 @@
 ﻿;;;Freeze or off by selection set
 ;;;(C) Copyright 1997 by Thomas Gail Haws
 
-(haws-milepost "Loading lastat.lsp version a")
+(haws-debug "Loading lastat.lsp version a")
 (defun c:haws-ff ()
 (haws-core-init 229) (haws-lastat "freeze" nil)(princ))
 (defun c:haws-lk ()

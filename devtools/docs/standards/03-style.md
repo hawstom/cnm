@@ -1,9 +1,9 @@
-HAWSEDC STANDARDS VOLUME 03: NAMES AND SYMBOLS
+HAWSEDC STANDARDS VOLUME 03: STYLE
 ==============================================
 
 **Document Type:** Standard  
 **Status:** Active  
-**Last Updated:** 2025-10-25  
+**Last Updated:** 2025-11-06  
 **Owner:** Tom Haws (TGH)
 
 ---
@@ -11,19 +11,28 @@ HAWSEDC STANDARDS VOLUME 03: NAMES AND SYMBOLS
 <!-- #region 1. QUICK START -->
 # 1. QUICK START
 
-## 1.1 Key Rules
-- **Case:** lowercase for code symbols. This means variables and functions. Schedule: Very aggressive
-- **Delimiter:** Underscores (not hyphens or colons). This means squash all hyphens and colons. Schedule: Moderately aggressive
-  - **Exception:** `c:` prefix for AutoCAD command functions is required by AutoLISP (e.g., `c:cnm`, `c:cnmedit`)
-- **Files:** lowercase with underscores. Schedule: Moderately conservative
-- **Prefixes:**  Moderately aggressive.
+## 1.1. Key Rules
+### 1.1.1. Indentation and whitespace
+  - **Indentation:** 2 spaces; no tabs; weakly discourage wide-car style and cond exception.
+  - **Whitespace:** No whitespace on "in" side of braces (parentheses). Otherwise single space. Weakly discourage padding spaces for vertical alignment other than initial indentation.
+  - **Closing brace:** On own line, aligned with opening brace (AutoLISP style) for defun, cond, loops, and long blocks (4+ lines). May be stacked on last line of code (Common LISP style) for closing a few (3-4) lines.
+### 1.1.2. Names
+  - **Case:** lowercase for code symbols. This means variables and functions. Schedule: Very aggressive
+  - **Delimiter:** Hyphens (not underscores or colons). Exception: `c:` prefix for AutoCAD command functions is required by AutoLISP (e.g., `c:cnm`, `c:cnmedit`)
+  - **Files:** same
+  - **Prefixes:**
   - `obj-` for VLA-OBJECTS
   - `es-` for the results of (entsel)
   - `en-` for entity names
   - `el-` or `eg-` for the results of (entget en)
   - `lst-` for lists when clarification is needed
   - `-p` suffix for booleans.
-
+### 1.1.3. Comments
+  - **Hierarchy:** follow established practice for number of semicolons 
+    - **Single semicolon:** for very minor comments to the right of code. Exception: ;#region and ;#endregion for VS Code folding
+    - **Double semicolon:** for normal comments aligned to the indentation of the code below them.
+    - **Triple semicolon:** for major comments aligned to left margin.
+    - **Block:** for temporary disabling. Minimize use.
 ---
 <!-- #endregion -->
 
@@ -713,6 +722,116 @@ refactor: rename hcnm-ldrblk-auto-pipe to hcnm_ldrblk_auto_pipe
   (* width height depth)
 )
 ```
+
+---
+<!-- #endregion -->
+
+<!-- #region 12. DOTTED PAIRS VS LISTS -->
+# 12. DOTTED PAIRS VS LISTS
+
+## 12.1 The Problem
+
+### 12.1.1 Two List Construction Primitives
+AutoLISP has two list construction primitives with different behavior:
+- `(cons 1 2)` → Dotted pair: `(1 . 2)`
+- `(list 1 2)` → Proper list: `(1 2)` = `(1 . (2 . nil))`
+
+```lisp
+(cdr (cons 1 2))   ; Returns atom: 2
+(cdr (list 1 2))   ; Returns list: (2)
+```
+
+Mixing in same data structure causes bugs (functions expecting atoms get lists or vice versa).
+
+## 12.2 When to Use Dotted Pairs
+
+### 12.2.1 Association Lists (alists)
+Use for semantic key-value pairs:
+
+```lisp
+;; CORRECT
+(setq config-alist '(("Name" . "John") ("Age" . 30)))
+(cdr (assoc "Name" config-alist))  ; Returns atom: "John" ✅
+```
+
+### 12.2.2 DXF Code Pairs
+AutoCAD entity data format:
+
+```lisp
+;; CORRECT
+(cons 8 "LAYER-NAME")  ; Returns: (8 . "LAYER-NAME") ✅
+```
+
+## 12.3 When to Use Proper Lists
+
+### 12.3.1 Collections to Iterate
+```lisp
+;; CORRECT
+(setq tags '("NOTETXT1" "NOTETXT2" "NOTETXT3"))
+(foreach tag tags ...)  ; Clean iteration ✅
+```
+
+### 12.3.2 Function Arguments
+```lisp
+;; CORRECT
+(hcnm-some-function (list tag text auto))  ; Multiple values ✅
+```
+
+### 12.3.3 Nested Data Structures
+```lisp
+;; CORRECT
+'(("NOTETXT1" "text") ("NOTETXT2" "text"))  ; lattribs ✅
+```
+
+## 12.4 CNM-Specific Patterns
+
+### 12.4.1 Dotted Pairs (alists)
+```lisp
+;; XDATA (key-value pairs)
+'(("NOTETXT1" . "auto-text") ("NOTETXT2" . "auto-text"))
+
+;; Config settings
+'(("BlockReactors" . "0") ("DebugReactors" . "0"))
+```
+
+### 12.4.2 Proper Lists
+```lisp
+;; lattribs (tag + text, 2-element lists)
+'(("NOTETXT1" "text") ("NOTETXT2" "text"))
+
+;; Reactor data (nested collections)
+'(("HCNM-BUBBLE" (("owner-handle" (("bubble-handle" ...))))))
+```
+
+## 12.5 Common Pitfall
+
+### 12.5.1 Cons vs List for 2-Element Lists
+```lisp
+;; WRONG: cons creates dotted pair, not 2-element list
+(cons "TAG" "value")  ; ("TAG" . "value")
+(cadr '("TAG" . "value"))  ; ERROR: cdr returns atom "value"!
+
+;; CORRECT: Use list for 2-element lists
+(list "TAG" "value")  ; ("TAG" "value")
+(cadr '("TAG" "value"))  ; Returns: "value" ✅
+```
+
+## 12.6 Decision Tree
+
+### 12.6.1 When to Choose
+```
+Is this key-value mapping with semantic meaning?
+├─ YES → Use dotted pairs (alist)
+│   Examples: XDATA, config, DXF codes
+└─ NO → Use proper lists
+    Is this collection to iterate?
+    ├─ YES → Proper lists
+    │   Examples: lattribs, tags list, bubble-list
+    └─ NO → Still prefer proper lists (consistency)
+```
+
+### 12.6.2 Rule of Thumb
+If `assoc` is primary accessor, use dotted pairs. Otherwise, use proper lists.
 
 ---
 <!-- #endregion -->

@@ -34,7 +34,6 @@
   "5.5.18"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
-(setq *haws-debuglevel* 0)
 ;;This function returns the current setting of nagmode.
 ;;Elizabeth asked me to give her a version with no nag mode (direct to fail).
 (defun haws-nagmode-p () t)
@@ -1934,15 +1933,6 @@
   |;
   (princ)
 )
-;;; HAWS-MILEPOST
-;;; Echos a progress message depending on debug level.
-;;(vl-acad-defun 'HAWS-MILEPOST)
-(defun haws-milepost (messagestring)
-  (if (> *haws-debuglevel* 0)
-    (princ (strcat "\nHawsEDC debug message: " messagestring))
-    messagestring
-  )
-)
 
 ;;------------------------------------------------------------------------------
 ;; haws-debug - Conditional debug output with flexible formatting
@@ -1958,8 +1948,7 @@
 ;;   (haws-debug nil "Never prints")
 ;;------------------------------------------------------------------------------
 (defun haws-debug (messages / enabled output)
-  ;; Check DebugReactors flag internally (DRY principle)
-  (setq enabled nil)
+  (setq enabled T)
   (cond
     (enabled
      ;; Convert single string to list for consistent processing
@@ -2394,7 +2383,7 @@
     )
     (vl-cmdf "._linetype" "_l" laltyp ltfile "")
   )
-  (haws-milepost "Finished assuring linetype.")
+  (haws-debug "Finished assuring linetype.")
   (if (not (tblsearch "LAYER" laname))
     (vl-cmdf "._layer" "_m" laname "")
     (vl-cmdf "._layer" "_t" laname "_on" laname "_u" laname "_s" laname "")
@@ -2405,7 +2394,7 @@
   (if (/= laltyp "")
     (vl-cmdf "._layer" "_lt" laltyp "" "")
   )
-  (haws-milepost "Finished making layer.")
+  (haws-debug "Finished making layer.")
   laopt
 )
 
@@ -2430,8 +2419,8 @@
     )
     (vl-cmdf "._linetype" "_l" ltype ltfile "")
   )
-  (haws-milepost
-    (strcat
+  (haws-debug
+    (list
       "Finished trying to load linetype "
       ltype
       " from acad.lin, default.lin (Bricscad), and hawsedc.lin."
@@ -3407,9 +3396,9 @@
 ;; Migration: Clear old getcfg location (one-time cleanup)
 ;; Old location: AppData/HawsEDC/UseLog/UseString
 ;; New location: HKEY_CURRENT_USER\Software\HawsEDC\HAWS\UseString
-(if (getcfg "AppData/HawsEDC/UseLog/UseString")
+(if (/= (getcfg "AppData/HawsEDC/UseLog/UseString") "")
   (progn
-    (setcfg "AppData/HawsEDC/UseLog/UseString" "")
+    (setcfg "AppData/HawsEDC/UseLog" "")
     (princ "\n[Migration] Cleared old USE_LOG location (AppData → Registry)")
   )
 )

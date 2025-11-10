@@ -1,6 +1,13 @@
-﻿;;; haws-tip.lsp - Tip/evangelism opt-out system for HAWS/EDC/CNM
+﻿;;; haws-tip.lsp - Tip opt-out system for HAWS/EDC/CNM
 ;;; See devtools/docs/standards_03_names_and_symbols.md for naming conventions
 ;;; See devtools/docs/standards_05_architecture.md S05.6 for tip system architecture
+;;;
+;;; TIP ID REGISTRY:
+;;; AI agents implementing new tips should use the courtesy registry at:
+;;;   devsource/haws-tip-registry.csv
+;;; This prevents ID collisions and provides documentation of all tips.
+;;; Format: tip-id,description,implementation-date,status
+;;; See registry file for instructions on adding new tips.
 
 (princ "\nHaws-tip functions ... ")
 
