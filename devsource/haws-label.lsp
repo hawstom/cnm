@@ -1,7 +1,7 @@
-﻿;;; HAWS-LABEL.lsp - C:HAWS_LABEL command for CNM/HAWSEDC
+﻿;;; HAWS-LABEL.lsp - C:HAWS-LABEL command for CNM/HAWSEDC
 ;;; See devtools/docs/standards_03_names_and_symbols.md for naming conventions
 ;;;
-;;; Command: HAWS_LABEL (aliases: LABEL, LAB)
+;;; Command: haws-label (aliases: LABEL, LAB)
 ;;; Tracker ID: 339
 ;;;
 ;;; TO CUSTOMIZE: Edit haws-label-settings.lsp to define layer-specific text
@@ -13,7 +13,7 @@
 ;;;   segments. Layer-specific text styles and labels from haws-label-settings.lsp.
 ;;;
 ;;; Usage:
-;;;   1. Type HAWS_LABEL (or LABEL or LAB)
+;;;   1. Type haws-label (or LABEL or LAB)
 ;;;   2. Select line, arc, or polyline at desired label point
 ;;;   3. Text inserted at pick point, aligned with entity
 ;;;
@@ -32,7 +32,7 @@
 ;;;   - Readability bias keeps text "right-side up"
 ;;;   - Text height from dimension style (haws-text-height-model)
 
-(defun c:haws_label (/ ent_data ent_name ent_pick ent_type label_text layer_name
+(defun c:haws-label (/ ent_data ent_name ent_pick ent_type label_text layer_name
                         layer_table pick_point readability_bias settings text_angle
                         text_height text_style_key text_style_name text_style_table)
   (haws-core-init 339)
@@ -291,7 +291,7 @@
 
 (princ
   (strcat
-    "\nHAWS-LABEL.LSP loaded. Type HAWS_LABEL (or LABEL or LAB) to start."
+    "\nHAWS-LABEL.LSP loaded. Type haws-label (or LABEL or LAB) to start."
     "\nTo customize labels: Edit haws-label-settings.lsp"
   )
 )
