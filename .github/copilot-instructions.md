@@ -4,10 +4,11 @@
 
 ### 1.1. Essential Instructions
 
-1. **Document alias**: This file (.github\copilot-instructions.md) is "ci"
+1. **ci** = This file (.github\copilot-instructions.md)
 2. **cinote:** = Immediately revise ci to include that information. "cinote." = You failed to execute previous cinote command
 3. **citruth.** = Tell the truth! Qualify statements with certainty estimates. Don't say "Perfect/Fixed/Done" when you mean "Please test"
 4. **Use get_errors tool**: Check syntax after AutoLISP edits. Fix errors before reporting
+5. **AutoLISP load paths**: Load expressions must use full paths or constructed paths like `(load (strcat (vl-filename-directory (findfile "edclib.lsp")) "\\" filename))` since relative paths don't work reliably
 
 **What is CNM?** Civil engineering tool for managing construction notes on AutoCAD drawings.
 

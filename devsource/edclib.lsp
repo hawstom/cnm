@@ -1,4 +1,4 @@
-﻿;#region HEAD
+;#region HEAD
 (princ "\nHawsEDC library functions loading ... ")
 ;;;
 ;;; ICAD compatibility issues:
@@ -31,7 +31,7 @@
 ;;; (legacy)
 ;;; lisputil.lsp
 (defun haws-unified-version ()
-  "5.5.18"
+  "5.5.20"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 ;;This function returns the current setting of nagmode.
@@ -59,7 +59,7 @@
     "\nDid you see LABEL (HAWS_LABEL), our new utility research pipe labeler? Edit haws-label-settings.lsp."
     "\nYou can open a suggestion or bug issue at at https://github.com/hawstom/cnm by registering at Github."
     "\nThe latest upgrades to CNM were made possible by AI! (VS Code IDE > Copilot AI agent > Claude Sonnet 4.5 model)"
-    "\nGive back to CNM. Contact Tom to learn how you can be an AI-supported programmer."
+    "\nGive back to CNM. Contact Tom to learn how you can be an AI-supported imagineer."
     "\nGet involved with CNM at https://github.com/hawstom/cnm"
     "\nTake CNM with you wherever you work. Share it, share your ideas, and help it grow!"
     "\nCNM is a community project! Make a difference by sharing it and making it better."
@@ -224,13 +224,6 @@
   ;; Redraw work entity
   (if errosm
     (setvar "osmode" errosm)
-  )
-  
-  ;; CNM: Clear reactor ignore flag if set during operation
-  ;; Prevents IgnoreReactorOnce from getting stuck at "1" due to user cancel/error
-  (if (and (fboundp 'c:hcnm-config-getvar)
-           (= (c:hcnm-config-getvar "IgnoreReactorOnce") "1"))
-    (c:hcnm-config-setvar "IgnoreReactorOnce" "0")
   )
   
   (setq
@@ -1948,7 +1941,7 @@
 ;;   (haws-debug nil "Never prints")
 ;;------------------------------------------------------------------------------
 (defun haws-debug (messages / enabled output)
-  (setq enabled T)
+  (setq enabled nil)
   (cond
     (enabled
      ;; Convert single string to list for consistent processing
@@ -1963,6 +1956,36 @@
     (t nil)  ; Return nil when disabled
   )
 )
+
+;;------------------------------------------------------------------------------
+;; HAWS PROFILING SYSTEM - DUMMY FUNCTIONS (Production Safety)
+;;------------------------------------------------------------------------------
+;; Purpose: No-op stubs that allow profiling calls in production code
+;; Architecture:
+;;   - These dummy functions are compiled into production FAS
+;;   - Return nil immediately (negligible overhead ~0.0001ms per call)
+;;   - Redefined by devtools/performance-profiler.lsp when loaded (dev only)
+;;   - Production FAS excludes devtools/ folder entirely
+;;
+;; Enable Profiling (development):
+;;   (load "devtools/performance-profiler.lsp")
+;;
+;; This allows clean profiling calls throughout CNM without guards:
+;;   (setq start (haws-profile-start "label"))  ; Safe in production
+;;   (haws-profile-end "label" start)           ; Safe in production
+;;------------------------------------------------------------------------------
+
+;; Dummy: Start timing (no-op in production)
+(defun haws-profile-start (label) nil)
+
+;; Dummy: End timing (no-op in production)
+(defun haws-profile-end (label start-time) nil)
+
+;; Dummy: Print report (no-op in production)
+(defun haws-profile-report (sorted) nil)
+
+;; Dummy: Reset data (no-op in production)
+(defun haws-profile-reset () nil)
 
 ;#endregion
 ;#region MISC
@@ -3399,7 +3422,7 @@
 (if (/= (getcfg "AppData/HawsEDC/UseLog/UseString") "")
   (progn
     (setcfg "AppData/HawsEDC/UseLog" "")
-    (princ "\n[Migration] Cleared old USE_LOG location (AppData → Registry)")
+    (princ "\n[Migration] Cleared old USE_LOG location (AppData \U+2192 Registry)")
   )
 )
 
@@ -3407,6 +3430,6 @@
 
 (princ "\nHawsEDC library functions loaded.")
 (princ)
- ;|�Visual LISP� Format Options�
+ ;|\U+FFFDVisual LISP\U+FFFD Format Options\U+FFFD
 (72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil t)
 ;*** DO NOT add text below the comment! ***|;

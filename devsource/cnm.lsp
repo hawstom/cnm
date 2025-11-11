@@ -3563,7 +3563,9 @@ ImportLayerSettings=No
 ;;; c:hcnm-config-getvar
 ;;; Var is case sensitive
 ;;; UPDATED: Now uses HAWS-CONFIG library (Issue #11)
-(defun c:hcnm-config-getvar (var / val)
+(defun c:hcnm-config-getvar (var / val start)
+  ;; PROFILING: Start timing CNM config wrapper
+  (setq start (haws-profile-start "cnm-config-getvar-wrapper"))
   ;; Call haws-config with appropriate parameters (scope auto-looked-up)
   (setq
     val
@@ -3574,6 +3576,8 @@ ImportLayerSettings=No
        "CNM"                            ; section for Project scope
      )
   )
+  ;; PROFILING: End timing CNM config wrapper
+  (haws-profile-end "cnm-config-getvar-wrapper" start)
   val
 )
 
@@ -5349,7 +5353,12 @@ ImportLayerSettings=No
 
 (defun hcnm-ldrblk-insert (notetype / blockname bubble-data bubblehooks
                        ename-bubble-old replace-bubble-p th
+                       profile-start
                       )
+  ;;===========================================================================
+  ;; PROFILING: Start timing bubble insertion (complete process)
+  ;;===========================================================================
+  (setq profile-start (haws-profile-start "insert-bubble"))
   (princ "\nCNM version: ")
   (princ (haws-unified-version))
   (haws-tip
@@ -5476,6 +5485,7 @@ ImportLayerSettings=No
   (setq bubble-data (hcnm-ldrblk-draw-bubble bubble-data))
   (setq bubble-data (hcnm-ldrblk-get-bubble-data bubble-data))
   (hcnm-ldrblk-finish-bubble bubble-data)
+  (haws-tip 7 "You can align/move bubble note text lines by moving their ATTDEF objects in the block editor (BEDIT). Save the results to a personal or team CNM customizations location so that you can copy in your versions after every CNM install.\n\nNote that there have been no changes to the bubble note block definition since version 5.0.07 (you can always check your version using HAWS-ABOUT).")
   (hcnm-restore-dimstyle)
   (haws-vrstor)
   (vl-cmdf "._undo" "_e")
@@ -5485,6 +5495,10 @@ ImportLayerSettings=No
   (c:hcnm-config-setvar "BlockReactors" "0")
   
   (haws-core-restore)
+  ;;===========================================================================
+  ;; PROFILING: End timing bubble insertion
+  ;;===========================================================================
+  (haws-profile-end "insert-bubble" profile-start)
   (princ)
 )
 (defun hcnm-ldrblk-get-user-start-point (bubble-data)
@@ -7664,7 +7678,12 @@ ImportLayerSettings=No
                         obj-align p1-world pspace-bubble-p sta-string
                         off-string string cvport ref-ocs-1 ref-ocs-2
                         ref-ocs-3 ref-wcs-1 ref-wcs-2 ref-wcs-3
+                        profile-start
                        )
+  ;;===========================================================================
+  ;; PROFILING: Start timing alignment auto-text generation
+  ;;===========================================================================
+  (setq profile-start (haws-profile-start "insert-auto-alignment"))
   (setq
     lattribs
      (hcnm-ldrblk-bubble-data-get bubble-data "ATTRIBUTES")
@@ -7737,14 +7756,6 @@ ImportLayerSettings=No
      (hcnm-ldrblk-assure-auto-text-has-reactor
        obj-align ename-bubble ename-leader tag auto-type
       )
-     ;; Write initial XDATA in handle-based format (reactor updates need this)
-     ;; Reference handle is alignment handle (will be written after we generate string below)
-     ;; Note: This is called before string is calculated, so we need to update XDATA 
-     ;; again after lattribs-put-auto. For now, skip initial write here - the subsequent
-     ;; hcnm-ldrblk-xdata-save will write it in simple format, then first reactor will fix it.
-     ;; FUTURE REFACTOR: Write handle-based XDATA after string generation (low priority)
-     ;; Now restore space after everything is done
-     (hcnm-ldrblk-space-restore pspace-bubble-p)
     )
   )
   ;; STEP 2: Calculate station and offset (only needed for coordinate-based types)
@@ -7858,6 +7869,25 @@ ImportLayerSettings=No
        lattribs
      )
   )
+  ;; Step 5: Write XDATA during initial insertion (not during reactor updates)
+  ;; Reactor updates already write XDATA in update-bubble-tag
+  (cond
+    ((and (not obj-target) obj-align)  ; Initial insertion AND alignment found
+     (hcnm-ldrblk-xdata-update-one
+       ename-bubble
+       tag
+       auto-type
+       (vla-get-handle obj-align)
+       string
+      )
+     ;; Restore space after everything is done
+     (hcnm-ldrblk-space-restore pspace-bubble-p)
+    )
+  )
+  ;;===========================================================================
+  ;; PROFILING: End timing alignment auto-text generation
+  ;;===========================================================================
+  (haws-profile-end "insert-auto-alignment" profile-start)
   bubble-data
 )
 (defun hcnm-ldrblk-auto-al-get-alignment (ename-bubble tag auto-type /
@@ -8382,8 +8412,12 @@ ImportLayerSettings=No
 ;;==============================================================================
 (defun hcnm-ldrblk-auto-pipe (bubble-data tag auto-type obj-target /
                           lattribs ename-bubble ename-leader obj-pipe
-                          pspace-bubble-p string
+                          pspace-bubble-p string profile-start
                          )
+  ;;===========================================================================
+  ;; PROFILING: Start timing pipe auto-text generation
+  ;;===========================================================================
+  (setq profile-start (haws-profile-start "insert-auto-pipe"))
   (setq
     lattribs
      (hcnm-ldrblk-bubble-data-get bubble-data "ATTRIBUTES")
@@ -8426,8 +8460,6 @@ ImportLayerSettings=No
          )
        )
      )
-     ;; Restore space after selection
-     (hcnm-ldrblk-space-restore pspace-bubble-p)
     )
   )
   ;; STEP 2: Extract and format the property based on auto-type
@@ -8465,6 +8497,25 @@ ImportLayerSettings=No
        lattribs
      )
   )
+  ;; STEP 4: Write XDATA during initial insertion (not during reactor updates)
+  ;; Reactor updates already write XDATA in update-bubble-tag
+  (cond
+    ((and (not obj-target) obj-pipe)  ; Initial insertion AND pipe found
+     (hcnm-ldrblk-xdata-update-one
+       ename-bubble
+       tag
+       auto-type
+       (vla-get-handle obj-pipe)
+       string
+      )
+     ;; Restore space after everything is done
+     (hcnm-ldrblk-space-restore pspace-bubble-p)
+    )
+  )
+  ;;===========================================================================
+  ;; PROFILING: End timing pipe auto-text generation
+  ;;===========================================================================
+  (haws-profile-end "insert-auto-pipe" profile-start)
   bubble-data
 )
 ;#endregion
@@ -10670,7 +10721,13 @@ ImportLayerSettings=No
 (defun hcnm-ldrblk-reactor-callback (obj-notifier obj-reactor parameter-list / 
                                      key-app data-old data handle-notifier 
                                      owner-list notifier-entry block-reactors-current
+                                     profile-start
                                     ) 
+  ;;===========================================================================
+  ;; PROFILING: Start timing reactor callback
+  ;;===========================================================================
+  (setq profile-start (haws-profile-start "reactor-callback"))
+  ;;===========================================================================
   ;; CRITICAL: Prevent nested/recursive callbacks (Autodesk guideline)
   ;; Problem: Bubble updates within callback trigger :vlr-modified on leader
   ;; Solution: Block all nested callbacks by setting flag at entry, restore at exit
@@ -10767,6 +10824,10 @@ ImportLayerSettings=No
   ;;            Now restore to parent's original state for next user action
   (haws-debug (list "[CALLBACK END] Restoring BlockReactors=" block-reactors-current))
   (c:hcnm-config-setvar "BlockReactors" block-reactors-current)
+  ;;===========================================================================
+  ;; PROFILING: End timing reactor callback
+  ;;===========================================================================
+  (haws-profile-end "reactor-callback" profile-start)
 )
 ;;==============================================================================
 ;; hcnm-ldrblk-reactor-notifier-update
@@ -10922,7 +10983,7 @@ ImportLayerSettings=No
   (cond
     ;; If entget returns nil, bubble was erased - return "DELETED" for cleanup
     ((not (entget ename-bubble))
-     (princ (strcat "\n[REACTOR CLEANUP] Bubble handle " handle-bubble " erased (removing from reactor data)"))
+     (haws-debug (list "[REACTOR CLEANUP] Bubble handle " handle-bubble " erased (removing from reactor data)"))
      "DELETED"
     )
     ;; Bubble is active - process updates
@@ -11109,7 +11170,12 @@ ImportLayerSettings=No
 ;;==============================================================================
 (defun hcnm-ldrblk-xdata-update-one (ename-bubble tag auto-type handle-reference auto-text / 
                                      xdata-alist tag-xdata composite-key composite-entry tag-entry
+                                     profile-start
                                     )
+  ;;===========================================================================
+  ;; PROFILING: Start timing XDATA write (hot path, inherently slow)
+  ;;===========================================================================
+  (setq profile-start (haws-profile-start "reactor-xdata-write"))
   (setq xdata-alist (hcnm-xdata-read ename-bubble))
   (setq tag-entry (assoc tag xdata-alist))
   (setq tag-xdata (cdr tag-entry))
@@ -11154,6 +11220,10 @@ ImportLayerSettings=No
   
   ;; Write updated XDATA
   (hcnm-xdata-set-autotext ename-bubble xdata-alist)
+  ;;===========================================================================
+  ;; PROFILING: End timing XDATA write
+  ;;===========================================================================
+  (haws-profile-end "reactor-xdata-write" profile-start)
   T
 )
 
@@ -11261,10 +11331,16 @@ ImportLayerSettings=No
 (defun hcnm-ldrblk-update-bubble-tag (handle-bubble tag auto-type handle-reference / 
                                       ename-bubble ename-reference lattribs lattribs-old
                                       attr current-text old-auto-text auto-new new-text
+                                      profile-start result
                                      )
+  ;;===========================================================================
+  ;; PROFILING: Start timing tag update (hot path)
+  ;;===========================================================================
+  (setq profile-start (haws-profile-start "reactor-update-tag"))
   (setq ename-bubble (handent handle-bubble))
   
-  ;; EARLY EXIT: Bubble no longer exists
+  ;; Execute main logic and capture result
+  (setq result
   (cond
     ((not ename-bubble)
      (princ
@@ -11368,6 +11444,12 @@ ImportLayerSettings=No
      )
     )
   )
+  )
+  ;;===========================================================================
+  ;; PROFILING: End timing tag update (always called, all exit paths)
+  ;;===========================================================================
+  (haws-profile-end "reactor-update-tag" profile-start)
+  result  ; Return the result from main logic
 )
 
 ;#endregion

@@ -1,38 +1,46 @@
 # HawsEDC Developer Tools
 
-**Not Implemented. Do not read.**
-
 This directory contains developer-only tools for HawsEDC/CNM development.
 
-## Setup
+## Scripts
 
-### Enable Developer Mode
+**Location:** `scripts/`  
+**Contents:** AutoLISP and PowerShell development tools
 
-1. Add this directory to AutoCAD's Support Files Search Path:
-   - `Tools` → `Options` → `Files` → `Support File Search Path`
-   - Add: `C:\TGHFiles\programming\hawsedc\develop\devtools`
+### Performance Benchmarking
+```lisp
+;; Load and test
+(load "devtools/scripts/performance-benchmark.lsp")
+(c:benchmark-config)  ; Phase 3: 40ms config bottleneck
+```
 
-2. Restart the drawing session or reload CNM with (load "cnmloader")
+**Key Phase 3 Finding:** 40ms bottleneck in config system due to `hcnm-proj` file validation. 97.5% improvement possible via session caching.
 
-3. Verify developer mode is active:
-   - Load CNM normally
-   - You should see: `*** HawsEDC Developer Mode Active ***` [TGH: Where would this appear?]
+### Build Automation
+- `compile.lsp` - AutoLISP compilation system
+- `*.ps1` - PowerShell scripts for code transformation
 
-### Developer Commands
+## Documentation
 
-Once enabled, you have access to:
+**Location:** `docs/`  
+**Contents:** Architecture standards, performance analysis, guides
 
-- `HAWS-REBUILD-FAS` - Compile all .lsp files to .fas (faster loading and better run-time performance and memory)
-- `HAWS-DISTRIB` - Package distribution files (planned) [TGH: I have a Windows batch file "C:\TGHFiles\programming\hawsedc\compile\distrib.bat" I have been using to copy all files to a distrib folder. There is a README.txt  (very old) "C:\TGHFiles\programming\hawsedc\compile\README.TXT" there to help with the setup compile steps.]
+## Files Structure
 
-## Files
+```
+devtools/
+├── scripts/              # AutoLISP and PowerShell development tools
+│   ├── performance-benchmark.lsp     # Performance benchmarking system
+│   ├── compile.lsp       # AutoLISP compilation system
+│   ├── *.ps1             # PowerShell transformation scripts
+│   └── README-performance.md  # Benchmarking documentation
+├── docs/                 # Development documentation
+└── README.md             # This file
+```
 
-- `cnmdevloader.lsp` - Entry point loaded by cnmloader.lsp
-- `haws_dev_rebuild_fas.lsp` - FAS compilation utility
-- `haws_dev_distrib.lsp` - Distribution packaging (planned)
+## Design Philosophy
 
-## Status
-
-⚠️ **IN DEVELOPMENT** - Not all features implemented yet
-
-See `HAWSEDC_DEVELOPER_GUIDE.md` section 2 for complete documentation.
+**Minimal:** Each subsystem should be 2-3 files maximum  
+**Self-contained:** No complex dependencies  
+**Focused:** Solve specific development needs  
+**Clean:** Avoid over-engineering

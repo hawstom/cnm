@@ -546,8 +546,10 @@
 ;;;   section - INI section name (string, typically same as app)
 ;;; Returns:
 ;;;   List of (var val) pairs from Project scope
-(defun haws-config-read-all-project (app ini-path section / ini-configs entry var val)
+(defun haws-config-read-all-project (app ini-path section / ini-configs entry var val file-io-start)
+  (setq file-io-start (haws-profile-start "config-file-io"))
   (setq ini-configs (ini_readsection ini-path section))
+  (haws-profile-end "config-file-io" file-io-start)
   (mapcar
     '(lambda (entry / var val)
        (setq
@@ -641,7 +643,8 @@
 ;;;   4. Store in cache and return
 ;;; Notes:
 ;;;   Scope is auto-looked-up from variable definitions (no longer passed as parameter)
-(defun haws-config-getvar (app var ini-path section / val setvar-p scope-code)
+(defun haws-config-getvar (app var ini-path section / val setvar-p scope-code start cache-start)
+  (setq start (haws-profile-start "config-getvar-total"))
   (setq setvar-p t)
   
   ;; Auto-lookup scope from definitions
@@ -661,7 +664,9 @@
   )
   
   ;; Try getting from cache first
+  (setq cache-start (haws-profile-start "config-cache-check"))
   (setq val (haws-config-cache-get app var))
+  (haws-profile-end "config-cache-check" cache-start)
   
   (cond
     ;; If found in cache, use it
@@ -735,6 +740,7 @@
     (haws-config-cache-set app var val)
   )
   
+  (haws-profile-end "config-getvar-total" start)
   val
 )
 
