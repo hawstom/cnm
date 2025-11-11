@@ -69,14 +69,14 @@
     )
   )
   ;; Check edclib.lsp is loaded
-  (if (/= (type haws-unified-version) 'USUBR)
+  (if (not (type haws-unified-version))
     (progn
       (alert "edclib.lsp not loaded - required for version management")
       (setq result nil)
     )
   )
   ;; Check haws-getstringx availability  
-  (if (/= (type haws-getstringx) 'USUBR)
+  (if (not (type haws-getstringx))
     (progn
       (alert "haws-getstringx not available - check edclib.lsp")
       (setq result nil)

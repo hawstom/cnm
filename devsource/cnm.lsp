@@ -77,9 +77,9 @@
   ;;
   ;;Insert table line NOTEQTY block if not exist
   (setq
-    j (if (= (c:hcnm-config-getvar "InsertTablePhases") "No")
+    j (if (= (hcnm-config-getvar "InsertTablePhases") "No")
         ""
-        (c:hcnm-config-getvar "InsertTablePhases")
+        (hcnm-config-getvar "InsertTablePhases")
       )
   )
   (cond
@@ -175,7 +175,7 @@
           (subst
             (reverse
               (cons
-                (c:hcnm-config-getvar (cadr phase))
+                (hcnm-config-getvar (cadr phase))
                 (cdr (assoc (itoa (car phase)) phaselist))
               )
             )
@@ -273,7 +273,7 @@
     phaselist
      (hcnm-getphaselistfromtblqty)
     ctabonly
-     (= "1" (c:hcnm-config-getvar "DoCurrentTabOnly"))
+     (= "1" (hcnm-config-getvar "DoCurrentTabOnly"))
     nottyp ""
   )
   (foreach
@@ -769,7 +769,7 @@
      )
     )
   )
-  (setq ctabonly (= (c:hcnm-config-getvar "DoCurrentTabOnly") "1"))
+  (setq ctabonly (= (hcnm-config-getvar "DoCurrentTabOnly") "1"))
   (if (= nfsource "E")
     (setq
       nfname
@@ -803,13 +803,13 @@
   (hcnm-readcf (hcnm-projnotes))
   (setq
     linspc
-     (atof (c:hcnm-config-getvar "LineSpacing"))
+     (atof (hcnm-config-getvar "LineSpacing"))
     notspc
-     (atof (c:hcnm-config-getvar "NoteSpacing"))
+     (atof (hcnm-config-getvar "NoteSpacing"))
     tblwid
-     (atof (c:hcnm-config-getvar "TableWidth"))
+     (atof (hcnm-config-getvar "TableWidth"))
     phasewid
-     (atof (c:hcnm-config-getvar "PhaseWidthAdd"))
+     (atof (hcnm-config-getvar "PhaseWidthAdd"))
     icol 1
     column-height 0
     iphase 1
@@ -1061,7 +1061,7 @@
               )
             )
             (cond
-              ((= (c:hcnm-config-getvar "ShowKeyTableTitleShapes") "1")
+              ((= (hcnm-config-getvar "ShowKeyTableTitleShapes") "1")
                (hcnm-key-table-insert-shape)
               )
             )
@@ -1113,7 +1113,7 @@
   ;;Apply table display configs from ini.  If no configs (legacy), show both.
   (mapcar
     '(lambda (layerkey / layershow layerlist)
-       (setq layershow (/= "0" (c:hcnm-config-getvar (cadr layerkey))))
+       (setq layershow (/= "0" (hcnm-config-getvar (cadr layerkey))))
        (cond
          (layershow (haws-mklayr (car layerkey)))
          (t
@@ -1834,13 +1834,13 @@
   (hcnm-readcf (hcnm-projnotes))
   (setq
     linspc
-     (atof (c:hcnm-config-getvar "LineSpacing"))
+     (atof (hcnm-config-getvar "LineSpacing"))
     notspc
-     (atof (c:hcnm-config-getvar "NoteSpacing"))
+     (atof (hcnm-config-getvar "NoteSpacing"))
     tblwid
-     (atof (c:hcnm-config-getvar "TableWidth"))
+     (atof (hcnm-config-getvar "TableWidth"))
     phasewid
-     (atof (c:hcnm-config-getvar "PhaseWidthAdd"))
+     (atof (hcnm-config-getvar "PhaseWidthAdd"))
     col1x
      (car qtypt1)
     row1y
@@ -1852,16 +1852,16 @@
     z pt1z
     ;;width from middle of number to left point of description text
     ndwid
-     (atof (c:hcnm-config-getvar "NumberToDescriptionWidth"))
+     (atof (hcnm-config-getvar "NumberToDescriptionWidth"))
     ;;width from left point of description text to right point of quantity
     dqwid
-     (atof (c:hcnm-config-getvar "DescriptionToQuantityWidth"))
+     (atof (hcnm-config-getvar "DescriptionToQuantityWidth"))
     ;;width from right point of one quantity phase to right point of next quantity phase
     qqwid
-     (atof (c:hcnm-config-getvar "QuantityToQuantityWidth"))
+     (atof (hcnm-config-getvar "QuantityToQuantityWidth"))
     ;;width from right point of quantity to left point of unit
     quwid
-     (atof (c:hcnm-config-getvar "QuantityToUnitsWidth"))
+     (atof (hcnm-config-getvar "QuantityToUnitsWidth"))
   )
   (setvar "osmode" 0)
   ;;Write column headings to the file
@@ -2282,13 +2282,13 @@
     ;;Column and line spacing widths (half width for middle justified columns)
     ;;line spacing
     linspc
-     (atof (c:hcnm-config-getvar "LineSpacing"))
+     (atof (hcnm-config-getvar "LineSpacing"))
     ;;width of single sheet table with only one phase
     tblwid
-     (atof (c:hcnm-config-getvar "TableWidth"))
+     (atof (hcnm-config-getvar "TableWidth"))
     ;;width for each extra phase on single sheet table.
     phasewid
-     (atof (c:hcnm-config-getvar "PhaseWidthAdd"))
+     (atof (hcnm-config-getvar "PhaseWidthAdd"))
   )
   (hcnm-readcf projnotes)
   (cond
@@ -3214,7 +3214,7 @@
   (setq projini (strcat proj "\\" "cnm.ini"))
   (cond
     ((and
-       (setq app (c:hcnm-config-getvar "AppFolder"))
+       (setq app (hcnm-config-getvar "AppFolder"))
        (setq
          appini
           (findfile
@@ -3525,7 +3525,7 @@ ImportLayerSettings=No
 (defun hcnm-config-temp-getvar (var)
   (cond
     ((cadr (assoc var *hcnm-config-temp*)))
-    (t (c:hcnm-config-getvar var))
+    (t (hcnm-config-getvar var))
   )
 )
 
@@ -3534,7 +3534,7 @@ ImportLayerSettings=No
 (defun hcnm-config-temp-save ()
   (foreach
      entry *hcnm-config-temp*
-    (c:hcnm-config-setvar
+    (hcnm-config-setvar
       (hcnm-config-entry-var entry)
       (hcnm-config-entry-val entry)
     )
@@ -3548,7 +3548,7 @@ ImportLayerSettings=No
 
 ;;;Sets a variable in the global lisp list and in CNM.INI
 ;;; UPDATED: Now uses HAWS-CONFIG library (Issue #11)
-(defun c:hcnm-config-setvar (var val /)
+(defun hcnm-config-setvar (var val /)
   ;; Call haws-config with appropriate parameters (scope auto-looked-up)
   (haws-config-setvar
     "CNM"                               ; app
@@ -3560,10 +3560,10 @@ ImportLayerSettings=No
 )
 
 
-;;; c:hcnm-config-getvar
+;;; hcnm-config-getvar  
 ;;; Var is case sensitive
 ;;; UPDATED: Now uses HAWS-CONFIG library (Issue #11)
-(defun c:hcnm-config-getvar (var / val start)
+(defun hcnm-config-getvar (var / val start)
   ;; PROFILING: Start timing CNM config wrapper
   (setq start (haws-profile-start "cnm-config-getvar-wrapper"))
   ;; Call haws-config with appropriate parameters (scope auto-looked-up)
@@ -3635,7 +3635,7 @@ ImportLayerSettings=No
   (setq projini (hcnm-project-folder-to-ini proj))
   (cond
     ((and
-       (setq app (c:hcnm-config-getvar "AppFolder"))
+       (setq app (hcnm-config-getvar "AppFolder"))
        (setq appini (findfile (hcnm-project-folder-to-ini app)))
      )
      (if (not (haws-file-copy appini projini))
@@ -3694,7 +3694,7 @@ ImportLayerSettings=No
 (defun hcnm-set-dimstyle (key / dsty)
   ;;Set dimstyle as requested by calling function and set by user
   ;;First, get dimstyle name
-  (setq dsty (c:hcnm-config-getvar key))
+  (setq dsty (hcnm-config-getvar key))
   ;;Second, if the style is TCGLeader and doesn't already exist, set the _DotSmall ldrblk.
   (cond
     ((and
@@ -3732,9 +3732,9 @@ ImportLayerSettings=No
 ;; It should resolve all errors and user conditions.
 ;; and return a "drive:\\...\\projroot\\pnname" filename to other functions.
 (defun hcnm-projnotes (/ app apppn format opt1 pnname projnotes)
-  (setq pnname (c:hcnm-config-getvar "ProjectNotes"))
+  (setq pnname (hcnm-config-getvar "ProjectNotes"))
   (if (= pnname "")
-    (c:hcnm-config-setvar
+    (hcnm-config-setvar
       "ProjectNotes"
       (setq pnname "constnot.txt")
     )
@@ -3767,7 +3767,7 @@ ImportLayerSettings=No
        )
      )
      ;;Record the find in the INI
-     (c:hcnm-config-setvar "ProjectNotes" projnotes)
+     (hcnm-config-setvar "ProjectNotes" projnotes)
     )
     ;;Third choice, we couldn't find the Project Notes specified,
     ;;so try to get the appropriate style Project Notes from the app folder
@@ -3775,7 +3775,7 @@ ImportLayerSettings=No
     ;;The CFREAD functions will later evaluate the necessity of changing the file
     ;;format and name.
     ((and
-       (setq app (c:hcnm-config-getvar "AppFolder"))
+       (setq app (hcnm-config-getvar "AppFolder"))
        (setq
          format
           (hcnm-config-project-notes-format)
@@ -3804,7 +3804,7 @@ ImportLayerSettings=No
      ;;try to copy it to this project.
      (haws-file-copy apppn projnotes)
      ;;Record the find in the INI
-     (c:hcnm-config-setvar "ProjectNotes" projnotes)
+     (hcnm-config-setvar "ProjectNotes" projnotes)
     )
     ;;Third and last choice, fail with alert.
     (t
@@ -3829,7 +3829,7 @@ ImportLayerSettings=No
     projnotes
      (getfiled
        "Select Project Notes Filename"
-       (c:hcnm-config-getvar "ProjectNotes")
+       (hcnm-config-getvar "ProjectNotes")
        ""
        37
      )
@@ -3883,7 +3883,7 @@ ImportLayerSettings=No
       )
       ((wcmatch
          (substr rdlin 1 3)
-         (c:hcnm-config-getvar "NoteTypes")
+         (hcnm-config-getvar "NoteTypes")
        )
        (setq pnformat "txt2")
       )
@@ -3992,7 +3992,7 @@ ImportLayerSettings=No
                    )
   (setq
     typwc
-     (c:hcnm-config-getvar "NoteTypes") ; Get typwc (which may open f1) before opening f1
+     (hcnm-config-getvar "NoteTypes") ; Get typwc (which may open f1) before opening f1
     f1 (open projnotes "r")
   )
   (while (setq rdlin (read-line f1))
@@ -4196,7 +4196,7 @@ ImportLayerSettings=No
      )
      (foreach
         entry varlist
-       (c:hcnm-config-setvar
+       (hcnm-config-setvar
          (hcnm-config-entry-var entry)
          (hcnm-config-entry-val entry)
        )
@@ -4287,9 +4287,9 @@ ImportLayerSettings=No
                   )
   (setq
     wrap
-     (atoi (c:hcnm-config-getvar "DescriptionWrap"))
+     (atoi (hcnm-config-getvar "DescriptionWrap"))
     typwc
-     (c:hcnm-config-getvar "NoteTypes") ; Get typwc (which may open f1) before opening f1
+     (hcnm-config-getvar "NoteTypes") ; Get typwc (which may open f1) before opening f1
     f1 (open projnotes "r")
   )
   (while (setq rdlin (read-line f1))
@@ -4662,7 +4662,7 @@ ImportLayerSettings=No
        (list "cnm" "csv")
      )
     editor
-     (c:hcnm-config-getvar "ProjectNotesEditor")
+     (hcnm-config-getvar "ProjectNotesEditor")
     format
      (cadr (assoc editor valid-editors))
   )
@@ -4697,7 +4697,7 @@ ImportLayerSettings=No
 (defun c:hcnm-notesedit (/ cnmedit-p noteseditor pnname)
   (setq
     noteseditor
-     (c:hcnm-config-getvar "ProjectNotesEditor")
+     (hcnm-config-getvar "ProjectNotesEditor")
     ;; wcmatch is legacy hack to be removed when 4.2.29 is deprecated and replaced with translation/conversion on getvar.
     cnmedit-p
      (wcmatch (strcase noteseditor) "*CNM*")
@@ -4719,7 +4719,7 @@ ImportLayerSettings=No
      (startapp
        (strcat
          "\""
-         (c:hcnm-config-getvar "AppFolder")
+         (hcnm-config-getvar "AppFolder")
          "\\CNMEdit.exe"
          "\" "
          "\""
@@ -4761,7 +4761,7 @@ ImportLayerSettings=No
         )
      )
      (vl-file-rename old-filename new-filename)
-     (c:hcnm-config-setvar "ProjectNotes" new-filename)
+     (hcnm-config-setvar "ProjectNotes" new-filename)
     )
   )
   new-filename
@@ -4783,11 +4783,11 @@ ImportLayerSettings=No
      ;; wcmatch is legacy hack to be removed when 4.2.29 is deprecated and replaced with translation/conversion on getvar.
      (cond
        ((wcmatch
-          (strcase (c:hcnm-config-getvar "LayersEditor"))
+          (strcase (hcnm-config-getvar "LayersEditor"))
           "*CNM*"
         )
         (strcat
-          (c:hcnm-config-getvar "AppFolder")
+          (hcnm-config-getvar "AppFolder")
           "\\CNMLayer.exe"
         )
        )
@@ -5039,7 +5039,7 @@ ImportLayerSettings=No
      )
   )
   (if bubblehooks
-    (c:hcnm-config-setvar
+    (hcnm-config-setvar
       "BubbleHooks"
       (cond
         ((= bubblehooks "Yes") "1")
@@ -5394,7 +5394,7 @@ ImportLayerSettings=No
   (hcnm-set-dimstyle "NotesLeaderDimstyle")
   (setq
     bubblehooks
-     (c:hcnm-config-getvar "BubbleHooks")
+     (hcnm-config-getvar "BubbleHooks")
     blockname
      (strcat
        "cnm-bubble-"
@@ -5477,7 +5477,7 @@ ImportLayerSettings=No
   ;; Solution: Block reactor callbacks until after VPTRANS/XDATA copied in finish-bubble
   (cond
     ((hcnm-ldrblk-bubble-data-get bubble-data "replace-bubble-p")
-     (c:hcnm-config-setvar "BlockReactors" "1")
+     (hcnm-config-setvar "BlockReactors" "1")
     )
   )
   ;; Draw bubble, update bubble-data with P2 and new entities
@@ -5492,7 +5492,7 @@ ImportLayerSettings=No
   
   ;; DEFENSIVE: Reset BlockReactors flag after insertion completes
   ;; Ensures stuck flags don't persist across user actions
-  (c:hcnm-config-setvar "BlockReactors" "0")
+  (hcnm-config-setvar "BlockReactors" "0")
   
   (haws-core-restore)
   ;;===========================================================================
@@ -5879,7 +5879,7 @@ ImportLayerSettings=No
      (entdel ename-bubble-old)
      ;; UNBLOCK REACTORS: Now safe to process auto-text updates
      ;; VPTRANS and XDATA copied, new bubble fully initialized
-     (c:hcnm-config-setvar "BlockReactors" "0")
+     (hcnm-config-setvar "BlockReactors" "0")
     )
   )
   (hcnm-ldrblk-lattribs-to-dwg ename-bubble attributes)
@@ -6064,13 +6064,13 @@ ImportLayerSettings=No
   (setq
     loop-p t
     prompt-p
-     (= (c:hcnm-config-getvar
+     (= (hcnm-config-getvar
           (strcat "BubbleTextLine" (itoa line-number) "PromptP")
         )
         "1"
      )
     skip-entry-p
-     (= (c:hcnm-config-getvar "BubbleSkipEntryPrompt") "1")
+     (= (hcnm-config-getvar "BubbleSkipEntryPrompt") "1")
     string ""
     tag
      (strcat "NOTETXT" (itoa line-number))
@@ -6424,23 +6424,23 @@ ImportLayerSettings=No
 )
 (defun hcnm-ldrblk-get-mtext-string ()
   (cond
-    ((= (c:hcnm-config-getvar "BubbleMtext") "1") "m-")
+    ((= (hcnm-config-getvar "BubbleMtext") "1") "m-")
     (t "")
   )
 )
 (defun hcnm-ldrblk-change-arrowhead (ename-leader /)
   (cond
-    ((= (c:hcnm-config-getvar "BubbleArrowIntegralPending") "1")
+    ((= (hcnm-config-getvar "BubbleArrowIntegralPending") "1")
      ;; Disable reactors during arrowhead change to prevent reactor from triggering
      ;; and overwriting the newly saved lattribs with stale XDATA
-     (c:hcnm-config-setvar "BlockReactors" "1")
+     (hcnm-config-setvar "BlockReactors" "1")
      ;; 18 is "Integral" arrowhead type.
      (vla-put-arrowheadtype
        (vlax-ename->vla-object ename-leader)
        18
      )
-     (c:hcnm-config-setvar "BubbleArrowIntegralPending" "0")
-     (c:hcnm-config-setvar "BlockReactors" "0")
+     (hcnm-config-setvar "BubbleArrowIntegralPending" "0")
+     (hcnm-config-setvar "BlockReactors" "0")
     )
   )
 )
@@ -7473,9 +7473,9 @@ ImportLayerSettings=No
      (cond
        ((and
           (= qt-type "Area")
-          (= (c:hcnm-config-getvar "BubbleAreaIntegral") "1")
+          (= (hcnm-config-getvar "BubbleAreaIntegral") "1")
         )
-        (c:hcnm-config-setvar "BubbleArrowIntegralPending" "1")
+        (hcnm-config-setvar "BubbleArrowIntegralPending" "1")
        )
      )
      (setq pspace-bubble-p (hcnm-ldrblk-space-set-model))
@@ -7505,7 +7505,7 @@ ImportLayerSettings=No
            (haws-qt-set-property
              "ldrblk"
              "postfix"
-             (c:hcnm-config-getvar
+             (hcnm-config-getvar
                (strcat "BubbleTextPostfix" auto-type)
              )
            )
@@ -7514,7 +7514,7 @@ ImportLayerSettings=No
           )
           (t
            (strcat
-             (c:hcnm-config-getvar
+             (hcnm-config-getvar
                (strcat "BubbleTextPrefix" auto-type)
              )
              "%<\\AcObjProp Object(%<\\_ObjId "
@@ -7528,13 +7528,13 @@ ImportLayerSettings=No
              ">%)."
              qt-type                    ; "Length" or "Area"
              " \\f \"%lu2%pr"
-             (c:hcnm-config-getvar
+             (hcnm-config-getvar
                (strcat "BubbleTextPrecision" auto-type)
              )
              "%ct8["
              factor
              "]\">%"
-             (c:hcnm-config-getvar
+             (hcnm-config-getvar
                (strcat "BubbleTextPostfix" auto-type)
              )
            )
@@ -7613,13 +7613,13 @@ ImportLayerSettings=No
 ;; Returns: Formatted station string (e.g., "STA 10+50.00")
 (defun hcnm-ldrblk-auto-al-station-to-string (alignment-object drawstation)
   (strcat
-    (c:hcnm-config-getvar "BubbleTextPrefixSta")
+    (hcnm-config-getvar "BubbleTextPrefixSta")
     (vlax-invoke-method
       alignment-object
       'getstationstringwithequations
       drawstation
     )
-    (c:hcnm-config-getvar "BubbleTextPostfixSta")
+    (hcnm-config-getvar "BubbleTextPostfixSta")
   )
 )
 
@@ -7632,7 +7632,7 @@ ImportLayerSettings=No
   (setq
     offset-value
      (cond
-       ((= (c:hcnm-config-getvar "BubbleOffsetDropSign")
+       ((= (hcnm-config-getvar "BubbleOffsetDropSign")
            "1"
         )
         (abs offset)                    ; Drop sign, show absolute value
@@ -7645,22 +7645,22 @@ ImportLayerSettings=No
     ;; Prefix depends on offset direction
     (cond
       ((minusp offset)
-       (c:hcnm-config-getvar "BubbleTextPrefixOff-")
+       (hcnm-config-getvar "BubbleTextPrefixOff-")
       )
-      (t (c:hcnm-config-getvar "BubbleTextPrefixOff+"))
+      (t (hcnm-config-getvar "BubbleTextPrefixOff+"))
     )
     ;; Format number with configured precision
     (rtos
       offset-value
       2
-      (atoi (c:hcnm-config-getvar "BubbleTextPrecisionOff+"))
+      (atoi (hcnm-config-getvar "BubbleTextPrecisionOff+"))
     )
     ;; Postfix depends on offset direction
     (cond
       ((minusp offset)
-       (c:hcnm-config-getvar "BubbleTextPostfixOff-")
+       (hcnm-config-getvar "BubbleTextPostfixOff-")
       )
-      (t (c:hcnm-config-getvar "BubbleTextPostfixOff+"))
+      (t (hcnm-config-getvar "BubbleTextPostfixOff+"))
     )
   )
 )
@@ -7824,7 +7824,7 @@ ImportLayerSettings=No
           ((= auto-type "StaOff")
            (strcat
              sta-string
-             (c:hcnm-config-getvar "BubbleTextJoinDelSta")
+             (hcnm-config-getvar "BubbleTextJoinDelSta")
              off-string
            )
           )
@@ -7898,7 +7898,7 @@ ImportLayerSettings=No
                                      )
   (setq
     obj-align-old
-     (c:hcnm-config-getvar "BubbleCurrentAlignment")
+     (hcnm-config-getvar "BubbleCurrentAlignment")
     name
      (cond
        ((and
@@ -7946,7 +7946,7 @@ ImportLayerSettings=No
        (= (cdr (assoc 0 (entget (car es-align)))) "AECC_ALIGNMENT")
      )
      (setq obj-align (vlax-ename->vla-object (car es-align)))
-     (c:hcnm-config-setvar "BubbleCurrentAlignment" obj-align)
+     (hcnm-config-setvar "BubbleCurrentAlignment" obj-align)
     )
     (es-align
      (alert
@@ -8080,7 +8080,7 @@ ImportLayerSettings=No
      (setq
        ne (strcat
             n
-            (c:hcnm-config-getvar (strcat "BubbleTextJoinDel" "N"))
+            (hcnm-config-getvar (strcat "BubbleTextJoinDel" "N"))
             e
           )
      )
@@ -8247,13 +8247,13 @@ ImportLayerSettings=No
      ;; Convert to inches for display
      (setq dia-inches (* dia-value 12.0))
      (strcat
-       (c:hcnm-config-getvar "BubbleTextPrefixPipeDia")
+       (hcnm-config-getvar "BubbleTextPrefixPipeDia")
        (rtos
          dia-inches
          2
-         (atoi (c:hcnm-config-getvar "BubbleTextPrecisionPipeDia"))
+         (atoi (hcnm-config-getvar "BubbleTextPrecisionPipeDia"))
        )
-       (c:hcnm-config-getvar "BubbleTextPostfixPipeDia")
+       (hcnm-config-getvar "BubbleTextPostfixPipeDia")
      )
     )
   )
@@ -8306,13 +8306,13 @@ ImportLayerSettings=No
      ;; Convert to percentage for display (take absolute value)
      (setq slope-percent (* (abs slope-value) 100.0))
      (strcat
-       (c:hcnm-config-getvar "BubbleTextPrefixPipeSlope")
+       (hcnm-config-getvar "BubbleTextPrefixPipeSlope")
        (rtos
          slope-percent
          2
-         (atoi (c:hcnm-config-getvar "BubbleTextPrecisionPipeSlope"))
+         (atoi (hcnm-config-getvar "BubbleTextPrecisionPipeSlope"))
        )
-       (c:hcnm-config-getvar "BubbleTextPostfixPipeSlope")
+       (hcnm-config-getvar "BubbleTextPostfixPipeSlope")
      )
     )
   )
@@ -8361,15 +8361,15 @@ ImportLayerSettings=No
     )
     (t
      (strcat
-       (c:hcnm-config-getvar "BubbleTextPrefixPipeLength")
+       (hcnm-config-getvar "BubbleTextPrefixPipeLength")
        (rtos
          length-value
          2
          (atoi
-           (c:hcnm-config-getvar "BubbleTextPrecisionPipeLength")
+           (hcnm-config-getvar "BubbleTextPrecisionPipeLength")
          )
        )
-       (c:hcnm-config-getvar "BubbleTextPostfixPipeLength")
+       (hcnm-config-getvar "BubbleTextPostfixPipeLength")
      )
     )
   )
@@ -8570,15 +8570,15 @@ ImportLayerSettings=No
 ;; Format number with config prefix/postfix (used by all numeric auto-text types)
 (defun hcnm-ldrblk-auto-rtos (number key)
   (strcat
-    (c:hcnm-config-getvar (strcat "BubbleTextPrefix" key))
+    (hcnm-config-getvar (strcat "BubbleTextPrefix" key))
     (rtos
       number
       2
       (atoi
-        (c:hcnm-config-getvar (strcat "BubbleTextPrecision" key))
+        (hcnm-config-getvar (strcat "BubbleTextPrecision" key))
       )
     )
-    (c:hcnm-config-getvar (strcat "BubbleTextPostfix" key))
+    (hcnm-config-getvar (strcat "BubbleTextPostfix" key))
   )
 )
 
@@ -10732,7 +10732,7 @@ ImportLayerSettings=No
   ;; Problem: Bubble updates within callback trigger :vlr-modified on leader
   ;; Solution: Block all nested callbacks by setting flag at entry, restore at exit
   ;; Save current blocker state to honor parent-level blocks
-  (setq block-reactors-current (c:hcnm-config-getvar "BlockReactors"))
+  (setq block-reactors-current (hcnm-config-getvar "BlockReactors"))
   
   ;; DEBUG: Show callback entry with blocker state
   (haws-debug (list "[CALLBACK START] BlockReactors=" block-reactors-current))
@@ -10755,7 +10755,7 @@ ImportLayerSettings=No
      ;; BLOCK NESTED CALLBACKS: Set flag to prevent recursion
      ;; Any bubble modifications below will trigger leader :vlr-modified
      ;; But nested callbacks will hit Gateway 1 and exit immediately
-     (c:hcnm-config-setvar "BlockReactors" "1")
+     (hcnm-config-setvar "BlockReactors" "1")
      ;; Extract reactor data and find notifier entry
      (setq 
        key-app "HCNM-BUBBLE"
@@ -10823,7 +10823,7 @@ ImportLayerSettings=No
   ;;            If we processed updates, we set flag="1" to block children
   ;;            Now restore to parent's original state for next user action
   (haws-debug (list "[CALLBACK END] Restoring BlockReactors=" block-reactors-current))
-  (c:hcnm-config-setvar "BlockReactors" block-reactors-current)
+  (hcnm-config-setvar "BlockReactors" block-reactors-current)
   ;;===========================================================================
   ;; PROFILING: End timing reactor callback
   ;;===========================================================================
@@ -11625,7 +11625,7 @@ ImportLayerSettings=No
   
   ;; DEFENSIVE: Reset BlockReactors flag after dialog completes
   ;; Ensures stuck flags don't persist across user actions
-  (c:hcnm-config-setvar "BlockReactors" "0")
+  (hcnm-config-setvar "BlockReactors" "0")
   
   (haws-core-restore)
   (princ)
@@ -12293,7 +12293,7 @@ ImportLayerSettings=No
     )
     (cadr
       (assoc
-        (c:hcnm-config-getvar key)
+        (hcnm-config-getvar key)
         (cadr (assoc key (hcnm-options-list-data)))
       )
     )

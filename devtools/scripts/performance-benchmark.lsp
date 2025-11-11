@@ -97,7 +97,7 @@
   (setq i 0)
   (repeat 100
     (setq start (haws-profile-start "config-read"))
-    (c:hcnm-config-getvar "BlockReactors")  ; Known bottleneck
+    (hcnm-config-getvar "BlockReactors")  ; Known bottleneck
     (haws-profile-end "config-read" start)
     (setq i (1+ i))
     (if (= (rem i 25) 0) (princ (strcat "\n " (itoa i) " completed...")))
@@ -143,7 +143,7 @@
   (setq i 0)
   (repeat 1000
     (setq start (haws-profile-start "stress-config"))
-    (c:hcnm-config-getvar "BlockReactors")
+    (hcnm-config-getvar "BlockReactors")
     (haws-profile-end "stress-config" start)
     (setq i (1+ i))
     (if (= (rem i 100) 0) (princ (strcat "\n " (itoa i) " completed...")))

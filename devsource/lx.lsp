@@ -1,6 +1,6 @@
 ﻿;;;(C) Copyright 2017 by Thomas Gail Haws
 ;;; This AutoLISP program lists a nested entity inside a XREF, BLOCK, or PLINE
-(if (not c:hcnm-config-getvar)(c:haws-load-from-app-dir "cnm"))
+(if (not hcnm-config-getvar)(c:haws-load-from-app-dir "cnm"))
 
 (defun c:haws-lx ()
 (haws-core-init 255)
@@ -51,7 +51,7 @@
      (nentsel
        (strcat
          "\nSelect object or [Selection set/List mode ("
-         (c:hcnm-config-getvar "LXXListMode")
+         (hcnm-config-getvar "LXXListMode")
          ")/Continue] <Continue>: "
        )
      )
@@ -65,7 +65,7 @@
      (cadr nentsel-results)
   )
   (cond ((= input1 "List") (haws-xlist-toggle-list-mode)))
-  (cond ((= (c:hcnm-config-getvar "LXXListMode") "yes") (haws-xlist-list)))
+  (cond ((= (hcnm-config-getvar "LXXListMode") "yes") (haws-xlist-list)))
   (list enamelist ss-p continue-p)
 )
 
@@ -74,10 +74,10 @@
 )
 
 (defun haws-xlist-toggle-list-mode ()
-  (c:hcnm-config-setvar
+  (hcnm-config-setvar
     "LXXListMode"
     (cond
-      ((= (c:hcnm-config-getvar "LXXListMode") "yes") "no")
+      ((= (hcnm-config-getvar "LXXListMode") "yes") "no")
       (t "yes")
     )
   )
