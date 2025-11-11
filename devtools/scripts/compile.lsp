@@ -229,16 +229,12 @@
   "Get list of files to exclude from compilation (pattern-based)"
   ;; Dynamic exclusion patterns - easy to modify as files move
   (list
-    ;; Loader files (need to remain as LSP for dev mode detection)
+    ;; Files we want toi remain as LSP for user editing and easy inspection.
     "cnmalias.lsp"     ; Command aliases
     "cnmloader.lsp"    ; Main loader
-    "cnmdevloader.lsp" ; Developer loader (if exists)
     
-    ;; Install and setup scripts
+    ;; Install and setup script needs to remain as LSP for Inno Setup editing.
     "CNM-Install.lsp"  ; Installation script
-    
-    ;; Configuration files (if moved to different category later)
-    "haws-config.lsp"  ; Configuration system (if separated)
     
     ;; Pattern-based exclusions can be added here
     ;; Format: exact filename matches for now
