@@ -31,7 +31,7 @@
 ;;; (legacy)
 ;;; lisputil.lsp
 (defun haws-unified-version ()
-  "5.5.22"
+  "5.5.23"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 ;;This function returns the current setting of nagmode.

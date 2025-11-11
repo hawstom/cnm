@@ -14,6 +14,18 @@ HCNMOptions : dialog {
 	: button {label = "&Bubble Notes..."; key = "Bubble";}
 	: button {label = "&Key Notes Table..."; key = "Key";}
 	: button {label = "&Quantity Take-off Table..."; key = "QT";}
+	: row {
+		: text {
+			key = "Message1";
+			label = "CNM settings changed outside this dialog";
+		}
+	}
+	: row {
+		: text {
+			key = "Message2";
+			label = "are not in effect until the drawing is restarted.";
+		}
+	}
 	ok_cancel;
 }
 
