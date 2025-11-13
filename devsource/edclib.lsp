@@ -31,7 +31,7 @@
 ;;; (legacy)
 ;;; lisputil.lsp
 (defun haws-unified-version ()
-  "5.5.23"
+  "5.5.24"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 ;;This function returns the current setting of nagmode.
@@ -186,9 +186,13 @@
   ;; If error occurs during reactor callback, flag could be stuck at "1"
   ;; This would permanently block all reactor updates until drawing reload
   ;; Self-healing: Always restore to "0" on any CNM command error
-  (if (and (= (type hcnm-config-setvar) 'SUBR)
-           (hcnm-config-setvar "BlockReactors" "0"))
-    (princ "\n[ERROR HANDLER] Restored BlockReactors=0 (self-healing)")
+  (cond 
+    ((and (boundp 'hcnm-config-setvar)
+          (= (hcnm-config-getvar "BlockReactors") "1")
+     )
+     (hcnm-config-setvar "BlockReactors" "0")
+     (princ "\n[ERROR HANDLER] Restored BlockReactors=0 (self-healing)")
+    )
   )
   
   (if (= (type f1) (quote file))
@@ -1941,7 +1945,7 @@
 ;;   (haws-debug nil "Never prints")
 ;;------------------------------------------------------------------------------
 (defun haws-debug (messages / enabled output)
-  (setq enabled nil)
+  (setq enabled T)
   (cond
     (enabled
      ;; Convert single string to list for consistent processing

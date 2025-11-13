@@ -244,6 +244,206 @@
   (princ)
 )
 
+;;; REACTOR CALLBACK BENCHMARKING
+(defun c:benchmark-reactor (/ bubble-list ename obj-notifier test-data current-pos new-pos i)
+  (princ "\n========================================")
+  (princ "\n REACTOR CALLBACK BENCHMARK")
+  (princ "\n========================================")
+  (princ "\nThis test requires bubbles with auto-text already placed in the drawing.")
+  (princ "\nSelect a bubble with coordinate-based auto-text (N/E/StaOff)...")
+  
+  (if (setq ename (car (entsel)))
+    (progn
+      ;; Verify this is a bubble with reactor data
+      (setq test-data (entget ename '("HCNM-BUBBLE")))
+      (if (assoc -3 test-data)  ; Has XDATA
+        (progn
+          (princ "\n✅ Found bubble with XDATA")
+          (princ "\nFinding associated leader for reactor testing...")
+          
+          ;; Find the leader associated with this bubble
+          (setq obj-notifier (hcnm-bubble-get-leader-object ename))
+          (if obj-notifier
+            (progn
+              (princ "\n✅ Found associated leader")
+              (princ "\nStarting reactor performance test...")
+              (princ "\n(This will move the leader 10 times to trigger callbacks)")
+              
+              ;; Get current leader position
+              (setq current-pos (vlax-get-property obj-notifier 'StartPoint))
+              
+              ;; Reset profiling data for clean test
+              (haws-profile-reset)
+              
+              ;; Test: Move leader multiple times to trigger reactor callbacks
+              (setq i 0)
+              (repeat 10
+                (setq i (1+ i))
+                (princ (strcat "\n  Test " (itoa i) "/10: Moving leader..."))
+                
+                ;; Move leader slightly (triggers reactor)
+                (setq new-pos (list (+ (car current-pos) (* i 0.1))
+                                   (+ (cadr current-pos) (* i 0.1))
+                                   (caddr current-pos)))
+                (vlax-put-property obj-notifier 'StartPoint new-pos)
+                
+                ;; Small delay to let reactor finish
+                (command "delay" 100)  ; 100ms delay
+              )
+              
+              ;; Restore original position
+              (vlax-put-property obj-notifier 'StartPoint current-pos)
+              
+              (princ "\n\nResults:")
+              (haws-profile-report nil)
+              
+              ;; Analysis
+              (hcnm-benchmark-analyze-reactor-results)
+            )
+            (princ "\n❌ Could not find associated leader for this bubble")
+          )
+        )
+        (progn
+          (princ "\n❌ Selected entity has no XDATA (not a reactive bubble)")
+          (princ "\n💡 Try inserting a bubble with auto-text first")
+        )
+      )
+    )
+    (princ "\nNo entity selected.")
+  )
+  (princ)
+)
+
+;;; REACTOR STRESS TEST
+(defun c:benchmark-reactor-stress (/ bubble-list ename obj-notifier test-data current-pos new-pos i)
+  (princ "\n========================================")
+  (princ "\n REACTOR STRESS TEST - 100 callbacks")
+  (princ "\n========================================")
+  (princ "\nSelect a bubble with auto-text for intensive testing...")
+  
+  (if (setq ename (car (entsel)))
+    (progn
+      (setq test-data (entget ename '("HCNM-BUBBLE")))
+      (if (assoc -3 test-data)
+        (progn
+          (setq obj-notifier (hcnm-bubble-get-leader-object ename))
+          (if obj-notifier
+            (progn
+              (princ "\n✅ Setup complete. Starting 100-callback stress test...")
+              (princ "\n⚠️  This may take 30-60 seconds depending on complexity...")
+              
+              (setq current-pos (vlax-get-property obj-notifier 'StartPoint))
+              (haws-profile-reset)
+              
+              (setq i 0)
+              (repeat 100
+                (setq i (1+ i))
+                (if (= (rem i 10) 0) 
+                  (princ (strcat "\n  Progress: " (itoa i) "/100 callbacks..."))
+                )
+                
+                ;; Micro-movement to trigger reactor
+                (setq new-pos (list (+ (car current-pos) (* (sin i) 0.01))
+                                   (+ (cadr current-pos) (* (cos i) 0.01))
+                                   (caddr current-pos)))
+                (vlax-put-property obj-notifier 'StartPoint new-pos)
+                (command "delay" 50)  ; 50ms delay
+              )
+              
+              ;; Restore original position
+              (vlax-put-property obj-notifier 'StartPoint current-pos)
+              
+              (princ "\n\nStress Test Results:")
+              (haws-profile-report nil)
+              (hcnm-benchmark-analyze-reactor-results)
+            )
+            (princ "\n❌ Could not find leader for this bubble")
+          )
+        )
+        (princ "\n❌ Selected bubble has no reactive auto-text")
+      )
+    )
+    (princ "\nNo entity selected.")
+  )
+  (princ)
+)
+
+;;; REACTOR ANALYSIS HELPER
+(defun hcnm-benchmark-analyze-reactor-results (/ reactor-data total-time avg-time callback-count)
+  (setq reactor-data '()
+        total-time 0
+        callback-count 0)
+  
+  ;; Extract reactor-callback timing data
+  (foreach entry *haws-profile-data*
+    (if (= (car entry) "reactor-callback")
+      (progn
+        (setq reactor-data (cons entry reactor-data)
+              total-time (+ total-time (cadr entry))
+              callback-count (1+ callback-count))
+      )
+    )
+  )
+  
+  (if (> callback-count 0)
+    (progn
+      (setq avg-time (/ total-time callback-count))
+      (princ "\n")
+      (princ "\n========================================")
+      (princ "\n REACTOR PERFORMANCE ANALYSIS")
+      (princ "\n========================================")
+      (princ (strcat "\n Callbacks triggered: " (itoa callback-count)))
+      (princ (strcat "\n Average callback time: " (rtos avg-time 2 2) "ms"))
+      (princ (strcat "\n Total reactor time: " (rtos total-time 2 1) "ms"))
+      
+      (cond
+        ((> avg-time 50)
+         (princ "\n")
+         (princ "\n ⚠️  SLOW: Reactor callbacks > 50ms")
+         (princ "\n 🔍 CHECK: Complex auto-text calculations")
+         (princ "\n 💡 Consider caching expensive operations")
+        )
+        ((> avg-time 20)
+         (princ "\n")
+         (princ "\n ⚡ MODERATE: 20-50ms per callback") 
+         (princ "\n 📊 Performance acceptable for typical use")
+        )
+        (t
+         (princ "\n")
+         (princ "\n ✅ FAST: Reactor callbacks < 20ms")
+         (princ "\n 🚀 Excellent reactive performance")
+        )
+      )
+      (princ "\n========================================")
+    )
+    (princ "\n\n❌ No reactor callback data found in results")
+  )
+)
+
+;;; HELPER: Find leader object for bubble (simplified version)
+(defun hcnm-bubble-get-leader-object (ename-bubble / owner-data leader-handles handle obj)
+  ;; This is a simplified helper - in production, use the full reactor data structure lookup
+  ;; For testing, we'll try to find any leader in the drawing that might be associated
+  (setq owner-data (entget ename-bubble '("HCNM-BUBBLE")))
+  (if (setq leader-handles (cdr (assoc -3 owner-data)))
+    ;; Try to find leader reference in XDATA (implementation would be more complex)
+    ;; For now, just select first leader in drawing for testing
+    (progn
+      (setq obj nil)
+      ;; Simple approach: prompt user to select the leader
+      (princ "\nSelect the leader associated with this bubble: ")
+      (if (setq handle (car (entsel)))
+        (if (= (cdr (assoc 0 (entget handle))) "LEADER")
+          (vlax-ename->vla-object handle)
+          nil
+        )
+        nil
+      )
+    )
+    nil
+  )
+)
+
 ;;; COMMAND ALIASES
 (defun c:benchmark-report () (haws-profile-report nil))
 (defun c:benchmark-reset () (haws-profile-reset))
@@ -253,14 +453,16 @@
 (princ "\n CNM PERFORMANCE BENCHMARKING LOADED")
 (princ "\n========================================")
 (princ "\n Commands:")
-(princ "\n   BENCHMARK-CONFIG        - Test config system (40ms bottleneck)")
+(princ "\n   BENCHMARK-CONFIG        - Test config system (Phase 3 complete)")
 (princ "\n   BENCHMARK-CONFIG-STRESS - 1000 iterations for statistical analysis")
+(princ "\n   BENCHMARK-REACTOR       - Test reactor callback performance")
+(princ "\n   BENCHMARK-REACTOR-STRESS- 100 callbacks for intensive testing")
 (princ "\n   BENCHMARK-XDATA         - Test XDATA performance")
 (princ "\n   BENCHMARK-SMOKE         - Verify system works")
 (princ "\n   BENCHMARK-REPORT        - View accumulated results")
 (princ "\n   BENCHMARK-RESET         - Clear all data")
 (princ "\n")
 (princ "\n Quick Start: (c:benchmark-config)")
-(princ "\n Phase 3 Analysis: (c:benchmark-config-stress)")
+(princ "\n Reactor Testing: (c:benchmark-reactor)")
 (princ "\n========================================")
 (princ)

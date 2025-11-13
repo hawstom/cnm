@@ -3,7 +3,7 @@ HAWSEDC STANDARDS VOLUME 05: ARCHITECTURE
 
 **Document Type:** Standard  
 **Status:** Active  
-**Last Updated:** 2025-10-25  
+**Last Updated:** 2025-11-12  
 **Owner:** Tom Haws (TGH)
 
 ---
@@ -14,18 +14,18 @@ HAWSEDC STANDARDS VOLUME 05: ARCHITECTURE
 ## 1.1 Key Patterns
 ### 1.1.1 General
 - **Central Core Library Functions:** edclib.lsp
-- **Config Storage:** Upcoming project to abstract HCNM_CONFIG (see this section) to HAWS_CONFIG. Meanwhile, HAWS-READCFG/HAWS-WRITECFG (AutoCAD getcfg/setcfg) not file I/O.
+- **Config Storage:** `hcnm-config-getvar`/`hcnm-config-setvar` now use the haws-config system. CNM project management (INI files, HCNM_PROJINIT) not yet migrated.
 
 **Note:** S04 (Organization and Locations) answers "WHERE is everything?" while S05 (Architecture) answers "HOW does it work internally?"
 
 ### 1.1.2 CNM General
-- **Config Storage:** Complex system HCNM_CONFIG with multiple storage scope options. Migrating it to a new file and system HAWS_CONFIG.
-  - Session: AutoLISP global
-  - Drawing: Not programmed
-  - User: getcfg/setcfg
-  - Project: ini file per folder or pointer file to other folder
-  - App: ini file in app folder copied to project folder
-  - Fallback and refresh: Falls back to hard-coded defaults as necessary. HCNM_PROJINIT refreshes project scope variables any time user may have edited the project ini file. Many calls with ini reads could be avoided if we disclaimed user edits to the ini file. Point of history: a third-party developer received permission to edit our ini file for his custom Project Notes Editor, devsource\cnmedit.exe. He now depreciates that editor, and he suggests that we replace it with our own editor, so that could be a little upcoming project.
+- **Config Storage:** `hcnm-config-getvar`/`hcnm-config-setvar` now use haws-config system. Project management (INI files, HCNM_PROJINIT) remains in CNM-specific code.
+  - **Performance Decision:** HCNM_PROJINIT disabled by default. CNM Options dialog alerts users that settings changes made outside dialog require drawing restart.
+  - **Business Decision:** Prioritized performance over instant reflection of external INI edits.
+  - Session: AutoLISP global via haws-config
+  - User: getcfg/setcfg via haws-config  
+  - Project: INI file per folder (CNM-specific, not migrated)
+  - App: INI file in app folder (CNM-specific, not migrated)
 - **Project Notes:** There have been three versions of project notes file formatting. READCF, READCFTXT2, and READCFCSV. READCFCSV is current and is used for spreadsheet editing and the third party custom editor (see previous point). READCFTXT3 was never released. READCFTXT was the original pretty, but clunky for editing, file format edited directly without automatic line wrapping.
 - **Key Notes Table:** CNM reads line by line from a Project Notes file and makes a Key Notes Table of the project notes that are found plus their total quantities for the sheet. When the a Key Notes Table is created for a sheet, a .not file is created with the notes and the quantities for that sheet.
 - **Quantity Take-off (aka Tally):** Using the .not files created by Key Notes Table, CNM Quantity Take-off makes a total quantities list in the drawing and saves a sheet-by-sheet breakdown to a csv file.
@@ -156,80 +156,86 @@ This volume documents the core architectural patterns and systems used in HAWSED
 <!-- #region 3. CONFIGURATION SYSTEM -->
 # 3. CONFIGURATION SYSTEM
 
-## 3.1 HCNM_CONFIG (Current System)
+## 3.1 Config System (Current Hybrid)
 
 ### 3.1.1 Overview
-CNM uses a multi-scope configuration system for managing hundreds of settings.
+CNM uses a hybrid configuration system: core config functions migrated to haws-config, project management remains CNM-specific.
 
-### 3.1.2 Scopes
-Configuration values exist at different scope levels with fallback chain:
+### 3.1.2 Migrated to haws-config
+**Status:** COMPLETED
 
-1. **Session (0):** In-memory AutoLISP global, lost on drawing close
-2. **Drawing (1):** Not currently programmed
-3. **Project (2):** INI file per project folder
-4. **App (3):** INI file in app folder, copied to project
-5. **User (4):** AutoCAD's getcfg/setcfg registry
-
-**Fallback:** Session → INI file → Hard-coded defaults
-
-### 3.1.3 Key Functions
 ```lisp
-C:HCNM-CONFIG-GETVAR  ; Retrieves value with scope awareness (uses hyphens - current code)
-C:HCNM-CONFIG-SETVAR  ; Saves value to appropriate scope (uses hyphens - current code)
-HCNM_CONFIG_DEFINITIONS ; Centralized schema (400+ settings)
+(c:hcnm-config-getvar "BubbleTextPrefixSta")  ; Uses haws-config internally
+(c:hcnm-config-setvar "BubbleTextPrefixSta" "STA ")  ; Uses haws-config internally
 ```
 
-[AI: Note - These command functions currently use hyphens. Will be renamed to C:HCNM_CONFIG_GETVAR and C:HCNM_CONFIG_SETVAR per S03.4.1 during refactoring]
+**Scopes handled by haws-config:**
+- **Session:** In-memory AutoLISP global
+- **User:** AutoCAD's getcfg/setcfg registry
 
-### 3.1.4 Global Cache
-`*HCNM_CONFIG*` - Association list caching all settings in session
+### 3.1.3 Remaining CNM-Specific
+**Status:** NOT MIGRATED (performance reasons)
 
-### 3.1.5 Project Refresh
-`HCNM_PROJINIT` - Refreshes project scope variables after user edits INI file
+**Project Management:**
+- **INI Files:** Project-specific cnm.ini files
+- **HCNM_PROJINIT:** Project scope refresh (disabled by default)
+- **Performance Decision:** INI reads expensive, disabled for performance
+- **User Alert:** CNM Options dialog warns "settings changes made outside dialog require drawing restart"
 
-Historical note: Third-party developer received permission to edit INI files for custom Project Notes Editor (devsource\cnmedit.exe). Developer now deprecates that editor and suggests we replace it with our own.
+**Key Functions (CNM-specific):**
+```lisp
+HCNM_CONFIG_DEFINITIONS    ; Schema for 400+ settings
+HCNM_PROJINIT             ; Project INI refresh (disabled by default)
+```
 
-## 3.2 HAWS_CONFIG (Planned Refactoring)
+### 3.1.4 Business Decision: Performance vs Responsiveness
 
-### 3.2.1 Goal
-Extract CNM's config system into reusable HAWS_CONFIG library for all HawsEDC apps.
+**Trade-off:** External INI edits not reflected immediately vs performance.
 
-**Status:** IN-DEV - Planned on haws-config branch
+**Chosen:** Performance (disabled HCNM_PROJINIT by default)
 
-### 3.2.2 Multi-App Design
+**Rationale:**
+- Most users edit via CNM Options dialog (immediate reflection)
+- External INI editing rare (legacy third-party editor deprecated)
+- Drawing restart acceptable for rare external edits
+- Performance improvement significant
+
+## 3.2 haws-config System (Current Implementation)
+
+### 3.2.1 Status
+**COMPLETED:** Core config functions extracted into reusable haws-config library.
+
+### 3.2.2 Current Architecture
+```lisp
+;; CNM functions now use haws-config internally
+(c:hcnm-config-getvar "BubbleTextPrefixSta")   ; Wrapper to haws-config
+(c:hcnm-config-setvar "BubbleTextPrefixSta" "STA ")  ; Wrapper to haws-config
+
+;; Direct haws-config usage (for new code)
+(haws-config-getvar "CNM" "BubbleTextPrefixSta")
+(haws-config-setvar "CNM" "BubbleTextPrefixSta" "STA ")
+```
+
+### 3.2.3 Multi-App Support
+**Implemented:** Each app gets separate namespace:
 ```lisp
 ;; App registration
-(HAWS_CONFIG_REGISTER_APP "CNM" (HCNM_CONFIG_DEFINITIONS))
-(HAWS_CONFIG_REGISTER_APP "HAWS_QT" (HAWSQT_CONFIG_DEFINITIONS))
-
-;; Each app gets its own INI per scope
-;; User:    %APPDATA%/HawsEDC/CNM-user.ini
-;; Project: C:/Projects/ABC/CNM-project.ini
+(haws-config-register-app "CNM")
+(haws-config-register-app "HAWS_QT")
 ```
 
-### 3.2.3 Enhanced Features
-- **Type system:** Explicit integer/boolean/string declarations
-- **Validation:** Register validators per setting
-- **Change notifications:** Callbacks when config changes
-- **Import/Export:** Templates for project defaults
+### 3.2.4 Features Implemented
+- ✅ **Type system:** Explicit integer/boolean/string validation
+- ✅ **Multi-app support:** Separate namespaces per application
+- ✅ **Session/User scopes:** In-memory and registry storage
+- ✅ **Backward compatibility:** CNM wrapper functions maintain API
+- ❌ **Project scope:** Remains in CNM-specific code (performance decision)
 
-### 3.2.4 Backward Compatibility
-CNM wrapper functions maintain compatibility:
-```lisp
-;; OLD function (still works, uses hyphens - current code)
-(C:HCNM-CONFIG-GETVAR "BubbleTextPrefixSta")
-
-;; NEW function (uses underscores - planned refactoring)
-(HAWS_CONFIG_GETVAR "CNM" "BubbleTextPrefixSta")
-```
-
-### 3.2.5 Benefits
-- Code reuse across HawsEDC apps
-- Consistent UX
-- Standalone library for third parties
-- Cleaner CNM code (smaller file)
-
-**Full refactoring plan:** See `devtools/docs/haws_config_refactoring_reference.md`
+### 3.2.5 Benefits Realized
+- **Code reuse:** haws-config used by multiple HawsEDC applications
+- **Consistent UX:** Uniform config behavior across apps
+- **Performance:** Optimized for session/user scopes
+- **Maintainability:** Central config logic, not duplicated
 
 ---
 <!-- #endregion -->
@@ -237,147 +243,297 @@ CNM wrapper functions maintain compatibility:
 <!-- #region 4. CNM BUBBLE NOTES -->
 # 4. CNM BUBBLE NOTES
 
-## 4.1 Delimiter System
+## 4.1 Current Architecture (2025-11-13)
 
-### 4.1.1 Structure
-Every bubble attribute value has three parts:
-- **PREFIX:** User-controlled text (appears before auto-text)
-- **AUTO:** System-generated text (pipe diameter, station, etc.)
-- **POSTFIX:** User-controlled text (appears after auto-text)
+**Current production system** as of 2025-11-01 (fully updated architecture from November 2025 debugging).
 
-**Storage:** Drawing attributes store concatenated values. XDATA stores AUTO text as TAG-VALUE pairs for search on next parse.
+### 4.1.1 lattribs Structure
 
-### 4.1.2 Storage Format
-Drawing: `"prefixautopostfix"` (concatenated)  
-XDATA: `(("TAG1" . "auto1") ("TAG2" . "auto2"))` (AUTO text only, for search)
+**2-Element Format:** `'(("TAG" "full-text") ...)`
+- Always 2-element lists: `("TAG" "string")`  
+- Never nil: All values MUST be strings, use `""` for empty
+- All required tags present: Missing tag = corruption
+- **NO prefix/auto/postfix separation** - full text stored in single string
 
-Examples:
-- Drawing attr: `"STA 100+25.50 RT"`  
-  XDATA: `("NOTETXT1" . "100+25.50")` ← search for this to split
-- Drawing attr: `"Ø24\""`  
-  XDATA: `("NOTETXT1" . "24")` ← search for this to split
-- Drawing attr: `"NOTE 3"`  
-  XDATA: (none) ← no AUTO text, all PREFIX
+**Required Tags:**
+- `NOTENUM` - Bubble number (user-controlled)
+- `NOTEPHASE` - Construction phase (user-controlled)  
+- `NOTEGAP` - Spacing between text lines (system-controlled)
+- `NOTETXT0` through `NOTETXT6` - User/auto text lines (free-form)
 
-### 4.1.3 Key Functions
-```lisp
-HCNM_LDRBLK_LATTRIBS_CONCAT   ; Concatenates (prefix auto postfix) → single string
-HCNM_LDRBLK_LATTRIBS_SPLIT    ; Searches for AUTO (from XDATA) in concat → (prefix auto postfix)
-HCNM_EB_EXPAND_VALUE_TO_DELIMITED ; Converts old single-value to delimited (migration)
+**Schema Validation:** Strict validation with `hcnm-lb-lattribs-validate-schema` - fails loudly on violations.
+
+### 4.1.2 XDATA Storage Patterns
+
+**Two Storage Systems:**
+1. **XDATA** - Auto-text composite keys (small, frequent access)
+2. **XRECORD** - Viewport transforms (large, infrequent access)
+
+**XDATA Format - Composite Key Storage**
+```autolisp
+;; (("TAG" (((auto-type . handle) . "value") ...)) ...)
+(("NOTETXT1" ((("StaOff" . "ABC123") . "STA 10+25.00 OFF 5.0' RT")))
+ ("NOTETXT2" ((("N" . "") . "N 123456.78") 
+              (("E" . "") . "E 789012.34"))))
 ```
 
-**Why Search Instead of Positions?**
-- User habits: Users may edit attributes directly in drawing (bypassing dialog)
-- Robustness: AUTO text acts as anchor for finding boundaries
-- No brittle position indices that could get out of sync
+**XRECORD Format - Viewport Transform Storage**
 
-### 4.1.4 Parsing Algorithm (Split Operation)
+**Storage location:** Extension dictionary → `"HCNM"` dict → `"VPTRANS"` xrecord
 
-**How It Works:**
-1. Read concatenated attribute from drawing: `"STA 100+25.50 RT"`
-2. Get AUTO text from XDATA: `"100+25.50"`
-3. Search for AUTO text position in concatenated string
-4. Split into three parts: `("STA " "100+25.50" " RT")`
+**Data structure:** `(cvport ref-ocs-1 ref-wcs-1 ref-ocs-2 ref-wcs-2 ref-ocs-3 ref-wcs-3)`
+- cvport = viewport number (integer)
+- Three 3D point pairs defining affine transformation
 
-**Edge Cases:**
-- **No XDATA:** Entire value goes to PREFIX (manual note)
-- **AUTO not found:** User edited directly; treat as PREFIX only
-- **Multiple occurrences:** Use first match (or implement context-aware heuristics)
-
-**Benefits:**
-- **Flexible:** Survives user edits to PREFIX/POSTFIX outside dialog
-- **Robust:** No brittle position indices that desync
-- **Simple:** Search is straightforward string operation
-
-### 4.1.5 System-Controlled Attributes
-Three attributes ALWAYS put values in PREFIX (never AUTO):
-- **NOTENUM:** Bubble number
-- **NOTEPHASE:** Phase indicator
-- **NOTEGAP:** Gap identifier
-
-**Pros and Cons:**
-- **Pro:** Users expect full control over numbering/organizing fields
-- **Pro:** These are metadata, not data from Civil 3D objects
-- **Con:** Creates mixed paradigm (some attributes auto, some not)
-
-## 4.2 Reactor System
-
-### 4.2.1 Design Principle
-**FIRM:** ONE VLR-OBJECT-REACTOR for all bubbles (not one per bubble)
-
-### 4.2.2 Pros and Cons
-**Pros (single reactor):**
-- Performance: Avoids memory bloat from thousands of reactors
-- Cleanup: Single reactor to manage, not thousands
-- Reliability: Less chance of orphaned reactors
-
-**Cons (single reactor):**
-- Slightly more complex callback logic (must find relevant bubbles)
-- All bubbles share same callback function
-
-### 4.2.3 Implementation
-One reactor watches ALL Civil 3D objects (pipes, alignments, surfaces). When object changes, reactor:
-1. Finds all bubbles linked to that object
-2. Updates each bubble's auto-text
-3. Refreshes display
-
-### 4.2.4 Attaching Reactors
-```lisp
-HCNM_LDRBLK_ASSURE_AUTO_TEXT_HAS_REACTOR
+**Service Layer API:**
+```autolisp
+(hcnm-xdata-get-vptrans ename-bubble)         ; Returns viewport data or nil
+(hcnm-xdata-set-vptrans ename-bubble data)    ; Writes to XRECORD
 ```
-- Checks if reactor exists
-- Creates if missing
-- Never creates duplicate reactors
 
-### 4.2.5 Reactor Proliferation Bug (Fixed)
-**Historical Issue:** Early implementation created one reactor per bubble, leading to thousands of reactors and performance degradation.
+**When created:**
+1. User places bubble in paper space with coordinate-based auto-text (N/E/NE)
+2. User clicks alignment/pipe in paper space for station/offset/diameter
+3. "Change View" button in edit dialog (explicit viewport reassociation)
 
-**Fix:** Centralized reactor system with cleanup on CNM load.
+**When used:** Every reactor update for paper space bubbles - transforms leader arrowhead position from paper space OCS to model space WCS.
 
-## 4.3 Auto-Text Sources
+**Migration note (2025-11-05):**
+- ✅ VPTRANS moved from XDATA to XRECORD (frees ~200 bytes per bubble)
+- ✅ Auto-text remains in XDATA (small, dynamic)
+- ✅ NOTEDATA attribute deprecated (never used)
 
-### 4.3.1 Civil 3D Pipes
-Functions: `HCNM_LDRBLK_AUTO_PIPE*`
+### 4.1.3 bubble-data Alist
 
-Properties extracted:
-- **Diameter:** Inner diameter or width
-- **Slope:** Calculated from pipe geometry
-- **Length:** Pipe length
+**Purpose:** Pass ephemeral state during insertion/editing operations without modifying global variables.
 
-### 4.3.2 Civil 3D Alignments
-Functions: `HCNM_LDRBLK_AUTO_ALIGN*`
+**Structure:** Association list with typed accessors:
+```autolisp
+(setq bubble-data (hcnm-lb-bubble-data-def))  ; Create empty structure
+(setq bubble-data (hcnm-lb-bubble-data-set bubble-data "NOTETYPE" "ELL"))
+(setq notetype (hcnm-lb-bubble-data-get bubble-data "NOTETYPE"))
+```
 
-Properties extracted:
-- **Station:** Point location along alignment
-- **Offset:** Perpendicular distance from alignment
+**Key Fields:**
+- `"NOTETYPE"` - Bubble shape (BOX/CIR/ELL/etc.)
+- `"ATTRIBUTES"` - lattribs structure
+- `"ename-bubble"` - Entity name of bubble
+- `"ename-leader"` - Entity name of leader
+- `"p1-world"` - World coordinates for coordinate-based auto-text
+- `"auto-metadata"` - Accumulated auto-text entries for reactor attachment
 
-### 4.3.3 Civil 3D Surfaces
-Functions: `HCNM_LDRBLK_AUTO_SURF*`
+**Data Flow:** Insertion commands build bubble-data incrementally, passing between functions. Dialog operations work on lattribs directly (simpler, synchronous).
 
-Properties extracted:
-- **Elevation:** Surface elevation at point
+### 4.1.4 Edit Flow Architecture
 
-### 4.3.4 HAWS_QT Integration
-Functions: `HCNM_LDRBLK_AUTO_QT*`
+**Key Insight from Nov 2025 debugging:** Editor system breaks VLA-OBJECT attachments while preserving data structure.
 
-Uses HAWS_QT library to extract:
-- **Length:** Polyline/line length
-- **Area:** Closed polyline area
+**Edit Dialog Flow:**
+1. `hcnm-lb-eb-open` - Load lattribs + XDATA into dialog
+2. `hcnm-lb-eb-auto-button` - Update dialog field (in-memory only)
+3. `hcnm-lb-eb-save` - ATOMIC write: lattribs + XDATA + reactor rebuild
+4. `hcnm-lb-eb-reactor-refresh` - Rebuild VLA-OBJECT attachments from XDATA
 
-[AI: HAWS_QT object-oriented design documented in S05.1.1.4]
+**Critical:** Step 4 was failing to properly re-attach VLA-OBJECTs to reactor, causing "all reactions killed by editing" bug discovered Nov 2025.
 
-## 4.4 Edit Bubble Dialog
+### 4.1.5 Auto-Text Dispatcher Architecture Flaw
 
-### 4.4.1 DCL File
-Location: `devsource/cnm.dcl`
+**Problem:** `hcnm-lb-auto-dispatch` parameter `obj-target` serves dual purposes:
+1. **Data source:** VLA-OBJECT for handle-based auto-text
+2. **Path discriminator:** NIL (insertion) vs non-NIL (reactor)
 
-### 4.4.2 State Management
-Global: `HCNM_EB_ATTRIBUTE_LIST`
+**Breaks for handleless auto-text (N/E/NE):** Must use sentinel value `T` instead of reference object.
 
-Stores current bubble attributes for dialog callbacks.
+**Proposed Solution:** Add explicit `reactor-context-p` parameter:
+```autolisp
+;; Current (broken)
+(hcnm-lb-auto-dispatch tag auto-type obj-target bubble-data)
 
-### 4.4.3 Delimiter Handling
-Dialog splits/joins delimiter values transparently. User sees three text boxes (PREFIX, AUTO, POSTFIX) but file stores single delimited string.
+;; Proposed (clean)  
+(hcnm-lb-auto-dispatch tag auto-type obj-reference bubble-data reactor-context-p)
+```
+
+**Status:** Architectural revision required - treating symptoms, not root cause.
+
+## 4.2 Reactive Auto-Text System
+
+**Reference:** Based on architectural understanding gained during November 2025 debugging session.
+
+### 4.2.1 System Overview
+
+**Problem Solved:** Auto-text in bubble notes needs to update automatically when:
+- Alignments change (station/offset updates)
+- Pipes change (diameter/slope updates)  
+- Leaders are moved (coordinate updates)
+- Surfaces change (elevation updates)
+
+**Solution:** Single persistent `VLR-OBJECT-REACTOR` per drawing with 5-level nested data structure tracking owner-bubble-tag-auto-type-reference relationships.
+
+### 4.2.2 Two Orthogonal Auto-Text Classifications
+
+**Handle-based vs Handleless:**
+- **Handle-based:** StaOff/Dia/Slope (stores reference object handle in XDATA)
+- **Handleless:** N/E/NE (empty handle `""`, coordinate-only)
+
+**Coordinate-based vs Non-coordinate:**
+- **Coordinate-based:** StaOff/N/E (needs viewport transform in paper space)
+- **Non-coordinate:** Dia/Slope (no transform needed)
+
+**Key Architectural Point:** Handleless auto-text STILL needs leader attachment for stretch updates. November 2025 fix ensures handleless auto-text always attached to leader regardless of coordinate requirements.
+
+### 4.2. Reactor Data Structure (5-Level Hierarchy)
+
+**Storage Location:** Reactor `:data` property
+
+**Structure:**
+```
+"HCNM-BUBBLE"               ; Application namespace (fixed key)
+  → owner-handle             ; Object being tracked (VLA-OBJECT handle)
+    → bubble-handle          ; Bubble depending on this owner
+      → tag                  ; Attribute tag ("NOTETXT1")
+        → auto-type          ; Calculation type ("StaOff")
+          → reference-handle ; LEAF: Object providing data
+```
+
+**Semantic Terminology (CRITICAL):**
+- **OWNER** = Any object attached to reactor (reference OR leader)
+- **NOTIFIER** = Specific owner that triggered THIS callback
+- **REFERENCE** = Object providing calculation data (always reference object, never leader)
+
+**Owner Attachment Logic:**
+```autolisp
+;; November 2025 Fix: Proper leader attachment for handleless auto-text
+(setq keys-leader
+  (cond
+    ((= handle-reference "")
+     ;; Handleless: Always attach to leader (for stretch updates)
+     (list (list handle-leader handle-reference))
+    )
+    ((member auto-type coord-based-list)
+     ;; Coordinate-based: Attach to both leader and reference  
+     (list (list handle-leader handle-reference) 
+           (list handle-reference handle-reference))
+    )
+    (t
+     ;; Handle-based, non-coordinate: Reference only
+     (list (list handle-reference handle-reference))
+    )
+  )
+)
+```
+
+### 4.2. BlockReactors Flag Lifecycle
+
+**Purpose:** Prevent infinite recursion when reactor callbacks modify reactor-monitored objects.
+
+**Critical Pattern (ALWAYS use save/restore):**
+```autolisp
+(defun hcnm-ldrblk-reactor-callback (obj-notifier reactor event-list / saved-state ...)
+  (setq saved-state (c:hcnm-config-getvar "BlockReactors"))
+  (if (= saved-state "1")
+    (progn  ; Gateway: Already blocked
+      (haws-debug "=== REACTOR BLOCKED by BlockReactors flag ===")
+      (c:hcnm-config-setvar "BlockReactors" saved-state)  ; Restore
+      (princ))
+    (progn  ; Normal processing
+      (c:hcnm-config-setvar "BlockReactors" "1")          ; Block nested
+      (hcnm-ldrblk-reactor-notifier-update ...)           ; Do work
+      (c:hcnm-config-setvar "BlockReactors" saved-state)  ; Restore
+    )
+  )
+)
+```
+
+**Why save/restore?** Nested callbacks must honor parent's blocking state. Philosophy: Better one extra update than permanently blocked updates.
+
+### 4.2. Reactor Update Algorithm
+
+**Flow:**
+1. **Trigger:** Object change fires VLR-OBJECT-REACTOR callback
+2. **Gateway:** Check BlockReactors flag (prevent infinite recursion)
+3. **Lookup:** Find all bubbles depending on changed object in 5-level hierarchy
+4. **Update:** For each bubble/tag/auto-type combination:
+   - Extract old auto-text from XDATA (search needle)
+   - Generate new auto-text via `hcnm-lb-auto-dispatch`
+   - Smart replace: preserve user edits around auto-text
+   - Update XDATA with new search needle
+   - Write lattribs to drawing attributes
+5. **Cleanup:** Remove deleted bubbles from reactor data (functional updates with `vl-remove-if`)
+
+**Key Insight:** Use functional data structure updates during callbacks to avoid corruption from concurrent reactor firing.
+
+### 4.2. Cleanup Pattern (Three-Tier)
+
+**Tier 1: Immediate Detection**
+- Function: `hcnm-ldrblk-reactor-bubble-update`
+- When: Every reactor callback attempts to update each tracked bubble
+- Check: `(not (entget ename-bubble))` → Return `"DELETED"` string
+
+**Tier 2: Batch Cleanup**
+- Function: `hcnm-ldrblk-reactor-notifier-update`
+- When: After processing all bubbles for ONE notifier
+- Algorithm: Accumulate deleted handles, filter using `vl-remove-if`
+
+**Tier 3: Deep Scrub**
+- Function: `hcnm-ldrblk-cleanup-reactor-data`
+- When: Called explicitly via `(c:pretest)` or maintenance commands
+- Purpose: Full scrub of entire reactor data structure
+
+### 4.2. Edit Dialog Integration
+
+**Critical Bug (November 2025):** Editor operations break VLA-OBJECT attachments while preserving data structure.
+
+**Edit Flow:**
+1. `hcnm-lb-eb-open` - Load lattribs + XDATA into dialog
+2. `hcnm-lb-eb-auto-button` - Update dialog field (in-memory only)
+3. `hcnm-lb-eb-save` - ATOMIC write: lattribs + XDATA + reactor rebuild
+4. `hcnm-lb-eb-reactor-refresh` - Rebuild VLA-OBJECT attachments from XDATA
+
+**Root Cause:** Step 4 was failing to properly re-attach VLA-OBJECTs to reactor.
+
+### 4.2. Debugging Tools
+
+**Standard Commands:**
+```autolisp
+;; View reactor data structure
+(hcnm-lb-reactor-debug-dump)
+
+;; Clean up all reactors and test bubbles  
+(c:pretest)
+
+;; Check XDATA format
+(hcnm-xdata-read ename-bubble)
+
+;; Check BlockReactors flag status
+(hcnm-config-getvar "BlockReactors")
+```
+
+### 4.2. Performance Considerations
+
+**Known Bottlenecks:**
+- XDATA read/write on every reactor callback
+- Nested loops in handle lookup
+- Multiple reactor callbacks per leader move
+
+**Optimization Strategy (Future):**
+- Batch updates at bubble level instead of tag level
+- Cache reactor handle lookups
+- Reactor data reorganization: Move bubble to higher level in hierarchy
+
+### 4.2. Maintenance Guidelines
+
+**Do:**
+- Understand owner vs notifier vs reference semantics before modifying
+- Preserve BlockReactors save/restore pattern in ALL reactor callbacks
+- Test both handleless (N/E/NE) and handle-based auto-text with leader stretch
+- Use functional data structure updates (`vl-remove-if`) during callbacks
+
+**Don't:**
+- Add defensive error handlers that mask architectural problems
+- Mutate data structures during callback iteration (corruption risk)
+- Skip cleanup logic - leads to memory leaks and performance degradation
+
+**Philosophy:** Clean architectural fixes are usually small and precise. The November 2025 handleless auto-text bug was fixed with 3 lines of code, not error handlers.
 
 ---
 <!-- #endregion -->
