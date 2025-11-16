@@ -4,7 +4,7 @@
 
 ### 1.1. Essential Instructions
 
-1. **ci** = This file (.github\copilot-instructions.md)
+1. **ci** (Copilot Instructions) = This file (.github\copilot-instructions.md)
 2. **cinote:** = Immediately revise ci to include that information. "cinote." = You failed to execute previous cinote command
 3. **citruth.** = Tell the truth! Qualify statements with certainty estimates. Don't say "Perfect/Fixed/Done" when you mean "Please test"
 4. **Use get_errors tool**: Check syntax after AutoLISP edits. Fix errors before reporting
@@ -24,7 +24,10 @@
 - Fail loudly (strict validation); never mask errors
 - Respect user edits (users bypass our dialogs)
 
-### 1.4. AutoLISP vs Common Lisp Differences
+### 1.4. AutoLISP
+AutoLISP is the primary programming language of CNM. AutoLISP and Common LISP are unrelated dialects of LISP with an ancient common ancestry. Do not assume that AutoLISP is similar to Common LISP.
+
+#### 1.4.1. AutoLISP vs Common Lisp Differences
 
 **AutoLISP ≠ Common Lisp:** AutoLISP lacks many Common Lisp functions. Use these AutoLISP idioms:
 
@@ -32,7 +35,7 @@
 - **Load paths:** Nested `vl-filename-directory` calls ✅ | `".."` relative paths ❌ (unsupported)  
 - **Symbolic constant idiom:** AutoLISP does not provide any benefits for user symbolic constants `'my-constant` ❌
 
-### 1.5. CRITICAL: Function Name Verification Protocol
+#### 1.4.2. CRITICAL: Function Name Verification Protocol
 
 **MANDATORY BEFORE USING ANY FUNCTION:**
 
@@ -46,6 +49,7 @@
 **Protocol violation consequences:** Function hallucination wastes human time and undermines trust. This is completely preventable by following the verification protocol above.
 
 **Verified Visual LISP functions (found in CNM codebase):**
+- `vl-consp`
 - `vlax-ename->vla-object` - Used throughout CNM (line 438, 5472, 6007, etc.)
 - `vlax-get-property` - Used in CNM (line 2608, 6674, etc.)
 - `vlax-put-property` - Used in CNM (line 6703)
@@ -57,11 +61,12 @@
 - `vlr-owners` - Used in CNM reactor code
 - `vlr-data` - Used in CNM reactor code
 
-### 1.6. AI Hallucination Blacklist
+#### 1.4.3. AI Hallucination Blacklist
 
 **BANNED FUNCTIONS (do not exist in AutoLISP):**
 - `vlax-object-p` - AI hallucination, does not exist
 - `fboundp` - Common Lisp only, not AutoLISP
+- `consp` - Common Lisp only, not AutoLISP. vl-consp is a function.
 
 **ADD TO BLACKLIST:** When human corrects AI hallucination, immediately add function to this blacklist to prevent repeat arguments.
 
@@ -264,6 +269,8 @@ CNM ships with bubble notes using block name pattern: `cnm-bubble-[m?]#-[dir]`
 
 #### 3.2.3. Data Models
 
+##### 3.2.3.1. Overview
+
 **See S05.4 (CNM Bubble Notes Architecture)** for complete data structure specifications including:
 - lattribs structure and validation rules
 - XDATA/XRECORD storage patterns  
@@ -278,7 +285,7 @@ CNM ships with bubble notes using block name pattern: `cnm-bubble-[m?]#-[dir]`
 
 **See S05.4.2 (XDATA Storage Patterns)** for complete XDATA specifications.
 
-**XRECORD Format - Viewport Transform Storage**
+##### 3.2.3.2. XRECORD Format - Viewport Transform Storage
 
 **Storage location:** Extension dictionary → `"HCNM"` dict → `"VPTRANS"` xrecord
 
@@ -306,17 +313,37 @@ CNM ships with bubble notes using block name pattern: `cnm-bubble-[m?]#-[dir]`
 
 ##### 3.2.3.3. Coordinate Transformation
 
-**Problem:** AutoCAD supports multiple coordinate systems. World Coordinate System (WCS) is canonical, but users may encounter:
-- User Coordinate Systems (UCS)
-- Object Coordinate Systems (OCS)
-- Paper space Display Coordinate Systems (DCS, represented as OCS)
+**AutoCAD Coordinate Systems (Critical Understanding):**
 
-For auto-text, CNM needs model space WCS coordinates, but bubbles may be in paper space OCS or model space with translated/rotated UCS.
+AutoCAD uses multiple coordinate systems with specific canonical relationships:
+
+1. **WCS (World Coordinate System)** - The canon for model space
+   - All model space geometry ultimately references WCS
+   - Never changes (absolute reference frame)
+
+2. **DCS (Display Coordinate System)** - The canon for each layout
+   - Paper space has its own DCS per layout
+   - Independent of model space WCS
+
+3. **UCS (User Coordinate System)** - Local working plane
+   - Can be rotated/translated in model space OR paper space
+   - `(getpoint)` returns coordinates in current UCS
+   - Temporary convenience for user - NOT stored with entities
+
+4. **OCS (Object Coordinate System)** - Entity storage coordinate system
+   - **CRITICAL:** OCS follows the canon (WCS for model space, DCS for paper space)
+   - **OCS ignores UCS!** Even with UCS active, entity DXF code 10 stores OCS coordinates
+   - For model space entities: OCS = WCS (regardless of current UCS)
+   - For paper space entities: OCS = DCS (regardless of current UCS)
+
+**Key Insight:** When inserting in model space, `(getpoint)` returns UCS coordinates, but the leader's DXF code 10 stores WCS coordinates (OCS). Therefore `p1-ucs` ≠ `p1-ocs` when UCS is rotated/translated, but `p1-ocs` = `p1-world` always in model space.
+
+**Problem for CNM:** Auto-text needs WCS coordinates to query Civil 3D objects (alignments/pipes/surfaces). Bubbles may be in paper space DCS or model space with non-standard UCS active.
 
 **Solution:** For paper space bubbles referencing model space objects for coordinate-based auto-text, store 3-point correspondence in XRECORD:
-- 3 reference points in OCS (viewport space)
+- 3 reference points in OCS (viewport DCS space)
 - 3 reference points in WCS (model space)
-- Apply affine transformation on reactor updates
+- Apply affine transformation on reactor updates to get WCS from current leader position
 
 ##### 3.2.3.4. Viewport Association
 
@@ -326,321 +353,74 @@ For auto-text, CNM needs model space WCS coordinates, but bubbles may be in pape
 
 #### 3.2.4. Reactor System
 
-##### 3.2.4.1. BlockReactors Flag
-
-**Purpose:** Prevent infinite recursion when reactor callbacks modify reactor-monitored objects.
-
-**Problem:** AutoCAD VLR reactors fire recursively when callback code modifies monitored objects. Modifying bubble attributes during callback triggers `:vlr-modified` on associated leader, causing nested callback. Without prevention: infinite recursion crashes AutoCAD.
-
-**Autodesk guideline:** "Don't modify reactor-monitored objects inside reactor callbacks." But CNM's purpose IS to update bubbles when tracked objects change. We must modify monitored objects.
-
-**Solution:** `BlockReactors` config flag (stored in cnm.ini, persists across sessions).
-
-**Flag lifecycle:**
-```
-Default: "0" (normal operation)
-Parent callback fires → Save state → Set "1" → Modify bubbles
-  Nested callback fires → Gateway 1 checks flag → Sees "1" → Exits immediately
-Parent continues → Restores saved state "0"
-```
-
-**Save/Restore Pattern (CRITICAL):**
-```autolisp
-(defun hcnm-ldrblk-reactor-callback (obj-notifier reactor event-list / saved-state ...)
-  (setq saved-state (c:hcnm-config-getvar "BlockReactors"))
-  (if (= saved-state "1")
-    (progn  ; Gateway 1: Already blocked
-      (haws-debug "=== REACTOR BLOCKED by BlockReactors flag ===")
-      (c:hcnm-config-setvar "BlockReactors" saved-state)  ; Restore "1"
-      (princ))
-    (progn  ; Normal processing
-      (c:hcnm-config-setvar "BlockReactors" "1")
-      (hcnm-ldrblk-reactor-notifier-update ...)
-      (c:hcnm-config-setvar "BlockReactors" saved-state))))  ; Restore "0"
-```
-
-**Why save/restore?** Nested callbacks must honor parent's blocking state. If nested restored to "0", parent's blocking would be defeated.
-
-**Defensive resets:** At natural completion boundaries (insertion complete, dialog complete, error handler), reset to "0" to prevent stuck flags.
-
-**Philosophy:** Better to allow one extra update than permanently block all updates.
-
-**Flag semantics:**
-- `"0"` = Normal operation (process all reactor events)
-- `"1"` = Ignore next reactor event (self-clearing via save/restore) [TGH 2025-11-12 22:58:27: Ignore all.]
-
-##### 3.2.4.2. Data Structure Hierarchy
-
-**One Reactor Per Drawing (Not Per Bubble)**
-
-CNM uses single persistent `VLR-OBJECT-REACTOR` per drawing:
-- Tracks multiple owner objects (alignments, pipes, surfaces, leaders)
-- When ANY tracked owner changes, callback fires and updates dependent bubbles
-- Data structure stored in reactor's `:data` property
-
-**5-Level Nested Hierarchy:**
-```
-"HCNM-BUBBLE"          ; Application namespace (fixed key)
-  → owner-handle        ; Object being tracked
-    → bubble-handle     ; Bubble depending on this owner
-      → tag             ; Attribute tag (e.g., "NOTETXT1")
-        → auto-type     ; Calculation type (e.g., "StaOff")
-          → reference-handle  ; LEAF: Object providing data
-```
-
-**Semantic terminology (CRITICAL):**
-- **OWNER** = Any object attached to reactor (reference OR leader)
-- **NOTIFIER** = Specific owner that triggered THIS callback
-- **REFERENCE** = Object providing calculation data (always reference object, never leader)
-
-**Lookup pattern:**
-1. Search owner-list to find notifier-entry (which owner triggered?)
-2. Drill down through bubbles/tags to find reference handles (where's the data?)
-
-**Direct vs Leader Paths:**
-
-**Direct path** (no leader):
-- owner = alignment, reference = alignment (same object)
-- Update when alignment geometry changes
-
-**Leader path** (coordinate-based with leader):
-- owner = leader (track arrowhead), reference = alignment (different object)
-- Update when leader moves OR when alignment geometry changes
-- Stores TWO owners: leader and alignment
-
-**Key insight:** Coordinate-based auto-texts (Sta/Off/StaOff/N/E/NE/Z) attach TWO owners. Non-coordinate auto-texts (Dia/SLope/L) attach only reference object.
-
-##### 3.2.4.3. Cleanup Pattern
-
-**Problem:** Users can erase bubbles anytime. Reactor data must track deletions to prevent memory leaks, performance degradation, error messages.
-
-**Solution:** Three-tier cleanup with "DELETED" status signal.
-
-**Tier 1: Immediate Detection**
-- Function: `hcnm-ldrblk-reactor-bubble-update`
-- When: Every reactor callback attempts to update each tracked bubble
-- Check: `(not (entget ename-bubble))` → Return `"DELETED"` string
-
-**Tier 2: Batch Cleanup**
-- Function: `hcnm-ldrblk-reactor-notifier-update`
-- When: After processing all bubbles for ONE notifier
-- Algorithm: Accumulate deleted handles, filter using `vl-remove-if` (functional, immutable)
-
-**Tier 3: Deep Scrub**
-- Function: `hcnm-ldrblk-cleanup-reactor-data`
-- When: Called explicitly via `(c:pretest)` or maintenance commands
-- Purpose: Full scrub of entire reactor data structure
-
-**Why functional updates?** Reactor callbacks can fire DURING data structure iteration. Mutating lists mid-iteration corrupts. `vl-remove-if` returns NEW list (safe for concurrent access).
-
-**Status signal pattern:**
-- `"DELETED"` = Bubble erased (string, not symbol `'deleted`)
-- `T` = Bubble modified successfully
-- `NIL` = Bubble skipped (no changes)
-
-**Philosophy:**
-- Fail fast: Detect immediately (Tier 1)
-- Batch efficiently: Remove multiple deletions (Tier 2)
-- Manual deep clean: Explicit maintenance (Tier 3)
-
-##### 3.2.4.4. Architecture Flaw: Handleless Auto-Text Reactor Disambiguation
-
-**CRITICAL ARCHITECTURAL FLAW DISCOVERED (2025-11-12):**
-
-**Problem:** The architecture uses `obj-target` parameter to distinguish insertion path from reactor path, but handleless auto-text types (N/E/NE) have no reference object to pass, making this disambiguation impossible.
-
-**Current Implementation:**
-```autolisp
-;; auto-dispatch signature
-(defun hcnm-lb-auto-dispatch (tag auto-type obj-target bubble-data) 
-
-;; Insertion path: obj-target = NIL (no object passed)
-(hcnm-lb-auto-dispatch tag "N" nil bubble-data)
-
-;; Reactor path: obj-target = T (sentinel for handleless)
-(hcnm-lb-auto-dispatch tag "N" t bubble-data)
-```
-
-**How handleless auto-text detects reactor updates:**
-```autolisp
-;; In auto-ne function:
-reactor-update-p
-  (and
-    obj-target
-    (or (= obj-target t)           ; T sentinel for N/E/NE reactor updates
-        (= (type obj-target) 'vla-object))  ; Reference object for other types
-  )
-```
-
-**The Architecture Flaw:**
-The `obj-target` parameter serves dual purposes:
-1. **Data source:** VLA-OBJECT for handle-based auto-text (alignments, pipes)
-2. **Path discriminator:** NIL vs non-NIL to distinguish insertion from reactor
-
-This works for handle-based auto-text but fails for handleless types (N/E/NE):
-- **Insertion:** `obj-target = NIL` (correct)
-- **Reactor:** `obj-target = T` (sentinel value, not data source)
-
-**Why This Causes Problems:**
-1. **Semantic confusion:** Same parameter represents data AND control flow
-2. **Special case handling:** Handleless types need sentinel value logic
-3. **Future extensibility:** Adding new handleless types requires sentinel modifications
-4. **Code complexity:** Every auto-text function must handle sentinel values
-
-**PROPOSED ARCHITECTURE REVISION:**
-
-**Option A: Add explicit `reactor-context-p` parameter**
-```autolisp
-;; Clean signature with explicit context
-(defun hcnm-lb-auto-dispatch (tag auto-type obj-reference bubble-data reactor-context-p)
-
-;; Insertion path
-(hcnm-lb-auto-dispatch tag "N" nil bubble-data nil)
-
-;; Reactor path  
-(hcnm-lb-auto-dispatch tag "N" nil bubble-data t)
-
-;; Handle-based types work naturally
-(hcnm-lb-auto-dispatch tag "StaOff" obj-alignment bubble-data t)
-```
-
-**Option B: Add context to bubble-data structure**
-```autolisp
-;; Store context in bubble-data
-(setq bubble-data (hcnm-lb-bubble-data-set bubble-data "reactor-context-p" t))
-(hcnm-lb-auto-dispatch tag auto-type obj-reference bubble-data)
-```
-
-**Option C: Separate functions for insertion vs reactor**
-```autolisp
-;; Dedicated functions eliminate ambiguity
-(hcnm-lb-auto-dispatch-insertion tag auto-type obj-reference bubble-data)
-(hcnm-lb-auto-dispatch-reactor tag auto-type obj-reference bubble-data)
-```
-
-**RECOMMENDATION:** Option A (explicit parameter) provides:
-- Clear semantic separation
-- Minimal code changes  
-- Future extensibility
-- Type safety (boolean vs sentinel values)
-
-**Implementation Impact:**
-- Update all auto-dispatch call sites (insertion, editing, reactor)
-- Update all auto-text functions to accept new parameter
-- Remove sentinel value logic from handleless functions
-- Update bubble-data-add-auto-metadata calls
-
-**Status:** ARCHITECTURAL REVISION REQUIRED - Current fix attempts treating symptoms, not root cause.
-
-##### 3.2.4.5. Performance Considerations
-
-**Known bottlenecks:**
-- XDATA read/write on every reactor callback
-- Nested loops in handle lookup (`hcnm-ldrblk-get-reactor-handle-for-tag`)
-- Multiple reactor callbacks per leader move
-- Debug output removed from hot paths (2025-11-01)
-
-**Optimization suggestions (future work):**
-1. Reactor data reorganization: Move bubble to higher level in hierarchy
-2. Batch updates: Build update list, apply all at once (reduce XDATA writes)
-3. Cache reactor handle lookups
-4. Profile operations before optimizing
-
-**Status:** Debug output removed. Further optimization pending user feedback on production performance.
-
-#### 3.2.5. Reactive Auto-Text
-
-##### 3.2.5.1. Technical Challenges
-
-**1. Paper Space Complexity**
-
-Bubbles in paper space viewports require coordinate transformation from paper space DCS (represented as OCS) to model space WCS.
-
-- **Implementation:** VPTRANS XRECORD stores 3-point correspondence for affine transformation
-- **Status:** Implemented, testing in progress
-
-**2. Free-form User Edits**
-
-Users edit bubble attributes directly in AutoCAD, bypassing CNM dialogs. Must robustly separate auto-text from user edits.
-
-- **Implementation:** XDATA stores verbatim auto-text as search needles for search-and-replace updates
-- **Status:** Implemented, handling edge cases
-
-**User expectations:**
-- Any text they add remains intact while auto-text updates
-- Text around auto-text preserved
-- Format changes via CNM settings reflected in next update
-- If they corrupt/delete auto-text, it doesn't get restored
-- Multiple auto-text fields with identical values can't all update independently (known limitation)
-
-**3. Legacy Migration**
-
-20+ years of customer drawings with evolving data formats. Fortunate to have few migration challenges from user perspective. Free to improve internal data formats as long as we maintain compatibility with:
-- Block attribute names and values
-- Project Notes file format
-- Key Notes Table format
-- Quantity Takeoff format
-
-**4. IgnoreReactorOnce Flag (OBSOLETE - replaced by BlockReactors)**
-
-This flag was part of early reactor architecture but has been superseded by the more robust BlockReactors flag with save/restore pattern.
-
-##### 3.2.5.2. Free-Form Architecture
-
-**Problem:** Previous 4-element lattribs structure limited users to ONE auto-text per line.
-
-**User request:** "I want `Storm Drain STA 10+25 RT, Ø24`" (TWO auto-texts: station AND diameter)
-
-**Solution (implemented 2025-11-01):**
-- lattribs: `(("TAG" "full-text") ...)` ← No structural limits
-- XDATA: `(("TAG" (((auto-type . handle) . "value") ...)) ...)` ← Multiple auto-texts with handles
-- Dialog: Single text field per line ← Natural UX like native AutoCAD
-- Reactor: Search/replace each auto-text needle independently
-
-**Key architectural decisions:**
-- Auto-text buttons during dialog = IN-MEMORY only (no XDATA writes until Save)
-- Save button = ATOMIC write (lattribs + XDATA + reactors all at once)
-- Cancel button = SAFE (no writes happened, nothing to rollback)
-
-**Auto-text insertion with delimiter:**
-
-User delimiter: ` ``` ` (triple backtick) marks insertion point
-- Why backticks? No shift key, visually distinct, won't accumulate confusingly
-- If delimiter exists: Replace FIRST occurrence
-- Otherwise: Append WITHOUT SPACE (user controls spacing)
-
-**CRITICAL DESIGN: No Automatic Spacing**
-
-CNM NEVER adds spaces around auto-text. Spacing fully user-controlled. This is atypical but appropriate because users expect fine-grained control.
-
-Example:
-```
-User types: "N"
-Click E button: "NE 878838.54"  ← NO SPACE between N and E
-User should have typed: "N ``` " to get "N E 878838.54"
-```
-
-**Philosophy:**
-- Fail gracefully in UX - Append if no delimiter (don't anger users)
-- Fail loudly in data - Invalid lattribs = alert and exit
-- Teach quietly - Appending shows delimiter would be better
-
-**Handle-based XDATA:** Multiple auto-texts from same attribute line supported. Each associated with reference object handle (alignment, pipe) or empty string `""` for coordinates.
-
-**Auto-text per reference limitation:** Current dotted pair format `(handle . "auto-text")` means ONE auto-text per reference object per tag. For multiple from same reference (e.g., station AND offset from same alignment), click auto-button once and CNM generates combined format controlled by auto-type ("Sta" vs "Off" vs "StaOff").
-
-Future enhancement could support `(handle ("auto1" "auto2" ...))` format.
-
-**Terminology - Semantic Hierarchy:**
-- OWNER = Any object attached to reactor (reference OR leader)
-- NOTIFIER = Specific owner that triggered callback
-- REFERENCE = Object providing calculation data (always reference, never leader)
-
-Lookup: Search owner-list for notifier → Drill to reference handles in leaf nodes.
-
-**Code semantically correct - documentation clarified 2025-11-05.**
-
-##### 3.2.5.3. Implementation Examples
+**Quick Reference:** CNM uses VLR-OBJECT-REACTOR for automatic bubble updates.
+
+**Essential Concepts:**
+- **BlockReactors flag:** Prevents infinite recursion (save/restore pattern CRITICAL)
+- **5-level hierarchy:** "HCNM-BUBBLE" → owner → bubble → tag → auto-type → reference
+- **Three-tier cleanup:** Immediate detection, batch cleanup, deep scrub
+- **Orphaned owners:** VLA-OBJECTs in VLR but not in data (causes warnings after edit)
+
+**Terminology (CRITICAL):**
+- **OWNER** = Any object in VLR system (reference OR leader)
+- **NOTIFIER** = Specific owner that triggered callback
+- **REFERENCE** = Object providing calculation data (never leader)
+
+**For Complete Documentation:** See S05.4.2 (Reactive Auto-Text System)
+- Section 4.2.3: 5-level data structure hierarchy
+- Section 4.2.4: BlockReactors flag lifecycle and save/restore pattern
+- Section 4.2.7: Orphaned owner cleanup (5-step process)
+- Section 4.2.8: Debugging reactor attachment issues
+- Section 4.2.10: Reactor cleanup flow (all tiers)
+- Section 7.1.6: Reactor system terms (glossary)
+
+**Common Pitfalls:**
+- ❌ Don't mutate data during callback iteration (use vl-remove-if)
+- ❌ Don't skip BlockReactors save/restore pattern
+- ❌ Don't panic over "Notifier not found" immediately after edit (expected VLR lag)
+- ✅ Do use functional updates for concurrent safety
+- ✅ Do follow 5-step orphaned owner cleanup when removing auto-text
+- ✅ Do check S05.4.8 debugging decision tree before investigating warnings
+
+#### 3.2.5. Reactive Auto-Text Implementation
+
+**Status:** Implemented on feat-sunrise branch (November 2025).
+
+**What it does:** Auto-text stays synchronized with source objects and follows leader arrowheads via VLR reactors.
+
+**Architecture:** Free-form 2-element lattribs with handle-based XDATA supporting multiple auto-texts per line.
+
+**For Complete Documentation:** See S05.4 (CNM Bubble Notes Architecture)
+- Section 4.1.5: lattribs structure (2-element format, validation)
+- Section 4.1.6: XDATA storage patterns (composite keys, auto-text format)
+- Section 4.2: Reactive Auto-Text System (complete architecture)
+
+**Key Technical Challenges:**
+1. **Paper Space Complexity** - VPTRANS XRECORD for coordinate transformation (see S05.4.1.6)
+2. **Free-Form User Edits** - XDATA search/replace preserves user text (see S05.4.2.5)
+3. **Legacy Migration** - 20+ years of drawings, minimal breaking changes (see S05.4.1)
+
+##### 3.2.5.1. Quick Reference
+
+**Free-Form User Edits:**
+- Users edit bubbles directly in AutoCAD (bypass dialogs)
+- XDATA stores verbatim auto-text as search needles
+- Search/replace preserves user prefix/postfix text
+- See S05.4.2.5 for complete algorithm
+
+**Auto-Text Insertion Delimiter:**
+- Triple backtick ` ``` ` marks insertion point
+- No automatic spacing (user controlled)
+- Append if no delimiter (graceful UX)
+- See S05.4.2.5 for complete philosophy
+
+**MVC Architecture:**
+- Dialog = IN-MEMORY until Save
+- Save = ATOMIC write (lattribs + XDATA + reactors)
+- Cancel = SAFE (no writes)
+- See S05.4.2.6 for complete flow diagrams
+
+##### 3.2.5.2. Code Examples
 
 **Free-form edit scenario:**
 
@@ -659,32 +439,32 @@ Lookup: Search owner-list for notifier → Drill to reference handles in leaf no
 **MVC call flow - Insertion:**
 ```autolisp
 ;; 1. VIEW: Auto-text button clicked
-(hcnm-bubbles-insert-auto-button tag)
+(hcnm-bn-insert-auto-button tag)
   ;; 2. CONTROLLER: Route to handler
-  (hcnm-bubbles-controller-add-auto tag auto-type)
+  (hcnm-bn-controller-add-auto tag auto-type)
     ;; 3. MODEL: Generate, store XDATA, attach reactor
-    (hcnm-bubbles-model-set-auto tag text auto-type)
+    (hcnm-bn-model-set-auto tag text auto-type)
 ```
 
 **MVC call flow - Editing:**
 ```autolisp
 ;; Dialog operates on IN-MEMORY copy until Save
-(hcnm-bubbles-eb-open ename)  ; Load lattribs + XDATA
-(hcnm-bubbles-eb-auto-button tag auto-type)  ; Update dialog field only
-(hcnm-bubbles-eb-save ename)  ; ATOMIC write: lattribs + XDATA + reactors
-(hcnm-bubbles-eb-cancel)  ; Safe: no writes, entity unchanged
+(hcnm-bn-eb-open ename)  ; Load lattribs + XDATA
+(hcnm-bn-eb-auto-button tag auto-type)  ; Update dialog field only
+(hcnm-bn-eb-save ename)  ; ATOMIC write: lattribs + XDATA + reactors
+(hcnm-bn-eb-cancel)  ; Safe: no writes, entity unchanged
 ```
 
 **Model layer functions:**
 ```autolisp
-(defun hcnm-bubbles-model-set-auto (tag text auto-type)
+(defun hcnm-bn-model-set-auto (tag text auto-type)
   ;; 1. Update lattribs (in-memory)
   ;; 2. Store XDATA with verbatim value for search
   ;; 3. Attach reactor (if coords-based, store viewport/transform)
   ;; 4. Store reference object handle for reactor lookup
   )
 
-(defun hcnm-bubbles-model-set-free (tag text)
+(defun hcnm-bn-model-set-free (tag text)
   ;; 1. Update lattribs (in-memory)
   ;; 2. Clear XDATA for this tag
   ;; 3. Remove reactor (user text doesn't auto-update)

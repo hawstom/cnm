@@ -261,7 +261,7 @@ HCNM_PROJINIT             ; Project INI refresh (disabled by default)
 - `NOTEGAP` - Spacing between text lines (system-controlled)
 - `NOTETXT0` through `NOTETXT6` - User/auto text lines (free-form)
 
-**Schema Validation:** Strict validation with `hcnm-lb-lattribs-validate-schema` - fails loudly on violations.
+**Schema Validation:** Strict validation with `hcnm-bn-lattribs-validate-schema` - fails loudly on violations.
 
 ### 4.1.2 XDATA Storage Patterns
 
@@ -309,9 +309,9 @@ HCNM_PROJINIT             ; Project INI refresh (disabled by default)
 
 **Structure:** Association list with typed accessors:
 ```autolisp
-(setq bubble-data (hcnm-lb-bubble-data-def))  ; Create empty structure
-(setq bubble-data (hcnm-lb-bubble-data-set bubble-data "NOTETYPE" "ELL"))
-(setq notetype (hcnm-lb-bubble-data-get bubble-data "NOTETYPE"))
+(setq bubble-data (hcnm-bn-bubble-data-def))  ; Create empty structure
+(setq bubble-data (hcnm-bn-bubble-data-set bubble-data "NOTETYPE" "ELL"))
+(setq notetype (hcnm-bn-bubble-data-get bubble-data "NOTETYPE"))
 ```
 
 **Key Fields:**
@@ -329,16 +329,16 @@ HCNM_PROJINIT             ; Project INI refresh (disabled by default)
 **Key Insight from Nov 2025 debugging:** Editor system breaks VLA-OBJECT attachments while preserving data structure.
 
 **Edit Dialog Flow:**
-1. `hcnm-lb-eb-open` - Load lattribs + XDATA into dialog
-2. `hcnm-lb-eb-auto-button` - Update dialog field (in-memory only)
-3. `hcnm-lb-eb-save` - ATOMIC write: lattribs + XDATA + reactor rebuild
-4. `hcnm-lb-eb-reactor-refresh` - Rebuild VLA-OBJECT attachments from XDATA
+1. `hcnm-bn-eb-open` - Load lattribs + XDATA into dialog
+2. `hcnm-bn-eb-auto-button` - Update dialog field (in-memory only)
+3. `hcnm-bn-eb-save` - ATOMIC write: lattribs + XDATA + reactor rebuild
+4. `hcnm-bn-eb-reactor-refresh` - Rebuild VLA-OBJECT attachments from XDATA
 
 **Critical:** Step 4 was failing to properly re-attach VLA-OBJECTs to reactor, causing "all reactions killed by editing" bug discovered Nov 2025.
 
 ### 4.1.5 Auto-Text Dispatcher Architecture Flaw
 
-**Problem:** `hcnm-lb-auto-dispatch` parameter `obj-target` serves dual purposes:
+**Problem:** `hcnm-bn-auto-dispatch` parameter `obj-target` serves dual purposes:
 1. **Data source:** VLA-OBJECT for handle-based auto-text
 2. **Path discriminator:** NIL (insertion) vs non-NIL (reactor)
 
@@ -347,10 +347,10 @@ HCNM_PROJINIT             ; Project INI refresh (disabled by default)
 **Proposed Solution:** Add explicit `reactor-context-p` parameter:
 ```autolisp
 ;; Current (broken)
-(hcnm-lb-auto-dispatch tag auto-type obj-target bubble-data)
+(hcnm-bn-auto-dispatch tag auto-type obj-target bubble-data)
 
 ;; Proposed (clean)  
-(hcnm-lb-auto-dispatch tag auto-type obj-reference bubble-data reactor-context-p)
+(hcnm-bn-auto-dispatch tag auto-type obj-reference bubble-data reactor-context-p)
 ```
 
 **Status:** Architectural revision required - treating symptoms, not root cause.
@@ -381,7 +381,7 @@ HCNM_PROJINIT             ; Project INI refresh (disabled by default)
 
 **Key Architectural Point:** Handleless auto-text STILL needs leader attachment for stretch updates. November 2025 fix ensures handleless auto-text always attached to leader regardless of coordinate requirements.
 
-### 4.2. Reactor Data Structure (5-Level Hierarchy)
+### 4.2.3 Reactor Data Structure (5-Level Hierarchy)
 
 **Storage Location:** Reactor `:data` property
 
@@ -422,13 +422,13 @@ HCNM_PROJINIT             ; Project INI refresh (disabled by default)
 )
 ```
 
-### 4.2. BlockReactors Flag Lifecycle
+### 4.2.4 BlockReactors Flag Lifecycle
 
 **Purpose:** Prevent infinite recursion when reactor callbacks modify reactor-monitored objects.
 
 **Critical Pattern (ALWAYS use save/restore):**
 ```autolisp
-(defun hcnm-ldrblk-reactor-callback (obj-notifier reactor event-list / saved-state ...)
+(defun hcnm-bn-reactor-callback (obj-notifier reactor event-list / saved-state ...)
   (setq saved-state (c:hcnm-config-getvar "BlockReactors"))
   (if (= saved-state "1")
     (progn  ; Gateway: Already blocked
@@ -437,7 +437,7 @@ HCNM_PROJINIT             ; Project INI refresh (disabled by default)
       (princ))
     (progn  ; Normal processing
       (c:hcnm-config-setvar "BlockReactors" "1")          ; Block nested
-      (hcnm-ldrblk-reactor-notifier-update ...)           ; Do work
+      (hcnm-bn-reactor-notifier-update ...)               ; Do work
       (c:hcnm-config-setvar "BlockReactors" saved-state)  ; Restore
     )
   )
@@ -446,7 +446,7 @@ HCNM_PROJINIT             ; Project INI refresh (disabled by default)
 
 **Why save/restore?** Nested callbacks must honor parent's blocking state. Philosophy: Better one extra update than permanently blocked updates.
 
-### 4.2. Reactor Update Algorithm
+### 4.2.5 Reactor Update Algorithm
 
 **Flow:**
 1. **Trigger:** Object change fires VLR-OBJECT-REACTOR callback
@@ -454,7 +454,7 @@ HCNM_PROJINIT             ; Project INI refresh (disabled by default)
 3. **Lookup:** Find all bubbles depending on changed object in 5-level hierarchy
 4. **Update:** For each bubble/tag/auto-type combination:
    - Extract old auto-text from XDATA (search needle)
-   - Generate new auto-text via `hcnm-lb-auto-dispatch`
+   - Generate new auto-text via `hcnm-bn-auto-dispatch`
    - Smart replace: preserve user edits around auto-text
    - Update XDATA with new search needle
    - Write lattribs to drawing attributes
@@ -462,41 +462,196 @@ HCNM_PROJINIT             ; Project INI refresh (disabled by default)
 
 **Key Insight:** Use functional data structure updates during callbacks to avoid corruption from concurrent reactor firing.
 
-### 4.2. Cleanup Pattern (Three-Tier)
+### 4.2.6 Edit Dialog Integration
 
-**Tier 1: Immediate Detection**
-- Function: `hcnm-ldrblk-reactor-bubble-update`
-- When: Every reactor callback attempts to update each tracked bubble
-- Check: `(not (entget ename-bubble))` → Return `"DELETED"` string
-
-**Tier 2: Batch Cleanup**
-- Function: `hcnm-ldrblk-reactor-notifier-update`
-- When: After processing all bubbles for ONE notifier
-- Algorithm: Accumulate deleted handles, filter using `vl-remove-if`
-
-**Tier 3: Deep Scrub**
-- Function: `hcnm-ldrblk-cleanup-reactor-data`
-- When: Called explicitly via `(c:pretest)` or maintenance commands
-- Purpose: Full scrub of entire reactor data structure
-
-### 4.2. Edit Dialog Integration
-
-**Critical Bug (November 2025):** Editor operations break VLA-OBJECT attachments while preserving data structure.
+**Critical Fix (November 2025):** Edit operations must rebuild VLA-OBJECT attachments AND detach orphaned owners.
 
 **Edit Flow:**
-1. `hcnm-lb-eb-open` - Load lattribs + XDATA into dialog
-2. `hcnm-lb-eb-auto-button` - Update dialog field (in-memory only)
-3. `hcnm-lb-eb-save` - ATOMIC write: lattribs + XDATA + reactor rebuild
-4. `hcnm-lb-eb-reactor-refresh` - Rebuild VLA-OBJECT attachments from XDATA
+1. Dialog opens - Load lattribs + XDATA
+2. User edits - Update in-memory only
+3. Save button - ATOMIC write: lattribs + XDATA + reactor refresh
+4. Reactor refresh - 5-step orphaned owner cleanup (see 4.2.7)
 
-**Root Cause:** Step 4 was failing to properly re-attach VLA-OBJECTs to reactor.
+**Key Point:** Step 4 removes bubble from data, rebuilds from XDATA, detaches orphaned owners.
 
-### 4.2. Debugging Tools
+### 4.2.7 VLA-OBJECT Detachment Pattern
+
+**Reference:** November 2025 debugging session - fixing orphaned owner warnings after edit operations.
+
+**Problem:** When user edits bubble to remove auto-text (e.g., deletes StaOff, keeps Slope), XDATA correctly removed but VLA-OBJECTs (leader, alignment) stay attached in AutoCAD's VLR system. Later updates fire callback with notifier not in data structure → "Notifier not found" warnings.
+
+**Solution:** 5-step orphaned owner cleanup in `hcnm-bn-eb-reactor-refresh`:
+
+**Step 1: Collect Old Owners (Before Data Removal)**
+```autolisp
+(setq old-owners (hcnm-bn-reactor-get-bubble-owners data handle-bubble))
+;; Returns: ("1D235" "6287B") for alignment + leader
+```
+
+**Step 2: Remove Bubble from Reactor Data**
+```autolisp
+(setq data (haws-nested-alist-dissoc data path-to-bubble))
+;; Removes entire bubble branch from 5-level hierarchy
+```
+
+**Step 3: Rebuild Reactor Tracking from Current XDATA**
+```autolisp
+;; Loops through remaining auto-text in XDATA, calls reactor-add-auto
+;; Only Slope remains, so only adds pipe owner back to data
+```
+
+**Step 4: Collect New Owners (After Rebuild)**
+```autolisp
+(setq new-owners (hcnm-bn-reactor-get-bubble-owners data handle-bubble))
+;; Returns: ("2FA31") for pipe only
+```
+
+**Step 5: Detach Orphaned Owners**
+```autolisp
+;; Orphaned = in old-owners but NOT in new-owners
+(setq orphaned-owners
+  (vl-remove-if '(lambda (h) (member h new-owners)) old-owners)
+)
+;; Returns: ("1D235" "6287B") - alignment and leader orphaned
+
+;; Detach each orphaned owner from AutoCAD VLR system
+(foreach handle orphaned-owners
+  (hcnm-bn-reactor-detach-owner data handle ename-bubble reactor)
+)
+```
+
+**VLR Best-Effort Pattern:**
+
+AutoCAD's `vlr-owner-remove` may fail silently:
+- Owner already detached (no error - AutoCAD returns nil)
+- Object erased (AutoCAD handles gracefully)
+- Internal VLR corruption (rare, AutoCAD recovers)
+
+**Philosophy:** Detachment is best-effort. Never crash on VLR errors. Log informational messages, continue processing. Better to allow one extra callback than permanently block updates.
+
+**Debug Messages (All 5 Meanings):**
+
+1. **"Detached: X from bubble Y"** - SUCCESS - Owner no longer needed, removed from VLR
+2. **"Keeping: X (still in new data)"** - EXPECTED - Owner still needed, not detached
+3. **"Ignoring: X (not a VLA-OBJECT)"** - EXPECTED - Handle lookup failed (object erased or invalid)
+4. **"Ignoring: X (not in current reactor owners)"** - EXPECTED - Already detached or never attached
+5. **"Detach returned nil: X"** - INFORMATIONAL - VLR operation failed (graceful, continue)
+
+**Expected Warning Scenarios:**
+
+**After Edit (Delete StaOff, Keep Slope):**
+```
+DEBUG: Orphaned owners: ("1D235" "6287B")
+DEBUG: Detached: 1D235 from bubble 62880
+DEBUG: Detached: 6287B from bubble 62880
+```
+✅ CORRECT - Leader and alignment no longer needed
+
+**Stretch Leader After Edit:**
+```
+WARNING: Notifier 6287B not found in reactor data for HCNM-BUBBLE
+```
+✅ EXPECTED - Leader still firing callback (VLR lag), but already detached from data. Harmless warning, will stop after a few callbacks.
+
+**Why AutoCAD Still Fires Callbacks After Detachment:**
+
+AutoCAD's VLR system has internal buffering and event queue. Even after `vlr-owner-remove` succeeds, AutoCAD may still fire 1-3 callbacks for pending events. This is NOT a bug in CNM - it's AutoCAD's asynchronous event architecture.
+
+**Gateway 3 handles this gracefully:** When notifier not in data, print warning, exit early. No corruption, no crashes. Warnings disappear after event queue drains.
+
+### 4.2.8 Debugging Reactor Attachment Issues
+
+**Common Symptoms:**
+- Auto-text not updating after leader stretch
+- "Notifier not found" warnings
+- Bubble has XDATA but no reactor updates
+- Multiple bubbles, only some update
+
+**Diagnostic Tools:**
+
+**1. Check VLA-OBJECT Attachment Status**
+```autolisp
+(c:hcnm-debug-reactor-owners)
+;; Prompts for bubble, shows:
+;;   - Which VLA-OBJECTs are attached in AutoCAD VLR system
+;;   - Which handles are in reactor data structure
+;;   - Mismatches between VLR and data (orphaned owners)
+```
+
+**2. View Bubble XDATA**
+```autolisp
+(c:hcnm-debug-bubble)
+;; Shows raw XDATA format for selected bubble
+;; Verify auto-text entries match expected tags/types
+```
+
+**3. Dump Entire Reactor Data Structure**
+```autolisp
+(c:hcnm-debug-reactor-dump)
+;; Prints formatted 5-level hierarchy
+;; Find bubble by handle, trace owner paths
+```
+
+**4. Check BlockReactors Flag**
+```autolisp
+(c:hcnm-config-getvar "BlockReactors")
+;; Should return "0" normally
+;; If stuck at "1", reactors permanently blocked
+;; Fix: (c:hcnm-config-setvar "BlockReactors" "0")
+```
+
+**Debugging Decision Tree:**
+
+**Q: Auto-text not updating?**
+→ Check XDATA first: Does bubble have auto-text entries?
+  - YES → Check VLR attachment: Are owners in `vlr-owners` list?
+    - YES → Check BlockReactors flag (should be "0")
+    - NO → Re-attach: Edit bubble, click auto-text button, Save
+  - NO → User manually deleted XDATA or edit removed it
+
+**Q: "Notifier not found" warnings?**
+→ Check timing: Just after edit operation?
+  - YES → EXPECTED - Orphaned owner cleanup lag, warnings will stop
+  - NO → Check reactor data: Is notifier still in data structure?
+    - YES → Programming bug (Gateway 3 should find it)
+    - NO → VLR detachment incomplete (orphaned owner)
+
+**Q: Only some bubbles update?**
+→ Compare working vs broken: Use debug tools on both
+  - Check XDATA format differences
+  - Check VLR attachment differences
+  - Check for corrupted auto-text (search/replace failed)
+
+**When to Worry vs When to Ignore:**
+
+**✅ Ignore (Expected):**
+- "Notifier not found" immediately after edit (1-3 warnings, then stops)
+- "Detach returned nil" (VLR best-effort, operation already succeeded)
+- "Keeping: X (still in new data)" (owner still needed, informational)
+
+**⚠️ Investigate (Potential Issues):**
+- "Notifier not found" persisting after 10+ updates (VLR detachment failed)
+- BlockReactors stuck at "1" (infinite recursion prevention stuck)
+- XDATA exists but no VLR attachment (attachment logic failed)
+- Multiple reactors found (corruption - should only be ONE per drawing)
+
+**⛔ Critical (Fix Immediately):**
+- Reactor callback crashes AutoCAD (infinite recursion, stack overflow)
+- Data structure corruption (nested alist format invalid)
+- Multiple reactors with conflicting data (programming error)
+
+### 4.2.9 Debugging Tools
 
 **Standard Commands:**
 ```autolisp
 ;; View reactor data structure
-(hcnm-lb-reactor-debug-dump)
+(c:hcnm-debug-reactor-dump)
+
+;; Check bubble VLA-OBJECT attachment
+(c:hcnm-debug-reactor-owners)
+
+;; View bubble XDATA
+(c:hcnm-debug-bubble)
 
 ;; Clean up all reactors and test bubbles  
 (c:pretest)
@@ -505,35 +660,84 @@ HCNM_PROJINIT             ; Project INI refresh (disabled by default)
 (hcnm-xdata-read ename-bubble)
 
 ;; Check BlockReactors flag status
-(hcnm-config-getvar "BlockReactors")
+(c:hcnm-config-getvar "BlockReactors")
 ```
 
-### 4.2. Performance Considerations
+### 4.2.10 Reactor Cleanup Flow
+
+**Overview:** Four cleanup strategies for different scenarios.
+
+**Tier 1: Immediate Detection (Every Callback)**
+- Function: `hcnm-bn-reactor-bubble-update`
+- Trigger: Every reactor callback per tracked bubble
+- Check: `(not (entget ename-bubble))` → Return `"DELETED"`
+- Purpose: Fast fail for erased bubbles
+
+**Tier 2: Batch Cleanup (Per Notifier)**
+- Function: `hcnm-bn-reactor-notifier-update`
+- Trigger: After processing all bubbles for ONE notifier
+- Method: Accumulate deleted handles, `vl-remove-if` (functional)
+- Purpose: Efficient multi-deletion, atomic update
+
+**Tier 3: Orphaned Owner Detachment (After Edit)**
+- Function: `hcnm-bn-eb-reactor-refresh`
+- Trigger: Edit dialog save removes auto-text
+- Process: 5-step pattern (see 4.2.7)
+- Result: VLA-OBJECTs detached from VLR, warnings stop
+
+**Tier 4: Deep Scrub (Manual)**
+- Function: `hcnm-bn-cleanup-reactor-data`
+- Trigger: Explicit via `(c:pretest)` or maintenance
+- Purpose: Full validation, garbage collection
+- Validates: Bubbles exist, owners exist, no orphans
+
+**Edit Flow Diagram:**
+```
+User Edit → Remove Auto-Text
+  ↓
+Step 1: Collect old owners (before data removal)
+Step 2: Remove bubble from data structure
+Step 3: Rebuild from remaining XDATA  
+Step 4: Collect new owners (after rebuild)
+Step 5: Detach orphaned (old - new)
+  ↓
+VLR Updated → Warnings stop (after queue drains)
+```
+
+**Why Functional Updates?** Reactor callbacks fire during iteration. `vl-remove-if` returns NEW list (safe for concurrent access).
+
+### 4.2.11 Performance Considerations
 
 **Known Bottlenecks:**
 - XDATA read/write on every reactor callback
 - Nested loops in handle lookup
 - Multiple reactor callbacks per leader move
+- Non-atomic lattribs updates (multiple XDATA writes per bubble)
 
 **Optimization Strategy (Future):**
 - Batch updates at bubble level instead of tag level
 - Cache reactor handle lookups
 - Reactor data reorganization: Move bubble to higher level in hierarchy
+- Accumulate lattribs changes, write once at end (documented in bubble-update header)
 
-### 4.2. Maintenance Guidelines
+### 4.2.12 Maintenance Guidelines
 
 **Do:**
 - Understand owner vs notifier vs reference semantics before modifying
 - Preserve BlockReactors save/restore pattern in ALL reactor callbacks
 - Test both handleless (N/E/NE) and handle-based auto-text with leader stretch
 - Use functional data structure updates (`vl-remove-if`) during callbacks
+- Follow 5-step orphaned owner cleanup pattern when removing auto-text
+- Use debug tools to verify VLA-OBJECT attachment after changes
 
 **Don't:**
 - Add defensive error handlers that mask architectural problems
 - Mutate data structures during callback iteration (corruption risk)
 - Skip cleanup logic - leads to memory leaks and performance degradation
+- Detach VLA-OBJECTs without collecting old/new owners first (orphans escape)
+- Panic over "Notifier not found" warnings immediately after edit (expected lag)
 
-**Philosophy:** Clean architectural fixes are usually small and precise. The November 2025 handleless auto-text bug was fixed with 3 lines of code, not error handlers.
+**Philosophy:** Clean architectural fixes are usually small and precise. The November 2025 handleless auto-text bug was fixed with 3 lines of code. The November 2025 orphaned owner bug was fixed with 5-step cleanup pattern (20 lines). Not error handlers, not workarounds - proper architecture.
 
 ---
 <!-- #endregion -->
@@ -726,6 +930,86 @@ These are the notorious, hard-working terms used throughout CNM's architecture. 
 **Definition:** Complete conceptual unit of a bubble (not a building block).
 
 **Note:** KEEP - descriptive compound term, not frequently-used enough to abbreviate.
+
+### 7.1.6 Reactor System Terms
+
+#### owner
+**Definition:** Any object attached to reactor in AutoCAD's VLR system (reference object OR leader).
+
+**Usage:** Triggers reactor callback when object changes (alignment geometry, leader position).
+
+**Examples:**
+- Alignment (reference) is owner when alignment geometry changes
+- Leader is owner when arrowhead moves (coordinate-based auto-text)
+- Pipe (reference) is owner when diameter changes
+
+**Related Terms:** notifier, reference
+
+#### notifier
+**Definition:** Specific owner that triggered THIS callback.
+
+**Usage:** Reactor callback receives notifier as first argument. Identifies which object changed.
+
+**Example:**
+```autolisp
+(defun hcnm-bn-reactor-callback (obj-notifier reactor event-list)
+  ;; obj-notifier = VLA-OBJECT that changed
+  ;; Look up notifier handle in data structure
+  ;; Find all bubbles depending on this notifier
+)
+```
+
+**Related Terms:** owner, reference
+
+#### reference
+**Definition:** Object that provides calculation data for auto-text (always reference object, never leader).
+
+**Usage:** Stored at leaf of 5-level reactor data structure. Retrieved during callback to recalculate auto-text.
+
+**Examples:**
+- Alignment is reference for StaOff (provides station/offset calculation)
+- Pipe is reference for Dia (provides diameter value)
+- Empty string "" for N/E/NE (no reference object, coordinates from leader position)
+
+**Critical Distinction:**
+- **Direct path:** owner = reference (same object, e.g., alignment for StaOff without leader)
+- **Leader path:** owner = leader, reference = alignment (DIFFERENT objects)
+
+**Data Structure Symmetry:**
+For coordinate-based auto-text, BOTH paths store SAME reference handle:
+```
+Alignment path: ("1D235" ("62880" ("NOTETXT1" ("StaOff" "1D235"))))
+Leader path:    ("6287B" ("62880" ("NOTETXT1" ("StaOff" "1D235"))))
+                                                          ^^^^^^ same!
+```
+
+**Related Terms:** owner, notifier
+
+#### orphaned owner
+**Definition:** VLA-OBJECT attached to reactor in AutoCAD's VLR system but NOT tracked in reactor data structure.
+
+**Cause:** User edits bubble to remove auto-text. XDATA deleted, data structure updated, but VLR detachment incomplete.
+
+**Symptom:** "Notifier not found" warnings when orphaned owner changes (callback fires but data lookup fails).
+
+**Example:**
+```
+Before Edit: Bubble has StaOff (alignment + leader attached)
+User Deletes StaOff: XDATA removed, data structure rebuilt
+Orphaned Owners: Alignment and leader still in VLR system
+Later: User stretches leader → Callback fires → "Notifier not found"
+```
+
+**Solution:** 5-step orphaned owner cleanup pattern in `hcnm-bn-eb-reactor-refresh` (see section 4.2.7).
+
+**Why It Happens:**
+AutoCAD's `vlr-owner-remove` is best-effort (may fail silently). Plus, VLR event queue has lag (1-3 callbacks after detachment). This is AutoCAD architecture, not CNM bug.
+
+**When to Worry:**
+- Warnings persist after 10+ updates → VLR detachment failed, investigate
+- Warnings immediately after edit → EXPECTED, ignore (will stop after queue drains)
+
+**Related Sections:** 4.2.7 (VLA-OBJECT Detachment Pattern), 4.2.8 (Debugging Reactor Issues)
 
 ## 7.2 Naming Patterns
 

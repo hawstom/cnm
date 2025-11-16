@@ -259,12 +259,12 @@
 ;;; This is NOT a command (no C: prefix) because it's called by AutoCAD
 ;;; event system, not by users. Therefore it doesn't use haws-autoload.
 ;;;===========================================================================
-(defun hcnm-lb-reactor-callback (obj-notifier obj-reactor parameter-list)
+(defun hcnm-bn-reactor-callback (obj-notifier obj-reactor parameter-list)
   (princ "\nAutoloading CNM reactor callback support...")
   (c:haws-load-from-app-dir "cnm")
   (princ " done.")
   ;; Now call the real function (which just loaded)
-  (hcnm-lb-reactor-callback obj-notifier obj-reactor parameter-list)
+  (hcnm-bn-reactor-callback obj-notifier obj-reactor parameter-list)
 )
 
 ;;;Load aliases
