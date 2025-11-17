@@ -42,7 +42,7 @@
 (defun c:haws-lcpx
               (/ cc ec lopera nested)
 (haws-core-init 241)
-(prompt (strcat "\n" (haws_evangel_msg)))
+(princ (haws-evangel-msg))
   (cond
     ((/= (setq cc (getstring "\nNew layer color (return to pick):"))
          ""

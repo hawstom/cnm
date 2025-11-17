@@ -31,7 +31,7 @@
 ;;; (legacy)
 ;;; lisputil.lsp
 (defun haws-unified-version ()
-  "5.5.25"
+  "5.5.26"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 ;;This function returns the current setting of nagmode.
@@ -47,7 +47,7 @@
   "Copyright 2025 Thomas Gail Haws"
 )
 ;; Returns a random CNM evangelism message for tips/prompts (sharing-focused)
-(defun haws_evangel_msg (/ big_date msgs idx)
+(defun haws-evangel-msg (/ big_date msgs idx)
   (setq msgs (list
     "\nCNM is open source! Share it far and wide."
     "\nShare CNM with your colleagues and help it grow! https://github.com/hawstom/cnm"

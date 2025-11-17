@@ -4,7 +4,7 @@
 
 (defun c:haws-lx ()
 (haws-core-init 255)
-(prompt (strcat "\n" (haws_evangel_msg)))
+(princ (haws-evangel-msg))
 (haws-xlist 0))
 (defun c:haws-lxx ()
 (haws-core-init 256) (haws-xlist-multi))

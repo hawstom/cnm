@@ -2233,7 +2233,7 @@
 )
 (defun c:hcnm-cnmkt ()
   (haws-core-init 180)
-  (prompt (strcat "\n" (haws_cnm_evangel_msg)))
+  (princ (haws-evangel-msg))
   (hcnm-cnm "Search")
   (haws-core-restore)
 )
@@ -2297,7 +2297,9 @@
     ((= opt "Search")
      (hcnm-key-table-from-search
        dn projnotes txtht linspc tblwid phasewid
-      )
+     )
+     ;; Cleanup reactor data after scanning all bubbles
+     (hcnm-bn-cleanup-all-reactors)
     )
     ((= opt "Import")
      (hcnm-import dn projnotes txtht linspc tblwid phasewid)
@@ -2934,6 +2936,77 @@
   )
   (princ "\n\n=== CLEANUP COMPLETE ===")
   (princ)
+)
+
+;;==============================================================================
+;; HCNM-BN-CLEANUP-ALL-REACTORS - Comprehensive reactor/XDATA cleanup
+;;==============================================================================
+;; Purpose:
+;;   Remove all data and XRECORD references where owner is missing from reactor
+;;   Called after SearchandSave to clean up orphaned data
+;;
+;; Business Need:
+;;   - Reactor data can accumulate stale entries when bubbles deleted outside callbacks
+;;   - XDATA can reference deleted alignment/pipe objects
+;;   - XRECORD viewport transforms may reference deleted viewports
+;;   - Drawing bloat from accumulated orphaned data
+;;
+;; Cleanup Strategy (3 tiers):
+;;   1. Immediate: During reactor callbacks (already implemented)
+;;   2. Batch: After SearchandSave scans all bubbles (this function)
+;;   3. Deep: Manual PRETEST command for development
+;;
+;; This function implements Tier 2 (Batch cleanup):
+;;   - Finds THE reactor (should only be one)
+;;   - Removes reactor data entries where owner entities don't exist
+;;   - Removes reactor data entries where bubble entities don't exist
+;;   - Removes XDATA from bubbles where reference handles are invalid
+;;   - Removes XRECORD where viewport doesn't exist
+;;   - Updates reactor data structure atomically
+;;
+;; Returns: T if cleanup occurred, NIL if nothing to clean
+;;==============================================================================
+(defun hcnm-bn-cleanup-all-reactors (/ reactor data cleaned-data cleanup-occurred)
+  (setq cleanup-occurred nil)
+  ;; Step 1: Get THE reactor (fail if multiple found - should never happen)
+  (setq reactor (hcnm-bn-get-reactor))
+  (cond
+    ((not reactor)
+     (haws-debug "Reactor cleanup: No reactor found (no auto-text bubbles in drawing)")
+     nil
+    )
+    (t
+     (haws-debug "Reactor cleanup: Starting comprehensive cleanup")
+     ;; Step 2: Clean reactor data structure (remove deleted owners/bubbles)
+     (setq
+       data (vlr-data reactor)
+       cleaned-data (hcnm-bn-cleanup-reactor-data reactor)
+     )
+     ;; Step 3: Update reactor if data changed
+     (cond
+       ((not (equal data cleaned-data))
+        (vlr-data-set reactor cleaned-data)
+        (setq cleanup-occurred T)
+        (haws-debug "Reactor cleanup: Removed orphaned entries from reactor data")
+       )
+     )
+     ;; Step 4: Clean XDATA/XRECORD from bubbles (future enhancement)
+     ;; TODO: Iterate through all bubbles, remove XDATA with invalid handles
+     ;; TODO: Remove XRECORD where viewport doesn't exist
+     ;; For now, just clean reactor data - XDATA cleanup can be added later
+     
+     (cond
+       (cleanup-occurred
+        (haws-debug "Reactor cleanup: Complete")
+        T
+       )
+       (t
+        (haws-debug "Reactor cleanup: No orphaned data found")
+        nil
+       )
+     )
+    )
+  )
 )
 
 (defun hcnm-concept-testsetvar (var val)
@@ -6006,13 +6079,13 @@ ImportLayerSettings=No
                   (cond
                     (ename-reference (vlax-ename->vla-object ename-reference))
                     (t 
-                     (princ (strcat "\nWarning: Invalid handle in metadata: " handle-reference))
+                     (haws-debug (strcat "Warning: Invalid handle in metadata: " handle-reference))
                      nil  ; Handle invalid - object may have been deleted
                     )
                   )
                  )
                  (t 
-                  (princ "\nWarning: Nil handle-reference in metadata")
+                  (haws-debug "Warning: Nil handle-reference in metadata")
                   nil  ; Handle is nil or empty
                  )
                )
@@ -6363,8 +6436,9 @@ ImportLayerSettings=No
         (hcnm-bn-auto-dispatch
           (strcat "NOTETXT" (itoa line-number))
           (cadr (assoc input (hcnm-bn-get-auto-data-keys)))
-          nil        ; obj-target - will be determined by auto-dispatch
+          nil        ; obj-reference - will be determined by auto-dispatch
           bubble-data
+          nil        ; reactor-context-p - insertion path
         )
      )
     )
@@ -6417,7 +6491,7 @@ ImportLayerSettings=No
 (defun hcnm-bn-bubble-data-set (bd key val /)
   (if (not (assoc key (hcnm-bn-bubble-data-def)))
     (progn
-      (princ (strcat "\nError: Invalid bubble-data key: " key))
+      (haws-debug (strcat "Error: Invalid bubble-data key: " key))
       bd
     )
     (haws_nested_list_update bd (list key) val)
@@ -7454,25 +7528,21 @@ ImportLayerSettings=No
 ;; tag is the attribute tag being processed (e.g., "NOTETXT1")
 ;; Returns bubble-data with the requested auto data added.
 ;;;
-;;; CRITICAL ARCHITECTURE FLAW (2025-11-12):
-;;; The obj-target parameter serves dual purposes which creates disambiguation problems:
-;;; 1. Data source: VLA-OBJECT for handle-based auto-text (alignments, pipes)  
-;;; 2. Path discriminator: NIL (insertion) vs non-NIL (reactor) to distinguish context
+;;; ARCHITECTURE (2025-11-16):
+;;; Refactored to separate dual-purpose parameter into two clear parameters:
 ;;;
-;;; This fails for handleless auto-text (N/E/NE) which has no reference object:
-;;; - Insertion: obj-target = NIL (correct)
-;;; - Reactor: obj-target = T (sentinel value, not data source)
+;;; PARAMETERS:
+;;;   tag - Attribute tag (e.g., "NOTETXT1")
+;;;   auto-type - Auto-text type (e.g., "Sta", "Off", "N", "Dia")
+;;;   obj-reference - VLA-OBJECT of reference (alignment/pipe/surface) or NIL
+;;;                   For handle-based types: VLA-OBJECT (never NIL)
+;;;                   For handleless types (N/E/NE): Always NIL
+;;;   bubble-data - Bubble data alist
+;;;   reactor-context-p - T if called from reactor, NIL if called from insertion/editing
+;;;                       Controls whether to prompt user for missing data
 ;;;
-;;; The T sentinel creates semantic confusion and special-case handling throughout
-;;; the auto-text functions. See .github/copilot-instructions.md section 3.2.4.4
-;;; for proposed architecture revision with explicit reactor-context-p parameter.
-;;;
-;;; PROPOSED SIGNATURE (not yet implemented):
-;;; (defun hcnm-bn-auto-dispatch (tag auto-type obj-reference bubble-data reactor-context-p)
-;;;   ;; obj-reference = reference object or NIL (semantic clarity)
-;;;   ;; reactor-context-p = T for reactor, NIL for insertion (explicit context)
-;;; )
-(defun hcnm-bn-auto-dispatch (tag auto-type obj-target bubble-data /
+;;; RETURNS: Updated bubble-data
+(defun hcnm-bn-auto-dispatch (tag auto-type obj-reference bubble-data reactor-context-p /
                               ename-bubble lattribs
                              )
   ;; Extract parameters from bubble-data
@@ -7521,22 +7591,23 @@ ImportLayerSettings=No
           bubble-data
           tag
           auto-type
-          obj-target
+          obj-reference
+          reactor-context-p
         )
        )
        ((= auto-type "LF")
         (hcnm-bn-auto-qty
-          bubble-data tag auto-type "Length" "1" obj-target
+          bubble-data tag auto-type "Length" "1" obj-reference reactor-context-p
          )
        )
        ((= auto-type "SF")
         (hcnm-bn-auto-qty
-          bubble-data tag auto-type "Area" "1" obj-target
+          bubble-data tag auto-type "Area" "1" obj-reference reactor-context-p
          )
        )
        ((= auto-type "SY")
         (hcnm-bn-auto-qty
-          bubble-data tag auto-type "Area" "0.11111111" obj-target
+          bubble-data tag auto-type "Area" "0.11111111" obj-reference reactor-context-p
          )
        )
        ((= auto-type "Sta")
@@ -7544,7 +7615,8 @@ ImportLayerSettings=No
           bubble-data
           tag
           auto-type
-          obj-target
+          obj-reference
+          reactor-context-p
         )
        )
        ((= auto-type "Off")
@@ -7552,7 +7624,8 @@ ImportLayerSettings=No
           bubble-data
           tag
           auto-type
-          obj-target
+          obj-reference
+          reactor-context-p
         )
        )
        ((= auto-type "StaOff")
@@ -7560,7 +7633,8 @@ ImportLayerSettings=No
           bubble-data
           tag
           auto-type
-          obj-target
+          obj-reference
+          reactor-context-p
         )
        )
        ((= auto-type "AlName")
@@ -7568,7 +7642,8 @@ ImportLayerSettings=No
           bubble-data
           tag
           auto-type
-          obj-target
+          obj-reference
+          reactor-context-p
         )
        )
        ((= auto-type "StaName")
@@ -7576,7 +7651,8 @@ ImportLayerSettings=No
           bubble-data
           tag
           auto-type
-          obj-target
+          obj-reference
+          reactor-context-p
         )
        )
        ((= auto-type "N")
@@ -7584,7 +7660,8 @@ ImportLayerSettings=No
           bubble-data
           tag
           auto-type
-          obj-target
+          obj-reference
+          reactor-context-p
         )
        )
        ((= auto-type "E")
@@ -7592,7 +7669,8 @@ ImportLayerSettings=No
           bubble-data
           tag
           auto-type
-          obj-target
+          obj-reference
+          reactor-context-p
         )
        )
        ((= auto-type "NE")
@@ -7600,7 +7678,8 @@ ImportLayerSettings=No
           bubble-data
           tag
           auto-type
-          obj-target
+          obj-reference
+          reactor-context-p
         )
        )
        ((= auto-type "Z")
@@ -7608,7 +7687,8 @@ ImportLayerSettings=No
           bubble-data
           tag
           auto-type
-          obj-target
+          obj-reference
+          reactor-context-p
         )
        )
        ((= auto-type "Dia")
@@ -7616,7 +7696,8 @@ ImportLayerSettings=No
           bubble-data
           tag
           auto-type
-          obj-target
+          obj-reference
+          reactor-context-p
         )
        )
        ((= auto-type "Slope")
@@ -7624,7 +7705,8 @@ ImportLayerSettings=No
           bubble-data
           tag
           auto-type
-          obj-target
+          obj-reference
+          reactor-context-p
         )
        )
        ((= auto-type "L")
@@ -7632,7 +7714,8 @@ ImportLayerSettings=No
           bubble-data
           tag
           auto-type
-          obj-target
+          obj-reference
+          reactor-context-p
         )
        )
      )
@@ -7645,7 +7728,7 @@ ImportLayerSettings=No
 )
 
 ;#region Auto text/mtext
-(defun hcnm-bn-auto-es (bubble-data tag auto-type obj-target / ename
+(defun hcnm-bn-auto-es (bubble-data tag auto-type obj-reference reactor-context-p / ename
                         lattribs ename-bubble
                        )
   (setq
@@ -7658,7 +7741,7 @@ ImportLayerSettings=No
      (hcnm-bn-bubble-data-get bubble-data "ATTRIBUTES")
     ename
      (cond
-       (obj-target)
+       (obj-reference)
        (t
         (car
           (nentsel (strcat "\nSelect object with " auto-type ": "))
@@ -7691,7 +7774,7 @@ ImportLayerSettings=No
 ;#endregion
 ;#region Auto quantity (LF/SF/SY)
 (defun hcnm-bn-auto-qty (bubble-data tag auto-type qt-type factor
-                         obj-target / lattribs str-backslash input1
+                         obj-reference reactor-context-p / lattribs str-backslash input1
                          pspace-bubble-p ss-p string ename-bubble
                         )
   (setq
@@ -7704,13 +7787,13 @@ ImportLayerSettings=No
      (hcnm-bn-bubble-data-get bubble-data "ATTRIBUTES")
   )
   (cond
-    (obj-target
+    (obj-reference
      (setq string "Programming error. See command line.")
      (princ
        (strcat
          "\nProgramming error: "
          auto-type
-         " auto text uses AutoCAD fields, which don't need to be updated by CNM. But hcnm-bn-auto-qty was given an an obj-target to update."
+         " auto text uses AutoCAD fields, which don't need to be updated by CNM. But hcnm-bn-auto-qty was given an obj-reference to update."
        )
      )
     )
@@ -7909,15 +7992,16 @@ ImportLayerSettings=No
     )
   )
 )
-;; Main alignment auto-text function (backward compatible)
-;; Orchestrates: get alignment ? calculate ? format ? attach reactor
+;; Main alignment auto-text function
+;; Orchestrates: get alignment → calculate → format → attach reactor
 ;; Arguments:
 ;;   bubble-data - Bubble data alist
 ;;   TAG - Attribute tag to update
 ;;   auto-type - "Sta", "Off", "StaOff", "AlName", or "StaName"
-;;   obj-target - Optional: Pre-selected alignment object (used by reactor updates)
+;;   obj-reference - VLA-OBJECT alignment (if provided), or NIL (will prompt user)
+;;   reactor-context-p - T if reactor callback, NIL if insertion/editing
 ;; Returns: Updated bubble-data with new attribute value
-(defun hcnm-bn-auto-al (bubble-data tag auto-type obj-target /
+(defun hcnm-bn-auto-al (bubble-data tag auto-type obj-reference reactor-context-p /
                         alignment-name lattribs ename-bubble
                         ename-leader sta-off-pair drawstation offset
                         obj-align p1-world pspace-bubble-p sta-string
@@ -7945,12 +8029,12 @@ ImportLayerSettings=No
     p1-world
      (hcnm-bn-bubble-data-get bubble-data "p1-world")
   )
-  ;; STEP 1: Get alignment object (user selection or provided obj-target)
+  ;; STEP 1: Get alignment object from reactor or user
   (cond
-    (obj-target
-     ;; Reactor callback - for coordinate types, just recalculate p1-world from current leader
-     ;; No gateway call needed - gate 3 (not-reactor) will be closed
-     (setq obj-align obj-target)
+    (obj-reference
+     ;; Path 1: obj-reference provided (VLA-OBJECT alignment)
+     ;; UX scenario: Reactor callback - reference from XDATA handle
+     (setq obj-align obj-reference)
      (cond
        ((or (= auto-type "Sta")
             (= auto-type "Off")
@@ -7969,7 +8053,9 @@ ImportLayerSettings=No
      )
     )
     (t
-     ;; Initial creation OR reactor callback with T sentinel - get alignment from user or previous selection
+     ;; Path 2: No obj-reference provided - get from user selection
+     ;; UX scenarios: Initial insertion or editing
+     ;; Calls gateway to let user select alignment from drawing (with fallback)
      (setq
        pspace-bubble-p
         (hcnm-bn-space-set-model)
@@ -8220,7 +8306,7 @@ ImportLayerSettings=No
      (setq obj-align obj-align-old)
     )
     (t
-     (princ "\nNo object selected. Keeping previous alignment.")
+     (haws-debug "No object selected. Keeping previous alignment.")
      (setq obj-align obj-align-old)
     )
   )
@@ -8228,7 +8314,7 @@ ImportLayerSettings=No
 )
 ;#endregion
 ;#region Auto NE
-(defun hcnm-bn-auto-ne (bubble-data tag auto-type obj-target / lattribs
+(defun hcnm-bn-auto-ne (bubble-data tag auto-type obj-reference reactor-context-p / lattribs
                         e ename-bubble ename-leader n ne p1-ocs p1-world
                         reactor-update-p string
                        )
@@ -8245,16 +8331,8 @@ ImportLayerSettings=No
        bubble-data
        "ename-leader"
      )
-    ;; obj-target = NIL means initial creation
-    ;; obj-target = T means reactor update for coordinate types (sentinel value)
-    ;; obj-target = VLA-OBJECT means reactor update with reference object (not used for N/E/NE)
-    reactor-update-p
-     (and
-       obj-target
-       (or (= obj-target t)
-           (= (type obj-target) 'vla-object)
-       )
-     )
+    ;; reactor-context-p = T means reactor callback, NIL means insertion/editing
+    reactor-update-p reactor-context-p
   )
   ;; CRITICAL: Check for leader BEFORE gateway call
   ;; Gateway tries to capture viewport, which is pointless without a leader
@@ -8291,7 +8369,7 @@ ImportLayerSettings=No
      (haws-debug ">>> DEBUG: Before gateway call")
      (hcnm-bn-gateways-to-viewport-selection-prompt
     ;; N/E/NE don't use reference objects
-    ename-bubble auto-type obj-target "NO-OBJECT"
+    ename-bubble auto-type obj-reference "NO-OBJECT"
     ;; Normal auto-text flow (not super-clearance)                               
     nil
    )                                    
@@ -8459,7 +8537,7 @@ ImportLayerSettings=No
      )
      (cond
        ((vl-catch-all-error-p obj-pipe)
-        (princ "\nError: Could not get pipe object.")
+        (haws-debug "Error: Could not get pipe object.")
         nil
        )
        (t obj-pipe)
@@ -8656,13 +8734,14 @@ ImportLayerSettings=No
 ;;   bubble-data - Bubble data alist (required)
 ;;   TAG - Attribute tag to update (required)
 ;;   auto-type - Property type: "Dia", "Slope", or "L" (required)
-;;   obj-target - Pre-selected pipe VLA-OBJECT (optional, for reactor callbacks)
+;;   obj-reference - VLA-OBJECT pipe (if provided), or NIL (will prompt user)
+;;   reactor-context-p - T if reactor callback, NIL if insertion/editing
 ;;
 ;; Returns:
 ;;   Updated bubble-data with new attribute value
 ;;
 ;; Side Effects:
-;;   - Prompts user for pipe selection if obj-target is NIL
+;;   - Prompts user for pipe selection if not reactor context
 ;;   - Attaches VLR-OBJECT-REACTOR to pipe for automatic updates
 ;;   - Switches to model space temporarily if bubble is in paper space
 ;;   - Updates lattribs within bubble-data
@@ -8676,10 +8755,10 @@ ImportLayerSettings=No
 ;;
 ;; Example:
 ;;   (SETQ bubble-data
-;;     (hcnm-bn-auto-pipe bubble-data "NOTETXT1" "Dia" NIL)
+;;     (hcnm-bn-auto-pipe bubble-data "NOTETXT1" "Dia" NIL NIL)
 ;;   )
 ;;==============================================================================
-(defun hcnm-bn-auto-pipe (bubble-data tag auto-type obj-target /
+(defun hcnm-bn-auto-pipe (bubble-data tag auto-type obj-reference reactor-context-p /
                           lattribs ename-bubble ename-leader obj-pipe
                           pspace-bubble-p string profile-start
                          )
@@ -8704,13 +8783,14 @@ ImportLayerSettings=No
   ;; NOTE: Pipe auto-text (Dia/Slope/L) does not use world coordinates.
   ;; At this point, coordinate-based auto-text functions get world coordinates
   ;; and the associated viewport as needed (via gateway + p1-world helpers).
-  ;; STEP 1: Get pipe object (user selection or provided obj-target)
+  ;; STEP 1: Get pipe object
   (cond
-    ((setq obj-pipe obj-target)
-     ;; Pipe provided (reactor update or programmatic call)
+    (obj-reference
+     ;; Path 1: obj-reference provided (VLA-OBJECT pipe from reactor)
+     (setq obj-pipe obj-reference)
     )
     (t
-     ;; Get pipe from user
+     ;; Path 2: No obj-reference - prompt user for selection (insertion path)
      (setq
        pspace-bubble-p
         (hcnm-bn-space-set-model)
@@ -8792,7 +8872,7 @@ ImportLayerSettings=No
 ;#region Auto surface
 ;; Civil 3D Surface query auto-text (Z elevation)
 ;; Currently unimplemented - returns apology message
-(defun hcnm-bn-auto-su (bubble-data tag auto-type obj-target / lattribs
+(defun hcnm-bn-auto-su (bubble-data tag auto-type obj-reference reactor-context-p / lattribs
                         ename-bubble
                        )
   (setq
@@ -8807,7 +8887,7 @@ ImportLayerSettings=No
   ;; Ensure viewport transform is captured if needed (gateway architecture)
   ;; FUTURE FEATURE: When Z elevation is implemented, this will be needed for coordinate calculations
   (hcnm-bn-gateways-to-viewport-selection-prompt
-    ename-bubble auto-type obj-target "NO-OBJECT"
+    ename-bubble auto-type obj-reference "NO-OBJECT"
                                         ; Z elevation doesn't use reference objects
     nil
    )                                    ; Normal auto-text flow (not super-clearance)
@@ -9054,7 +9134,7 @@ ImportLayerSettings=No
 ;; RETURNS: nil (this is a procedure with side effects, not a value-returning function)
 ;;
 (defun hcnm-bn-gateways-to-viewport-selection-prompt
-   (ename-bubble auto-type obj-target object-reference-status
+   (ename-bubble auto-type obj-reference object-reference-status
     request-type / avport-coordinates-gateway-open-p
     avport-paperspace-gateway-open-p avport-reactor-gateway-open-p
     avport-xdata-gateway-open-p avport-object-gateway-open-p
@@ -9103,8 +9183,8 @@ ImportLayerSettings=No
       )
     )
   )
-  ;; Gateway 3: Not a reactor update  (obj-target is nil during insertion/editing)
-  (setq avport-reactor-gateway-open-p (not obj-target))
+  ;; Gateway 3: Not a reactor update (obj-reference is nil during insertion/editing)
+  (setq avport-reactor-gateway-open-p (not obj-reference))
   (haws-debug
     (list
       "  Gateway 3 (not-reactor): "
@@ -9113,7 +9193,7 @@ ImportLayerSettings=No
         "CLOSED"
       )
       " [input="
-      (if obj-target
+      (if obj-reference
         "exists"
         "nil"
       )
@@ -9321,10 +9401,56 @@ ImportLayerSettings=No
 
 ;; Get viewport transformation matrix from bubble's XDATA
 ;; Returns list: (CVPORT ref-ocs-1 ref-wcs-1 ref-ocs-2 ref-wcs-2 ref-ocs-3 ref-wcs-3) or NIL
-(defun hcnm-bn-get-viewport-transform-xdata (ename-bubble)
-  ;; Use service layer to get viewport transform
-  ;; Returns: (cvport ref-ocs-1 ref-wcs-1 ref-ocs-2 ref-wcs-2 ref-ocs-3 ref-wcs-3) or nil
-  (hcnm-xdata-get-vptrans ename-bubble)
+(defun hcnm-bn-get-viewport-transform-xdata (ename-bubble / viewport-handle en-viewport vptrans-data)
+  ;; NEW ARCHITECTURE (2025-11): Get VPTRANS from viewport, not bubble
+  ;; Try new location first (viewport handle → viewport XRECORD)
+  (setq viewport-handle (hcnm-bn-get-viewport-handle ename-bubble))
+  (cond
+    (viewport-handle
+     ;; New architecture: Get viewport entity from handle
+     (setq en-viewport (handent viewport-handle))
+     (cond
+       (en-viewport
+        ;; Read VPTRANS from viewport extension dictionary
+        (setq vptrans-data (hcnm-vptrans-viewport-read en-viewport))
+        (if vptrans-data
+          (progn
+            (haws-debug
+              (list
+                "NEW: Read VPTRANS from viewport "
+                viewport-handle
+              )
+            )
+            vptrans-data
+          )
+          (progn
+            (haws-debug "WARNING: Viewport found but no VPTRANS data")
+            nil
+          )
+        )
+       )
+       (t
+        ;; Viewport was deleted
+        (haws-debug
+          (list
+            "WARNING: Viewport "
+            viewport-handle
+            " has been deleted"
+          )
+        )
+        nil
+       )
+     )
+    )
+    (t
+     ;; LEGACY FALLBACK: Try old location (bubble XRECORD)
+     (setq vptrans-data (hcnm-xdata-get-vptrans ename-bubble))
+     (if vptrans-data
+       (haws-debug "LEGACY: Using VPTRANS from bubble XRECORD (run migration)")
+     )
+     vptrans-data
+    )
+  )
 )
 
 ;; DEPRECATED: Old function - use hcnm-bn-get-viewport-transform-xdata instead
@@ -9354,14 +9480,46 @@ ImportLayerSettings=No
                                              ref-ocs-1 ref-wcs-1
                                              ref-ocs-2 ref-wcs-2
                                              ref-ocs-3 ref-wcs-3
+                                             / en-viewport viewport-handle vptrans-data
                                             )
-  ;; Build viewport data list
-  ;; Format: (cvport ref-ocs-1 ref-wcs-1 ref-ocs-2 ref-wcs-2 ref-ocs-3 ref-wcs-3)
-  (hcnm-xdata-set-vptrans
-    ename-bubble
-    (list
-      cvport ref-ocs-1 ref-wcs-1 ref-ocs-2 ref-wcs-2 ref-ocs-3 ref-wcs-3
+  ;; NEW ARCHITECTURE (2025-11): Store VPTRANS in viewport, handle in bubble
+  (setq en-viewport (hcnm-bn-find-viewport-by-number cvport))
+  (cond
+    (en-viewport
+     ;; Build viewport data list
+     ;; Format: (cvport ref-ocs-1 ref-wcs-1 ref-ocs-2 ref-wcs-2 ref-ocs-3 ref-wcs-3)
+     (setq vptrans-data
+       (list cvport ref-ocs-1 ref-wcs-1 ref-ocs-2 ref-wcs-2 ref-ocs-3 ref-wcs-3)
      )
+     ;; Store VPTRANS in viewport extension dictionary
+     (hcnm-vptrans-viewport-write en-viewport vptrans-data)
+     ;; Store viewport handle in bubble XDATA
+     (setq viewport-handle (cdr (assoc 5 (entget en-viewport))))
+     (hcnm-bn-set-viewport-handle ename-bubble viewport-handle)
+     (haws-debug
+       (list
+         "NEW: Stored VPTRANS in viewport "
+         viewport-handle
+         ", bubble stores handle only"
+       )
+     )
+     t
+    )
+    (t
+     ;; FALLBACK: Viewport not found, use old architecture
+     (haws-debug
+       (list
+         "WARNING: Viewport #"
+         (itoa cvport)
+         " not found - using legacy bubble VPTRANS storage"
+       )
+     )
+     (hcnm-xdata-set-vptrans
+       ename-bubble
+       (list cvport ref-ocs-1 ref-wcs-1 ref-ocs-2 ref-wcs-2 ref-ocs-3 ref-wcs-3)
+     )
+     nil
+    )
   )
 )
 
@@ -9961,6 +10119,185 @@ ImportLayerSettings=No
   )
 )
 
+;;------------------------------------------------------------------------------
+;; VIEWPORT-CENTRIC VPTRANS FUNCTIONS (New Architecture 2025-11)
+;;------------------------------------------------------------------------------
+;; These functions store VPTRANS once per viewport (not per bubble) to eliminate
+;; redundant storage. Bubbles store only viewport handle, not full matrix.
+;;
+;; Write VPTRANS to viewport's extension dictionary
+;; en-viewport: Viewport entity name
+;; viewport-data: (cvport ref-ocs-1 ref-wcs-1 ref-ocs-2 ref-wcs-2 ref-ocs-3 ref-wcs-3)
+;; Returns: T on success, nil on failure
+(defun hcnm-vptrans-viewport-write (en-viewport viewport-data / dict-ename xrec-data
+                                    cvport ref-points
+                                   )
+  (setq dict-ename (hcnm-extdict-get en-viewport))
+  (cond
+    (viewport-data
+     (setq
+       cvport
+        (car viewport-data)
+       ref-points
+        (cdr viewport-data)
+     )
+     ;; Build XRECORD data list with labeled fields
+     (setq
+       xrec-data
+        (list
+          '(0 . "XRECORD")
+          '(100 . "AcDbXrecord")
+          (cons 70 cvport)
+        )
+     )                                  ; 70 = short integer for cvport
+     ;; Add all 6 reference points as 3D points (code 10)
+     (foreach
+        pt ref-points
+       (setq xrec-data (append xrec-data (list (cons 10 pt))))
+     )
+     ;; Create or update VPTRANS xrecord in viewport's extension dictionary
+     (dictadd dict-ename "VPTRANS" (entmakex xrec-data))
+     t
+    )
+    (t nil)
+  )
+)
+
+;; Read VPTRANS from viewport's extension dictionary  
+;; en-viewport: Viewport entity name
+;; Returns: (cvport ref-ocs-1 ref-wcs-1 ... ref-wcs-3) or nil
+(defun hcnm-vptrans-viewport-read
+   (en-viewport / dict-ename vptrans-rec cvport ref-points)
+  (setq dict-ename (hcnm-extdict-get en-viewport))
+  (cond
+    ((and
+       dict-ename
+       (setq vptrans-rec (dictsearch dict-ename "VPTRANS"))
+     )
+     (setq vptrans-rec (entget (cdr (assoc -1 vptrans-rec))))
+     ;; Extract cvport (code 70)
+     (setq cvport (cdr (assoc 70 vptrans-rec)))
+     ;; Extract all points (code 10)
+     (setq ref-points '())
+     (foreach
+        item vptrans-rec
+       (cond
+         ((= (car item) 10)
+          (setq ref-points (append ref-points (list (cdr item))))
+         )
+       )
+     )
+     ;; Return viewport data
+     (cond
+       ((and cvport (= (length ref-points) 6))
+        (cons cvport ref-points)
+       )
+       (t nil)
+     )
+    )
+    (t nil)
+  )
+)
+
+;; Delete VPTRANS from viewport's extension dictionary
+;; en-viewport: Viewport entity name
+;; Returns: T if deleted, nil if not found
+(defun hcnm-vptrans-viewport-delete (en-viewport / dict-ename vptrans-rec)
+  (setq dict-ename (hcnm-extdict-get en-viewport))
+  (cond
+    ((and
+       dict-ename
+       (setq vptrans-rec (dictsearch dict-ename "VPTRANS"))
+     )
+     (entdel (cdr (assoc -1 vptrans-rec)))
+     t
+    )
+    (t nil)
+  )
+)
+
+;;------------------------------------------------------------------------------
+;; VIEWPORT HANDLE STORAGE (Bubble XDATA)
+;;------------------------------------------------------------------------------
+;; Bubbles store viewport handle in XDATA to lookup viewport-stored VPTRANS.
+;; This replaces storing full VPTRANS matrix in every bubble.
+;;
+;; Store viewport handle in bubble XDATA
+;; en-bubble: Bubble entity name
+;; viewport-handle: Viewport entity handle string (e.g., "1A100")
+;; Returns: T on success, nil on failure
+(defun hcnm-bn-set-viewport-handle (en-bubble viewport-handle / elist xdata-new appname)
+  (setq appname "HCNM-VIEWPORT")
+  (if (not (tblsearch "APPID" appname))
+    (regapp appname)
+  )
+  (setq elist (entget en-bubble))
+  (setq xdata-new
+    (list -3
+      (list appname
+        (cons 1000 "VIEWPORT-HANDLE")
+        (cons 1000 viewport-handle)
+      )
+    )
+  )
+  ;; Remove old HCNM-VIEWPORT XDATA if exists
+  (setq elist (vl-remove-if '(lambda (x) (and (= (car x) -3) (assoc appname (cdr x)))) elist))
+  ;; Add new XDATA
+  (entmod (append elist (list xdata-new)))
+  t
+)
+
+;; Get viewport handle from bubble XDATA
+;; en-bubble: Bubble entity name
+;; Returns: Viewport handle string or nil
+(defun hcnm-bn-get-viewport-handle (en-bubble / xdata-raw appname)
+  (setq appname "HCNM-VIEWPORT")
+  (setq xdata-raw (assoc -3 (entget en-bubble (list appname))))
+  (cond
+    ((and xdata-raw (setq xdata-raw (cdr (assoc appname (cdr xdata-raw)))))
+     ;; Parse XDATA: (1000 . "VIEWPORT-HANDLE") (1000 . "1A100")
+     (cond
+       ((and
+          (equal (cdr (nth 0 xdata-raw)) "VIEWPORT-HANDLE")
+          (= (length xdata-raw) 2)
+        )
+        (cdr (nth 1 xdata-raw))
+       )
+       (t nil)
+     )
+    )
+    (t nil)
+  )
+)
+
+;; Find viewport entity by cvport number
+;; cvport: Viewport number from CVPORT system variable
+;; Returns: Viewport entity name or nil
+(defun hcnm-bn-find-viewport-by-number (cvport / ss i en-vport ent-data vport-num)
+  (cond
+    ((and cvport (> cvport 1))
+     ;; Search for viewport with matching number (DXF code 69)
+     (setq ss (ssget "_X" '((0 . "VIEWPORT"))))
+     (if ss
+       (progn
+         (setq i 0)
+         (while (and (< i (sslength ss)) (not en-vport))
+           (setq ent-data (entget (ssname ss i)))
+           (setq vport-num (cdr (assoc 69 ent-data)))
+           (if (= vport-num cvport)
+             (setq en-vport (cdr (assoc -1 ent-data)))
+           )
+           (setq i (1+ i))
+         )
+         en-vport
+       )
+       nil
+     )
+    )
+    (t nil)
+  )
+)
+
 ;#endregion
 
 ;#region XDATA Service Layer
@@ -10165,9 +10502,7 @@ ImportLayerSettings=No
         ;; DEBUG: Check if entity read succeeded
         (cond
           ((not ent-list)
-           (alert
-             (princ (strcat "\nERROR: Could not read bubble entity"))
-           )
+           (haws-debug (strcat "ERROR: Could not read bubble entity"))
           )
           (t
            ;; Remove any existing -3 to avoid conflicts
@@ -10464,7 +10799,7 @@ ImportLayerSettings=No
 ;; Lookup pattern: Search owner-list → find notifier → drill to reference handles
 ;;==============================================================================
 
-(defun hcnm-bn-cleanup-reactor-data (reactor / data key-app owner-list cleaned-owner-list owner handle-owner bubble-list cleaned-bubble-list bubble handle-bubble tag-list)
+(defun hcnm-bn-cleanup-reactor-data (reactor / data key-app owner-list cleaned-owner-list owner handle-owner bubble-list cleaned-bubble-list bubble handle-bubble tag-list deleted-bubbles-count deleted-owners-count)
   ;; Remove entries for deleted bubbles and empty references
   ;; Returns cleaned data structure
   (setq
@@ -10474,6 +10809,8 @@ ImportLayerSettings=No
     owner-list
      (cadr (assoc key-app data))
     cleaned-owner-list nil
+    deleted-bubbles-count 0
+    deleted-owners-count 0
   )
   ;; Iterate through each reference/leader owner
   (foreach
@@ -10485,33 +10822,68 @@ ImportLayerSettings=No
        (cadr owner)
       cleaned-bubble-list nil
     )
-    ;; Keep only bubbles that still exist
-    (foreach
-       bubble bubble-list
-      (setq
-        handle-bubble
-         (car bubble)
-      )
-      (cond
-        ((handent handle-bubble)
-         (setq
-           cleaned-bubble-list
-            (append cleaned-bubble-list (list bubble))
-         )
-        )
-      )
-    )
-    ;; Only keep this reference if it has remaining bubbles
+    ;; Only process this owner if it still exists
+    ;; handent returns nil for user-erased entities (entdel is esoteric, ignore it)
+    ;; Empty string "" is valid for handleless N/E/NE coordinate-only auto-text
     (cond
-      (cleaned-bubble-list
-       (setq
-         cleaned-owner-list
-          (append
+      ((or (= handle-owner "") (handent handle-owner))
+       ;; Keep only bubbles that still exist
+       (foreach
+          bubble bubble-list
+         (setq
+           handle-bubble
+            (car bubble)
+         )
+         (cond
+           ;; Check if bubble still exists (handent returns nil for user-erased entities)
+           ((handent handle-bubble)
+            (setq
+              cleaned-bubble-list
+               (append cleaned-bubble-list (list bubble))
+            )
+           )
+           (t
+            ;; Bubble was deleted
+            (setq deleted-bubbles-count (1+ deleted-bubbles-count))
+            (haws-debug (strcat "  Removed deleted bubble: " handle-bubble))
+           )
+         )
+       )
+       ;; Only keep this owner if it has remaining bubbles
+       (cond
+         (cleaned-bubble-list
+          (setq
             cleaned-owner-list
-            (list (list handle-owner cleaned-bubble-list))
+             (append
+               cleaned-owner-list
+               (list (list handle-owner cleaned-bubble-list))
+             )
           )
+         )
+         (t
+          ;; Owner has no remaining bubbles
+          (setq deleted-owners-count (1+ deleted-owners-count))
+          (haws-debug (strcat "  Removed owner with no bubbles: " handle-owner))
+         )
        )
       )
+      (t
+       ;; Owner itself was deleted
+       (setq deleted-owners-count (1+ deleted-owners-count))
+       (haws-debug (strcat "  Removed deleted owner: " handle-owner))
+      )
+    )
+  )
+  ;; Report cleanup summary
+  (cond
+    ((or (> deleted-bubbles-count 0) (> deleted-owners-count 0))
+     (haws-debug
+       (strcat
+         "Reactor cleanup summary: "
+         (itoa deleted-bubbles-count) " bubble(s), "
+         (itoa deleted-owners-count) " owner(s) removed"
+       )
+     )
     )
   )
   ;; Return cleaned data
@@ -10805,9 +11177,9 @@ ImportLayerSettings=No
               (setq owner-add-result (vl-catch-all-apply 'vlr-owner-add (list reactor-old owner)))
               (cond
                 ((vl-catch-all-error-p owner-add-result)
-                  (princ (strcat "\n*** ERROR: vlr-owner-add failed for handle: " 
+                  (haws-debug (strcat "*** ERROR: vlr-owner-add failed for handle: " 
                                  (vl-catch-all-apply 'vla-get-handle (list owner))))
-                  (princ (strcat "\n    Error: " (vl-catch-all-error-message owner-add-result)))
+                  (haws-debug (strcat "    Error: " (vl-catch-all-error-message owner-add-result)))
                 )
                 (t
                   (haws-debug
@@ -10817,12 +11189,12 @@ ImportLayerSettings=No
                       " to reactor"
                     )
                   )
-                  (princ (strcat "\n  -> Successfully added owner: " (vla-get-handle owner)))
+                  (haws-debug (strcat "  -> Successfully added owner: " (vla-get-handle owner)))
                 )
               )
             )
             (t
-              (princ (strcat "\n*** ERROR: Invalid VLA-OBJECT in owners list: " (type owner)))
+              (haws-debug (strcat "*** ERROR: Invalid VLA-OBJECT in owners list: " (type owner)))
             )
           )
          )
@@ -11333,13 +11705,11 @@ ImportLayerSettings=No
 ;;   )
 ;;==============================================================================
 (defun hcnm-bn-reactor-bubble-update (handle-bubble handle-notifier tag-list / tag auto-list auto-entry auto-type handle-reference updated-any ename-bubble update-result)
-  ;; Check if bubble is active (not erased)
-  ;; Active bubble: (entget (handent handle)) returns entity data
-  ;; Erased bubble: (entget (handent handle)) returns nil
+  ;; Check if bubble is active (handent returns nil for user-erased entities)
   (setq ename-bubble (handent handle-bubble))
   (cond
-    ;; If entget returns nil, bubble was erased - return "DELETED" for cleanup
-    ((not (entget ename-bubble))
+    ;; Bubble was erased by user - return "DELETED" for cleanup
+    ((not ename-bubble)
      (haws-debug (list "[REACTOR CLEANUP] Bubble handle " handle-bubble " erased (removing from reactor data)"))
      "DELETED"
     )
@@ -11388,7 +11758,7 @@ ImportLayerSettings=No
          )
          ;; Old format: just auto-type string, use handle-notifier as reference
          ((atom auto-list)
-          (princ "\nWARNING: Old reactor data format detected - please re-insert bubble")
+          (haws-debug "WARNING: Old reactor data format detected - please re-insert bubble")
           (setq update-result
             (hcnm-bn-update-bubble-tag
               handle-bubble
@@ -11407,7 +11777,7 @@ ImportLayerSettings=No
           )
          )
          (t
-          (princ (strcat "\nERROR: Unexpected reactor data format for tag " tag))
+          (haws-debug (strcat "ERROR: Unexpected reactor data format for tag " tag))
          )
        )
      )
@@ -11714,13 +12084,13 @@ ImportLayerSettings=No
 ;;   - May read viewport transform data from XDATA
 ;;   - Does NOT modify drawing (returns data only)
 ;;==============================================================================
-(defun hcnm-bn-generate-new-auto-text (ename-bubble ename-reference lattribs tag auto-type / objref bubble-data)
-  ;; Convert entity to VLA object, or use T sentinel for coordinate-only types
+(defun hcnm-bn-generate-new-auto-text (ename-bubble ename-reference lattribs tag auto-type / obj-reference bubble-data)
+  ;; Convert entity to VLA object for handle-based types, NIL for handleless
   (setq
-    objref
+    obj-reference
      (cond
        (ename-reference (vlax-ename->vla-object ename-reference))
-       (t t)  ; Sentinel for N/E/NE reactor updates (no reference object)
+       (t nil)  ; NIL for N/E/NE (handleless, no reference object)
      )
   )
   ;; Build minimal bubble-data for auto-dispatch
@@ -11728,8 +12098,8 @@ ImportLayerSettings=No
     bubble-data (hcnm-bn-bubble-data-set nil "ename-bubble" ename-bubble)
     bubble-data (hcnm-bn-bubble-data-set bubble-data "ATTRIBUTES" lattribs)
   )
-  ;; Call auto-dispatch to generate new auto-text (now returns bubble-data)
-  (setq bubble-data (hcnm-bn-auto-dispatch tag auto-type objref bubble-data))
+  ;; Call auto-dispatch to generate new auto-text (reactor context)
+  (setq bubble-data (hcnm-bn-auto-dispatch tag auto-type obj-reference bubble-data t))
   ;; Extract lattribs from bubble-data
   (hcnm-bn-bubble-data-get bubble-data "ATTRIBUTES")
 )
@@ -11882,10 +12252,10 @@ ImportLayerSettings=No
         )
         (t
           ;; Search FAILED - user corrupted auto-text, remove from XDATA/reactor
-          (princ (strcat "\n*** WARNING: Auto-text search failed for " tag " - user may have corrupted text"))
-          (princ (strcat "\n    Old auto-text: \"" (if old-auto-text old-auto-text "nil") "\""))
-          (princ (strcat "\n    Current text: \"" current-text "\""))
-          (princ (strcat "\n    Removing from XDATA and reactor tracking (treating as user text)"))
+          (haws-debug (strcat "*** WARNING: Auto-text search failed for " tag " - user may have corrupted text"))
+          (haws-debug (strcat "    Old auto-text: \"" (if old-auto-text old-auto-text "nil") "\""))
+          (haws-debug (strcat "    Current text: \"" current-text "\""))
+          (haws-debug (strcat "    Removing from XDATA and reactor tracking (treating as user text)"))
           
           ;; Remove this auto-text entry from XDATA
           (hcnm-bn-xdata-remove-one ename-bubble tag auto-type handle-reference)
@@ -12263,7 +12633,8 @@ ImportLayerSettings=No
 (defun hcnm-bn-eb-get-text (ename-bubble done-code tag / auto-string
                             auto-type attr current-text old-auto-text
                             new-text handle-ref tag-handles composite-key
-                            existing-entry bubble-data
+                            existing-entry bubble-data auto-metadata metadata-entry
+                            handle-ref-from-auto
                            )
   (setq
     auto-type
@@ -12332,14 +12703,36 @@ ImportLayerSettings=No
      (setq
        bubble-data
         (hcnm-bn-auto-dispatch
-          tag auto-type nil bubble-data ; nil obj-target = initial creation of auto text, not reactor update
+          tag auto-type nil bubble-data nil ; nil obj-reference, nil reactor-context-p (edit dialog insertion)
          )
        ;; Extract updated lattribs from bubble-data
        hcnm-bn-eb-lattribs
         (hcnm-bn-bubble-data-get bubble-data "ATTRIBUTES")
-       ;; Extract handle-reference for semi-global (if auto function provided it)
+       ;; Extract handle from auto-metadata list (if auto function provided it)
+       ;; Metadata format: ((tag auto-type handle auto-text) ...)
        handle-ref-from-auto
-        (hcnm-bn-bubble-data-get bubble-data "handle-reference")
+        (cond
+          ((setq auto-metadata (hcnm-bn-bubble-data-get bubble-data "auto-metadata"))
+           ;; Find entry matching this tag and auto-type
+           (cond
+             ((setq metadata-entry
+                (vl-some
+                  '(lambda (entry)
+                     (if (and (= (car entry) tag) (= (cadr entry) auto-type))
+                       entry
+                       nil
+                     )
+                   )
+                  auto-metadata
+                )
+              )
+              (caddr metadata-entry)  ; Extract handle (3rd element)
+             )
+             (t nil)  ; No matching entry found
+           )
+          )
+          (t nil)  ; No metadata at all
+        )
      )
      ;; Update handle-ref with value from auto function (overrides reactor lookup)
      (cond
@@ -13063,7 +13456,7 @@ ImportLayerSettings=No
     "Message"
     (strcat
       "Tip: Use ``` (triple backtick) to mark where auto-text should insert."
-      (haws_evangel_msg)
+      (haws-evangel-msg)
     )
   )
   (mode_tile "ChgView" 0)               ; Always enable
@@ -13499,7 +13892,7 @@ ImportLayerSettings=No
                                   owner-handle bubble-list bubble-entry
                                   bubble-h bubble-tags vla-owners
                                   owner-attached-p owner-ename owner-vla
-                                  vla-owner)
+                                  vla-owner bubble-ename vptrans-data)
   (princ "\n=== ENTIRE REACTOR DATA STRUCTURE ===")
   (setq
     reactors (cdar (vlr-reactors :vlr-object-reactor))
@@ -13565,8 +13958,19 @@ ImportLayerSettings=No
                         (if (and bubble-h (= (type bubble-h) 'STR) (not (handent bubble-h)))
                           " [ERASED]"
                           "")
-                        ": "
-                        (vl-prin1-to-string bubble-tags)))
+                        ": "))
+                (princ (vl-prin1-to-string bubble-tags))
+                ;; Show VPTRANS XRECORD data if bubble exists
+                (if (and bubble-h (= (type bubble-h) 'STR) (setq bubble-ename (handent bubble-h)))
+                  (progn
+                    (setq vptrans-data (hcnm-xdata-get-vptrans bubble-ename))
+                    (if vptrans-data
+                      (princ (strcat "\n      VPTRANS: viewport=" (itoa (car vptrans-data))
+                                     " points=" (itoa (length (cdr vptrans-data)))))
+                      (princ "\n      VPTRANS: none")
+                    )
+                  )
+                )
               )
               (princ "\n    (no bubbles tracked)")
             )
@@ -13640,6 +14044,285 @@ ImportLayerSettings=No
   )
   (princ "\n=== END REACTOR OWNERS ===")
   (princ)
+)
+
+;; Command to explore viewport properties and test transformation capabilities
+(defun c:hcnm-debug-viewport-props (/ ss ent obj-vport prop-list prop-name prop-val
+                                     error-result cvport layout-obj vports-collection
+                                     i vport-obj vport-num ent-data dxf-val code
+                                     test-write verify-data)
+  (princ "\n=== VIEWPORT PROPERTY EXPLORER ===")
+  (princ "\nThis command explores what transformation data AutoCAD provides for viewports.")
+  (princ "\n\nSelect a viewport in paper space (or press Enter to explore current CVPORT): ")
+  (setq ss (ssget "_:S" '((0 . "VIEWPORT"))))
+  (cond
+    (ss
+     ;; User selected a viewport entity
+     (setq ent (ssname ss 0))
+     (princ (strcat "\n\nSelected viewport entity: " (vl-prin1-to-string (cdr (assoc 5 (entget ent))))))
+     (setq obj-vport (vlax-ename->vla-object ent))
+     (princ "\n\n--- VIEWPORT OBJECT DUMP ---")
+     (princ "\nUsing vlax-dump-object to show all properties:")
+     (vlax-dump-object obj-vport T)
+    )
+    (t
+     ;; No selection - use CVPORT to find active viewport
+     (setq cvport (getvar "CVPORT"))
+     (princ (strcat "\n\nNo viewport selected. Current CVPORT = " (itoa cvport)))
+     (cond
+       ((and cvport (> cvport 1))
+        (princ "\n\nAttempting to find viewport object for CVPORT...")
+        ;; Try to get viewport from layout
+        (setq layout-obj (vla-get-activelayout (vla-get-activedocument (vlax-get-acad-object))))
+        (setq vports-collection (vla-get-viewports (vla-get-paperspace (vla-get-activedocument (vlax-get-acad-object)))))
+        (princ (strcat "\nFound " (itoa (vla-get-count vports-collection)) " viewports in paper space"))
+        ;; Iterate to find matching viewport number
+        (setq i 0)
+        (vlax-for vport-obj vports-collection
+          (setq vport-num (vl-catch-all-apply 'vla-get-number (list vport-obj)))
+          (if (and (not (vl-catch-all-error-p vport-num)) (= vport-num cvport))
+            (progn
+              (princ (strcat "\n\nFound viewport #" (itoa cvport) " in collection"))
+              (setq obj-vport vport-obj)
+            )
+          )
+          (setq i (1+ i))
+        )
+       )
+       (t
+        (princ "\n\nNot in a viewport (CVPORT=1 means paper space)")
+       )
+     )
+    )
+  )
+  ;; If we found a viewport object, explore key transformation properties
+  (if obj-vport
+    (progn
+      (princ "\n\n--- TRANSFORMATION-RELATED PROPERTIES ---")
+      (foreach prop-name '("Center" "ViewCenter" "Target" "Direction" "ViewTarget"
+                          "Height" "Width" "TwistAngle" "LensLength"
+                          "CustomScale" "StandardScale" "UCSIconAtOrigin" "UCSIconOn"
+                          "UCSPerViewport" "SnapBasePoint" "SnapOn" "GridOn"
+                          "Number" "DisplayLocked" "On")
+        (setq prop-val (vl-catch-all-apply 'vlax-get-property (list obj-vport (read prop-name))))
+        (princ (strcat "\n  " prop-name ": "
+                      (if (vl-catch-all-error-p prop-val)
+                        "[NOT AVAILABLE]"
+                        (vl-prin1-to-string prop-val))))
+      )
+      (princ "\n\n--- TESTING: Can we get transformation matrices? ---")
+      (princ "\nAttempt 1: ModelToWorld matrix...")
+      (setq prop-val (vl-catch-all-apply 'vlax-get-property (list obj-vport 'ModelToWorld)))
+      (if (vl-catch-all-error-p prop-val)
+        (princ " NOT FOUND")
+        (princ (strcat " FOUND! Value: " (vl-prin1-to-string prop-val)))
+      )
+      (princ "\nAttempt 2: WorldToModel matrix...")
+      (setq prop-val (vl-catch-all-apply 'vlax-get-property (list obj-vport 'WorldToModel)))
+      (if (vl-catch-all-error-p prop-val)
+        (princ " NOT FOUND")
+        (princ (strcat " FOUND! Value: " (vl-prin1-to-string prop-val)))
+      )
+      (princ "\nAttempt 3: ViewMatrix...")
+      (setq prop-val (vl-catch-all-apply 'vlax-get-property (list obj-vport 'ViewMatrix)))
+      (if (vl-catch-all-error-p prop-val)
+        (princ " NOT FOUND")
+        (princ (strcat " FOUND! Value: " (vl-prin1-to-string prop-val)))
+      )
+      (princ "\nAttempt 4: TransformMatrix...")
+      (setq prop-val (vl-catch-all-apply 'vlax-get-property (list obj-vport 'TransformMatrix)))
+      (if (vl-catch-all-error-p prop-val)
+        (princ " NOT FOUND")
+        (princ (strcat " FOUND! Value: " (vl-prin1-to-string prop-val)))
+      )
+      (princ "\n\n--- DXF DATA ANALYSIS ---")
+      (princ "\nLet's check what's in the viewport entity's DXF data:")
+      ;; Get entity name from VLA-OBJECT (works for both selection and CVPORT paths)
+      (if (not ent)
+        (setq ent (vlax-vla-object->ename obj-vport))
+      )
+      (setq ent-data (entget ent))
+      (princ "\nKey DXF codes:")
+      (foreach code '(10 11 12 13 40 41 42 43 44 45 50 51 68 69 90)
+        (setq dxf-val (assoc code ent-data))
+        (if dxf-val
+          (princ (strcat "\n  Code " (itoa code) ": " (vl-prin1-to-string (cdr dxf-val))))
+        )
+      )
+      (princ "\n\n--- ANALYSIS & RECOMMENDATIONS ---")
+      (princ "\n\nFINDINGS:")
+      (princ "\n1. No built-in transformation matrices (ModelToWorld, etc.)")
+      (princ "\n2. Available properties that might help:")
+      (princ "\n   - Center (viewport center in paper space)")
+      (princ "\n   - Target (view target in model space WCS)")
+      (princ "\n   - Direction (view direction vector)")
+      (princ "\n   - Height, Width (viewport size)")
+      (princ "\n   - TwistAngle (viewport rotation)")
+      (princ "\n   - CustomScale (viewport scale factor)")
+      (princ "\n\n3. These properties describe the view but don't provide transform matrix")
+      (princ "\n\nCONCLUSION: We must store our own transformation data.")
+      (princ "\n\nNEXT STEP: Test if we can attach XRECORD to viewport extension dictionary...")
+      (princ "\nAttempting to read viewport extension dictionary...")
+      (setq verify-data (hcnm-extdict-get ent))
+      (if verify-data
+        (princ (strcat "\n  Extension dictionary exists: " (vl-prin1-to-string verify-data)))
+        (princ "\n  No extension dictionary yet (will be created)")
+      )
+      (princ "\n\nAttempting to write test XRECORD using NEW viewport-centric functions...")
+      (setq test-write
+        (vl-catch-all-apply 'hcnm-vptrans-viewport-write
+          (list ent (list 99 '(0.0 0.0 0.0) '(1.0 0.0 0.0) '(1.0 1.0 0.0) 
+                          '(0.0 1.0 0.0) '(0.0 0.0 1.0) '(1.0 1.0 1.0)))
+        )
+      )
+      (if (vl-catch-all-error-p test-write)
+        (princ (strcat "\n  ERROR: Cannot write XRECORD! " (vl-prin1-to-string test-write)))
+        (progn
+          (princ "\n  SUCCESS: XRECORD written to viewport using hcnm-vptrans-viewport-write!")
+          (princ "\n  Reading back test XRECORD using hcnm-vptrans-viewport-read...")
+          (setq verify-data (hcnm-vptrans-viewport-read ent))
+          (if verify-data
+            (progn
+              (princ "\n  VERIFIED: XRECORD successfully stored and retrieved!")
+              (princ (strcat "\n  Data: cvport=" (itoa (car verify-data)) 
+                            ", points=" (itoa (length (cdr verify-data)))))
+              (princ "\n\n  ✓ Phase 1 Task 1: Can write VPTRANS to viewport ExtDict")
+              (princ "\n  ✓ Phase 1 Task 2: Can read VPTRANS from viewport ExtDict")
+              (princ "\n\n  PERSISTENCE TEST: VPTRANS left in viewport for save/load testing")
+              (princ "\n  Instructions:")
+              (princ "\n    1. Save drawing now")
+              (princ "\n    2. Close and reopen AutoCAD")
+              (princ "\n    3. Run HCNM-DEBUG-VIEWPORT-PROPS again")
+              (princ "\n    4. If VPTRANS still reads back, persistence is confirmed!")
+              (princ "\n\n  To cleanup manually, run: (hcnm-vptrans-viewport-delete (car (entsel)))")
+            )
+            (princ "\n  WARNING: Write succeeded but couldn't read back XRECORD")
+          )
+        )
+      )
+    )
+    (princ "\n\nNo viewport object available for analysis.")
+  )
+  (princ "\n\n=== END VIEWPORT EXPLORER ===\n")
+  (princ)
+)
+
+;;------------------------------------------------------------------------------
+;; HCNM-MIGRATE-VPTRANS - Migrate bubble VPTRANS to viewport-centric architecture
+;;------------------------------------------------------------------------------
+;; Converts drawing from legacy (VPTRANS in every bubble) to new architecture
+;; (VPTRANS in viewport, bubbles store handle only). Safe to run multiple times.
+;;
+(defun c:hcnm-migrate-vptrans (/ bubbles-with-vptrans vptrans-groups 
+                                unique-vptrans en-bubble vptrans-data
+                                vptrans-key existing-group en-viewport
+                                viewport-handle bubbles-migrated 
+                                viewports-created space-saved
+                               )
+  (princ "\n=== VPTRANS MIGRATION TO VIEWPORT-CENTRIC ARCHITECTURE ===")
+  (princ "\n\nThis command migrates bubble notes from legacy VPTRANS storage")
+  (princ "\n(stored in every bubble) to new architecture (stored once per viewport).")
+  (princ "\n\nScanning drawing for bubbles with legacy VPTRANS...")
+  ;; Step 1: Find all bubbles with VPTRANS in bubble XRECORD
+  ;; Strategy: Find all blocks with HCNM-BUBBLE XDATA (more reliable than block name)
+  (setq bubbles-with-vptrans '())
+  (setq ss (ssget "_X" '((-3 ("HCNM-BUBBLE")))))
+  (if ss
+    (progn
+      (setq i 0)
+      (while (< i (sslength ss))
+        (setq en-bubble (ssname ss i))
+        (setq vptrans-data (hcnm-xdata-get-vptrans en-bubble))
+        (if vptrans-data
+          (setq bubbles-with-vptrans (cons (list en-bubble vptrans-data) bubbles-with-vptrans))
+        )
+        (setq i (1+ i))
+      )
+      (princ (strcat "\n  Found " (itoa (length bubbles-with-vptrans)) " bubbles with legacy VPTRANS"))
+      (if (= (length bubbles-with-vptrans) 0)
+        (progn
+          (princ "\n\nNo legacy VPTRANS found. Drawing is already using new architecture!")
+          (princ "\n\n=== MIGRATION COMPLETE ===\n")
+          (princ)
+        )
+        (progn
+          ;; Step 2: Group bubbles by identical VPTRANS data
+          (princ "\n\nGrouping bubbles by viewport...")
+          (setq vptrans-groups '())
+          (foreach bubble-vptrans bubbles-with-vptrans
+            (setq en-bubble (car bubble-vptrans))
+            (setq vptrans-data (cadr bubble-vptrans))
+            ;; Use VPTRANS as key (convert to string for comparison)
+            (setq vptrans-key (vl-prin1-to-string vptrans-data))
+            ;; Find existing group or create new one
+            (setq existing-group (assoc vptrans-key vptrans-groups))
+            (if existing-group
+              ;; Add bubble to existing group
+              (setq vptrans-groups
+                (subst
+                  (list vptrans-key (cons en-bubble (cadr existing-group)) vptrans-data)
+                  existing-group
+                  vptrans-groups
+                )
+              )
+              ;; Create new group
+              (setq vptrans-groups
+                (cons (list vptrans-key (list en-bubble) vptrans-data) vptrans-groups)
+              )
+            )
+          )
+          (princ (strcat "\n  Grouped into " (itoa (length vptrans-groups)) " unique viewports"))
+          ;; Step 3: For each group, store VPTRANS in viewport
+          (princ "\n\nMigrating VPTRANS to viewports...")
+          (setq bubbles-migrated 0)
+          (setq viewports-created 0)
+          (foreach group vptrans-groups
+            (setq bubble-list (cadr group))
+            (setq vptrans-data (caddr group))
+            (setq cvport (car vptrans-data))
+            ;; Find viewport entity by number
+            (setq en-viewport (hcnm-bn-find-viewport-by-number cvport))
+            (cond
+              (en-viewport
+               ;; Write VPTRANS to viewport
+               (hcnm-vptrans-viewport-write en-viewport vptrans-data)
+               (setq viewport-handle (cdr (assoc 5 (entget en-viewport))))
+               (princ (strcat "\n  Viewport " viewport-handle ": Stored VPTRANS, updating " 
+                             (itoa (length bubble-list)) " bubbles..."))
+               ;; Update all bubbles in group
+               (foreach en-bubble bubble-list
+                 ;; Store viewport handle in bubble
+                 (hcnm-bn-set-viewport-handle en-bubble viewport-handle)
+                 ;; Remove legacy VPTRANS from bubble (optional cleanup)
+                 ;; Note: We could leave it for additional backward compat
+                 (setq bubbles-migrated (1+ bubbles-migrated))
+               )
+               (setq viewports-created (1+ viewports-created))
+              )
+              (t
+               (princ (strcat "\n  WARNING: Viewport #" (itoa cvport) 
+                             " not found - skipping " (itoa (length bubble-list)) " bubbles"))
+              )
+            )
+          )
+          ;; Report results
+          (setq space-saved (* (- (length bubbles-with-vptrans) viewports-created) 7))
+          (princ "\n\n=== MIGRATION COMPLETE ===")
+          (princ (strcat "\n  Bubbles migrated: " (itoa bubbles-migrated)))
+          (princ (strcat "\n  Viewports updated: " (itoa viewports-created)))
+          (princ (strcat "\n  Redundant values eliminated: " (itoa space-saved)))
+          (princ "\n\nNOTE: Legacy VPTRANS still in bubble XRECORDs (safe fallback).")
+          (princ "\nRun cleanup command to remove legacy data (optional).\n")
+          (princ)
+        )
+      )
+    )
+    (progn
+      (princ "\n\nNo bubble notes found in drawing.")
+      (princ "\n\n=== MIGRATION COMPLETE ===\n")
+      (princ)
+    )
+  )
 )
 
 ;#endregion

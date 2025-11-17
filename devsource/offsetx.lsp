@@ -3,7 +3,7 @@
 ;only all new entities are created in the current layer. Rev 7/01/96
 (defun c:haws-oo ()
 (haws-core-init 92)
-(prompt (strcat "\n" (haws_evangel_msg)))
+(princ (haws-evangel-msg))
 (c:haws-offsetx))
 (defun c:haws-offsetx (/ enm0 temp pp clay)
   (haws-core-init 93)

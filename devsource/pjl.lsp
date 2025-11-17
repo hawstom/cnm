@@ -1,7 +1,7 @@
 ﻿;;; PJL joins as a polyline objects that are on the layer of the selected object.
 (defun c:haws-pjl (/ eg en et la peaold)
 (haws-core-init 97)
-(prompt (strcat "\n" (haws_evangel_msg)))
+(princ (haws-evangel-msg))
   (setq
     en	(car (entsel))
     eg	(entget en)

@@ -237,6 +237,11 @@
 (haws-autoload "loadandrun"       '("haws-LoadAndRun"))
 ;-------------MODIFY THE ABOVE--------------------------------------
 ;#region Required libraries
+;;; Load legacy library
+;; LISPUTIL.LSP has library functions for legacy routines some legacy users have. 
+;; Since some of its contents conflict with edclib, edclib must be loaded before lisputil so that edclib has precedence.
+(if (not haws-errdef) (load "lisputil"))
+
 ;;; edclib is the common core library for HawsEDC and CNM.
 ;;; Must be loaded early so haws-config and other utilities are available.
 (load "edclib")
@@ -275,12 +280,6 @@
   )
   (t (princ "\nSkipping cnmalias.lsp command aliases.  Already loaded."))
 )
-;#endregion
-;#region Very old legacy
-;;; Load legacy library
-;; LISPUTIL.LSP has library functions for legacy routines some legacy users have.
-(if (not haws-errdef) (load "lisputil"))
-
 ;;;The following line loads user.lsp if found.
 (if (setq temp(findfile "user.lsp"))(load temp))
 ;;;You can put personally preferred routines in user.lsp.

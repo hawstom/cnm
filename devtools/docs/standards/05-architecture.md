@@ -371,15 +371,37 @@ HCNM_PROJINIT             ; Project INI refresh (disabled by default)
 
 ### 4.2.2 Two Orthogonal Auto-Text Classifications
 
-**Handle-based vs Handleless:**
-- **Handle-based:** StaOff/Dia/Slope (stores reference object handle in XDATA)
-- **Handleless:** N/E/NE (empty handle `""`, coordinate-only)
+**Handle-based vs Handleless (CRITICAL - Affects XDATA Storage):**
+- **Handle-based:** ALL alignment types (Sta/Off/StaOff/AlName/StaName) + Dia/Slope/L (stores reference object handle in XDATA, never empty string)
+- **Handleless:** N/E/NE ONLY (empty handle `""` in XDATA, coordinate-only, no reference object)
 
-**Coordinate-based vs Non-coordinate:**
-- **Coordinate-based:** StaOff/N/E (needs viewport transform in paper space)
-- **Non-coordinate:** Dia/Slope (no transform needed)
+**Coordinate-based vs Non-coordinate (Affects Paper Space Transform):**
+- **Coordinate-based:** Sta/Off/StaOff/StaName/N/E/NE (needs p1-world + viewport transform in paper space)
+- **Non-coordinate:** AlName/Dia/Slope/L (no transform needed, just reads object properties)
 
-**Key Architectural Point:** Handleless auto-text STILL needs leader attachment for stretch updates. November 2025 fix ensures handleless auto-text always attached to leader regardless of coordinate requirements.
+**Common Misconception to Avoid:**
+- ❌ WRONG: "Sta/Off have empty handles" (they store alignment handle!)
+- ✅ CORRECT: "N/E/NE have empty handles" (handleless coordinates)
+- ❌ WRONG: "All coordinate types are handleless" (Sta/Off are coordinate AND handle-based!)
+- ✅ CORRECT: "Coordinate types can be handle-based (Sta/Off) OR handleless (N/E/NE)"
+
+**Quick Reference Table:**
+
+| Auto-Type | Handle-Based? | Coordinate-Based? | Reference Object | Handle in XDATA |
+|-----------|---------------|-------------------|------------------|-----------------|
+| Sta       | ✅ YES        | ✅ YES            | Alignment        | `"handle"`      |
+| Off       | ✅ YES        | ✅ YES            | Alignment        | `"handle"`      |
+| StaOff    | ✅ YES        | ✅ YES            | Alignment        | `"handle"`      |
+| StaName   | ✅ YES        | ✅ YES            | Alignment        | `"handle"`      |
+| AlName    | ✅ YES        | ❌ NO             | Alignment        | `"handle"`      |
+| N         | ❌ NO         | ✅ YES            | None             | `""`            |
+| E         | ❌ NO         | ✅ YES            | None             | `""`            |
+| NE        | ❌ NO         | ✅ YES            | None             | `""`            |
+| Dia       | ✅ YES        | ❌ NO             | Pipe             | `"handle"`      |
+| Slope     | ✅ YES        | ❌ NO             | Pipe             | `"handle"`      |
+| L         | ✅ YES        | ❌ NO             | Pipe             | `"handle"`      |
+
+**Key Architectural Point:** Handleless auto-text (N/E/NE) STILL needs leader attachment for stretch updates. November 2025 fix ensures handleless auto-text always attached to leader regardless of coordinate requirements.
 
 ### 4.2.3 Reactor Data Structure (5-Level Hierarchy)
 

@@ -3,7 +3,7 @@
 (defun c:haws-na () (haws-newang))
 (defun haws-newang (/ sset)
   (haws-core-init 267)
-  (prompt (strcat "\n" (haws_evangel_msg)))
+  (princ (haws-evangel-msg))
   (haws-vsave '("aunits"))
   (vl-cmdf "._undo" "_g")
   (setq sset (ssget))

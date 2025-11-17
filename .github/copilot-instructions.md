@@ -18,6 +18,11 @@
 
 **AI's role:** Help maintain 20-year-old codebase with strict data integrity requirements.
 
+**Recent Milestones:**
+- **2025-11-16**: obj-target refactoring complete - all auto-text functions now use obj-reference + reactor-context-p pattern
+- **2025-11-16**: Multiple auto-texts per line working (Slope + Off + Sta on same tag)
+- **2025-11-16**: Handle extraction from auto-metadata complete - edit dialog correctly stores alignment/pipe handles
+
 ### 1.3. Key Principles
 - Don't break code or cause regressions
 - Make it gradually more maintainable and readable
@@ -34,6 +39,7 @@ AutoLISP is the primary programming language of CNM. AutoLISP and Common LISP ar
 - **Function exists:** `(boundp 'function-name)` ✅ | `fboundp` ❌ (doesn't exist)
 - **Load paths:** Nested `vl-filename-directory` calls ✅ | `".."` relative paths ❌ (unsupported)  
 - **Symbolic constant idiom:** AutoLISP does not provide any benefits for user symbolic constants `'my-constant` ❌
+- **Entity deletion check:** `(handent handle)` returns nil for user-erased entities ✅ (entdel is esoteric/temporary, ignore it)
 
 #### 1.4.2. CRITICAL: Function Name Verification Protocol
 
@@ -77,13 +83,18 @@ AutoLISP is the primary programming language of CNM. AutoLISP and Common LISP ar
 **AutoCAD block behavior patterns:**
 
 - **Anonymous blocks:** Dynamic blocks become anonymous when modified. Use EffectiveName property or XDATA for identification
-- **Auto-text classification:** Handle-based (StaOff/Dia/Slope use object handles) vs Handleless (N/E/NE use empty handle). Don't confuse with "coordinate-based" - both types may require coordinates.
 
-**Auto-text type classification (two orthogonal properties):**
-- **Handle-based**: StaOff/Dia/Slope (stores reference object handle) vs Handleless: N/E/NE (empty handle)  
-- **Coordinate-based**: StaOff/N/E (needs VPTRANS for paper space) vs Non-coordinate: Dia/Slope (no transform needed)
+**Auto-text type classification (two orthogonal properties - CRITICAL):**
+- **Handle-based vs Handleless (affects XDATA storage):**
+  - Handle-based: ALL alignment types (Sta/Off/StaOff/AlName/StaName) + Dia/Slope/L - stores reference object handle in XDATA (never empty)
+  - Handleless: N/E/NE ONLY - empty handle `""` in XDATA, coordinate-only, no reference object
+- **Coordinate-based vs Non-coordinate (affects paper space transform):**
+  - Coordinate-based: Sta/Off/StaOff/StaName/N/E/NE - needs p1-world + VPTRANS for paper space
+  - Non-coordinate: AlName/Dia/Slope/L - no transform needed, just reads object properties
+- **Common misconception to avoid:**
+  - ❌ WRONG: "Sta/Off have empty handles" (they store alignment handle!)
+  - ✅ CORRECT: "N/E/NE have empty handles" (handleless coordinates)
 - **Complete architecture:** See S05.4.2 (Reactive Auto-Text System) for VLR-OBJECT-REACTOR patterns, BlockReactors flag lifecycle, and debugging guidelines
-- **Load expressions:** Must use full paths or constructed paths since relative paths are not legal for (load) [TGH 2025-11-12 22:52:09: this is redundant with information above. DRY]
 
 ### 1.6. AI Collaboration Workflow
 

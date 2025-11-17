@@ -78,13 +78,13 @@
 ;;;Freeze or off by picking nested entities
 
 (defun c:haws-ffx ()
-  (prompt (strcat "\n" (haws_evangel_msg)))
+  (princ (haws-evangel-msg))
   (haws-core-init 232)
   (haws-nlstat "freeze")
   (princ))
 
 (defun c:haws-offx ()
-  (prompt (strcat "\n" (haws_evangel_msg)))
+  (princ (haws-evangel-msg))
   (haws-core-init 233)
   (haws-nlstat "off")
   (princ))
