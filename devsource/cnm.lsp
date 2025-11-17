@@ -9200,11 +9200,11 @@ ImportLayerSettings=No
       "]"
     )
   )
-  ;; Gateway 4: No existing viewport XDATA
+  ;; Gateway 4: No existing viewport XDATA (check if viewport handle exists)
   (setq
     avport-xdata-gateway-open-p
      (not
-       (hcnm-xdata-get-vptrans ename-bubble)
+       (hcnm-bn-get-viewport-handle ename-bubble)
      )
   )
   (haws-debug
@@ -10224,28 +10224,29 @@ ImportLayerSettings=No
 ;;
 ;; Store viewport handle in bubble XDATA
 ;; en-bubble: Bubble entity name
-;; viewport-handle: Viewport entity handle string (e.g., "1A100")
+;; viewport-handle: Viewport entity handle string (e.g., "1A100"), or nil to remove
 ;; Returns: T on success, nil on failure
 (defun hcnm-bn-set-viewport-handle (en-bubble viewport-handle / elist xdata-new appname)
   (setq appname "HCNM-VIEWPORT")
-  (if (not (tblsearch "APPID" appname))
-    (regapp appname)
-  )
   (setq elist (entget en-bubble))
-  (setq xdata-new
-    (list -3
-      (list appname
-        (cons 1000 "VIEWPORT-HANDLE")
-        (cons 1000 viewport-handle)
-      )
-    )
-  )
   ;; Remove old HCNM-VIEWPORT XDATA if exists
   (setq elist (vl-remove-if '(lambda (x) (and (= (car x) -3) (assoc appname (cdr x)))) elist))
-  ;; Add new XDATA
-  (entmod (append elist (list xdata-new)))
-  t
-)
+  (cond
+    (viewport-handle
+     ;; Add new XDATA with handle
+     (if (not (tblsearch "APPID" appname))
+       (regapp appname))
+     (setq xdata-new
+       (list -3
+         (list appname
+           (cons 1000 "VIEWPORT-HANDLE")
+           (cons 1000 viewport-handle))))
+     (entmod (append elist (list xdata-new)))
+     t)
+    (t
+     ;; nil = just remove XDATA, don't add anything
+     (entmod elist)
+     t)))
 
 ;; Get viewport handle from bubble XDATA
 ;; en-bubble: Bubble entity name
@@ -13649,18 +13650,26 @@ ImportLayerSettings=No
 
 ;; Show XDATA structure (extended entity data)
 (defun hcnm-debug-show-xdata
-   (ename-bubble / vptrans autotext)
+   (ename-bubble / vptrans autotext viewport-handle)
   (princ "\n=== XDATA (extended entity data) ===")
   
-  ;; VPTRANS is stored in XRECORD, not XDATA
-  (setq vptrans (hcnm-xdata-get-vptrans ename-bubble))
-  (princ "\n  VPTRANS (viewport transform): ")
+  ;; Show viewport handle stored in bubble
+  (setq viewport-handle (hcnm-bn-get-viewport-handle ename-bubble))
+  (princ "\n  VIEWPORT HANDLE: ")
+  (if viewport-handle
+    (princ viewport-handle)
+    (princ "NONE")
+  )
+  
+  ;; VPTRANS is stored in viewport XRECORD (lookup via handle)
+  (setq vptrans (hcnm-bn-get-viewport-transform-xdata ename-bubble))
+  (princ "\n  VPTRANS (from viewport): ")
   (if vptrans
     (princ (vl-prin1-to-string vptrans))
     (princ "NONE")
   )
   
-  ;; AUTO-TEXT is stored in XDATA
+  ;; AUTO-TEXT is stored in bubble XDATA
   (setq autotext (hcnm-xdata-read ename-bubble))
   (princ "\n  AUTO-TEXT: ")
   (if autotext
@@ -14205,124 +14214,6 @@ ImportLayerSettings=No
   )
   (princ "\n\n=== END VIEWPORT EXPLORER ===\n")
   (princ)
-)
-
-;;------------------------------------------------------------------------------
-;; HCNM-MIGRATE-VPTRANS - Migrate bubble VPTRANS to viewport-centric architecture
-;;------------------------------------------------------------------------------
-;; Converts drawing from legacy (VPTRANS in every bubble) to new architecture
-;; (VPTRANS in viewport, bubbles store handle only). Safe to run multiple times.
-;;
-(defun c:hcnm-migrate-vptrans (/ bubbles-with-vptrans vptrans-groups 
-                                unique-vptrans en-bubble vptrans-data
-                                vptrans-key existing-group en-viewport
-                                viewport-handle bubbles-migrated 
-                                viewports-created space-saved
-                               )
-  (princ "\n=== VPTRANS MIGRATION TO VIEWPORT-CENTRIC ARCHITECTURE ===")
-  (princ "\n\nThis command migrates bubble notes from legacy VPTRANS storage")
-  (princ "\n(stored in every bubble) to new architecture (stored once per viewport).")
-  (princ "\n\nScanning drawing for bubbles with legacy VPTRANS...")
-  ;; Step 1: Find all bubbles with VPTRANS in bubble XRECORD
-  ;; Strategy: Find all blocks with HCNM-BUBBLE XDATA (more reliable than block name)
-  (setq bubbles-with-vptrans '())
-  (setq ss (ssget "_X" '((-3 ("HCNM-BUBBLE")))))
-  (if ss
-    (progn
-      (setq i 0)
-      (while (< i (sslength ss))
-        (setq en-bubble (ssname ss i))
-        (setq vptrans-data (hcnm-xdata-get-vptrans en-bubble))
-        (if vptrans-data
-          (setq bubbles-with-vptrans (cons (list en-bubble vptrans-data) bubbles-with-vptrans))
-        )
-        (setq i (1+ i))
-      )
-      (princ (strcat "\n  Found " (itoa (length bubbles-with-vptrans)) " bubbles with legacy VPTRANS"))
-      (if (= (length bubbles-with-vptrans) 0)
-        (progn
-          (princ "\n\nNo legacy VPTRANS found. Drawing is already using new architecture!")
-          (princ "\n\n=== MIGRATION COMPLETE ===\n")
-          (princ)
-        )
-        (progn
-          ;; Step 2: Group bubbles by identical VPTRANS data
-          (princ "\n\nGrouping bubbles by viewport...")
-          (setq vptrans-groups '())
-          (foreach bubble-vptrans bubbles-with-vptrans
-            (setq en-bubble (car bubble-vptrans))
-            (setq vptrans-data (cadr bubble-vptrans))
-            ;; Use VPTRANS as key (convert to string for comparison)
-            (setq vptrans-key (vl-prin1-to-string vptrans-data))
-            ;; Find existing group or create new one
-            (setq existing-group (assoc vptrans-key vptrans-groups))
-            (if existing-group
-              ;; Add bubble to existing group
-              (setq vptrans-groups
-                (subst
-                  (list vptrans-key (cons en-bubble (cadr existing-group)) vptrans-data)
-                  existing-group
-                  vptrans-groups
-                )
-              )
-              ;; Create new group
-              (setq vptrans-groups
-                (cons (list vptrans-key (list en-bubble) vptrans-data) vptrans-groups)
-              )
-            )
-          )
-          (princ (strcat "\n  Grouped into " (itoa (length vptrans-groups)) " unique viewports"))
-          ;; Step 3: For each group, store VPTRANS in viewport
-          (princ "\n\nMigrating VPTRANS to viewports...")
-          (setq bubbles-migrated 0)
-          (setq viewports-created 0)
-          (foreach group vptrans-groups
-            (setq bubble-list (cadr group))
-            (setq vptrans-data (caddr group))
-            (setq cvport (car vptrans-data))
-            ;; Find viewport entity by number
-            (setq en-viewport (hcnm-bn-find-viewport-by-number cvport))
-            (cond
-              (en-viewport
-               ;; Write VPTRANS to viewport
-               (hcnm-vptrans-viewport-write en-viewport vptrans-data)
-               (setq viewport-handle (cdr (assoc 5 (entget en-viewport))))
-               (princ (strcat "\n  Viewport " viewport-handle ": Stored VPTRANS, updating " 
-                             (itoa (length bubble-list)) " bubbles..."))
-               ;; Update all bubbles in group
-               (foreach en-bubble bubble-list
-                 ;; Store viewport handle in bubble
-                 (hcnm-bn-set-viewport-handle en-bubble viewport-handle)
-                 ;; Remove legacy VPTRANS from bubble (optional cleanup)
-                 ;; Note: We could leave it for additional backward compat
-                 (setq bubbles-migrated (1+ bubbles-migrated))
-               )
-               (setq viewports-created (1+ viewports-created))
-              )
-              (t
-               (princ (strcat "\n  WARNING: Viewport #" (itoa cvport) 
-                             " not found - skipping " (itoa (length bubble-list)) " bubbles"))
-              )
-            )
-          )
-          ;; Report results
-          (setq space-saved (* (- (length bubbles-with-vptrans) viewports-created) 7))
-          (princ "\n\n=== MIGRATION COMPLETE ===")
-          (princ (strcat "\n  Bubbles migrated: " (itoa bubbles-migrated)))
-          (princ (strcat "\n  Viewports updated: " (itoa viewports-created)))
-          (princ (strcat "\n  Redundant values eliminated: " (itoa space-saved)))
-          (princ "\n\nNOTE: Legacy VPTRANS still in bubble XRECORDs (safe fallback).")
-          (princ "\nRun cleanup command to remove legacy data (optional).\n")
-          (princ)
-        )
-      )
-    )
-    (progn
-      (princ "\n\nNo bubble notes found in drawing.")
-      (princ "\n\n=== MIGRATION COMPLETE ===\n")
-      (princ)
-    )
-  )
 )
 
 ;#endregion
