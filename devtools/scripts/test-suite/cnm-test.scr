@@ -1,0 +1,73 @@
+; CNM Test Suite - Main Test Script
+; Created: 2025-11-17
+; Status: Phase B (Foundation) - Structure only, tests in Phase C
+;
+; Purpose: Comprehensive regression testing for CNM bubble notes
+;
+; Execution:
+;   Method 1: Drag this .scr file into AutoCAD drawing window
+;   Method 2: Type c:cnm-test-script at command line (future wrapper)
+;
+; Prerequisites:
+;   1. Open cnm-test.dwg with Civil 3D objects prepared per README.md
+;   2. Ensure CNM is loaded
+;
+; Output:
+;   - MTEXT annotations on C-ANNO-TEST-RESULTS layer
+;   - cnm-test-report.md file for AI analysis
+;   - Summary MTEXT at top of drawing
+;
+; Phase B Status: Foundation complete - helpers ready, awaiting Phase C tests
+;
+; === SETUP ===
+(load "cnm-test-validation.lsp")
+(c:test-setup-layers)
+(test-write-report-header)
+
+; === PLACEHOLDER: Phase C will add auto-text tests here ===
+; Example test structure (Phase C):
+;
+; ; TEST 1: Insert bubble with Station auto-text
+; haws-elll
+; 800,450
+; 850,450
+; 1
+; .
+; sta
+; 800,500
+;
+; ; Validation
+; (test-validate-station (entlast) "NOTETXT1" "Expected STA 3+00")
+
+; === PLACEHOLDER: Phase D will add reactor tests here ===
+; === PLACEHOLDER: Phase E will add viewport tests here ===
+; === PLACEHOLDER: Phase F will add performance tests here ===
+
+; === DEMO: Test annotation system (verify helpers work) ===
+(c:test-annotate-result "100,900" "INFO" "Phase B Foundation Complete\nValidation helper functions ready\nAwaiting Phase C test implementation")
+
+; === SUMMARY ===
+(c:test-generate-summary-mtext)
+(test-write-report-summary 0 0 1)
+
+; === SUCCESS MESSAGE ===
+mtext
+60,310
+style
+Standard
+height
+1
+just
+tc
+530,220
+CNM TEST SUITE - PHASE B COMPLETE
+
+Foundation setup successful:
+- Test validation functions loaded
+- Report generation ready
+- Annotation system verified
+
+NEXT: Phase C - Auto-text tests implementation
+
+Ready for human review or AI-driven test development.
+
