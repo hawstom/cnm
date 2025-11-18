@@ -134,5 +134,108 @@
 (princ "\nCNM Test Suite validation functions loaded")
 (princ "\n  Commands: c:test-setup-layers, c:test-annotate-result, c:test-generate-summary-mtext")
 (princ "\n  Helpers: test-write-report-header, test-write-report-entry, test-write-report-summary")
-(princ "\n  Phase C: Actual test validation functions coming next")
+(princ "\n  Validators: test-validate-auto-text, test-validate-xdata, test-validate-reactor")
+(princ)
+;;==============================================================================
+;; PHASE C: AUTO-TEXT VALIDATION FUNCTIONS
+;;==============================================================================
+(defun test-validate-auto-text (ename tag expected-text test-name /
+                                lattribs actual-text result status message location
+                               )
+  ;; Validate bubble attribute text matches expected value
+  ;; Args:
+  ;;   ename - Entity name of bubble
+  ;;   tag - Attribute tag to check (e.g., "NOTETXT1")
+  ;;   expected-text - Expected text value (e.g., "STA 3+00.00")
+  ;;   test-name - Name for report (e.g., "TEST 1: Station Auto-Text")
+  ;; Returns: T if pass, nil if fail
+  (setq lattribs (hcnm-bn-dwg-to-lattribs ename))
+  (setq actual-text (cadr (assoc tag lattribs)))
+  (setq result (= actual-text expected-text))
+  (setq status (if result "PASS" "FAIL"))
+  (setq message
+    (strcat "Tag: " tag "\n"
+            "Expected: \"" expected-text "\"\n"
+            "Actual:   \"" (if actual-text actual-text "<<NIL>>") "\""
+    )
+  )
+  (setq location (test-get-bubble-annotation-location ename))
+  (c:test-annotate-result location status (strcat test-name "\n" message))
+  (test-write-report-entry test-name status message)
+  result
+)
+(defun test-validate-xdata (ename tag expected-auto-type test-name /
+                           xdata composite-key auto-text result status message location
+                          )
+  ;; Validate XDATA exists and has correct auto-type
+  ;; Args:
+  ;;   ename - Entity name of bubble
+  ;;   tag - Attribute tag (e.g., "NOTETXT1")
+  ;;   expected-auto-type - Expected auto-type (e.g., "Sta", "Dia", "NE")
+  ;;   test-name - Name for report
+  ;; Returns: T if XDATA found with correct auto-type, nil otherwise
+  (setq xdata (hcnm-xdata-read ename))
+  (setq composite-key (car (assoc tag xdata)))
+  (setq auto-text (cdr (assoc tag xdata)))
+  (setq result
+    (and composite-key
+         (= (car (car composite-key)) expected-auto-type)
+    )
+  )
+  (setq status (if result "PASS" "FAIL"))
+  (setq message
+    (strcat "Tag: " tag "\n"
+            "Expected auto-type: \"" expected-auto-type "\"\n"
+            "XDATA composite-key: " (vl-prin1-to-string composite-key) "\n"
+            "XDATA auto-text: \"" (if auto-text auto-text "<<NIL>>") "\""
+    )
+  )
+  (setq location (test-get-bubble-annotation-location ename))
+  (c:test-annotate-result location status (strcat test-name " (XDATA)\n" message))
+  (test-write-report-entry (strcat test-name " (XDATA)") status message)
+  result
+)
+(defun test-validate-reactor (ename tag expected-auto-type test-name /
+                              handle-bubble vlr-data reactor-entry result status message location
+                             )
+  ;; Validate reactor is attached for auto-text tag
+  ;; Args:
+  ;;   ename - Entity name of bubble
+  ;;   tag - Attribute tag (e.g., "NOTETXT1")
+  ;;   expected-auto-type - Expected auto-type (e.g., "Sta", "Dia")
+  ;;   test-name - Name for report
+  ;; Returns: T if reactor found, nil otherwise
+  (setq handle-bubble (cdr (assoc 5 (entget ename))))
+  (setq vlr-data (hcnm-bn-reactor-get-data))
+  (setq reactor-entry
+    (haws_nested_list_get vlr-data
+      (list "HCNM-BUBBLE" handle-bubble)
+    )
+  )
+  (setq result (not (null reactor-entry)))
+  (setq status (if result "PASS" "FAIL"))
+  (setq message
+    (strcat "Tag: " tag "\n"
+            "Expected auto-type: \"" expected-auto-type "\"\n"
+            "Reactor attached: " (if result "YES" "NO") "\n"
+            "Reactor entry: " (vl-prin1-to-string reactor-entry)
+    )
+  )
+  (setq location (test-get-bubble-annotation-location ename))
+  (c:test-annotate-result location status (strcat test-name " (Reactor)\n" message))
+  (test-write-report-entry (strcat test-name " (Reactor)") status message)
+  result
+)
+(defun test-get-bubble-annotation-location (ename / en obj-block pt-insert)
+  ;; Get insertion point of bubble for annotation placement
+  ;; Returns: String "x,y" coordinates offset to right of bubble
+  (setq en (entget ename))
+  (setq obj-block (vlax-ename->vla-object ename))
+  (setq pt-insert (vlax-get obj-block 'InsertionPoint))
+  (strcat
+    (rtos (+ (car (vlax-safearray->list pt-insert)) 2.0) 2 2)
+    ","
+    (rtos (cadr (vlax-safearray->list pt-insert)) 2 2)
+  )
+)
 (princ)

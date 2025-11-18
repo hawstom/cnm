@@ -27,21 +27,223 @@ zoom
 extents
 ; === PHASE C: AUTO-TEXT TESTS ===
 ; Model Space Tests (Alignment, Pipe, Coordinate, Static)
-; Paper Space Tests (Viewport VPTRANS validation)
-; === PLACEHOLDER: Phase C implementation starts here ===
-; Example test structure (Phase C):
-;
-; ; TEST 1: Insert bubble with Station auto-text
-; haws-elll
-; 800,450
-; 850,450
-; 1
-; .
-; sta
-; 800,500
-;
-; ; Validation
-; (test-validate-station (entlast) "NOTETXT1" "Expected STA 3+00")
+; Bubble placement: Grid starting at (100,400), 3 columns, 1.0 vertical spacing
+; Column spacing: 3 units horizontal
+; Arrow points FIRST (0.5 horizontal offset), then leader start
+;;
+;; TEST 1: Station (Sta) - Click at (800,500) = STA 3+00
+;;
+HAWS-ELLL
+800.5,501
+800,500
+1
+.
+sta
+800,500
+(test-validate-auto-text (entlast) "NOTETXT1" "STA 3+00.00" "TEST 1: Station (Sta)")
+(test-validate-xdata (entlast) "NOTETXT1" "Sta" "TEST 1")
+(test-validate-reactor (entlast) "NOTETXT1" "Sta" "TEST 1")
+;;
+;; TEST 2: Offset (Off) - Click at (800,550) = 50 RT
+;;
+HAWS-ELLL
+100.5,399
+100,398
+2
+.
+off
+800,550
+(test-validate-auto-text (entlast) "NOTETXT1" "50.00 RT" "TEST 2: Offset (Off)")
+(test-validate-xdata (entlast) "NOTETXT1" "Off" "TEST 2")
+(test-validate-reactor (entlast) "NOTETXT1" "Off" "TEST 2")
+;;
+;; TEST 3: StaOff (Station + Offset) - Click at (1200,600) = STA 7+00 100 RT
+;;
+HAWS-ELLL
+103.5,399
+103,398
+3
+.
+staoff
+1200,600
+(test-validate-auto-text (entlast) "NOTETXT1" "STA 7+00.00  100.00 RT" "TEST 3: StaOff")
+(test-validate-xdata (entlast) "NOTETXT1" "StaOff" "TEST 3")
+(test-validate-reactor (entlast) "NOTETXT1" "StaOff" "TEST 3")
+;;
+;; TEST 4: Alignment Name (AlName)
+;;
+HAWS-ELLL
+106.5,399
+106,398
+4
+.
+alname
+800,500
+(test-validate-auto-text (entlast) "NOTETXT1" "OAK ST" "TEST 4: AlName")
+(test-validate-xdata (entlast) "NOTETXT1" "AlName" "TEST 4")
+(test-validate-reactor (entlast) "NOTETXT1" "AlName" "TEST 4")
+;;
+;; TEST 5: StaName (Station + Alignment Name)
+;;
+HAWS-ELLL
+100.5,398
+100,397
+5
+.
+staname
+1000,500
+(test-validate-auto-text (entlast) "NOTETXT1" "STA 5+00.00 OAK ST" "TEST 5: StaName")
+(test-validate-xdata (entlast) "NOTETXT1" "StaName" "TEST 5")
+(test-validate-reactor (entlast) "NOTETXT1" "StaName" "TEST 5")
+;;
+;; TEST 6: Pipe Diameter (Dia) - 18" pipe
+;;
+HAWS-ELLL
+103.5,398
+103,397
+6
+.
+dia
+450,300
+(test-validate-auto-text (entlast) "NOTETXT1" "18\"" "TEST 6: Pipe Diameter")
+(test-validate-xdata (entlast) "NOTETXT1" "Dia" "TEST 6")
+(test-validate-reactor (entlast) "NOTETXT1" "Dia" "TEST 6")
+;;
+;; TEST 7: Pipe Slope - -0.67%
+;;
+HAWS-ELLL
+106.5,398
+106,397
+7
+.
+slope
+450,300
+(test-validate-auto-text (entlast) "NOTETXT1" "-0.67%" "TEST 7: Pipe Slope")
+(test-validate-xdata (entlast) "NOTETXT1" "Slope" "TEST 7")
+(test-validate-reactor (entlast) "NOTETXT1" "Slope" "TEST 7")
+;;
+;; TEST 8: Pipe Length - 300 LF
+;;
+HAWS-ELLL
+100.5,397
+100,396
+8
+.
+l
+450,300
+(test-validate-auto-text (entlast) "NOTETXT1" "300.00 LF" "TEST 8: Pipe Length")
+(test-validate-xdata (entlast) "NOTETXT1" "L" "TEST 8")
+(test-validate-reactor (entlast) "NOTETXT1" "L" "TEST 8")
+;;
+;; TEST 9: Northing (N) - Y coordinate
+;;
+HAWS-ELLL
+103.5,397
+103,396
+9
+.
+n
+(test-validate-auto-text (entlast) "NOTETXT1" "N 100.00" "TEST 9: Northing")
+(test-validate-xdata (entlast) "NOTETXT1" "N" "TEST 9")
+(test-validate-reactor (entlast) "NOTETXT1" "N" "TEST 9")
+;;
+;; TEST 10: Easting (E) - X coordinate
+;;
+HAWS-ELLL
+106.5,397
+106,396
+10
+.
+e
+(test-validate-auto-text (entlast) "NOTETXT1" "E 100.00" "TEST 10: Easting")
+(test-validate-xdata (entlast) "NOTETXT1" "E" "TEST 10")
+(test-validate-reactor (entlast) "NOTETXT1" "E" "TEST 10")
+;;
+;; TEST 11: NE (Both coordinates)
+;;
+HAWS-ELLL
+100.5,396
+100,395
+11
+.
+ne
+(test-validate-auto-text (entlast) "NOTETXT1" "N 100.00, E 100.00" "TEST 11: NE")
+(test-validate-xdata (entlast) "NOTETXT1" "NE" "TEST 11")
+(test-validate-reactor (entlast) "NOTETXT1" "NE" "TEST 11")
+;;
+;; TEST 12: Linear Feet (LF) - 100 LF line
+;;
+HAWS-ELLL
+103.5,396
+103,395
+12
+.
+lf
+
+s
+100,250
+200,250
+
+(test-validate-auto-text (entlast) "NOTETXT1" "100.00 LF" "TEST 12: LF")
+(test-validate-xdata (entlast) "NOTETXT1" "LF" "TEST 12")
+;;
+;; TEST 13: Square Feet (SF) - 10000 SF rectangle
+;;
+HAWS-ELLL
+106.5,396
+106,395
+13
+.
+sf
+
+s
+100,100
+200,200
+
+(test-validate-auto-text (entlast) "NOTETXT1" "10000.00 SF" "TEST 13: SF")
+(test-validate-xdata (entlast) "NOTETXT1" "SF" "TEST 13")
+;;
+;; TEST 14: Square Yards (SY) - 1111.11 SY rectangle
+;;
+HAWS-ELLL
+100.5,395
+100,394
+14
+.
+sy
+
+s
+100,100
+200,200
+
+(test-validate-auto-text (entlast) "NOTETXT1" "1111.11 SY" "TEST 14: SY")
+(test-validate-xdata (entlast) "NOTETXT1" "SY" "TEST 14")
+;;
+;; TEST 15: ES (Copy Text) - "TEST STRING"
+;;
+HAWS-ELLL
+103.5,395
+103,394
+15
+.
+es
+50,50
+(test-validate-auto-text (entlast) "NOTETXT1" "TEST STRING" "TEST 15: ES")
+(test-validate-xdata (entlast) "NOTETXT1" "ES" "TEST 15")
+;;
+;; TEST 16: Manual Text Entry - User types "MANUAL ENTRY"
+;;
+HAWS-ELLL
+106.5,395
+106,394
+16
+MANUAL ENTRY
+
+
+(test-validate-auto-text (entlast) "NOTETXT1" "MANUAL ENTRY" "TEST 16: Manual Text")
+;;
+;; Paper Space Tests (Phase E preparation - deferred for now)
+;;
 ; === PLACEHOLDER: Phase D will add reactor tests here ===
 ; === PLACEHOLDER: Phase E will add viewport tests here ===
 ; === PLACEHOLDER: Phase F will add performance tests here ===

@@ -123,7 +123,7 @@
 ```
 HAWS-ELL
 10.5,11      ; Arrow endpoint (comes FIRST)
-10,10        ; Leader start (comes SECOND)
+10,10        ; Block location (comes SECOND)
 ```
 **Note:** Arrow point comes first, then leader start (0.5 horizontal, 1.0 vertical offset)
 
