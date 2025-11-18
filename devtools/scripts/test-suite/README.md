@@ -107,6 +107,52 @@
 **Note:** Model space tests (Phase C-D) don't need this, but having it ready helps Phase E
 ---
 
+## Bubble Note Placement Guidelines
+
+### Typical CNM Bubble Dimensions
+
+**Text heights (US units):**
+- Standard: 0.1" or 0.12"
+- Metric equivalent: 0.25mm or 0.35mm
+
+**Bubble shape size:**
+- 3× text height
+- Real-world typical: ~0.3" high
+
+**Typical compact leader pattern:**
+```
+HAWS-ELL
+10,10        ; Leader start
+10.5,11      ; Arrow endpoint (0.5 horizontal, 1.0 vertical offset)
+```
+
+### Array Layout Pattern
+
+**Vertical spacing:** 0.5 to 1.0 units between rows  
+**Horizontal spacing:** 2 to 3 units between columns
+
+**Example 2×2 grid:**
+```
+; Row 1, Column 1
+HAWS-ELL
+10,10
+10.5,11
+
+; Row 2, Column 1  
+HAWS-ELL
+10,11
+10.5,12
+
+; Row 1, Column 2
+HAWS-ELL
+13,10
+13.5,11
+```
+
+**Reference:** See `CNM-Demo.scr` for production examples
+
+---
+
 ## Test Suite Architecture
 
 ### File Structure
