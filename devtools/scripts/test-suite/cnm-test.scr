@@ -37,6 +37,7 @@ HAWS-ELLL
 800.5,501
 800,500
 1
+
 .
 sta
 800,500
@@ -44,29 +45,31 @@ sta
 (test-validate-xdata (entlast) "NOTETXT1" "Sta" "TEST 1")
 (test-validate-reactor (entlast) "NOTETXT1" "Sta" "TEST 1")
 ;;
-;; TEST 2: Offset (Off) - Click at (800,550) = 50 RT
+;; TEST 2: Offset (Off) - Click at (800,500) = 50 RT (same point as TEST 1)
 ;;
 HAWS-ELLL
 100.5,399
 100,398
 2
+
 .
 off
-800,550
+800,500
 (test-validate-auto-text (entlast) "NOTETXT1" "50.00 RT" "TEST 2: Offset (Off)")
 (test-validate-xdata (entlast) "NOTETXT1" "Off" "TEST 2")
 (test-validate-reactor (entlast) "NOTETXT1" "Off" "TEST 2")
 ;;
-;; TEST 3: StaOff (Station + Offset) - Click at (1200,600) = STA 7+00 100 RT
+;; TEST 3: StaOff (Station + Offset) - Click at (800,500) = STA 3+00 50 RT
 ;;
 HAWS-ELLL
 103.5,399
 103,398
 3
+
 .
 staoff
-1200,600
-(test-validate-auto-text (entlast) "NOTETXT1" "STA 7+00.00  100.00 RT" "TEST 3: StaOff")
+800,500
+(test-validate-auto-text (entlast) "NOTETXT1" "STA 3+00.00  50.00 RT" "TEST 3: StaOff")
 (test-validate-xdata (entlast) "NOTETXT1" "StaOff" "TEST 3")
 (test-validate-reactor (entlast) "NOTETXT1" "StaOff" "TEST 3")
 ;;
@@ -76,6 +79,7 @@ HAWS-ELLL
 106.5,399
 106,398
 4
+
 .
 alname
 800,500
@@ -89,10 +93,11 @@ HAWS-ELLL
 100.5,398
 100,397
 5
+
 .
 staname
-1000,500
-(test-validate-auto-text (entlast) "NOTETXT1" "STA 5+00.00 OAK ST" "TEST 5: StaName")
+800,500
+(test-validate-auto-text (entlast) "NOTETXT1" "STA 3+00.00 OAK ST" "TEST 5: StaName")
 (test-validate-xdata (entlast) "NOTETXT1" "StaName" "TEST 5")
 (test-validate-reactor (entlast) "NOTETXT1" "StaName" "TEST 5")
 ;;
@@ -102,6 +107,7 @@ HAWS-ELLL
 103.5,398
 103,397
 6
+
 .
 dia
 450,300
@@ -115,6 +121,7 @@ HAWS-ELLL
 106.5,398
 106,397
 7
+
 .
 slope
 450,300
@@ -128,6 +135,7 @@ HAWS-ELLL
 100.5,397
 100,396
 8
+
 .
 l
 450,300
@@ -141,6 +149,7 @@ HAWS-ELLL
 103.5,397
 103,396
 9
+
 .
 n
 (test-validate-auto-text (entlast) "NOTETXT1" "N 100.00" "TEST 9: Northing")
@@ -153,6 +162,7 @@ HAWS-ELLL
 106.5,397
 106,396
 10
+
 .
 e
 (test-validate-auto-text (entlast) "NOTETXT1" "E 100.00" "TEST 10: Easting")
@@ -165,6 +175,7 @@ HAWS-ELLL
 100.5,396
 100,395
 11
+
 .
 ne
 (test-validate-auto-text (entlast) "NOTETXT1" "N 100.00, E 100.00" "TEST 11: NE")
@@ -177,6 +188,7 @@ HAWS-ELLL
 103.5,396
 103,395
 12
+
 .
 lf
 
@@ -193,6 +205,7 @@ HAWS-ELLL
 106.5,396
 106,395
 13
+
 .
 sf
 
@@ -209,6 +222,7 @@ HAWS-ELLL
 100.5,395
 100,394
 14
+
 .
 sy
 
@@ -225,6 +239,7 @@ HAWS-ELLL
 103.5,395
 103,394
 15
+
 .
 es
 50,50
