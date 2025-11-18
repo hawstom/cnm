@@ -122,9 +122,10 @@
 **Typical compact leader pattern:**
 ```
 HAWS-ELL
-10,10        ; Leader start
-10.5,11      ; Arrow endpoint (0.5 horizontal, 1.0 vertical offset)
+10.5,11      ; Arrow endpoint (comes FIRST)
+10,10        ; Leader start (comes SECOND)
 ```
+**Note:** Arrow point comes first, then leader start (0.5 horizontal, 1.0 vertical offset)
 
 ### Array Layout Pattern
 
@@ -135,18 +136,18 @@ HAWS-ELL
 ```
 ; Row 1, Column 1
 HAWS-ELL
-10,10
-10.5,11
+10.5,11      ; Arrow endpoint (comes FIRST)
+10,10        ; Leader start (comes SECOND)
 
 ; Row 2, Column 1  
 HAWS-ELL
-10,11
 10.5,12
+10,11
 
 ; Row 1, Column 2
 HAWS-ELL
-13,10
 13.5,11
+13,10
 ```
 
 **Reference:** See `CNM-Demo.scr` for production examples
