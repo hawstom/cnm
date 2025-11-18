@@ -526,50 +526,6 @@ HCNMEditBubble : dialog {
 				label = "Line 0 text (hidden)";
 			}
 		}
-		: radio_column {
-			key = "NoteTextRadioColumn";
-			fixed_width = true;
-			: text {
-				label = "";
-				height = 1.55;
- 			}
-			: text {
-				label = "";
-				height = 1.55;
- 			}
-			: text {
-				label = "";
-				height = 1.55;
-			}
-			: radio_button {
-				key = "RadioNOTETXT1";
-				label = "";
-			}
-			: radio_button {
-				key = "RadioNOTETXT2";
-				label = "";
-			}
-			: radio_button {
-				key = "RadioNOTETXT3";
-				label = "";
-			}
-			: radio_button {
-				key = "RadioNOTETXT4";
-				label = "";
-			}
-			: radio_button {
-				key = "RadioNOTETXT5";
-				label = "";
-			}
-			: radio_button {
-				key = "RadioNOTETXT6";
-				label = "";
-			}
-			: radio_button {
-				key = "RadioNOTETXT0";
-				label = "";
-			}
-		}
 	}
 	: row {
 		: button {label = "LF"; key = "LF";}

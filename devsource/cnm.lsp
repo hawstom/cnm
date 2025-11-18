@@ -12412,7 +12412,7 @@ ImportLayerSettings=No
 
 (defun hcnm-edit-bubble (ename-bubble / bubble-data dclfile ename-leader
                      hcnm-bn-eb-lattribs hcnm-bn-eb-auto-handles
-                     notetextradiocolumn return-list tag done-code 
+                     return-list tag done-code 
                     )
   (haws-debug (list "=== DEBUG: Entering hcnm-edit-bubble"))
   (setq
@@ -12438,7 +12438,10 @@ ImportLayerSettings=No
        ;; Same bubble dialog reopening - keep accumulated changes
        (t hcnm-bn-eb-auto-handles)
      )
-    notetextradiocolumn "RadioNOTETXT1"
+    ;; Focus tracking - replaces radio button selection
+    ;; Track which edit box has focus for auto-text insertion
+    ;; Default to NOTETXT1 (line 1 is default target)
+    hcnm-bn-eb-focused-tag "NOTETXT1"
     dclfile
      (load_dialog "cnm.dcl")
     done-code 2
@@ -12498,20 +12501,13 @@ ImportLayerSettings=No
           (setq done-code (hcnm-bn-eb-save ename-bubble))
          )
          ((= done-code 2)
-          ;; Show the CNM Bubble Note Editor dialog with the requested text line's radio button selected.
+          ;; Show the CNM Bubble Note Editor dialog
           (setq
-            return-list
-             (hcnm-bn-eb-show
-               dclfile
-               notetextradiocolumn
-               ename-bubble
-             )
             done-code
-             (car return-list)
-            notetextradiocolumn
-             (cadr return-list)
+             (hcnm-bn-eb-show dclfile ename-bubble)
+            ;; Use focused tag from focus tracking (no radio button needed)
             tag
-             (substr notetextradiocolumn 6)
+             hcnm-bn-eb-focused-tag
           )
          )
          ((= done-code 29)
@@ -13434,7 +13430,7 @@ ImportLayerSettings=No
   ;; Do nothing - no postfix field exists
 )
 
-(defun hcnm-bn-eb-show (dclfile notetextradiocolumn ename-bubble / tag
+(defun hcnm-bn-eb-show (dclfile ename-bubble / tag
                         value parts prefix auto postfix on-model-tab-p
                         lst-dlg-attributes 
                        )
@@ -13488,16 +13484,14 @@ ImportLayerSettings=No
     (haws-debug (list "=== DEBUG: Setting tiles for " tag))
     ;; Set text field (single-column DCL with free-form editing)
     (set_tile tag value)
+    ;; Track focus on ANY interaction (click, type, tab into field)
     (action_tile
       tag
-      (strcat "(hcnm-bn-eb-update-text \"" tag "\" $value)")
+      (strcat 
+        "(setq hcnm-bn-eb-focused-tag \"" tag "\")"  ; Track focus
+        "(hcnm-bn-eb-update-text \"" tag "\" $value)"  ; Update text (existing logic)
+      )
     )
-  )
-  ;;Radio buttons
-  (set_tile "NoteTextRadioColumn" notetextradiocolumn)
-  (action_tile
-    "NoteTextRadioColumn"
-    "(SETQ NoteTextRadioColumn $value)"
   )
   ;;Auto text buttons
   (mapcar
@@ -13515,7 +13509,7 @@ ImportLayerSettings=No
   (action_tile "ChgView" "(DONE_DIALOG 29)")
   (action_tile "accept" "(DONE_DIALOG 1)")
   (action_tile "cancel" "(DONE_DIALOG 0)")
-  (list (start_dialog) notetextradiocolumn)
+  (start_dialog)
 )
 
 ;; Split string on delimiter
