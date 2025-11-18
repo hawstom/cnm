@@ -23,8 +23,12 @@
 (load "cnm-test-validation.lsp")
 (c:test-setup-layers)
 (test-write-report-header)
-
-; === PLACEHOLDER: Phase C will add auto-text tests here ===
+zoom
+extents
+; === PHASE C: AUTO-TEXT TESTS ===
+; Model Space Tests (Alignment, Pipe, Coordinate, Static)
+; Paper Space Tests (Viewport VPTRANS validation)
+; === PLACEHOLDER: Phase C implementation starts here ===
 ; Example test structure (Phase C):
 ;
 ; ; TEST 1: Insert bubble with Station auto-text
@@ -38,18 +42,14 @@
 ;
 ; ; Validation
 ; (test-validate-station (entlast) "NOTETXT1" "Expected STA 3+00")
-
 ; === PLACEHOLDER: Phase D will add reactor tests here ===
 ; === PLACEHOLDER: Phase E will add viewport tests here ===
 ; === PLACEHOLDER: Phase F will add performance tests here ===
-
 ; === DEMO: Test annotation system (verify helpers work) ===
 (c:test-annotate-result "100,900" "INFO" "Phase B Foundation Complete\nValidation helper functions ready\nAwaiting Phase C test implementation")
-
 ; === SUMMARY ===
 (c:test-generate-summary-mtext)
 (test-write-report-summary 0 0 1)
-
 ; === SUCCESS MESSAGE ===
 mtext
 60,310
@@ -61,13 +61,9 @@ just
 tc
 530,220
 CNM TEST SUITE - PHASE B COMPLETE
-
 Foundation setup successful:
 - Test validation functions loaded
 - Report generation ready
 - Annotation system verified
-
 NEXT: Phase C - Auto-text tests implementation
-
 Ready for human review or AI-driven test development.
-
