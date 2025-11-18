@@ -35,12 +35,29 @@
 
 ## Drawing Preparation Requirements
 
+**Starting point:** Empty drawing in model space with World UCS current
+- Remove all CNM-Demo objects (we're not using that script)
+- Model space (not paper space)
+- World UCS active (not rotated/translated)
+- No existing objects
+
 **Human must prepare `cnm-test.dwg` with the following Civil 3D objects:**
+
+### Object Placement Strategy
+**Goal:** Convenient grouped layout for visual inspection + zoom extents coverage
+
+**Suggested layout (all objects visible in single zoom extents):**
+- Group 1 (left): Polylines at (100,100) and (100,250)
+- Group 2 (center): Alignment from (500,500) to (1500,500)
+- Group 3 (lower left): Pipe from (300,300) to (600,300)
+- Text: (50,50) - visible near polylines
+
+**Zoom:** Script will use `zoom extents` - all objects should fit comfortably in view
 
 ### 1. Alignment: "OAK ST"
 - **Geometry:** Perfectly horizontal, single tangent segment
-- **Start:** (500, 500, 100.0)
-- **End:** (1500, 500, 100.0)
+- **Start:** (500, 500)
+- **End:** (1500, 500)
 - **Length:** 1000.0 feet exactly
 - **Station Range:** 0+00 to 10+00
 - **Purpose:** Predictable coordinates for Sta/Off/StaOff/AlName/StaName tests
@@ -68,9 +85,26 @@
 
 ### 5. Text for ES (Copy Text) Tests
 - **MTEXT:** Located at (50,50)
+- **Justify:** Middle center (MC)
+- **Height:** 10 (or any readable size - AI doesn't care, human readability helpful)
 - **Content:** "TEST STRING"
 - **Purpose:** ES (copy text) auto-text test
 
+### 6. Paper Space Layout (RECOMMENDED - Phase E preparation)
+**Layout name:** "TEST-LAYOUT"
+
+**Viewport specifications:**
+- **Corners:** (0.5, 0.5) to (35.5, 23.5) - standard paper space limits
+- **Zoom:** `ZOOM Center 1300,700 1/100XP`
+- **Locking:** Locked (prevents accidental pan/zoom)
+- **Purpose:** Phase E viewport VPTRANS tests
+
+**Model space to paper space mapping:**
+- Model space alignment: (500,500) to (1500,500)
+- Paper space alignment: (10,10) to (20,10)
+- **How's that for nice and tidy?** ✓
+
+**Note:** Model space tests (Phase C-D) don't need this, but having it ready helps Phase E
 ---
 
 ## Test Suite Architecture
@@ -194,6 +228,22 @@ Use `hcnm-config-setvar` to configure expected output format:
 ---
 
 ## Development Notes
+
+### Script Execution Behavior
+
+**CRITICAL: Alerts and dialogs do NOT pause script execution**
+- `(alert "message")` displays but script continues immediately
+- DCL dialogs display but script continues immediately
+- **No RESUME required** for alerts/dialogs (script never pauses)
+- **RESUME only needed** when:
+  - Unknown command error occurs
+  - AutoLISP error/crash occurs
+- **Performance testing implication:** Alerts/dialogs not acceptable (add time, don't pause)
+
+**Blank lines in .scr files:**
+- Blank lines = Enter commands (can break script flow)
+- Remove all unnecessary blank lines
+- Use comments (`;`) instead of blank lines for readability
 
 ### Script Modularity Philosophy
 
