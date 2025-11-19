@@ -31,7 +31,7 @@
 ;;; (legacy)
 ;;; lisputil.lsp
 (defun haws-unified-version ()
-  "5.5.26"
+  "5.5.27"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 ;;This function returns the current setting of nagmode.
@@ -1945,7 +1945,7 @@
 ;;   (haws-debug nil "Never prints")
 ;;------------------------------------------------------------------------------
 (defun haws-debug (messages / enabled output)
-  (setq enabled T)
+  (setq enabled nil)
   (cond
     (enabled
      ;; Convert single string to list for consistent processing

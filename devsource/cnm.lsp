@@ -3367,15 +3367,55 @@ ImportLayerSettings=No
 )
 ;;;================================================================================================================
 ;;; End multi-app planning thoughts and code
+;#region CNM Configuration System
 ;;;================================================================================================================
-;;; CONFIG: Name of the app
-;;; DEFINITIONS: Name of an entry in the def
-;;; scope-key: eg. "User"
-;;; scope-code: eg. 4
-;;; ENTRY: An entry in the var list
-;;; VAR: The string name of a var
-;;; VAL: The string value of a var
 ;;;
+;;; CNM CONFIGURATION SYSTEM - MIGRATION STATUS (Issue #11)
+;;;
+;;; LEGACY ARCHITECTURE (commit 8bbcdac, pre-HAWS-CONFIG):
+;;;   - All config logic lived in cnm.lsp
+;;;   - c:hcnm-config-getvar had built-in caching via *hcnm-config*
+;;;   - Checked cache FIRST, then scope, then loaded appropriate scope reader
+;;;   - Session-scope loader (hcnm-config-read-all-session) did NOT call hcnm-proj
+;;;   - Project-scope loader (hcnm-config-read-all-project) called hcnm-proj
+;;;   - This prevented circular dependency: hcnm-proj → hcnm-initialize-project → 
+;;;     getvar("AppFolder") → Session loader (no hcnm-proj call) → success
+;;;
+;;; HAWS-CONFIG MIGRATION (commit dac2c4c, Issue #11):
+;;;   - INTENT: Move ALL config logic to haws-config.lsp
+;;;   - INTENT: Leave only definitions + thin getvar/setvar wrappers in cnm.lsp
+;;;   - REALITY: Partial migration left confusing hybrid
+;;;   - PROBLEM: Wrappers blindly called hcnm-proj for ALL scopes → circular dependency
+;;;   - FIX (2025-11-18): Added scope checks to wrappers (legacy guard restored)
+;;;
+;;; CURRENT STATE (confusing hybrid - needs cleanup):
+;;;   - hcnm-config-definitions: CNM variable definitions (GOOD - stays in cnm.lsp)
+;;;   - hcnm-config-getvar/setvar: Thin wrappers with scope checks (GOOD - minimal)
+;;;   - hcnm-config-defaults: Should move to haws-config or be eliminated
+;;;   - hcnm-config-defaults-single-scope: Should move to haws-config
+;;;   - hcnm-config-scope-code: Should move to haws-config or be eliminated
+;;;   - hcnm-config-scope-eq: Should move to haws-config or be eliminated
+;;;   - hcnm-config-entry-*: Should move to haws-config (already duplicated there)
+;;;   - hcnm-config-read-user: Should be eliminated (haws-config handles this)
+;;;   - hcnm-config-write-project: Should be eliminated (haws-config handles this)
+;;;
+;;; TODO (complete HAWS-CONFIG migration):
+;;;   1. Move generic config helper functions to haws-config.lsp
+;;;   2. Eliminate CNM-specific duplicates of haws-config functions
+;;;   3. Simplify wrappers to pure delegation (definitions + scope check only)
+;;;   4. Document why scope check is needed (prevent circular dependency)
+;;;   5. Consider moving project folder logic into haws-config (multi-app benefit)
+;;;
+;;; DEFINITIONS STRUCTURE:
+;;;   - CONFIG: Name of the app (e.g., "CNM")
+;;;   - DEFINITIONS: List of variable definitions
+;;;   - scope-key: String name (e.g., "User", "Project", "Session")
+;;;   - scope-code: Integer (0=Session, 1=Drawing, 2=Project, 3=App, 4=User)
+;;;   - ENTRY: Single variable definition: (var-name default-value scope-code)
+;;;   - VAR: String name of a variable
+;;;   - VAL: String value of a variable
+;;;
+;;;================================================================================================================
 (defun hcnm-config-definitions (/)
   (list
     (list "ProjectFolder" "" 1)
@@ -3633,15 +3673,45 @@ ImportLayerSettings=No
   (setq *hcnm-config-temp* nil)
 )
 
+;;; ================================================================================================
+;;; HCNM-CONFIG-SETVAR / HCNM-CONFIG-GETVAR - CNM Configuration Wrappers
+;;; ================================================================================================
+;;;
+;;; CRITICAL: Scope check BEFORE calling hcnm-proj prevents circular dependency:
+;;;   - hcnm-proj (finds/creates project) calls hcnm-initialize-project
+;;;   - hcnm-initialize-project calls (hcnm-config-getvar "AppFolder")
+;;;   - AppFolder is Session-scope (0), NOT Project-scope (2)
+;;;   - Wrapper checks scope FIRST, passes nil instead of calling hcnm-proj
+;;;   - haws-config-getvar retrieves from Session cache (no project path needed)
+;;;   - SUCCESS - no circular dependency!
+;;;
+;;; WITHOUT scope check (bug introduced in commit dac2c4c):
+;;;   - Wrapper blindly calls (hcnm-ini-name (hcnm-proj)) for ALL variables
+;;;   - This evaluates hcnm-proj BEFORE haws-config can check scope or cache
+;;;   - Causes infinite recursion: hcnm-proj → initialize → getvar → hcnm-proj → ...
+;;;
+;;; LEGACY BEHAVIOR (commit 8bbcdac):
+;;;   - c:hcnm-config-getvar checked (hcnm-config-scope-eq var "Session") FIRST
+;;;   - Only called hcnm-proj if variable was Project-scope
+;;;   - This pattern restored here (2025-11-18) to fix circular dependency
+;;;
+;;; ================================================================================================
+
 ;;;Sets a variable in the global lisp list and in CNM.INI
 ;;; UPDATED: Now uses HAWS-CONFIG library (Issue #11)
-(defun hcnm-config-setvar (var val /)
-  ;; Call haws-config with appropriate parameters (scope auto-looked-up)
+(defun hcnm-config-setvar (var val / scope-code)
+  ;; Get scope code to avoid calling hcnm-proj for non-Project variables
+  (setq scope-code (haws-config-get-scope "CNM" var))
+  ;; Call haws-config with appropriate parameters
   (haws-config-setvar
     "CNM"                               ; app
     var                                 ; var
     val                                 ; val
-    (hcnm-ini-name (hcnm-proj))         ; ini-path for Project scope
+    ;; Only call hcnm-proj for Project-scope variables (scope 2)
+    (if (= scope-code 2)
+      (hcnm-ini-name (hcnm-proj))       ; ini-path for Project scope
+      nil                               ; no ini-path needed for other scopes
+    )
     "CNM"                               ; section for Project scope
   )
 )
@@ -3650,16 +3720,26 @@ ImportLayerSettings=No
 ;;; hcnm-config-getvar  
 ;;; Var is case sensitive
 ;;; UPDATED: Now uses HAWS-CONFIG library (Issue #11)
-(defun hcnm-config-getvar (var / val start)
+(defun hcnm-config-getvar (var / val start scope-code)
   ;; PROFILING: Start timing CNM config wrapper
   (setq start (haws-profile-start "cnm-config-getvar-wrapper"))
-  ;; Call haws-config with appropriate parameters (scope auto-looked-up)
+  ;; Get scope code to avoid calling hcnm-proj for non-Project variables
+  ;; This prevents circular dependency during project initialization:
+  ;; hcnm-proj → hcnm-initialize-project → hcnm-config-getvar("AppFolder") → hcnm-proj
+  ;; AppFolder is Session-scope (0), so it doesn't need project path
+  (setq scope-code (haws-config-get-scope "CNM" var))
+  ;; Call haws-config with appropriate parameters
   (setq
     val
      (haws-config-getvar
        "CNM"                            ; app
        var                              ; var
-       (hcnm-ini-name (hcnm-proj))      ; ini-path for Project scope
+       ;; Only call hcnm-proj for Project-scope variables (scope 2)
+       ;; Session/Drawing/App/User scopes don't need project path
+       (if (= scope-code 2)
+         (hcnm-ini-name (hcnm-proj))    ; ini-path for Project scope
+         nil                            ; no ini-path needed for other scopes
+       )
        "CNM"                            ; section for Project scope
      )
   )
@@ -5763,7 +5843,7 @@ ImportLayerSettings=No
           )
         )
         ;; Workaround: Initialize command/input system before GETKWORD
-        (command "._REDRAW")
+        (vl-cmdf "._REDRAW")
         (initget 1 "Yes No")
         (setq
           input1
@@ -9338,17 +9418,7 @@ ImportLayerSettings=No
      (setq *hcnm-pspace-restore-needed* t)
     )
   )
-  (while
-    (not
-      (progn
-        (princ
-          "\nSet the TARGET viewport active and press ENTER to continue: "
-        )
-        (equal (setq input (grread nil 10)) '(2 13))
-                                        ; WAIT FOR ENTER (ASCII 13)
-      )
-    )
-  )
+  (getstring "\nSet the TARGET viewport active and press ENTER to continue: ")
   (setq input (getvar "CVPORT"))        ; Capture the viewport ID
   input                                 ; Return the viewport ID
 )

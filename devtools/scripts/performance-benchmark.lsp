@@ -288,7 +288,7 @@
                 (vlax-put-property obj-notifier 'StartPoint new-pos)
                 
                 ;; Small delay to let reactor finish
-                (command "delay" 100)  ; 100ms delay
+                (vl-cmdf "delay" 100)  ; 100ms delay
               )
               
               ;; Restore original position
@@ -347,7 +347,7 @@
                                    (+ (cadr current-pos) (* (cos i) 0.01))
                                    (caddr current-pos)))
                 (vlax-put-property obj-notifier 'StartPoint new-pos)
-                (command "delay" 50)  ; 50ms delay
+                (vl-cmdf "delay" 50)  ; 50ms delay
               )
               
               ;; Restore original position

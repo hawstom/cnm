@@ -11,6 +11,7 @@
 5. **MANDATORY FUNCTION VERIFICATION**: NEVER use any function without first searching ORIGINAL codebase with grep_search AND verifying with git history that function existed before recent AI changes. If function not found in original CNM code, check official Autodesk documentation with fetch_webpage. See Section 1.5 for complete protocol.
 6. **AutoLISP load paths**: Load expressions must use full paths or constructed paths like `(load (strcat (vl-filename-directory (vl-filename-directory (findfile "cnm.lsp"))) "\\devtools\\scripts\\" filename))` since relative paths are not legal for (load). Use nested vl-filename-directory calls to climb directory tree, not ".." paths.
 7. **AutoLISP Common Pitfalls**: See Section 1.4 for AutoLISP/Common Lisp differences and correct AutoLISP idioms.
+8. **DO NOT git commit**: Let the human commit. AI prepares files only.
 
 ### 1.2. Project Context
 

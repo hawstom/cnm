@@ -1,6 +1,6 @@
 ; CNM Test Suite - Main Test Script
 ; Created: 2025-11-17
-; Status: Phase B (Foundation) - Structure only, tests in Phase C
+; Status: Phase C - Auto-text tests implementation
 ;
 ; Purpose: Comprehensive regression testing for CNM bubble notes
 ;
@@ -11,276 +11,416 @@
 ; Prerequisites:
 ;   1. Open cnm-test.dwg with Civil 3D objects prepared per README.md
 ;   2. Ensure CNM is loaded
+;   3. Add test folder to AutoCAD's Trusted Locations:
+;      OPTIONS → Files → Trusted Locations → Add → Select devtools/scripts/test-suite
+;   4. Drawing must be on TEST-LAYOUT (not Model tab)
+;   5. Script uses MSPACE/PSPACE for space switching (not LAYOUT command)
 ;
 ; Output:
 ;   - MTEXT annotations on C-ANNO-TEST-RESULTS layer
 ;   - cnm-test-report.md file for AI analysis
 ;   - Summary MTEXT at top of drawing
 ;
-; Phase B Status: Foundation complete - helpers ready, awaiting Phase C tests
+; Script Style Guidelines:
+;   - All command options spelled out (not minimum mnemonics) for readability
+;   - Example: "extents" not "e", "topcenter" not "tc", "Standard" not "S"
+;   - Makes scripts self-documenting and easier to maintain
+;
+; CRITICAL FOR AI AGENTS - Script Line Break Handling:
+;   Scripts differ from code - EVERY line (including blanks) is significant!
+;   
+;   HAWS-ELLL prompt sequence (bubble insertion):
+;     Line N:   Command name (HAWS-ELLL)
+;     Line N+1: Arrow point coordinate
+;     Line N+2: Leader start coordinate
+;     Line N+3: Note number
+;     Line N+4: Line 1 text response (blank = skip, "." = auto-text, "text" = manual)
+;     Line N+5: [if "." on N+4] Auto-type selection (sta/dia/lf/n/e/etc.)
+;     Line N+6: [if auto-text needs it] Object selection coordinate or viewport confirmation
+;     Line N+7: Line 2 text response (blank = skip, "." = auto-text, "text" = manual)
+;   
+;   Example - Auto-text on Line 1, skip Line 2:
+;     HAWS-ELLL
+;     850,600      ; Arrow point
+;     800,600      ; Leader start
+;     1            ; Note number
+;     .            ; Line 1: use auto-text
+;     sta          ; Auto-type selection
+;     800,500      ; Alignment selection
+;                  ; Line 2: blank = skip (CRITICAL - don't omit this!)
+;   
+;   Common AI mistake: Forgetting Line 2 skip blank after auto-text selection
+;   Without that blank, script fails or puts unexpected text on Line 2
+;
+; Debugging Tips:
+;   - Run one test at a time by copying lines to command line
+;   - Check (entlast) after each HAWS-ELLL to verify bubble created
+;   - Use (test-validate-auto-text ...) manually to check expected values
+;   - If script fails, check line number in error message
+;   - Common failures: Missing objects, wrong coordinates, CVPORT issues
 ;
 ; === SETUP ===
-(load "cnm-test-validation.lsp")
+(load (strcat (getvar "dwgprefix") "cnm-test-validation.lsp"))
 (c:test-setup-layers)
 (test-write-report-header)
+; Switch to model space (drawing starts on TEST-LAYOUT)
+mspace
 zoom
 extents
 ; === PHASE C: AUTO-TEXT TESTS ===
-; Model Space Tests (Alignment, Pipe, Coordinate, Static)
-; Bubble placement: Grid starting at (100,400), 3 columns, 1.0 vertical spacing
-; Column spacing: 3 units horizontal
-; Arrow points FIRST (0.5 horizontal offset), then leader start
+;
+; STRATEGY: Paper space focus validates VPTRANS architecture (weeks of work!)
+; - Model space: 6 quick validation tests (basic functionality works)
+; - Paper space: 10 comprehensive VPTRANS tests (coordinate transformation)
+;
+; CRITICAL WORKFLOW NOTES:
+; - Model space: NO viewport confirmation needed (already in model space)
+; - Paper space: After alignment/pipe selection, Enter accepts, NO viewport prompt
+; - Paper space: Bubble placed in paper, selection happens through viewport to model
+;
+; === MODEL SPACE TESTS (Quick Validation - 6 tests) ===
+; COORDINATE SYSTEM: +10000' X offset, +20000' Y offset (civil engineering best practice)
+; Viewport center: (10360', 20240') model = (18", 12") paper @ 1/20XP scale
+; Grid: 60' column spacing, 10' row spacing
+; Alignment "OAK ST": (10040',20240') to (10680',20240'), Station 50+00 at X=10040'
+; Pipe "18\" STORM": (10040',20200') to (10680',20200'), 18" diameter, -0.31% slope
+; Curb line: (10040',20260') to (10680',20260'), 640 LF
 ;;
-;; TEST 1: Station (Sta) - Click at (800,500) = STA 3+00
+;; TEST 1: Sta (Model) - Station from alignment
+;; Position: 1L-1U = Column 1 Left, Row 1 Up
+;; Arrow: (10340',20250'), Bubble: (10335',20260')
+;; Selection: Alignment at (10360',20240') - center X, avoids bubbles/leaders
+;; Calculation: X=10340' - Start X=10040' = 300', Station 50+00 + 300' = STA 53+00.00
 ;;
 HAWS-ELLL
-800.5,501
-800,500
+10340,20250
+10335,20260
 1
-
 .
 sta
-800,500
-(test-validate-auto-text (entlast) "NOTETXT1" "STA 3+00.00" "TEST 1: Station (Sta)")
+10360,20240
+
+(test-validate-auto-text (entlast) "NOTETXT1" "STA 53+00.00" "TEST 1: Sta (Model)")
 (test-validate-xdata (entlast) "NOTETXT1" "Sta" "TEST 1")
 (test-validate-reactor (entlast) "NOTETXT1" "Sta" "TEST 1")
 ;;
-;; TEST 2: Offset (Off) - Click at (800,500) = 50 RT (same point as TEST 1)
+;; TEST 2: Dia (Model) - Pipe diameter
+;; Position: 3L-4D = Column 3 Left, Row 4 Down
+;; Arrow: (10220',20200'), Bubble: (10215',20190')
+;; Selection: Pipe at (10360',20200') - center X, avoids bubbles/leaders
+;; Expected: 18" diameter
 ;;
 HAWS-ELLL
-100.5,399
-100,398
+10220,20200
+10215,20190
 2
-
-.
-off
-800,500
-(test-validate-auto-text (entlast) "NOTETXT1" "50.00 RT" "TEST 2: Offset (Off)")
-(test-validate-xdata (entlast) "NOTETXT1" "Off" "TEST 2")
-(test-validate-reactor (entlast) "NOTETXT1" "Off" "TEST 2")
-;;
-;; TEST 3: StaOff (Station + Offset) - Click at (800,500) = STA 3+00 50 RT
-;;
-HAWS-ELLL
-103.5,399
-103,398
-3
-
-.
-staoff
-800,500
-(test-validate-auto-text (entlast) "NOTETXT1" "STA 3+00.00  50.00 RT" "TEST 3: StaOff")
-(test-validate-xdata (entlast) "NOTETXT1" "StaOff" "TEST 3")
-(test-validate-reactor (entlast) "NOTETXT1" "StaOff" "TEST 3")
-;;
-;; TEST 4: Alignment Name (AlName)
-;;
-HAWS-ELLL
-106.5,399
-106,398
-4
-
-.
-alname
-800,500
-(test-validate-auto-text (entlast) "NOTETXT1" "OAK ST" "TEST 4: AlName")
-(test-validate-xdata (entlast) "NOTETXT1" "AlName" "TEST 4")
-(test-validate-reactor (entlast) "NOTETXT1" "AlName" "TEST 4")
-;;
-;; TEST 5: StaName (Station + Alignment Name)
-;;
-HAWS-ELLL
-100.5,398
-100,397
-5
-
-.
-staname
-800,500
-(test-validate-auto-text (entlast) "NOTETXT1" "STA 3+00.00 OAK ST" "TEST 5: StaName")
-(test-validate-xdata (entlast) "NOTETXT1" "StaName" "TEST 5")
-(test-validate-reactor (entlast) "NOTETXT1" "StaName" "TEST 5")
-;;
-;; TEST 6: Pipe Diameter (Dia) - 18" pipe
-;;
-HAWS-ELLL
-103.5,398
-103,397
-6
-
 .
 dia
-450,300
-(test-validate-auto-text (entlast) "NOTETXT1" "18\"" "TEST 6: Pipe Diameter")
-(test-validate-xdata (entlast) "NOTETXT1" "Dia" "TEST 6")
-(test-validate-reactor (entlast) "NOTETXT1" "Dia" "TEST 6")
+10360,20200
+
+(test-validate-auto-text (entlast) "NOTETXT1" "18\"" "TEST 2: Dia (Model)")
+(test-validate-xdata (entlast) "NOTETXT1" "Dia" "TEST 2")
+(test-validate-reactor (entlast) "NOTETXT1" "Dia" "TEST 2")
 ;;
-;; TEST 7: Pipe Slope - -0.67%
+;; TEST 3: N (Model) - Northing coordinate
+;; Position: 2L-2U = Column 2 Left, Row 2 Up
+;; Arrow: (10280',20260'), Bubble: (10275',20270')
+;; No selection (coordinate-based)
+;; Expected: N 20260.00 (arrow Y coordinate)
 ;;
 HAWS-ELLL
-106.5,398
-106,397
-7
-
-.
-slope
-450,300
-(test-validate-auto-text (entlast) "NOTETXT1" "-0.67%" "TEST 7: Pipe Slope")
-(test-validate-xdata (entlast) "NOTETXT1" "Slope" "TEST 7")
-(test-validate-reactor (entlast) "NOTETXT1" "Slope" "TEST 7")
-;;
-;; TEST 8: Pipe Length - 300 LF
-;;
-HAWS-ELLL
-100.5,397
-100,396
-8
-
-.
-l
-450,300
-(test-validate-auto-text (entlast) "NOTETXT1" "300.00 LF" "TEST 8: Pipe Length")
-(test-validate-xdata (entlast) "NOTETXT1" "L" "TEST 8")
-(test-validate-reactor (entlast) "NOTETXT1" "L" "TEST 8")
-;;
-;; TEST 9: Northing (N) - Y coordinate
-;;
-HAWS-ELLL
-103.5,397
-103,396
-9
-
+10280,20260
+10275,20270
+3
 .
 n
-(test-validate-auto-text (entlast) "NOTETXT1" "N 100.00" "TEST 9: Northing")
-(test-validate-xdata (entlast) "NOTETXT1" "N" "TEST 9")
-(test-validate-reactor (entlast) "NOTETXT1" "N" "TEST 9")
+
+(test-validate-auto-text (entlast) "NOTETXT1" "N 20260.00" "TEST 3: N (Model)")
+(test-validate-xdata (entlast) "NOTETXT1" "N" "TEST 3")
+(test-validate-reactor (entlast) "NOTETXT1" "N" "TEST 3")
 ;;
-;; TEST 10: Easting (E) - X coordinate
+;; TEST 4: LF (Model) - Linear feet from curb line
+;; Position: 1R-2U = Column 1 Right, Row 2 Up
+;; Arrow: (10380',20260'), Bubble: (10385',20270')
+;; Selection: Curb line at (10360',20260') - center X, avoids bubbles/leaders
+;; Expected: 640.00 LF (full line length)
 ;;
 HAWS-ELLL
-106.5,397
-106,396
-10
-
-.
-e
-(test-validate-auto-text (entlast) "NOTETXT1" "E 100.00" "TEST 10: Easting")
-(test-validate-xdata (entlast) "NOTETXT1" "E" "TEST 10")
-(test-validate-reactor (entlast) "NOTETXT1" "E" "TEST 10")
-;;
-;; TEST 11: NE (Both coordinates)
-;;
-HAWS-ELLL
-100.5,396
-100,395
-11
-
-.
-ne
-(test-validate-auto-text (entlast) "NOTETXT1" "N 100.00, E 100.00" "TEST 11: NE")
-(test-validate-xdata (entlast) "NOTETXT1" "NE" "TEST 11")
-(test-validate-reactor (entlast) "NOTETXT1" "NE" "TEST 11")
-;;
-;; TEST 12: Linear Feet (LF) - 100 LF line
-;;
-HAWS-ELLL
-103.5,396
-103,395
-12
-
+10380,20260
+10385,20270
+4
 .
 lf
+10360,20260
 
-s
-100,250
-200,250
-
-(test-validate-auto-text (entlast) "NOTETXT1" "100.00 LF" "TEST 12: LF")
-(test-validate-xdata (entlast) "NOTETXT1" "LF" "TEST 12")
+(test-validate-auto-text (entlast) "NOTETXT1" "640.00 LF" "TEST 4: LF (Model)")
+(test-validate-xdata (entlast) "NOTETXT1" "LF" "TEST 4")
 ;;
-;; TEST 13: Square Feet (SF) - 10000 SF rectangle
+;; TEST 5: Manual (Model) - Baseline manual text entry
+;; Position: 2R-1U = Column 2 Right, Row 1 Up
+;; Arrow: (10440',20250'), Bubble: (10445',20260')
+;; No selection
 ;;
 HAWS-ELLL
-106.5,396
-106,395
-13
+10440,20250
+10445,20260
+5
+MODEL MANUAL
 
+(test-validate-auto-text (entlast) "NOTETXT1" "MODEL MANUAL" "TEST 5: Manual (Model)")
+;;
+;; TEST 6: Name (Model) - Alignment name
+;; Position: 3R-CENTER = Column 3 Right, CENTER row (points directly at alignment)
+;; Arrow: (10500',20240'), Bubble: (10505',20250')
+;; Selection: Alignment at (10360',20240') - center X, avoids bubbles/leaders
+;; Expected: "OAK ST" (alignment name property)
+;;
+HAWS-ELLL
+10500,20240
+10505,20250
+6
+.
+name
+10360,20240
+
+(test-validate-auto-text (entlast) "NOTETXT1" "OAK ST" "TEST 6: Name (Model)")
+(test-validate-xdata (entlast) "NOTETXT1" "AlName" "TEST 6")
+(test-validate-reactor (entlast) "NOTETXT1" "AlName" "TEST 6")
+;;
+;; TEST 7: SF (Model) - Square feet from rectangle
+;; Position: 4R-3U = Column 4 Right, Row 3 Up (sidewalk row)
+;; Arrow: (10560',20270'), Bubble: (10565',20280')
+;; Selection: Sidewalk rectangle at (10360',20272') - center X, top edge
+;; Expected: 3840.00 SF (640' × 6' rectangle)
+;;
+HAWS-ELLL
+10560,20270
+10565,20280
+7
 .
 sf
+10360,20272
 
-s
-100,100
-200,200
-
-(test-validate-auto-text (entlast) "NOTETXT1" "10000.00 SF" "TEST 13: SF")
-(test-validate-xdata (entlast) "NOTETXT1" "SF" "TEST 13")
+(test-validate-auto-text (entlast) "NOTETXT1" "3840.00 SF" "TEST 7: SF (Model)")
+(test-validate-xdata (entlast) "NOTETXT1" "SF" "TEST 7")
 ;;
-;; TEST 14: Square Yards (SY) - 1111.11 SY rectangle
+;; TEST 8: SY (Model) - Square yards from rectangle
+;; Position: 5R-3U = Column 5 Right, Row 3 Up (sidewalk row)
+;; Arrow: (10620',20270'), Bubble: (10625',20280')
+;; Selection: Sidewalk rectangle at (10360',20272') - center X, top edge
+;; Expected: 426.67 SY (3840 SF ÷ 9)
 ;;
 HAWS-ELLL
-100.5,395
-100,394
-14
-
+10620,20270
+10625,20280
+8
 .
 sy
+10360,20272
 
-s
-100,100
-200,200
-
-(test-validate-auto-text (entlast) "NOTETXT1" "1111.11 SY" "TEST 14: SY")
-(test-validate-xdata (entlast) "NOTETXT1" "SY" "TEST 14")
+(test-validate-auto-text (entlast) "NOTETXT1" "426.67 SY" "TEST 8: SY (Model)")
 ;;
-;; TEST 15: ES (Copy Text) - "TEST STRING"
+;; === PAPER SPACE TESTS (VPTRANS Validation - 10 tests) ===
+;; Viewport: Full page 36"×24", center (18",12") paper = (10360',20240') model @ 1/20XP
+;; Paper space grid: Uses same grid spacing as model (3" column, 0.5" row @ paper scale)
+;; CRITICAL: Selection coordinates are MODEL SPACE (CNM switches to mspace)
+;; CRITICAL: N/E/NE require viewport confirmation (blank line = Enter accepts)
+;; Each test validates VPTRANS storage and coordinate transformation
+;; CRITICAL: Paper positions chosen to avoid model space bubble conflicts
+;;
+pspace
+;;
+;; TEST 9: Sta (Paper→Model) - VPTRANS coordinate transform for station
+;; Paper position: 6L column area - no conflict with model tests
+;; Selection: Alignment in MODEL coordinates (10360',20240') - center X, avoids bubbles
+;; Paper (2",12.5") × 20 = Model offset (-320',-5') from center = (10040',20235')
+;; Station at X=10040' = 50+00.00
 ;;
 HAWS-ELLL
-103.5,395
-103,394
-15
-
+2.0,12.5
+1.75,13.0
+9
 .
-es
-50,50
-(test-validate-auto-text (entlast) "NOTETXT1" "TEST STRING" "TEST 15: ES")
-(test-validate-xdata (entlast) "NOTETXT1" "ES" "TEST 15")
+sta
+10360,20240
+
+(test-validate-auto-text (entlast) "NOTETXT1" "STA 50+00.00" "TEST 9: Sta (Paper)")
+(test-validate-xdata (entlast) "NOTETXT1" "Sta" "TEST 9")
+(test-validate-reactor (entlast) "NOTETXT1" "Sta" "TEST 9")
 ;;
-;; TEST 16: Manual Text Entry - User types "MANUAL ENTRY"
+;; TEST 10: Off (Paper→Model) - Offset calculation through viewport
+;; Paper position: 5L column area - no conflict with model tests
+;; Selection: Alignment in MODEL coordinates (10360',20240') - center X, avoids bubbles
+;; Paper (5",13.0") × 20 = Model offset (-260',+20') from center = (10100',20260')
+;; Offset from alignment Y=20240': 20260'-20240' = 20.00 LT
 ;;
 HAWS-ELLL
-106.5,395
-106,394
+5.0,13.0
+4.75,13.5
+10
+.
+off
+10360,20240
+
+(test-validate-auto-text (entlast) "NOTETXT1" "20.00 LT" "TEST 10: Off (Paper)")
+(test-validate-xdata (entlast) "NOTETXT1" "Off" "TEST 10")
+(test-validate-reactor (entlast) "NOTETXT1" "Off" "TEST 10")
+;;
+;; TEST 11: StaOff (Paper→Model) - Combined station and offset
+;; Paper position: 4L column area - no conflict with model tests
+;; Selection: Alignment in MODEL coordinates (10360',20240') - center X, avoids bubbles
+;; Paper (8",12.5") × 20 = Model offset (-200',+10') from center = (10160',20250')
+;; Station: 10160'-10040' = 120' = STA 51+20.00, Offset: 20250'-20240' = 10.00 LT
+;;
+HAWS-ELLL
+8.0,12.5
+7.75,13.0
+11
+.
+staoff
+10360,20240
+
+(test-validate-auto-text (entlast) "NOTETXT1" "STA 51+20.00  10.00 LT" "TEST 11: StaOff (Paper)")
+(test-validate-xdata (entlast) "NOTETXT1" "StaOff" "TEST 11")
+(test-validate-reactor (entlast) "NOTETXT1" "StaOff" "TEST 11")
+;;
+;; TEST 12: StaName (Paper→Model) - Station plus alignment name
+;; Paper position: 6R column area - no conflict with model tests
+;; Selection: Alignment in MODEL coordinates (10360',20240') - center X, avoids bubbles
+;; Paper (34",12.0") × 20 = Model offset (+320',0') from center = (10680',20240')
+;; Station: 10680'-10040' = 640' = STA 56+40.00 (alignment end)
+;;
+HAWS-ELLL
+34.0,12.0
+34.25,12.5
+12
+.
+staname
+10360,20240
+
+(test-validate-auto-text (entlast) "NOTETXT1" "STA 56+40.00 OAK ST" "TEST 12: StaName (Paper)")
+(test-validate-xdata (entlast) "NOTETXT1" "StaName" "TEST 12")
+(test-validate-reactor (entlast) "NOTETXT1" "StaName" "TEST 12")
+;;
+;; TEST 13: Dia (Paper→Model) - Pipe diameter through viewport
+;; Paper position: 2L column area at pipe row - no conflict with model tests
+;; Selection: Pipe in MODEL coordinates (10360',20200') - center X, avoids bubbles
+;; Expected: 18" (property read, no coordinate transform)
+;; Paper (14",10.0") × 20 = Model offset (-80',-40') from center = (10280',20200')
+;;
+HAWS-ELLL
+14.0,10.0
+13.75,9.5
+13
+.
+dia
+10360,20200
+
+(test-validate-auto-text (entlast) "NOTETXT1" "18\"" "TEST 13: Dia (Paper)")
+(test-validate-xdata (entlast) "NOTETXT1" "Dia" "TEST 13")
+(test-validate-reactor (entlast) "NOTETXT1" "Dia" "TEST 13")
+;;
+;; TEST 14: Slope (Paper→Model) - Pipe slope through viewport
+;; Paper position: 5R column area at pipe row - no conflict with model tests
+;; Selection: Pipe in MODEL coordinates (10360',20200') - center X, avoids bubbles
+;; Expected: -0.31% (calculated from pipe elevation difference)
+;; Paper (31",10.0") × 20 = Model offset (+260',-40') from center = (10620',20200')
+;;
+HAWS-ELLL
+31.0,10.0
+31.25,9.5
+14
+.
+slope
+10360,20200
+
+(test-validate-auto-text (entlast) "NOTETXT1" "-0.31%" "TEST 14: Slope (Paper)")
+(test-validate-xdata (entlast) "NOTETXT1" "Slope" "TEST 14")
+(test-validate-reactor (entlast) "NOTETXT1" "Slope" "TEST 14")
+;;
+;; TEST 15: N (Paper) - VPTRANS CRITICAL! Northing coordinate transform
+;; Paper arrow position transforms to model Y coordinate
+;; NO selection (coordinate-based), blank line confirms viewport
+;; Expected: Northing = transformed arrow Y coordinate
+;;
+HAWS-ELLL
+17.0,13.0
+16.75,13.5
+15
+.
+n
+
+
+(test-validate-auto-text (entlast) "NOTETXT1" "N 20260.00" "TEST 15: N (Paper)")
+(test-validate-xdata (entlast) "NOTETXT1" "N" "TEST 15")
+(test-validate-reactor (entlast) "NOTETXT1" "N" "TEST 15")
+;;
+;; TEST 16: E (Paper) - Easting coordinate transform
+;; Paper arrow position transforms to model X coordinate
+;; NO selection (coordinate-based), blank line confirms viewport
+;; Expected: Easting = transformed arrow X coordinate
+;;
+HAWS-ELLL
+19.0,11.5
+19.25,11.0
 16
-MANUAL ENTRY
+.
+e
 
 
-(test-validate-auto-text (entlast) "NOTETXT1" "MANUAL ENTRY" "TEST 16: Manual Text")
+(test-validate-auto-text (entlast) "NOTETXT1" "E 10380.00" "TEST 16: E (Paper)")
+(test-validate-xdata (entlast) "NOTETXT1" "E" "TEST 16")
+(test-validate-reactor (entlast) "NOTETXT1" "E" "TEST 16")
 ;;
-;; Paper Space Tests (Phase E preparation - deferred for now)
+;; TEST 17: NE (Paper) - Full VPTRANS validation (both coordinates)
+;; Paper arrow transforms to both model X and Y
+;; NO selection (coordinate-based), blank line confirms viewport
+;; Expected: Both northing and easting from transformed arrow position
 ;;
-; === PLACEHOLDER: Phase D will add reactor tests here ===
-; === PLACEHOLDER: Phase E will add viewport tests here ===
-; === PLACEHOLDER: Phase F will add performance tests here ===
-; === DEMO: Test annotation system (verify helpers work) ===
-(c:test-annotate-result "100,900" "INFO" "Phase B Foundation Complete\nValidation helper functions ready\nAwaiting Phase C test implementation")
+HAWS-ELLL
+22.0,11.5
+22.25,11.0
+17
+.
+ne
+
+
+(test-validate-auto-text (entlast) "NOTETXT1" "N 20230.00, E 10440.00" "TEST 17: NE (Paper)")
+(test-validate-xdata (entlast) "NOTETXT1" "NE" "TEST 17")
+(test-validate-reactor (entlast) "NOTETXT1" "NE" "TEST 17")
+;;
+;; TEST 18: Manual (Paper) - Baseline manual text in paper space
+;; Paper position: Right side area
+;; No auto-text, no VPTRANS needed
+;;
+HAWS-ELLL
+25.0,11.5
+25.25,11.0
+18
+PAPER MANUAL
+
+(test-validate-auto-text (entlast) "NOTETXT1" "PAPER MANUAL" "TEST 18: Manual (Paper)")
+;;
+;; Return to model space for summary annotation
+;;
+mspace
 ; === SUMMARY ===
 (c:test-generate-summary-mtext)
-(test-write-report-summary 0 0 1)
+(test-write-report-summary 8 10 18)
 ; === SUCCESS MESSAGE ===
+; Place in model space at top of drawing for visibility @ 1/20XP scale
 mtext
-60,310
-style
-Standard
+10360,20350
 height
-1
-just
-tc
-530,220
-CNM TEST SUITE - PHASE B COMPLETE
-Foundation setup successful:
-- Test validation functions loaded
-- Report generation ready
-- Annotation system verified
-NEXT: Phase C - Auto-text tests implementation
-Ready for human review or AI-driven test development.
+2
+justify
+TC
+Width
+0
+CNM TEST SUITE - PHASE C COMPLETE
+VPTRANS Validation Focus:
+- 8 model space tests (baseline + SF/SY)
+- 10 paper space tests (VPTRANS coordinate transform)
+Total: 18 comprehensive auto-text validation tests
+Review cnm-test-report.md for detailed results.
+

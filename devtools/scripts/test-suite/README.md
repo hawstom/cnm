@@ -44,32 +44,32 @@
 **Human must prepare `cnm-test.dwg` with the following Civil 3D objects:**
 
 ### Object Placement Strategy
-**Goal:** Convenient grouped layout for visual inspection + zoom extents coverage
+**See:** `.ai-plans/test-suite-layout-phase-c.md` for complete coordinate system specification
 
-**Suggested layout (all objects visible in single zoom extents):**
-- Group 1 (left): Polylines at (100,100) and (100,250)
-- Group 2 (center): Alignment from (500,500) to (1500,500)
-- Group 3 (lower left): Pipe from (300,300) to (600,300)
-- Text: (50,50) - visible near polylines
-
-**Zoom:** Script will use `zoom extents` - all objects should fit comfortably in view
+**Summary:**
+- Coordinate offsets: X +10000, Y +20000 (civil engineering convention)
+- Viewport: 36"×24" paper @ 1/20XP scale
+- Bubble grid: 6 columns × 10 rows, symmetric from centerline
+- Test objects: Alignment, pipe, line, rectangle with precise coordinates
 
 ### 1. Alignment: "OAK ST"
 - **Geometry:** Perfectly horizontal, single tangent segment
-- **Start:** (500, 500)
-- **End:** (1500, 500)
-- **Length:** 1000.0 feet exactly
-- **Station Range:** 0+00 to 10+00
+- **Start:** (10040', 20240')
+- **End:** (10680', 20240')
+- **Length:** 640 feet exactly
+- **Station Range:** 50+00 to 56+40 (civil engineering convention)
 - **Purpose:** Predictable coordinates for Sta/Off/StaOff/AlName/StaName tests
 
-### 2. Pipe Network: "Storm"
+### 2. Pipe Network: "18\" STORM"
 - **Geometry:** Perfectly horizontal single pipe
-- **Start Manhole:** (300, 300, 100.0)
-- **End Manhole:** (600, 300, 98.0)
+- **Start Manhole:** (10040', 20200', 100.0)
+- **End Manhole:** (10680', 20200', 98.0)
+- **Length:** 640 feet
 - **Diameter:** 18 inches (1.5 feet)
-- **Slope:** -2.0 feet over 300 feet = -0.67%
+- **Start elevation:** 100.00'
+- **End elevation:** 98.00'
+- **Slope:** -0.31%
 - **Purpose:** Dia/Slope/L auto-text tests
-- **Note:** Reactor tests will move end manholes (not use STRETCH command)
 
 ### 3. Surface: "EG" (DEFERRED - Not Phase 1)
 - **Status:** Z auto-text behavior not yet defined
@@ -77,80 +77,50 @@
 - **Phase 1:** Skip all Z elevation tests
 
 ### 4. Polylines for LF/SF/SY Tests
-- **Rectangle (closed):** (100,100) → (200,100) → (200,200) → (100,200) → close
-  - Dimensions: 100' × 100' = 10,000 SF = 1,111.11 SY
-- **Line:** (100,250) → (200,250)
-  - Length: 100.0 LF exactly
-- **Purpose:** Static auto-text calculation tests
+- **Curb Line:** (10040', 20260') → (10680', 20260')
+  - Length: 640.0 LF exactly
+  - Offset: 20' north of alignment
+- **Sidewalk Rectangle (closed):** (10040',20266') → (10680',20272')
+  - Dimensions: 640' × 6' = 3,840 SF = 426.67 SY
+  - Offset: 26' to 32' north of alignment
+- **Purpose:** Static auto-text calculation tests (LF/SF/SY)
 
-### 5. Text for ES (Copy Text) Tests
-- **MTEXT:** Located at (50,50)
+### 5. Test String for ES (Copy Text) Tests
+- **MTEXT:** Located at (10360', 20220')
 - **Justify:** Middle center (MC)
-- **Height:** 10 (or any readable size - AI doesn't care, human readability helpful)
-- **Content:** "TEST STRING"
-- **Purpose:** ES (copy text) auto-text test
+- **Height:** 2' (readable)
+- **Content:** "OAK ST FROM MTEXT"
+- **Purpose:** ES (copy text from string) auto-text test
 
 ### 6. Paper Space Layout (RECOMMENDED - Phase E preparation)
 **Layout name:** "TEST-LAYOUT"
 
 **Viewport specifications:**
-- **Corners:** (0.5, 0.5) to (35.5, 23.5) - standard paper space limits
-- **Zoom:** `ZOOM Center 1300,700 1/100XP`
+- **Size:** 36" × 24" (ANSI D, full page)
+- **Center (paper):** (18", 12")
+- **Center (model):** (10360', 20240')
+- **Scale:** 1/20XP (1" = 20')
 - **Locking:** Locked (prevents accidental pan/zoom)
 - **Purpose:** Phase E viewport VPTRANS tests
 
-**Model space to paper space mapping:**
-- Model space alignment: (500,500) to (1500,500)
-- Paper space alignment: (10,10) to (20,10)
-- **How's that for nice and tidy?** ✓
-
 **Note:** Model space tests (Phase C-D) don't need this, but having it ready helps Phase E
----
-
 ## Bubble Note Placement Guidelines
 
-### Typical CNM Bubble Dimensions
+**See:** `.ai-plans/test-suite-layout-phase-c.md` Section 4 for complete bubble grid system
 
-**Text heights (US units):**
-- Standard: 0.1" or 0.12"
-- Metric equivalent: 0.25mm or 0.35mm
+**Summary:**
+- Grid positions: 1L-3L (left), 1R-3R (right), 1U-3U (up), 1D-4D (down)
+- Column spacing: 60' model = 3" paper @ 1/20 scale
+- Row spacing: 10' model = 0.5" paper @ 1/20 scale
+- Leader geometry: ±5' horizontal, ±10' vertical offset
 
-**Bubble shape size:**
-- 3× text height
-- Real-world typical: ~0.3" high
-
-**Typical compact leader pattern:**
+**Example positioning:**
 ```
+; Position 1L-1U (Column 1 Left, Row 1 Up)
 HAWS-ELL
-10.5,11      ; Arrow endpoint (comes FIRST)
-10,10        ; Block location (comes SECOND)
+10340,20250    ; Arrow point
+10335,20260    ; Bubble location (5' left, 10' up from arrow)
 ```
-**Note:** Arrow point comes first, then leader start (0.5 horizontal, 1.0 vertical offset)
-
-### Array Layout Pattern
-
-**Vertical spacing:** 0.5 to 1.0 units between rows  
-**Horizontal spacing:** 2 to 3 units between columns
-
-**Example 2×2 grid:**
-```
-; Row 1, Column 1
-HAWS-ELL
-10.5,11      ; Arrow endpoint (comes FIRST)
-10,10        ; Leader start (comes SECOND)
-
-; Row 2, Column 1  
-HAWS-ELL
-10.5,12
-10,11
-
-; Row 1, Column 2
-HAWS-ELL
-13.5,11
-13,10
-```
-
-**Reference:** See `CNM-Demo.scr` for production examples
 
 ---
 
