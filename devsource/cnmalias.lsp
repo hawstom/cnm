@@ -244,7 +244,7 @@
 (hcnm-define-lisp-alias '("haws-to" "to" "Tools" ""))
 (hcnm-define-lisp-alias '("haws-tu" "tu" "Tools" ""))
 (hcnm-define-lisp-alias '("haws-txtsum" "txtsum" "Tools" ""))
-(hcnm-define-lisp-alias '("haws_label" "label" "Tools" ""))
+(hcnm-define-lisp-alias '("haws-label" "label" "Tools" ""))
 ;;;---------------Layer Management Section---------------   )
 (hcnm-define-lisp-alias '("haws-l0" "l0" "Tools" ""))
 (hcnm-define-lisp-alias '("haws-lk0" "lk0" "Tools" ""))

@@ -5994,7 +5994,13 @@ ImportLayerSettings=No
   ;; NOTE: XDATA is written by reactor attachment during insertion
   ;; hcnm-bn-xdata-save is ONLY for dialog save path (requires semi-global)
   ;; Validate structure, but don't apply deprecated underover function
-  (setq lattribs (hcnm-bn-bubble-data-get bubble-data "ATTRIBUTES"))
+  (cond
+    ((not replace-bubble-p)
+     ;; Normal insert: read lattribs from bubble-data
+     (setq lattribs (hcnm-bn-bubble-data-get bubble-data "ATTRIBUTES"))
+    )
+    ;; Replace-bubble: lattribs already set from ename-bubble-old above
+  )
   (hcnm-bn-bubble-data-set
     bubble-data
     "ATTRIBUTES"
@@ -6248,8 +6254,20 @@ ImportLayerSettings=No
 )
 ;; Copy viewport transform (VPTRANS XRECORD) from old bubble to new bubble
 ;; Used during replace-bubble operation to preserve paper space coordinate transforms
-(defun hcnm-bn-copy-vptrans (ename-old ename-new / vptrans-data)
+(defun hcnm-bn-copy-vptrans (ename-old ename-new / vptrans-data viewport-handle)
   (cond
+    ;; Try NEW format first (viewport handle in XDATA, VPTRANS in viewport's extdict)
+    ((setq viewport-handle (hcnm-bn-get-viewport-handle ename-old))
+     (hcnm-bn-set-viewport-handle ename-new viewport-handle)
+     (haws-debug
+       (list
+         "[REPLACE] Copied viewport handle from old bubble to new bubble: "
+         viewport-handle
+       )
+     )
+     t
+    )
+    ;; Fall back to OLD format (VPTRANS in bubble's extdict)
     ((setq vptrans-data (hcnm-xdata-get-vptrans ename-old))
      ;; Old bubble has VPTRANS - copy to new bubble
      (hcnm-xdata-set-vptrans ename-new vptrans-data)
@@ -6664,8 +6682,21 @@ ImportLayerSettings=No
       )
     )
     (setq p1-ocs (hcnm-bn-bubble-data-get bubble-data "p1-ocs"))
-    ;; NOTE: p1-ucs only needed during insertion (drawing commands, user positioning)
-    ;; Edit/reactor paths don't use it - leave as-is (probably nil)
+    ;; NOTE: p1-ucs needed during insertion AND replace-bubble (drawing commands use UCS)
+    (or
+      (hcnm-bn-bubble-data-get bubble-data "p1-ucs")
+      (and
+        ename-leader
+        (setq
+          bubble-data
+           (hcnm-bn-bubble-data-set
+             bubble-data
+             "p1-ucs"
+             (trans p1-ocs ename-leader 1)  ; Transform from leader's OCS to current UCS
+           )
+        )
+      )
+    )
     ;; Try to calculate p1-world - may return nil for legacy bubbles without viewport XDATA
     (or
       (hcnm-bn-bubble-data-get bubble-data "p1-world")
