@@ -174,7 +174,7 @@
   )
   (cond
     (enamelist
-     (foreach e enamelist (setq q (haws-qt-add-ent e q qtype)))
+     (foreach e enamelist (setq q (haws-qt-add-ent e q qtype)(redraw e 4)))
     )
   )
   q
@@ -244,6 +244,7 @@
     enamelist
      (cond
        ((and input1 (= (type input1) 'LIST))
+        (redraw (car input1) 3)
         (princ (strcat "\n" (cdr(assoc 0 (entget (car input1)))) " was selected."))
         (list (car input1))
        )
