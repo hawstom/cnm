@@ -180,7 +180,7 @@
   )
   (COND
     (ENAMELIST
-     (FOREACH E ENAMELIST (SETQ Q (HAWS-QT-ADD-ENT E Q QTYPE)))
+     (FOREACH E ENAMELIST (SETQ Q (HAWS-QT-ADD-ENT E Q QTYPE))(REDRAW E 4))
     )
   )
   Q
@@ -254,6 +254,7 @@
     ENAMELIST
      (COND
        ((AND INPUT1 (= (TYPE INPUT1) 'LIST))
+        (REDRAW (CAR INPUT1) 3)
         (PRINC (STRCAT "\n" (CDR(ASSOC 0 (ENTGET (CAR INPUT1)))) " was selected."))
         (LIST (CAR INPUT1))
        )
