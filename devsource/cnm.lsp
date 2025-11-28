@@ -11889,6 +11889,7 @@ ImportLayerSettings=No
 )
 
 ;#endregion
+;#endregion
 
 ;#region Smart Replace & Update Helpers
 ;;==============================================================================
@@ -13353,22 +13354,25 @@ ImportLayerSettings=No
 ;;   - May attach new owners to reactor
 ;;==============================================================================
 (defun hcnm-bn-reactor-rebuild-from-xdata-alist (ename-bubble xdata-alist / 
-                                                 ename-leader tag-entry tag handle-list 
-                                                 handle-entry auto-type handle-reference
+                                                 ename-leader tag-entry tag composite-pairs-list 
+                                                 composite-pair composite-key auto-type handle-reference
                                                  ref-ename ref-vla
                                                 )
   ;; Find associated leader (needed for coordinate-based auto-text)
   (setq ename-leader (hcnm-bn-get-leader-for-bubble ename-bubble))
   
   ;; Process each tag's auto-text entries
+  ;; Entry format: (tag . composite-pairs-list)
+  ;; Each composite-pair: ((auto-type . handle) . auto-text)
   (foreach tag-entry xdata-alist
     (setq tag (car tag-entry))
-    (setq handle-list (cdr tag-entry))
+    (setq composite-pairs-list (cdr tag-entry))
     
-    ;; Process each auto-text entry for this tag
-    (foreach handle-entry handle-list
-      (setq auto-type (caar handle-entry))
-      (setq handle-reference (cdar handle-entry))
+    ;; Process each composite pair for this tag
+    (foreach composite-pair composite-pairs-list
+      (setq composite-key (car composite-pair))
+      (setq auto-type (car composite-key))
+      (setq handle-reference (cdr composite-key))
       
       ;; Re-create reactor tracking for this auto-text
       (cond
@@ -13648,6 +13652,278 @@ ImportLayerSettings=No
   )
 )
 ;#endregion
+;#region Copy Bubbles Command
+;;==============================================================================
+;; c:hcnm-copy-bubbles - Copy bubble notes with auto-text preservation
+;;==============================================================================
+;; Mimics AutoCAD COPY command:
+;; - Select bubbles (filters to CNM bubbles only, ignores leaders/other entities)
+;; - Creates copies at new location via interactive MOVE command
+;; - Preserves attributes, XDATA, VPTRANS, and reactor attachments
+;; - Only creates leader copy if source bubble has leader
+;;==============================================================================
+(defun c:hcnm-copy-bubbles (/ ss ss-bubbles-only ss-copies count-bubbles 
+                            i ename-bubble-old ename-bubble-new 
+                            ename-leader-new)
+  (haws-core-init 340)
+  (command "._undo" "_begin")
+  (princ "\nSelect bubble notes to copy:")
+  (setq ss (ssget))
+  ;; Filter selection to CNM bubbles only (rejects leaders, dimensions, text, etc.)
+  (setq ss-bubbles-only (ssadd))
+  (if ss
+    (progn
+      (setq i 0)
+      (repeat (sslength ss)
+        (setq ename-bubble-old (ssname ss i))
+        (cond
+          ((hcnm-bn-is-bubble-p ename-bubble-old)
+            (ssadd ename-bubble-old ss-bubbles-only)
+          )
+        )
+        (setq i (1+ i))
+      )
+    )
+  )
+  (setq ss ss-bubbles-only)
+  (cond
+    ((not ss)
+     (princ "\nNo bubbles selected.")
+    )
+    ((= (sslength ss) 0)
+     (princ "\nNo bubbles in selection.")
+    )
+    (t
+      (setq count-bubbles (sslength ss))
+      (princ (strcat "\n" (itoa count-bubbles) " bubble(s) selected."))
+      ;; Copy all bubbles in place (displacement applied via MOVE command)
+      (setq ss-copies (ssadd)
+            i 0)
+      (repeat count-bubbles
+        (setq ename-bubble-old (ssname ss i))
+        (setq ename-bubble-new (hcnm-bn-copy-one-bubble ename-bubble-old '(0 0 0)))
+        (cond
+          (ename-bubble-new
+            (princ (strcat "\nCopied bubble " (itoa (1+ i)) " of " (itoa count-bubbles)))
+            (ssadd ename-bubble-new ss-copies)
+            ;; Add leader to selection ONLY if new bubble has one
+            (setq ename-leader-new (hcnm-bn-bubble-leader ename-bubble-new))
+            (if ename-leader-new
+              (progn
+                (ssadd ename-leader-new ss-copies)
+                (princ " (with leader)")
+              )
+              (princ " (no leader)")
+            )
+          )
+          (t
+            (princ (strcat "\nFailed to copy bubble " (itoa (1+ i))))
+          )
+        )
+        (setq i (1+ i))
+      )
+      ;; Use AutoCAD MOVE for interactive placement
+      (princ "\nSpecify base point or displacement:")
+      (command "._move" ss-copies "" pause pause)
+      (princ "\nCopy complete.")
+    )
+  )
+  (command "._undo" "_end")
+  (haws-core-restore)
+  (princ)
+)
+;;==============================================================================
+;; hcnm-bn-copy-one-bubble - Copy single bubble with displacement
+;;==============================================================================
+;; Purpose:
+;;   Creates copy of bubble block with new position, preserving all data.
+;;   Handles leader copy if source has leader (users sometimes delete leaders).
+;;
+;; Arguments:
+;;   ename-bubble-old - Source bubble entity name
+;;   displacement - Vector (dx dy dz) for position offset
+;;
+;; Returns:
+;;   Entity name of new bubble, or nil on failure
+;;
+;; Business Logic:
+;;   - Blocks reactor callbacks during copy (prevents spurious updates)
+;;   - Only creates leader copy if source has leader
+;;   - Copies XDATA, VPTRANS, and reactor attachments
+;;==============================================================================
+(defun hcnm-bn-copy-one-bubble (ename-bubble-old displacement / 
+                                 obj-old obj-new ename-bubble-new
+                                 ename-leader-old ename-leader-new
+                                 saved-blockreactors)
+  ;; Block reactors during copy to prevent cascade during qlattach
+  (setq saved-blockreactors (hcnm-config-getvar "BlockReactors"))
+  (hcnm-config-setvar "BlockReactors" "1")
+  ;; Copy bubble block using vla-copy (does NOT copy leader - leader is separate)
+  (setq obj-old (vlax-ename->vla-object ename-bubble-old)
+        obj-new (vla-copy obj-old)
+        ename-bubble-new (vlax-vla-object->ename obj-new))
+  (cond
+    ((not (equal displacement '(0 0 0)))
+     (vla-move obj-new 
+               (vlax-3d-point '(0 0 0))
+               (vlax-3d-point displacement))
+    )
+  )
+  ;; Copy leader if source has one (users sometimes delete leaders intentionally)
+  (setq ename-leader-old (hcnm-bn-bubble-leader ename-bubble-old))
+  (cond
+    (ename-leader-old
+      (setq ename-leader-new (hcnm-bn-copy-leader ename-leader-old displacement))
+      ;; Attach leader to bubble with draw order fix
+      (vl-cmdf
+        "._qldetachset"
+        ename-leader-new
+        ""
+        "._qlattach"
+        ename-leader-new
+        ename-bubble-new
+        "._draworder"
+        ename-bubble-new
+        ""
+        "_front"
+      )
+    )
+  )
+  ;; Copy data (XDATA, VPTRANS, reactors)
+  (hcnm-bn-copy-xdata ename-bubble-old ename-bubble-new)
+  (hcnm-bn-copy-vptrans ename-bubble-old ename-bubble-new)
+  (hcnm-bn-copy-reactors ename-bubble-old ename-bubble-new)
+  ;; Restore reactor blocking flag
+  (hcnm-config-setvar "BlockReactors" saved-blockreactors)
+  ename-bubble-new
+)
+;;==============================================================================
+;; hcnm-bn-copy-leader - Copy leader with displacement
+;;==============================================================================
+;; Purpose:
+;;   Creates copy of leader entity with new position.
+;;
+;; Arguments:
+;;   ename-leader-old - Source leader entity name
+;;   displacement - Vector (dx dy dz) for position offset
+;;
+;; Returns:
+;;   Entity name of new leader
+;;==============================================================================
+(defun hcnm-bn-copy-leader (ename-leader-old displacement / 
+                            obj-leader-old obj-leader-new)
+  (setq obj-leader-old (vlax-ename->vla-object ename-leader-old)
+        obj-leader-new (vla-copy obj-leader-old))
+  ;; Move to new position if displacement is non-zero
+  (cond
+    ((not (equal displacement '(0 0 0)))
+     (vla-move obj-leader-new 
+               (vlax-3d-point '(0 0 0))
+               (vlax-3d-point displacement))
+    )
+  )
+  (vlax-vla-object->ename obj-leader-new)
+)
+;;==============================================================================
+;; hcnm-bn-is-bubble-p - Test if entity is CNM bubble block
+;;==============================================================================
+;; Purpose:
+;;   Checks if entity is a CNM bubble note block insertion.
+;;   Uses effective name to handle anonymous (dynamic) blocks.
+;;
+;; Arguments:
+;;   ename - Entity name to test
+;;
+;; Returns:
+;;   T if entity is CNM bubble, nil otherwise
+;;==============================================================================
+(defun hcnm-bn-is-bubble-p (ename / elist)
+  (and
+    ename
+    (setq elist (entget ename))
+    (= (cdr (assoc 0 elist)) "INSERT")
+    (wcmatch
+      (strcase
+        (vla-get-effectivename
+          (vlax-ename->vla-object ename)
+        )
+      )
+      "CNM-BUBBLE-*"
+    )
+  )
+)
+;;==============================================================================
+;; hcnm-bn-copy-reactors - Copy reactor attachments to new bubble
+;;==============================================================================
+;; Purpose:
+;;   Attaches reactors to new bubble based on XDATA from source bubble.
+;;   Processes all auto-text entries and creates appropriate reactor tracking.
+;;
+;; Arguments:
+;;   ename-bubble-old - Source bubble entity name
+;;   ename-bubble-new - Destination bubble entity name
+;;
+;; Returns:
+;;   T on success
+;;
+;; Side Effects:
+;;   - Attaches VLR-OBJECT-REACTOR to reference objects (alignments/pipes)
+;;   - Updates reactor data structure with new bubble handle
+;;==============================================================================
+(defun hcnm-bn-copy-reactors (ename-bubble-old ename-bubble-new / 
+                               xdata-alist composite-key composite-pair composite-pairs-list
+                               tag auto-type handle-reference
+                               auto-text objref ename-reference ename-leader-new)
+  (setq xdata-alist (hcnm-xdata-get-autotext ename-bubble-old))
+  (setq ename-leader-new (hcnm-bn-bubble-leader ename-bubble-new))
+  ;; Process each XDATA entry and attach reactors
+  ;; Entry format: (tag . composite-pairs-list)
+  ;; Each composite-pair: ((auto-type . handle) . auto-text)
+  (foreach entry xdata-alist
+    (setq tag (car entry)
+          composite-pairs-list (cdr entry))
+    ;; Process each composite pair (multiple auto-texts per tag possible)
+    (foreach composite-pair composite-pairs-list
+      (setq composite-key (car composite-pair)
+            auto-type (car composite-key)
+            handle-reference (cdr composite-key))
+      ;; Convert handle to reference object
+      (setq objref
+        (cond
+          ;; Coordinate-based auto-text (N/E/NE) - no reference object
+          ((or (= handle-reference "") (not handle-reference))
+           nil
+          )
+          ;; Handle-based auto-text - convert handle to VLA-OBJECT
+          (t
+           (setq ename-reference (handent handle-reference))
+           (cond
+             (ename-reference
+               (vlax-ename->vla-object ename-reference)
+             )
+             (t
+               nil
+             )
+           )
+          )
+        )
+      )
+      ;; Attach reactor for this auto-text entry
+      (cond
+        ((or objref (= handle-reference ""))
+         (hcnm-bn-assure-auto-text-has-reactor
+           objref
+           ename-bubble-new
+           ename-leader-new
+           tag
+           auto-type
+         )
+        )
+      )
+    ) ;; end foreach composite-pair
+  ) ;; end foreach entry
+  t
+)
 ;#endregion
 ;#region Debug Utilities
 ;;==============================================================================

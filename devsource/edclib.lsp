@@ -31,7 +31,7 @@
 ;;; (legacy)
 ;;; lisputil.lsp
 (defun haws-unified-version ()
-  "5.5.28"
+  "5.5.29"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 ;;This function returns the current setting of nagmode.
@@ -818,6 +818,7 @@
      (337 1 "hcnm-edit-bubbles")
      (338 1 "hcnm-replace-bubble")
      (339 -1 "haws_label")
+     (340 -1 "hcnm-copy-bubbles")
      ;; Add new commands here
      (1000 1 "untracked")
    )
