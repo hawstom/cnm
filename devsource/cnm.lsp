@@ -1,8 +1,6 @@
 ;#region Header comments
 ;;; CONSTRUCTION NOTES MANAGER
 ;;;
-;;; Visual LISP Extensions Loading
-;;;
 ;; Ensure Visual LISP extensions are loaded
 (vl-load-com)
 ;;;
@@ -272,7 +270,7 @@
                                  usrvar vplayers x bubble-list notesmaxheight
                                  orphaned-bubbles
                                 )
-  (princ "\nDEBUG: hcnm-key-table-searchandsave called")
+  (haws-debug "hcnm-key-table-searchandsave called")
   ;;
   ;; Section 1.  Make an empty NOTELIST from tblqty and constnot.txt.  TGHI can use this section for Tally, except there is a conflict in the way they do PHASELIST.
   ;;
@@ -431,7 +429,7 @@
      (mapcar '(lambda (phase) (reverse phase)) (car notelist))
     bubble-list nil
   )
-  (princ "\nDEBUG: Starting bubble search loop")
+  (haws-debug "\nStarting bubble search loop")
   (while (and blkss (setq blki (ssname blkss (setq i (1+ i)))))
     (setq
       en blki
@@ -467,7 +465,7 @@
       notei
        (assoc notenum (cdr (assoc notetype (cadr notelist))))
     )
-    (princ (strcat "\nDEBUG: Processing bubble " (vl-princ-to-string en) " notenum=" (if notenum notenum "nil")))
+    (haws-debug (strcat "Processing bubble " (vl-princ-to-string en) " notenum=" (if notenum notenum "nil")))
     (setq bubble-list (cons en bubble-list))
     (cond
       ;;If there is such a note and phase, or no phasing is being used.
@@ -573,15 +571,15 @@
   )
   ;;After searching bubbles for presence and quantities,
   ;;audit bubbles for orphaned auto-text (but delay alert until after prompts)
-  (princ (strcat "\nDEBUG: bubble-list length = " (itoa (length bubble-list))))
+  (haws-debug (strcat "Bubble-list length = " (itoa (length bubble-list))))
   (setq orphaned-bubbles
     (if bubble-list
       (progn
-        (princ "\nDEBUG: Calling hcnm-audit-bubbles-in-table (no alert)")
+        (haws-debug "Calling hcnm-audit-bubbles-in-table (no alert)")
         (hcnm-audit-bubbles-in-table-silent (reverse bubble-list))
       )
       (progn
-        (princ "\nDEBUG: bubble-list is nil, skipping audit")
+        (haws-debug "bubble-list is nil, skipping audit")
         nil
       )
     )
@@ -1363,12 +1361,12 @@
 ;;Returns: List of orphaned auto-text details if found, nil if all valid
 ;;  Format: '((tag auto-type xdata-text actual-text) ...)
 (defun hcnm-audit-bubble-orphaned-p (en-bubble / xdata-list orphans tag auto-type handle verbatim actual-text composite-pairs lattribs)
-  (haws-debug (strcat "DEBUG: Auditing bubble " (vl-princ-to-string en-bubble)))
+  (haws-debug (strcat "Auditing bubble " (vl-princ-to-string en-bubble)))
   (setq xdata-list (hcnm-xdata-read en-bubble)
         lattribs (hcnm-get-attributes en-bubble t)
         orphans nil
   )
-  (haws-debug (strcat "DEBUG: XDATA list: " (vl-princ-to-string xdata-list)))
+  (haws-debug (strcat "XDATA list: " (vl-princ-to-string xdata-list)))
   (foreach tag-entry xdata-list
     (setq tag (car tag-entry)
           composite-pairs (cdr tag-entry)
@@ -1379,19 +1377,19 @@
             handle (cdr (car composite-entry))
             verbatim (cdr composite-entry)
       )
-      (haws-debug (strcat "DEBUG: Checking tag=" tag " auto-type=" auto-type))
-      (haws-debug (strcat "DEBUG: Verbatim=[" verbatim "]"))
-      (haws-debug (strcat "DEBUG: Actual=[" actual-text "]"))
+      (haws-debug (strcat "Checking tag=" tag " auto-type=" auto-type))
+      (haws-debug (strcat "Verbatim=[" verbatim "]"))
+      (haws-debug (strcat "Actual=[" actual-text "]"))
       (cond
         ((not (vl-string-search verbatim actual-text))
-         (haws-debug "DEBUG: ORPHAN FOUND!")
+         (haws-debug "ORPHAN FOUND!")
          (setq orphans (cons (list tag auto-type verbatim actual-text) orphans))
         )
-        (t (haws-debug "DEBUG: Match OK"))
+        (t (haws-debug "Match OK"))
       )
     )
   )
-  (haws-debug (strcat "DEBUG: Total orphans found: " (itoa (length orphans))))
+  (haws-debug (strcat "Total orphans found: " (itoa (length orphans))))
   (reverse orphans)
 )
 ;;hcnm-audit-mark-orphan
@@ -1416,7 +1414,7 @@
 ;;Returns: List of orphaned bubbles with details
 ;;  Format: '((en-bubble ((tag auto-type xdata-text actual-text) ...)) ...)
 (defun hcnm-audit-bubbles-in-table-silent (bubble-list / orphaned-bubbles en-bubble orphan-details total-orphans)
-  (princ (strcat "\nDEBUG: Auditing " (itoa (length bubble-list)) " bubbles"))
+  (haws-debug (strcat "Auditing " (itoa (length bubble-list)) " bubbles"))
   (setq orphaned-bubbles nil
         total-orphans 0
   )
@@ -1432,7 +1430,7 @@
       )
     )
   )
-  (haws-debug (strcat "DEBUG: Total orphaned bubbles: " (itoa total-orphans)))
+  (haws-debug (strcat "Total orphaned bubbles: " (itoa total-orphans)))
   (reverse orphaned-bubbles)
 )
 ;;hcnm-audit-show-alert
@@ -1459,7 +1457,7 @@
 ;;Returns: List of orphaned bubbles with details
 ;;  Format: '((en-bubble ((tag auto-type xdata-text actual-text) ...)) ...)
 (defun hcnm-audit-bubbles-in-table (bubble-list / orphaned-bubbles en-bubble orphan-details total-orphans msg)
-  (princ (strcat "\nDEBUG: Auditing " (itoa (length bubble-list)) " bubbles"))
+  (haws-debug (strcat "Auditing " (itoa (length bubble-list)) " bubbles"))
   (setq orphaned-bubbles nil
         total-orphans 0
   )
@@ -1475,7 +1473,7 @@
       )
     )
   )
-  (haws-debug (strcat "DEBUG: Total orphaned bubbles: " (itoa total-orphans)))
+  (haws-debug (strcat "Total orphaned bubbles: " (itoa total-orphans)))
   (cond
     ((> total-orphans 0)
      (setq msg (strcat
@@ -3103,7 +3101,7 @@
   (princ "\n\n=== CLEANUP COMPLETE ===")
   (princ)
 )
-
+;[moveme to a better region]
 ;;==============================================================================
 ;; HCNM-BN-CLEANUP-ALL-REACTORS - Comprehensive reactor/XDATA cleanup
 ;;==============================================================================
@@ -3174,7 +3172,7 @@
     )
   )
 )
-
+;[/moveme]
 (defun hcnm-concept-testsetvar (var val)
   (hcnm-concept-setvar
     ;; variable
