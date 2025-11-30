@@ -4,14 +4,20 @@
 
 ### 1.1. Essential Instructions
 
-1. **ci** (Copilot Instructions) = This file (.github\copilot-instructions.md)
-2. **cinote:** = Immediately revise ci to include that information. "cinote." = You failed to execute previous cinote command
-3. **citruth.** = Tell the truth! Qualify statements with certainty estimates. Don't say "Perfect/Fixed/Done" when you mean "Please test"
-4. **Use get_errors tool**: Check syntax after AutoLISP edits. Fix errors before reporting
-5. **MANDATORY FUNCTION VERIFICATION**: NEVER use any function without first searching ORIGINAL codebase with grep_search AND verifying with git history that function existed before recent AI changes. If function not found in original CNM code, check official Autodesk documentation with fetch_webpage. See Section 1.5 for complete protocol.
-6. **AutoLISP load paths**: Load expressions must use full paths or constructed paths like `(load (strcat (vl-filename-directory (vl-filename-directory (findfile "cnm.lsp"))) "\\devtools\\scripts\\" filename))` since relative paths are not legal for (load). Use nested vl-filename-directory calls to climb directory tree, not ".." paths.
-7. **AutoLISP Common Pitfalls**: See Section 1.4 for AutoLISP/Common Lisp differences and correct AutoLISP idioms.
-8. **DO NOT git commit**: Let the human commit. AI prepares files only.
+#### 1.1.1. Human Command Keywords
+- **ci** = This file (.github\copilot-instructions.md)
+- **cinote:** = Immediately revise ci to include that information
+- **cinote.** = You failed to execute previous cinote command
+- **citruth.** = Tell the truth! Qualify statements with certainty estimates. Don't say "Perfect/Fixed/Done" when you mean "Please test"
+- **cicleanup** = Audit repository for obsolete documentation and comments, mark candidates with `[deleteme]` or `[moveme]` tags for human review (see Section 1.6.1). When invoked, respond: "The cleanup is ready for your review. Search for `deleteme` and `moveme` in the repository awaiting your approval."
+
+#### 1.1.2. AutoLISP-Specific Rules
+- **MANDATORY FUNCTION VERIFICATION**: NEVER use any function without first searching ORIGINAL codebase with grep_search AND verifying with git history that function existed before recent AI changes. If function not found in original CNM code, check official Autodesk documentation with fetch_webpage. See Section 1.5 for complete protocol.
+- **Use get_errors tool**: Check syntax after AutoLISP edits. Fix errors before reporting
+- **AutoLISP Common Pitfalls**: See Section 1.4 for AutoLISP/Common Lisp differences and correct AutoLISP idioms.
+
+#### 1.1.3. Workflow Constraints
+- **DO NOT git commit**: Let the human commit. AI prepares files only.
 
 ### 1.2. Project Context
 
@@ -38,7 +44,7 @@ AutoLISP is the primary programming language of CNM. AutoLISP and Common LISP ar
 **AutoLISP ≠ Common Lisp:** AutoLISP lacks many Common Lisp functions. Use these AutoLISP idioms:
 
 - **Function exists:** `(boundp 'function-name)` ✅ | `fboundp` ❌ (doesn't exist)
-- **Load paths:** Nested `vl-filename-directory` calls ✅ | `".."` relative paths ❌ (unsupported)  
+- **Load paths:** AutoLISP `(load)` function doesn't accept relative paths (e.g., `"../file.lsp"`). It searches AutoCAD's support paths automatically.
 - **Symbolic constant idiom:** AutoLISP does not provide any benefits for user symbolic constants `'my-constant` ❌
 - **Entity deletion check:** `(handent handle)` returns nil for user-erased entities ✅ (entdel is esoteric/temporary, ignore it)
 
@@ -100,6 +106,27 @@ AutoLISP is the primary programming language of CNM. AutoLISP and Common LISP ar
 ### 1.6. AI Collaboration Workflow
 
 See Section 5.2 for planning document workflow and [standards-02-ai-human-collaboration.md](../devtools/docs/standards/02-ai-human-collaboration.md) for general AI collaboration patterns.
+
+#### 1.6.1. Cleanup Markers (deleteme / moveme)
+
+AI agents are **encouraged** to identify obsolete comments, resolved issues, and long-disconnected documentation. When you spot content that should be removed or relocated, mark it with a lightweight tag so a human can review and approve:
+
+- `[deleteme]...[/deleteme]` — Propose deletion (content is obsolete or resolved)
+- `[moveme destination="ci 1.4" or "S05.2.3"]...[/moveme]` — Propose relocation to a canonical location
+
+Keep the marker on a single line when possible:
+```
+[deleteme] This workaround note is obsolete after the 2025-11 refactor. [/deleteme]
+```
+
+For multi-line passages, wrap the entire block:
+```
+[moveme destination="S05.4.1"]
+<long-form content that belongs in architecture docs>
+[/moveme]
+```
+
+Human reviewers: inspect each marker, then either (A) apply the change and remove the marker, or (B) remove the marker if the content should stay. See S02.4.2.4 for full policy.
 
 ### 1.7. Read These Sections First
 

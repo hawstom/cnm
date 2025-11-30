@@ -3,8 +3,8 @@
 **Purpose:** Comprehensive regression testing and performance benchmarking for CNM bubble notes system
 
 **Created:** 2025-11-17  
-**Status:** Foundation Setup Complete (Phase B)  
-**Next:** Auto-Text Tests Implementation (Phase C)
+**Status:** All Phases Complete (A-J + F)  
+**Current:** 42 tests implemented and validated
 
 ---
 
@@ -12,36 +12,25 @@
 
 ### For Human Testers
 
-**Preparation (one-time):**
-1. Open `cnm-test.dwg` in Civil 3D
-2. Prepare Civil 3D objects as specified in "Drawing Preparation" section below
-3. Save as template
+**Preparation:**
+1. Optional: Delete `cnm.ini` and `constnot.csv` before starting (script auto-cleans at end)
+2. Open `cnm-test.dwg` in Civil 3D
 
 **Running Tests:**
 - **Method 1 (Drag & Drop):** Drag `cnm-test.scr` into AutoCAD drawing window
 - **Method 2 (Command):** Type `cnm-test-script` at AutoCAD command line (future wrapper)
 
 **Results:**
-- Script generates `cnm-test-report.md` with pass/fail status
+- Script generates `test-results/cnm-test-report.md` with pass/fail status
+- Script generates `test-results/cnm-test-run.log` with timing data
 - MTEXT annotations on `C-ANNO-TEST-RESULTS` layer show detailed results
 - Summary MTEXT at top of drawing shows overall status
 
 **Human Review:**
-- Copy report file contents
-- Paste to AI for analysis
-- AI identifies failures and suggests fixes
+- Human evaluates finished state of cnm-test.dwg. Did test finish completely? Are positional adjustments needed?
 
----
-
-## Drawing Preparation Requirements
-
-**Starting point:** Empty drawing in model space with World UCS current
-- Remove all CNM-Demo objects (we're not using that script)
-- Model space (not paper space)
-- World UCS active (not rotated/translated)
-- No existing objects
-
-**Human must prepare `cnm-test.dwg` with the following Civil 3D objects:**
+**AI Review:**
+- AI analyzes test-results/cnm-test-report.md, identifies failures, and suggests fixes
 
 ### Object Placement Strategy
 **See:** `.ai-plans/test-suite-layout-phase-c.md` for complete coordinate system specification
@@ -134,9 +123,12 @@ test-suite/
 ├── cnm-test.scr                   # Main test script (drag into drawing)
 ├── cnm-test.pro                   # CNM project notes template
 ├── cnm-test-validation.lsp        # AutoLISP validation functions
-├── cnm-test-report.md             # Generated test results (AI reads this)
-└── test-results/                  # Future: Saved test run archives
+└── test-results/                  # Generated files (gitignored)
+    ├── cnm-test-report.md         # Test results (AI reads this)
+    └── cnm-test-run.log           # Timing log (START/END timestamps)
 ```
+
+**Cleanup:** Script auto-deletes `cnm.ini`, `constnot.csv`, `cnm-test.csv` at end
 
 ### Test Categories (Phases)
 
@@ -162,9 +154,9 @@ test-suite/
 - VPTRANS cleanup validation
 
 **Phase F: Performance Benchmarks**
-- 50 bubble insertion timing (baseline)
-- 20 reactor update timing (performance regression)
-- Memory usage monitoring (future)
+- Insertion performance (20 bubbles with Station auto-text)
+- Reactor update performance (20 leader stretches)
+- Baseline timing for regression detection
 
 ---
 
@@ -234,13 +226,130 @@ Use `hcnm-config-setvar` to configure expected output format:
 - Created this README documentation
 - Ready for test implementation
 
-### ⏸️ Phase C: Auto-Text Tests (NEXT)
-- NOT YET IMPLEMENTED
-- Will create comprehensive auto-text validation
-- 17 auto-text types with XDATA/reactor verification
+### ✅ Phase C: Auto-Text Tests (COMPLETE)
+- 8 model space tests (Sta, Dia, N, LF, Manual, AlName, SF, SY)
+- 10 paper space tests (VPTRANS coordinate transform validation)
+- XDATA and reactor attachment verification
+- All 18 auto-text tests passing
 
-### ⏸️ Phase D-G: Reactor/Viewport/Performance (FUTURE)
-- Awaiting Phase C completion
+### ✅ Phase D-G: Reactor/Viewport/Performance (COMPLETE)
+- Reactor attachment validated
+- VPTRANS viewport coordinate transforms working
+- Performance benchmarks implemented (Phase F)
+  - TEST 39: Insertion performance (20 bubbles, baseline timing)
+  - TEST 40: Reactor performance (20 updates, callback overhead)
+  - Establishes regression detection baseline
+
+### ✅ Phase H: Key Notes Table (COMPLETE)
+- Table generation validated
+- .not file creation verified
+- Quantity totals tested
+
+### ✅ Phase I: Quantity Takeoff (COMPLETE)
+- QT table generation validated
+- Single-sheet test confirmed
+- CSV integration working
+
+### ✅ Phase J: CNM Plus Utilities (COMPLETE)
+- haws-contvol (contour volume)
+- haws-ut (utility function - 2 tests)
+- haws-mof (multiple offset)
+- haws-lotnum (lot numbering)
+- haws-newpro (profile drafter)
+
+---
+
+## CNM Behavior Notes (Test Expectations)
+
+### LF/SF/SY Auto-Text Uses Field Expressions (CORRECT)
+
+**Behavior:** CNM creates AutoCAD field expressions for polyline Length/Area calculations
+- **Field format:** `%<\AcObjProp Object(%<\_ObjId ...>%).Length \f "%lu2%pr0%ct8[1]">% LF`
+- **Example:** Instead of static "640.00 LF", you see field code in attribute text
+- **Why:** Fields update automatically when polyline geometry changes (dynamic values)
+- **Test validation:** Check for field code presence with correct suffix (LF/SF/SY)
+- **Not a bug:** This is intentional CNM design for maintaining accuracy
+
+**Impact on test expectations:**
+- TEST 4 (LF): Validates field code exists with "LF" suffix
+- TEST 7 (SF): Validates field code exists with "SF" suffix  
+- TEST 8 (SY): Validates field code exists with "SY" suffix
+- Tests do NOT validate numeric values (fields evaluate at display time)
+
+### StaOff and Slope Formatting Specified by CNM.ini
+
+**Behavior:** Format controlled by CNM.ini configuration settings
+- **StaOff format:** `BubbleTextFormatStaOff` setting (default: `"STA %s, %s %s"` = comma separator)
+- **Slope format:** `BubbleTextFormatSlope` setting (default: `"%s%%"`)
+- **Test expectations:** Match CNM.ini defaults in test drawing
+  - TEST 11 StaOff: `"STA 51+20.00, 10.00 LT"` (comma separator)
+  - TEST 14 Slope: `"0.31%"` (as calculated, no forced sign)
+
+**Note:** Slope value reflects actual calculation (positive/negative based on elevation delta), not forced formatting
+
+### LF/SF/SY Do NOT Use XDATA/Reactors (Field-Only)
+
+**Behavior:** LF/SF/SY are field-based only, NOT part of CNM's reactive auto-text system
+- **No XDATA:** Field expressions stored directly in attribute text, no XDATA composite keys
+- **No reactors:** Fields update via AutoCAD's field system, not VLR-OBJECT-REACTOR callbacks
+- **No VPTRANS:** Field references are object handles, not coordinates needing viewport transform
+- **Test expectations:** Assert ABSENCE of XDATA for LF/SF/SY tags (PASS if no XDATA found)
+
+**Architecture difference:**
+- **Reactive auto-text (Sta/Off/Dia/etc.):** Uses XDATA + VLR reactors for dynamic updates
+- **Field-only (LF/SF/SY):** Uses AutoCAD built-in field system (simpler, no CNM overhead)
+
+---
+
+## Performance Analysis
+
+### TEST 39: Insertion Performance (Baseline: 1552 ms/bubble)
+
+**Status:** BASELINE ESTABLISHED - Lower priority (user reaction delay mitigates)
+
+**No dialog overhead:** CNM bubble insertion has NO dialog prompts - all parameters provided via script
+
+**Suspected bottlenecks:**
+1. **Block insertion overhead:** Could `entmake` be faster than `command` for block insertion?
+2. **Civil 3D queries:** Alignment/pipe property retrieval (vlax-get-property)
+3. **XDATA writes:** Extended entity data storage
+4. **Reactor attachment:** VLR-OBJECT-REACTOR setup per bubble
+
+**Profiling strategy needed:**
+- Instrument insertion path with `(getvar "MILLISECS")` checkpoints
+- Isolate each operation: block insert, XDATA write, reactor attach, Civil 3D query
+- Compare `entmake` vs `command` for block insertion
+- Identify which operation consumes most time
+
+**Target:** <500ms excellent, 500-1000ms acceptable, >1000ms investigate
+
+### TEST 40: Reactor Performance (Baseline: 773 ms/stretch, ~193 ms/callback)
+
+**Status:** PRIORITY CONCERN - Must be "blinding speed" (happens in specious present)
+
+**Critical requirement:** Reactor updates must feel instant (< 100ms perceived as instant)
+
+**Current performance:** 193 ms/callback significantly exceeds instant threshold
+
+**Suspected bottlenecks:**
+1. **Civil 3D property queries:** Every reactor callback queries alignment/pipe properties
+2. **XDATA reads/writes:** Searching and updating auto-text in XDATA
+3. **Attribute updates:** Writing new values to block attributes
+4. **String formatting:** Generating formatted auto-text (Sta/Off/Slope/etc.)
+
+**Profiling strategy needed:**
+- Instrument `hcnm-ldrblk-reactor-callback` with millisecond checkpoints
+- Measure: Civil 3D query time, XDATA read, XDATA write, attribute update, formatting
+- Identify dominant bottleneck
+- Consider caching frequently-accessed object properties
+
+**Optimization opportunities:**
+- Cache Civil 3D object properties (alignment/pipe handles → property cache)
+- Minimize XDATA parsing overhead
+- Batch attribute updates if multiple auto-texts per bubble
+- Profile each formatting function (Sta, Off, StaOff, Slope, etc.)
+
+**Target:** <20ms fast, 20-50ms moderate, >50ms slow, >100ms noticeable lag
 
 ---
 

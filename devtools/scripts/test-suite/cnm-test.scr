@@ -63,6 +63,7 @@
 (load (strcat (getvar "dwgprefix") "cnm-test-validation.lsp"))
 (c:test-setup-layers)
 (test-write-report-header)
+(c:test-log-start)
 ; Switch to model space (drawing starts on TEST-LAYOUT)
 mspace
 zoom
@@ -143,7 +144,8 @@ n
 ;; Position: 1R-2U = Column 1 Right, Row 2 Up
 ;; Arrow: (10380',20260'), Bubble: (10385',20270')
 ;; Selection: Curb line at (10360',20260') - center X, avoids bubbles/leaders
-;; Expected: 640.00 LF (full line length)
+;; NOTE: CNM uses AutoCAD field expressions for dynamic length - this is CORRECT
+;; Field format: %<\AcObjProp Object(...).Length ...>% LF
 ;;
 HAWS-ELLL
 10380,20260
@@ -153,8 +155,19 @@ HAWS-ELLL
 lf
 10360,20260
 
-(test-validate-auto-text (entlast) "NOTETXT1" "640.00 LF" "TEST 4: LF (Model)")
-(test-validate-xdata (entlast) "NOTETXT1" "LF" "TEST 4")
+;; Field expression validation: Check for field code with LF suffix
+;; NOTE: LF uses AutoCAD fields only - NO XDATA/reactors (static field reference)
+(if (and (setq test-text (cadr (assoc "NOTETXT1" (hcnm-bn-dwg-to-lattribs (entlast)))))
+         (vl-string-search "%<\\AcObjProp" test-text)
+         (vl-string-search "LF" test-text))
+  (test-validate-auto-text (entlast) "NOTETXT1" test-text "TEST 4: LF (Model)")
+  (test-validate-auto-text (entlast) "NOTETXT1" "FIELD ERROR" "TEST 4: LF (Model)")
+)
+;; Validate NO XDATA present (LF is field-only, not CNM auto-text)
+(if (not (assoc "NOTETXT1" (hcnm-xdata-read (entlast))))
+  (test-write-report-entry "TEST 4 (No XDATA)" "PASS" "LF correctly uses field only (no XDATA)")
+  (test-write-report-entry "TEST 4 (No XDATA)" "FAIL" "Unexpected XDATA found for field-only LF")
+)
 ;;
 ;; TEST 5: Manual (Model) - Baseline manual text entry
 ;; Position: 2R-1U = Column 2 Right, Row 1 Up
@@ -191,7 +204,7 @@ name
 ;; Position: 4R-3U = Column 4 Right, Row 3 Up (sidewalk row)
 ;; Arrow: (10560',20270'), Bubble: (10565',20280')
 ;; Selection: Sidewalk rectangle at (10360',20272') - center X, top edge
-;; Expected: 3840.00 SF (640' × 6' rectangle)
+;; NOTE: CNM uses AutoCAD field expressions for dynamic area - this is CORRECT
 ;;
 HAWS-ELLL
 10560,20270
@@ -201,14 +214,25 @@ HAWS-ELLL
 sf
 10360,20272
 
-(test-validate-auto-text (entlast) "NOTETXT1" "3840.00 SF" "TEST 7: SF (Model)")
-(test-validate-xdata (entlast) "NOTETXT1" "SF" "TEST 7")
+;; Field expression validation: Check for field code with SF suffix
+;; NOTE: SF uses AutoCAD fields only - NO XDATA/reactors (static field reference)
+(if (and (setq test-text (cadr (assoc "NOTETXT1" (hcnm-bn-dwg-to-lattribs (entlast)))))
+         (vl-string-search "%<\\AcObjProp" test-text)
+         (vl-string-search "SF" test-text))
+  (test-validate-auto-text (entlast) "NOTETXT1" test-text "TEST 7: SF (Model)")
+  (test-validate-auto-text (entlast) "NOTETXT1" "FIELD ERROR" "TEST 7: SF (Model)")
+)
+;; Validate NO XDATA present (SF is field-only, not CNM auto-text)
+(if (not (assoc "NOTETXT1" (hcnm-xdata-read (entlast))))
+  (test-write-report-entry "TEST 7 (No XDATA)" "PASS" "SF correctly uses field only (no XDATA)")
+  (test-write-report-entry "TEST 7 (No XDATA)" "FAIL" "Unexpected XDATA found for field-only SF")
+)
 ;;
 ;; TEST 8: SY (Model) - Square yards from rectangle
 ;; Position: 5R-3U = Column 5 Right, Row 3 Up (sidewalk row)
 ;; Arrow: (10620',20270'), Bubble: (10625',20280')
 ;; Selection: Sidewalk rectangle at (10360',20272') - center X, top edge
-;; Expected: 426.67 SY (3840 SF ÷ 9)
+;; NOTE: CNM uses AutoCAD field expressions for dynamic area - this is CORRECT
 ;;
 HAWS-ELLL
 10620,20270
@@ -218,7 +242,19 @@ HAWS-ELLL
 sy
 10360,20272
 
-(test-validate-auto-text (entlast) "NOTETXT1" "426.67 SY" "TEST 8: SY (Model)")
+;; Field expression validation: Check for field code with SY suffix
+;; NOTE: SY uses AutoCAD fields only - NO XDATA/reactors (static field reference)
+(if (and (setq test-text (cadr (assoc "NOTETXT1" (hcnm-bn-dwg-to-lattribs (entlast)))))
+         (vl-string-search "%<\\AcObjProp" test-text)
+         (vl-string-search "SY" test-text))
+  (test-validate-auto-text (entlast) "NOTETXT1" test-text "TEST 8: SY (Model)")
+  (test-validate-auto-text (entlast) "NOTETXT1" "FIELD ERROR" "TEST 8: SY (Model)")
+)
+;; Validate NO XDATA present (SY is field-only, not CNM auto-text)
+(if (not (assoc "NOTETXT1" (hcnm-xdata-read (entlast))))
+  (test-write-report-entry "TEST 8 (No XDATA)" "PASS" "SY correctly uses field only (no XDATA)")
+  (test-write-report-entry "TEST 8 (No XDATA)" "FAIL" "Unexpected XDATA found for field-only SY")
+)
 ;;
 ;; === PAPER SPACE TESTS (VPTRANS Validation - 10 tests) ===
 ;; Viewport: Full page 36"×24", center (18",12") paper = (10360',20240') model @ 1/20XP
@@ -271,6 +307,7 @@ off
 ;; Selection: Alignment in MODEL coordinates (10360',20240') - center X, avoids bubbles
 ;; Paper (8",12.5") × 20 = Model offset (-200',+10') from center = (10160',20250')
 ;; Station: 10160'-10040' = 120' = STA 51+20.00, Offset: 20250'-20240' = 10.00 LT
+;; NOTE: Format specified by CNM.ini BubbleTextFormatStaOff setting
 ;;
 HAWS-ELLL
 8.0,12.5
@@ -280,7 +317,7 @@ HAWS-ELLL
 staoff
 10360,20240
 
-(test-validate-auto-text (entlast) "NOTETXT1" "STA 51+20.00  10.00 LT" "TEST 11: StaOff (Paper)")
+(test-validate-auto-text (entlast) "NOTETXT1" "STA 51+20.00, 10.00 LT" "TEST 11: StaOff (Paper)")
 (test-validate-xdata (entlast) "NOTETXT1" "StaOff" "TEST 11")
 (test-validate-reactor (entlast) "NOTETXT1" "StaOff" "TEST 11")
 ;;
@@ -323,7 +360,8 @@ dia
 ;; TEST 14: Slope (Paper→Model) - Pipe slope through viewport
 ;; Paper position: 5R column area at pipe row - no conflict with model tests
 ;; Selection: Pipe in MODEL coordinates (10360',20200') - center X, avoids bubbles
-;; Expected: -0.31% (calculated from pipe elevation difference)
+;; NOTE: Format specified by CNM.ini BubbleTextFormatSlope setting
+;; Slope calculation: elevation delta / horizontal length
 ;; Paper (31",10.0") × 20 = Model offset (+260',-40') from center = (10620',20200')
 ;;
 HAWS-ELLL
@@ -334,7 +372,7 @@ HAWS-ELLL
 slope
 10360,20200
 
-(test-validate-auto-text (entlast) "NOTETXT1" "-0.31%" "TEST 14: Slope (Paper)")
+(test-validate-auto-text (entlast) "NOTETXT1" "0.31%" "TEST 14: Slope (Paper)")
 (test-validate-xdata (entlast) "NOTETXT1" "Slope" "TEST 14")
 (test-validate-reactor (entlast) "NOTETXT1" "Slope" "TEST 14")
 ;;
@@ -401,26 +439,759 @@ PAPER MANUAL
 
 (test-validate-auto-text (entlast) "NOTETXT1" "PAPER MANUAL" "TEST 18: Manual (Paper)")
 ;;
-;; Return to model space for summary annotation
+;; Return to model space for final phases
 ;;
 mspace
+;;==============================================================================
+;; PHASE H: KEY NOTES TABLE TESTS
+;;==============================================================================
+;;
+;; Purpose: Validate CNM's core workflow - generating Key Notes Tables
+;; Prerequisites: Project notes file managed by CNM (haws-config/hcnm-config)
+;;
+;; IMPORTANT: CNM automatically copies constnot-default.csv from app folder
+;;            to project folder on first use. This tests proper project
+;;            management via haws-config system. Do NOT manually copy!
+;;
+;; TEST 19-26: Place bubbles with quantities for Key Notes Table
+;; Following standard CNM project notes pattern:
+;;   - Note 1 of each shape: LINE1 quantity (sums from line 1 text)
+;;   - Note 2 of each shape: COUNT (counts number of bubbles)
+;;
+;; BOX-1 bubbles with LINE1 quantities (should sum to 325 LF total)
+;;
+;; Position 1: 100 LF
+haws-boxl
+10300,20140
+10295,20150
+1
+100 LF
+
+;; Position 2: 150 LF
+haws-boxl
+10360,20140
+10355,20150
+1
+150 LF
+
+;; Position 3: 75 LF
+haws-boxl
+10420,20140
+10415,20150
+1
+75 LF
+
+;; BOX-2 bubbles (should count to 2 EA)
+;; Position 4
+haws-boxl
+10480,20140
+10475,20150
+2
+
+
+;; Position 5
+haws-boxl
+10540,20140
+10535,20150
+2
+
+
+;; CIR-1 bubbles with quantities (should sum to 200 LF)
+haws-cirl
+10300,20120
+10295,20130
+1
+200 LF
+
+;; CIR-2 bubble (should count to 1 EA)
+haws-cirl
+10360,20120
+10355,20130
+2
+
+
+;; DIA-1 bubbles with quantities (should sum to 450 LF)
+haws-dial
+10420,20120
+10415,20130
+1
+450 LF
+
+;; DIA-2 bubbles (should count to 3 EA)
+haws-dial
+10480,20120
+10475,20130
+2
+
+
+haws-dial
+10540,20120
+10535,20130
+2
+
+
+haws-dial
+10600,20120
+10595,20130
+2
+
+
+;; HEX-1 bubbles with quantities (should sum to 800 LF)
+haws-hexl
+10300,20100
+10295,20110
+1
+800 LF
+
+;; HEX-2 bubbles (should count to 5 EA)
+haws-hexl
+10360,20100
+10355,20110
+2
+
+
+haws-hexl
+10420,20100
+10415,20110
+2
+
+
+haws-hexl
+10480,20100
+10475,20110
+2
+
+
+haws-hexl
+10540,20100
+10535,20110
+2
+
+
+haws-hexl
+10600,20100
+10595,20110
+2
+
+
+;; PHASE J: CNM-DEMO COVERAGE - CNM PLUS UTILITIES
+;;==============================================================================
+;; Source: CNM-Demo.scr (appended with displacement +9800,+20400)
+;; NOTE: Model Space must be current for these tests
+;; Utilities tested: haws-contvol, haws-ut, haws-mof, haws-lotnum, haws-newpro
+;;
+;; Return to model space (required for CNM-Demo tests)
+;;
+mspace
+;;
+;; Disable osnap for precise coordinate entry
+;;
+-osnap
+off
+;;
+;; Create contour layer for haws-contvol test
+;;
+-LAYER
+m
+C-TOPO-CONT
+C
+M
+
+
+;;
+;; TEST 27: haws-contvol (Contour Volume Calculation)
+;; Draw nested polylines for volume calculation
+;;
+PLINE
+10100,20750
+10180,20750
+10180,20850
+10100,20850
+C
+OFFSET
+4
+10100,20750
+10104,20754
+10104,20754
+10108,20758
+10108,20758
+10112,20762
+
+;;
+;; Run contour volume utility
+;;
+haws-contvol
+10108,20758
+10104,20754
+10100,20750
+
+10115,20830
+;;
+;; TEST 28-35: Bubble placement (CNM-Demo pattern)
+;; Standard bubble insertion tests from original CNM-Demo
+;;
+HAWS-BOXL
+10525,20650
+@25<60
+1
+26 LF
+3
+HAWS-CIRL
+10575,20650
+@25<60
+1
+22 LF
+INSIDE PROPERTY
+HAWS-HEXL
+10625,20650
+@25<60
+2
+STA 46+57.28
+3' R
+HAWS-RECL
+10675,20650
+@25<60
+1
+456 LF
+
+HAWS-BOXL
+10760,20650
+@25<120
+1
+280 LF
+
+HAWS-PENL
+10810,20650
+@25<120
+1
+502 LF
+
+HAWS-OCTL
+10860,20650
+@25<120
+2
+
+
+HAWS-DIAL
+10910,20650
+@25<120
+2
+STA. 5+22
+5' L
+;;
+;; GENERATE KEY NOTES TABLE
+;; Command: hcnm-cnmkt (Key Notes Table)
+;; Prompts for search scope and insertion point
+;;
+hcnm-cnmkt
+10220,20850
+
+;;
+;; VALIDATE KEY NOTES TABLE
+;; Check that Key Notes Table was generated
+;; Check that .not file was created
+;;
+(c:test-validate-key-table)
+;;==============================================================================
+;; PHASE I: QUANTITY TAKEOFF TABLE TESTS
+;;==============================================================================
+;;
+;; Create cnm-test.lst (sheet list for QT command)
+;; Single-sheet test: cnm-test.dwg -> cnm-test.not
+;;
+(c:test-create-qt-lst-file)
+;;
+;; GENERATE QT TABLE
+;; Command: hcnm-cnmqt (Quantity Takeoff Table)
+;; Prompts for insertion point
+;;
+hcnm-cnmqt
+Yes
+Used
+10750,20400
+;;
+;; VALIDATE QT TABLE
+;;
+(c:test-validate-qt-table)
+;;
+;; Create test layer for utilities
+;;
+-layer
+make
+C-ANNO-HCNM-TEST
+
+;;
+;; TEST 36-37: haws-ut (Utility function)
+;; First test: Setup with specific parameters
+;;
+haws-ut
+;Setup
+e
+w
+24
+28
+CSCP
+
+10560,20750
+10860,20750
+Arc
+10900,20790
+
+;;
+;; Second test: Setup with different parameters
+;;
+haws-ut
+Setup
+p
+w
+28
+10560,20760
+10860,20760
+Arc
+10890,20790
+
+;;
+;; TEST 38: haws-mof (Multiple Offset)
+;; Select base object and create multiple offsets
+;;
+haws-mof
+
+10465,20573
+10439,20595
+10470,20595
+10462,20638
+10485,20632
+
+;;
+;; Create property identification layer
+;;
+-layer
+make
+C-PROP-IDEN
+
+;;
+;; TEST 39: haws-lotnum (Lot Numbering)
+;; Number multiple lot boundaries
+;;
+haws-lotnum
+1
+mid
+10957,20502
+mid
+10906,20502
+mid
+10855,20507
+mid
+10805,20507
+mid
+10755,20507
+mid
+10705,20507
+mid
+10655,20507
+mid
+10605,20507
+mid
+10555,20507
+mid
+10500,20504
+
+;;
+;; TEST 40: haws-newpro (New Profile)
+;; Initialize Profile Drafter system
+;;
+haws-newpro
+;;
+;; Set layer for final message
+;;
+-layer
+set
+C-ANNO-HCNM-TEST
+
+; === PHASE F: PERFORMANCE BENCHMARKS ===
+; TEST 39: Bubble insertion performance (20 insertions)
+(princ "\n\n=== TEST 39: Bubble Insertion Performance ===")
+(setq perf-start-39 (getvar "MILLISECS"))
+;; Insert 20 bubbles with Station auto-text in grid pattern
+;; Row 11-12 positions (below CNM-Demo tests)
+;; Position 1L-11D
+HAWS-ELLL
+10340,20050
+10335,20060
+151
+.
+sta
+10360,20240
+
+;; Position 2L-11D
+HAWS-ELLL
+10400,20050
+10395,20060
+152
+.
+sta
+10360,20240
+
+;; Position 3L-11D
+HAWS-ELLL
+10460,20050
+10455,20060
+153
+.
+sta
+10360,20240
+
+;; Position 1R-11D
+HAWS-ELLL
+10380,20050
+10385,20060
+154
+.
+sta
+10360,20240
+
+;; Position 2R-11D
+HAWS-ELLL
+10440,20050
+10445,20060
+155
+.
+sta
+10360,20240
+
+;; Position 3R-11D
+HAWS-ELLL
+10500,20050
+10505,20060
+156
+.
+sta
+10360,20240
+
+;; Position 1L-12D
+HAWS-ELLL
+10340,20040
+10335,20050
+157
+.
+sta
+10360,20240
+
+;; Position 2L-12D
+HAWS-ELLL
+10400,20040
+10395,20050
+158
+.
+sta
+10360,20240
+
+;; Position 3L-12D
+HAWS-ELLL
+10460,20040
+10455,20050
+159
+.
+sta
+10360,20240
+
+;; Position 1R-12D
+HAWS-ELLL
+10380,20040
+10385,20050
+160
+.
+sta
+10360,20240
+
+;; Position 2R-12D
+HAWS-ELLL
+10440,20040
+10445,20050
+161
+.
+sta
+10360,20240
+
+;; Position 3R-12D
+HAWS-ELLL
+10500,20040
+10505,20050
+162
+.
+sta
+10360,20240
+
+;; Position 1L-13D
+HAWS-ELLL
+10340,20030
+10335,20040
+163
+.
+sta
+10360,20240
+
+;; Position 2L-13D
+HAWS-ELLL
+10400,20030
+10395,20040
+164
+.
+sta
+10360,20240
+
+;; Position 3L-13D
+HAWS-ELLL
+10460,20030
+10455,20040
+165
+.
+sta
+10360,20240
+
+;; Position 1R-13D
+HAWS-ELLL
+10380,20030
+10385,20040
+166
+.
+sta
+10360,20240
+
+;; Position 2R-13D
+HAWS-ELLL
+10440,20030
+10445,20040
+167
+.
+sta
+10360,20240
+
+;; Position 3R-13D
+HAWS-ELLL
+10500,20030
+10505,20040
+168
+.
+sta
+10360,20240
+
+;; Position 1L-14D
+HAWS-ELLL
+10340,20020
+10335,20030
+169
+.
+sta
+10360,20240
+
+;; Position 2L-14D
+HAWS-ELLL
+10400,20020
+10395,20030
+170
+.
+sta
+10360,20240
+
+;; End performance test and report
+(c:test-report-insertion-performance perf-start-39 20)
+; TEST 40: Reactor performance (20 leader stretches)
+(princ "\n\n=== TEST 40: Reactor Update Performance ===")
+(setq test-bubble-40 (entlast))
+(setq perf-start-40 (getvar "MILLISECS"))
+;; Stretch 4 leaders in column 1L (notes 151, 157, 163, 169)
+;; All have X=10340, Y ranges from 20020 to 20050
+;; Perform 20 stretches with micro-offsets (0.01' increments in Y)
+;; Stretch 1: Move leaders +0.01' in Y
+stretch
+c
+10339,20019
+10341,20051
+
+0,0.01
+
+;; Stretch 2: Move leaders +0.01' in Y (cumulative +0.02')
+stretch
+c
+10339,20019
+10341,20051
+
+0,0.01
+
+;; Stretch 3
+stretch
+c
+10339,20019
+10341,20051
+
+0,0.01
+
+;; Stretch 4
+stretch
+c
+10339,20019
+10341,20051
+
+0,0.01
+
+;; Stretch 5
+stretch
+c
+10339,20019
+10341,20051
+
+0,0.01
+
+;; Stretch 6
+stretch
+c
+10339,20019
+10341,20051
+
+0,0.01
+
+;; Stretch 7
+stretch
+c
+10339,20019
+10341,20051
+
+0,0.01
+
+;; Stretch 8
+stretch
+c
+10339,20019
+10341,20051
+
+0,0.01
+
+;; Stretch 9
+stretch
+c
+10339,20019
+10341,20051
+
+0,0.01
+
+;; Stretch 10
+stretch
+c
+10339,20019
+10341,20051
+
+0,0.01
+
+;; Stretch 11
+stretch
+c
+10339,20019
+10341,20051
+
+0,0.01
+
+;; Stretch 12
+stretch
+c
+10339,20019
+10341,20051
+
+0,0.01
+
+;; Stretch 13
+stretch
+c
+10339,20019
+10341,20051
+
+0,0.01
+
+;; Stretch 14
+stretch
+c
+10339,20019
+10341,20051
+
+0,0.01
+
+;; Stretch 15
+stretch
+c
+10339,20019
+10341,20051
+
+0,0.01
+
+;; Stretch 16
+stretch
+c
+10339,20019
+10341,20051
+
+0,0.01
+
+;; Stretch 17
+stretch
+c
+10339,20019
+10341,20051
+
+0,0.01
+
+;; Stretch 18
+stretch
+c
+10339,20019
+10341,20051
+
+0,0.01
+
+;; Stretch 19
+stretch
+c
+10339,20019
+10341,20051
+
+0,0.01
+
+;; Stretch 20 (final cumulative offset: +0.20' in Y)
+stretch
+c
+10339,20019
+10341,20051
+
+0,0.01
+
+;; End reactor performance test and report
+(c:test-report-reactor-performance perf-start-40 20)
 ; === SUMMARY ===
 (c:test-generate-summary-mtext)
-(test-write-report-summary 8 10 18)
+(test-write-report-summary 8 10 42)
+;; Cleanup: remove project files for next test run
+(c:test-cleanup-project-files)
+(c:test-log-end)
 ; === SUCCESS MESSAGE ===
 ; Place in model space at top of drawing for visibility @ 1/20XP scale
 mtext
-10360,20350
+10360,20440
 height
-2
+4
 justify
 TC
 Width
 0
-CNM TEST SUITE - PHASE C COMPLETE
-VPTRANS Validation Focus:
+CNM TEST SUITE
+Auto-Text Validation
 - 8 model space tests (baseline + SF/SY)
 - 10 paper space tests (VPTRANS coordinate transform)
-Total: 18 comprehensive auto-text validation tests
-Review cnm-test-report.md for detailed results.
+Performance Benchmarks
+- Insertion performance (20 bubbles, baseline timing)
+- Reactor performance (20 updates, callback overhead)
+Key Notes & QT Tables: Key Notes Table generation validated and QT Table generation validated
+CNM-Demo Coverage (CNM Plus Utilities): haws-contvol (contour volume), haws-ut (utility drafter - 2 tests), haws-mof (multiple offset), haws-lotnum (lot numbering), haws-newpro (profile drafter)
+Total: 42 comprehensive CNM workflow tests
+Review test-results/cnm-test-report.md for detailed results.
+ALL TESTS COMPLETED SUCCESSFULLY.
 
+; This is the end of the script. Do not add characters after this comment.

@@ -5525,8 +5525,20 @@ ImportLayerSettings=No
   (princ (haws-unified-version))
   (haws-tip
     1
-    "\nIn some AutoCAD installations, CNM bubble insertion crashes the first time in each drawing session, possibly when it's the first command or the first block insertion. Please let us know if you can confirm a pattern."
+    "\nMystery crash:\n\nIn some AutoCAD installations, CNM bubble insertion crashes the first time in each drawing session, possibly when it's the first command or the first block insertion. Purging may resolve this. Please let us know if you can confirm a pattern."
   )
+  ;; [TGH NOTE 2025-11-29]
+  ;; Observation: After purging the test drawing used by the automated
+  ;; test-suite (devtools/scripts/test-suite/cnm-test.dwg), the "first
+  ;; bubble" crash did not reproduce. This suggests the crash may be
+  ;; related to drawing state (unpurged items) rather than a deterministic code path.
+  ;;
+  ;; Action: Keep this note here for investigators. When running tests,
+  ;; try purging test drawings as part of repro steps. See
+  ;; devtools/scripts/test-suite/cnm-test.scr for related test harness
+  ;; comments and the cnm-test-run log. If a consistent repro is found,
+  ;; file an issue with steps to reproduce and include a copy of the
+  ;; purged vs non-purged drawing for debugging.
   (haws-vsave '("attreq" "aunits" "clayer" "cmdecho"))
   (cond
     ((and (getvar "wipeoutframe") (/= (getvar "wipeoutframe") 2))

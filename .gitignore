@@ -15,3 +15,5 @@ Devmenu/VS-DLL/
 # Active planning documents (work in progress, not for version control)
 # See .planning/README.md for workflow explanation
 .planning/
+
+devtools/scripts/test-suite/

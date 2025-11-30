@@ -3,7 +3,7 @@ HAWSEDC STANDARDS VOLUME 02: AI AND HUMAN COLLABORATION
 
 **Document Type:** Standard  
 **Status:** Active  
-**Last Updated:** 2025-10-25  
+**Last Updated:** 2025-11-29  
 **Owner:** Tom Haws (TGH)
 
 ---
@@ -221,6 +221,31 @@ Anyone (human or AI) can add comments using their initials.
 ### 4.2.3 Requesting Cleanup
 Humans can request: "Remove all resolved [TGH: ...] comments"  
 AIs can suggest: "I see 3 resolved comments marked for removal"
+
+### 4.2.4 Resolved-passages marker (deletion-by-citation workflow)
+
+When an inline passage is judged obsolete or proposed for deletion, follow this low-risk, human-reviewed workflow:
+
+- Add a Resolved-passages marker block directly above the passage using the following syntax:
+
+```
+[delete]
+Human approval needed for deletion: This passage is proposed for removal because <short rationale>.
+Proposed-by: <name or AI id>
+Date: YYYY-MM-DD
+[/delete]
+```
+
+- If the passage contains long-form knowledge that should be preserved, migrate that content to an appropriate canonical location (`ci` or `devtools/docs/standards`) BEFORE removing the passage. Replace the original passage with a one-line citation to the canonical document and leave the `[delete]` marker for human review.
+
+- If the passage is low-value historical noise (e.g., a now-resolved workaround instruction), the `[delete]` marker allows humans to validate and then remove it safely.
+
+Human reviewer responsibilities:
+
+- Inspect each `[delete]` marker and either (A) remove the marked passage and the marker, or (B) remove the marker if the passage should remain. Record the decision in the relevant standards or the commit message.
+- For migrations to `ci` or `devtools/docs/standards`, update the target document's metadata (`Last Updated`) and record the migration rationale.
+
+Rationale: This procedure gives AI agents a standardized, auditable way to propose broad cleanups while ensuring humans retain final control and canonical knowledge is preserved.
 
 ## 4.3 Types of Comments
 
