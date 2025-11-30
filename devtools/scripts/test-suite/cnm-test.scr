@@ -156,18 +156,14 @@ lf
 10360,20260
 
 ;; Field expression validation: Check for field code with LF suffix
-;; NOTE: LF uses AutoCAD fields only - NO XDATA/reactors (static field reference)
+;; NOTE: LF uses AutoCAD fields (passive updates) but stores XDATA for editor smart replace
 (if (and (setq test-text (cadr (assoc "NOTETXT1" (hcnm-bn-dwg-to-lattribs (entlast)))))
          (vl-string-search "%<\\AcObjProp" test-text)
          (vl-string-search "LF" test-text))
   (test-validate-auto-text (entlast) "NOTETXT1" test-text "TEST 4: LF (Model)")
   (test-validate-auto-text (entlast) "NOTETXT1" "FIELD ERROR" "TEST 4: LF (Model)")
 )
-;; Validate NO XDATA present (LF is field-only, not CNM auto-text)
-(if (not (assoc "NOTETXT1" (hcnm-xdata-read (entlast))))
-  (test-write-report-entry "TEST 4 (No XDATA)" "PASS" "LF correctly uses field only (no XDATA)")
-  (test-write-report-entry "TEST 4 (No XDATA)" "FAIL" "Unexpected XDATA found for field-only LF")
-)
+(test-validate-xdata (entlast) "NOTETXT1" "LF" "TEST 4")
 ;;
 ;; TEST 5: Manual (Model) - Baseline manual text entry
 ;; Position: 2R-1U = Column 2 Right, Row 1 Up
@@ -215,18 +211,14 @@ sf
 10360,20272
 
 ;; Field expression validation: Check for field code with SF suffix
-;; NOTE: SF uses AutoCAD fields only - NO XDATA/reactors (static field reference)
+;; NOTE: SF uses AutoCAD fields (passive updates) but stores XDATA for editor smart replace
 (if (and (setq test-text (cadr (assoc "NOTETXT1" (hcnm-bn-dwg-to-lattribs (entlast)))))
          (vl-string-search "%<\\AcObjProp" test-text)
          (vl-string-search "SF" test-text))
   (test-validate-auto-text (entlast) "NOTETXT1" test-text "TEST 7: SF (Model)")
   (test-validate-auto-text (entlast) "NOTETXT1" "FIELD ERROR" "TEST 7: SF (Model)")
 )
-;; Validate NO XDATA present (SF is field-only, not CNM auto-text)
-(if (not (assoc "NOTETXT1" (hcnm-xdata-read (entlast))))
-  (test-write-report-entry "TEST 7 (No XDATA)" "PASS" "SF correctly uses field only (no XDATA)")
-  (test-write-report-entry "TEST 7 (No XDATA)" "FAIL" "Unexpected XDATA found for field-only SF")
-)
+(test-validate-xdata (entlast) "NOTETXT1" "SF" "TEST 7")
 ;;
 ;; TEST 8: SY (Model) - Square yards from rectangle
 ;; Position: 5R-3U = Column 5 Right, Row 3 Up (sidewalk row)
@@ -243,18 +235,14 @@ sy
 10360,20272
 
 ;; Field expression validation: Check for field code with SY suffix
-;; NOTE: SY uses AutoCAD fields only - NO XDATA/reactors (static field reference)
+;; NOTE: SY uses AutoCAD fields (passive updates) but stores XDATA for editor smart replace
 (if (and (setq test-text (cadr (assoc "NOTETXT1" (hcnm-bn-dwg-to-lattribs (entlast)))))
          (vl-string-search "%<\\AcObjProp" test-text)
          (vl-string-search "SY" test-text))
   (test-validate-auto-text (entlast) "NOTETXT1" test-text "TEST 8: SY (Model)")
   (test-validate-auto-text (entlast) "NOTETXT1" "FIELD ERROR" "TEST 8: SY (Model)")
 )
-;; Validate NO XDATA present (SY is field-only, not CNM auto-text)
-(if (not (assoc "NOTETXT1" (hcnm-xdata-read (entlast))))
-  (test-write-report-entry "TEST 8 (No XDATA)" "PASS" "SY correctly uses field only (no XDATA)")
-  (test-write-report-entry "TEST 8 (No XDATA)" "FAIL" "Unexpected XDATA found for field-only SY")
-)
+(test-validate-xdata (entlast) "NOTETXT1" "SY" "TEST 8")
 ;;
 ;; === PAPER SPACE TESTS (VPTRANS Validation - 10 tests) ===
 ;; Viewport: Full page 36"×24", center (18",12") paper = (10360',20240') model @ 1/20XP
@@ -998,6 +986,7 @@ sta
 (c:test-report-insertion-performance perf-start-39 20)
 ; TEST 40: Reactor performance (20 leader stretches)
 (princ "\n\n=== TEST 40: Reactor Update Performance ===")
+(c:test-enable-profiling)
 (setq test-bubble-40 (entlast))
 (setq perf-start-40 (getvar "MILLISECS"))
 ;; Stretch 4 leaders in column 1L (notes 151, 157, 163, 169)
@@ -1174,14 +1163,14 @@ c
 ; === SUCCESS MESSAGE ===
 ; Place in model space at top of drawing for visibility @ 1/20XP scale
 mtext
-10360,20440
+10360,20430
 height
-4
+8
 justify
 TC
 Width
 0
-CNM TEST SUITE
+CNM TEST SUITE - ALL 42 TESTS COMPLETED SUCCESSFULLY
 Auto-Text Validation
 - 8 model space tests (baseline + SF/SY)
 - 10 paper space tests (VPTRANS coordinate transform)
@@ -1189,9 +1178,7 @@ Performance Benchmarks
 - Insertion performance (20 bubbles, baseline timing)
 - Reactor performance (20 updates, callback overhead)
 Key Notes & QT Tables: Key Notes Table generation validated and QT Table generation validated
-CNM-Demo Coverage (CNM Plus Utilities): haws-contvol (contour volume), haws-ut (utility drafter - 2 tests), haws-mof (multiple offset), haws-lotnum (lot numbering), haws-newpro (profile drafter)
-Total: 42 comprehensive CNM workflow tests
+CNM-Demo Coverage (CNM Plus Utilities): haws-contvol, haws-ut, haws-mof, haws-lotnum, haws-newpro (profile drafter)
 Review test-results/cnm-test-report.md for detailed results.
-ALL TESTS COMPLETED SUCCESSFULLY.
 
 ; This is the end of the script. Do not add characters after this comment.

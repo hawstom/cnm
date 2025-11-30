@@ -19,6 +19,42 @@
 #### 1.1.3. Workflow Constraints
 - **DO NOT git commit**: Let the human commit. AI prepares files only.
 
+#### 1.1.4. Architecture Checklist (MANDATORY before coding)
+
+**ALWAYS ask these questions BEFORE writing code:**
+
+1. **Who calls this?** (user command, script, callback, internal function)
+   - User command → use `c:` prefix
+   - Script-only → NO `c:` prefix (not a user command)
+   - Callback → NO `c:` prefix (event-driven)
+   - Internal → NO `c:` prefix (helper function)
+
+2. **Where does it belong?** (layering check)
+   - Core library (edclib) → MUST NOT depend on apps (CNM)
+   - App (CNM) → CAN depend on core, CANNOT depend on test suite
+   - Test suite → ISOLATED, minimal dependencies
+   - Prefix must match location: `haws-` for edclib, `hcnm-` for CNM
+
+3. **What's the scope?** (identity/lifetime)
+   - Session-only → Scope 0
+   - Project-wide → Scope 2
+   - User preference → Scope 4
+   - App must match usage: CNM settings in "CNM", HawsEDC-wide in "HAWS"
+
+4. **Does this already exist?** (DRY check)
+   - Search with `grep_search` for similar functionality
+   - Reuse existing utilities (haws-debug, haws-profile-log, etc.)
+   - Don't duplicate file I/O patterns
+
+5. **Is this the simplest solution?**
+   - Shortest path to working code
+   - Reuse existing patterns
+   - No premature abstraction
+
+**VIOLATION CONSEQUENCES:** Architectural errors create technical debt, confuse future maintainers, and waste human cleanup time.
+
+**When uncertain:** ASK the human these questions explicitly before proceeding.
+
 ### 1.2. Project Context
 
 **What is CNM?** Civil engineering tool for managing construction notes on AutoCAD drawings.

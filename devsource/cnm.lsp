@@ -263,14 +263,16 @@
 ;;; Then saves all the notes and quantities for drawing in file nfname.
 ;;;
 ;;;Set up list from CONSTNOT.TXT and NOTEQTY block.
-(defun hcnm-key-table-searchandsave (dn projnotes / aliaslist at attributes
+(defun hcnm-key-table-searchandsave (dn projnotes qtypt / aliaslist at attributes
                                  av blki blkss count ctabonly el en et i
                                  j mvport mvsset n nfname notefnd notei
                                  notelines notelist notenum notephase
                                  noteqty notetxt notetype notnum nottyp
                                  phase phaselist qtyopt skippedphases
-                                 usrvar vplayers x
+                                 usrvar vplayers x bubble-list notesmaxheight
+                                 orphaned-bubbles
                                 )
+  (princ "\nDEBUG: hcnm-key-table-searchandsave called")
   ;;
   ;; Section 1.  Make an empty NOTELIST from tblqty and constnot.txt.  TGHI can use this section for Tally, except there is a conflict in the way they do PHASELIST.
   ;;
@@ -427,8 +429,9 @@
     i -1
     aliaslist
      (mapcar '(lambda (phase) (reverse phase)) (car notelist))
+    bubble-list nil
   )
-  ]
+  (princ "\nDEBUG: Starting bubble search loop")
   (while (and blkss (setq blki (ssname blkss (setq i (1+ i)))))
     (setq
       en blki
@@ -464,6 +467,8 @@
       notei
        (assoc notenum (cdr (assoc notetype (cadr notelist))))
     )
+    (princ (strcat "\nDEBUG: Processing bubble " (vl-princ-to-string en) " notenum=" (if notenum notenum "nil")))
+    (setq bubble-list (cons en bubble-list))
     (cond
       ;;If there is such a note and phase, or no phasing is being used.
       ((and
@@ -567,6 +572,20 @@
     )
   )
   ;;After searching bubbles for presence and quantities,
+  ;;audit bubbles for orphaned auto-text (but delay alert until after prompts)
+  (princ (strcat "\nDEBUG: bubble-list length = " (itoa (length bubble-list))))
+  (setq orphaned-bubbles
+    (if bubble-list
+      (progn
+        (princ "\nDEBUG: Calling hcnm-audit-bubbles-in-table (no alert)")
+        (hcnm-audit-bubbles-in-table-silent (reverse bubble-list))
+      )
+      (progn
+        (princ "\nDEBUG: bubble-list is nil, skipping audit")
+        nil
+      )
+    )
+  )
   ;;get quantities from qty table if no counting instructions
   (setq
     blkss
@@ -737,43 +756,48 @@
       "\nSaved notes and quantities in " nfname "."
      )
   )
-)
-;;MAKENOTETABLE reads NOTELIST from file nfname and makes a table of notes and quantities.
-;;Uses the qty block.
-;;Puts table at qtypt.
-;; TGH to use this for TALLY, maybe I just need to read NOTELIST as an argument instead of from a file in this function.
-(defun hcnm-key-table-make (nfsource qtypt qtyset dn txtht / ctabonly icol
-                        iphase column-height note-first-line-p
-                        column-height-pending nfname notdsc notelist
-                        notesmaxheight notetitles notnum notqty nottyp
-                        notunt numfnd phaselist prompteachcol qty qtypt1
-                        rdlin txthttemp typfnd usrvar
-                       )
-  (setq phaselist (hcnm-getphaselistfromtblqty))
+  ;;Prompt for table parameters
+  (if (not qtypt)
+    (setq qtypt (getpoint "\nStart point for key notes table: "))
+  )
   (setvar "osmode" 0)
-  (setvar "attreq" 1)
   (initget "Prompt")
   (setq
     notesmaxheight
      (haws-getdistx
        qtypt
        "Maximum height of each notes column"
-                                        ; or [Prompt for each column]"
        notesmaxheight
        9999.0
      )
   )
   (cond
     ((= notesmaxheight "Prompt")
-     (setq
-       prompteachcol t
-       notesmaxheight 9999.0
-     )
+     (setq notesmaxheight 9999.0)
      (alert
        "The option to prompt for each column is not yet operational."
      )
     )
   )
+  ;;Show audit alert after prompts if orphans were found
+  (if orphaned-bubbles
+    (hcnm-audit-show-alert (length orphaned-bubbles))
+  )
+  (list qtypt notesmaxheight)
+)
+;;MAKENOTETABLE reads NOTELIST from file nfname and makes a table of notes and quantities.
+;;Uses the qty block.
+;;Puts table at qtypt.
+;; TGH to use this for TALLY, maybe I just need to read NOTELIST as an argument instead of from a file in this function.
+(defun hcnm-key-table-make (nfsource qtypt qtyset dn txtht notesmaxheight / ctabonly icol
+                        iphase column-height note-first-line-p
+                        column-height-pending nfname notdsc notelist
+                        notetitles notnum notqty nottyp
+                        notunt numfnd phaselist prompteachcol qty qtypt1
+                        rdlin txthttemp typfnd usrvar
+                       )
+  (setq phaselist (hcnm-getphaselistfromtblqty))
+  (setvar "attreq" 1)
   (setq ctabonly (= (hcnm-config-getvar "DoCurrentTabOnly") "1"))
   (if (= nfsource "E")
     (setq
@@ -1323,9 +1347,151 @@
   (if (not qtypt)
     (setq qtypt (getpoint "\nStart point for key notes table: "))
   )
-  (hcnm-key-table-searchandsave dn projnotes)
+  (setq result (hcnm-key-table-searchandsave dn projnotes qtypt)
+        qtypt (car result)
+        notesmaxheight (cadr result)
+  )
   ;;Make a new notes table
-  (hcnm-key-table-make "E" qtypt qtyset dn txtht)
+  (hcnm-key-table-make "E" qtypt qtyset dn txtht notesmaxheight)
+)
+;#endregion
+;#region Bubble Notes Audit
+;;hcnm-audit-bubble-orphaned-p
+;;Checks if a bubble has orphaned auto-text (XDATA verbatim not found in attribute text)
+;;Parameters:
+;;  en-bubble - Entity name of bubble block
+;;Returns: List of orphaned auto-text details if found, nil if all valid
+;;  Format: '((tag auto-type xdata-text actual-text) ...)
+(defun hcnm-audit-bubble-orphaned-p (en-bubble / xdata-list orphans tag auto-type handle verbatim actual-text composite-pairs lattribs)
+  (haws-debug (strcat "DEBUG: Auditing bubble " (vl-princ-to-string en-bubble)))
+  (setq xdata-list (hcnm-xdata-read en-bubble)
+        lattribs (hcnm-get-attributes en-bubble t)
+        orphans nil
+  )
+  (haws-debug (strcat "DEBUG: XDATA list: " (vl-princ-to-string xdata-list)))
+  (foreach tag-entry xdata-list
+    (setq tag (car tag-entry)
+          composite-pairs (cdr tag-entry)
+          actual-text (cadr (assoc tag lattribs))
+    )
+    (foreach composite-entry composite-pairs
+      (setq auto-type (car (car composite-entry))
+            handle (cdr (car composite-entry))
+            verbatim (cdr composite-entry)
+      )
+      (haws-debug (strcat "DEBUG: Checking tag=" tag " auto-type=" auto-type))
+      (haws-debug (strcat "DEBUG: Verbatim=[" verbatim "]"))
+      (haws-debug (strcat "DEBUG: Actual=[" actual-text "]"))
+      (cond
+        ((not (vl-string-search verbatim actual-text))
+         (haws-debug "DEBUG: ORPHAN FOUND!")
+         (setq orphans (cons (list tag auto-type verbatim actual-text) orphans))
+        )
+        (t (haws-debug "DEBUG: Match OK"))
+      )
+    )
+  )
+  (haws-debug (strcat "DEBUG: Total orphans found: " (itoa (length orphans))))
+  (reverse orphans)
+)
+;;hcnm-audit-mark-orphan
+;;Marks a bubble as orphaned by drawing a circle around it with color ByLayer
+;;Parameters:
+;;  en-bubble - Entity name of bubble block
+;;Returns: T if marked successfully
+(defun hcnm-audit-mark-orphan (en-bubble / el layer-name insertion-point circle-radius)
+  (setq el (entget en-bubble)
+        layer-name (cdr (assoc 8 el))
+        insertion-point (cdr (assoc 10 el))
+        circle-radius 1.0
+  )
+  (command "._circle" insertion-point circle-radius)
+  (command "._chprop" (entlast) "" "_layer" layer-name "")
+  t
+)
+;;hcnm-audit-bubbles-in-table-silent
+;;Audits bubbles and marks orphans, but does NOT show alert
+;;Parameters:
+;;  bubble-list - List of bubble entity names from key notes table search
+;;Returns: List of orphaned bubbles with details
+;;  Format: '((en-bubble ((tag auto-type xdata-text actual-text) ...)) ...)
+(defun hcnm-audit-bubbles-in-table-silent (bubble-list / orphaned-bubbles en-bubble orphan-details total-orphans)
+  (princ (strcat "\nDEBUG: Auditing " (itoa (length bubble-list)) " bubbles"))
+  (setq orphaned-bubbles nil
+        total-orphans 0
+  )
+  (foreach en-bubble bubble-list
+    (setq orphan-details (hcnm-audit-bubble-orphaned-p en-bubble))
+    (cond
+      (orphan-details
+       (haws-debug "DEBUG: Marking orphan and adding to list")
+       (hcnm-audit-mark-orphan en-bubble)
+       (setq orphaned-bubbles (cons (list en-bubble orphan-details) orphaned-bubbles)
+             total-orphans (1+ total-orphans)
+       )
+      )
+    )
+  )
+  (haws-debug (strcat "DEBUG: Total orphaned bubbles: " (itoa total-orphans)))
+  (reverse orphaned-bubbles)
+)
+;;hcnm-audit-show-alert
+;;Shows alert for orphaned bubbles
+;;Parameters:
+;;  total-orphans - Number of orphaned bubbles found
+(defun hcnm-audit-show-alert (total-orphans / msg)
+  (setq msg (strcat
+              "BROKEN BUBBLE NOTE UPDATERS FOUND"
+              "\n\nCNM found " (itoa total-orphans) " bubble note(s) with static (broken) auto-text."
+              "\nProblem bubbles were marked with circles on bubble notes layer."
+              "\n\nTo fix:"
+              "\n1. Edit bubbles to update auto-text,"
+              "\n2. Erase circles manually, and"
+              "\n3. Contact the developers if this happens too ofen."
+            )
+  )
+  (alert (princ msg))
+)
+;;hcnm-audit-bubbles-in-table
+;;Audits all bubbles collected for key notes table and alerts if orphans found
+;;Parameters:
+;;  bubble-list - List of bubble entity names from key notes table search
+;;Returns: List of orphaned bubbles with details
+;;  Format: '((en-bubble ((tag auto-type xdata-text actual-text) ...)) ...)
+(defun hcnm-audit-bubbles-in-table (bubble-list / orphaned-bubbles en-bubble orphan-details total-orphans msg)
+  (princ (strcat "\nDEBUG: Auditing " (itoa (length bubble-list)) " bubbles"))
+  (setq orphaned-bubbles nil
+        total-orphans 0
+  )
+  (foreach en-bubble bubble-list
+    (setq orphan-details (hcnm-audit-bubble-orphaned-p en-bubble))
+    (cond
+      (orphan-details
+       (haws-debug "DEBUG: Marking orphan and adding to list")
+       (hcnm-audit-mark-orphan en-bubble)
+       (setq orphaned-bubbles (cons (list en-bubble orphan-details) orphaned-bubbles)
+             total-orphans (1+ total-orphans)
+       )
+      )
+    )
+  )
+  (haws-debug (strcat "DEBUG: Total orphaned bubbles: " (itoa total-orphans)))
+  (cond
+    ((> total-orphans 0)
+     (setq msg (strcat
+                 "\n*** AUDIT WARNING ***"
+                 "\nFound " (itoa total-orphans) " bubble(s) with orphaned auto-text."
+                 "\nOrphaned bubbles marked with circles on bubble layer (ByLayer color)."
+                 "\n\nTo fix:"
+                 "\n1. Edit bubble to update auto-text, OR"
+                 "\n2. Erase circles if bubbles are correct"
+                 "\n\nIf you see this frequently, please contact developers."
+               )
+     )
+     (alert (princ msg))
+    )
+  )
+  (reverse orphaned-bubbles)
 )
 ;#endregion
 ;#region Table from import
@@ -7666,8 +7832,10 @@ ImportLayerSettings=No
 ;;;
 ;;; RETURNS: Updated bubble-data
 (defun hcnm-bn-auto-dispatch (tag auto-type obj-reference bubble-data reactor-context-p /
-                              ename-bubble lattribs
+                              ename-bubble lattribs time-start
                              )
+  ;; Profile start
+  (setq time-start (getvar "MILLISECS"))
   ;; Extract parameters from bubble-data
   (setq 
     ename-bubble (hcnm-bn-bubble-data-get bubble-data "ename-bubble")
@@ -7845,6 +8013,9 @@ ImportLayerSettings=No
     lattribs
      (hcnm-bn-bubble-data-get bubble-data "ATTRIBUTES")
   )
+  ;; Report auto-dispatch timing
+  (haws-profile-log (strcat "    [PROFILE] Auto-dispatch (" auto-type "): " 
+                 (itoa (- (getvar "MILLISECS") time-start)) "ms"))
   ;; Return full bubble-data (contains lattribs + handle-reference + viewport info)
   ;; This allows callers to extract handle info for XDATA updates and reactor attachment
   bubble-data
@@ -7898,7 +8069,7 @@ ImportLayerSettings=No
 ;#region Auto quantity (LF/SF/SY)
 (defun hcnm-bn-auto-qty (bubble-data tag auto-type qt-type factor
                          obj-reference reactor-context-p / lattribs str-backslash input1
-                         pspace-bubble-p ss-p string ename-bubble
+                         pspace-bubble-p ss-p string ename-bubble handle-reference
                         )
   (setq
     ename-bubble
@@ -8011,6 +8182,22 @@ ImportLayerSettings=No
        "ATTRIBUTES"
        lattribs
      )
+  )
+  ;; FIX: Add auto-metadata for editor smart replace consistency
+  ;; ALL auto-text (field-based and static) needs XDATA for editor smart replace
+  ;; Handle is always empty ("") because:
+  ;; - Dynamic fields: AutoCAD field system handles updates (not CNM reactors)
+  ;; - Static quantities: No updates needed (calculated once)
+  ;; XDATA only purpose: Enable editor to find/replace auto-text (user convenience)
+  (setq handle-reference "")
+  (setq bubble-data
+    (hcnm-bn-bubble-data-add-auto-metadata
+      bubble-data
+      tag
+      auto-type
+      handle-reference
+      string
+    )
   )
   bubble-data
 )
@@ -8694,7 +8881,8 @@ ImportLayerSettings=No
 ;;   (SETQ TEXT (hcnm-bn-auto-pipe-dia-to-string obj-pipe))
 ;;==============================================================================
 (defun hcnm-bn-auto-pipe-dia-to-string
-   (obj-pipe / dia-value dia-inches)
+   (obj-pipe / dia-value dia-inches time-start time-civil3d-query time-format result)
+  (setq time-start (getvar "MILLISECS"))
   (setq
     dia-value
      (vl-catch-all-apply
@@ -8702,6 +8890,7 @@ ImportLayerSettings=No
        (list obj-pipe 'innerdiameterorwidth)
      )
   )
+  (setq time-civil3d-query (- (getvar "MILLISECS") time-start))
   (cond
     ((vl-catch-all-error-p dia-value)
      (princ
@@ -8716,15 +8905,22 @@ ImportLayerSettings=No
      ;; Civil 3D returns diameter in drawing units (typically feet for US)
      ;; Convert to inches for display
      (setq dia-inches (* dia-value 12.0))
-     (strcat
-       (hcnm-config-getvar "BubbleTextPrefixPipeDia")
-       (rtos
-         dia-inches
-         2
-         (atoi (hcnm-config-getvar "BubbleTextPrecisionPipeDia"))
+     (setq time-start (getvar "MILLISECS"))
+     (setq result
+       (strcat
+         (hcnm-config-getvar "BubbleTextPrefixPipeDia")
+         (rtos
+           dia-inches
+           2
+           (atoi (hcnm-config-getvar "BubbleTextPrecisionPipeDia"))
+         )
+         (hcnm-config-getvar "BubbleTextPostfixPipeDia")
        )
-       (hcnm-config-getvar "BubbleTextPostfixPipeDia")
      )
+     (setq time-format (- (getvar "MILLISECS") time-start))
+     (haws-profile-log (strcat "      [PROFILE Dia] Civil3D query: " (itoa time-civil3d-query) 
+                   "ms, Config+format: " (itoa time-format) "ms"))
+     result
     )
   )
 )
@@ -8753,7 +8949,8 @@ ImportLayerSettings=No
 ;;   (SETQ TEXT (hcnm-bn-auto-pipe-slope-to-string obj-pipe))
 ;;==============================================================================
 (defun hcnm-bn-auto-pipe-slope-to-string
-   (obj-pipe / slope-value slope-percent)
+   (obj-pipe / slope-value slope-percent time-start time-civil3d-query time-format result)
+  (setq time-start (getvar "MILLISECS"))
   (setq
     slope-value
      (vl-catch-all-apply
@@ -8761,6 +8958,7 @@ ImportLayerSettings=No
        (list obj-pipe 'slope)
      )
   )
+  (setq time-civil3d-query (- (getvar "MILLISECS") time-start))
   (cond
     ((vl-catch-all-error-p slope-value)
      (princ
@@ -8775,15 +8973,22 @@ ImportLayerSettings=No
      ;; Civil 3D returns slope as decimal (e.g., 0.02 for 2%)
      ;; Convert to percentage for display (take absolute value)
      (setq slope-percent (* (abs slope-value) 100.0))
-     (strcat
-       (hcnm-config-getvar "BubbleTextPrefixPipeSlope")
-       (rtos
-         slope-percent
-         2
-         (atoi (hcnm-config-getvar "BubbleTextPrecisionPipeSlope"))
+     (setq time-start (getvar "MILLISECS"))
+     (setq result
+       (strcat
+         (hcnm-config-getvar "BubbleTextPrefixPipeSlope")
+         (rtos
+           slope-percent
+           2
+           (atoi (hcnm-config-getvar "BubbleTextPrecisionPipeSlope"))
+         )
+         (hcnm-config-getvar "BubbleTextPostfixPipeSlope")
        )
-       (hcnm-config-getvar "BubbleTextPostfixPipeSlope")
      )
+     (setq time-format (- (getvar "MILLISECS") time-start))
+     (haws-profile-log (strcat "      [PROFILE Slope] Civil3D query: " (itoa time-civil3d-query) 
+                   "ms, Config+format: " (itoa time-format) "ms"))
+     result
     )
   )
 )
@@ -12285,6 +12490,7 @@ ImportLayerSettings=No
 (defun hcnm-bn-update-bubble-tag (handle-bubble tag auto-type handle-reference / 
                                       ename-bubble ename-reference lattribs lattribs-old
                                       attr current-text old-auto-text auto-new new-text
+                                      time-start time-read-state time-xdata-read time-generate time-replace
                                      )
   ;; Convert handle to entity name - deleted bubbles return nil
   (setq ename-bubble (handent handle-bubble))
@@ -12292,6 +12498,7 @@ ImportLayerSettings=No
     ((not ename-bubble) "DELETED")
     (t
       ;; STEP 1: Read current state
+      (setq time-start (getvar "MILLISECS"))
       (setq
         ename-reference
           (cond
@@ -12303,25 +12510,32 @@ ImportLayerSettings=No
         attr (assoc tag lattribs)
         current-text (if attr (cadr attr) "")
       )
+      (setq time-read-state (- (getvar "MILLISECS") time-start))
       ;; STEP 2: Extract old auto-text from XDATA (search needle)
+      (setq time-start (getvar "MILLISECS"))
       (setq old-auto-text 
         (hcnm-bn-extract-old-auto-text ename-bubble tag auto-type handle-reference)
       )
+      (setq time-xdata-read (- (getvar "MILLISECS") time-start))
       ;; STEP 3: Generate new auto-text via auto-dispatch
+      (setq time-start (getvar "MILLISECS"))
       (setq lattribs 
         (hcnm-bn-generate-new-auto-text 
           ename-bubble ename-reference lattribs tag auto-type
         )
       )
+      (setq time-generate (- (getvar "MILLISECS") time-start))
       ;; STEP 4: Extract generated auto-text (plain, no format codes)
       (setq
         attr (assoc tag lattribs)
         auto-new (if attr (cadr attr) "")
       )
       ;; STEP 5: Smart replace - preserve user edits around auto-text
+      (setq time-start (getvar "MILLISECS"))
       (setq new-text
         (hcnm-bn-smart-replace-auto current-text old-auto-text auto-new)
       )
+      (setq time-replace (- (getvar "MILLISECS") time-start))
       
       ;; STEP 5.5: Detect if smart replace actually found old auto-text
       ;; If user corrupted the text (deleted part of auto-text), search fails
@@ -12355,11 +12569,20 @@ ImportLayerSettings=No
           (cond
             ((/= lattribs lattribs-old)
               ;; Update XDATA for this specific composite key (preserves other auto-text entries)
+              (setq time-start (getvar "MILLISECS"))
               (hcnm-bn-xdata-update-one ename-bubble tag auto-type handle-reference auto-new)
+              (haws-profile-log (strcat "  [PROFILE] XDATA write: " (itoa (- (getvar "MILLISECS") time-start)) "ms"))
               ;; Format for display (adds underline/overline codes)
               (setq lattribs (hcnm-bn-underover-add lattribs))
               ;; Write formatted attributes (uses VLA methods, not entmod)
+              (setq time-start (getvar "MILLISECS"))
               (hcnm-set-attributes ename-bubble lattribs)
+              (haws-profile-log (strcat "  [PROFILE] Attribute write: " (itoa (- (getvar "MILLISECS") time-start)) "ms"))
+              ;; Report timing breakdown
+              (haws-profile-log (strcat "  [PROFILE BREAKDOWN] Read state: " (itoa time-read-state) 
+                            "ms, XDATA read: " (itoa time-xdata-read)
+                            "ms, Generate: " (itoa time-generate)
+                            "ms, Replace: " (itoa time-replace) "ms"))
               T  ; Return T to indicate modification occurred
             )
             (t nil)  ; Return nil if no changes

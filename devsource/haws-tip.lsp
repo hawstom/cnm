@@ -201,7 +201,7 @@
     (alert (princ msg))  ; Fallback if DCL can't load
     (progn
       ;; Initialize state
-      (setq snooze-choice "5")  ; Default to "No snooze" (index 5)
+      (setq snooze-choice "0")  ; Default to "No snooze" (index 5)
       (setq done-code 2)  ; 2 = show dialog initially
       
       ;; Dialog loop - keeps showing until done-code = -1
@@ -218,7 +218,7 @@
                 (action_tile "snooze_dropdown" "(setq snooze-choice $value)")
                 
                 ;; Set dropdown value - DCL default is already "5" so only set if different
-                (if (/= snooze-choice "5")
+                (if (/= snooze-choice "0")
                   (set_tile "snooze_dropdown" snooze-choice)
                 )
                 
@@ -249,20 +249,20 @@
               )
             )
             ;; Reset dialog state before showing again
-            (setq snooze-choice "5")  ; Reset to "No snooze"
+            (setq snooze-choice "0")  ; Reset to "No snooze"
             (setq done-code 2)  ; Return to dialog
           )
           
           ;; User clicked OK (code 1)
           ((= done-code 1)
             ;; Apply snooze duration if selected (not "No snooze")
-            (if (/= snooze-choice "5")  ; "No snooze" is index 5
+            (if (/= snooze-choice "0")  ; "No snooze" is index 0
               (cond
-                ((= snooze-choice "0") (haws-tip-set-snooze tip-id 1))
-                ((= snooze-choice "1") (haws-tip-set-snooze tip-id 7))
-                ((= snooze-choice "2") (haws-tip-set-snooze tip-id 30))
-                ((= snooze-choice "3") (haws-tip-set-snooze tip-id 180)) 
-                ((= snooze-choice "4") (haws-tip-set-snooze tip-id 0))  ; Forever
+                ((= snooze-choice "1") (haws-tip-set-snooze tip-id 1))
+                ((= snooze-choice "2") (haws-tip-set-snooze tip-id 7))
+                ((= snooze-choice "3") (haws-tip-set-snooze tip-id 30))
+                ((= snooze-choice "4") (haws-tip-set-snooze tip-id 180)) 
+                ((= snooze-choice "5") (haws-tip-set-snooze tip-id 0))  ; Forever
               )
             )
             (setq done-code -1)  ; Exit loop

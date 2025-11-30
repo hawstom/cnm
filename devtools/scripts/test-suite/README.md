@@ -261,19 +261,31 @@ Use `hcnm-config-setvar` to configure expected output format:
 
 ## CNM Behavior Notes (Test Expectations)
 
-### LF/SF/SY Auto-Text Uses Field Expressions (CORRECT)
+### LF/SF/SY Auto-Text: Field-Based Architecture (CORRECT)
 
 **Behavior:** CNM creates AutoCAD field expressions for polyline Length/Area calculations
 - **Field format:** `%<\AcObjProp Object(%<\_ObjId ...>%).Length \f "%lu2%pr0%ct8[1]">% LF`
 - **Example:** Instead of static "640.00 LF", you see field code in attribute text
 - **Why:** Fields update automatically when polyline geometry changes (dynamic values)
-- **Test validation:** Check for field code presence with correct suffix (LF/SF/SY)
-- **Not a bug:** This is intentional CNM design for maintaining accuracy
+- **Update mechanism:** AutoCAD's built-in field system (passive updates, not CNM reactors)
 
-**Impact on test expectations:**
-- TEST 4 (LF): Validates field code exists with "LF" suffix
-- TEST 7 (SF): Validates field code exists with "SF" suffix  
-- TEST 8 (SY): Validates field code exists with "SY" suffix
+**XDATA Storage (Editor Smart Replace):**
+- **Purpose:** Stores verbatim field expression for editor "smart replace" functionality
+- **Format:** Composite key `(("LF/SF/SY" . "") . "field-expression-text")`
+- **Handle:** Always empty `""` (handleless - no reference object from CNM's perspective)
+- **NOT for reactors:** CNM reactors do NOT monitor LF/SF/SY (AutoCAD field system handles updates)
+- **Editor convenience:** Allows re-editing bubbles without creating duplicate field expressions
+
+**Architecture Classification:**
+- **Field-based:** YES (AutoCAD field system updates, not CNM VLR reactors)
+- **Handleless:** YES (empty handle `""` in XDATA composite key)
+- **Non-coordinate:** YES (no viewport transform needed)
+- **Update mechanism:** AutoCAD field system (passive), not CNM reactive auto-text
+
+**Test expectations:**
+- TEST 4 (LF): Validates field code exists AND XDATA with handle=""
+- TEST 7 (SF): Validates field code exists AND XDATA with handle=""
+- TEST 8 (SY): Validates field code exists AND XDATA with handle=""
 - Tests do NOT validate numeric values (fields evaluate at display time)
 
 ### StaOff and Slope Formatting Specified by CNM.ini
@@ -287,17 +299,24 @@ Use `hcnm-config-setvar` to configure expected output format:
 
 **Note:** Slope value reflects actual calculation (positive/negative based on elevation delta), not forced formatting
 
-### LF/SF/SY Do NOT Use XDATA/Reactors (Field-Only)
+### Field-Based vs Reactive Auto-Text Architecture
 
-**Behavior:** LF/SF/SY are field-based only, NOT part of CNM's reactive auto-text system
-- **No XDATA:** Field expressions stored directly in attribute text, no XDATA composite keys
-- **No reactors:** Fields update via AutoCAD's field system, not VLR-OBJECT-REACTOR callbacks
-- **No VPTRANS:** Field references are object handles, not coordinates needing viewport transform
-- **Test expectations:** Assert ABSENCE of XDATA for LF/SF/SY tags (PASS if no XDATA found)
+**Two Update Mechanisms:**
+1. **Field-based (LF/SF/SY):** AutoCAD field system handles updates automatically
+   - **XDATA:** Stores verbatim field expression for editor smart replace
+   - **Handle:** Always empty `""` (handleless from CNM perspective)
+   - **Reactors:** NONE (AutoCAD handles field updates)
+   - **VPTRANS:** NONE (field references are object handles, not coordinates)
 
-**Architecture difference:**
-- **Reactive auto-text (Sta/Off/Dia/etc.):** Uses XDATA + VLR reactors for dynamic updates
-- **Field-only (LF/SF/SY):** Uses AutoCAD built-in field system (simpler, no CNM overhead)
+2. **Reactive (Sta/Off/Dia/Slope/etc.):** CNM VLR-OBJECT-REACTOR callbacks handle updates
+   - **XDATA:** Stores verbatim auto-text for editor smart replace
+   - **Handle:** Object handle (alignment/pipe/surface) for reactor tracking
+   - **Reactors:** VLR-OBJECT-REACTOR attached to reference object
+   - **VPTRANS:** For coordinate-based types in paper space (viewport transform data)
+
+**Test expectations:**
+- **LF/SF/SY tests (4, 7, 8):** Validate XDATA EXISTS with handle="" (field-based, no reactors)
+- **Reactive tests (1-3, 5-6, 9-18):** Validate XDATA with handle + reactor attachment
 
 ---
 

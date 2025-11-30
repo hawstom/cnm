@@ -96,8 +96,8 @@
   (princ)
 )
 (princ "\nCNM Test Suite validation functions loaded")
-(princ "\n  Commands: c:test-setup-layers, c:test-annotate-result, c:test-generate-summary-mtext")
-(princ "\n  Helpers: test-write-report-header, test-write-report-entry, test-write-report-summary")
+(princ "\n  Commands: c:test-setup-layers")
+(princ "\n  Helpers: test-write-report-*, test-log-*, test-cleanup-*")
 (princ "\n  Validators: test-validate-auto-text, test-validate-xdata, test-validate-reactor")
 (princ)
 ;;==============================================================================
@@ -342,13 +342,16 @@
   ;;==============================================================================
   ;; TEST RUN TIMING & CLEANUP HELPERS
   ;;==============================================================================
-  (defun c:test-log-start ( / logfile timestamp f resultsdir )
+  (defun c:test-log-start ( / logfile timestamp f resultsdir profile-log )
     ;; Append a START timestamp to test-results/cnm-test-run.log
+    ;; Also initialize reactor-profiling.log for this test run
     ;; Create test-results subfolder if it doesn't exist
     (setq resultsdir (strcat (getvar "dwgprefix") "test-results"))
     (if (not (vl-file-directory-p resultsdir))
       (vl-mkdir resultsdir)
     )
+    ;; Enable profiling for test run
+    (haws-setvar "EnableProfiling" "1")
     (setq logfile (strcat resultsdir "\\cnm-test-run.log"))
     (setq timestamp (menucmd "m=$(edtime,$(getvar,date),YYYY-MM-DD HH:MM:SS)"))
     (if (setq f (open logfile "a"))
@@ -359,11 +362,28 @@
       )
       (princ "\nFailed to open test run log for writing")
     )
+    ;; Initialize profiling log (overwrite previous)
+    (setq profile-log (strcat resultsdir "\\reactor-profiling.log"))
+    (if (setq f (open profile-log "w"))
+      (progn
+        (write-line (strcat "=== REACTOR PROFILING LOG ===") f)
+        (write-line (strcat "Test run: " timestamp) f)
+        (write-line "" f)
+        (write-line "Profiling data will be appended during TEST 40 execution" f)
+        (write-line "Each stretch operation triggers reactor callback with timing breakdown" f)
+        (write-line "" f)
+        (close f)
+        (princ "\nReactor profiling log initialized")
+      )
+      (princ "\nFailed to initialize reactor profiling log")
+    )
     (princ)
   )
 
   (defun c:test-log-end ( / logfile timestamp f resultsdir )
     ;; Append an END timestamp to test-results/cnm-test-run.log
+    ;; Disable profiling after test run
+    (haws-setvar "EnableProfiling" "0")
     (setq resultsdir (strcat (getvar "dwgprefix") "test-results"))
     (setq logfile (strcat resultsdir "\\cnm-test-run.log"))
     (setq timestamp (menucmd "m=$(edtime,$(getvar,date),YYYY-MM-DD HH:MM:SS)"))
@@ -421,7 +441,7 @@
   (test-write-report-entry "TEST 39: Insertion Performance" "INFO" result-msg)
   (princ)
 )
-(defun c:test-report-reactor-performance (start-time count / end-time elapsed avg result-msg)
+(defun c:test-report-reactor-performance (start-time count / end-time elapsed avg result-msg resultsdir logfile f)
   ;; Report reactor update performance
   (setq end-time (getvar "MILLISECS"))
   (setq elapsed (- end-time start-time))
@@ -443,9 +463,47 @@
             "\n\n  BASELINE: Use for regression detection\n"
             "  - Re-run after reactor code changes\n"
             "  - Compare to detect performance impact\n"
-            "  - Track config optimization effects (Phase 3)"))
+            "  - Track config optimization effects (Phase 3)\n\n"
+            "  DETAILED PROFILING:\n"
+            "  Check test-results/reactor-profiling.log for millisecond-level breakdown\n"
+            "  of XDATA writes, attribute updates, Civil3D queries, and formatting"))
   (princ (strcat "\n\n" result-msg))
   (test-write-report-entry "TEST 40: Reactor Performance" "INFO" result-msg)
+  ;; Append summary to profiling log (profiling data already written during test)
+  (setq resultsdir (strcat (getvar "dwgprefix") "test-results"))
+  (setq logfile (strcat resultsdir "\\reactor-profiling.log"))
+  (if (setq f (open logfile "a"))
+    (progn
+      (write-line "=== REACTOR PROFILING LOG ===" f)
+      (write-line "" f)
+      (write-line "NOTE: Detailed profiling output should appear in AutoCAD console during TEST 40" f)
+      (write-line "" f)
+      (write-line "Expected profiling output format:" f)
+      (write-line "  [PROFILE] XDATA write: Xms" f)
+      (write-line "  [PROFILE] Attribute write: Yms" f)
+      (write-line "  [PROFILE BREAKDOWN] Read state: Ams, XDATA read: Bms, Generate: Cms, Replace: Dms" f)
+      (write-line "  [PROFILE] Auto-dispatch (StaOff): Zms" f)
+      (write-line "  [PROFILE Dia] Civil3D query: Pms, Config+format: Qms" f)
+      (write-line "" f)
+      (write-line "TO CAPTURE PROFILING OUTPUT:" f)
+      (write-line "1. Run TEST 40 manually in AutoCAD" f)
+      (write-line "2. Watch console for [PROFILE] messages during stretch operations" f)
+      (write-line "3. Copy console output to this file for analysis" f)
+      (write-line "" f)
+      (write-line "ANALYSIS STRATEGY:" f)
+      (write-line "- Identify operation with highest cumulative time" f)
+      (write-line "- Civil3D queries > 30ms: Consider caching VLA properties" f)
+      (write-line "- XDATA writes > 10ms: Check XDATA size, consider batching" f)
+      (write-line "- Config+format > 5ms: Verify Phase 3 config optimization applied" f)
+      (write-line "- Attribute writes > 15ms: May be unavoidable AutoCAD overhead" f)
+      (write-line "" f)
+      (write-line (strcat "Test run summary: " (rtos avg 2 0) "ms average per callback") f)
+      (close f)
+      (princ "\nProfiler log created: test-results/reactor-profiling.log")
+    )
+    (princ "\nWARNING: Could not create reactor-profiling.log")
+  )
+  (haws-setvar "EnableProfiling" "0")
   (princ)
 )
 

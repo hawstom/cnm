@@ -30,15 +30,14 @@
 ;;; 20050831 1.05   TGH Changed CNM to version 4.2.00.  Recompiled
 ;;; (legacy)
 ;;; lisputil.lsp
+;;;This is the current version of HawsEDC and CNM
 (defun haws-unified-version ()
-  "5.5.30"
+  "5.5.31"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 ;;This function returns the current setting of nagmode.
 ;;Elizabeth asked me to give her a version with no nag mode (direct to fail).
 (defun haws-nagmode-p () t)
-;;;This is the current version of HawsEDC and CNM
-;;; Load HAWS-CONFIG library (Issue #11 - Multi-app config system)
 (load "haws-config")
 (load "haws-tip")
 (load "lee-mac")
@@ -830,14 +829,14 @@
 
 ;;; MIGRATED: Now uses haws-config instead of haws-readcfg
 (defun haws-use-get-local-log-string ()
-  (haws-config-getvar "HAWS" "UseString" nil nil)
+  (haws-getvar "UseString")
 )
 
 ;;; MIGRATED: Now uses haws-config instead of haws-writecfg
 (defun haws-use-log-local (command-id / log-string)
-  (haws-config-setvar "HAWS" "UseString"
+  (haws-setvar "UseString"
     (haws-use-command-id-to-log-string command-id (haws-use-get-local-log-string))
-    nil nil)
+  )
 )
 
 ;;; The ASCII code of each character of the log string (one for each command) represents the number of times the command has been used this session. This implies that we count only up to 255 uses per session.
@@ -881,7 +880,7 @@
      (princ (strcat "\nInvalid request: " url))
     )
     ;; MIGRATED: Now uses haws-config instead of haws-writecfg
-    (t (haws-config-setvar "HAWS" "UseString" (haws-use-initialize-log-string) nil nil))
+    (t (haws-setvar "UseString" (haws-use-initialize-log-string)))
   )
   (vlax-release-object http)
   (princ)
@@ -1945,20 +1944,43 @@
 ;;   (haws-debug *hcnm-debug* "Simple message")
 ;;   (haws-debug nil "Never prints")
 ;;------------------------------------------------------------------------------
-(defun haws-debug (messages / enabled output)
-  (setq enabled nil)
-  (cond
+(defun haws-debug (messages / enabled output) 
+  (setq enabled T)
+  (cond 
     (enabled
      ;; Convert single string to list for consistent processing
-     (if (= (type messages) 'STR)
+     (if (= (type messages) 'STR) 
        (setq messages (list messages))
      )
      ;; Concatenate all strings with newline prefix
      (setq output (apply 'strcat (cons "\n" messages)))
-     (princ output)
-     output  ; Return the output string
+     (setq f2 (open (strcat (getvar "dwgprefix") "haws-debug-log.md") "a"))
+     (princ output f2)
+     (setq f2 (close f2))
+     output ; Return the output string
     )
-    (t nil)  ; Return nil when disabled
+    (t nil) ; Return nil when disabled
+  )
+)
+(defun haws-profile-log (message / profile-path config-value)
+  ;; Write profiling message to haws-profiling.log if profiling enabled
+  ;; Args: message - String to write to log
+  ;; Returns: T if successful, nil if failed or profiling disabled
+  ;; Usage: (haws-profile-log "  [PROFILE] XDATA write: 15ms")
+  (setq config-value (haws-config-getvar "HawsEDC" "EnableProfiling" nil nil))
+  (if (= config-value "1")
+    (progn
+      (setq profile-path (strcat (getvar "dwgprefix") "haws-profiling.log"))
+      (if (setq f2 (open profile-path "a"))
+        (progn
+          (write-line message f2)
+          (close f2)
+          T
+        )
+        nil
+      )
+    )
+    nil
   )
 )
 
@@ -2233,7 +2255,7 @@
     ((vl-catch-all-error-p
        (vl-catch-all-apply
          'LOAD
-         (list (princ (strcat (haws-config-getvar "HAWS" "AppFolder" nil nil) "\\" filename)))
+         (list (princ (strcat (haws-getvar "AppFolder") "\\" filename)))
        )
      )
      (princ
@@ -3404,10 +3426,11 @@
 ;;; MOVED UP: Must be defined BEFORE USE_LOG section uses it
 (defun haws-config-definitions ()
   (list
-   (list "AppFolder" (haws-filename-directory (findfile "cnm.mnl")) 0)  ; Session scope - set at load time
-   (list "ImportLayerSettings" "YES" 2)  ; Project scope - INI file
-   (list "CNMAliasActivation" "2" 4)  ; User scope - Registry
-   (list "UseString" "" 4)  ; User scope - Registry (usage telemetry)
+    (list "AppFolder" (haws-filename-directory (findfile "cnm.mnl")) 0)  ; Session scope - set at load time
+    (list "ImportLayerSettings" "YES" 2)  ; Project scope - INI file
+    (list "CNMAliasActivation" "2" 4)  ; User scope - Registry
+    (list "UseString" "" 4)  ; User scope - Registry (usage telemetry)
+    (list "EnableProfiling" "0" 0)  ; "0"=off, "1"=on (performance logging for tests)
   )
 )
 
@@ -3417,6 +3440,35 @@
 (if haws-config-register-app
   (haws-config-register-app "HAWS" (haws-config-definitions))
 )
+
+;;; Register EDC app for shared HawsEDC config
+;;; This allows edclib.lsp and cnmaliaslib.lsp to use HAWS-CONFIG without depending on CNM
+;;; MOVED UP: Must register BEFORE USE_LOG section calls haws-config-getvar
+(if haws-config-register-app
+  (haws-config-register-app "HAWS" (haws-config-definitions))
+)
+(defun haws-setvar (var val / scope-code) 
+  ;; Get scope code to avoid calling hcnm-proj for non-Project variables
+  (setq scope-code (haws-config-get-scope "HAWS" var))
+  ;; Call haws-config with appropriate parameters
+  (haws-config-setvar 
+    "HAWS" ; app
+    var ; var
+    val ; val
+    (haws-config-getvar "HAWS" "AppFolder" nil nil) ; ini-path for project scope
+    "HAWS" ; section for Project scope
+  )
+)
+(defun haws-getvar (var) 
+  (setq scope-code (haws-config-get-scope "HAWS" var))
+  (haws-config-getvar 
+    "HAWS" ; app
+    var ; var
+    (haws-config-getvar "HAWS" "AppFolder" nil nil) ; ini-path for project scope
+    "HAWS" ; section for Project scope
+  )
+)
+
 
 ;#region USE_LOG
 (if (/=(haws-use-get-local-log-string)(haws-use-initialize-log-string))(haws-use-log-remote))

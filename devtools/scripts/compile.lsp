@@ -1,19 +1,45 @@
 ;;;=====================================================================
 ;;; HAWS-DISTRIB Compilation System
 ;;; 
-;;; Purpose: Replace Visual LISP IDE compilation workflow with AutoLISP-based
-;;;          compilation system for HawsEDC/CNM project distribution
+;;; PURPOSE: Production deployment compiler for HawsEDC/CNM distribution
+;;;          Compiles .lsp source files to .fas binaries for user deployment
+;;;
+;;; DEPLOYMENT WORKFLOW:
+;;;   1. Load this file in AutoCAD: (load "devtools/scripts/compile.lsp")
+;;;   2. Auto-executes compilation (prompts for version update)
+;;;   3. Compiles all devsource/*.lsp → compile/acad/*.fas
+;;;   4. Run ../compile/distrib.bat for final packaging (creates installer)
+;;;
+;;; WHAT IT COMPILES:
+;;;   - All .lsp files in devsource/ directory (auto-discovered)
+;;;   - Excludes: cnmalias.lsp, cnmloader.lsp, CNM-Install.lsp (remain as .lsp)
+;;;   - Output: Binary .fas files in ../compile/acad/ directory
+;;;   - Version management: Updates edclib.lsp version before compilation
+;;;
+;;; WHY .FAS BINARIES:
+;;;   - Faster loading than .lsp source files
+;;;   - Protects intellectual property (obfuscated binary)
+;;;   - Reduces distribution package size
+;;;   - Industry standard for commercial AutoLISP applications
+;;;
+;;; EXCLUDED FILES (remain as .lsp for user editing):
+;;;   - cnmalias.lsp: User-customizable command aliases
+;;;   - cnmloader.lsp: Main loader (users may inspect/modify)
+;;;   - CNM-Install.lsp: Inno Setup integration script
 ;;;
 ;;; Author: HawsEDC Development Team  
 ;;; Created: 2025-11-08
 ;;; License: Copyright (c) HawsEDC
 ;;;
-;;; Usage: Load this file in AutoCAD and run (c:haws-distrib-compile)
-;;;
 ;;; Dependencies: 
 ;;;   - edclib.lsp (for haws-unified-version, haws-getstringx, haws-vlisp-p)
 ;;;   - Visual LISP enabled AutoCAD (2000+)
-;;;   - Write access to compile folders
+;;;   - Write access to compile/ folders
+;;;   - Close all debugger sessions before running (VS Code AutoLISP Extension)
+;;;
+;;; Post-Compilation:
+;;;   After successful compilation, run distrib.bat to create installer package
+;;;   Installer bundles .fas binaries + menus + documentation for end users
 ;;;
 ;;;=====================================================================
 

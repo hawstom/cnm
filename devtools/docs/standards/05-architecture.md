@@ -3,7 +3,7 @@ HAWSEDC STANDARDS VOLUME 05: ARCHITECTURE
 
 **Document Type:** Standard  
 **Status:** Active  
-**Last Updated:** 2025-11-12  
+**Last Updated:** 2025-11-29  
 **Owner:** Tom Haws (TGH)
 
 ---
@@ -373,35 +373,48 @@ HCNM_PROJINIT             ; Project INI refresh (disabled by default)
 
 **Handle-based vs Handleless (CRITICAL - Affects XDATA Storage):**
 - **Handle-based:** ALL alignment types (Sta/Off/StaOff/AlName/StaName) + Dia/Slope/L (stores reference object handle in XDATA, never empty string)
-- **Handleless:** N/E/NE ONLY (empty handle `""` in XDATA, coordinate-only, no reference object)
+- **Handleless:** N/E/NE + LF/SF/SY (empty handle `""` in XDATA, no CNM reactor needed)
 
 **Coordinate-based vs Non-coordinate (Affects Paper Space Transform):**
 - **Coordinate-based:** Sta/Off/StaOff/StaName/N/E/NE (needs p1-world + viewport transform in paper space)
-- **Non-coordinate:** AlName/Dia/Slope/L (no transform needed, just reads object properties)
+- **Non-coordinate:** AlName/Dia/Slope/L/LF/SF/SY (no transform needed, just reads object properties or field values)
+
+**Field-based vs Reactive (Affects Update Mechanism):**
+- **Field-based:** LF/SF/SY (AutoCAD field system handles updates automatically, no CNM reactor)
+- **Reactive:** All others (CNM VLR-OBJECT-REACTOR handles updates via callbacks)
 
 **Common Misconception to Avoid:**
 - ❌ WRONG: "Sta/Off have empty handles" (they store alignment handle!)
 - ✅ CORRECT: "N/E/NE have empty handles" (handleless coordinates)
 - ❌ WRONG: "All coordinate types are handleless" (Sta/Off are coordinate AND handle-based!)
 - ✅ CORRECT: "Coordinate types can be handle-based (Sta/Off) OR handleless (N/E/NE)"
+- ❌ WRONG: "LF/SF/SY don't need XDATA" (they need it for editor smart replace!)
+- ✅ CORRECT: "LF/SF/SY are handleless but still store XDATA for editor convenience"
 
 **Quick Reference Table:**
 
-| Auto-Type | Handle-Based? | Coordinate-Based? | Reference Object | Handle in XDATA |
-|-----------|---------------|-------------------|------------------|-----------------|
-| Sta       | ✅ YES        | ✅ YES            | Alignment        | `"handle"`      |
-| Off       | ✅ YES        | ✅ YES            | Alignment        | `"handle"`      |
-| StaOff    | ✅ YES        | ✅ YES            | Alignment        | `"handle"`      |
-| StaName   | ✅ YES        | ✅ YES            | Alignment        | `"handle"`      |
-| AlName    | ✅ YES        | ❌ NO             | Alignment        | `"handle"`      |
-| N         | ❌ NO         | ✅ YES            | None             | `""`            |
-| E         | ❌ NO         | ✅ YES            | None             | `""`            |
-| NE        | ❌ NO         | ✅ YES            | None             | `""`            |
-| Dia       | ✅ YES        | ❌ NO             | Pipe             | `"handle"`      |
-| Slope     | ✅ YES        | ❌ NO             | Pipe             | `"handle"`      |
-| L         | ✅ YES        | ❌ NO             | Pipe             | `"handle"`      |
+| Auto-Type | Handle-Based? | Coordinate-Based? | Field-Based? | Reference Object | Handle in XDATA | Update Mechanism |
+|-----------|---------------|-------------------|--------------|------------------|-----------------|------------------|
+| Sta       | ✅ YES        | ✅ YES            | ❌ NO        | Alignment        | `"handle"`      | CNM Reactor      |
+| Off       | ✅ YES        | ✅ YES            | ❌ NO        | Alignment        | `"handle"`      | CNM Reactor      |
+| StaOff    | ✅ YES        | ✅ YES            | ❌ NO        | Alignment        | `"handle"`      | CNM Reactor      |
+| StaName   | ✅ YES        | ✅ YES            | ❌ NO        | Alignment        | `"handle"`      | CNM Reactor      |
+| AlName    | ✅ YES        | ❌ NO             | ❌ NO        | Alignment        | `"handle"`      | CNM Reactor      |
+| N         | ❌ NO         | ✅ YES            | ❌ NO        | None             | `""`            | CNM Reactor      |
+| E         | ❌ NO         | ✅ YES            | ❌ NO        | None             | `""`            | CNM Reactor      |
+| NE        | ❌ NO         | ✅ YES            | ❌ NO        | None             | `""`            | CNM Reactor      |
+| Dia       | ✅ YES        | ❌ NO             | ❌ NO        | Pipe             | `"handle"`      | CNM Reactor      |
+| Slope     | ✅ YES        | ❌ NO             | ❌ NO        | Pipe             | `"handle"`      | CNM Reactor      |
+| L         | ✅ YES        | ❌ NO             | ❌ NO        | Pipe             | `"handle"`      | CNM Reactor      |
+| LF        | ❌ NO         | ❌ NO             | ✅ YES       | Polyline (in field) | `""`         | AutoCAD Field    |
+| SF        | ❌ NO         | ❌ NO             | ✅ YES       | Polyline (in field) | `""`         | AutoCAD Field    |
+| SY        | ❌ NO         | ❌ NO             | ✅ YES       | Polyline (in field) | `""`         | AutoCAD Field    |
 
-**Key Architectural Point:** Handleless auto-text (N/E/NE) STILL needs leader attachment for stretch updates. November 2025 fix ensures handleless auto-text always attached to leader regardless of coordinate requirements.
+**Key Architectural Points:**
+- **Handleless auto-text (N/E/NE):** STILL needs leader attachment for stretch updates (November 2025 fix)
+- **Field-based auto-text (LF/SF/SY):** Handle always `""` because AutoCAD field system handles updates (not CNM reactor)
+- **XDATA purpose for LF/SF/SY:** Editor smart replace ONLY (not reactor tracking)
+- **All auto-text types:** Store XDATA for editor to distinguish CNM-managed text from user-typed text
 
 ### 4.2.3 Reactor Data Structure (5-Level Hierarchy)
 
