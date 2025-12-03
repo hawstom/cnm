@@ -81,7 +81,7 @@
            )
   (haws-core-init 274)
   (haws-vsave '("ucsfollow" "osmode" "clayer"))
-  (haws-mklayr "PSUP")
+  (haws-setlayr "PSUP")
   (setvar "ucsfollow" 0)
   (setvar "osmode" 16)
   (if (not hvexag)
@@ -196,8 +196,8 @@
      ) ;_ end of IF
   ) ;_ end of SETQ
   (if exist
-    (haws-mklayr "PXCB")
-    (haws-mklayr "PCB")
+    (haws-setlayr "PXCB")
+    (haws-setlayr "PCB")
   ) ;_ end of IF
   (haws-drawcb botpt toppt cbview width nil)
   (haws-vrstor)
@@ -307,8 +307,8 @@
      (list (car botpt) (cadr (getpoint botpt "\nRim: ")) 0.0)
   ) ;_ end of SETQ
   (if exist
-    (haws-mklayr "PXMH")
-    (haws-mklayr "PMH")
+    (haws-setlayr "PXMH")
+    (haws-setlayr "PMH")
   ) ;_ end of IF
   (haws-drawmh botpt toppt nil)
   (haws-vrstor)
@@ -378,8 +378,8 @@
   (initget "Exist Prop")
   (setq exist (= (getkword "Exist/Prop: ") "Exist"))
   (if exist
-    (haws-mklayr "PXEL")
-    (haws-mklayr "PEL")
+    (haws-setlayr "PXEL")
+    (haws-setlayr "PEL")
   ) ;_ end of IF
   (setq
     invert
@@ -522,8 +522,8 @@
      ) ;_ end of STRCAT
   ) ;_ end of SETQ
   (if exist
-    (haws-mklayr "PXLDR")
-    (haws-mklayr "PLDR")
+    (haws-setlayr "PXLDR")
+    (haws-setlayr "PLDR")
   ) ;_ end of IF
   (cond
     ((>= (atof (getvar "acadver")) 14)
@@ -552,7 +552,7 @@
   (setq expold (getvar "expert"))
   (setvar "expert" 0)
   (vl-cmdf "._undo" "_m" "._layer" "_off" "*" "" "")
-  (haws-mklayr "PROSTRT")
+  (haws-setlayr "PROSTRT")
   (setq
     prolaywc (strcat (car(haws-getlayr "PROPRE")) "*")
     ss1          (ssget "X" (list (cons 8 prolaywc)))
@@ -789,11 +789,11 @@
       )
       ((= proht -10000) (setq laylin (haws-getlayr "PROLINE")))
       ((and (= proht 1000) (wcmatch protyp "X*"))
-       (haws-mklayr "PROPNT")
+       (haws-setlayr "PROPNT")
        (setq laylin (haws-getlayr "PROXEL"))
       )
       ((= proht 1000)
-       (haws-mklayr "PROPNT")
+       (haws-setlayr "PROPNT")
        (setq laylin (haws-getlayr "PROEL"))
       )
       ((and (>= proht 0) (wcmatch protyp "X*,MESA"))
@@ -848,10 +848,10 @@
     ) ;_ end of IF
     (setq laytx (subst (strcat (car laylin) (car laytx)) (car laytx) laytx))
     (if (not (tblsearch "LAYER" (car laylin)))
-      (haws-mklayr laylin)
+      (haws-setlayr laylin)
     ) ;_ end of IF
     (if (not (tblsearch "LAYER" (car laytx)))
-      (haws-mklayr laytx)
+      (haws-setlayr laytx)
     ) ;_ end of IF
     (setq
       laylin
@@ -1823,7 +1823,7 @@
   ;;Plot a vertical upward profile point label.
   (defun haws-pltlbl1
                  (/ i)
-    (haws-mklayr (list laytx "" ""))
+    (haws-setlayr (list laytx "" ""))
     (cond
       ((= protyp "MESA")
        ;;Slanted label
@@ -1898,15 +1898,15 @@
           (cond
             (mhrim
              (if pexist
-               (haws-mklayr "PROXMH")
-               (haws-mklayr "PROMH")
+               (haws-setlayr "PROXMH")
+               (haws-setlayr "PROMH")
              ) ;_ end of IF
              (haws-drawmh botpt mhrim brkpt)
             )
             (cbtc
              (if pexist
-               (haws-mklayr "PPROXCB")
-               (haws-mklayr "PROCB")
+               (haws-setlayr "PPROXCB")
+               (haws-setlayr "PROCB")
              ) ;_ end of IF
              (haws-drawcb
                botpt
@@ -1928,7 +1928,7 @@
   ;;Plot a downward slant elevation tail.
   (defun haws-pltlbl2
                  (/ i)
-    (haws-mklayr (list laytx "" ""))
+    (haws-setlayr (list laytx "" ""))
     (haws-mkline pltpt1 txpt6)
     (haws-mkline txpt6 txpt7)
     (haws-mktext
@@ -1951,7 +1951,7 @@
        (prompt
          "Point circles are on DEFPOINTS layer. Will not plot."
        ) ;_ end of prompt
-       (haws-mklayr (list "defpoints" "" ""))
+       (haws-setlayr (list "defpoints" "" ""))
        (entmake
          (list
            (cons 0 "CIRCLE")
@@ -2024,7 +2024,7 @@
          xcenter
           (polar xinvert (/ pi 2.0) (* xinrad hvexag *haws-elvscl*))
        ) ;_ end of SETQ
-       (haws-mklayr (list laylin "" ""))
+       (haws-setlayr (list laylin "" ""))
        (entmake
          (list
            '(0 . "ELLIPSE")
@@ -2065,7 +2065,7 @@
        ) ;_ end of IF
        (cond
          ((/= lbltxt "")
-          (haws-mklayr (list laytx "" ""))
+          (haws-setlayr (list laytx "" ""))
           (haws-mkline pltpt1 txpt6)
           (haws-mkline txpt6 txpt7)
           (setq i -1)
@@ -2098,7 +2098,7 @@
   ;;Connect two profile points with lines
   (defun haws-connecthard
                      ()
-    (haws-mklayr (list laylin "" ""))
+    (haws-setlayr (list laylin "" ""))
     (cond
       ((/= -20000 proht) (haws-mkline pltpt1a pltpt1))
       ((= proht -20000)
@@ -2182,7 +2182,7 @@
         ) ;_ end of AND
       (setq slope temp)
     ) ;_ end of IF
-    (haws-mklayr (list laytx "" ""))
+    (haws-setlayr (list laytx "" ""))
     ;;Build slope string
     (setq
       slope
@@ -2638,7 +2638,7 @@
 (defun c:haws-stalabel
              (/ pnt1 inc n sta1 endsta sta)
   (haws-core-init 288)
-  (haws-mklayr "PSTALBL")
+  (haws-setlayr "PSTALBL")
   (haws-vsave '("luprec"))
   (setvar "luprec" 0)
   (setq
@@ -2675,7 +2675,7 @@
   (if (not hvexag)
     (haws-gethvx)
   ) ;_ end of IF
-  (haws-mklayr "PELEVLBL")
+  (haws-setlayr "PELEVLBL")
   (setq
     pnt1
      (getpoint "\nBottom right point of first label: ")
@@ -2764,7 +2764,7 @@
 (haws-core-init 292) (haws-linblk "*GRB" "PGB"))
 (defun haws-linblk
               (blname bllay / pt1 pt2)
-  (haws-mklayr bllay)
+  (haws-setlayr bllay)
   (setq pt1 (getpoint "\nFirst point: "))
   (vl-cmdf "._pline" pt1)
   (while (setq pt2 (getpoint pt1 "Next point: "))

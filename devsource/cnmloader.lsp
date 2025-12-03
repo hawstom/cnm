@@ -1,4 +1,4 @@
-﻿(princ "\nConstruction Notes Manager menu utilities ... ")
+﻿(princ "\nConstruction Notes Manager menu utilities loading ... ")
 ;;; ============================================================================
 ;;; HOW TO ADD A NEW CNM/HAWSEDC COMMAND
 ;;; ============================================================================
@@ -304,5 +304,5 @@
 )
 
 (if (not(c:haws-icad-p))(hcnm-placecnmmenu)) ;Do it if not in icad
-(princ "loaded.")
+(princ "\nConstruction Notes Manager menu utilities loaded.")
 (princ)

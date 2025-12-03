@@ -185,7 +185,7 @@
   (setq style_info (assoc text_style_key text_style_table))
   (if style_info
     (progn
-      (haws-mklayr (list (cadr style_info) "" ""))
+      (haws-setlayr (list (cadr style_info) "" ""))
       (setq style_info (caddr style_info))
       (if (tblsearch "STYLE" style_info)
         (setvar "TEXTSTYLE" style_info)

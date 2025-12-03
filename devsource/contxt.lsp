@@ -3,7 +3,7 @@
   (haws-core-init 212)
   (haws-vsave '("cmdecho"))
   (setq txtstr (getstring "\nContour text:"))
-  (haws-mklayr "CONTLBL")
+  (haws-setlayr "CONTLBL")
   (setq inspt (getpoint "\nMiddle point:") rot (getangle inspt " Rotation: "))
   (haws-mktext "m" inspt nil rot txtstr)
   (haws-vrstor)(haws-core-restore)(princ)

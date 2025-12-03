@@ -21,7 +21,7 @@
      )
   )
   (setvar "osmode" 0)
-  (haws-mklayr "DRIVEWAY")
+  (haws-setlayr "DRIVEWAY")
   (setq ts (haws-text-height-model))
   (while
     (progn
@@ -164,7 +164,7 @@
   (vl-cmdf "._line" pt5 pt8 "")
   (vl-cmdf "._line" pt2 pt4 "")
   (vl-cmdf "._line" pt6 pt8 "")
-  (haws-mklayr "DRIVEWAYTX")
+  (haws-setlayr "DRIVEWAYTX")
   (vl-cmdf "._line" cl1 cl2 "")
   (haws-mktext
     (if left
@@ -179,5 +179,5 @@
     )
     "DW"
   )
-  (haws-mklayr "DRIVEWAY")
+  (haws-setlayr "DRIVEWAY")
 )

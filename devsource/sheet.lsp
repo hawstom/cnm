@@ -44,7 +44,7 @@
   )
   ;Create mview
   (defun haws-shtmv ()
-    (haws-mklayr "SHTMVW")
+    (haws-setlayr "SHTMVW")
     (setq
       ptmvc1(getpoint "\nFirst corner for centered paper space viewport: ")
       ptmvc2(getcorner ptmvc1 "Other corner: ")

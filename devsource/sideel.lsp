@@ -9,7 +9,7 @@
 ;;; Special program requirements:
 ;;; -You need profile point that is drawn somewhat accurately and labeled correctly.
 ;;; -Vertical exaggeration is assumed to be 10 as set in the sideel function.
-;;; -(HAWS-MKLAYR layer_key_or_list) subroutine to make layer (included in HawsEDC edclib.lsp) or comment out (HAWS-MKLAYR) line.
+;;; -(haws-setlayr layer_key_or_list) subroutine to make layer (included in HawsEDC edclib.lsp) or comment out (haws-setlayr) line.
 ;;; -(HAWS-MKTEXT j i h r s) subroutine to make a text entity.
 ;;; -(HAWS-ATOFX) subroutine to EXTRACT number from text.
 ;;;
@@ -32,7 +32,7 @@
 	) ;_ end of if
 ) ;_ end of defun
 (defun 	 se_mktxt	(side el1 y1 pt1 / eli pti)
-	(haws-mklayr '("p-elev" "m" ""))
+	(haws-setlayr '("p-elev" "m" ""))
 	(setq
 		eli	(+ el1 (/ (- (cadr pt1) (* ds vs) y1) hvexag));Elevation for first text
 		pti	(polar pt1 (/ pi -2) (* ds vs));Insertion point for first text.

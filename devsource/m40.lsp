@@ -30,7 +30,7 @@
     (vl-cmdf "._line" pt10 pt14 "")
     (vl-cmdf "._line" pt11 pt16 "")
     (vl-cmdf "._line" pt16 pt15 "")
-    (haws-mklayr "DRIVEWAYTX")
+    (haws-setlayr "DRIVEWAYTX")
     (vl-cmdf "._line" cl1  cl2 "")
     (haws-mktext
       (if left "MR" "ML")
@@ -39,7 +39,7 @@
       (if left (+ ang1 pi) ang1)
       "DW"
     )
-    (haws-mklayr "DRIVEWAY")
+    (haws-setlayr "DRIVEWAY")
   )
   (haws-vsave '("clayer"))
   (setq
@@ -49,7 +49,7 @@
     swwid (if swwid swwid 4.0)
     ts (* (haws-dwgscale)(getvar"dimtxt"))
   )
-  (haws-mklayr "DRIVEWAY")
+  (haws-setlayr "DRIVEWAY")
   (while
     (progn
       (initget "Hc Dw Sw")

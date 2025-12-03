@@ -15,7 +15,7 @@
   (princ "\nUse the chamfer command to change.")
   ;;;Put sewer taps on    sewtap layer,33 color.
   (while (setq stubpt (getpoint "\nEnd of sewer tap (Return to quit):"))
-    (haws-mklayr "SEWTAP")
+    (haws-setlayr "SEWTAP")
     (setq mainln (entsel "\nSewer main downstream of connection point:"))
     (vl-cmdf "._line" stubpt "_perp")
     (vl-cmdf (cadr mainln))
@@ -29,7 +29,7 @@
     (vl-cmdf "._chamfer" (list taplin stubpt) (list tmpsew (cadr mainln)))
     (vl-cmdf "._erase" tmpsew "")
     (setvar "osmode" osuser)
-    (haws-mklayr "SEWTAPTX")
+    (haws-setlayr "SEWTAPTX")
     (haws-mktext
       (if left "MR" "ML")
       (polar stubpt ang1 ts)

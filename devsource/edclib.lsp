@@ -2303,9 +2303,10 @@
   )
   mkfld_field
 )
-;; MKLAYR sub-function defines and makes current a layer for another routine.
-;; Usage: (haws-mklayr (list "laname" "lacolr" "laltyp"))
-;; Use empty quotes for default color and linetype (eg. (mklay (list "AZ" "" ""))
+;#region LAYER MANAGEMENT
+;; HAWS-SETLAYR skips settings if layer already created this session.
+;; Usage: (haws-setlayr laopt), where laopt is either a layer key string or a list of (laname lacolr laltyp)
+;; Use empty quotes for default color and linetype (eg. (setlayr (list "AZ" "" ""))
 (defun haws-getusl (/ i rdlin temp)
   (setq temp (findfile "layers.dat"))
   (cond
@@ -2359,9 +2360,8 @@
     )
   )
 )
-;;(vl-acad-defun 'HAWS-MKLAYR)
-(defun haws-mklayr (laopt / laname lacolr laltyp ltfile ltfiles temp)
-  (haws-debug "Entering HAWS-MKLAYR in edclib")
+(defun haws-setlayr (laopt / laname)
+  (haws-debug "Entering HAWS-SETLAYR in edclib")
   (if (= 'STR (type laopt))
     (setq
       laopt
@@ -2371,6 +2371,22 @@
        )
     )
   )
+  (setq laname (car laopt))
+  (cond
+    ;; Fast path: layer already created this session
+    ((member laname *haws-layers-made*)
+     (haws-debug (strcat "Layer " laname " in cache, setting current (fast path)"))
+     (setvar "clayer" laname)
+    )
+    ;; Slow path: create layer and add to cache
+    (t
+      (haws-mklayr laopt)
+    )
+  )
+)
+;;(vl-acad-defun 'HAWS-MKLAYR)
+(defun haws-mklayr (laopt / laname lacolr laltyp ltfile ltfiles temp)
+  (haws-debug "Entering HAWS-MKLAYR in edclib because layer settings not applied yet this session.")
   (setq
     laname
      (car laopt)
@@ -2418,29 +2434,18 @@
     (vl-cmdf "._linetype" "_l" laltyp ltfile "")
   )
   (haws-debug "Finished assuring linetype.")
-  (cond
-    ;; Fast path: layer already created this session
-    ((member laname *haws-layers-made*)
-     (haws-debug (strcat "Layer " laname " in cache, setting current (fast path)"))
-     (setvar "clayer" laname)
-    )
-    ;; Slow path: create layer and add to cache
-    (t
-     (haws-debug (strcat "Creating layer " laname " (not in cache)"))
-     (if (not (tblsearch "LAYER" laname))
-       (vl-cmdf "._layer" "_m" laname "")
-       (vl-cmdf "._layer" "_t" laname "_on" laname "_u" laname "_s" laname "")
-     )
-     (if (/= lacolr "")
-       (vl-cmdf "._layer" "_c" lacolr "" "")
-     )
-     (if (/= laltyp "")
-       (vl-cmdf "._layer" "_lt" laltyp "" "")
-     )
-     (setq *haws-layers-made* (cons laname *haws-layers-made*))
-     (haws-debug "Finished making layer.")
-    )
+  (if (not (tblsearch "LAYER" laname))
+    (vl-cmdf "._layer" "_m" laname "")
+    (vl-cmdf "._layer" "_t" laname "_on" laname "_u" laname "_s" laname "")
   )
+  (if (/= lacolr "")
+    (vl-cmdf "._layer" "_c" lacolr "" "")
+  )
+  (if (/= laltyp "")
+    (vl-cmdf "._layer" "_lt" laltyp "" "")
+  )
+  (setq *haws-layers-made* (cons laname *haws-layers-made*))
+  (haws-debug "Finished making layer.")
   laopt
 )
 
@@ -2467,14 +2472,13 @@
   )
   (haws-debug
     (list
-      "Finished trying to load linetype "
+      "Finished trying to load linetype \""
       ltype
-      " from acad.lin, default.lin (Bricscad), and hawsedc.lin."
+      "\" from acad.lin, default.lin (Bricscad), and hawsedc.lin."
     )
   )
 )
-
-
+;#endregion
 ;;; ======================================================================
 ;;;
 ;;;                 Text creation and scale functions
@@ -3427,7 +3431,6 @@
     (list "CNMAliasActivation" "2" 4)  ; User scope - Registry
     (list "UseString" "" 4)  ; User scope - Registry (usage telemetry)
     (list "DebugLevel" "0" 0)  ; "0"=off, "1"=on (debug logging)
-    (list "ClockLevel" "0" 0)  ; "0"=off, "1"=on (performance logging for tests)
   )
 )
 

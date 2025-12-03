@@ -262,7 +262,7 @@ Engineers add context: "Storm Drain STA 10+25.50 RT" where "Storm Drain" and "RT
 CNM loads automatically when AutoCAD starts:
 
 1. **cnm.cuix** (AutoCAD menu file) - Entry point, loads with AutoCAD
-2. **cnm.mnl** (menu LISP file) - Checks for `haws-mklayr`, loads CNMloader if not present
+2. **cnm.mnl** (menu LISP file) - Checks for `haws-setlayr`, loads CNMloader if not present
 3. **CNMloader.lsp** (initialization) - Loads immediately:
    - Defines `haws-autoload` function (creates command stubs)
    - Loads core libraries immediately: `edclib.lsp`, `haws-tip.lsp`, `cnmalias.lsp`

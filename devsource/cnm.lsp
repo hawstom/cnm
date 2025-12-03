@@ -1141,7 +1141,7 @@
     '(lambda (layerkey / layershow layerlist)
        (setq layershow (/= "0" (hcnm-config-getvar (cadr layerkey))))
        (cond
-         (layershow (haws-mklayr (car layerkey)))
+         (layershow (haws-setlayr (car layerkey)))
          (t
           (setq
             layerlist
@@ -1305,7 +1305,7 @@
   (haws-debug "Entering hcnm-key-table-from-search.")  
   (setq
     qtyset
-     (ssget "X" (list (cons 8 (car (haws-mklayr "NOTESEXP")))))
+     (ssget "X" (list (cons 8 (car (haws-setlayr "NOTESEXP")))))
   )
   (haws-debug "After ssget key notes table layer.")  
   (cond
@@ -1505,7 +1505,7 @@
                )
   (setq
     qtyset
-     (ssget "X" (list (cons 8 (car (haws-mklayr "NOTESIMP")))))
+     (ssget "X" (list (cons 8 (car (haws-setlayr "NOTESIMP")))))
   )
   (cond
     (qtyset
@@ -1964,7 +1964,7 @@
              (ssget
                "X"
                (list
-                 (cons 8 (car (haws-mklayr "NOTESTAL")))
+                 (cons 8 (car (haws-setlayr "NOTESTAL")))
                )
              )
           )
@@ -5427,7 +5427,7 @@ ImportLayerSettings=No
   (vl-cmdf "._undo" "_g")
   (setq nplayer (car (haws-getlayr layer)))
   (if (not (tblsearch "LAYER" nplayer))
-    (haws-mklayr layer)
+    (haws-setlayr layer)
   )
   (prompt "\nBlocks to change: ")
   (setq sset (ssget '((0 . "INSERT"))))
@@ -5549,7 +5549,7 @@ ImportLayerSettings=No
   )
   (hcnm-set-dimstyle (strcat bldsty "Dimstyle"))
   (setvar "osmode" 0)
-  (haws-mklayr bllay)
+  (haws-setlayr bllay)
   (setq p1 (getpoint "\nStart point for leader:"))
   (setq
     ds (haws-dwgscale)
@@ -5702,7 +5702,7 @@ ImportLayerSettings=No
   (princ (haws-unified-version))
   (haws-tip
     1
-    "\nMystery crash:\n\nIn some AutoCAD installations, CNM bubble insertion crashes the first time in each drawing session, possibly when it's the first command or the first block insertion. Purging may resolve this. Please let us know if you can confirm a pattern."
+    "\nMystery crash:\n\nIn some AutoCAD installations, CNM bubble insertion crashes the first time in each drawing session, possibly when there are other CNM bubbles present, it's the first command, or it's the first block insertion. Purging may resolve this. Please let us know if you can confirm a pattern."
   )
   ;; [TGH NOTE 2025-11-29]
   ;; Observation: After purging the test drawing used by the automated
@@ -5762,7 +5762,7 @@ ImportLayerSettings=No
           )
        )
   )
-  (haws-mklayr "NOTESLDR")
+  (haws-setlayr "NOTESLDR")
   (setvar "attreq" 0)
   (setq
     bubble-data
@@ -8274,20 +8274,146 @@ ImportLayerSettings=No
 ;;==============================================================================
 ;; Offline calculation of station/offset for simple alignments
 ;; Uses geometry math instead of Civil 3D API for speed (~100x faster)
-;; Currently placeholder - returns nil to force Civil 3D API fallback
+;; Supports: Straight line segments and circular arcs
+;; Returns: (drawstation . offset) or nil if calculation fails
 ;;==============================================================================
-(defun hcnm-bn-auto-alignment-calculate-offline (obj-align p1-world / result)
-  ;; TODO: Implement offline geometry calculation
-  ;; Strategy:
-  ;;   1. Get alignment start point and direction
-  ;;   2. Iterate through entities (lines/arcs)
-  ;;   3. Find which segment contains the perpendicular from p1-world
-  ;;   4. Calculate station (distance along path) and offset (perpendicular distance)
-  ;;
-  ;; For now, return nil to force Civil 3D API fallback
-  ;; This allows the infrastructure to work while we implement geometry math
-  (haws-debug "[OFFLINE CALC] Not yet implemented, falling back to Civil 3D API")
-  nil
+(defun hcnm-bn-auto-alignment-calculate-offline (obj-align p1-world / 
+                                                   entities entity cumulative-station
+                                                   entity-type start-point end-point
+                                                   segment-length projection-distance
+                                                   perpendicular-distance drawstation offset
+                                                   result found-segment-p)
+  (setq result
+    (vl-catch-all-apply
+      '(lambda ()
+        (setq 
+          entities (vlax-get-property obj-align 'Entities)
+          cumulative-station 0.0
+          found-segment-p nil
+        )
+        
+        ;; Iterate through alignment entities (lines/arcs)
+        (vlax-for entity entities
+          (if (not found-segment-p)
+            (progn
+              (setq entity-type (vlax-get-property entity 'ObjectName))
+              
+              (cond
+                ;; CASE 1: Straight line segment
+                ((wcmatch (strcase entity-type) "*LINE*")
+                 (setq 
+                   start-point (vlax-get-property entity 'StartPoint)
+                   end-point (vlax-get-property entity 'EndPoint)
+                   segment-length (vlax-get-property entity 'Length)
+                 )
+                 
+                 ;; Convert variant points to lists for AutoLISP geometry functions
+                 (setq 
+                   start-point (list (vlax-variant-value (vlax-safearray-get-element start-point 0))
+                                     (vlax-variant-value (vlax-safearray-get-element start-point 1))
+                                     0.0)
+                   end-point (list (vlax-variant-value (vlax-safearray-get-element end-point 0))
+                                   (vlax-variant-value (vlax-safearray-get-element end-point 1))
+                                   0.0)
+                 )
+                 
+                 ;; Calculate projection of p1-world onto line segment
+                 ;; Vector from start to end
+                 (setq segment-vector (mapcar '- end-point start-point))
+                 
+                 ;; Vector from start to point
+                 (setq point-vector (mapcar '- p1-world start-point))
+                 
+                 ;; Dot product and magnitude
+                 (setq 
+                   dot-product (apply '+ (mapcar '* segment-vector point-vector))
+                   segment-length-sq (apply '+ (mapcar '* segment-vector segment-vector))
+                 )
+                 
+                 ;; Parameter t = how far along segment (0=start, 1=end)
+                 (setq t-param (/ dot-product segment-length-sq))
+                 
+                 ;; Check if projection falls on this segment (0 <= t <= 1)
+                 (cond
+                   ((and (>= t-param 0.0) (<= t-param 1.0))
+                    ;; Point projects onto this segment
+                    (setq 
+                      projection-distance (* t-param segment-length)
+                      drawstation (+ cumulative-station projection-distance)
+                    )
+                    
+                    ;; Calculate perpendicular distance (offset)
+                    ;; Projection point on segment
+                    (setq projection-point 
+                      (mapcar '+ start-point 
+                              (mapcar '(lambda (x) (* x t-param)) segment-vector)))
+                    
+                    ;; Distance from p1-world to projection point
+                    (setq perpendicular-distance (distance p1-world projection-point))
+                    
+                    ;; Determine sign (left/right) using cross product
+                    ;; Cross product Z component: (end-start) × (point-start)
+                    (setq cross-z 
+                      (- (* (- (car end-point) (car start-point))
+                            (- (cadr p1-world) (cadr start-point)))
+                         (* (- (cadr end-point) (cadr start-point))
+                            (- (car p1-world) (car start-point)))))
+                    
+                    ;; Positive cross-z = left, negative = right (standard convention)
+                    (setq offset 
+                      (if (>= cross-z 0.0)
+                        perpendicular-distance     ; Left (positive)
+                        (- perpendicular-distance) ; Right (negative)
+                      ))
+                    
+                    (setq found-segment-p t)
+                   )
+                   (t
+                    ;; Point doesn't project onto this segment, accumulate station
+                    (setq cumulative-station (+ cumulative-station segment-length))
+                   )
+                 )
+                )
+                
+                ;; CASE 2: Circular arc segment
+                ((wcmatch (strcase entity-type) "*ARC*")
+                 ;; TODO: Implement arc projection geometry
+                 ;; For now, skip arc segments (return nil to force Civil 3D API)
+                 (haws-debug "[OFFLINE CALC] Arc segment detected, falling back to Civil 3D API")
+                 (setq found-segment-p nil)
+                 (vlr-break)  ; Exit iteration early
+                )
+                
+                ;; CASE 3: Other geometry (shouldn't happen if is-simple-p worked)
+                (t
+                 (haws-debug (strcat "[OFFLINE CALC] Unexpected entity type: " entity-type))
+                 (setq found-segment-p nil)
+                 (vlr-break)  ; Exit iteration early
+                )
+              )
+            )
+          )
+        )
+        
+        ;; Return result if segment found
+        (if found-segment-p
+          (cons drawstation offset)
+          nil
+        )
+      )
+    )
+  )
+  
+  ;; Handle errors gracefully - return nil to force Civil 3D API fallback
+  (if (vl-catch-all-error-p result)
+    (progn
+      (haws-debug (strcat "[OFFLINE CALC] Error during calculation: " 
+                         (vl-prin1-to-string result)))
+      (haws-debug "[OFFLINE CALC] Falling back to Civil 3D API")
+      nil
+    )
+    result
+  )
 )
 
 (defun hcnm-bn-auto-alignment-calculate
@@ -8307,7 +8433,7 @@ ImportLayerSettings=No
        )
        (t
         ;; STANDARD PATH: Civil 3D API (~530ms, but accurate for all geometry)
-        (haws-debug "[CIVIL3D API] Using Civil 3D StationOffset method")
+        (haws-debug "[CIVIL3D API] Using Civil 3D StationOffset method...")
         (vlax-invoke-method
           alignment-object
           'stationoffset
@@ -8316,6 +8442,7 @@ ImportLayerSettings=No
           'drawstation
           'offset
         )
+        (haws-debug "  successful.")
         ;; Return as dotted pair
         (cons drawstation offset)
        )
@@ -9384,7 +9511,7 @@ ImportLayerSettings=No
   (cond ((= (getvar "CVPORT") 1) (vl-cmdf "._MSPACE") t))
 )
 (defun hcnm-bn-space-restore (pspace-bubble-p /)
-  (cond (pspace-bubble-p (vl-cmdf "._PSPACE")))
+  (cond (pspace-bubble-p (command "._PSPACE")))
 )
 ;#endregion
 ;#region Auto text user experience interruptions
@@ -9549,6 +9676,7 @@ ImportLayerSettings=No
     avport-xdata-gateway-open-p avport-object-gateway-open-p
     has-super-clearance-p cvport
    )
+  (haws-debug "Starting hcnm-bn-gateways-to-viewport-selection-prompt decision-maker...")
   ;; Gateway 1: Coordinate-based auto-text
   (setq
     avport-coordinates-gateway-open-p

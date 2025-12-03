@@ -352,6 +352,11 @@
 		(laopt)
   (haws-deprecation-01 "mklayr")
 )
+;; HAWS-SETLAYR skips settings if layer already created this session.
+;; Usage: (haws-setlayr laopt), where laopt is either a layer key string or a list of (laname lacolr laltyp)
+(defun haws-setlayr (laopt)
+  (haws-mklayr laopt)
+)
 (defun haws-mklayr (laopt / laname lacolr laltyp ltfile)
   (if
     (= 'STR (type laopt))

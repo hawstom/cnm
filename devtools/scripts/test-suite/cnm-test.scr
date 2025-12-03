@@ -60,11 +60,12 @@
 ;   - Common failures: Missing objects, wrong coordinates, CVPORT issues
 ;
 ; === SETUP ===
+(haws-setvar "DebugLevel" "1")
+;(load "haws-clock.lsp")
 (load (strcat (getvar "dwgprefix") "cnm-test-validation.lsp"))
 (c:test-setup-layers)
 (test-write-report-header)
 (c:test-log-start)
-;(load "haws-clock.lsp")
 ; Switch to model space (drawing starts on TEST-LAYOUT)
 mspace
 zoom

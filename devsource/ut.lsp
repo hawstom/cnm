@@ -24,7 +24,7 @@
                  pt2 pt3 temp utlen utpl
                 )
   ;; Draw centerline using PLINE command
-  (haws-mklayr (strcat "UT" (haws-ut-getvar "Key") "SNG"))
+  (haws-setlayr (strcat "UT" (haws-ut-getvar "Key") "SNG"))
   (vl-cmdf "pline" pt1 "_w" 0 "")
   (setvar "cmdecho" 1)
   (while (= 1 (logand 1 (getvar "cmdactive")))
@@ -234,13 +234,13 @@
   (haws-ut-setvar
     "Layer.PL"
     (car
-      (haws-mklayr (strcat "UT" (haws-ut-getvar "Key") "PL"))
+      (haws-setlayr (strcat "UT" (haws-ut-getvar "Key") "PL"))
     )
   )
   (haws-ut-setvar
     "Layer.OD"
     (car
-      (haws-mklayr (strcat "UT" (haws-ut-getvar "Key") "OD"))
+      (haws-setlayr (strcat "UT" (haws-ut-getvar "Key") "OD"))
     )
   )
 )

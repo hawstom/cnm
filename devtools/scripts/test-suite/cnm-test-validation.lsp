@@ -350,8 +350,6 @@
     (if (not (vl-file-directory-p resultsdir))
       (vl-mkdir resultsdir)
     )
-    ;; Enable profiling for test run
-    (haws-setvar "ClockLevel" "1")
     (setq logfile (strcat resultsdir "\\cnm-test-run.log"))
     (setq timestamp (menucmd "m=$(edtime,$(getvar,date),YYYY-MM-DD HH:MM:SS)"))
     (if (setq f (open logfile "a"))
@@ -382,8 +380,6 @@
 
   (defun c:test-log-end ( / logfile timestamp f resultsdir )
     ;; Append an END timestamp to test-results/cnm-test-run.log
-    ;; Disable profiling after test run
-    (haws-setvar "ClockLevel" "0")
     (setq resultsdir (strcat (getvar "dwgprefix") "test-results"))
     (setq logfile (strcat resultsdir "\\cnm-test-run.log"))
     (setq timestamp (menucmd "m=$(edtime,$(getvar,date),YYYY-MM-DD HH:MM:SS)"))
@@ -503,7 +499,6 @@
     )
     (princ "\nWARNING: Could not create reactor-profiling.log")
   )
-  (haws-setvar "ClockLevel" "0")
   (princ)
 )
 

@@ -75,7 +75,7 @@
       (prompt "\nPlease enter dimtxt (plotted text height):")
       (vl-cmdf "dimtxt" pause)
   ) )
-  (if bllay (haws-mklayr bllay))
+  (if bllay (haws-setlayr bllay))
   (prompt (strcat "\nInsertion point for " blname ":"))
   (vl-cmdf "._insert" blname pause)
   (setq blsclx (if (= 1 (logand blopt 1)) (haws-dwgscale) 1))
