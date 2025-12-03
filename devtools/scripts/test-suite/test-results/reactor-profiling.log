@@ -1,4 +1,8 @@
-=== REACTOR PROFILING DATA ===
+=== REACTOR PROFILING LOG ===
+Test run: 2025-04-02 10:04:38
+
+Profiling data will be appended during TEST 40 execution
+Each stretch operation triggers reactor callback with timing breakdown
 
 === REACTOR PROFILING LOG ===
 
@@ -23,4 +27,4 @@ ANALYSIS STRATEGY:
 - Config+format > 5ms: Verify Phase 3 config optimization applied
 - Attribute writes > 15ms: May be unavoidable AutoCAD overhead
 
-Test run summary: 7052ms average per callback
+Test run summary: 2953ms average per callback

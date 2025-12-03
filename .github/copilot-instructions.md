@@ -43,7 +43,7 @@
 
 4. **Does this already exist?** (DRY check)
    - Search with `grep_search` for similar functionality
-   - Reuse existing utilities (haws-debug, haws-profile-log, etc.)
+   - Reuse existing utilities (haws-debug, haws-clock-console-log, etc.)
    - Don't duplicate file I/O patterns
 
 5. **Is this the simplest solution?**

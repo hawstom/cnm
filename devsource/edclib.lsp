@@ -39,9 +39,12 @@
 ;;Elizabeth asked me to give her a version with no nag mode (direct to fail).
 (defun haws-nagmode-p () t)
 (load "haws-config")
+;;; haws-tip is the tip/evangelism system for HAWS/EDC/CNM.
+;;; It must be loaded before any tips are shown.
 (load "haws-tip")
 (load "lee-mac")
-
+;;; Layer caching for performance optimization
+(setq *haws-layers-made* nil) ; Tracks layers created in current drawing session
 (defun haws-copyright ()
   "Copyright 2025 Thomas Gail Haws"
 )
@@ -1940,80 +1943,60 @@
 ;;   messages - List of strings to concatenate and print
 ;;              OR single string (auto-wrapped in list)
 ;; Usage:
-;;   (haws-debug *hcnm-debug* '("Gateway 1: " "PASSED"))
-;;   (haws-debug *hcnm-debug* "Simple message")
-;;   (haws-debug nil "Never prints")
+;;   (haws-debug '("Gateway 1: " "PASSED"))
+;;   (haws-debug "Simple message")
 ;;------------------------------------------------------------------------------
-(defun haws-debug (messages / enabled output) 
-  (setq enabled T)
+(defun haws-debug (messages / enabled-p output) 
+  ;; Why not hard-code this? Clocking may be needed on a user's machine with a compiled edclib.lsp.
+  (setq enabled-p (> (atoi (haws-getvar "DebugLevel")) 0))
   (cond 
-    (enabled
+    (enabled-p
      ;; Convert single string to list for consistent processing
      (if (= (type messages) 'STR) 
        (setq messages (list messages))
      )
-     ;; Concatenate all strings with newline prefix
-     (setq output (apply 'strcat (cons "\n" messages)))
-     (setq f2 (open (strcat (getvar "dwgprefix") "haws-debug-log.md") "a"))
-     (princ output f2)
-     (setq f2 (close f2))
+     ;; Concatenate all strings
+     (setq output (apply 'strcat (cons (itoa (rem (getvar "millisecs") 100000)) messages)))
+     (haws-message-log output "haws-debug-log.md")
      output ; Return the output string
     )
     (t nil) ; Return nil when disabled
   )
 )
-(defun haws-profile-log (message / profile-path config-value)
-  ;; Write profiling message to haws-profiling.log if profiling enabled
-  ;; Args: message - String to write to log
-  ;; Returns: T if successful, nil if failed or profiling disabled
-  ;; Usage: (haws-profile-log "  [PROFILE] XDATA write: 15ms")
-  (setq config-value (haws-config-getvar "HawsEDC" "EnableProfiling" nil nil))
-  (if (= config-value "1")
-    (progn
-      (setq profile-path (strcat (getvar "dwgprefix") "haws-profiling.log"))
-      (if (setq f2 (open profile-path "a"))
-        (progn
-          (write-line message f2)
-          (close f2)
-          T
-        )
-        nil
-      )
+;; Append message to file in drawing's folder
+;; Args: message - String to write to log
+;;       file-name - Name of log file (e.g., "haws-clocking.log")
+;; Returns: T if successful, nil if failed to write
+;; Usage: (haws-message-log "Message to log" "custom-log.txt")
+(defun haws-message-log (message file-name / profile-path config-value) 
+  (cond 
+    ((and 
+       (setq f2 (open (strcat (getvar "dwgprefix") file-name) "a"))
+       (write-line message f2)
+     )
+     (setq f2 (close f2))
+     T
     )
-    nil
+    (T nil)
   )
 )
-
 ;;------------------------------------------------------------------------------
-;; HAWS PROFILING SYSTEM - DUMMY FUNCTIONS (Production Safety)
+;; HAWS CLOCKING SYSTEM - Production-Safe Stubs
 ;;------------------------------------------------------------------------------
-;; Purpose: No-op stubs that allow profiling calls in production code
-;; Architecture:
-;;   - These dummy functions are compiled into production FAS
-;;   - Return nil immediately (negligible overhead ~0.0001ms per call)
-;;   - Redefined by devtools/performance-profiler.lsp when loaded (dev only)
-;;   - Production FAS excludes devtools/ folder entirely
+;; Purpose: No-op stubs for production code safety
 ;;
-;; Enable Profiling (development):
-;;   (load "devtools/performance-profiler.lsp")
+;; Enable timing: (load "haws-clock.lsp")
 ;;
-;; This allows clean profiling calls throughout CNM without guards:
-;;   (setq start (haws-profile-start "label"))  ; Safe in production
-;;   (haws-profile-end "label" start)           ; Safe in production
+;; These dummy functions:
+;;   - Allow clocking calls in production code (return NIL immediately)
+;;   - Get redefined by haws-clock.lsp when loaded (development only)
+;;   - Have negligible overhead (~0.0001ms per call)
 ;;------------------------------------------------------------------------------
-
-;; Dummy: Start timing (no-op in production)
-(defun haws-profile-start (label) nil)
-
-;; Dummy: End timing (no-op in production)
-(defun haws-profile-end (label start-time) nil)
-
-;; Dummy: Print report (no-op in production)
-(defun haws-profile-report (sorted) nil)
-
-;; Dummy: Reset data (no-op in production)
-(defun haws-profile-reset () nil)
-
+(defun haws-clock-start (label) nil)
+(defun haws-clock-end (label start-time) nil)
+(defun haws-clock-report (sorted) nil)
+(defun haws-clock-reset () nil)
+(defun haws-clock-console-log (message) nil)
 ;#endregion
 ;#region MISC
 ;; ======================================================================
@@ -2355,6 +2338,7 @@
             ;; Per the author of CNMEdit.exe, it is time to replace it with something else.
             ((= (haws-config-getvar "HAWS" "ImportLayerSettings" (hcnm-ini-name (hcnm-proj)) "HAWS") "Yes")
              (haws-config-setvar "HAWS" "ImportLayerSettings" "No" (hcnm-ini-name (hcnm-proj)) "HAWS")
+             (setq *haws-layers-made* nil) ; Clear cache to force recreation
              t
             )
           )
@@ -2377,7 +2361,7 @@
 )
 ;;(vl-acad-defun 'HAWS-MKLAYR)
 (defun haws-mklayr (laopt / laname lacolr laltyp ltfile ltfiles temp)
-  ;;(princ "\nHAWS-MKLAYR in edclib")
+  (haws-debug "Entering HAWS-MKLAYR in edclib")
   (if (= 'STR (type laopt))
     (setq
       laopt
@@ -2434,17 +2418,29 @@
     (vl-cmdf "._linetype" "_l" laltyp ltfile "")
   )
   (haws-debug "Finished assuring linetype.")
-  (if (not (tblsearch "LAYER" laname))
-    (vl-cmdf "._layer" "_m" laname "")
-    (vl-cmdf "._layer" "_t" laname "_on" laname "_u" laname "_s" laname "")
+  (cond
+    ;; Fast path: layer already created this session
+    ((member laname *haws-layers-made*)
+     (haws-debug (strcat "Layer " laname " in cache, setting current (fast path)"))
+     (setvar "clayer" laname)
+    )
+    ;; Slow path: create layer and add to cache
+    (t
+     (haws-debug (strcat "Creating layer " laname " (not in cache)"))
+     (if (not (tblsearch "LAYER" laname))
+       (vl-cmdf "._layer" "_m" laname "")
+       (vl-cmdf "._layer" "_t" laname "_on" laname "_u" laname "_s" laname "")
+     )
+     (if (/= lacolr "")
+       (vl-cmdf "._layer" "_c" lacolr "" "")
+     )
+     (if (/= laltyp "")
+       (vl-cmdf "._layer" "_lt" laltyp "" "")
+     )
+     (setq *haws-layers-made* (cons laname *haws-layers-made*))
+     (haws-debug "Finished making layer.")
+    )
   )
-  (if (/= lacolr "")
-    (vl-cmdf "._layer" "_c" lacolr "" "")
-  )
-  (if (/= laltyp "")
-    (vl-cmdf "._layer" "_lt" laltyp "" "")
-  )
-  (haws-debug "Finished making layer.")
   laopt
 )
 
@@ -3420,7 +3416,7 @@
 ;;end sub-functions
 
 ;#endregion
-
+;#region Config
 ;; HAWS app configuration definitions
 ;; These are shared HawsEDC configuration variables used by edclib.lsp and cnmaliaslib.lsp
 ;;; MOVED UP: Must be defined BEFORE USE_LOG section uses it
@@ -3430,7 +3426,8 @@
     (list "ImportLayerSettings" "YES" 2)  ; Project scope - INI file
     (list "CNMAliasActivation" "2" 4)  ; User scope - Registry
     (list "UseString" "" 4)  ; User scope - Registry (usage telemetry)
-    (list "EnableProfiling" "0" 0)  ; "0"=off, "1"=on (performance logging for tests)
+    (list "DebugLevel" "0" 0)  ; "0"=off, "1"=on (debug logging)
+    (list "ClockLevel" "0" 0)  ; "0"=off, "1"=on (performance logging for tests)
   )
 )
 
@@ -3449,7 +3446,6 @@
 )
 (defun haws-setvar (var val / scope-code) 
   ;; Get scope code to avoid calling hcnm-proj for non-Project variables
-  (setq scope-code (haws-config-get-scope "HAWS" var))
   ;; Call haws-config with appropriate parameters
   (haws-config-setvar 
     "HAWS" ; app
@@ -3460,7 +3456,6 @@
   )
 )
 (defun haws-getvar (var) 
-  (setq scope-code (haws-config-get-scope "HAWS" var))
   (haws-config-getvar 
     "HAWS" ; app
     var ; var
@@ -3469,7 +3464,7 @@
   )
 )
 
-
+;#endregion
 ;#region USE_LOG
 (if (/=(haws-use-get-local-log-string)(haws-use-initialize-log-string))(haws-use-log-remote))
 
@@ -3487,6 +3482,6 @@
 
 (princ "\nHawsEDC library functions loaded.")
 (princ)
- ;|\U+FFFDVisual LISP\U+FFFD Format Options\U+FFFD
+;|\U+FFFDVisual LISP\U+FFFD Format Options\U+FFFD
 (72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil t)
 ;*** DO NOT add text below the comment! ***|;

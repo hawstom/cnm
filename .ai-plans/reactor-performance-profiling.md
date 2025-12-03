@@ -122,9 +122,12 @@ Focus on operation with highest cumulative time:
 
 ## Testing Instructions
 
-1. Load modified cnm.lsp into AutoCAD
-2. Run TEST 40: `(load "test-suite-reactor-performance.lsp")` → `(test-40)`
-3. Capture console output with timing details
+1. Open cnm-test.dwg in Civil 3D
+2. Ensure CNM is loaded
+3. Run cnm-test.scr (includes TEST 40 - reactor performance)
+   - Method: Drag cnm-test.scr into AutoCAD drawing window
+   - Or use: SCRIPT command and select cnm-test.scr
+4. Capture console output with timing details
 4. Analyze timing breakdown to identify bottleneck
 5. Report findings in this document
 

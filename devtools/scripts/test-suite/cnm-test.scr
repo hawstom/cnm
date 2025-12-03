@@ -64,6 +64,7 @@
 (c:test-setup-layers)
 (test-write-report-header)
 (c:test-log-start)
+;(load "haws-clock.lsp")
 ; Switch to model space (drawing starts on TEST-LAYOUT)
 mspace
 zoom

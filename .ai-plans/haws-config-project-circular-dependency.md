@@ -158,7 +158,7 @@
 
 ```autolisp
 (defun hcnm-config-getvar (var / val start scope-code)
-  (setq start (haws-profile-start "cnm-config-getvar-wrapper"))
+  (setq start (haws-clock-start "cnm-config-getvar-wrapper"))
   
   ;; Get scope code for this variable (matches legacy scope check!)
   (setq scope-code (haws-config-get-scope "CNM" var))
@@ -178,7 +178,7 @@
     )
   )
   
-  (haws-profile-end "cnm-config-getvar-wrapper" start)
+  (haws-clock-end "cnm-config-getvar-wrapper" start)
   val
 )
 ```

@@ -1,6 +1,6 @@
 # CNM Test Suite Report
 
-**Date:** 2025-02-30 02:02:48
+**Date:** 2025-04-02 10:04:38
 
 **Status:** Running tests...
 
@@ -40,7 +40,7 @@ XDATA auto-text: "STA 53+00.00"
 Tag: NOTETXT1
 Expected auto-type: "Sta"
 Reactor validation: SKIPPED (API unclear)
-Handle: 282E2
+Handle: 2895D
 ```
 
 ### TEST 2: Dia (Model)
@@ -75,7 +75,7 @@ XDATA auto-text: "18""
 Tag: NOTETXT1
 Expected auto-type: "Dia"
 Reactor validation: SKIPPED (API unclear)
-Handle: 28536
+Handle: 28BB1
 ```
 
 ### TEST 3: N (Model)
@@ -110,7 +110,7 @@ XDATA auto-text: "N 20260.00"
 Tag: NOTETXT1
 Expected auto-type: "N"
 Reactor validation: SKIPPED (API unclear)
-Handle: 2878A
+Handle: 28E05
 ```
 
 ### TEST 4: LF (Model)
@@ -120,8 +120,8 @@ Handle: 2878A
 **Details:**
 ```
 Tag: NOTETXT1
-Expected: "%<\AcObjProp Object(%<\_ObjId 2393892826736>%).Length \f "%lu2%pr0%ct8[1]">% LF"
-Actual:   "%<\AcObjProp Object(%<\_ObjId 2393892826736>%).Length \f "%lu2%pr0%ct8[1]">% LF"
+Expected: "%<\AcObjProp Object(%<\_ObjId 2448452359792>%).Length \f "%lu2%pr0%ct8[1]">% LF"
+Actual:   "%<\AcObjProp Object(%<\_ObjId 2448452359792>%).Length \f "%lu2%pr0%ct8[1]">% LF"
 ```
 
 ### TEST 4 (XDATA)
@@ -133,7 +133,7 @@ Actual:   "%<\AcObjProp Object(%<\_ObjId 2393892826736>%).Length \f "%lu2%pr0%ct
 Tag: NOTETXT1
 Expected auto-type: "LF"
 XDATA composite-key: ("LF" . "")
-XDATA auto-text: "%<\AcObjProp Object(%<\_ObjId 2393892826736>%).Length \f "%lu2%pr0%ct8[1]">% LF"
+XDATA auto-text: "%<\AcObjProp Object(%<\_ObjId 2448452359792>%).Length \f "%lu2%pr0%ct8[1]">% LF"
 ```
 
 ### TEST 5: Manual (Model)
@@ -179,7 +179,7 @@ XDATA auto-text: "OAK ST"
 Tag: NOTETXT1
 Expected auto-type: "AlName"
 Reactor validation: SKIPPED (API unclear)
-Handle: 28E89
+Handle: 29504
 ```
 
 ### TEST 7: SF (Model)
@@ -189,8 +189,8 @@ Handle: 28E89
 **Details:**
 ```
 Tag: NOTETXT1
-Expected: "%<\AcObjProp Object(%<\_ObjId 2393892826736>%).Area \f "%lu2%pr0%ct8[1]">% SF"
-Actual:   "%<\AcObjProp Object(%<\_ObjId 2393892826736>%).Area \f "%lu2%pr0%ct8[1]">% SF"
+Expected: "%<\AcObjProp Object(%<\_ObjId 2448452359792>%).Area \f "%lu2%pr0%ct8[1]">% SF"
+Actual:   "%<\AcObjProp Object(%<\_ObjId 2448452359792>%).Area \f "%lu2%pr0%ct8[1]">% SF"
 ```
 
 ### TEST 7 (XDATA)
@@ -202,7 +202,7 @@ Actual:   "%<\AcObjProp Object(%<\_ObjId 2393892826736>%).Area \f "%lu2%pr0%ct8[
 Tag: NOTETXT1
 Expected auto-type: "SF"
 XDATA composite-key: ("SF" . "")
-XDATA auto-text: "%<\AcObjProp Object(%<\_ObjId 2393892826736>%).Area \f "%lu2%pr0%ct8[1]">% SF"
+XDATA auto-text: "%<\AcObjProp Object(%<\_ObjId 2448452359792>%).Area \f "%lu2%pr0%ct8[1]">% SF"
 ```
 
 ### TEST 8: SY (Model)
@@ -212,8 +212,8 @@ XDATA auto-text: "%<\AcObjProp Object(%<\_ObjId 2393892826736>%).Area \f "%lu2%p
 **Details:**
 ```
 Tag: NOTETXT1
-Expected: "%<\AcObjProp Object(%<\_ObjId 2393892826736>%).Area \f "%lu2%pr0%ct8[0.11111111]">% SY"
-Actual:   "%<\AcObjProp Object(%<\_ObjId 2393892826736>%).Area \f "%lu2%pr0%ct8[0.11111111]">% SY"
+Expected: "%<\AcObjProp Object(%<\_ObjId 2448452359792>%).Area \f "%lu2%pr0%ct8[0.11111111]">% SY"
+Actual:   "%<\AcObjProp Object(%<\_ObjId 2448452359792>%).Area \f "%lu2%pr0%ct8[0.11111111]">% SY"
 ```
 
 ### TEST 8 (XDATA)
@@ -225,7 +225,7 @@ Actual:   "%<\AcObjProp Object(%<\_ObjId 2393892826736>%).Area \f "%lu2%pr0%ct8[
 Tag: NOTETXT1
 Expected auto-type: "SY"
 XDATA composite-key: ("SY" . "")
-XDATA auto-text: "%<\AcObjProp Object(%<\_ObjId 2393892826736>%).Area \f "%lu2%pr0%ct8[0.11111111]">% SY"
+XDATA auto-text: "%<\AcObjProp Object(%<\_ObjId 2448452359792>%).Area \f "%lu2%pr0%ct8[0.11111111]">% SY"
 ```
 
 ### TEST 9: Sta (Paper)
@@ -260,7 +260,7 @@ XDATA auto-text: "STA 50+00.00"
 Tag: NOTETXT1
 Expected auto-type: "Sta"
 Reactor validation: SKIPPED (API unclear)
-Handle: 2958B
+Handle: 29C06
 ```
 
 ### TEST 10: Off (Paper)
@@ -295,7 +295,7 @@ XDATA auto-text: "20.00 LT"
 Tag: NOTETXT1
 Expected auto-type: "Off"
 Reactor validation: SKIPPED (API unclear)
-Handle: 297E0
+Handle: 29E5B
 ```
 
 ### TEST 11: StaOff (Paper)
@@ -330,7 +330,7 @@ XDATA auto-text: "STA 51+20.00, 10.00 LT"
 Tag: NOTETXT1
 Expected auto-type: "StaOff"
 Reactor validation: SKIPPED (API unclear)
-Handle: 29A35
+Handle: 2A0B0
 ```
 
 ### TEST 12: StaName (Paper)
@@ -365,7 +365,7 @@ XDATA auto-text: "STA 56+40.00 OAK ST"
 Tag: NOTETXT1
 Expected auto-type: "StaName"
 Reactor validation: SKIPPED (API unclear)
-Handle: 29C8A
+Handle: 2A305
 ```
 
 ### TEST 13: Dia (Paper)
@@ -400,7 +400,7 @@ XDATA auto-text: "18""
 Tag: NOTETXT1
 Expected auto-type: "Dia"
 Reactor validation: SKIPPED (API unclear)
-Handle: 29EDF
+Handle: 2A55A
 ```
 
 ### TEST 14: Slope (Paper)
@@ -435,7 +435,7 @@ XDATA auto-text: "0.31%"
 Tag: NOTETXT1
 Expected auto-type: "Slope"
 Reactor validation: SKIPPED (API unclear)
-Handle: 2A133
+Handle: 2A7AE
 ```
 
 ### TEST 15: N (Paper)
@@ -470,7 +470,7 @@ XDATA auto-text: "N 20260.00"
 Tag: NOTETXT1
 Expected auto-type: "N"
 Reactor validation: SKIPPED (API unclear)
-Handle: 2A387
+Handle: 2AA02
 ```
 
 ### TEST 16: E (Paper)
@@ -505,7 +505,7 @@ XDATA auto-text: "E 10380.00"
 Tag: NOTETXT1
 Expected auto-type: "E"
 Reactor validation: SKIPPED (API unclear)
-Handle: 2A5DC
+Handle: 2AC57
 ```
 
 ### TEST 17: NE (Paper)
@@ -540,7 +540,7 @@ XDATA auto-text: "N 20230.00, E 10440.00"
 Tag: NOTETXT1
 Expected auto-type: "NE"
 Reactor validation: SKIPPED (API unclear)
-Handle: 2A831
+Handle: 2AEAC
 ```
 
 ### TEST 18: Manual (Paper)
@@ -626,9 +626,9 @@ cnm-test.lst created with single entry: cnm-test
 **Details:**
 ```
 ⏱ INSERTION PERFORMANCE: 20 bubbles with auto-text
-  Total time: 41.20 seconds
-  Average per bubble: 2060 ms
-  Insertion rate: 0.5 bubbles/sec
+  Total time: 28.72 seconds
+  Average per bubble: 1436 ms
+  Insertion rate: 0.7 bubbles/sec
 
   BASELINE: Establishes performance expectation
   - < 500ms/bubble: ✅ Excellent (typical)
@@ -648,8 +648,8 @@ cnm-test.lst created with single entry: cnm-test
 **Details:**
 ```
 ⏱ REACTOR PERFORMANCE: 20 leader stretches
-  Total time: 141.05 seconds
-  Average per update: 7052 ms
+  Total time: 59.06 seconds
+  Average per update: 2953 ms
   (Each stretch triggers VLR-OBJECT-REACTOR callback)
 
   PERFORMANCE ANALYSIS:

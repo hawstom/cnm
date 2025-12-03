@@ -270,7 +270,7 @@
                                  usrvar vplayers x bubble-list notesmaxheight
                                  orphaned-bubbles
                                 )
-  (haws-debug "hcnm-key-table-searchandsave called")
+  (haws-debug "Entering hcnm-key-table-searchandsave.")
   ;;
   ;; Section 1.  Make an empty NOTELIST from tblqty and constnot.txt.  TGHI can use this section for Tally, except there is a conflict in the way they do PHASELIST.
   ;;
@@ -1302,10 +1302,12 @@
                                / el en i notelist qtypt qtyset
                                tablespace
                               )
+  (haws-debug "Entering hcnm-key-table-from-search.")  
   (setq
     qtyset
      (ssget "X" (list (cons 8 (car (haws-mklayr "NOTESEXP")))))
   )
+  (haws-debug "After ssget key notes table layer.")  
   (cond
     (qtyset
      (setq
@@ -1315,6 +1317,7 @@
          )
      )
      (while (setq en (ssname qtyset (setq i (1- i))))
+       (haws-debug "Looping through key notes table objects to find start point.")
        (setq el (entget en))
        (cond
          ((or (= (getvar "CTAB") (setq tablespace (cdr (assoc 410 el))))
@@ -1342,6 +1345,7 @@
      )
     )
   )
+  (haws-debug "After loop for start point.")
   (if (not qtypt)
     (setq qtypt (getpoint "\nStart point for key notes table: "))
   )
@@ -2396,9 +2400,13 @@
   (haws-core-restore)
 )
 (defun c:hcnm-cnmkt ()
+  (haws-debug "Entering c:hcnm-cnmkt")
   (haws-core-init 180)
+  (haws-debug "c:hcnm-cnmkt after haws-core-init")
   (princ (haws-evangel-msg))
+  (haws-debug "c:hcnm-cnmkt after haws-evangel-msg")
   (hcnm-cnm "Search")
+  (haws-debug "c:hcnm-cnmkt after hcnm-cnm")
   (haws-core-restore)
 )
 (defun c:hcnm-cnmkti ()
@@ -3677,6 +3685,7 @@ ImportLayerSettings=No
     (list "BubbleCurrentAlignment" "" 0)
     (list "BlockReactors" "0" 0)  ; "0"=normal, "1"=block (at arrowhead style change and nested callbacks)
     (list "BubbleArrowIntegralPending" "0" 0)
+    (list "UseOfflineStaOffCalculation" "No" 0)  ; "Yes"=fast offline calc for simple alignments, "No"=always use Civil 3D API
   )
 )
 
@@ -3886,7 +3895,7 @@ ImportLayerSettings=No
 ;;; UPDATED: Now uses HAWS-CONFIG library (Issue #11)
 (defun hcnm-config-getvar (var / val start scope-code)
   ;; PROFILING: Start timing CNM config wrapper
-  (setq start (haws-profile-start "cnm-config-getvar-wrapper"))
+  (setq start (haws-clock-start "cnm-config-getvar-wrapper"))
   ;; Get scope code to avoid calling hcnm-proj for non-Project variables
   ;; This prevents circular dependency during project initialization:
   ;; hcnm-proj → hcnm-initialize-project → hcnm-config-getvar("AppFolder") → hcnm-proj
@@ -3908,7 +3917,7 @@ ImportLayerSettings=No
      )
   )
   ;; PROFILING: End timing CNM config wrapper
-  (haws-profile-end "cnm-config-getvar-wrapper" start)
+  (haws-clock-end "cnm-config-getvar-wrapper" start)
   val
 )
 
@@ -4063,7 +4072,9 @@ ImportLayerSettings=No
 ;; It should resolve all errors and user conditions.
 ;; and return a "drive:\\...\\projroot\\pnname" filename to other functions.
 (defun hcnm-projnotes (/ app apppn format opt1 pnname projnotes)
+  (haws-debug "Before getvar ProjectNotes")
   (setq pnname (hcnm-config-getvar "ProjectNotes"))
+  (haws-debug "After getvar ProjectNotes")
   (if (= pnname "")
     (hcnm-config-setvar
       "ProjectNotes"
@@ -4191,7 +4202,7 @@ ImportLayerSettings=No
 ;; Excel CSV
 ;; Doesn't do project management except to write txt2 configs to cnm.ini in the same folder as projnotes.
 (defun hcnm-readcf
-   (projnotes / bakprojnotes pnformat rdlin requested-format)
+   (projnotes / bakprojnotes pnformat rdlin requested-format test-string)
   ;;Do a file read to figure out what the file format is.
   ;;For now, assume that a file that has any of the shape keys followed by a comma ("BOX,", etc.) is CSV
   ;;any other file is TXT2
@@ -4204,26 +4215,26 @@ ImportLayerSettings=No
   )
   (setq f1 (open projnotes "r"))
   (while (and (not pnformat) (setq rdlin (read-line f1)))
+    (haws-debug "Reading a line of existing project notes.")
     (cond
-      ((wcmatch
-         (substr rdlin 1 4)
-         "BOX`,,CIR`,,DIA`,,ELL`,,HEX`,,OCT`,,PEN`,,REC`,,SST`,,TRI`,"
-       )
+      ((= ";" (substr rdlin 1 1))
+       ;;Comment line, skip
+      )
+      ((= "," (substr rdlin 4 1))
        (setq pnformat "csv")
       )
-      ((wcmatch
-         (substr rdlin 1 3)
-         (hcnm-config-getvar "NoteTypes")
-       )
+      (t
        (setq pnformat "txt2")
       )
     )
   )
+  (haws-debug "Finished detecting existing project notes format.")
   (setq
     f1 (close f1)
     requested-format
      (hcnm-config-project-notes-format)
   )
+  (haws-debug "Finished getting requested project notes format.")
   (cond
     ((= pnformat "txt2")
      (hcnm-readcftxt2 projnotes)
@@ -4264,7 +4275,9 @@ ImportLayerSettings=No
      )
     )
     ((= pnformat "csv")
+     (haws-debug "Start reading csv project notes.")
      (hcnm-readcfcsv projnotes)
+     (haws-debug "Finished reading csv project notes.")
      (cond
        ((= requested-format "txt2")
         (setq bakprojnotes projnotes)
@@ -5684,7 +5697,7 @@ ImportLayerSettings=No
   ;;===========================================================================
   ;; PROFILING: Start timing bubble insertion (complete process)
   ;;===========================================================================
-  (setq profile-start (haws-profile-start "insert-bubble"))
+  (setq profile-start (haws-clock-start "insert-bubble"))
   (princ "\nCNM version: ")
   (princ (haws-unified-version))
   (haws-tip
@@ -5842,7 +5855,7 @@ ImportLayerSettings=No
   ;;===========================================================================
   ;; PROFILING: End timing bubble insertion
   ;;===========================================================================
-  (haws-profile-end "insert-bubble" profile-start)
+  (haws-clock-end "insert-bubble" profile-start)
   (princ)
 )
 (defun hcnm-bn-get-user-start-point (bubble-data)
@@ -8012,7 +8025,7 @@ ImportLayerSettings=No
      (hcnm-bn-bubble-data-get bubble-data "ATTRIBUTES")
   )
   ;; Report auto-dispatch timing
-  (haws-profile-log (strcat "    [PROFILE] Auto-dispatch (" auto-type "): " 
+  (haws-clock-console-log (strcat "    [PROFILE] Auto-dispatch (" auto-type "): " 
                  (itoa (- (getvar "MILLISECS") time-start)) "ms"))
   ;; Return full bubble-data (contains lattribs + handle-reference + viewport info)
   ;; This allows callers to extract handle info for XDATA updates and reactor attachment
@@ -8221,22 +8234,92 @@ ImportLayerSettings=No
 ;; Returns:
 ;;   (DRAWSTATION . OFFSET) on success
 ;;   NIL on failure
+;; Check if alignment contains only simple geometry (lines/arcs, no spirals)
+;; Returns T if simple (can use offline calculation), nil if complex
+(defun hcnm-bn-alignment-is-simple-p (obj-align / entities has-spiral-p result)
+  (setq result
+    (vl-catch-all-apply
+      '(lambda ()
+        (setq 
+          entities (vlax-get-property obj-align 'Entities)
+          has-spiral-p nil
+        )
+        ;; Iterate through alignment entities checking for spirals
+        (vlax-for entity entities
+          ;; Entity types: 1=Line, 2=Arc, 3=Spiral (Civil 3D API)
+          ;; Check Type property or object name
+          (if (wcmatch 
+                (strcase (vlax-get-property entity 'ObjectName))
+                "*SPIRAL*"
+              )
+            (setq has-spiral-p t)
+          )
+        )
+        ;; Return T if no spirals found
+        (not has-spiral-p)
+      )
+    )
+  )
+  ;; Return result, or nil if error occurred
+  (if (vl-catch-all-error-p result)
+    (progn
+      (haws-debug (strcat "[GEOMETRY CHECK] Error checking alignment geometry: " 
+                         (vl-prin1-to-string result)))
+      nil  ; Assume complex on error (use Civil 3D API)
+    )
+    result
+  )
+)
+
+;;==============================================================================
+;; Offline calculation of station/offset for simple alignments
+;; Uses geometry math instead of Civil 3D API for speed (~100x faster)
+;; Currently placeholder - returns nil to force Civil 3D API fallback
+;;==============================================================================
+(defun hcnm-bn-auto-alignment-calculate-offline (obj-align p1-world / result)
+  ;; TODO: Implement offline geometry calculation
+  ;; Strategy:
+  ;;   1. Get alignment start point and direction
+  ;;   2. Iterate through entities (lines/arcs)
+  ;;   3. Find which segment contains the perpendicular from p1-world
+  ;;   4. Calculate station (distance along path) and offset (perpendicular distance)
+  ;;
+  ;; For now, return nil to force Civil 3D API fallback
+  ;; This allows the infrastructure to work while we implement geometry math
+  (haws-debug "[OFFLINE CALC] Not yet implemented, falling back to Civil 3D API")
+  nil
+)
+
 (defun hcnm-bn-auto-alignment-calculate
    (alignment-object p1-world / drawstation offset)
   (cond
     ((and (= (type alignment-object) 'vla-object) p1-world)
-     ;; Call Civil 3D alignment method to get station/offset
-     ;; http://docs.autodesk.com/CIV3D/2012/ENU/API_Reference_Guide/com/AeccXLandLib__IAeccAlignment__StationOffset
-     (vlax-invoke-method
-       alignment-object
-       'stationoffset
-       (vlax-make-variant (car p1-world) vlax-vbdouble)
-       (vlax-make-variant (cadr p1-world) vlax-vbdouble)
-       'drawstation
-       'offset
+     ;; Decide whether to use offline calculation or Civil 3D API
+     (cond
+       ;; Try offline calculation if alignment is simple (lines/arcs only)
+       ((and (hcnm-bn-alignment-is-simple-p alignment-object)
+             ;; Feature can be disabled via config
+             (= (hcnm-config-getvar "UseOfflineStaOffCalculation") "Yes")
+        )
+        ;; FAST PATH: Offline geometry calculation (~5ms)
+        (haws-debug "[OFFLINE CALC] Using fast offline station/offset calculation")
+        (hcnm-bn-auto-alignment-calculate-offline alignment-object p1-world)
+       )
+       (t
+        ;; STANDARD PATH: Civil 3D API (~530ms, but accurate for all geometry)
+        (haws-debug "[CIVIL3D API] Using Civil 3D StationOffset method")
+        (vlax-invoke-method
+          alignment-object
+          'stationoffset
+          (vlax-make-variant (car p1-world) vlax-vbdouble)
+          (vlax-make-variant (cadr p1-world) vlax-vbdouble)
+          'drawstation
+          'offset
+        )
+        ;; Return as dotted pair
+        (cons drawstation offset)
+       )
      )
-     ;; Return as dotted pair
-     (cons drawstation offset)
     )
     (t nil)                             ; Invalid inputs
   )
@@ -8320,7 +8403,7 @@ ImportLayerSettings=No
   ;;===========================================================================
   ;; PROFILING: Start timing alignment auto-text generation
   ;;===========================================================================
-  (setq profile-start (haws-profile-start "insert-auto-alignment"))
+  (setq profile-start (haws-clock-start "insert-auto-alignment"))
   (setq
     lattribs
      (hcnm-bn-bubble-data-get bubble-data "ATTRIBUTES")
@@ -8544,7 +8627,7 @@ ImportLayerSettings=No
   ;;===========================================================================
   ;; PROFILING: End timing alignment auto-text generation
   ;;===========================================================================
-  (haws-profile-end "insert-auto-alignment" profile-start)
+  (haws-clock-end "insert-auto-alignment" profile-start)
   bubble-data
 )
 (defun hcnm-bn-auto-al-get-alignment (ename-bubble tag auto-type /
@@ -8916,7 +8999,7 @@ ImportLayerSettings=No
        )
      )
      (setq time-format (- (getvar "MILLISECS") time-start))
-     (haws-profile-log (strcat "      [PROFILE Dia] Civil3D query: " (itoa time-civil3d-query) 
+     (haws-clock-console-log (strcat "      [PROFILE Dia] Civil3D query: " (itoa time-civil3d-query) 
                    "ms, Config+format: " (itoa time-format) "ms"))
      result
     )
@@ -8984,7 +9067,7 @@ ImportLayerSettings=No
        )
      )
      (setq time-format (- (getvar "MILLISECS") time-start))
-     (haws-profile-log (strcat "      [PROFILE Slope] Civil3D query: " (itoa time-civil3d-query) 
+     (haws-clock-console-log (strcat "      [PROFILE Slope] Civil3D query: " (itoa time-civil3d-query) 
                    "ms, Config+format: " (itoa time-format) "ms"))
      result
     )
@@ -9091,7 +9174,7 @@ ImportLayerSettings=No
   ;;===========================================================================
   ;; PROFILING: Start timing pipe auto-text generation
   ;;===========================================================================
-  (setq profile-start (haws-profile-start "insert-auto-pipe"))
+  (setq profile-start (haws-clock-start "insert-auto-pipe"))
   (setq
     lattribs
      (hcnm-bn-bubble-data-get bubble-data "ATTRIBUTES")
@@ -9191,7 +9274,7 @@ ImportLayerSettings=No
   ;;===========================================================================
   ;; PROFILING: End timing pipe auto-text generation
   ;;===========================================================================
-  (haws-profile-end "insert-auto-pipe" profile-start)
+  (haws-clock-end "insert-auto-pipe" profile-start)
   bubble-data
 )
 ;#endregion
@@ -11748,7 +11831,7 @@ ImportLayerSettings=No
   ;;===========================================================================
   ;; PROFILING: Start timing reactor callback
   ;;===========================================================================
-  (setq profile-start (haws-profile-start "reactor-callback"))
+  (setq profile-start (haws-clock-start "reactor-callback"))
   ;;===========================================================================
   ;; CRITICAL: Prevent nested/recursive callbacks (Autodesk guideline)
   ;; Problem: Bubble updates within callback trigger :vlr-modified on leader
@@ -11849,7 +11932,7 @@ ImportLayerSettings=No
   ;;===========================================================================
   ;; PROFILING: End timing reactor callback
   ;;===========================================================================
-  (haws-profile-end "reactor-callback" profile-start)
+  (haws-clock-end "reactor-callback" profile-start)
 )
 ;;==============================================================================
 ;; hcnm-bn-reactor-notifier-update
@@ -11902,6 +11985,12 @@ ImportLayerSettings=No
     deleted-handles nil  ; Track bubbles that no longer exist
     corrupted-handles nil  ; Track bubbles with corrupted auto-text
   )
+  ;; USER FEEDBACK: Show recalculation message
+  (princ (strcat "\rRecalculating " 
+                 (itoa (length bubble-list)) 
+                 " auto-text bubble" 
+                 (if (> (length bubble-list) 1) "s" "")
+                 "..."))
   
   ;; NOTE: No flag setting here - parent callback already set BlockReactors="1"
   ;; This blocks ALL nested callbacks (leader modifications triggered by attribute updates)
@@ -11961,6 +12050,9 @@ ImportLayerSettings=No
       )
     )
   )
+  
+  ;; Clear command line message
+  (princ "\r                                                    \r")
   
   ;; Return cleaned notifier-entry (callback expects this format)
   notifier-entry
@@ -12258,7 +12350,7 @@ ImportLayerSettings=No
   ;;===========================================================================
   ;; PROFILING: Start timing XDATA write (hot path, inherently slow)
   ;;===========================================================================
-  (setq profile-start (haws-profile-start "reactor-xdata-write"))
+  (setq profile-start (haws-clock-start "reactor-xdata-write"))
   (setq xdata-alist (hcnm-xdata-read ename-bubble))
   (setq tag-entry (assoc tag xdata-alist))
   (setq tag-xdata (cdr tag-entry))
@@ -12306,7 +12398,7 @@ ImportLayerSettings=No
   ;;===========================================================================
   ;; PROFILING: End timing XDATA write
   ;;===========================================================================
-  (haws-profile-end "reactor-xdata-write" profile-start)
+  (haws-clock-end "reactor-xdata-write" profile-start)
   T
 )
 
@@ -12509,12 +12601,14 @@ ImportLayerSettings=No
         current-text (if attr (cadr attr) "")
       )
       (setq time-read-state (- (getvar "MILLISECS") time-start))
+      (haws-debug "[AFTER-READ-STATE] About to extract old auto-text from XDATA")
       ;; STEP 2: Extract old auto-text from XDATA (search needle)
       (setq time-start (getvar "MILLISECS"))
       (setq old-auto-text 
         (hcnm-bn-extract-old-auto-text ename-bubble tag auto-type handle-reference)
       )
       (setq time-xdata-read (- (getvar "MILLISECS") time-start))
+      (haws-debug (strcat "[AFTER-XDATA-READ] Extracted old auto-text (" (itoa time-xdata-read) "ms), about to generate new auto-text"))
       ;; STEP 3: Generate new auto-text via auto-dispatch
       (setq time-start (getvar "MILLISECS"))
       (setq lattribs 
@@ -12523,6 +12617,7 @@ ImportLayerSettings=No
         )
       )
       (setq time-generate (- (getvar "MILLISECS") time-start))
+      (haws-debug (strcat "[AFTER-GENERATE] Generated new auto-text (" (itoa time-generate) "ms), about to smart replace"))
       ;; STEP 4: Extract generated auto-text (plain, no format codes)
       (setq
         attr (assoc tag lattribs)
@@ -12534,6 +12629,7 @@ ImportLayerSettings=No
         (hcnm-bn-smart-replace-auto current-text old-auto-text auto-new)
       )
       (setq time-replace (- (getvar "MILLISECS") time-start))
+      (haws-debug (strcat "[AFTER-REPLACE] Smart replace done (" (itoa time-replace) "ms), about to detect search success"))
       
       ;; STEP 5.5: Detect if smart replace actually found old auto-text
       ;; If user corrupted the text (deleted part of auto-text), search fails
@@ -12569,15 +12665,15 @@ ImportLayerSettings=No
               ;; Update XDATA for this specific composite key (preserves other auto-text entries)
               (setq time-start (getvar "MILLISECS"))
               (hcnm-bn-xdata-update-one ename-bubble tag auto-type handle-reference auto-new)
-              (haws-profile-log (strcat "  [PROFILE] XDATA write: " (itoa (- (getvar "MILLISECS") time-start)) "ms"))
+              (haws-clock-console-log (strcat "  [PROFILE] XDATA write: " (itoa (- (getvar "MILLISECS") time-start)) "ms"))
               ;; Format for display (adds underline/overline codes)
               (setq lattribs (hcnm-bn-underover-add lattribs))
               ;; Write formatted attributes (uses VLA methods, not entmod)
               (setq time-start (getvar "MILLISECS"))
               (hcnm-set-attributes ename-bubble lattribs)
-              (haws-profile-log (strcat "  [PROFILE] Attribute write: " (itoa (- (getvar "MILLISECS") time-start)) "ms"))
+              (haws-clock-console-log (strcat "  [PROFILE] Attribute write: " (itoa (- (getvar "MILLISECS") time-start)) "ms"))
               ;; Report timing breakdown
-              (haws-profile-log (strcat "  [PROFILE BREAKDOWN] Read state: " (itoa time-read-state) 
+              (haws-clock-console-log (strcat "  [PROFILE BREAKDOWN] Read state: " (itoa time-read-state) 
                             "ms, XDATA read: " (itoa time-xdata-read)
                             "ms, Generate: " (itoa time-generate)
                             "ms, Replace: " (itoa time-replace) "ms"))

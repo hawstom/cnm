@@ -246,10 +246,6 @@
 ;;; Must be loaded early so haws-config and other utilities are available.
 (load "edclib")
 
-;;; haws-tip is the tip/evangelism system for HAWS/EDC/CNM.
-;;; It must be loaded before any tips are shown.
-(load "haws-tip")
-
 ;;;===========================================================================
 ;;; REACTOR CALLBACK AUTOLOADER
 ;;;===========================================================================
