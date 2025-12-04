@@ -570,20 +570,20 @@
 ;;File version converter for PRO
 ;;Adds or removes fields between the slope and label column.
 (defun c:haws-profc
-          (/ colwid flist fm fname i m n rdlin temp tempfile)
+          (/ colwid f1 flist fm fname i m n rdlin temp tempfile)
   (haws-core-init 283)
   (setq
-    f1 (open
+    *f1* (open
          (getfiled "List of files to convert" (haws-getdnpath) "lst" 0)
          "r"
        ) ;_ end of open
   ) ;_ end of setq
-  (while (setq rdlin (read-line f1))
+  (while (setq rdlin (read-line *f1*))
     (setq flist (cons (findfile rdlin) flist))
   ) ;_ end of while
   (textscr)
   (setq
-    f1 (close f1)
+    *f1* (close *f1*)
     colwid
      (getint "New column width: ")
     m (getint "Old number of fields between slope and label: ")
@@ -596,9 +596,9 @@
     (vl-cmdf "_del" tempfile)
   ) ;_ end of IF
   (while (setq fname (nth (setq i (1+ i)) flist))
-    (setq f1 (open fname "r"))
-    (setq f2 (open tempfile "w"))
-    (while (setq rdlin (read-line f1))
+    (setq *f1* (open fname "r"))
+    (setq *f2* (open tempfile "w"))
+    (while (setq rdlin (read-line *f1*))
       (cond
         ((= (substr rdlin 1 6) "COLWID")
          (if (zerop (setq fm (atoi (substr rdlin 8))))
@@ -655,11 +655,11 @@
       (while (= " " (substr rdlin (max (strlen rdlin) 1)))
         (setq rdlin (substr rdlin 1 (1- (strlen rdlin))))
       ) ;_ end of WHILE
-      (write-line rdlin f2)
+      (write-line rdlin *f2*)
     ) ;_ end of WHILE
     (setq
-      f1 (close f1)
-      f2 (close f2)
+      *f1* (close *f1*)
+      *f2* (close *f2*)
     ) ;_ end of SETQ
     (vl-cmdf "_sh" (strcat "copy " tempfile " " fname))
     (vl-cmdf "_sh" (strcat "del " tempfile))
@@ -677,7 +677,7 @@
   (prompt
     "\nProfile drafter version 5.06.  Copyright 2000, Thomas Gail Haws."
   ) ;_ end of prompt
-  (defun c:haws-tgh2_pro
+  (defun c:haws-tgh2-pro
                ()
     (while (progn
              (initget "Ref Type Vertical Precision New File Plot")
@@ -693,16 +693,16 @@
                    ((= proopt "Type") (gettyp))
                    ((= proopt "Vertical")
                      (haws-gethvx)
-                     (if f2
-                       (write-line (strcat "HVEXAG    " hvexag) f2)
+                     (if *f2*
+                       (write-line (strcat "HVEXAG    " hvexag) *f2*)
                      ) ;_ end of IF
                    )
                    ((= proopt "Precision") (getprec))
                    ((= proopt "New")
                      (setq pltpt1 nil)
                      (prompt "\nEnded previous profile, starting new profile.")
-                     (if f2
-                       (write-line "NEWPRF" f2)
+                     (if *f2*
+                       (write-line "NEWPRF" *f2*)
                      ) ;_ end of IF
                    )
                    ((= proopt "File") (getfop))
@@ -730,16 +730,16 @@
         ((= opt "Type") (gettyp))
         ((= opt "Vertical")
          (haws-gethvx)
-         (if f2
-           (write-line (strcat "HVEXAG    " hvexag) f2)
+         (if *f2*
+           (write-line (strcat "HVEXAG    " hvexag) *f2*)
          ) ;_ end of IF
         )
         ((= opt "Precision") (getprec))
         ((= opt "New")
          (setq pltpt1 nil)
          (prompt "\nEnded previous profile, starting new profile.")
-         (if f2
-           (write-line "NEWPRF" f2)
+         (if *f2*
+           (write-line "NEWPRF" *f2*)
          ) ;_ end of IF
         )
         ((= opt "File") (getfop))
@@ -763,7 +763,7 @@
       refpty
        (cadr r)
     ) ;_ end of SETQ
-    (if f2
+    (if *f2*
       (write-line
         (strcat
           (mkfld "REFPNT" colwid)
@@ -772,7 +772,7 @@
           (mkfld (rtos refsta 2 2) colwid)
           (mkfld (rtos refelv 2 2) colwid)
         ) ;_ end of STRCAT
-        f2
+        *f2*
       ) ;_ end of WRITE-LINE
     ) ;_ end of IF
   ) ;_ end of DEFUN
@@ -926,7 +926,7 @@
     (if (= (getkword "Exist/Prop: ") "Exist")
       (setq protyp (strcat "X" protyp))
     ) ;_ end of IF
-    (if f2
+    (if *f2*
       (write-line
         (strcat
           "PROTYP    "
@@ -943,7 +943,7 @@
           (mkfld (rtos (* (/ walthk hvexag *haws-elvscl*) 12) 2 6))
           protyp
         ) ;_ end of STRCAT
-        f2
+        *f2*
       ) ;_ end of WRITE-LINE
     ) ;_ end of IF
     (setlay)
@@ -983,7 +983,7 @@
        (getreal "\nIncrement for all other elevations: ")
     ) ;_ end of SETQ
     (setq
-      f1 (cond
+      *f1* (cond
            (proinputfile
             (open (setq fname (strcat proinputfile ".pro")) "r")
            )
@@ -996,7 +996,7 @@
            (t (car (getfil "File to increment" (haws-getdnpath) "r" "pro")))
          ) ;_ end of COND
     ) ;_ end of SETQ
-    (while (if f1
+    (while (if *f1*
              (haws-rdfile)
            ) ;_ end of IF
       (if (and sta (/= sta "Setup"))
@@ -1004,13 +1004,13 @@
         (progn
           (pltpro)
           ;;plot the point
-          (if f2
+          (if *f2*
             ;;If requested, write all
             (write-line
               (strcat
                 ;;the point information
                 "PRFPNT    "
-                ;;to a file (f2).
+                ;;to a file (*f2*).
                 (mkfld (rtos sta 2 3))
                 (mkfld
                   (if offset
@@ -1036,13 +1036,13 @@
                   ("")
                 ) ;_ end of COND
               ) ;_ end of STRCAT
-              f2
+              *f2*
             ) ;_ end of WRITE-LINE
           ) ;_ end of IF
           (setq sta nil)
           ;;Reset profile point to nil.
         ) ;_ end of PROGN
-        (if (not f1)
+        (if (not *f1*)
           (haws-proset)
         ) ;_ end of IF
         ;;If not a point, do setup.
@@ -1060,8 +1060,8 @@
        (getkword
          "\nRead from file/Save to file/Increment elevations in a file: "
        ) ;_ end of getkword
-      f1 nil
-      f2 nil
+      *f1* nil
+      *f2* nil
     ) ;_ end of SETQ
     (cond
       ((= rdwrt "Increment")
@@ -1108,8 +1108,8 @@
           ) ;_ end of COND
        ) ;_ end of SETQ
        (if (= rdwrt "r")
-         (setq f1 datfil)
-         (progn (setq f2 datfil) (write-line "COLWID 10" f2))
+         (setq *f1* datfil)
+         (progn (setq *f2* datfil) (write-line "COLWID 10" *f2*))
        ) ;_ end of IF
       )
     ) ;_ end of COND
@@ -1165,7 +1165,7 @@
     (if (not fm)
       (setq fm ",")
     ) ;_ end of IF
-    (setq rdlin (read-line f1))
+    (setq rdlin (read-line *f1*))
     (if rdlin
       (progn
         (setq title (substr rdlin 1 6))
@@ -1892,7 +1892,7 @@
        ;;Plot manhole
        (cond
          ((< proht 0)
-          (if (not f1)
+          (if (not *f1*)
             (haws-mktext "tl" txpt4 ts (/ pi 2) "RIM=")
           ) ;_ end of IF
           (cond
@@ -2167,7 +2167,7 @@
       )
     ) ;_ end of COND
     (if (and
-          (not f1)
+          (not *f1*)
           (/= proht -10000)
           (setq
             temp
@@ -2306,13 +2306,13 @@
   (if (not elprec) (setq elprec 2))
   (if (not slprec) (setq slprec 3))
   (if proinputfile
-    (setq f1 proinputfile)
+    (setq *f1* proinputfile)
   ) ;_ end of IF
-  (while (not (or f1 refsta))
+  (while (not (or *f1* refsta))
     (prompt "\nPlease set reference point.")
     (haws-proset)
   ) ;_ end of while
-  (while (not (or f1 proht))
+  (while (not (or *f1* proht))
     (prompt "\nPlease set profile type.")
     (haws-proset)
   ) ;_ end of while
@@ -2341,7 +2341,7 @@
   (setvar "osmode" 0)
   (setvar "dimzin" 0)
   ;;While there's input,
-  (while (if f1
+  (while (if *f1*
            (haws-rdfile)
            (haws-getpnt)
          ) ;_ end of IF
@@ -2374,8 +2374,8 @@
         (vl-cmdf "._undo" "_e")
         ;;If requested, write all
         ;;the point information
-        ;;to a file (f2).
-        (if f2
+        ;;to a file (*f2*).
+        (if *f2*
           (write-line
             (strcat
               "PRFPNT    "
@@ -2407,14 +2407,14 @@
                 ("")
               ) ;_ end of COND
             ) ;_ end of STRCAT
-            f2
+            *f2*
           ) ;_ end of WRITE-LINE
         ) ;_ end of IF
         ;;Reset profile point to nil.
         (setq sta nil)
       ) ;_ end of PROGN
       ;;Otherwise, if not reading from file, do setup.
-      (if (not f1)
+      (if (not *f1*)
         (haws-proset)
       ) ;_ end of IF
     ) ;_ end of IF
@@ -2422,11 +2422,11 @@
     (princ (setq i (1+ i)))
   ) ;_ end of WHILE
   (setq
-    f1 (if f1
-         (close f1)
+    *f1* (if *f1*
+         (close *f1*)
        ) ;_ end of IF
-    f2 (if f2
-         (close f2)
+    *f2* (if *f2*
+         (close *f2*)
        ) ;_ end of IF
   ) ;_ end of SETQ
   ;;Close files

@@ -120,10 +120,10 @@
 ;;;
 ;;; ssx_gf == SSX_Get_Filters
 ;;;
-(defun ssx_gf (f1 / t1 t2 t3 f2)
+(defun ssx_gf (filter1 / t1 t2 t3 filter2)
   (while
     (progn
-      (cond (f1 (prompt "\nFilter: ") (prin1 f1)))
+      (cond (filter1 (prompt "\nFilter: ") (prin1 filter1)))
       (initget
         "Block Color Entity Flag LAyer LType Pick Style Thickness Vector STRing")
       (setq t1 (getkword (strcat
@@ -163,7 +163,7 @@
           (getstring "\n>>Text style name to add/<RETURN to remove>: ")
         )
         ((= t2 39)  (getreal   "\n>>Thickness to add/<RETURN to remove>: "))
-        ((= t2 66)  (if (assoc 66 f1) nil 1))
+        ((= t2 66)  (if (assoc 66 filter1) nil 1))
         ((= t2 210)
           (getpoint  "\n>>Extrusion Vector to add/<RETURN to remove>: ")
         )
@@ -172,27 +172,27 @@
       )
     )
     (cond
-      ((= t2 "Pick") (setq f1 (ssx_fe) t2 nil)) ; get entity
-      ((and f1 (assoc t2 f1))         ; already in the list
+      ((= t2 "Pick") (setq filter1 (ssx_fe) t2 nil)) ; get entity
+      ((and filter1 (assoc t2 filter1))         ; already in the list
         (if (and t3 (/= t3 ""))
           ;; Replace with a new value...
-          (setq f1 (subst (cons t2 t3) (assoc t2 f1) f1))
+          (setq filter1 (subst (cons t2 t3) (assoc t2 filter1) filter1))
           ;; Remove it from filter list...
-          (setq f1 (ssx_re (assoc t2 f1) f1))
+          (setq filter1 (ssx_re (assoc t2 filter1) filter1))
         )
       )
       ((and t3 (/= t3 ""))
-        (setq f1 (cons (cons t2 t3) f1))
+        (setq filter1 (cons (cons t2 t3) filter1))
       )
       (t nil)
     )
   )
-  (if f1 (setq f2 (ssget "x" f1)))
+  (if filter1 (setq filter2 (ssget "x" filter1)))
   (setq *error* olderr)
-  (if (and f1 f2)
+  (if (and filter1 filter2)
     (progn
-      (princ (strcat "\n" (itoa (sslength f2)) " found. "))
-      f2
+      (princ (strcat "\n" (itoa (sslength filter2)) " found. "))
+      filter2
     )
     (progn (princ "\n0 found.") (prin1))
   )

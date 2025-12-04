@@ -1,3 +1,10 @@
+; Config
+; Note that all spaces are significant on script lines. You can't pad anything.
+; This may have unacceptable overhead.
+(haws-setvar "DebugLevel" "1")
+; This may have unacceptable overhead.
+;(load "haws-clock.lsp")
+;
 ; CNM Test Suite - Main Test Script
 ; Created: 2025-11-17
 ; Status: Phase C - Auto-text tests implementation
@@ -60,8 +67,6 @@
 ;   - Common failures: Missing objects, wrong coordinates, CVPORT issues
 ;
 ; === SETUP ===
-(haws-setvar "DebugLevel" "1")
-;(load "haws-clock.lsp")
 (load (strcat (getvar "dwgprefix") "cnm-test-validation.lsp"))
 (c:test-setup-layers)
 (test-write-report-header)

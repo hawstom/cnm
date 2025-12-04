@@ -714,38 +714,38 @@
        )
        ".not"
      )
-    f2 (open nfname "w")
+    *f2* (open nfname "w")
   )
   ;;Write NOTELIST to the work file
-  (princ "(" f2)
-  (prin1 (car notelist) f2)
-  (princ "(" f2)
+  (princ "(" *f2*)
+  (prin1 (car notelist) *f2*)
+  (princ "(" *f2*)
   (foreach
      nottyp (cadr notelist)
-    (princ "(" f2)
-    (prin1 (car nottyp) f2)
+    (princ "(" *f2*)
+    (prin1 (car nottyp) *f2*)
     (foreach
        notnum (cdr nottyp)
-      (princ "(" f2)
-      (prin1 (car notnum) f2)
-      (prin1 (cadr notnum) f2)
-      (prin1 (caddr notnum) f2)
+      (princ "(" *f2*)
+      (prin1 (car notnum) *f2*)
+      (prin1 (cadr notnum) *f2*)
+      (prin1 (caddr notnum) *f2*)
       (foreach
          noteqty (cdddr notnum)
         (cond
-          ((= (type noteqty) 'str) (prin1 noteqty f2))
-          (noteqty (prin1 (rtos noteqty 2 8) f2))
-          ((princ "nil " f2))
+          ((= (type noteqty) 'str) (prin1 noteqty *f2*))
+          (noteqty (prin1 (rtos noteqty 2 8) *f2*))
+          ((princ "nil " *f2*))
         )
-        f2
+        *f2*
       )
-      (princ ")" f2)                    ;End of notnum
+      (princ ")" *f2*)                    ;End of notnum
     )
-    (princ ")" f2)                      ;End of nottyp
+    (princ ")" *f2*)                      ;End of nottyp
   )
-  (princ "))" f2)                       ;End of (cadr noteqty) and noteqty
+  (princ "))" *f2*)                       ;End of (cadr noteqty) and noteqty
   (setq
-    f2 (close f2)
+    *f2* (close *f2*)
        ;;Close notes file for this drawing (program work file)
   )
   (princ
@@ -787,7 +787,7 @@
 ;;Uses the qty block.
 ;;Puts table at qtypt.
 ;; TGH to use this for TALLY, maybe I just need to read NOTELIST as an argument instead of from a file in this function.
-(defun hcnm-key-table-make (nfsource qtypt qtyset dn txtht notesmaxheight / ctabonly icol
+(defun hcnm-key-table-make (nfsource qtypt qtyset dn txtht notesmaxheight / ctabonly f1 icol
                         iphase column-height note-first-line-p
                         column-height-pending nfname notdsc notelist
                         notetitles notnum notqty nottyp
@@ -810,10 +810,10 @@
     (setq nfname (getfiled "Select Drawing and Layout" "" "NOT" 0))
   )
   (setq
-    f1 (open nfname "r")
+    *f1* (open nfname "r")
     notelist
-     (read (read-line f1))
-    f1 (close f1)
+     (read (read-line *f1*))
+    *f1* (close *f1*)
   )
   ;;Check that we got a valid NOTELIST from file.
   (if (/= (type notelist) 'list)
@@ -1570,7 +1570,7 @@
 ;;   put the qtys.  Use "" for any unused phases on a sheet.
 ;;   '((shti (typj (notek qty1 qty2 qtyk))))
 (defun hcnm-tally (dn projnotes txtht linspc tblwid phasewid / allnot
-               all-sheets-quantities col1x column dqwid el flspec i
+               all-sheets-quantities col1x column dqwid el f1 flspec i
                input ndwid notdesc notetitles note-first-line-p notnum
                notprice notqty notspc nottyp notunt numfnd numlist
                pgp-defines-run pgp-filename pgp-file-contents
@@ -1640,9 +1640,9 @@
            (strcat dn ".lst")
           pgp-filename
            (findfile "acad.pgp")
-          f1 (open pgp-filename "r")
+          *f1* (open pgp-filename "r")
         )
-        (while (setq pgp-file-line (read-line f1))
+        (while (setq pgp-file-line (read-line *f1*))
           (if (= "RUN," (substr pgp-file-line 1 4))
             (setq pgp-defines-run t)
           )
@@ -1660,18 +1660,18 @@
              (cons pgp-file-line pgp-file-contents)
           )
         )
-        (setq f1 (close f1))
+        (setq *f1* (close *f1*))
         (if (not pgp-defines-run)
           (progn
             (setq
-              f1                (open pgp-filename "w")
+              *f1*                (open pgp-filename "w")
               pgp-file-contents (reverse pgp-file-contents)
             )
             (foreach
                pgp-file-line pgp-file-contents
-              (write-line pgp-file-line f1)
+              (write-line pgp-file-line *f1*)
             )
-            (setq f1 (close f1))
+            (setq *f1* (close *f1*))
             (setvar "re-init" 16)
           )
         )
@@ -1690,9 +1690,9 @@
              )
           )
           (setq
-            f1 (open sheet-list-filename "r")
+            *f1* (open sheet-list-filename "r")
             sheet-filename
-             (read-line f1)
+             (read-line *f1*)
             column
              (strlen sheet-filename)
           )
@@ -1700,7 +1700,7 @@
             ((wcmatch sheet-filename "* not found *")
              (setq
                column nil
-               f1 (close f1)
+               *f1* (close *f1*)
              )
              (alert
                (princ
@@ -1729,11 +1729,11 @@
                 (setq column (1- column))
              )
              (setq
-               f1              (close f1)
-               f1              (open sheet-list-filename "r")
+               *f1*              (close *f1*)
+               *f1*              (open sheet-list-filename "r")
                sheet-filenames nil
              )
-             (while (setq sheet-filename (read-line f1))
+             (while (setq sheet-filename (read-line *f1*))
                (setq
                  sheet-filename
                   (substr sheet-filename column)
@@ -1749,15 +1749,15 @@
                )
              )
              (setq
-               f1 (close f1)
-               f1 (open sheet-list-filename "w")
+               *f1* (close *f1*)
+               *f1* (open sheet-list-filename "w")
              )
              (setq sheet-filenames (reverse sheet-filenames))
              (foreach
                 sheet-filename sheet-filenames
-               (write-line sheet-filename f1)
+               (write-line sheet-filename *f1*)
              )
-             (setq f1 (close f1))
+             (setq *f1* (close *f1*))
             )
           )
         )
@@ -1766,7 +1766,7 @@
         (setq
           sheet-list-filename
            (strcat dn ".lst")
-          f1 (open sheet-list-filename "w")
+          *f1* (open sheet-list-filename "w")
         )
         (while (setq
                  sheet-filename
@@ -1779,10 +1779,10 @@
                )
           (write-line
             (substr sheet-filename 1 (- (strlen sheet-filename) 4))
-            f1
+            *f1*
           )
         )
-        (setq f1 (close f1))
+        (setq *f1* (close *f1*))
        )
      ) ;_ end cond
     )
@@ -1836,10 +1836,10 @@
 ;;;  Read all .NOT's into a master all-sheets-quantities
 ;;;  Add phases from all .NOTs to the list if not already there.  And if aliases in conflict, alert user.
 ;;;
-  (setq f1 (open sheet-list-filename "r"))
+  (setq *f1* (open sheet-list-filename "r"))
   (princ "\n")
   (while (and
-           (setq sheet-list-line (read-line f1))
+           (setq sheet-list-line (read-line *f1*))
            (/= "" sheet-list-line)
          )
     ;;Read in this sheet's notelist '( ((alias number phase)) ((type1 (notenum txtlines countmethod qty1...))))
@@ -1861,16 +1861,16 @@
           )
          )
        )
-      f2 (open sheet-file-name "r")
+      *f2* (open sheet-file-name "r")
       sheet-quantities
-       (read (read-line f2))
+       (read (read-line *f2*))
       all-sheets-quantities
        (cons
          (cons sheet-file-name sheet-quantities)
          all-sheets-quantities
        )
     )
-    (if (read-line f2)
+    (if (read-line *f2*)
       (alert
         (princ
           (strcat
@@ -1881,7 +1881,7 @@
         )
       )
     )
-    (setq f2 (close f2))
+    (setq *f2* (close *f2*))
     ;;Set all phases discovered.
     ;;In .NOT files, phases are ("alias" order "number"), but here they are ("number" order "alias")
     (foreach
@@ -1933,7 +1933,7 @@
       )
     )
   )
-  (setq f1 (close f1))
+  (setq *f1* (close *f1*))
   ;;Condense list to standard phases-definition format: '((phasej j aliasj)...)
   ;;and renumber for only sheets being tallied.
   (setq i 0)
@@ -2036,8 +2036,8 @@
   )
   (setvar "osmode" 0)
   ;;Write column headings to the file
-  (setq f2 (haws-file-open (strcat dn ".csv") "w"))
-  (princ "TYPE,NO,ITEM,UNIT,PRICE," f2)
+  (setq *f2* (haws-open (strcat dn ".csv") "w"))
+  (princ "TYPE,NO,ITEM,UNIT,PRICE," *f2*)
   ;; Price and cost
   (setq sheet-headings "")
   (foreach
@@ -2063,7 +2063,7 @@
       )
     )
   )
-  (princ sheet-headings f2)
+  (princ sheet-headings *f2*)
   (foreach
      phase phases-definition
     (princ
@@ -2082,10 +2082,10 @@
         (caddr phase)
         ","
       )
-      f2
+      *f2*
     )
   )
-  (write-line "" f2)
+  (write-line "" *f2*)
   (if qtyset
     (vl-cmdf "._erase" qtyset "")
   )
@@ -2185,7 +2185,7 @@
               (haws-mktext "ML" (list x y z) txtht 0 (cadr notetitle))
             )
             (setq y (- y (* txtht linspc)))
-            (write-line (cadr notetitle) f2)
+            (write-line (cadr notetitle) *f2*)
           )
           (setq
             y     (- y (* txtht (- notspc linspc)))
@@ -2376,17 +2376,17 @@
            (progn
              (setq notdesc "")
              (foreach y x (setq notdesc (strcat notdesc "\n" y)))
-             (princ (haws-mkfld (substr notdesc 2) ",") f2)
+             (princ (haws-mkfld (substr notdesc 2) ",") *f2*)
            )
-           (princ (strcat x ",") f2)
+           (princ (strcat x ",") *f2*)
          )
        )
        (setq writelist nil)
-       (write-line "" f2)
+       (write-line "" *f2*)
       )
     )
   )
-  (setq f2 (close f2))
+  (setq *f2* (close *f2*))
   (prompt
     (strcat "\nUsed project notes file found at " projnotes)
   )
@@ -2664,12 +2664,12 @@
   (haws-filename-directory local-marker-file)
 )
 
-(defun hcnm-assure-linked-project (link-marker / projroot rdlin)
+(defun hcnm-assure-linked-project (link-marker / f1 projroot rdlin)
   (cond
     ((and
-       (setq f1 (open link-marker "r"))
+       (setq *f1* (open link-marker "r"))
        (progn
-         (while (and (setq rdlin (read-line f1)) (not projroot))
+         (while (and (setq rdlin (read-line *f1*)) (not projroot))
            (cond
              ((haws-vlisp-p)
               (if (vl-file-directory-p rdlin)
@@ -2684,7 +2684,7 @@
              )
            )
          )
-         (setq f1 (close f1))
+         (setq *f1* (close *f1*))
          projroot
        )
      )
@@ -2914,7 +2914,7 @@
 ;;Makes a project root reference file CNMPROJ.TXT in this drawing's folder
 ;;Returns nil.
 (defun hcnm-makeprojtxt (projdir dwgdir)
-  (setq f2 (open (hcnm-project-folder-to-link dwgdir) "w"))
+  (setq *f2* (open (hcnm-project-folder-to-link dwgdir) "w"))
   (princ
     (strcat
       ";For simple projects, all project drawings are in one folder, 
@@ -2927,9 +2927,9 @@
 ;the Project Root Folder, given below:
 "     projdir
     )
-    f2
+    *f2*
   )
-  (setq f2 (close f2))
+  (setq *f2* (close *f2*))
 )
 
 ;#endregion
@@ -3490,7 +3490,7 @@
      projini
     )
     (t
-     (setq f2 (open projini "w"))
+     (setq *f2* (open projini "w"))
      (princ
        "[CNM]
 ProjectNotes=constnot.csv
@@ -3521,9 +3521,9 @@ ShowKeyTableGrid=0
 ShowKeyTableQuantities=1
 BubbleHooks=1
 ImportLayerSettings=No
-"      f2
+"      *f2*
      )
-     (setq f2 (close f2))
+     (setq *f2* (close *f2*))
      projini
     )
   )
@@ -3685,7 +3685,7 @@ ImportLayerSettings=No
     (list "BubbleCurrentAlignment" "" 0)
     (list "BlockReactors" "0" 0)  ; "0"=normal, "1"=block (at arrowhead style change and nested callbacks)
     (list "BubbleArrowIntegralPending" "0" 0)
-    (list "UseOfflineStaOffCalculation" "No" 0)  ; "Yes"=fast offline calc for simple alignments, "No"=always use Civil 3D API
+    (list "UseOfflineStaOffCalculation" "Yes" 0)  ; "Yes"=fast offline calc for simple alignments, "No"=always use Civil 3D API
   )
 )
 
@@ -4202,7 +4202,7 @@ ImportLayerSettings=No
 ;; Excel CSV
 ;; Doesn't do project management except to write txt2 configs to cnm.ini in the same folder as projnotes.
 (defun hcnm-readcf
-   (projnotes / bakprojnotes pnformat rdlin requested-format test-string)
+   (projnotes / bakprojnotes f1 pnformat rdlin requested-format)
   ;;Do a file read to figure out what the file format is.
   ;;For now, assume that a file that has any of the shape keys followed by a comma ("BOX,", etc.) is CSV
   ;;any other file is TXT2
@@ -4213,8 +4213,8 @@ ImportLayerSettings=No
       "\nand evaluating the need for format conversion."
     )
   )
-  (setq f1 (open projnotes "r"))
-  (while (and (not pnformat) (setq rdlin (read-line f1)))
+  (setq *f1* (open projnotes "r"))
+  (while (and (not pnformat) (setq rdlin (read-line *f1*)))
     (haws-debug "Reading a line of existing project notes.")
     (cond
       ((= ";" (substr rdlin 1 1))
@@ -4230,7 +4230,7 @@ ImportLayerSettings=No
   )
   (haws-debug "Finished detecting existing project notes format.")
   (setq
-    f1 (close f1)
+    *f1* (close *f1*)
     requested-format
      (hcnm-config-project-notes-format)
   )
@@ -4330,15 +4330,15 @@ ImportLayerSettings=No
 )
 
 (defun hcnm-readcftxt2 (projnotes / alertnote alerttitle cfitem cflist
-                    cflist2 commentbegin filev42 iline ininame nottyp
+                    cflist2 commentbegin f1 filev42 iline ininame nottyp
                     rdlin val1 val2 var varlist n notdesc notnum typwc
                    )
   (setq
     typwc
-     (hcnm-config-getvar "NoteTypes") ; Get typwc (which may open f1) before opening f1
-    f1 (open projnotes "r")
+     (hcnm-config-getvar "NoteTypes") ; Get typwc (which may open *f1*) before opening *f1*
+    *f1* (open projnotes "r")
   )
-  (while (setq rdlin (read-line f1))
+  (while (setq rdlin (read-line *f1*))
     (cond
       ;;Comment
       ((= ";" (substr rdlin 1 1))
@@ -4506,7 +4506,7 @@ ImportLayerSettings=No
       )
     )
   )
-  (setq f1 (close f1))
+  (setq *f1* (close *f1*))
   (if alerttitle
     (alert
       (princ
@@ -4576,11 +4576,11 @@ ImportLayerSettings=No
        )
      )
      (setq
-       f1 (open projnotes "r")
+       *f1* (open projnotes "r")
        cflist nil
        iline 0
      )
-     (while (setq rdlin (read-line f1))
+     (while (setq rdlin (read-line *f1*))
        (setq iline (1+ iline))
        ;;If the line is recognizable as a vestige of version 4.1 config settings,
        ;;make a note of it for adding a comment.
@@ -4603,39 +4603,39 @@ ImportLayerSettings=No
        (setq cflist (cons rdlin cflist))
      )
      (setq
-       f1    (close f1)
-       f2    (open projnotes "w")
+       *f1*    (close *f1*)
+       *f2*    (open projnotes "w")
        iline 0
      )
-     (write-line "SET CNMVERSION 4.2" f2)
+     (write-line "SET CNMVERSION 4.2" *f2*)
      (foreach
         cfitem (reverse cflist)
        (if (= iline commentbegin)
          (write-line
            ";The variable settings section below is not used by CNM 4.2.\n;All variables except TXTHT (optional) and CNMVERSION are in CNM.INI.\n;You can use TXTHT to vary text heights from one line to the next.\n;CNM uses the current DIMTXT for the whole table if TXTHT is omitted,\n;."
-           f2
+           *f2*
          )
        )
        (setq iline (1+ iline))
-       (write-line cfitem f2)
+       (write-line cfitem *f2*)
      )
-     (setq f2 (close f2))
+     (setq *f2* (close *f2*))
     )
   )
 )
 
 
-(defun hcnm-readcfcsv (projnotes / cflist notdscstr nottyp rdlin typwc val
+(defun hcnm-readcfcsv (projnotes / cflist f1 notdscstr nottyp rdlin typwc val
                    var wrap
                   )
   (setq
     wrap
      (atoi (hcnm-config-getvar "DescriptionWrap"))
     typwc
-     (hcnm-config-getvar "NoteTypes") ; Get typwc (which may open f1) before opening f1
-    f1 (open projnotes "r")
+     (hcnm-config-getvar "NoteTypes") ; Get typwc (which may open *f1*) before opening *f1*
+    *f1* (open projnotes "r")
   )
-  (while (setq rdlin (read-line f1))
+  (while (setq rdlin (read-line *f1*))
     (cond
       ;;Comment
       ((= ";" (substr rdlin 1 1))
@@ -4709,7 +4709,7 @@ ImportLayerSettings=No
       )
     )
   )
-  (setq f1 (close f1))
+  (setq *f1* (close *f1*))
   (setq *hcnm-cnmprojectnotes* (reverse cflist))
 )
 
@@ -4887,27 +4887,27 @@ ImportLayerSettings=No
       )
     )
   )
-  (setq f2 (open projnotes "w"))
+  (setq *f2* (open projnotes "w"))
   (foreach
      item *hcnm-cnmprojectnotes*
     (cond
       ;;Comment
-      ((= 0 (car item)) (write-line (strcat ";" (cdr item)) f2))
+      ((= 0 (car item)) (write-line (strcat ";" (cdr item)) *f2*))
       ;;Set variable (TXTHT only at this time)
       ((= 1 (car item))
-       (write-line (strcat "SET " (cadr item) " " (caddr item)) f2)
+       (write-line (strcat "SET " (cadr item) " " (caddr item)) *f2*)
       )
       ;;Title
       ((= 2 (car item))
        (if (/= nottyp (setq nottyp (cadr item)))
-         (write-line nottyp f2)
+         (write-line nottyp *f2*)
        )
-       (write-line (strcat "TITLE " (caddr item)) f2)
+       (write-line (strcat "TITLE " (caddr item)) *f2*)
       )
       ;;Note
       ((= 3 (car item))
        (if (/= nottyp (setq nottyp (cadr item)))
-         (write-line nottyp f2)
+         (write-line nottyp *f2*)
        )
        (princ
          (strcat
@@ -4917,16 +4917,16 @@ ImportLayerSettings=No
            (nth 4 item)
            "\n"
          )
-         f2
+         *f2*
        )
        (foreach
           item (cdr (nth 5 item))
-         (princ (strcat "     " item "\n") f2)
+         (princ (strcat "     " item "\n") *f2*)
        )
       )
     )
   )
-  (setq f2 (close f2))
+  (setq *f2* (close *f2*))
   *hcnm-cnmprojectnotes*
 )
 
@@ -4940,7 +4940,7 @@ ImportLayerSettings=No
       )
     )
   )
-  (setq f2 (open projnotes "w"))
+  (setq *f2* (open projnotes "w"))
   (foreach
      item *hcnm-cnmprojectnotes*
     (cond
@@ -4955,15 +4955,15 @@ ImportLayerSettings=No
            ",N/A,"
            (haws-mkfld (cdr item) ",")
          )
-         f2
+         *f2*
        )
       )
       ((= 1 (car item))
-       (write-line (strcat "SET," (cadr item) "," (caddr item)) f2)
+       (write-line (strcat "SET," (cadr item) "," (caddr item)) *f2*)
       )
       ((= 2 (car item))
        (setq nottyp (cadr item))
-       (write-line (strcat nottyp ",TITLE," (caddr item) ",,") f2)
+       (write-line (strcat nottyp ",TITLE," (caddr item) ",,") *f2*)
       )
       ((= 3 (car item))
        (setq
@@ -4987,12 +4987,12 @@ ImportLayerSettings=No
            ","
            (nth 4 item)
          )
-         f2
+         *f2*
        )
       )
     )
   )
-  (setq f2 (close f2))
+  (setq *f2* (close *f2*))
   *hcnm-cnmprojectnotes*
 )
 
@@ -5212,10 +5212,10 @@ ImportLayerSettings=No
     )
     ((= opt1 "Project")
      (setq
-       f1     (open (hcnm-projnotes) "r")
+       *f1*     (open (hcnm-projnotes) "r")
        cflist nil
      )
-     (while (setq rdlin (read-line f1))
+     (while (setq rdlin (read-line *f1*))
        (cond
          ;;If there is a SET PHASES line already, remove it.
          ((and
@@ -5228,14 +5228,14 @@ ImportLayerSettings=No
        )
      )
      (setq
-       f1 (close f1)
+       *f1* (close *f1*)
        cflist
         ;;Put the SET PHASES line at the beginning of the file.
         (cons (strcat "SET PHASES " phases) (reverse cflist))
-       f1 (open (hcnm-projnotes) "W")
+       *f1* (open (hcnm-projnotes) "W")
      )
-     (foreach rdlin cflist (write-line rdlin f1))
-     (setq f1 (close f1))
+     (foreach rdlin cflist (write-line rdlin *f1*))
+     (setq *f1* (close *f1*))
     )
   )
   (haws-core-restore)
@@ -5841,7 +5841,9 @@ ImportLayerSettings=No
   (setq bubble-data (hcnm-bn-get-p2-data bubble-data))
   (setq bubble-data (hcnm-bn-draw-bubble bubble-data))
   (setq bubble-data (hcnm-bn-get-bubble-data bubble-data))
+  (haws-debug ">>> ABOUT TO CALL hcnm-bn-finish-bubble")
   (hcnm-bn-finish-bubble bubble-data)
+  (haws-debug ">>> RETURNED FROM hcnm-bn-finish-bubble")
   (haws-tip 7 "You can align/move bubble note text lines by moving their ATTDEF objects in the block editor (BEDIT). Save the results to a personal or team CNM customizations location so that you can copy in your versions after every CNM install.\n\nNote that there have been no changes to the bubble note block definition since version 5.0.07 (you can always check your version using HAWS-ABOUT).")
   (hcnm-restore-dimstyle)
   (haws-vrstor)
@@ -6276,13 +6278,21 @@ ImportLayerSettings=No
   ;; Change leader arrowhead if needed.
   (hcnm-bn-change-arrowhead ename-leader)
   
+  (haws-debug (list ">>> In finish-bubble, replace-bubble-p=" (if replace-bubble-p "T" "NIL")))
+  
   ;; Phase 4: Attach reactors for insertion path auto-text
   ;; For new insertions, use accumulated metadata from bubble-data to create XDATA and attach reactors
   (cond
     ((not replace-bubble-p)  ; Only for new insertions, not replace-bubble
+     (haws-debug ">>> Calling finish-bubble-attach-reactors")
      (hcnm-bn-finish-bubble-attach-reactors bubble-data ename-bubble ename-leader)
+     (haws-debug ">>> Returned from finish-bubble-attach-reactors")
+    )
+    (t
+     (haws-debug ">>> SKIPPING finish-bubble-attach-reactors (replace-bubble)")
     )
   )
+  (haws-debug ">>> EXITING finish-bubble")
 )
 
 ;;==============================================================================
@@ -6311,28 +6321,33 @@ ImportLayerSettings=No
                                                    auto-metadata meta-entry tag auto-type 
                                                    handle-reference auto-text
                                                    xdata-alist composite-key objref ename-reference)
+  (haws-debug ">>> ENTERING finish-bubble-attach-reactors")
   ;; Read accumulated metadata from bubble-data
   (setq auto-metadata (hcnm-bn-bubble-data-get bubble-data "auto-metadata"))
   
-
+  (haws-debug (list ">>> auto-metadata count=" (if auto-metadata (itoa (length auto-metadata)) "NIL")))
   
   ;; Process metadata if it exists
   (cond
     (auto-metadata
+     (haws-debug ">>> auto-metadata exists, processing...")
      ;; Initialize XDATA alist for final storage
      (setq xdata-alist '())
      
      ;; Process each metadata entry
      ;; Format: (tag auto-type handle-reference auto-text)
      (foreach meta-entry auto-metadata
+       (haws-debug (list ">>> Processing metadata entry: " (vl-princ-to-string meta-entry)))
        (cond 
          ((= (length meta-entry) 4)  ; Valid entry
+          (haws-debug ">>> Entry valid (length=4)")
           (setq 
             tag (nth 0 meta-entry)
             auto-type (nth 1 meta-entry)
             handle-reference (nth 2 meta-entry)
             auto-text (nth 3 meta-entry)
           )
+          (haws-debug (list ">>> Extracted: tag=" tag " auto-type=" auto-type " handle=" handle-reference))
           
           ;; Build composite key and add to XDATA
           (setq composite-key (cons auto-type handle-reference))
@@ -6632,14 +6647,6 @@ ImportLayerSettings=No
          ;; Extract updated lattribs for local string comparison
          lattribs (hcnm-bn-bubble-data-get bubble-data "ATTRIBUTES")
        )
-       ;; Restore PSPACE if auto-text selection switched to MSPACE for viewport selection
-       ;; This ensures subsequent prompts (Line 2, etc.) happen in correct space
-       (cond
-         (*hcnm-pspace-restore-needed*
-          (vl-cmdf "._PSPACE")
-          (setq *hcnm-pspace-restore-needed* nil) ; Clear the flag
-         )
-       )
        ;; Get text value for string comparison (2-element lattribs)
        (setq
          attr   (assoc tag lattribs)
@@ -6761,19 +6768,17 @@ ImportLayerSettings=No
     (cons "p1-ucs" nil)
     (cons "p1-world" nil)
     (cons "P2" nil)
-    (cons "pspace-bubble-p" nil)
-    (cons "pspace-for-restore-p" nil)   ; Tracks if we need to restore to pspace after auto-text selection
     (cons "replace-bubble-p" nil)
     (cons "TH" nil)
   )
 )
 
-;; Get a value from bubble data using haws_nested_list_get
+;; Get a value from bubble data using haws-nested-list-get
 (defun hcnm-bn-bubble-data-get (bd key)
-  (haws_nested_list_get bd (list key))
+  (haws-nested-list-get bd (list key))
 )
 
-;; Set a value in bubble data using haws_nested_list_update
+;; Set a value in bubble data using haws-nested-list-update
 ;; Validates key against known schema
 (defun hcnm-bn-bubble-data-set (bd key val /)
   (if (not (assoc key (hcnm-bn-bubble-data-def)))
@@ -6781,7 +6786,7 @@ ImportLayerSettings=No
       (haws-debug (strcat "Error: Invalid bubble-data key: " key))
       bd
     )
-    (haws_nested_list_update bd (list key) val)
+    (haws-nested-list-update bd (list key) val)
   )
 )
 
@@ -6796,8 +6801,9 @@ ImportLayerSettings=No
   ;; Format: (tag auto-type handle-reference auto-text)
   (setq new-entry (list tag auto-type handle-reference auto-text))
   
-  ;; Add to list and store back in bubble-data
-  (hcnm-bn-bubble-data-set bd "auto-metadata" (cons new-entry current-metadata))
+  ;; Add to list and store back in bubble-data, return updated bubble-data
+  (setq bd (hcnm-bn-bubble-data-set bd "auto-metadata" (cons new-entry current-metadata)))
+  bd  ; Return updated bubble-data
 )
 
 ;; Create empty lattribs structure with all required tags
@@ -8080,7 +8086,7 @@ ImportLayerSettings=No
 ;#region Auto quantity (LF/SF/SY)
 (defun hcnm-bn-auto-qty (bubble-data tag auto-type qt-type factor
                          obj-reference reactor-context-p / lattribs str-backslash input1
-                         pspace-bubble-p ss-p string ename-bubble handle-reference
+                         pspace-restore-p ss-p string ename-bubble handle-reference
                         )
   (setq
     ename-bubble
@@ -8111,7 +8117,7 @@ ImportLayerSettings=No
         (hcnm-config-setvar "BubbleArrowIntegralPending" "1")
        )
      )
-     (setq pspace-bubble-p (hcnm-bn-space-set-model))
+     (setq pspace-restore-p (hcnm-bn-space-set-model))
      (initget "Selection")
      (setq
        input1
@@ -8174,7 +8180,7 @@ ImportLayerSettings=No
           )
         )
      )
-     (hcnm-bn-space-restore pspace-bubble-p)
+     (hcnm-bn-space-restore pspace-restore-p)
     )
   )
   ;; END hcnm-bn-auto-get-input SUBFUNCTION
@@ -8522,7 +8528,7 @@ ImportLayerSettings=No
 (defun hcnm-bn-auto-al (bubble-data tag auto-type obj-reference reactor-context-p /
                         alignment-name lattribs ename-bubble
                         ename-leader sta-off-pair drawstation offset
-                        obj-align p1-world pspace-bubble-p sta-string
+                        obj-align p1-world pspace-restore-p sta-string
                         off-string string cvport ref-ocs-1 ref-ocs-2
                         ref-ocs-3 ref-wcs-1 ref-wcs-2 ref-wcs-3
                         profile-start
@@ -8575,7 +8581,7 @@ ImportLayerSettings=No
      ;; UX scenarios: Initial insertion or editing
      ;; Calls gateway to let user select alignment from drawing (with fallback)
      (setq
-       pspace-bubble-p
+       pspace-restore-p
         (hcnm-bn-space-set-model)
        obj-align
         (hcnm-bn-auto-al-get-alignment
@@ -8746,11 +8752,7 @@ ImportLayerSettings=No
   )
   ;; Step 5: Restore space after calculation is complete
   ;; (XDATA updates and reactor attachment now handled by caller)
-  (cond
-    (pspace-bubble-p
-     (hcnm-bn-space-restore pspace-bubble-p)
-    )
-  )
+  (hcnm-bn-space-restore pspace-restore-p)
   ;;===========================================================================
   ;; PROFILING: End timing alignment auto-text generation
   ;;===========================================================================
@@ -8884,58 +8886,58 @@ ImportLayerSettings=No
      ;; Normal flow - has leader, proceed with gateway and coordinate calculation
      ;; Ensure viewport transform is captured if needed (gateway architecture)
      ;; MUST happen BEFORE p1-world calculation below, which depends on viewport transform
-     (haws-debug ">>> DEBUG: Before gateway call")
+     (haws-debug "Before gateway call")
      (hcnm-bn-gateways-to-viewport-selection-prompt
     ;; N/E/NE don't use reference objects
     ename-bubble auto-type obj-reference "NO-OBJECT"
     ;; Normal auto-text flow (not super-clearance)                               
     nil
    )                                    
-  (haws-debug ">>> DEBUG: After gateway call")
+  (haws-debug "After gateway call")
   ;; Calculate or get p1-world
   (cond
     (reactor-update-p
      ;; Reactor update - recalculate p1-world from current leader position using stored transformation
-     (haws-debug ">>> DEBUG: Reactor update path")
+     (haws-debug "Reactor update path")
      (setq p1-ocs (hcnm-bn-p1-ocs ename-leader))
-     (haws-debug (list ">>> DEBUG: p1-ocs=" (vl-princ-to-string p1-ocs)))
+     (haws-debug (list "p1-ocs=" (vl-princ-to-string p1-ocs)))
      (setq
        p1-world
         (hcnm-bn-p1-world ename-leader p1-ocs ename-bubble)
      )
-     (haws-debug (list ">>> DEBUG: p1-world=" (vl-princ-to-string p1-world)))
+     (haws-debug (list "p1-world=" (vl-princ-to-string p1-world)))
     )
     (t
      ;; Initial creation - ensure p1-world is calculated (now that viewport transform is in XDATA)
-     (haws-debug ">>> DEBUG: Initial creation path - calling ensure-p1-world")
+     (haws-debug "Initial creation path - calling ensure-p1-world")
      (setq
        bubble-data
         (hcnm-bn-bubble-data-ensure-p1-world bubble-data)
        p1-world
         (hcnm-bn-bubble-data-get bubble-data "p1-world")
      )
-     (haws-debug (list ">>> DEBUG: After ensure-p1-world, p1-world=" (vl-princ-to-string p1-world)))
+     (haws-debug (list "After ensure-p1-world, p1-world=" (vl-princ-to-string p1-world)))
     )
   )
   ;; Calculate coordinates from p1-world
-  (haws-debug ">>> DEBUG: Before coordinate calculation")
-  (haws-debug (list ">>> DEBUG: p1-world value=" (vl-princ-to-string p1-world)))
+  (haws-debug "Before coordinate calculation")
+  (haws-debug (list "p1-world value=" (vl-princ-to-string p1-world)))
   (cond
     (p1-world
-     (haws-debug ">>> DEBUG: p1-world exists, calculating N/E")
-     (haws-debug (list ">>> DEBUG: (car p1-world)=" (vl-princ-to-string (car p1-world))))
-     (haws-debug (list ">>> DEBUG: (cadr p1-world)=" (vl-princ-to-string (cadr p1-world))))
-     (haws-debug ">>> DEBUG: About to call hcnm-bn-auto-rtos for N")
+     (haws-debug "p1-world exists, calculating N/E")
+     (haws-debug (list "(car p1-world)=" (vl-princ-to-string (car p1-world))))
+     (haws-debug (list "(cadr p1-world)=" (vl-princ-to-string (cadr p1-world))))
+     (haws-debug "About to call hcnm-bn-auto-rtos for N")
      (setq
        n  (hcnm-bn-auto-rtos (cadr p1-world) "N")
      )
-     (haws-debug (list ">>> DEBUG: N calculated=" n))
-     (haws-debug ">>> DEBUG: About to call hcnm-bn-auto-rtos for E")
+     (haws-debug (list "N calculated=" n))
+     (haws-debug "About to call hcnm-bn-auto-rtos for E")
      (setq
        e  (hcnm-bn-auto-rtos (car p1-world) "E")
      )
-     (haws-debug (list ">>> DEBUG: E calculated=" e))
-     (haws-debug ">>> DEBUG: About to concatenate NE string")
+     (haws-debug (list "E calculated=" e))
+     (haws-debug "About to concatenate NE string")
      (setq
        ne (strcat
             n
@@ -8943,8 +8945,8 @@ ImportLayerSettings=No
             e
           )
      )
-     (haws-debug (list ">>> DEBUG: NE concatenated=" ne))
-     (haws-debug ">>> DEBUG: About to select final string based on auto-type")
+     (haws-debug (list "NE concatenated=" ne))
+     (haws-debug "About to select final string based on auto-type")
      (setq
        string
         (cond
@@ -8953,7 +8955,7 @@ ImportLayerSettings=No
           ((= auto-type "NE") ne)
         )
      )
-     (haws-debug (list ">>> DEBUG: Final string selected=" string))
+     (haws-debug (list "Final string selected=" string))
     )
     (t
      ;; p1-world is NIL - couldn't get world coordinates
@@ -8965,6 +8967,7 @@ ImportLayerSettings=No
   )  ; End outer (cond ...) - leader check
   ;; END hcnm-bn-auto-get-input SUBFUNCTION
   ;; START hcnm-bn-auto-update SUBFUNCTION
+  (haws-debug ">>> BEFORE lattribs-put-auto")
   (setq
     lattribs
      (hcnm-bn-lattribs-put-auto
@@ -8973,6 +8976,9 @@ ImportLayerSettings=No
        lattribs
        ename-bubble
      )
+  )
+  (haws-debug ">>> AFTER lattribs-put-auto")
+  (setq
     bubble-data
      (hcnm-bn-bubble-data-set
        bubble-data
@@ -8980,10 +8986,12 @@ ImportLayerSettings=No
        lattribs
      )
   )
+  (haws-debug ">>> AFTER bubble-data-set ATTRIBUTES")
   ;; Accumulate auto-text metadata for insertion path (N/E/NE are handleless)
   ;; Only accumulate during initial creation, not reactor updates
   (cond
     ((not reactor-update-p)
+     (haws-debug ">>> BEFORE bubble-data-add-auto-metadata")
      (setq
        bubble-data
         (hcnm-bn-bubble-data-add-auto-metadata 
@@ -8994,8 +9002,10 @@ ImportLayerSettings=No
           string
         )
      )
+     (haws-debug ">>> AFTER bubble-data-add-auto-metadata")
     )
   )
+  (haws-debug ">>> RETURNING bubble-data from hcnm-bn-auto-ne")
   bubble-data
 )
 ;#endregion
@@ -9296,7 +9306,7 @@ ImportLayerSettings=No
 ;;==============================================================================
 (defun hcnm-bn-auto-pipe (bubble-data tag auto-type obj-reference reactor-context-p /
                           lattribs ename-bubble ename-leader obj-pipe
-                          pspace-bubble-p string profile-start
+                          pspace-restore-p string profile-start
                          )
   ;;===========================================================================
   ;; PROFILING: Start timing pipe auto-text generation
@@ -9328,7 +9338,7 @@ ImportLayerSettings=No
     (t
      ;; Path 2: No obj-reference - prompt user for selection (insertion path)
      (setq
-       pspace-bubble-p
+       pspace-restore-p
         (hcnm-bn-space-set-model)
        obj-pipe
         (hcnm-bn-auto-pipe-get-object
@@ -9393,11 +9403,7 @@ ImportLayerSettings=No
   )
   ;; STEP 4: Restore space after calculation is complete
   ;; (XDATA updates and reactor attachment now handled by caller)
-  (cond
-    (pspace-bubble-p
-     (hcnm-bn-space-restore pspace-bubble-p)
-    )
-  )
+  (hcnm-bn-space-restore pspace-restore-p)
   ;;===========================================================================
   ;; PROFILING: End timing pipe auto-text generation
   ;;===========================================================================
@@ -9506,12 +9512,15 @@ ImportLayerSettings=No
 ;; directly from p1-world). It still needs viewport transform for paper space
 ;; coordinate conversion, but that's handled by the gateway system.
 ;;==============================================================================
-
+;; Switch to model space if in paper space (CVPORT=1 means paper space in layout)
+;; Returns: T if switched, NIL if already in model space or not applicable
 (defun hcnm-bn-space-set-model ()
   (cond ((= (getvar "CVPORT") 1) (vl-cmdf "._MSPACE") t))
 )
-(defun hcnm-bn-space-restore (pspace-bubble-p /)
-  (cond (pspace-bubble-p (command "._PSPACE")))
+;; Restore paper space if bubble was in paper space
+;; Called at end of operations that may have switched to model space
+(defun hcnm-bn-space-restore (pspace-restore-p /)
+  (cond (pspace-restore-p (vl-cmdf "._PSPACE")))
 )
 ;#endregion
 ;#region Auto text user experience interruptions
@@ -9861,22 +9870,11 @@ ImportLayerSettings=No
 ;; Gets the target viewport from user. This would only be called because we needed it before we could determine it automatically or when user clicks the button to change association.
 ;; NOTE: Warning should be shown BEFORE calling this function (via hcnm-bn-tip-warn-pspace-no-react)
 ;; NOTE: This function does NOT restore space - caller must handle that after capturing transformation matrix
-(defun hcnm-bn-get-target-vport (/ input pspace-before-p)
-  ;; Check if we're in paper space before switching
-  (setq pspace-before-p (= (getvar "CVPORT") 1))
-  ;; Ensure user is in model space so they can activate a viewport
-  (cond
-    (pspace-before-p
-     (princ
-       "\nWARNING: Not in model space - switching to MSPACE first"
-     )
-     (vl-cmdf "._MSPACE")
-     ;; Set global flag so top-level can restore
-     (setq *hcnm-pspace-restore-needed* t)
-    )
-  )
+(defun hcnm-bn-get-target-vport (/ input pspace-restore-p)
+  (setq pspace-restore-p (hcnm-bn-space-set-model))
   (getstring "\nSet the TARGET viewport active and press ENTER to continue: ")
   (setq input (getvar "CVPORT"))        ; Capture the viewport ID
+  (hcnm-bn-space-restore pspace-restore-p)
   input                                 ; Return the viewport ID
 )
 ;; Apply affine transformation using 3-point correspondence
@@ -11452,7 +11450,7 @@ ImportLayerSettings=No
 ;;==============================================================================
 ;; Purpose:
 ;;   Helper function to add or update auto-text entry in reactor data structure.
-;;   Wraps haws_nested_list_update for cleaner API.
+;;   Wraps haws-nested-list-update for cleaner API.
 ;;
 ;; Arguments:
 ;;   data - Current reactor data structure (or NIL to create new)
@@ -11488,7 +11486,7 @@ ImportLayerSettings=No
 ;;   )
 ;;==============================================================================
 (defun hcnm-bn-reactor-add-auto (data handle-owner handle-bubble tag auto-type handle-reference)
-  (haws_nested_list_update
+  (haws-nested-list-update
     data
     (list "HCNM-BUBBLE" handle-owner handle-bubble tag auto-type)
     handle-reference

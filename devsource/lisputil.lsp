@@ -80,9 +80,7 @@
       (princ (strcat "\nTrapped error: " s))
   ) )
   (vl-cmdf-s)
-  (if (= (type f1) (quote file))(setq f1(close f1))); Close files
-  (if (= (type f2) (quote file))(setq f2(close f2)))
-  (if (= (type f3) (quote file))(setq f3(close f3)))
+  (haws-close-all)
   (if (= 8 (logand (getvar"undoctl") 8))(vl-cmdf-s "._undo" "end")); End undo group
   (if (and vrstor vstr) (vrstor))     ; Restore variables to previous values
   (if ucsp (vl-cmdf-s "._UCS""P"))       ; Restore previous UCS
@@ -97,10 +95,10 @@
   (haws-deprecation-01 "errrst")
 )
 (defun haws-errrst ()
-  (setq ucsp nil ucspp nil enm nil f1 nil f2 nil *error* olderr olderr nil)
+  (setq ucsp nil ucspp nil enm nil *f1* nil *f2* nil *error* olderr olderr nil)
 )
 (defun haws-core-restore ()
-  (setq ucsp nil ucspp nil enm nil f1 nil f2 nil *error* olderr olderr nil)
+  (setq ucsp nil ucspp nil enm nil *f1* nil *f2* nil *error* olderr olderr nil)
 )
 ;;; END ERROR HANDLER
 
@@ -328,16 +326,16 @@
       ((prompt "\nLayer settings file not found.") (exit))
     )
     (setq
-      f3 (open temp "r")
+      *f3* (open temp "r")
       i 0
     )
-    (while (setq rdlin (read-line f3))
+    (while (setq rdlin (read-line *f3*))
       (princ "\rReading line ")(princ (setq i (1+ i)))
       (if (= 'LIST (type (setq temp (read rdlin))))
         (setq *haws:layers* (cons temp *haws:layers*))
       )
     )
-    (setq f3 (close f3))
+    (setq *f3* (close *f3*))
   )
 (defun haws-getlayr ( key / temp)
   (if (not *haws:layers*)(haws-getusl))

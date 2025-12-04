@@ -49,7 +49,7 @@
   "Copyright 2025 Thomas Gail Haws"
 )
 ;; Returns a random CNM evangelism message for tips/prompts (sharing-focused)
-(defun haws-evangel-msg (/ big_date msgs idx)
+(defun haws-evangel-msg (/ big-date msgs idx)
   (setq msgs (list
     "\nCNM is open source! Share it far and wide."
     "\nShare CNM with your colleagues and help it grow! https://github.com/hawstom/cnm"
@@ -58,7 +58,7 @@
     "\nLeverage modern AI plus 30 years of human experience to make AutoCAD work for you!"
     "\nShare CNM, discuss CNM, and contribute to CNM at https://github.com/hawstom/cnm"
     "\nCNM Bubble notes now offer auto text that reacts to leader and reference object changes."
-    "\nDid you see LABEL (HAWS_LABEL), our new utility research pipe labeler? Edit haws-label-settings.lsp."
+    "\nDid you see LABEL (HAWS-LABEL), our new utility research pipe labeler? Edit haws-label-settings.lsp."
     "\nYou can open a suggestion or bug issue at at https://github.com/hawstom/cnm by registering at Github."
     "\nThe latest upgrades to CNM were made possible by AI! (VS Code IDE > Copilot AI agent > Claude Sonnet 4.5 model)"
     "\nGive back to CNM. Contact Tom to learn how you can be an AI-supported imagineer."
@@ -67,8 +67,8 @@
     "\nCNM is a community project! Make a difference by sharing it and making it better."
     "\nContribute to CNM and report issues at https://github.com/hawstom/cnm"
   ))
-  (setq big_date (* (getvar "DATE") 100000000))
-  (setq idx  (rem (fix (* 10000 (- big_date (fix big_date)))) (length msgs)))
+  (setq big-date (* (getvar "DATE") 100000000))
+  (setq idx  (rem (fix (* 10000 (- big-date (fix big-date)))) (length msgs)))
   (nth idx msgs)
 )
 
@@ -196,16 +196,26 @@
      (princ "\n[ERROR HANDLER] Restored BlockReactors=0 (self-healing)")
     )
   )
-  
-  (if (= (type f1) (quote file))
-    (setq f1 (close f1))
-  )
   ;; Close files
-  (if (= (type f2) (quote file))
-    (setq f2 (close f2))
-  )
-  (if (= (type f3) (quote file))
-    (setq f3 (close f3))
+  ;; Note that symptoms of file pointer clashes (setting a var to another file pointer leaving the original open and unreferenced) include:
+  ;; unhandled exceptions, can't reenter autolisp, unwind errors, etc.
+  ;; New way: haws-close-all managed list
+  (haws-close-all)
+  ;; Old way: close globals. Many functions in many files for decades used this old close-on-error strategy. Will have to migrate gradually. 
+  ;;   1. Replace (open) and (close) with haws versions. This is pretty safe.
+  ;;   2. Add a local declaration to all f1, f2, f3. Some will need to be shared-locals (semi-globals). Handle with care. Better to miss some than to declare locals where sharing with parent functions is needed (indicated when the present function doesn't open and close the file). TGH started this on 2025-12-04.
+  ;;   3. After great care with step 2, remove * from *f1*, *f2*, and *f3* to make them local.
+  (mapcar
+    '(lambda (file-pointer)
+      (if (= (type (eval file-pointer)) 'file)
+        (set file-pointer (close (eval file-pointer)))
+      )      
+    )
+    '(
+      *f1* ; reader (outer or long-term) file handle
+      *f2* ; writer (inner or shorter term) file handle
+      *f3* ; extra quick (no logs inside; instant term) file handle for logs and getlayr's getusl function
+    )
   )
   ;;Versional housekeeping
   (if (/= 'subr (type command-s)) (setq command-s command))
@@ -245,7 +255,7 @@
     ucspp nil
     enm nil
     f1 nil
-    f2 nil
+    *f2* nil
     *error* olderr
     olderr nil
   )
@@ -449,8 +459,8 @@
        (/ num newbase)
       done
        (= num 0)
-    ) ;_ end of setq
-  ) ;_ end of while
+    ) ;- end of setq
+  ) ;- end of while
   returnstring
 )
 ;;ConvertToDecimal converts a string representing a number in another base
@@ -459,7 +469,7 @@
   (setq
     decimal 0
     m 1
-  ) ;_ end of setq
+  ) ;- end of setq
   (while (> (strlen string) 0)
     (setq
       chari
@@ -476,10 +486,10 @@
       string
        (substr string 1 (1- (strlen string)))
       m (* m base)
-    ) ;_ end of setq
-  ) ;_ end of while
+    ) ;- end of setq
+  ) ;- end of while
   decimal
-) ;_ end of defun
+) ;- end of defun
 
 ;#endregion
 ;#region USE LOG
@@ -536,7 +546,7 @@
      (40 -1 "haws-vb")
      (41 -1 "haws-facnum")
      (42 -1 "haws-funky")
-     (43 -1 "haws-imp_exp")
+     (43 -1 "haws-imp-exp")
      (44 -1 "haws-incnum")
      (45 -1 "haws-xin")
      (46 -1 "haws-xout")
@@ -767,7 +777,7 @@
      (282 -1 "haws-newpro")
      (283 0 "haws-profc")
      (284 -1 "haws-pro")
-     (285 0 "haws-tgh2_pro")
+     (285 0 "haws-tgh2-pro")
      (286 -1 "haws-lst")
      (287 0 "haws-ellabel")
      (288 0 "haws-stalabel")
@@ -819,7 +829,7 @@
      (336 1 "hcnm-cnmqt")
      (337 1 "hcnm-edit-bubbles")
      (338 1 "hcnm-replace-bubble")
-     (339 -1 "haws_label")
+     (339 -1 "haws-label")
      (340 -1 "hcnm-copy-bubbles")
      ;; Add new commands here
      (1000 1 "untracked")
@@ -859,18 +869,18 @@
 
 (defun haws-use-log-remote (/ url http bios-date log-data)
   (setq
-    url  "http://www.constructionnotesmanager.com/cnm_log.php"
+    url  "http://www.constructionnotesmanager.com/cnm-log.php"
     http (vlax-create-object "MSXML2.XMLHTTP")
     bios-date (haws-getbiosdate)
     log-data
      (strcat
-       "computer_name="
+       "computer-name="
        (haws-getcomputername)
        "&loginname="
        (getvar "loginname")
-       "&cnm_version="
+       "&cnm-version="
        (haws-unified-version)
-       "&command_log="
+       "&command-log="
        (haws-use-get-local-log-string)
      )
   )
@@ -1561,7 +1571,7 @@
        (setq number (strcat number c))
       )
       ((and
-         (eq c "-")
+         (eq c "_")
          (= suffix number "")
          (wcmatch (substr s (1+ i) 1) "#")
        )
@@ -1642,7 +1652,7 @@
        )
       )
       ((and
-         (eq c "-")
+         (eq c "_")
          (= number "")
          (not done)
          (wcmatch (substr s (1+ i) 1) "#")
@@ -1726,12 +1736,12 @@
      (if (not(setq f1 (open source "r")))
        (setq return nil)
      )
-     (if (not (and return (setq f2 (open destination "w"))))
+     (if (not (and return (setq *f2* (open destination "w"))))
        (setq return nil)
      )
-     (while (setq rdlin (read-line f1)) (write-line rdlin f2))
+     (while (setq rdlin (read-line f1)) (write-line rdlin *f2*))
      (setq f1 (close f1))
-     (setq f2 (close f2))
+     (setq *f2* (close *f2*))
      return
     )
   )
@@ -1855,9 +1865,9 @@
 )
 ;#endregion;;
 ;#region DEVELOP
-;; HAWS_UNIT_TEST EXAMPLE
+;; HAWS-UNIT-TEST EXAMPLE
 ;|
-(haws_unit_test 
+(haws-unit-test 
   '+ 
   '(
     ((1 0 0) 1)
@@ -1868,8 +1878,8 @@
     ((6 0 0) 6)
   )
 )
-(haws_unit_test
-  'HAWS_NESTED_LIST_UPDATE
+(haws-unit-test
+  'haws-nested-list-update
   '(
     (((1 . ((11 . "A")(12 . ((121 . "B")(122 . ((1221 . "C")))))))) (1 12 1221 "1")
     ((1 . ((11 . "A")(12 . ((121 . "B")(122 . ((1221 . "1"))))))))
@@ -1877,18 +1887,18 @@
   )
 )
 |;
-(defun haws_unit_test (f assertions / answer args continue_p i result) 
+(defun haws-unit-test (f assertions / answer args continue-p i result) 
   (setq i          0
-        continue_p t
+        continue-p t
   )
   (mapcar 
     '(lambda (assertion) 
        (and 
-         continue_p
+         continue-p
          (setq args   (car assertion)
                answer (cadr assertion)
          )
-         (setq continue_p (equal 
+         (setq continue-p (equal 
                             (setq result (apply f args))
                             answer
                           )
@@ -1897,7 +1907,7 @@
          (princ (strcat "\nSuccess on test " (itoa i)))
        )
        (and
-         (not continue_p)
+         (not continue-p)
          (print result)
        )
      )
@@ -1955,8 +1965,8 @@
      (if (= (type messages) 'STR) 
        (setq messages (list messages))
      )
-     ;; Concatenate all strings
-     (setq output (apply 'strcat (cons (itoa (rem (getvar "millisecs") 100000)) messages)))
+     ;; Concatenate all strings with ">>> DEBUG: " prefix
+     (setq output (apply 'strcat (cons (itoa (rem (getvar "millisecs") 1000000)) (cons ">>> DEBUG: " messages))))
      (haws-message-log output "haws-debug-log.md")
      output ; Return the output string
     )
@@ -1971,10 +1981,10 @@
 (defun haws-message-log (message file-name / profile-path config-value) 
   (cond 
     ((and 
-       (setq f2 (open (strcat (getvar "dwgprefix") file-name) "a"))
-       (write-line message f2)
+       (setq *f3* (open (strcat (getvar "dwgprefix") file-name) "a"))
+       (write-line message *f3*)
      )
-     (setq f2 (close f2))
+     (setq *f3* (close *f3*))
      T
     )
     (T nil)
@@ -2006,9 +2016,9 @@
 ;; ======================================================================
 
 ;; Function to read a value at a nested path (returns nil if not found)
-;; Usage: (HAWS_NESTED_LIST_GET DATA '(1 13 132 1323))
+;; Usage: (haws-nested-list-get DATA '(1 13 132 1323))
 ;; Credit to Grok AI 2025-10-17
-(defun haws_nested_list_get (alist keys / key rest pair val)
+(defun haws-nested-list-get (alist keys / key rest pair val)
   (cond
     ((null keys) nil)  ; Invalid empty path
     (t
@@ -2025,7 +2035,7 @@
             )
             (t
               (cond
-                ((listp val) (haws_nested_list_get val rest))  ; Recurse into sub-alist - removed (CAR VAL)
+                ((listp val) (haws-nested-list-get val rest))  ; Recurse into sub-alist - removed (CAR VAL)
                 (t nil)  ; Cannot go deeper
               )
             )
@@ -2038,42 +2048,42 @@
 
 ;; Function to update or create a value at a nested path
 ;; Uses subst to preserve original list order, returns modified list
-;; Usage: (HAWS_NESTED_LIST_UPDATE DATA '(1 13 132 1323) "2")
+;; Usage: (haws-nested-list-update DATA '(1 13 132 1323) "2")
 ;; Credit to Grok AI 2025-10-17
-(defun haws_nested_list_update (alist keys val / key rest pair sub new_sub_alist new_pair)
+(defun haws-nested-list-update (alist keys val / key rest pair sub new-sub-alist new-pair)
   (cond
     ((null keys) alist)  ; Nothing to do for empty path
     (t
-      (setq key (car keys)
-            rest (cdr keys))
-      (setq pair (assoc key alist))
-      (cond
-        ((null rest)
-          (setq new_pair (list key val))  ; Changed from (CONS KEY VAL) to (LIST KEY VAL) for uniform structure
-          (cond
-            (pair (subst new_pair pair alist))
-            (t (append alist (list new_pair)))
-          )
+     (setq key (car keys)
+           rest (cdr keys))
+     (setq pair (assoc key alist))
+     (cond
+       ((null rest)
+        (setq new-pair (list key val))  ; Changed from (CONS KEY VAL) to (LIST KEY VAL) for uniform structure
+        (cond
+          (pair (subst new-pair pair alist))
+          (t (append alist (list new-pair)))
         )
-        (t
-          (setq sub (cadr pair))  ; Changed from (CDR PAIR) then (CAR SUB) to just (CADR PAIR)
-          (setq new_sub_alist (haws_nested_list_update sub rest val))
-          (setq new_pair (list key new_sub_alist))  ; Changed from (CONS KEY (LIST ...)) to (LIST KEY ...)
-          (cond
-            (pair (subst new_pair pair alist))
-            (t (append alist (list new_pair)))
-          )
+       )
+       (t
+        (setq sub (cadr pair))  ; Changed from (CDR PAIR) then (CAR SUB) to just (CADR PAIR)
+        (setq new-sub-alist (haws-nested-list-update sub rest val))
+        (setq new-pair (list key new-sub-alist))  ; Changed from (CONS KEY (LIST ...)) to (LIST KEY ...)
+        (cond
+          (pair (subst new-pair pair alist))
+          (t (append alist (list new-pair)))
         )
-      )
+       )
+     )
     )
   )
 )
 
 ;; Function to delete a key at a nested path
 ;; Uses subst to preserve original list order, prunes empty branches, returns modified list
-;; Usage: (HAWS_NESTED_LIST_DELETE DATA '(1 13 132 1323))
+;; Usage: (haws-nested-list-delete DATA '(1 13 132 1323))
 ;; Credit to Grok AI 2025-10-17
-(defun haws_nested_list_delete (alist keys / key rest pair sub new_sub_alist new_pair)
+(defun haws-nested-list-delete (alist keys / key rest pair sub new-sub-alist new-pair)
   (cond
     ((null keys) alist)  ; Nothing to do
     (t
@@ -2088,12 +2098,12 @@
           (cond
             ((not (listp sub)) alist)  ; Cannot delete deeper into leaf
             (t
-              (setq new_sub_alist (haws_nested_list_delete sub rest))
+              (setq new-sub-alist (haws-nested-list-delete sub rest))
               (cond
-                ((null new_sub_alist) (vl-remove pair alist))  ; Prune empty branch
+                ((null new-sub-alist) (vl-remove pair alist))  ; Prune empty branch
                 (t
-                  (setq new_pair (list key new_sub_alist))  ; Changed from (CONS KEY (LIST ...))
-                  (subst new_pair pair alist)
+                  (setq new-pair (list key new-sub-alist))  ; Changed from (CONS KEY (LIST ...))
+                  (subst new-pair pair alist)
                 )
               )
             )
@@ -2105,50 +2115,50 @@
 )
 
 ;; Function to test nested list operations
-;; Usage: (HAWS_NESTED_LIST_TEST)
+;; Usage: (haws-nested-list-test)
 ;; Credit to Grok AI 2025-10-17, updated 2025-10-20 for uniform LIST structure
-(defun haws_nested_list_test (/ data)
+(defun haws-nested-list-test (/ data)
   (setq data nil)
   ;; Test long path creation
-  (setq data (haws_nested_list_update data '(1 12 121) "121A"))
+  (setq data (haws-nested-list-update data '(1 12 121) "121A"))
   (princ "\nExpecting ((1 ((12 ((121 \"121A\")))))) we get ")
   (print data)
   (princ "\nExpecting \"121A\" we get ")
-  (print (haws_nested_list_get data '(1 12 121)))
+  (print (haws-nested-list-get data '(1 12 121)))
   ;; Test NIL value creation
-  (setq data (haws_nested_list_update data '(1 11 111) nil))
+  (setq data (haws-nested-list-update data '(1 11 111) nil))
   (princ "\nExpecting nil we get ")
-  (print (haws_nested_list_get data '(1 11 111)))
+  (print (haws-nested-list-get data '(1 11 111)))
   (princ "\nExpecting ((1 ((12 ((121 \"121A\"))) (11 ((111 nil)))))) we get ")
   (print data)
   ;; Test deletion
-  (setq data (haws_nested_list_update data '(1 13 131) "131A"))
+  (setq data (haws-nested-list-update data '(1 13 131) "131A"))
   (princ "\nAfter adding (1 13 131) \"131A\", expecting ((1 ((12 ((121 \"121A\"))) (11 ((111 nil))) (13 ((131 \"131A\")))))) we get ")
   (print data)
-  (setq data (haws_nested_list_delete data '(1 13 131)))
+  (setq data (haws-nested-list-delete data '(1 13 131)))
   (princ "\nAfter deleting (1 13 131), expecting ((1 ((12 ((121 \"121A\"))) (11 ((111 nil)))))) we get ")
   (print data)
-  ;; Test list value storage (like ATTRIBUTE_LIST)
-  (setq data (haws_nested_list_update data '("ATTRIBUTES") '(("TAG1" "value1") ("TAG2" "value2"))))
+  ;; Test list value storage (like CNM lattribs)
+  (setq data (haws-nested-list-update data '("ATTRIBUTES") '(("TAG1" "value1") ("TAG2" "value2"))))
   (princ "\nAfter adding ATTRIBUTES list, we get ")
   (print data)
   (princ "\nExpecting ((\"TAG1\" \"value1\") (\"TAG2\" \"value2\")) we get ")
-  (print (haws_nested_list_get data '("ATTRIBUTES")))
+  (print (haws-nested-list-get data '("ATTRIBUTES")))
   (princ)
 );; HAWS-FILE-OPEN
 ;;
 ;; If a write directive file is locked, allows user to provide an alternate filename to open.
 ;;
 ;;
-(defun haws-file-open (filename mode / errobj fp input)
-  (setq errobj (vl-catch-all-apply 'OPEN (list filename mode)))
+(defun haws-open-polite (file-name mode / errobj fp input)
+  (setq errobj (vl-catch-all-apply 'OPEN (list file-name mode)))
   (cond
     ((vl-catch-all-error-p errobj)
      (alert
        (princ
          (strcat
            "Couldn't write to "
-           filename
+           file-name
            "\nPlease close if possible and follow command prompts."
          )
        )
@@ -2157,20 +2167,72 @@
      (setq
        input
         (getkword
-          "\n[Continue with file closed/Specify another filename] <Continue>: "
+          "\n[Continue with file closed/Specify another file-name] <Continue>: "
         )
      )
      (cond
        ((= input "Continue"))
        ((= input "Specify")
-        (setq filename (getfiled "Specify filename" filename "" 1))
-        (setq fp (haws-file-open filename mode))
+        (setq file-name (getfiled "Specify file-name" file-name "" 1))
+        (setq fp (haws-open-polite file-name mode))
        )
      )
     )
     (t (setq fp errobj))
   )
 )
+;; Opens a file if possible
+;; Saves the file pointer and mode in a global management list like this:
+;; '((file-name (mode file-pointer)))
+(defun haws-open (file-name mode / file-pointer open-files failure-reason)
+  (setq 
+    open-files (haws-getvar "OpenFiles")
+    failure-reason " because such a file cannot be opened for reading or created for writing."
+  )
+  (cond
+    (
+      (and
+        ;; This isn't a repeated attempt to open it for writing.
+        (not 
+          (and 
+            (or (= mode "w")(= mode "a"))
+            (haws-nested-list-get open-files (list file-name))
+            (setq failure-reason " because haws-open already opened it for writing.")
+          )
+        )
+        ;; It opens successfully.
+        (setq file-pointer (haws-open-polite file-name mode))
+      )
+      (haws-setvar "OpenFiles" (haws-nested-list-update open-files (list file-name) (list mode file-pointer)))
+      file-pointer
+    )
+    (t
+      (haws-debug (list "haws-open couldn't open " file-name " in \"" mode "\" mode" failure-reason))
+      nil
+    )
+  ) 
+)
+;; Closes a file. Removes it from the open files management list.
+(defun haws-close (file-pointer / file-name file-pointer-string open-file open-files file-pointer-string-name-position)
+  (setq 
+    open-files (haws-getvar "OpenFiles")
+    file-pointer-string (vl-princ-to-string file-pointer)
+    file-pointer-string-name-position 8
+    file-name (substr (vl-princ-to-string file-pointer-string) file-pointer-string-name-position (- (strlen file-pointer-string) file-pointer-string-name-position))
+  )
+  (close file-pointer)
+  (haws-setvar "OpenFiles" (haws-nested-list-delete open-files (list file-name)))
+)
+;; Closes all files in the open files management list.
+(defun haws-close-all ( / open-file open-files)
+  (setq open-files (haws-getvar "OpenFiles"))
+  (foreach open-file open-files
+    (setq file-pointer (cadadr open-file))
+    (if (= (type file-pointer) 'file) (close file-pointer))
+  )
+  (haws-setvar "OpenFiles" nil)
+)
+
 ;;;  HAWS-FLATTEN
 ;;(vl-acad-defun 'HAWS-FLATTEN)
 (defun haws-flatten (pnt)
@@ -2257,26 +2319,26 @@
 ;;         [uniform field width or field delimiter character]
 ;;       )
 ;;(vl-acad-defun 'HAWS-MKFLD)
-(defun haws-mkfld (string format / char i mkfld_field mkfld_literal)
+(defun haws-mkfld (string format / char i mkfld-field mkfld-literal)
   (cond
     ((= (type format) 'STR)
      (setq
        i 0
-       mkfld_field ""
+       mkfld-field ""
      )
      (cond
        ((wcmatch string (strcat "*`" format "*,*\"*,*\n*"))
         (setq
-          mkfld_literal t
-          mkfld_field "\""
+          mkfld-literal t
+          mkfld-field "\""
         )
        )
      )
      (while (<= (setq i (1+ i)) (strlen string))
        (setq
-         mkfld_field
+         mkfld-field
           (strcat
-            mkfld_field
+            mkfld-field
             (cond
               ((= (setq char (substr string i 1)) "\"")
                "\"\""
@@ -2286,22 +2348,22 @@
           )
        )
      )
-     (if mkfld_literal
-       (setq mkfld_field (strcat mkfld_field "\""))
+     (if mkfld-literal
+       (setq mkfld-field (strcat mkfld-field "\""))
      )
-     (setq mkfld_field (strcat mkfld_field format))
+     (setq mkfld-field (strcat mkfld-field format))
     )
     (t
-     (setq mkfld_field string)
+     (setq mkfld-field string)
      (while
-       (< (strlen (setq mkfld_field (substr mkfld_field 1 format)))
+       (< (strlen (setq mkfld-field (substr mkfld-field 1 format)))
           format
        )
-        (setq mkfld_field (strcat mkfld_field " "))
+        (setq mkfld-field (strcat mkfld-field " "))
      )
     )
   )
-  mkfld_field
+  mkfld-field
 )
 ;#region LAYER MANAGEMENT
 ;; HAWS-SETLAYR skips settings if layer already created this session.
@@ -2318,17 +2380,17 @@
     ((prompt "\nLayer settings file not found.") (exit))
   )
   (setq
-    f3 (open temp "r")
+    *f3* (open temp "r")
     i  0
   )
-  (while (setq rdlin (read-line f3))
+  (while (setq rdlin (read-line *f3*))
     (princ "\rReading line ")
     (princ (setq i (1+ i)))
     (if (= 'LIST (type (setq temp (read rdlin))))
       (setq *haws:layers* (cons temp *haws:layers*))
     )
   )
-  (setq f3 (close f3))
+  (setq *f3* (close *f3*))
 )
 ;;(vl-acad-defun 'HAWS-GETLAYR)
 (defun haws-getlayr (key / temp)
@@ -2377,6 +2439,7 @@
     ((member laname *haws-layers-made*)
      (haws-debug (strcat "Layer " laname " in cache, setting current (fast path)"))
      (setvar "clayer" laname)
+     laopt
     )
     ;; Slow path: create layer and add to cache
     (t
@@ -2385,7 +2448,8 @@
   )
 )
 ;;(vl-acad-defun 'HAWS-MKLAYR)
-(defun haws-mklayr (laopt / laname lacolr laltyp ltfile ltfiles temp)
+(defun haws-mklayr (laopt / laname lacolr laltyp ltfile ltfiles temp profile-start)
+  (setq profile-start (haws-clock-start "mklayr-create-layer"))
   (haws-debug "Entering HAWS-MKLAYR in edclib because layer settings not applied yet this session.")
   (setq
     laname
@@ -2446,6 +2510,7 @@
   )
   (setq *haws-layers-made* (cons laname *haws-layers-made*))
   (haws-debug "Finished making layer.")
+  (haws-clock-end "mklayr-create-layer" profile-start)
   laopt
 )
 
@@ -2751,13 +2816,13 @@
 ;; substitute
 ;;
 ;;(vl-acad-defun 'HAWS-PRIN1-TO-STRING)
-(defun haws-prin1-to-string (atomx / f1 f2 string)
+(defun haws-prin1-to-string (atomx / f1 *f2* string)
   (cond
     ((haws-vlisp-p) (vl-prin1-to-string atomx))
     (t
-     (setq f2 (open "hawsprin1.tmp" "w"))
-     (prin1 atomx f2)
-     (setq f2 (close f2))
+     (setq *f2* (open "hawsprin1.tmp" "w"))
+     (prin1 atomx *f2*)
+     (setq *f2* (close *f2*))
      (setq f1 (open "hawsprin1.tmp" "r"))
      (setq string (read-line f1))
      (setq f1 (close f1))
@@ -2789,10 +2854,10 @@
 ;;;        /                  \                 
 ;;;       /                    \                
 ;;;      /                      \               
-;;;     /       __chord___ ----- 1
+;;;     /       --chord--- ----- 1
 ;;;    3 ------                 *
-;;;       .    ANG2        _.* 
-;;;           - 2 - .__..-
+;;;       .    ANG2        -.* 
+;;;           - 2 - ._-.._
 ;;;
 ;;;
 ;;;
@@ -2864,7 +2929,7 @@
     2dpnt2
      (haws-flatten 2dpnt2)
     d (/ (distance 2dpnt1 2dpnt2) 2)
-  ) ;_ end of setq
+  )
   (cond
     ((/= 0 bulge)
      (setq
@@ -2873,11 +2938,11 @@
        delta
         (* 2 dover2)
        r (/ d (sin dover2))
-     ) ;_ end of setq
+     )
      (* delta r)
     )
     (t (* d 2))
-  ) ;_ end of cond
+  )
 )
 
 ;;;HAWS-STRTOLST
@@ -3248,7 +3313,7 @@
   (if isneg
     (setq
       before
-       (strcat "-(" before)
+       (strcat "_(" before)
       after
        (strcat after ")")
     )
@@ -3423,7 +3488,7 @@
 ;#region Config
 ;; HAWS app configuration definitions
 ;; These are shared HawsEDC configuration variables used by edclib.lsp and cnmaliaslib.lsp
-;;; MOVED UP: Must be defined BEFORE USE_LOG section uses it
+;;; MOVED UP: Must be defined BEFORE USE LOG section uses it
 (defun haws-config-definitions ()
   (list
     (list "AppFolder" (haws-filename-directory (findfile "cnm.mnl")) 0)  ; Session scope - set at load time
@@ -3431,19 +3496,20 @@
     (list "CNMAliasActivation" "2" 4)  ; User scope - Registry
     (list "UseString" "" 4)  ; User scope - Registry (usage telemetry)
     (list "DebugLevel" "0" 0)  ; "0"=off, "1"=on (debug logging)
+    (list "OpenFiles" '(("" ("" ""))) 0)  ; '((file-name (mode file-pointer)))
   )
 )
 
 ;;; Register HAWS app with shared HawsEDC config (Issue #11)
 ;;; This allows edclib.lsp and cnmaliaslib.lsp to use HAWS-CONFIG without depending on CNM
-;;; MOVED UP: Must register BEFORE USE_LOG section calls haws-config-getvar
+;;; MOVED UP: Must register BEFORE USE LOG section calls haws-config-getvar
 (if haws-config-register-app
   (haws-config-register-app "HAWS" (haws-config-definitions))
 )
 
 ;;; Register EDC app for shared HawsEDC config
 ;;; This allows edclib.lsp and cnmaliaslib.lsp to use HAWS-CONFIG without depending on CNM
-;;; MOVED UP: Must register BEFORE USE_LOG section calls haws-config-getvar
+;;; MOVED UP: Must register BEFORE USE LOG section calls haws-config-getvar
 (if haws-config-register-app
   (haws-config-register-app "HAWS" (haws-config-definitions))
 )
@@ -3468,7 +3534,7 @@
 )
 
 ;#endregion
-;#region USE_LOG
+;#region USE LOG
 (if (/=(haws-use-get-local-log-string)(haws-use-initialize-log-string))(haws-use-log-remote))
 
 ;; Migration: Clear old getcfg location (one-time cleanup)
@@ -3477,7 +3543,7 @@
 (if (/= (getcfg "AppData/HawsEDC/UseLog/UseString") "")
   (progn
     (setcfg "AppData/HawsEDC/UseLog" "")
-    (princ "\n[Migration] Cleared old USE_LOG location (AppData \U+2192 Registry)")
+    (princ "\n[Migration] Cleared old USE-LOG location (AppData \U+2192 Registry)")
   )
 )
 
