@@ -8426,35 +8426,17 @@ ImportLayerSettings=No
    (alignment-object p1-world / drawstation offset)
   (cond
     ((and (= (type alignment-object) 'vla-object) p1-world)
-     ;; Decide whether to use offline calculation or Civil 3D API
-     (cond
-       ;; Try offline calculation if alignment is simple (lines/arcs only)
-       ((and (hcnm-bn-alignment-is-simple-p alignment-object)
-             ;; Feature can be disabled via config
-             (= (hcnm-config-getvar "UseOfflineStaOffCalculation") "Yes")
-        )
-        ;; FAST PATH: Offline geometry calculation (~5ms)
-        (haws-debug "[OFFLINE CALC] Using fast offline station/offset calculation")
-        (hcnm-bn-auto-alignment-calculate-offline alignment-object p1-world)
-       )
-       (t
-        ;; STANDARD PATH: Civil 3D API (~530ms, but accurate for all geometry)
-        (haws-debug "[CIVIL3D API] Using Civil 3D StationOffset method...")
-        (vlax-invoke-method
-          alignment-object
-          'stationoffset
-          (vlax-make-variant (car p1-world) vlax-vbdouble)
-          (vlax-make-variant (cadr p1-world) vlax-vbdouble)
-          'drawstation
-          'offset
-        )
-        (haws-debug "  successful.")
-        ;; Return as dotted pair
-        (cons drawstation offset)
-       )
+     (vlax-invoke-method
+       alignment-object
+       'stationoffset
+       (vlax-make-variant (car p1-world) vlax-vbdouble)
+       (vlax-make-variant (cadr p1-world) vlax-vbdouble)
+       'drawstation
+       'offset
      )
+     (cons drawstation offset)
     )
-    (t nil)                             ; Invalid inputs
+    (t nil)
   )
 )
 
@@ -8763,7 +8745,7 @@ ImportLayerSettings=No
                                       avport cvport es-align name
                                       obj-align obj-align-old ref-ocs-1
                                       ref-ocs-2 ref-ocs-3 ref-wcs-1
-                                      ref-wcs-2 ref-wcs-3
+                                      ref-wcs-2 ref-wcs-3 valid-alignment-p
                                      )
   (setq
     obj-align-old
@@ -8788,46 +8770,59 @@ ImportLayerSettings=No
        )
        (t (setq obj-align-old nil) "")
      )
-    es-align
-     (nentsel
-       (strcat
-         "\nSelect alignment"
-         (cond
-           ((= name "") ": ")
-           (t (strcat " or <" name ">: "))
+    valid-alignment-p nil
+  )
+  ;; Loop until valid alignment selected or user cancels (ESC)
+  (while (not valid-alignment-p)
+    (setq
+      es-align
+       (nentsel
+         (strcat
+           "\nSelect alignment"
+           (cond
+             ((= name "") ": ")
+             (t (strcat " or <" name ">: "))
+           )
          )
        )
-     )
-  )
-  (hcnm-bn-gateways-to-viewport-selection-prompt
-    ename-bubble
-    auto-type
-    nil                                 ; obj-target=nil for initial creation
-    (if es-align
-      "PICKED"
-      "REUSED"
-    )                                   ; Based on whether user selected something
-    nil
-  )                                     ; Normal auto-text flow (not super-clearance)
-  (cond
-    ((and
-       es-align
-       (= (cdr (assoc 0 (entget (car es-align)))) "AECC_ALIGNMENT")
-     )
-     (setq obj-align (vlax-ename->vla-object (car es-align)))
-     (hcnm-config-setvar "BubbleCurrentAlignment" obj-align)
     )
-    (es-align
-     (alert
-       (princ
-         "\nSelected object is not an alignment. Keeping previous alignment."
+    (cond
+      ;; Valid alignment selected
+      ((and
+         es-align
+         (= (cdr (assoc 0 (entget (car es-align)))) "AECC_ALIGNMENT")
        )
-     )
-     (setq obj-align obj-align-old)
-    )
-    (t
-     (haws-debug "No object selected. Keeping previous alignment.")
-     (setq obj-align obj-align-old)
+       (setq
+         obj-align (vlax-ename->vla-object (car es-align))
+         valid-alignment-p t
+       )
+       (hcnm-config-setvar "BubbleCurrentAlignment" obj-align)
+       ;; Gateway call AFTER validating alignment (only for valid picks)
+       (hcnm-bn-gateways-to-viewport-selection-prompt
+         ename-bubble
+         auto-type
+         nil                              ; obj-target=nil for initial creation
+         "PICKED"                         ; Object was just picked
+         nil                              ; Normal auto-text flow (not super-clearance)
+       )
+      )
+      ;; Wrong object type selected
+      (es-align
+       (alert
+         "\nSelected object is not an alignment. Try again or press ESC to cancel."
+       )
+      )
+      ;; Empty selection - use previous if exists, else loop
+      ((and (not es-align) obj-align-old)
+       (setq
+         obj-align obj-align-old
+         valid-alignment-p t
+       )
+      )
+      ;; Empty selection with no previous - loop continues
+      (t
+       (haws-debug "No object selected and no previous alignment.")
+      )
     )
   )
   obj-align                             ; Return the alignment object
@@ -9037,42 +9032,51 @@ ImportLayerSettings=No
 ;; Example:
 ;;   (SETQ obj-pipe (hcnm-bn-auto-pipe-get-object ename-bubble "NOTETXT1" "Dia"))
 ;;==============================================================================
-(defun hcnm-bn-auto-pipe-get-object
-   (ename-bubble tag auto-type / esapipe obj-pipe)
-  (setq
-    esapipe
-     (nentsel
-       (strcat
-         "\nSelect Civil 3D pipe for "
-         (cond
-           ((= auto-type "Dia") "diameter")
-           ((= auto-type "Slope") "slope")
-           ((= auto-type "L") "length")
-           (t "property")
-         )
-         ": "
-       )
-     )
-  )
-  (cond
-    (esapipe
-     (setq
-       obj-pipe
-        (vl-catch-all-apply
-          'vlax-ename->vla-object
-          (list (car esapipe))
+(defun hcnm-bn-auto-pipe-get-object (ename-bubble tag auto-type / esapipe obj-pipe 
+                                     valid-pipe-p obj-type
+                                    ) 
+  (setq valid-pipe-p nil)
+  ;; Loop until valid pipe selected or user cancels (ESC)
+  (while (not valid-pipe-p) 
+    (setq esapipe 
+      (nentsel 
+        (strcat 
+          "\nSelect Civil 3D pipe for "
+          (cond 
+            ((= auto-type "Dia") "diameter")
+            ((= auto-type "Slope") "slope")
+            ((= auto-type "L") "length")
+            (t "property")
+          )
+          ": "
         )
-     )
-     (cond
-       ((vl-catch-all-error-p obj-pipe)
-        (haws-debug "Error: Could not get pipe object.")
-        nil
-       )
-       (t obj-pipe)
-     )
+      )
     )
-    (t nil)
+    (cond 
+      ;; Valid Civil 3D pipe
+      ((and 
+         esapipe
+         (setq obj-pipe (vlax-ename->vla-object (car esapipe)))
+         (setq obj-type (vl-catch-all-apply 
+                          'vlax-get-property
+                          (list obj-pipe 'ObjectName)
+                        )
+         )
+         (not (vl-catch-all-error-p obj-type))
+         (wcmatch (strcase obj-type) "*PIPE*")
+       ) 
+        (setq valid-pipe-p t)
+      )
+      ;; Not a pipe
+      (t
+       (haws-debug (strcat "Wrong object type: " (vl-prin1-to-string obj-type)))
+       (alert 
+         "\nNo Civil 3D pipe selected. Try again or press ESC to cancel."
+       )
+      )
+    )
   )
+  obj-pipe
 )
 
 ;;==============================================================================
