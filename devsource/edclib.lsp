@@ -32,7 +32,7 @@
 ;;; lisputil.lsp
 ;;;This is the current version of HawsEDC and CNM
 (defun haws-unified-version ()
-  "5.5.31"
+  "5.5.32"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 ;;This function returns the current setting of nagmode.
@@ -3498,13 +3498,6 @@
     (list "DebugLevel" "0" 0)  ; "0"=off, "1"=on (debug logging)
     (list "OpenFiles" '(("" ("" ""))) 0)  ; '((file-name (mode file-pointer)))
   )
-)
-
-;;; Register HAWS app with shared HawsEDC config (Issue #11)
-;;; This allows edclib.lsp and cnmaliaslib.lsp to use HAWS-CONFIG without depending on CNM
-;;; MOVED UP: Must register BEFORE USE LOG section calls haws-config-getvar
-(if haws-config-register-app
-  (haws-config-register-app "HAWS" (haws-config-definitions))
 )
 
 ;;; Register EDC app for shared HawsEDC config

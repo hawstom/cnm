@@ -9069,7 +9069,7 @@ ImportLayerSettings=No
       )
       ;; Not a pipe
       (t
-       (haws-debug (strcat "Wrong object type: " (vl-prin1-to-string obj-type)))
+       (haws-debug (strcat "No pipe selected: " (vl-prin1-to-string esapipe)))
        (alert 
          "\nNo Civil 3D pipe selected. Try again or press ESC to cancel."
        )
