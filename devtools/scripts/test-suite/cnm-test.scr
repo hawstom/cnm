@@ -75,6 +75,96 @@
 mspace
 zoom
 extents
+; === EDITOR WORKFLOW TESTS (MANUAL INTERVENTION REQUIRED) ===
+;
+; CRITICAL: These tests require tester to follow on-screen instructions
+; Script auto-pauses at editor dialogs, resumes when tester clicks OK/Save
+;
+; TEST E1: Delimiter-based auto-text insertion (Paper Space + VPTRANS)
+; Position: 1C-1U = Column 1 Center, Row 1 Up
+; Arrow: (7", 13") paper = (10340', 20240') model via viewport
+; Tests: Delimiter replacement, VPTRANS creation, paper space transform
+; WORKFLOW: Tester clicks StaOff button → dialog prompts for alignment → script provides coordinate (10340,20240)
+;;
+pspace
+HAWS-ELLL
+7,13
+6.5,13.5
+E1
+INSTALL AT ```. L=4', A=24', B=6.33'
+Click in Line 1, click StaOff, then OK.
+(setq test-e1-handle (cdr (assoc 5 (entget (entlast)))))
+HAWS-EE
+L
+
+10340,20240
+; Validation after tester completes edit dialog
+(test-validate-auto-text (handent test-e1-handle) "NOTETXT1" "INSTALL AT STA 53+40.00 100.00' RT. L=4', A=24', B=6.33'" "TEST E1: Delimiter Insertion")
+(test-validate-xdata (handent test-e1-handle) "NOTETXT1" "StaOff" "TEST E1")
+(test-validate-reactor (handent test-e1-handle) "NOTETXT1" "StaOff" "TEST E1")
+(test-validate-vptrans-created (handent test-e1-handle) "TEST E1")
+; Additional: Verify delimiter was replaced (not just appended)
+(setq e1-text (cadr (assoc "NOTETXT1" (hcnm-bn-dwg-to-lattribs (handent test-e1-handle)))))
+(if (vl-string-search "```" e1-text) (test-write-report-entry "TEST E1 (Delimiter)" "FAIL" "Delimiter not replaced - still present in text") (test-write-report-entry "TEST E1 (Delimiter)" "PASS" "Delimiter correctly replaced with auto-text"))
+;;
+;; TEST E2: Replace free-form text with auto-text (Model Space)
+;; Position: 2C-1D = Column 2 Center, Row 1 Down
+;; Arrow: (10280',20230'), Bubble: (10275',20220')
+;; Tests: Smart search/replace, manual text replacement, Dia auto-text
+;; WORKFLOW: Tester clicks Dia button → dialog prompts for pipe → script provides coordinate (10360,20200)
+;;
+mspace
+HAWS-ELLL
+10280,20230
+10275,20220
+E2
+18 INCH STORM DRAIN
+Replace "18 INCH" with ```, click Dia, then OK.
+(setq test-e2-handle (cdr (assoc 5 (entget (entlast)))))
+HAWS-EE
+L
+
+10360,20200
+; Validation after tester completes edit dialog
+(test-validate-auto-text (handent test-e2-handle) "NOTETXT1" "18\" STORM DRAIN" "TEST E2: Replace with Auto-Text")
+(test-validate-xdata (handent test-e2-handle) "NOTETXT1" "Dia" "TEST E2")
+(test-validate-reactor (handent test-e2-handle) "NOTETXT1" "Dia" "TEST E2")
+; Additional: Verify manual text was replaced (not both present)
+(setq e2-text (cadr (assoc "NOTETXT1" (hcnm-bn-dwg-to-lattribs (handent test-e2-handle)))))
+(if (vl-string-search "18 INCH" e2-text) (test-write-report-entry "TEST E2 (Replace)" "FAIL" "Manual text not replaced - still present") (test-write-report-entry "TEST E2 (Replace)" "PASS" "Manual text correctly replaced with auto-text"))
+;;
+;; TEST E3: Clear auto-text and revert to manual (Model Space)
+;; Position: 3C-2D = Column 3 Center, Row 2 Down
+;; Arrow: (10460',20220'), Bubble: (10455',20210')
+;; Tests: XDATA cleanup, reactor detachment, manual text replacement
+;; WORKFLOW: Insert with NE auto-text, then manually replace in one edit
+;;
+HAWS-ELLL
+10460,20220
+10455,20210
+E3
+.
+ne
+Replace Line 1 text with USER and click OK.
+(setq test-e3-handle (cdr (assoc 5 (entget (entlast)))))
+; Edit: Replace auto-text with manual text
+HAWS-EE
+L
+
+; Validation after tester completes edit dialog
+(test-validate-auto-text (handent test-e3-handle) "NOTETXT1" "USER" "TEST E3: Clear Auto-Text")
+; Validate XDATA cleared
+(setq xdata-e3 (hcnm-xdata-read (handent test-e3-handle)))
+(if (assoc "NOTETXT1" xdata-e3) (test-write-report-entry "TEST E3 (XDATA Cleanup)" "FAIL" (strcat "XDATA not cleared - entry still exists: " (vl-prin1-to-string (assoc "NOTETXT1" xdata-e3)))) (test-write-report-entry "TEST E3 (XDATA Cleanup)" "PASS" "XDATA cleared correctly"))
+; Validate reactor detached
+(test-validate-reactor-detached (handent test-e3-handle) "NOTETXT1" "TEST E3")
+; Validate VPTRANS not present (model space)
+(test-validate-vptrans-removed (handent test-e3-handle) "TEST E3")
+; Validate reactor detached
+(test-validate-reactor-detached (handent test-e3-handle) "NOTETXT1" "TEST E3")
+; Validate VPTRANS removed (if applicable)
+(test-validate-vptrans-removed (handent test-e3-handle) "TEST E3")
+;;
 ; === PHASE C: AUTO-TEXT TESTS ===
 ;
 ; STRATEGY: Paper space focus validates VPTRANS architecture (weeks of work!)

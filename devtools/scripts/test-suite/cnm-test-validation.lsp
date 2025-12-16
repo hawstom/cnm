@@ -228,6 +228,126 @@
     nil  ; Return nil on error
   )
 )
+(defun test-validate-reactor-detached (ename tag test-name /
+                                      handle-bubble reactors r data owner-list
+                                      found-p status message location
+                                     )
+  ;; Validate NO reactor attachment exists for this bubble
+  ;; Args:
+  ;;   ename - Entity name of bubble
+  ;;   tag - Attribute tag (e.g., "NOTETXT1")
+  ;;   test-name - Name for report
+  ;; Returns: T if reactor correctly detached, nil if still attached
+  (setq handle-bubble (cdr (assoc 5 (entget ename))))
+  ;; Find all VLR-OBJECT-REACTORs
+  (setq reactors (vlr-reactors :vlr-object-reactor))
+  ;; Find HCNM-BUBBLE reactor
+  (setq r
+    (car
+      (vl-remove-if-not
+        '(lambda (reactor)
+          (and (listp (vlr-data reactor))
+               (assoc "HCNM-BUBBLE" (vlr-data reactor))
+          )
+        )
+        reactors
+      )
+    )
+  )
+  (cond
+    ((not r)
+     ;; No HCNM-BUBBLE reactor at all - correctly detached
+     (setq found-p nil status "PASS" message "Reactor correctly detached (no HCNM-BUBBLE reactor exists)")
+    )
+    (t
+     ;; Check if bubble handle is in reactor data
+     (setq data (vlr-data r))
+     (setq owner-list (cdr (assoc "HCNM-BUBBLE" data)))
+     ;; owner-list format: '(("owner-handle" (("bubble-handle" . (("tag" . "auto-type"))) ...)) ...)
+     ;; Check all owner entries for this bubble handle
+     (setq found-p
+       (vl-some
+         '(lambda (owner-entry)
+           ;; owner-entry: ("owner-handle" . (("bubble-handle" . ...) ...))
+           (vl-some
+             '(lambda (bubble-entry)
+               ;; bubble-entry: ("bubble-handle" . (("tag" . "auto-type") ...))
+               (= (car bubble-entry) handle-bubble)
+             )
+             (cdr owner-entry)
+           )
+         )
+         owner-list
+       )
+     )
+     (setq status (if found-p "FAIL" "PASS"))
+     (setq message
+       (if found-p
+         (strcat "FAIL: Bubble still found in reactor data after clearing auto-text\n"
+                 "Handle: " handle-bubble "\n"
+                 "Tag: " tag "\n"
+                 "Action: Manual cleanup required")
+         (strcat "PASS: Bubble correctly removed from reactor data\n"
+                 "Handle: " handle-bubble)
+       )
+     )
+    )
+  )
+  (setq location (test-get-bubble-annotation-location ename))
+  (if location
+    (c:test-annotate-result location status (strcat test-name " (Reactor Detachment)\n" message))
+  )
+  (test-write-report-entry (strcat test-name " (Reactor Detachment)") status message)
+  (not found-p)  ; Return T if detached
+)
+(defun test-validate-vptrans-removed (ename test-name / vptrans status message location)
+  ;; Validate VPTRANS XRECORD does not exist
+  ;; Args:
+  ;;   ename - Entity name of bubble
+  ;;   test-name - Name for report
+  ;; Returns: T if correctly removed, nil if still present
+  (setq vptrans (hcnm-vptrans-read ename))
+  (setq status (if vptrans "FAIL" "PASS"))
+  (setq message
+    (if vptrans
+      (strcat "FAIL: VPTRANS still present after clearing coordinate-based auto-text\n"
+              "Data: " (vl-prin1-to-string vptrans) "\n"
+              "Action: Manual cleanup required")
+      "PASS: VPTRANS correctly removed"
+    )
+  )
+  (setq location (test-get-bubble-annotation-location ename))
+  (if location
+    (c:test-annotate-result location status (strcat test-name " (VPTRANS Cleanup)\n" message))
+  )
+  (test-write-report-entry (strcat test-name " (VPTRANS Cleanup)") status message)
+  (not vptrans)  ; Return T if removed
+)
+(defun test-validate-vptrans-created (ename test-name / vptrans status message location)
+  ;; Validate VPTRANS XRECORD exists (for paper space coordinate-based auto-text)
+  ;; Args:
+  ;;   ename - Entity name of bubble
+  ;;   test-name - Name for report
+  ;; Returns: T if created, nil if missing
+  (setq vptrans (hcnm-vptrans-read ename))
+  (setq status (if vptrans "PASS" "FAIL"))
+  (setq message
+    (if vptrans
+      (strcat "PASS: VPTRANS created for paper space coordinate-based auto-text\n"
+              "Viewport: " (itoa (car vptrans)) "\n"
+              "Transform points: " (itoa (length (cdr vptrans))))
+      (strcat "FAIL: VPTRANS not created\n"
+              "Expected: Viewport transform for paper space StaOff auto-text\n"
+              "Action: Check hcnm-bn-eb-save VPTRANS creation logic")
+    )
+  )
+  (setq location (test-get-bubble-annotation-location ename))
+  (if location
+    (c:test-annotate-result location status (strcat test-name " (VPTRANS Created)\n" message))
+  )
+  (test-write-report-entry (strcat test-name " (VPTRANS Created)") status message)
+  vptrans  ; Return T if created
+)
 ;;==============================================================================
 ;; PHASE H: KEY NOTES TABLE VALIDATION FUNCTIONS
 ;;==============================================================================

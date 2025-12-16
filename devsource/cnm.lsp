@@ -1365,28 +1365,31 @@
 ;;Returns: List of orphaned auto-text details if found, nil if all valid
 ;;  Format: '((tag auto-type xdata-text actual-text) ...)
 (defun hcnm-audit-bubble-orphaned-p (en-bubble / xdata-list orphans tag auto-type handle verbatim actual-text composite-pairs lattribs)
-  (haws-debug (strcat "Auditing bubble " (vl-princ-to-string en-bubble)))
+  ;; Lightweight audit trace: log handle being checked
+  (haws-debug (list "AUDIT: checking-bubble" (cdr (assoc 5 (entget en-bubble)))))
   (setq xdata-list (hcnm-xdata-read en-bubble)
         lattribs (hcnm-get-attributes en-bubble t)
         orphans nil
   )
-  (haws-debug (strcat "XDATA list: " (vl-princ-to-string xdata-list)))
+  ;; Do not print full XDATA here (could be large); just note presence
+  (haws-debug (list "AUDIT: xdata-count=" (if xdata-list (itoa (length xdata-list)) "0")))
   (foreach tag-entry xdata-list
     (setq tag (car tag-entry)
           composite-pairs (cdr tag-entry)
           actual-text (cadr (assoc tag lattribs))
     )
+    ;; Lightweight trace: tag and whether verbatim entries exist (avoid printing large strings)
+    (haws-debug (list "AUDIT: tag=" tag "pairs=" (if composite-pairs "YES" "NO")))
     (foreach composite-entry composite-pairs
       (setq auto-type (car (car composite-entry))
             handle (cdr (car composite-entry))
             verbatim (cdr composite-entry)
       )
-      (haws-debug (strcat "Checking tag=" tag " auto-type=" auto-type))
-      (haws-debug (strcat "Verbatim=[" verbatim "]"))
-      (haws-debug (strcat "Actual=[" actual-text "]"))
+      ;; Avoid printing full verbatim/actual text; log lengths only to prevent heavy logging
+      (haws-debug (list "AUDIT: checking" tag auto-type "verbatim-len=" (if verbatim (itoa (strlen verbatim)) "0") "actual-len=" (if actual-text (itoa (strlen actual-text)) "0")))
       (cond
         ((not (vl-string-search verbatim actual-text))
-         (haws-debug "ORPHAN FOUND!")
+         (haws-debug (list "AUDIT: ORPHAN" tag auto-type))
          (setq orphans (cons (list tag auto-type verbatim actual-text) orphans))
         )
         (t (haws-debug "Match OK"))
@@ -1401,14 +1404,21 @@
 ;;Parameters:
 ;;  en-bubble - Entity name of bubble block
 ;;Returns: T if marked successfully
-(defun hcnm-audit-mark-orphan (en-bubble / el layer-name insertion-point circle-radius)
+(defun hcnm-audit-mark-orphan (en-bubble / el layer-name insertion-point circle-radius th)
   (setq el (entget en-bubble)
         layer-name (cdr (assoc 8 el))
         insertion-point (cdr (assoc 10 el))
-        circle-radius 1.0
+        th (* (getvar "dimtxt") (getvar "dimscale"))
+        circle-radius (* 10.0 th)
   )
-  (command "._circle" insertion-point circle-radius)
-  (command "._chprop" (entlast) "" "_layer" layer-name "")
+  (entmake
+    (list
+      (cons 0 "CIRCLE")
+      (cons 8 layer-name)
+      (cons 10 insertion-point)
+      (cons 40 circle-radius)
+    )
+  )
   t
 )
 ;;hcnm-audit-bubbles-in-table-silent
@@ -11074,6 +11084,28 @@ ImportLayerSettings=No
           )
         )
        )
+       (t ; No data to write -> remove our app entry from existing XDATA if present
+        ;; CRITICAL: Must load entity WITH XDATA to check if it exists
+        ;; Plain (entget) without appname does NOT load XDATA
+        (setq ent-list (entget ename-bubble (list appname)))
+        (cond
+          ((and ent-list (assoc -3 ent-list))
+           ;; Entity has XDATA - remove it by writing empty XDATA for our app
+           ;; NOTE: Simply removing -3 from entget result doesn't work!
+           ;; Must explicitly write empty XDATA: (-3 ("APPNAME")) with no data codes
+           (haws-debug (list "XDATA-CLEAR: handle=" (cdr (assoc 5 ent-list)) "app=" appname))
+           (setq ent-list (vl-remove-if '(lambda (x) (= (car x) -3)) ent-list))
+           ;; Append empty XDATA for our app - this removes our data
+           (setq ent-list (append ent-list (list (list -3 (list appname)))))
+           (setq result (entmod ent-list))
+           (haws-debug (list "XDATA-CLEAR: entmod-result=" (if result "SUCCESS" "FAILED")))
+          )
+          (t
+           ;; Entity has no XDATA for this app - nothing to clear
+           (haws-debug (list "XDATA-CLEAR: no-xdata-to-clear handle=" (cdr (assoc 5 (entget ename-bubble)))))
+          )
+        )
+       )
      )
      t
     )
@@ -11126,36 +11158,23 @@ ImportLayerSettings=No
 ;; Reactor path uses hcnm-bn-xdata-update-one (maintains composite-key format).
 ;; This function is ONLY for dialog save path where semi-global is bound.
 (defun hcnm-bn-xdata-save (ename-bubble lattribs / autotext-alist)
-  ;; FAIL LOUDLY: Semi-global must be bound (programming error if not)
+  ;; Note: hcnm-bn-eb-auto-handles is a semi-global (local to hcnm-edit-bubble)
+  ;; It's always set by hcnm-edit-bubble before calling this function
+  ;; Semi-global being nil/empty is VALID - means user cleared all auto-text
   (cond
-    ((not (boundp 'hcnm-bn-eb-auto-handles))
-     (alert
-       (princ
-         (strcat
-           "\nPROGRAMMING ERROR: hcnm-bn-xdata-save called without semi-global bound!"
-           "\n"
-           "\nThis function requires hcnm-bn-eb-auto-handles (dialog context)."
-           "\nReactor path should use hcnm-bn-xdata-update-one instead."
-           "\n"
-           "\nPlease report this error to the developer."
-         )
-       )
-     )
-     nil  ; Return nil, don't crash
-    )
     ((not hcnm-bn-eb-auto-handles)
-     ;; Semi-global bound but empty - this is OK (user cleared all auto-text)
+     ;; Semi-global empty - user cleared all auto-text, write empty XDATA
+     (haws-debug (list "XDATA-SAVE: semi-global=EMPTY handle=" (cdr (assoc 5 (entget ename-bubble)))))
      (setq autotext-alist '())
      (hcnm-xdata-set-autotext ename-bubble autotext-alist)
+     (haws-debug (list "XDATA-SAVE: wrote-empty-list handle=" (cdr (assoc 5 (entget ename-bubble)))))
     )
     (t
      ;; Normal case: Write composite-key format from semi-global
      (setq autotext-alist hcnm-bn-eb-auto-handles)
-     (haws-debug (list "=== DEBUG XDATA SAVE: semi-global=" (vl-prin1-to-string autotext-alist)))
-     (foreach tag-entry autotext-alist
-       (haws-debug (list "=== DEBUG XDATA SAVE: tag=" (car tag-entry) " handles=" (vl-prin1-to-string (cdr tag-entry))))
-     )
+     (haws-debug (list "XDATA-SAVE: semi-global=HAS-DATA count=" (itoa (length autotext-alist)) "handle=" (cdr (assoc 5 (entget ename-bubble)))))
      (hcnm-xdata-set-autotext ename-bubble autotext-alist)
+     (haws-debug (list "XDATA-SAVE: wrote-data handle=" (cdr (assoc 5 (entget ename-bubble)))))
     )
   )
 )
@@ -13543,10 +13562,12 @@ ImportLayerSettings=No
   
   ;; Step 3: Read current XDATA and rebuild reactor tracking
   (setq xdata-alist (hcnm-xdata-read ename-bubble))
+  (haws-debug (list "REACTOR-REFRESH: xdata-alist=" (if xdata-alist "HAS-DATA" "NIL") "handle=" handle-bubble))
   (cond
     (xdata-alist
       ;; Rebuild reactor tracking from current XDATA
       ;; This will create a new reactor if none exists
+      (haws-debug (list "REACTOR-REFRESH: Rebuilding from XDATA"))
       (setq rebuild-result (vl-catch-all-apply 
                             'hcnm-bn-reactor-rebuild-from-xdata-alist 
                             (list ename-bubble xdata-alist)))
@@ -13874,11 +13895,22 @@ ImportLayerSettings=No
   t  ; Return success
 )
 
-;; Save auto-text to XDATA for each attribute tag
+;; Read all dialog tiles into lattribs semi-global
+;; Called before dialog closes because action_tile only fires on focus-out,
+;; not when user types and immediately clicks OK
+(defun hcnm-bn-eb-tiles-to-lattribs ()
+  (foreach tag '("NOTENUM" "NOTEPHASE" "NOTEGAP" "NOTETXT1" "NOTETXT2" "NOTETXT3" "NOTETXT4" "NOTETXT5" "NOTETXT6" "NOTETXT0")
+    (setq tile-value (get_tile tag))
+    (if tile-value
+      (hcnm-bn-eb-update-text tag tile-value)
+    )
+  )
+)
 (defun hcnm-bn-eb-save (ename-bubble / saved-block-reactors)
   ;; CRITICAL: Block reactor callbacks during save to prevent infinite recursion
   (setq saved-block-reactors (hcnm-config-getvar "BlockReactors"))
   (hcnm-config-setvar "BlockReactors" "1")
+  ;; NOTE: Tiles already read into lattribs by accept action_tile
   ;; Save attributes (concatenated) and XDATA (auto text only)
   (hcnm-bn-lattribs-to-dwg
     ename-bubble
@@ -13922,6 +13954,8 @@ ImportLayerSettings=No
 ;; User typing replaces the entire text value
 ;; Update text value when user types in dialog field
 (defun hcnm-bn-eb-update-text (tag new-value / attr old-value tag-handles updated-handles composite-key auto-text)
+  (haws-debug (list "UPDATE-TEXT: called tag=" tag))
+  (if (not new-value) (setq new-value ""))
   (setq attr (assoc tag hcnm-bn-eb-lattribs))
   (setq old-value (if attr (cadr attr) ""))
   
@@ -14071,7 +14105,8 @@ ImportLayerSettings=No
   (action_tile "ClearAuto" "(DONE_DIALOG 28)")
   ;; Change View button (paper space only)
   (action_tile "ChgView" "(DONE_DIALOG 29)")
-  (action_tile "accept" "(DONE_DIALOG 1)")
+  ;; CRITICAL: Read tiles into lattribs before closing (action_tile doesn't fire on OK click)
+  (action_tile "accept" "(progn (hcnm-bn-eb-tiles-to-lattribs) (DONE_DIALOG 1))")
   (action_tile "cancel" "(DONE_DIALOG 0)")
   (start_dialog)
 )
