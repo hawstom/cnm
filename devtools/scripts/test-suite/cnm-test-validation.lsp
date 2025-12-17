@@ -51,7 +51,7 @@
     (vl-mkdir resultsdir)
   )
   (setq report-file (open (strcat resultsdir "\\cnm-test-report.md") "w"))
-  (setq timestamp (menucmd "m=$(edtime,$(getvar,date),YYYY-MM-DD HH:MM:SS)"))
+  (setq timestamp (menucmd "M=$(edtime,$(getvar,date),YYYY-MO-DD HH:MM:SS)"))
   (write-line "# CNM Test Suite Report\n" report-file)
   (write-line (strcat "**Date:** " timestamp "\n") report-file)
   (write-line "**Status:** Running tests...\n" report-file)
@@ -470,8 +470,8 @@
     (if (not (vl-file-directory-p resultsdir))
       (vl-mkdir resultsdir)
     )
-    (setq logfile (strcat resultsdir "\\cnm-test-run.log"))
-    (setq timestamp (menucmd "m=$(edtime,$(getvar,date),YYYY-MM-DD HH:MM:SS)"))
+(setq logfile (strcat resultsdir "\\cnm-test-run.log"))
+    (setq timestamp (menucmd "M=$(edtime,$(getvar,date),YYYY-MO-DD HH:MM:SS)"))
     (if (setq f (open logfile "a"))
       (progn
         (write-line (strcat "START: " timestamp) f)
@@ -501,8 +501,8 @@
   (defun c:test-log-end ( / logfile timestamp f resultsdir )
     ;; Append an END timestamp to test-results/cnm-test-run.log
     (setq resultsdir (strcat (getvar "dwgprefix") "test-results"))
-    (setq logfile (strcat resultsdir "\\cnm-test-run.log"))
-    (setq timestamp (menucmd "m=$(edtime,$(getvar,date),YYYY-MM-DD HH:MM:SS)"))
+(setq logfile (strcat resultsdir "\\cnm-test-run.log"))
+    (setq timestamp (menucmd "M=$(edtime,$(getvar,date),YYYY-MO-DD HH:MM:SS)"))
     (if (setq f (open logfile "a"))
       (progn
         (write-line (strcat "END:   " timestamp) f)

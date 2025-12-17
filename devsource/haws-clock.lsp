@@ -110,7 +110,7 @@
   (if (setq f (open log-path "w"))
     (progn
       (write-line (strcat "HawsEDC Performance Timing Log - " 
-                          (menucmd "m=$(edtime,$(getvar,date),YYYY-MM-DD HH:MM:SS)"))
+                          (menucmd "M=$(edtime,$(getvar,date),YYYY-MO-DD HH:MM:SS)"))
                   f)
       (write-line "======================================================================" f)
       (if label-totals

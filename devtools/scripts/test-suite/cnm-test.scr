@@ -85,8 +85,11 @@ extents
 ; Arrow: (7", 13") paper = (10340', 20240') model via viewport
 ; Tests: Delimiter replacement, VPTRANS creation, paper space transform
 ; WORKFLOW: Tester clicks StaOff button → dialog prompts for alignment → script provides coordinate (10340,20240)
+; Config: No hooks, with mtext
 ;;
 pspace
+(hcnm-config-setvar "BubbleHooks" "0")
+(hcnm-config-setvar "BubbleMtext" "1")
 HAWS-ELLL
 7,13
 6.5,13.5
@@ -112,8 +115,11 @@ L
 ;; Arrow: (10280',20230'), Bubble: (10275',20220')
 ;; Tests: Smart search/replace, manual text replacement, Dia auto-text
 ;; WORKFLOW: Tester clicks Dia button → dialog prompts for pipe → script provides coordinate (10360,20200)
+;; Config: With hooks, with mtext (both enabled)
 ;;
 mspace
+(hcnm-config-setvar "BubbleHooks" "1")
+(hcnm-config-setvar "BubbleMtext" "1")
 HAWS-ELLL
 10280,20230
 10275,20220
@@ -138,7 +144,10 @@ L
 ;; Arrow: (10460',20220'), Bubble: (10455',20210')
 ;; Tests: XDATA cleanup, reactor detachment, manual text replacement
 ;; WORKFLOW: Insert with NE auto-text, then manually replace in one edit
+;; Config: No hooks, no mtext (baseline)
 ;;
+(hcnm-config-setvar "BubbleHooks" "0")
+(hcnm-config-setvar "BubbleMtext" "0")
 HAWS-ELLL
 10460,20220
 10455,20210
@@ -189,7 +198,10 @@ L
 ;; Arrow: (10340',20250'), Bubble: (10335',20260')
 ;; Selection: Alignment at (10360',20240') - center X, avoids bubbles/leaders
 ;; Calculation: X=10340' - Start X=10040' = 300', Station 50+00 + 300' = STA 53+00.00
+;; Config: No hooks, no mtext (baseline)
 ;;
+(hcnm-config-setvar "BubbleHooks" "0")
+(hcnm-config-setvar "BubbleMtext" "0")
 HAWS-ELLL
 10340,20250
 10335,20260
@@ -207,7 +219,10 @@ sta
 ;; Arrow: (10220',20200'), Bubble: (10215',20190')
 ;; Selection: Pipe at (10360',20200') - center X, avoids bubbles/leaders
 ;; Expected: 18" diameter
+;; Config: With hooks, no mtext
 ;;
+(hcnm-config-setvar "BubbleHooks" "1")
+(hcnm-config-setvar "BubbleMtext" "0")
 HAWS-ELLL
 10220,20200
 10215,20190
@@ -225,7 +240,10 @@ dia
 ;; Arrow: (10280',20260'), Bubble: (10275',20270')
 ;; No selection (coordinate-based)
 ;; Expected: N 20260.00 (arrow Y coordinate)
+;; Config: No hooks, with mtext
 ;;
+(hcnm-config-setvar "BubbleHooks" "0")
+(hcnm-config-setvar "BubbleMtext" "1")
 HAWS-ELLL
 10280,20260
 10275,20270
@@ -243,7 +261,10 @@ n
 ;; Selection: Curb line at (10360',20260') - center X, avoids bubbles/leaders
 ;; NOTE: CNM uses AutoCAD field expressions for dynamic length - this is CORRECT
 ;; Field format: %<\AcObjProp Object(...).Length ...>% LF
+;; Config: With hooks, with mtext (both enabled)
 ;;
+(hcnm-config-setvar "BubbleHooks" "1")
+(hcnm-config-setvar "BubbleMtext" "1")
 HAWS-ELLL
 10380,20260
 10385,20270
@@ -266,7 +287,10 @@ lf
 ;; Position: 2R-1U = Column 2 Right, Row 1 Up
 ;; Arrow: (10440',20250'), Bubble: (10445',20260')
 ;; No selection
+;; Config: No hooks, no mtext (return to baseline)
 ;;
+(hcnm-config-setvar "BubbleHooks" "0")
+(hcnm-config-setvar "BubbleMtext" "0")
 HAWS-ELLL
 10440,20250
 10445,20260
@@ -280,7 +304,10 @@ MODEL MANUAL
 ;; Arrow: (10500',20240'), Bubble: (10505',20250')
 ;; Selection: Alignment at (10360',20240') - center X, avoids bubbles/leaders
 ;; Expected: "OAK ST" (alignment name property)
+;; Config: With hooks, no mtext
 ;;
+(hcnm-config-setvar "BubbleHooks" "1")
+(hcnm-config-setvar "BubbleMtext" "0")
 HAWS-ELLL
 10500,20240
 10505,20250
@@ -298,7 +325,10 @@ name
 ;; Arrow: (10560',20270'), Bubble: (10565',20280')
 ;; Selection: Sidewalk rectangle at (10360',20272') - center X, top edge
 ;; NOTE: CNM uses AutoCAD field expressions for dynamic area - this is CORRECT
+;; Config: No hooks, with mtext
 ;;
+(hcnm-config-setvar "BubbleHooks" "0")
+(hcnm-config-setvar "BubbleMtext" "1")
 HAWS-ELLL
 10560,20270
 10565,20280
@@ -322,7 +352,10 @@ sf
 ;; Arrow: (10620',20270'), Bubble: (10625',20280')
 ;; Selection: Sidewalk rectangle at (10360',20272') - center X, top edge
 ;; NOTE: CNM uses AutoCAD field expressions for dynamic area - this is CORRECT
+;; Config: With hooks, with mtext (both enabled)
 ;;
+(hcnm-config-setvar "BubbleHooks" "1")
+(hcnm-config-setvar "BubbleMtext" "1")
 HAWS-ELLL
 10620,20270
 10625,20280
@@ -356,7 +389,10 @@ pspace
 ;; Selection: Alignment in MODEL coordinates (10360',20240') - center X, avoids bubbles
 ;; Paper (2",12.5") × 20 = Model offset (-320',-5') from center = (10040',20235')
 ;; Station at X=10040' = 50+00.00
+;; Config: No hooks, no mtext (baseline)
 ;;
+(hcnm-config-setvar "BubbleHooks" "0")
+(hcnm-config-setvar "BubbleMtext" "0")
 HAWS-ELLL
 2.0,12.5
 1.75,13.0
@@ -374,7 +410,10 @@ sta
 ;; Selection: Alignment in MODEL coordinates (10360',20240') - center X, avoids bubbles
 ;; Paper (5",13.0") × 20 = Model offset (-260',+20') from center = (10100',20260')
 ;; Offset from alignment Y=20240': 20260'-20240' = 20.00 LT
+;; Config: With hooks, no mtext
 ;;
+(hcnm-config-setvar "BubbleHooks" "1")
+(hcnm-config-setvar "BubbleMtext" "0")
 HAWS-ELLL
 5.0,13.0
 4.75,13.5
@@ -393,7 +432,10 @@ off
 ;; Paper (8",12.5") × 20 = Model offset (-200',+10') from center = (10160',20250')
 ;; Station: 10160'-10040' = 120' = STA 51+20.00, Offset: 20250'-20240' = 10.00 LT
 ;; NOTE: Format specified by CNM.ini BubbleTextFormatStaOff setting
+;; Config: No hooks, with mtext
 ;;
+(hcnm-config-setvar "BubbleHooks" "0")
+(hcnm-config-setvar "BubbleMtext" "1")
 HAWS-ELLL
 8.0,12.5
 7.75,13.0
@@ -411,7 +453,10 @@ staoff
 ;; Selection: Alignment in MODEL coordinates (10360',20240') - center X, avoids bubbles
 ;; Paper (34",12.0") × 20 = Model offset (+320',0') from center = (10680',20240')
 ;; Station: 10680'-10040' = 640' = STA 56+40.00 (alignment end)
+;; Config: With hooks, with mtext (both enabled)
 ;;
+(hcnm-config-setvar "BubbleHooks" "1")
+(hcnm-config-setvar "BubbleMtext" "1")
 HAWS-ELLL
 34.0,12.0
 34.25,12.5
@@ -429,7 +474,10 @@ staname
 ;; Selection: Pipe in MODEL coordinates (10360',20200') - center X, avoids bubbles
 ;; Expected: 18" (property read, no coordinate transform)
 ;; Paper (14",10.0") × 20 = Model offset (-80',-40') from center = (10280',20200')
+;; Config: No hooks, no mtext (return to baseline)
 ;;
+(hcnm-config-setvar "BubbleHooks" "0")
+(hcnm-config-setvar "BubbleMtext" "0")
 HAWS-ELLL
 14.0,10.0
 13.75,9.5
@@ -448,7 +496,10 @@ dia
 ;; NOTE: Format specified by CNM.ini BubbleTextFormatSlope setting
 ;; Slope calculation: elevation delta / horizontal length
 ;; Paper (31",10.0") × 20 = Model offset (+260',-40') from center = (10620',20200')
+;; Config: With hooks, no mtext
 ;;
+(hcnm-config-setvar "BubbleHooks" "1")
+(hcnm-config-setvar "BubbleMtext" "0")
 HAWS-ELLL
 31.0,10.0
 31.25,9.5
@@ -465,7 +516,10 @@ slope
 ;; Paper arrow position transforms to model Y coordinate
 ;; NO selection (coordinate-based), blank line confirms viewport
 ;; Expected: Northing = transformed arrow Y coordinate
+;; Config: No hooks, with mtext
 ;;
+(hcnm-config-setvar "BubbleHooks" "0")
+(hcnm-config-setvar "BubbleMtext" "1")
 HAWS-ELLL
 17.0,13.0
 16.75,13.5
@@ -482,7 +536,10 @@ n
 ;; Paper arrow position transforms to model X coordinate
 ;; NO selection (coordinate-based), blank line confirms viewport
 ;; Expected: Easting = transformed arrow X coordinate
+;; Config: With hooks, with mtext (both enabled)
 ;;
+(hcnm-config-setvar "BubbleHooks" "1")
+(hcnm-config-setvar "BubbleMtext" "1")
 HAWS-ELLL
 19.0,11.5
 19.25,11.0
@@ -499,7 +556,10 @@ e
 ;; Paper arrow transforms to both model X and Y
 ;; NO selection (coordinate-based), blank line confirms viewport
 ;; Expected: Both northing and easting from transformed arrow position
+;; Config: No hooks, no mtext (return to baseline)
 ;;
+(hcnm-config-setvar "BubbleHooks" "0")
+(hcnm-config-setvar "BubbleMtext" "0")
 HAWS-ELLL
 22.0,11.5
 22.25,11.0
@@ -515,7 +575,10 @@ ne
 ;; TEST 18: Manual (Paper) - Baseline manual text in paper space
 ;; Paper position: Right side area
 ;; No auto-text, no VPTRANS needed
+;; Config: With hooks, no mtext
 ;;
+(hcnm-config-setvar "BubbleHooks" "1")
+(hcnm-config-setvar "BubbleMtext" "0")
 HAWS-ELLL
 25.0,11.5
 25.25,11.0

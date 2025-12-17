@@ -11232,15 +11232,6 @@ ImportLayerSettings=No
 ;#endregion
 ;#endregion
 ;#region Reactors
-;; Legacy callback wrappers (migration compatibility)
-;; Reactors created with old naming will call this, which forwards to new function
-(defun hcnm-ldrblk-reactor-callback (obj-notifier obj-reactor parameter-list)
-  (hcnm-bn-reactor-callback obj-notifier obj-reactor parameter-list)
-)
-(defun hcnm-lb-reactor-callback (obj-notifier obj-reactor parameter-list)
-  (hcnm-bn-reactor-callback obj-notifier obj-reactor parameter-list)
-)
-
 
 ;; Check and cleanup reactor proliferation
 ;; Returns: T if cleanup occurred, NIL if no problems found
@@ -11971,6 +11962,14 @@ ImportLayerSettings=No
 ;;   → Finds alignment handle in data structure
 ;;   → Updates all bubbles with "StaOff" auto-text from that alignment
 ;;==============================================================================
+;; Legacy callback wrappers (migration compatibility)
+;; Reactors created with old naming will call this, which forwards to new function
+(defun hcnm-ldrblk-reactor-callback (obj-notifier obj-reactor parameter-list)
+  (hcnm-bn-reactor-callback obj-notifier obj-reactor parameter-list)
+)
+(defun hcnm-lb-reactor-callback (obj-notifier obj-reactor parameter-list)
+  (hcnm-bn-reactor-callback obj-notifier obj-reactor parameter-list)
+)
 (defun hcnm-bn-reactor-callback (obj-notifier obj-reactor parameter-list / 
                                      key-app data-old data handle-notifier 
                                      owner-list notifier-entry block-reactors-current
