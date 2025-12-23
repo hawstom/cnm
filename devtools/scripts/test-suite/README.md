@@ -14,11 +14,10 @@
 
 **Preparation:**
 1. Optional: Delete `cnm.ini` and `constnot.csv` before starting (script auto-cleans at end)
-2. Open `cnm-test.dwg` in Civil 3D
+2. Open `cnm-test-start.dwg` in Civil 3D
 
 **Running Tests:**
-- **Method 1 (Drag & Drop):** Drag `cnm-test.scr` into AutoCAD drawing window
-- **Method 2 (Command):** Type `cnm-test-script` at AutoCAD command line (future wrapper)
+- Drag `cnm-test.scr` into AutoCAD drawing window
 
 **Results:**
 - Script generates `test-results/cnm-test-report.md` with pass/fail status

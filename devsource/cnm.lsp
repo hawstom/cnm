@@ -1364,7 +1364,7 @@
 ;;  en-bubble - Entity name of bubble block
 ;;Returns: List of orphaned auto-text details if found, nil if all valid
 ;;  Format: '((tag auto-type xdata-text actual-text) ...)
-(defun hcnm-audit-bubble-orphaned-p (en-bubble / xdata-list orphans tag auto-type handle verbatim actual-text composite-pairs lattribs)
+(defun hcnm-audit-bubble-orphaned-p (en-bubble / xdata-list orphans tag auto-type handle verbatim actual-text composite-pairs lattribs is-reactive)
   ;; Lightweight audit trace: log handle being checked
   (haws-debug (list "AUDIT: checking-bubble" (cdr (assoc 5 (entget en-bubble)))))
   (setq xdata-list (hcnm-xdata-read en-bubble)
@@ -1384,15 +1384,18 @@
       (setq auto-type (car (car composite-entry))
             handle (cdr (car composite-entry))
             verbatim (cdr composite-entry)
+            is-reactive (hcnm-bn-auto-type-is-reactive-p auto-type)
       )
       ;; Avoid printing full verbatim/actual text; log lengths only to prevent heavy logging
-      (haws-debug (list "AUDIT: checking" tag auto-type "verbatim-len=" (if verbatim (itoa (strlen verbatim)) "0") "actual-len=" (if actual-text (itoa (strlen actual-text)) "0")))
+      (haws-debug (list "AUDIT: checking" tag auto-type "reactive=" (if is-reactive "YES" "NO") "verbatim-len=" (if verbatim (itoa (strlen verbatim)) "0") "actual-len=" (if actual-text (itoa (strlen actual-text)) "0")))
       (cond
-        ((not (vl-string-search verbatim actual-text))
+        ;; ONLY validate reactive auto-text (skip field-based like LF/SF/SY)
+        ((and is-reactive (not (vl-string-search verbatim actual-text)))
          (haws-debug (list "AUDIT: ORPHAN" tag auto-type))
          (setq orphans (cons (list tag auto-type verbatim actual-text) orphans))
         )
-        (t (haws-debug "Match OK"))
+        (is-reactive (haws-debug "Match OK"))
+        (t (haws-debug "Skipped (field-based auto-text)"))
       )
     )
   )
@@ -11233,9 +11236,7 @@ ImportLayerSettings=No
 ;#endregion
 ;#region Reactors
 
-;; Check and cleanup reactor proliferation
-;; Returns: T if cleanup occurred, NIL if no problems found
-;; Should be called at start of any bubble operation and on drawing open
+;; Check and cleanup reactor proliferation (called at CNM load)
 (defun hcnm-check-reactor-proliferation (/ hcnm-reactors reactor-count)
   (setq
     hcnm-reactors
@@ -11253,13 +11254,16 @@ ImportLayerSettings=No
   )
   (cond
     ((> reactor-count 1)
-     ;; Multiple HCNM-BUBBLE reactors found - make extras transient (die at session end)
-     ;; NEVER use vlr-remove on persistent reactors - they become ghosts in the DWG!
+     (haws-debug (strcat "=== REACTOR PROLIFERATION: Found " (itoa reactor-count) " reactors, keeping first, releasing " (itoa (1- reactor-count)) " ==="))
+     ;; ROOT CAUSE: vlr-reactors returns nil on first call after opening drawing
+     ;; This causes creation of duplicate reactor, which persists to next session
+     ;; SOLUTION: Mark duplicates non-persistent AND remove from current session
      (foreach
-        reactor (cdr hcnm-reactors)     ; Keep first, release rest
+        reactor (cdr hcnm-reactors)     ; Keep first, remove rest
        (if (vlr-pers-p reactor)
-         (vlr-pers-release reactor)
+         (vlr-pers-release reactor)     ; Prevent saving to DWG
        )
+       (vlr-remove reactor)               ; Remove from current session immediately
      )
      (princ
        (strcat
@@ -11270,7 +11274,14 @@ ImportLayerSettings=No
      )
      t                                  ; Return T to indicate cleanup occurred
     )
-    (t nil)                             ; Return NIL if no problems
+    ((= reactor-count 1)
+     (haws-debug "=== REACTOR PROLIFERATION CHECK: Found exactly 1 reactor (correct) ===")
+     nil
+    )
+    (t 
+     (haws-debug "=== REACTOR PROLIFERATION CHECK: Found 0 reactors (no cleanup needed) ===")
+     nil
+    )
   )
 )
 
@@ -11295,8 +11306,6 @@ ImportLayerSettings=No
 ;; VALUE = auto-type (just the string)
 (defun hcnm-bn-auto-type-requires-coordinates-p (auto-type / keys-entry)
   ;; Returns T if auto-type needs leader position (coordinates), nil otherwise
-  ;; This determines if leader should be a reactor owner
-  ;; Note: auto-type is the SECOND element in the keys list, not the first
   (setq
     keys-entry
      (vl-member-if
@@ -11313,30 +11322,42 @@ ImportLayerSettings=No
     (t nil)
   )
 )
-(defun hcnm-bn-debug-reactor-attachment (auto-type handle-reference handle-leader handle-bubble keys-leader owners data)
-  ;; Debug output for reactor attachment
-  (haws-debug
-    (list
-      "=== Reactor attachment complete ==="
-      "Auto-type: " auto-type
-      "Handle-reference: " (if handle-reference handle-reference "nil")
-      "Handle-leader: " (if handle-leader handle-leader "nil")
-      "Handle-bubble: " handle-bubble
-      "Keys-leader: " (if keys-leader (vl-prin1-to-string keys-leader) "nil")
-      "Owners count: " (itoa (length owners))
-      "Final data structure: " (vl-prin1-to-string data)
-    )
+(defun hcnm-bn-auto-type-is-reactive-p (auto-type / keys-entry ref-type requires-coords)
+  ;; Returns T if auto-type uses reactor system, nil for field-based (LF/SF/SY)
+  ;; Reactive types have either: reference-type OR requires-coordinates
+  (setq
+    keys-entry
+     (vl-member-if
+       '(lambda (entry)
+          (equal auto-type (cadr entry))
+        )
+       (hcnm-bn-get-auto-data-keys)
+     )
   )
+  (cond
+    (keys-entry
+     (setq ref-type (caddr (car keys-entry))
+           requires-coords (cadddr (car keys-entry))
+     )
+     (or ref-type requires-coords)  ; Reactive if has reference OR needs coordinates
+    )
+    (t nil)  ; Unknown type = not reactive
+  )
+)
+(defun hcnm-bn-debug-reactor-attachment (auto-type handle-reference handle-leader handle-bubble keys-leader owners data)
+  ;; Debug output for reactor attachment (can be disabled by commenting out body)
+  (haws-debug (strcat "=== Reactor attachment complete: "
+                     "auto=" auto-type
+                     " ref=" (if handle-reference handle-reference "nil")
+                     " bubble=" handle-bubble
+                     " owners=" (itoa (length owners))
+                     " ==="))
 )
 
 ;#region Reactor System Core
 ;;==============================================================================
-;; Persistent reactor system for auto-updating bubble notes.
-;; ONE reactor per drawing tracks multiple owners (alignments, pipes, leaders).
-;; Data structure: owner → bubble → tag → auto-type → reference-handle
-;; 
-;; Call flow: AutoCAD event → callback → notifier-update → bubble-update → update-bubble-tag
-;; Lookup pattern: Search owner-list → find notifier → drill to reference handles
+;; Persistent reactor system: ONE reactor per drawing tracks multiple owners
+;; Data: owner → bubble → tag → auto-type → reference-handle
 ;;==============================================================================
 
 (defun hcnm-bn-cleanup-reactor-data (reactor / data key-app owner-list cleaned-owner-list owner handle-owner bubble-list cleaned-bubble-list bubble handle-bubble tag-list deleted-bubbles-count deleted-owners-count)
@@ -11462,43 +11483,16 @@ ImportLayerSettings=No
 ;;==============================================================================
 ;; hcnm-bn-reactor-add-auto
 ;;==============================================================================
-;; Purpose:
-;;   Helper function to add or update auto-text entry in reactor data structure.
-;;   Wraps haws-nested-list-update for cleaner API.
+;; Adds/updates auto-text entry in reactor data: owner → bubble → tag → auto-type → reference
 ;;
-;; Arguments:
-;;   data - Current reactor data structure (or NIL to create new)
-;;   handle-owner - Handle of owner object (reference or leader)
-;;   handle-bubble - Handle of bubble block
-;;   tag - Attribute tag (e.g., "NOTETXT1")
-;;   auto-type - Auto-text type (e.g., "StaOff", "Dia")
-;;   handle-reference - Handle of actual reference object (stored at leaf)
+;; Terminology:
+;;   owner = Reactor trigger (reference OR leader)
+;;   reference = Data provider (alignment/pipe/surface, never leader)
+;;   For direct: owner = reference (track object changes)
+;;   For leader: owner = leader, reference = alignment (track leader position + calc from alignment)
 ;;
-;; Returns:
-;;   Updated data structure with new entry added
-;;
-;; Path Structure:
-;;   ("HCNM-BUBBLE" owner bubble tag auto-type) → reference-handle
-;;
-;; Terminology (Semantic Hierarchy):
-;;   handle-owner = Owner that triggers reactor (reference object OR leader)
-;;                  - References: Trigger when object geometry changes
-;;                  - Leaders: Trigger when arrowhead moves (coordinate-based auto-text only)
-;;   handle-reference = Owner that provides calculation data (always reference object, never leader)
-;;                      - For direct path: owner = reference (same object)
-;;                      - For leader path: owner = leader, reference = alignment/pipe/surface
-;;
-;; Leader Path Example:
-;;   User places NE bubble in paper space, clicks alignment for StaOff auto-text.
-;;   - handle-owner = leader handle (we track leader arrowhead moves)
-;;   - handle-reference = alignment handle (we get station/offset from alignment)
-;;   When leader moves, we recalculate StaOff using NEW leader position on SAME alignment.
-;;
-;; Example:
-;;   (hcnm-bn-reactor-add-auto 
-;;     data "1D235" "62880" "NOTETXT1" "StaOff" "1D235"
-;;   )
-;;==============================================================================
+;; Example: (hcnm-bn-reactor-add-auto data "1D235" "62880" "NOTETXT1" "StaOff" "1D235")
+;;============================================================================================================================================================
 (defun hcnm-bn-reactor-add-auto (data handle-owner handle-bubble tag auto-type handle-reference)
   (haws-nested-list-update
     data
@@ -11510,88 +11504,18 @@ ImportLayerSettings=No
 ;;==============================================================================
 ;; hcnm-bn-assure-auto-text-has-reactor
 ;;==============================================================================
-;; Purpose:
-;;   Ensures a bubble's auto-text field is tracked by the persistent reactor system.
-;;   Creates reactor if needed, attaches owner objects, updates data structure.
-;;   This is called when user creates new auto-text via insertion or editing.
+;; Ensures bubble auto-text is tracked by persistent reactor. Creates reactor if needed,
+;; attaches owners, updates data structure. Called during insertion/editing.
 ;;
-;; Arguments:
-;;   objref - VLA-OBJECT of reference (alignment/pipe/surface) or NIL for N/E/NE
-;;   ename-bubble - Entity name of bubble block
-;;   ename-leader - Entity name of leader (or NIL if direct bubble without leader)
-;;   tag - Attribute tag to track (e.g., "NOTETXT1")
-;;   auto-type - Auto-text type (e.g., "StaOff", "Dia", "N", "E")
+;; ONE reactor per drawing tracks multiple owners (alignments, pipes, surfaces, leaders).
+;; Data: owner → bubble → tag → auto-type → reference-handle
 ;;
-;; Terminology:
-;;   owner = Any object attached to reactor (reference OR leader)
-;;   reference = Object that provides calculation data (alignment/pipe/surface, never leader)
-;;   For direct path: owner = reference (track alignment changes)
-;;   For leader path: owners = [reference, leader] (track both alignment AND leader moves)
+;; Owner attachment logic:
+;;   1. NIL objref (N/E/NE only): attach leader only (coordinates from arrowhead)
+;;   2. Coordinate-dependent (Sta/Off/StaOff/N/E/NE/Z): attach BOTH reference AND leader
+;;   3. Otherwise: attach reference only (leader position irrelevant, e.g. Dia/Slope)
 ;;
-;; Call Flow:
-;;   User action → insertion/editing → auto-dispatch → THIS FUNCTION → reactor-add-auto (builds data)
-;;
-;; Reactor Architecture (ONE Persistent Reactor Per Drawing):
-;;   CNM uses a SINGLE persistent VLR-OBJECT-REACTOR per drawing (not per bubble).
-;;   This reactor tracks multiple owner objects (alignments, pipes, surfaces, leaders).
-;;   Data structure maps: owner → bubble → tag → auto-type → reference-handle
-;;   When ANY tracked owner changes, callback fires and updates dependent bubbles.
-;;
-;; Owner Attachment Logic (What to Track):
-;;   1. If objref is NIL (N/E/NE only): attach leader only
-;;      - Leader arrowhead position provides coordinates
-;;   2. If coordinate-dependent (Sta/Off/StaOff/N/E/NE/Z): attach BOTH reference AND leader
-;;      - Reference provides calculation context (alignment for station/offset)
-;;      - Leader provides arrowhead position (what changed?)
-;;   3. Otherwise: attach reference only
-;;      - Leader position irrelevant (e.g., Dia/Slope/Length are object properties)
-;;
-;; Data Structure Symmetry (Critical for Leader Path):
-;;   For coordinate-dependent types, BOTH paths must store SAME reference-handle:
-;;     Alignment path: ("1D235" (("62880" (("NOTETXT1" (("StaOff" "1D235")))))))
-;;     Leader path:    ("6287B" (("62880" (("NOTETXT1" (("StaOff" "1D235")))))))
-;;                                                                  ^^^^^^ same reference!
-;;   Why? When leader moves (notifier = "6287B"), callback drills down to find reference "1D235"
-;;   and recalculates StaOff using NEW leader position on SAME alignment.
-;;
-;; Performance & Safety:
-;;   - Filters reactor list once (vl-remove-if-not) to find HCNM-BUBBLE reactor
-;;   - Fails loudly if multiple reactors found (corruption check - should never happen)
-;;   - Cleans up stale bubble entries before adding new data (garbage collection)
-;;   - Debug output shows final data structure (useful for troubleshooting)
-;;
-;; Side Effects:
-;;   - Creates persistent reactor via vlr-pers if none exists (one-time per drawing)
-;;   - Attaches owners to reactor via vlr-owner-add (tells AutoCAD what to watch)
-;;   - Updates reactor data structure via vlr-data-set (tracks bubble dependencies)
-;;   - Prints debug output to command line (can be disabled via config)
-;;
-;; Error Handling:
-;;   - Multiple reactors: ALERT + abort (programming error, must fix)
-;;   - Missing bubble: No-op (graceful - bubble may have been erased)
-;;   - NIL objref for non-coordinate types: Alert (invalid use case)
-;;
-;; Example (Alignment-based StaOff with Leader):
-;;   User places bubble in paper space, clicks alignment for StaOff auto-text.
-;;   (hcnm-bn-assure-auto-text-has-reactor 
-;;     vla-alignment     ; objref - provides station/offset calculation
-;;     ename-bubble      ; bubble to update
-;;     ename-leader      ; leader - tracks arrowhead position
-;;     "NOTETXT1"        ; tag to populate
-;;     "StaOff"          ; auto-type
-;;   )
-;;   Result: Reactor tracks BOTH alignment (geometry changes) AND leader (position changes)
-;;
-;; Example (Coordinate-only NE without Reference):
-;;   User places bubble, clicks NE button (no reference object).
-;;   (hcnm-bn-assure-auto-text-has-reactor 
-;;     nil               ; objref - no reference object for N/E
-;;     ename-bubble      ; bubble to update
-;;     ename-leader      ; leader - provides arrowhead coordinates
-;;     "NOTETXT1"        ; tag to populate
-;;     "NE"              ; auto-type
-;;   )
-;;   Result: Reactor tracks leader only (N/E calculated from arrowhead position)
+;; KNOWN ISSUE: vlr-reactors returns nil on first call after opening - retry forces restoration
 ;;==============================================================================
 (defun hcnm-bn-assure-auto-text-has-reactor (objref ename-bubble
                                              ename-leader tag auto-type
@@ -11600,7 +11524,7 @@ ImportLayerSettings=No
                                              handle-reference handle-leader
                                              keys keys-leader
                                              key-app reactor-old
-                                             reactors-old owner owners
+                                             reactors-old owner new-owners
                                              object-leader hcnm-reactors
                                              reactor-count owner-add-result
                                              leader-vla-result
@@ -11619,7 +11543,7 @@ ImportLayerSettings=No
         (vlax-ename->vla-object ename-leader)
        )
      )
-    owners
+    new-owners
      (cond
        ;; If OBJREF is NIL (for N/E/NE), only attach to leader
        ((and (not objref) object-leader) (list object-leader))
@@ -11628,7 +11552,12 @@ ImportLayerSettings=No
         (list objref object-leader)
        )
        ;; Otherwise only attach objref (leader position doesn't matter for this auto-type)
-       (t (list objref))
+       (objref (list objref))
+       ;; ERROR: No valid owners to attach!
+       (t 
+        (haws-debug "*** ERROR: No valid owners for reactor attachment (objref=nil, object-leader=nil)")
+        nil  ; Return nil to signal error condition
+       )
      )
     key-app "HCNM-BUBBLE"
     handle-reference
@@ -11663,6 +11592,22 @@ ImportLayerSettings=No
      nil                                ; Initialize to nil
   )
   ;; Get the single HCNM-BUBBLE reactor (should be 0 or 1)
+  (haws-debug "=== Searching for existing HCNM-BUBBLE reactor ===")
+  ;; KNOWN ISSUE: vlr-reactors returns nil on first call after opening drawing with persistent reactors
+  ;; This is AutoCAD internal timing - call twice to force restoration
+  (setq vlr-result (vlr-reactors :vlr-object-reactor))
+  (if (null vlr-result)
+    (progn
+      (haws-debug "=== vlr-reactors returned nil, retrying... ===")
+      (setq vlr-result (vlr-reactors :vlr-object-reactor))
+    )
+  )
+  (setq reactors-old 
+    (if vlr-result
+      (cdar vlr-result)
+      nil
+    )
+  )
   (setq
     hcnm-reactors
      (vl-remove-if-not
@@ -11672,25 +11617,32 @@ ImportLayerSettings=No
             (assoc key-app (vlr-data r))
           )
         )
-       (cdar (vlr-reactors :vlr-object-reactor))
+       reactors-old
      )
     reactor-count
      (length hcnm-reactors)
     reactor-old
      (car hcnm-reactors)
   )
+  (haws-debug (strcat "=== Reactor search complete: found " (itoa reactor-count) " reactor(s) ==="))
+  (cond
+    (reactor-old
+      (haws-debug "=== reactor-old FOUND - will update existing reactor ===")
+    )
+    (t
+      (haws-debug "=== reactor-old is nil - will create new reactor ===")
+    )
+  )
   ;; FAIL LOUDLY if multiple reactors (should never happen after CNM load cleanup)
   (if (> reactor-count 1)
-    (alert
-      (princ
-        (strcat
-          "\n*** PROGRAMMING ERROR ***\n\n"
-          "Found "
-          (itoa reactor-count)
-          " HCNM-BUBBLE reactors.\n"
-          "This should never happen!\n\n"
-          "Please report this to GitHub with steps to reproduce.\n"
-        )
+    (haws-debug
+      (strcat
+        "*** PROGRAMMING ERROR ***\n\n"
+        "Found "
+        (itoa reactor-count)
+        " HCNM-BUBBLE reactors.\n"
+        "This should never happen!\n\n"
+        "Please report this to https://github.com/hawstom/cnm/issues with steps to reproduce.\n"
       )
     )
   )
@@ -11708,12 +11660,12 @@ ImportLayerSettings=No
     (reactor-old
      ;; ATTACH THIS OWNER NOTIFIER IF NOT ALREADY ATTACHED.
      (foreach
-        owner owners
+        owner new-owners
        (cond
          ((not (member owner (vlr-owners reactor-old)))
-          ;; CRITICAL FIX: Add robust error checking for VLA-OBJECT attachment
+          ;; Validate owner before attempting to add
           (cond
-            ((and owner owner)
+            (owner  ; Only process non-nil owners
               (setq owner-add-result (vl-catch-all-apply 'vlr-owner-add (list reactor-old owner)))
               (cond
                 ((vl-catch-all-error-p owner-add-result)
@@ -11722,19 +11674,12 @@ ImportLayerSettings=No
                   (haws-debug (strcat "    Error: " (vl-catch-all-error-message owner-add-result)))
                 )
                 (t
-                  (haws-debug
-                    (list
-                      "Adding owner: "
-                      (vla-get-handle owner)
-                      " to reactor"
-                    )
-                  )
-                  (haws-debug (strcat "  -> Successfully added owner: " (vla-get-handle owner)))
+                  (haws-debug (strcat "Adding owner: " (vla-get-handle owner)))
                 )
               )
             )
             (t
-              (haws-debug (strcat "*** ERROR: Invalid VLA-OBJECT in owners list: " (type owner)))
+              (haws-debug (strcat "*** ERROR: NIL owner in owners list - skipping reactor attachment"))
             )
           )
          )
@@ -11783,8 +11728,9 @@ ImportLayerSettings=No
        )
      )
     )
-    (t
+    ((and new-owners (car new-owners))  ; Only create reactor if we have valid owners (non-nil, non-empty)
      ;; ELSE MAKE REACTOR AND MAKE IT PERSISTENT
+     (haws-debug "=== CREATING NEW REACTOR ===")
      (setq
        data
         (hcnm-bn-reactor-add-auto
@@ -11815,13 +11761,19 @@ ImportLayerSettings=No
      (setq
        reactor
         (vlr-object-reactor
-          owners                        ; ATTACHED OWNERS OF REACTOR
+          new-owners                    ; ATTACHED OWNERS OF REACTOR
           data
           callbacks
         )
        reactor
         (vlr-pers reactor)
      )
+     (haws-debug "=== NEW REACTOR CREATED AND MADE PERSISTENT ===")
+    )
+    (t
+     ;; ERROR: Cannot create reactor without valid owners
+     (haws-debug "*** ERROR: Attempted to create reactor with nil/empty owners list - reactor NOT created")
+     (alert (princ "\n*** CNM ERROR ***\n\nCannot attach reactor: no valid reference objects.\nAuto-text will not update automatically.\n"))
     )
   )
   ;; Debug output (can be disabled by commenting out function body)
@@ -11831,136 +11783,35 @@ ImportLayerSettings=No
     handle-leader
     handle-bubble
     keys-leader
-    owners
+    new-owners
     data
   )
 )
 ;;==============================================================================
-;; REACTOR GATEWAY CHECKS
-;;==============================================================================
-;; Gateway functions determine if reactor callback should process updates.
-;; Each returns T if gate is OPEN (allow processing), NIL if BLOCKED.
+;; REACTOR GATEWAY CHECKS - Return T if gate OPEN, NIL if BLOCKED
 ;;==============================================================================
 
 ;;==============================================================================
 ;; hcnm-bn-reactor-callback
 ;;==============================================================================
-;; Purpose:
-;;   Main VLR-OBJECT-REACTOR callback - fires when any tracked reference object
-;;   (alignment, pipe, surface) or leader is modified. Updates all dependent
-;;   bubble notes with fresh auto-text.
+;; Main VLR-OBJECT-REACTOR callback. Fires when tracked object (alignment/pipe/surface/leader)
+;; is modified. Updates dependent bubbles with fresh auto-text.
 ;;
-;; CRITICAL - AUTOLOADER STUB:
-;;   This function has an autoloader stub defined in cnmloader.lsp that ensures
-;;   cnm.lsp loads before first callback fires. The stub intercepts the call,
-;;   loads cnm.lsp, then calls this real function. This solves the problem of
-;;   persistent reactors firing before cnm.lsp autoloads via user commands.
+;; AUTOLOADER: Stub in cnmloader.lsp loads cnm.lsp before first callback.
 ;;
-;; Arguments:
-;;   obj-notifier - VLA-OBJECT that was modified (trigger object)
-;;   obj-reactor - The persistent reactor object (contains data structure)
-;;   parameter-list - Event parameters (unused)
+;; Terminology:
+;;   OWNER = Any object attached to reactor (reference OR leader)
+;;   NOTIFIER = Specific owner that triggered this callback
+;;   REFERENCE = Data provider (alignment/pipe/surface, never leader)
 ;;
-;; Call Flow:
-;;   AutoCAD event → (stub in cnmloader.lsp) → THIS FUNCTION → notifier-update → bubble-update → update-bubble-tag
-;;
-;; Data Structure (stored in reactor):
-;;   ("HCNM-BUBBLE" (
-;;     (handle-owner (              ;; Any owner: reference object OR leader
-;;       (handle-bubble (
-;;         (tag (
-;;           ("auto-type" "handle-reference")  ;; Leaf: always reference object, never leader
-;;           ...
-;;         ))
-;;       ))
-;;     ))
-;;   ))
-;;
-;; Terminology (Semantic Hierarchy):
-;;   OWNER = General term for any object attached to reactor (reference OR leader)
-;;   NOTIFIER = Specific owner that triggered THIS callback (obj-notifier parameter)
-;;   REFERENCE = Specific owner that provides calculation data (always reference object, never leader)
-;;
-;; Lookup Pattern:
-;;   1. Search owner-list to find notifier-entry (which owner triggered this event?)
-;;   2. Drill down through bubbles/tags to find reference handles (where's the data?)
-;;
-;; Performance:
-;;   - Uses continue-p pattern for early exits (fail-fast)
-;;   - Direct assoc lookup for notifier (O(1) instead of foreach)
-;;   - Blocks nested callbacks to prevent dangerous recursion (Autodesk guideline)
-;;
-;; Gateways (must all pass to continue):
-;;   1. BlockReactors = "0" (normal operation, blocking disabled for various reasons)
-;;   2. Object not erased (error-safe check via vl-catch-all-apply)
-;;   3. Notifier found in reactor data (valid tracked object)
-;;
-;;      GATEWAY 1 EXPLANATION: General-purpose reactor blocking flag.
-;;      
-;;      USAGE SCENARIOS where BlockReactors="1" blocks callbacks:
-;;      1. NESTED CALLBACKS: Inside this callback when modifying bubble attributes
-;;         - Problem: Modifying bubble triggers :vlr-modified on associated leader
-;;         - Solution: Set flag="1" at callback entry, restore="0" at exit
-;;         - Prevents infinite recursion (Autodesk guideline violation)
-;;      
-;;      2. ARROWHEAD STYLE CHANGES: During hcnm-bn-change-arrowhead operations
-;;         - Problem: Changing leader arrowhead style triggers callbacks during lattribs update
-;;         - Solution: Block reactors during arrowhead property changes
-;;         - Prevents stale XDATA from overwriting newly saved lattribs
-;;      
-;;      3. FUTURE USES: Any operation that needs to modify owners without triggering callbacks
-;;      
-;;      AUTODESK GUIDELINE: Do NOT modify reactor-monitored objects inside callbacks.
-;;      Nested callbacks can cause infinite recursion, unpredictable ordering, and crashes.
-;;      
-;;      SOLUTION: Set BlockReactors="1" at callback entry (before any modifications).
-;;      Nested callbacks see flag="1" and exit immediately at Gateway 1.
-;;      Restore to "0" at callback end (allows next user action to process normally).
-;;      
-;;      This implements "outsmart the danger" pattern - we prevent recursion by
-;;      temporarily disabling nested reactors during our update operation.
-;;
-;;      GATEWAY 3 EXPLANATION: This is a defensive/debug check for data integrity.
-;;      
-;;      EXPECTED BEHAVIOR: The notifier IS in our data structure because we added
-;;      it when user created auto-text via hcnm-bn-assure-auto-text-has-reactor.
-;;      
-;;      WHEN THIS CHECK FAILS (should be rare):
-;;      - Data structure corruption (programming bugs)
-;;      - Race conditions during undo/redo operations
-;;      - Manual reactor data manipulation (advanced debugging)
-;;      - Reactor ownership cleanup left orphaned callback registrations
-;;      
-;;      RESPONSE: Print warning (for debugging) and skip update gracefully.
-;;      We DON'T crash AutoCAD over potentially transient state issues.
-;;      
-;;      This is "fail gracefully on UX convenience" not "fail loudly on data
-;;      corruption" because the reactor system is self-healing (cleanup runs
-;;      on next successful update).
-;;
-;; Side Effects:
-;;   - Sets BlockReactors="1" to prevent nested callbacks during updates
-;;   - Calls notifier-update which modifies bubble attributes
-;;   - May remove notifier from reactor if no bubbles remain
-;;   - Updates reactor data if structure changes
-;;   - Restores BlockReactors to original value at callback end
-;;
-;; Error Handling:
-;;   - Wraps vla-get-handle in error handler (erased objects throw errors)
-;;   - Prints warning if notifier not in data (should never happen - see Gateway 3)
-;;   - Silently skips if reactors blocked or object erased
-;;   - haws-core-stperr also restores BlockReactors="0" on any CNM command error
-;;
-;; Gotchas:
-;;   - BlockReactors="1" during space transitions (prevents spurious events)
-;;   - BlockReactors="1" during this callback (prevents nested recursion)
-;;   - Reactor data may have stale entries (cleanup removes them)
-;;   - Object erasure triggers callback (must check before accessing)
-;;
-;; Example Event:
-;;   User stretches alignment → obj-notifier = alignment VLA-OBJECT
-;;   → Finds alignment handle in data structure
-;;   → Updates all bubbles with "StaOff" auto-text from that alignment
+;; Gateways (must pass to continue):
+;;   1. BlockReactors="0" (prevents recursion: set="1" during callback, restore="0" at exit)
+;;      - Autodesk guideline: Don't modify reactor-monitored objects inside callbacks
+;;      - Solution: Block nested callbacks, restore at exit
+;;   2. Object not erased (vl-catch-all-apply wrapper handles errors)
+;;   3. Notifier found in reactor data (defensive check for integrity)
+;;      - Should always pass (added via hcnm-bn-assure-auto-text-has-reactor)
+;;      - If fails: Print warning, skip update (self-healing on next run)
 ;;==============================================================================
 ;; Legacy callback wrappers (migration compatibility)
 ;; Reactors created with old naming will call this, which forwards to new function
@@ -15341,7 +15192,9 @@ ImportLayerSettings=No
 ;;; Clean up reactor proliferation on CNM load (Issue #X)
 ;;; Persistent reactors can accumulate across drawing saves/loads
 ;;; This ensures we start with a clean slate
+(haws-debug "=== CNM LOAD: Checking for reactor proliferation ===")
 (hcnm-check-reactor-proliferation)
+(haws-debug "=== CNM LOAD: Reactor check complete ===")
 
 (load "ini-edit")
 ;#endregion

@@ -32,7 +32,7 @@
 ;;; lisputil.lsp
 ;;;This is the current version of HawsEDC and CNM
 (defun haws-unified-version ()
-  "5.5.33"
+  "5.5.34"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 ;;This function returns the current setting of nagmode.
@@ -1966,7 +1966,7 @@
        (setq messages (list messages))
      )
      ;; Concatenate all strings with ">>> DEBUG: " prefix
-     (setq output (apply 'strcat (cons (itoa (rem (getvar "millisecs") 1000000)) (cons ">>> DEBUG: " messages))))
+     (setq output (apply 'strcat (cons (itoa (rem (getvar "millisecs") 10000000)) (cons ">>> DEBUG: " messages))))
      (haws-message-log output "haws-debug-log.md")
      output ; Return the output string
     )
@@ -2448,18 +2448,30 @@
   )
 )
 ;;(vl-acad-defun 'HAWS-MKLAYR)
-(defun haws-mklayr (laopt / laname lacolr laltyp ltfile ltfiles temp profile-start)
+(defun haws-mklayr (laopt / laname lacolr laltyp ltfile ltfiles temp profile-start layer-exists layer-obj)
   (setq profile-start (haws-clock-start "mklayr-create-layer"))
-  (haws-debug "Entering HAWS-MKLAYR in edclib because layer settings not applied yet this session.")
   (setq
-    laname
-     (car laopt)
-    lacolr
-     (cadr laopt)
-    laltyp
-     (caddr laopt)
+    laname (car laopt)
+    lacolr (cadr laopt)
+    laltyp (caddr laopt)
+    layer-exists (tblsearch "LAYER" laname)
   )
-  (haws-load-linetype laltyp)
+  ;; Check if layer already exists with correct settings (fast path for session cache miss)
+  (cond
+    ((and layer-exists
+          (or (= lacolr "") (= lacolr (cdr (assoc 62 layer-exists)))) ; Color matches or not specified
+          (or (= laltyp "") (= laltyp (cdr (assoc 6 layer-exists))))   ; Linetype matches or not specified
+     )
+     (haws-debug (strcat "Layer " laname " already exists with correct settings, adding to cache (fast path)"))
+     (setvar "clayer" laname)
+     (setq *haws-layers-made* (cons laname *haws-layers-made*))
+     (haws-clock-end "mklayr-create-layer" profile-start)
+     laopt
+    )
+    ;; Slow path: create or modify layer
+    (t
+     (haws-debug (strcat "Creating/modifying layer " laname " (not in session cache)"))
+     (haws-load-linetype laltyp)
   (while (and (/= laltyp "") (not (tblsearch "LTYPE" laltyp)))
     (alert
       (strcat
@@ -2512,6 +2524,8 @@
   (haws-debug "Finished making layer.")
   (haws-clock-end "mklayr-create-layer" profile-start)
   laopt
+    )
+  )
 )
 
 ;; This function has two undocumented semi-globals, laltyp and ltfile
