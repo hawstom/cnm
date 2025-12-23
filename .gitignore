@@ -4,7 +4,8 @@ Devmenu/VS-DLL/
 *.bak*
 *.backup
 *.dll
-*.dw*
+*.dwl*
+*.dw2*
 *._??
 *#
 *.mnr
