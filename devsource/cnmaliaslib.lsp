@@ -187,7 +187,7 @@
           )
          
        )
-       (haws-config-setvar "CNMAliasActivation" (itoa activation-preference))
+       (haws-setvar "CNMAliasActivation" (itoa activation-preference))
       )
     )
   )

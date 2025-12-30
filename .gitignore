@@ -9,6 +9,7 @@ Devmenu/VS-DLL/
 *._??
 *#
 *.mnr
+*.not
 
 # AI Planning Documents (phased feature planning, not committed)
 # See .github/copilot-instructions.md for AI collaboration workflow
@@ -22,5 +23,6 @@ devtools/scripts/test-suite/test-results
 devtools/scripts/test-suite/cnm.ini
 devtools/scripts/test-suite/constnot.csv
 devtools/scripts/test-suite/cnm-test.csv
+devtools/scripts/test-suite/cnm-test.not
 devtools/scripts/test-suite/haws-debug-log.md
 devtools/scripts/test-suite/haws-clock.log

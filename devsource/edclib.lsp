@@ -32,7 +32,7 @@
 ;;; lisputil.lsp
 ;;;This is the current version of HawsEDC and CNM
 (defun haws-unified-version ()
-  "5.5.34"
+  "5.5.35"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 ;;This function returns the current setting of nagmode.
@@ -66,6 +66,7 @@
     "\nTake CNM with you wherever you work. Share it, share your ideas, and help it grow!"
     "\nCNM is a community project! Make a difference by sharing it and making it better."
     "\nContribute to CNM and report issues at https://github.com/hawstom/cnm"
+    "\nUse CNMALIAS to try the most popular CNM+ commands: FFX/OFFX, LX, R, OO, PJL, LCPX, and EE."
   ))
   (setq big-date (* (getvar "DATE") 100000000))
   (setq idx  (rem (fix (* 10000 (- big-date (fix big-date)))) (length msgs)))

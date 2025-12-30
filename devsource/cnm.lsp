@@ -8122,6 +8122,7 @@ ImportLayerSettings=No
      )
     )
     (t
+     (haws-tip 9 "This auto text uses AutoCAD fields that display as ####. They update on regen or print.")
      (cond
        ((and
           (= qt-type "Area")
