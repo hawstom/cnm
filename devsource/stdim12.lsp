@@ -16,9 +16,9 @@
     (setq dimlay (getkword "Stdim layer/Dim/Xdim/Current layer: "))
   )
   (cond
-    ( (= dimlay "Stdim")(haws-mklayr "ST-DIM"))
-    ( (= dimlay "Dim")(haws-mklayr "DIM"))
-    ( (= dimlay "Xdim")(haws-mklayr "XDIM"))
+    ( (= dimlay "Stdim")(haws-setlayr "ST-DIM"))
+    ( (= dimlay "Dim")(haws-setlayr "DIM"))
+    ( (= dimlay "Xdim")(haws-setlayr "XDIM"))
   )
   (setvar "osmode" 128)
   (setq

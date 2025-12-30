@@ -3,7 +3,7 @@
 (defun c:haws-bw ( / ang1 pt4 as pt1 pt2 pt3)
   (haws-core-init 167)
   (haws-vsave '("dimpost"))
-  (haws-mklayr "BWLDR")
+  (haws-setlayr "BWLDR")
   (setvar "dimpost" "")
   (setq
     as (* (haws-dwgscale)(getvar "dimasz"))

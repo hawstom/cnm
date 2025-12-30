@@ -1,15 +1,19 @@
 ; CNM Test Suite - Main Test Script
-; Created: 2025-11-17
-; Status: Phase C - Auto-text tests implementation
-;
 ; Purpose: Comprehensive regression testing for CNM bubble notes
 ;
-; Execution:
-;   Method 1: Drag this .scr file into AutoCAD drawing window
-;   Method 2: Type c:cnm-test-script at command line (future wrapper)
+; Execution: Drag this .scr file into cnm-test-start.dwg
+;
+; Config:
+; Note that all spaces are significant on script lines. You can't pad anything.
+; This logs all debug messages to (strcat (getvar "dwgprefix") "haws-debug-log.md").
+; This may have unacceptable overhead.
+; You have to delete the file or its contents manually or automatically if you don't want it to keep growing.
+(haws-setvar "DebugLevel" "1")
+; This may have unacceptable overhead.
+;(load "haws-clock.lsp")
 ;
 ; Prerequisites:
-;   1. Open cnm-test.dwg with Civil 3D objects prepared per README.md
+;   1. Open cnm-test-start.dwg with Civil 3D objects prepared.
 ;   2. Ensure CNM is loaded
 ;   3. Add test folder to AutoCAD's Trusted Locations:
 ;      OPTIONS → Files → Trusted Locations → Add → Select devtools/scripts/test-suite
@@ -23,11 +27,11 @@
 ;
 ; Script Style Guidelines:
 ;   - All command options spelled out (not minimum mnemonics) for readability
-;   - Example: "extents" not "e", "topcenter" not "tc", "Standard" not "S"
+;   - Example: "extents" not "e"
 ;   - Makes scripts self-documenting and easier to maintain
 ;
 ; CRITICAL FOR AI AGENTS - Script Line Break Handling:
-;   Scripts differ from code - EVERY line (including blanks) is significant!
+;   Scripts differ from code - EVERY line and space (including blanks) is significant!
 ;   
 ;   HAWS-ELLL prompt sequence (bubble insertion):
 ;     Line N:   Command name (HAWS-ELLL)
@@ -60,6 +64,10 @@
 ;   - Common failures: Missing objects, wrong coordinates, CVPORT issues
 ;
 ; === SETUP ===
+; These variable settings are restored at the end of this script. If script crashes, they have to be restored manually.
+filedia
+0
+(command "._saveas" "" (strcat (getvar "dwgprefix") "cnm-test.dwg") "_yes")
 (load (strcat (getvar "dwgprefix") "cnm-test-validation.lsp"))
 (c:test-setup-layers)
 (test-write-report-header)
@@ -68,6 +76,107 @@
 mspace
 zoom
 extents
+; === EDITOR WORKFLOW TESTS (MANUAL INTERVENTION REQUIRED) ===
+;
+; CRITICAL: These tests require tester to follow on-screen instructions
+; Script auto-pauses at editor dialogs, resumes when tester clicks OK/Save
+;
+; TEST E1: Delimiter-based auto-text insertion (Paper Space + VPTRANS)
+; Position: 1C-1U = Column 1 Center, Row 1 Up
+; Arrow: (7", 13") paper = (10340', 20240') model via viewport
+; Tests: Delimiter replacement and manual text preservation, VPTRANS creation, paper space transform
+; WORKFLOW: Tester clicks StaOff button → dialog prompts for alignment → script provides coordinate (10340,20240)
+; Config: No hooks, with mtext
+;;
+pspace
+(hcnm-config-setvar "BubbleHooks" "0")
+(hcnm-config-setvar "BubbleMtext" "1")
+HAWS-ELLL
+7,13
+6.5,13.5
+E1
+INSTALL AT ```. L=4', A=24', B=6.33'
+Click in Line 1, click StaOff, then OK.
+(setq test-e1-handle (cdr (assoc 5 (entget (entlast)))))
+HAWS-EE
+L
+
+10340,20240
+; Validation after tester completes edit dialog
+(test-validate-auto-text (handent test-e1-handle) "NOTETXT1" "INSTALL AT STA 51+00.00, 20.00 LT. L=4', A=24', B=6.33'" "TEST E1: Delimiter Insertion")
+(test-validate-xdata (handent test-e1-handle) "NOTETXT1" "StaOff" "TEST E1")
+(test-validate-reactor (handent test-e1-handle) "NOTETXT1" "StaOff" "TEST E1")
+(test-validate-vptrans-created (handent test-e1-handle) "TEST E1")
+; Additional: Verify delimiter was replaced (not just appended)
+(setq e1-text (cadr (assoc "NOTETXT1" (hcnm-bn-dwg-to-lattribs (handent test-e1-handle)))))
+(if (vl-string-search "```" e1-text) (test-write-report-entry "TEST E1 (Delimiter)" "FAIL" "Delimiter not replaced - still present in text") (test-write-report-entry "TEST E1 (Delimiter)" "PASS" "Delimiter correctly replaced with auto-text"))
+;;
+;; TEST E2: Append Dia auto text with StaOff auto-text (Model Space)
+;; Position: 2C-1D = Column 2 Center, Row 1 Down
+;; Arrow: (10280',20230'), Bubble: (10275',20220')
+;; Tests: Smart search/replace (keep auto text), StaOff auto-text, Dia auto-text
+;; WORKFLOW: Tester clicks in Line 1, clicks StaOff button → dialog prompts for alignment → script provides coordinate (10340,20240)
+;; Config: With hooks, with mtext (both enabled)
+;;
+mspace
+(hcnm-config-setvar "BubbleHooks" "1")
+(hcnm-config-setvar "BubbleMtext" "1")
+HAWS-ELLL
+10280,20230
+10275,20220
+E2
+.
+dia
+10360,20200
+Click in Line 1, click StaOff, then OK.
+(setq test-e2-handle (cdr (assoc 5 (entget (entlast)))))
+HAWS-EE
+L
+
+10340,20240
+; Validation after tester completes edit dialog
+(test-validate-auto-text (handent test-e2-handle) "NOTETXT1" "18\"STA 52+40.00, 10.00 RT" "TEST E2: Replace with Auto-Text")
+(test-validate-xdata (handent test-e2-handle) "NOTETXT1" "Dia" "TEST E2")
+(test-validate-reactor (handent test-e2-handle) "NOTETXT1" "Dia" "TEST E2")
+; Additional: Verify both auto-texts present (Dia + StaOff appended, not replaced)
+(setq e2-text (cadr (assoc "NOTETXT1" (hcnm-bn-dwg-to-lattribs (handent test-e2-handle)))))
+(if (and (vl-string-search "18\"" e2-text) (vl-string-search "STA" e2-text)) (test-write-report-entry "TEST E2 (Append)" "PASS" "Both Dia and StaOff auto-texts present") (test-write-report-entry "TEST E2 (Append)" "FAIL" "Missing expected auto-text - should have both Dia and StaOff"))
+;;
+;; TEST E3: Clear auto-text and revert to manual (Model Space)
+;; Position: 3C-2D = Column 3 Center, Row 2 Down
+;; Arrow: (10460',20220'), Bubble: (10455',20210')
+;; Tests: XDATA cleanup, reactor detachment, manual text replacement
+;; WORKFLOW: Insert with NE auto-text, then manually replace in one edit
+;; Config: No hooks, no mtext (baseline)
+;;
+(hcnm-config-setvar "BubbleHooks" "0")
+(hcnm-config-setvar "BubbleMtext" "0")
+HAWS-ELLL
+10460,20220
+10455,20210
+E3
+.
+ne
+Replace Line 1 text with USER and click OK.
+(setq test-e3-handle (cdr (assoc 5 (entget (entlast)))))
+; Edit: Replace auto-text with manual text
+HAWS-EE
+L
+
+; Validation after tester completes edit dialog
+(test-validate-auto-text (handent test-e3-handle) "NOTETXT1" "USER" "TEST E3: Clear Auto-Text")
+; Validate XDATA cleared
+(setq xdata-e3 (hcnm-xdata-read (handent test-e3-handle)))
+(if (assoc "NOTETXT1" xdata-e3) (test-write-report-entry "TEST E3 (XDATA Cleanup)" "FAIL" (strcat "XDATA not cleared - entry still exists: " (vl-prin1-to-string (assoc "NOTETXT1" xdata-e3)))) (test-write-report-entry "TEST E3 (XDATA Cleanup)" "PASS" "XDATA cleared correctly"))
+; Validate reactor detached
+(test-validate-reactor-detached (handent test-e3-handle) "NOTETXT1" "TEST E3")
+; Validate VPTRANS not present (model space)
+(test-validate-vptrans-removed (handent test-e3-handle) "TEST E3")
+; Validate reactor detached
+(test-validate-reactor-detached (handent test-e3-handle) "NOTETXT1" "TEST E3")
+; Validate VPTRANS removed (if applicable)
+(test-validate-vptrans-removed (handent test-e3-handle) "TEST E3")
+;;
 ; === PHASE C: AUTO-TEXT TESTS ===
 ;
 ; STRATEGY: Paper space focus validates VPTRANS architecture (weeks of work!)
@@ -92,7 +201,10 @@ extents
 ;; Arrow: (10340',20250'), Bubble: (10335',20260')
 ;; Selection: Alignment at (10360',20240') - center X, avoids bubbles/leaders
 ;; Calculation: X=10340' - Start X=10040' = 300', Station 50+00 + 300' = STA 53+00.00
+;; Config: No hooks, no mtext (baseline)
 ;;
+(hcnm-config-setvar "BubbleHooks" "0")
+(hcnm-config-setvar "BubbleMtext" "0")
 HAWS-ELLL
 10340,20250
 10335,20260
@@ -104,13 +216,23 @@ sta
 (test-validate-auto-text (entlast) "NOTETXT1" "STA 53+00.00" "TEST 1: Sta (Model)")
 (test-validate-xdata (entlast) "NOTETXT1" "Sta" "TEST 1")
 (test-validate-reactor (entlast) "NOTETXT1" "Sta" "TEST 1")
+sdi
+1
+(command "._qsave" "._open" (strcat (getvar "dwgprefix") "cnm-test.dwg"))
+sdi
+0
+(haws-setvar "DebugLevel" "1")
+;(load "haws-clock.lsp")
 ;;
 ;; TEST 2: Dia (Model) - Pipe diameter
 ;; Position: 3L-4D = Column 3 Left, Row 4 Down
 ;; Arrow: (10220',20200'), Bubble: (10215',20190')
 ;; Selection: Pipe at (10360',20200') - center X, avoids bubbles/leaders
 ;; Expected: 18" diameter
+;; Config: With hooks, no mtext
 ;;
+(hcnm-config-setvar "BubbleHooks" "1")
+(hcnm-config-setvar "BubbleMtext" "0")
 HAWS-ELLL
 10220,20200
 10215,20190
@@ -122,13 +244,23 @@ dia
 (test-validate-auto-text (entlast) "NOTETXT1" "18\"" "TEST 2: Dia (Model)")
 (test-validate-xdata (entlast) "NOTETXT1" "Dia" "TEST 2")
 (test-validate-reactor (entlast) "NOTETXT1" "Dia" "TEST 2")
+sdi
+1
+(command "._qsave" "._open" (strcat (getvar "dwgprefix") "cnm-test.dwg"))
+sdi
+0
+(haws-setvar "DebugLevel" "1")
+;(load "haws-clock.lsp")
 ;;
 ;; TEST 3: N (Model) - Northing coordinate
 ;; Position: 2L-2U = Column 2 Left, Row 2 Up
 ;; Arrow: (10280',20260'), Bubble: (10275',20270')
 ;; No selection (coordinate-based)
 ;; Expected: N 20260.00 (arrow Y coordinate)
+;; Config: No hooks, with mtext
 ;;
+(hcnm-config-setvar "BubbleHooks" "0")
+(hcnm-config-setvar "BubbleMtext" "1")
 HAWS-ELLL
 10280,20260
 10275,20270
@@ -139,6 +271,13 @@ n
 (test-validate-auto-text (entlast) "NOTETXT1" "N 20260.00" "TEST 3: N (Model)")
 (test-validate-xdata (entlast) "NOTETXT1" "N" "TEST 3")
 (test-validate-reactor (entlast) "NOTETXT1" "N" "TEST 3")
+sdi
+1
+(command "._qsave" "._open" (strcat (getvar "dwgprefix") "cnm-test.dwg"))
+sdi
+0
+(haws-setvar "DebugLevel" "1")
+;(load "haws-clock.lsp")
 ;;
 ;; TEST 4: LF (Model) - Linear feet from curb line
 ;; Position: 1R-2U = Column 1 Right, Row 2 Up
@@ -146,7 +285,10 @@ n
 ;; Selection: Curb line at (10360',20260') - center X, avoids bubbles/leaders
 ;; NOTE: CNM uses AutoCAD field expressions for dynamic length - this is CORRECT
 ;; Field format: %<\AcObjProp Object(...).Length ...>% LF
+;; Config: With hooks, with mtext (both enabled)
 ;;
+(hcnm-config-setvar "BubbleHooks" "1")
+(hcnm-config-setvar "BubbleMtext" "1")
 HAWS-ELLL
 10380,20260
 10385,20270
@@ -164,12 +306,22 @@ lf
   (test-validate-auto-text (entlast) "NOTETXT1" "FIELD ERROR" "TEST 4: LF (Model)")
 )
 (test-validate-xdata (entlast) "NOTETXT1" "LF" "TEST 4")
+sdi
+1
+(command "._qsave" "._open" (strcat (getvar "dwgprefix") "cnm-test.dwg"))
+sdi
+0
+(haws-setvar "DebugLevel" "1")
+;(load "haws-clock.lsp")
 ;;
 ;; TEST 5: Manual (Model) - Baseline manual text entry
 ;; Position: 2R-1U = Column 2 Right, Row 1 Up
 ;; Arrow: (10440',20250'), Bubble: (10445',20260')
 ;; No selection
+;; Config: No hooks, no mtext (return to baseline)
 ;;
+(hcnm-config-setvar "BubbleHooks" "0")
+(hcnm-config-setvar "BubbleMtext" "0")
 HAWS-ELLL
 10440,20250
 10445,20260
@@ -183,7 +335,10 @@ MODEL MANUAL
 ;; Arrow: (10500',20240'), Bubble: (10505',20250')
 ;; Selection: Alignment at (10360',20240') - center X, avoids bubbles/leaders
 ;; Expected: "OAK ST" (alignment name property)
+;; Config: With hooks, no mtext
 ;;
+(hcnm-config-setvar "BubbleHooks" "1")
+(hcnm-config-setvar "BubbleMtext" "0")
 HAWS-ELLL
 10500,20240
 10505,20250
@@ -201,7 +356,10 @@ name
 ;; Arrow: (10560',20270'), Bubble: (10565',20280')
 ;; Selection: Sidewalk rectangle at (10360',20272') - center X, top edge
 ;; NOTE: CNM uses AutoCAD field expressions for dynamic area - this is CORRECT
+;; Config: No hooks, with mtext
 ;;
+(hcnm-config-setvar "BubbleHooks" "0")
+(hcnm-config-setvar "BubbleMtext" "1")
 HAWS-ELLL
 10560,20270
 10565,20280
@@ -225,7 +383,10 @@ sf
 ;; Arrow: (10620',20270'), Bubble: (10625',20280')
 ;; Selection: Sidewalk rectangle at (10360',20272') - center X, top edge
 ;; NOTE: CNM uses AutoCAD field expressions for dynamic area - this is CORRECT
+;; Config: With hooks, with mtext (both enabled)
 ;;
+(hcnm-config-setvar "BubbleHooks" "1")
+(hcnm-config-setvar "BubbleMtext" "1")
 HAWS-ELLL
 10620,20270
 10625,20280
@@ -259,7 +420,10 @@ pspace
 ;; Selection: Alignment in MODEL coordinates (10360',20240') - center X, avoids bubbles
 ;; Paper (2",12.5") × 20 = Model offset (-320',-5') from center = (10040',20235')
 ;; Station at X=10040' = 50+00.00
+;; Config: No hooks, no mtext (baseline)
 ;;
+(hcnm-config-setvar "BubbleHooks" "0")
+(hcnm-config-setvar "BubbleMtext" "0")
 HAWS-ELLL
 2.0,12.5
 1.75,13.0
@@ -277,7 +441,10 @@ sta
 ;; Selection: Alignment in MODEL coordinates (10360',20240') - center X, avoids bubbles
 ;; Paper (5",13.0") × 20 = Model offset (-260',+20') from center = (10100',20260')
 ;; Offset from alignment Y=20240': 20260'-20240' = 20.00 LT
+;; Config: With hooks, no mtext
 ;;
+(hcnm-config-setvar "BubbleHooks" "1")
+(hcnm-config-setvar "BubbleMtext" "0")
 HAWS-ELLL
 5.0,13.0
 4.75,13.5
@@ -296,7 +463,10 @@ off
 ;; Paper (8",12.5") × 20 = Model offset (-200',+10') from center = (10160',20250')
 ;; Station: 10160'-10040' = 120' = STA 51+20.00, Offset: 20250'-20240' = 10.00 LT
 ;; NOTE: Format specified by CNM.ini BubbleTextFormatStaOff setting
+;; Config: No hooks, with mtext
 ;;
+(hcnm-config-setvar "BubbleHooks" "0")
+(hcnm-config-setvar "BubbleMtext" "1")
 HAWS-ELLL
 8.0,12.5
 7.75,13.0
@@ -314,7 +484,10 @@ staoff
 ;; Selection: Alignment in MODEL coordinates (10360',20240') - center X, avoids bubbles
 ;; Paper (34",12.0") × 20 = Model offset (+320',0') from center = (10680',20240')
 ;; Station: 10680'-10040' = 640' = STA 56+40.00 (alignment end)
+;; Config: With hooks, with mtext (both enabled)
 ;;
+(hcnm-config-setvar "BubbleHooks" "1")
+(hcnm-config-setvar "BubbleMtext" "1")
 HAWS-ELLL
 34.0,12.0
 34.25,12.5
@@ -332,7 +505,10 @@ staname
 ;; Selection: Pipe in MODEL coordinates (10360',20200') - center X, avoids bubbles
 ;; Expected: 18" (property read, no coordinate transform)
 ;; Paper (14",10.0") × 20 = Model offset (-80',-40') from center = (10280',20200')
+;; Config: No hooks, no mtext (return to baseline)
 ;;
+(hcnm-config-setvar "BubbleHooks" "0")
+(hcnm-config-setvar "BubbleMtext" "0")
 HAWS-ELLL
 14.0,10.0
 13.75,9.5
@@ -351,7 +527,10 @@ dia
 ;; NOTE: Format specified by CNM.ini BubbleTextFormatSlope setting
 ;; Slope calculation: elevation delta / horizontal length
 ;; Paper (31",10.0") × 20 = Model offset (+260',-40') from center = (10620',20200')
+;; Config: With hooks, no mtext
 ;;
+(hcnm-config-setvar "BubbleHooks" "1")
+(hcnm-config-setvar "BubbleMtext" "0")
 HAWS-ELLL
 31.0,10.0
 31.25,9.5
@@ -368,7 +547,10 @@ slope
 ;; Paper arrow position transforms to model Y coordinate
 ;; NO selection (coordinate-based), blank line confirms viewport
 ;; Expected: Northing = transformed arrow Y coordinate
+;; Config: No hooks, with mtext
 ;;
+(hcnm-config-setvar "BubbleHooks" "0")
+(hcnm-config-setvar "BubbleMtext" "1")
 HAWS-ELLL
 17.0,13.0
 16.75,13.5
@@ -385,7 +567,10 @@ n
 ;; Paper arrow position transforms to model X coordinate
 ;; NO selection (coordinate-based), blank line confirms viewport
 ;; Expected: Easting = transformed arrow X coordinate
+;; Config: With hooks, with mtext (both enabled)
 ;;
+(hcnm-config-setvar "BubbleHooks" "1")
+(hcnm-config-setvar "BubbleMtext" "1")
 HAWS-ELLL
 19.0,11.5
 19.25,11.0
@@ -402,7 +587,10 @@ e
 ;; Paper arrow transforms to both model X and Y
 ;; NO selection (coordinate-based), blank line confirms viewport
 ;; Expected: Both northing and easting from transformed arrow position
+;; Config: No hooks, no mtext (return to baseline)
 ;;
+(hcnm-config-setvar "BubbleHooks" "0")
+(hcnm-config-setvar "BubbleMtext" "0")
 HAWS-ELLL
 22.0,11.5
 22.25,11.0
@@ -418,7 +606,10 @@ ne
 ;; TEST 18: Manual (Paper) - Baseline manual text in paper space
 ;; Paper position: Right side area
 ;; No auto-text, no VPTRANS needed
+;; Config: With hooks, no mtext
 ;;
+(hcnm-config-setvar "BubbleHooks" "1")
+(hcnm-config-setvar "BubbleMtext" "0")
 HAWS-ELLL
 25.0,11.5
 25.25,11.0
@@ -1181,4 +1372,8 @@ Key Notes & QT Tables: Key Notes Table generation validated and QT Table generat
 CNM-Demo Coverage (CNM Plus Utilities): haws-contvol, haws-ut, haws-mof, haws-lotnum, haws-newpro (profile drafter)
 Review test-results/cnm-test-report.md for detailed results.
 
+filedia
+1
+sdi
+0
 ; This is the end of the script. Do not add characters after this comment.

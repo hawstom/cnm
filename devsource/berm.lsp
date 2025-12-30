@@ -2,7 +2,7 @@
 (defun c:haws-berm ( / dbvar dbold)
   (haws-core-init 165)
   (haws-vsave '("clayer"))
-  (haws-mklayr "BERM")
+  (haws-setlayr "BERM")
   (cond
     ((not (tblsearch "DIMSTYLE" "BERM"))
      (vl-cmdf "._insert" "berm")(vl-cmdf)

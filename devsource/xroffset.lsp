@@ -1,7 +1,7 @@
 ﻿;;;XROFFSET
 (defun c:haws-xro ()
 (haws-core-init 331) (c:haws-xroffset))
-(defun 	 c:haws-xroffset	(/ ofdist temp xrodistr pt1 pt2 xrodists)
+(defun 	 c:haws-xroffset	(/ f1 ofdist temp xrodistr pt1 pt2 xrodists)
 	(haws-core-init 332)
 	(setq ofdist (getvar "offsetdist"))
 	(if	(not *haws-xrosetupdone*)
@@ -44,7 +44,7 @@
 					 ) ;_ end of if
 				 ) ;_ end of getpoint
 			) ;_ end of setq
-			(setq f1 (open (strcat (getvar "tempprefix") "xrotemp.scr") "w"))
+			(setq *f1* (open (strcat (getvar "tempprefix") "xrotemp.scr") "w"))
 			(princ
 				(strcat
 					"ncopy "
@@ -55,12 +55,12 @@
 					xrodists
 					" (list xroen '"
 				) ;_ end of strcat
-				f1
+				*f1*
 			) ;_ end of princ
-			(princ pt1 f1)
-			(princ ") " f1)
-			(princ (strcat (rtos (car pt2)) "," (rtos (cadr pt2)) "  ._erase !xroen  (setq *HAWS-xrosetupdone* T) haws-xroffset ") f1)
-			(setq f1 (close f1))
+			(princ pt1 *f1*)
+			(princ ") " *f1*)
+			(princ (strcat (rtos (car pt2)) "," (rtos (cadr pt2)) "  ._erase !xroen  (setq *HAWS-xrosetupdone* T) haws-xroffset ") *f1*)
+			(setq *f1* (close *f1*))
 			(haws-core-restore)
 			(vl-cmdf "._script" (strcat (getvar "tempprefix") "xrotemp"))
 		) ;_ end of progn

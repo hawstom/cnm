@@ -15,9 +15,9 @@
     (setq *haws-dimlay* (getkword "Stdim layer/Dim/Xdim/Current layer: "))
   )
   (cond
-    ( (= *haws-dimlay* "Stdim")(haws-mklayr "ST-DIM"))
-    ( (= *haws-dimlay* "Dim")(haws-mklayr "DIM"))
-    ( (= *haws-dimlay* "Xdim")(haws-mklayr "XDIM"))
+    ( (= *haws-dimlay* "Stdim")(haws-setlayr "ST-DIM"))
+    ( (= *haws-dimlay* "Dim")(haws-setlayr "DIM"))
+    ( (= *haws-dimlay* "Xdim")(haws-setlayr "XDIM"))
   )
   (setvar "osmode" 128)
   (prompt"\nTip: Type DIMSTY to load dimension styles, then select STREET style before using DM.")

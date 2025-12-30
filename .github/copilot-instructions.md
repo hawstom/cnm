@@ -43,7 +43,7 @@
 
 4. **Does this already exist?** (DRY check)
    - Search with `grep_search` for similar functionality
-   - Reuse existing utilities (haws-debug, haws-profile-log, etc.)
+   - Reuse existing utilities (haws-debug, haws-clock-console-log, etc.)
    - Don't duplicate file I/O patterns
 
 5. **Is this the simplest solution?**
@@ -262,7 +262,7 @@ Engineers add context: "Storm Drain STA 10+25.50 RT" where "Storm Drain" and "RT
 CNM loads automatically when AutoCAD starts:
 
 1. **cnm.cuix** (AutoCAD menu file) - Entry point, loads with AutoCAD
-2. **cnm.mnl** (menu LISP file) - Checks for `haws-mklayr`, loads CNMloader if not present
+2. **cnm.mnl** (menu LISP file) - Checks for `haws-setlayr`, loads CNMloader if not present
 3. **CNMloader.lsp** (initialization) - Loads immediately:
    - Defines `haws-autoload` function (creates command stubs)
    - Loads core libraries immediately: `edclib.lsp`, `haws-tip.lsp`, `cnmalias.lsp`

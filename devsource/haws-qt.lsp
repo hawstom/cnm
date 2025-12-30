@@ -5,11 +5,7 @@
   (haws-aet (/ 1.0 43560) " AC")
 )
 (defun c:haws-sf () (haws-core-init 157) (haws-aet 1 " SF"))
-(defun haws-evangel-msg_prompt ()
-  (princ (haws-evangel-msg))
-)
-
-(defun c:haws-aet () (haws-core-init 158) (haws-evangel-msg_prompt) (haws-aet 1 ""))
+(defun c:haws-aet () (haws-core-init 158) (haws-aet 1 ""))
 (defun c:haws-sm ()
   (haws-core-init 159)
   (haws-aet (/ 1.0 27878400) " SQ. MI.")
@@ -19,6 +15,7 @@
   (haws-aet (/ 1.0 9) " SY")
 )
 (defun haws-aet (factor label / area ts txpt)
+  (princ (haws-evangel-msg))   
   (setq haws-qt-instance (haws-qt-new "haws-aet"))
   (haws-qt-set-property haws-qt-instance "type" "area")
   (haws-qt-set-property haws-qt-instance "factor" factor)
@@ -174,7 +171,7 @@
   )
   (cond
     (enamelist
-     (foreach e enamelist (setq q (haws-qt-add-ent e q qtype)(redraw e 4)))
+     (foreach e enamelist (setq q (haws-qt-add-ent e q qtype))(redraw e 4))
     )
   )
   q
@@ -253,49 +250,37 @@
   )
   (list enamelist ss-p continue-p)
 )
-(defun haws-qt-add-ent (e q qtype / obj qi)
-  (if (and
-        (= (cdr (assoc 0 (entget e))) "VERTEX")
-        (assoc 330 (entget e))
-      )
+(defun haws-qt-add-ent (e q qtype / obj qi) 
+  (if 
+    (and 
+      (= (cdr (assoc 0 (entget e))) "VERTEX")
+      (assoc 330 (entget e))
+    )
     (setq e (cdr (assoc 330 (entget e))))
   )
-  (setq
-    obj
-     (vlax-ename->vla-object e)
-    errobj
-     (vl-catch-all-apply 'VLAX-CURVE-GETSTARTPOINT (list obj))
-    qi (cond
-         ((vl-catch-all-error-p errobj)
-          (princ
-            (strcat
-              "\nCan't get quantity from a "
-              (cdr (assoc 0 (entget e)))
-              "."
-            )
-          )
-          0
-         )
-         ((= qtype "length")
-          (cond
-            ((= (cdr (assoc 0 (entget e))) "AECC_PIPE")
-             (princ "\nGetting 3D length of AECC_PIPE object.")
-             (vlax-get-property obj 'LENGTH3D)
-            )
-            (t
-             (vlax-curve-getdistatparam
-               obj
-               (vlax-curve-getendparam obj)
-             )
-            )
-          )
-         )
-         ((= qtype "area") (vlax-curve-getarea obj))
+  (setq obj (vlax-ename->vla-object e))
+  (cond 
+    ((= qtype "length")
+     (cond 
+       ((= (cdr (assoc 0 (entget e))) "AECC_PIPE")
+        (princ "\nGetting 3D length of AECC_PIPE object.")
+        (setq qi (vlax-get-property obj 'LENGTH3D))
        )
-    q (cond
-        (qi (+ q qi))
-        (q)
-      )
+       (t
+        (setq qi (vl-catch-all-apply 'vla-get-length (list obj)))
+        (if (/= (type qi) 'REAL) (setq qi 0.0))
+       )
+     )
+    )
+    ((= qtype "area")
+     (setq qi (vl-catch-all-apply 'vla-get-area (list obj)))
+     (if (/= (type qi) 'REAL) (setq qi 0.0))
+    )
+  )
+  (setq q (cond 
+            (qi (+ q qi))
+            (q)
+          )
   )
   q
 )

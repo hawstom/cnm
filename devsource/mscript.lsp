@@ -4,14 +4,14 @@
 ;;Runs a script file on multiple drawings.
 (defun c:haws-mscr ()
 (haws-core-init 263) (c:haws-mscript))
-(defun c:haws-mscript (/ temp msnamelist msnameshort pltcmd flspec rdscr
+(defun c:haws-mscript (/ f1 temp msnamelist msnameshort pltcmd flspec rdscr
                    rptscr rsname users1old users2old users3old users4old
                    dwgfil column del
                   )
   (setq temp "MSCRIPT.LSP version 1.22 by Thomas Gail Haws")
   (if (not
         (setq
-          f1 (open
+          *f1* (open
                (strcat
                  (setq
                    msnameshort
@@ -28,7 +28,7 @@
         ) ;_ end of setq
       ) ;_ end of not
     (setq msnameshort (strcat (getvar "dwgprefix") "mscr"))
-    (setq f1 (close f1))
+    (setq *f1* (close *f1*))
   ) ;_ end of if
   (setq
     msnamelist
@@ -77,7 +77,7 @@
      )
      (vl-cmdf "-vbarun" "fselect.dvb!modFileSelect.FileSelect")
      (setq
-       f1 (setq msnamelist (getvar "users1"))
+       *f1* (setq msnamelist (getvar "users1"))
        *haws-mscriptlistfile* msnamelist
      )
      (if (/= (getvar "users2") "OK")
@@ -138,9 +138,9 @@
            (strcat dn ".lst")
           temp
            (findfile "acad.pgp")
-          f1 (open temp "r")
+          *f1* (open temp "r")
         )
-        (while (setq dwgfil (read-line f1))
+        (while (setq dwgfil (read-line *f1*))
           (if (= "RUN," (substr dwgfil 1 4))
             (setq pgpmod t)
           )
@@ -160,15 +160,15 @@
           )
           (setq shtlst (cons dwgfil shtlst))
         )
-        (setq f1 (close f1))
+        (setq *f1* (close *f1*))
         (if (not pgpmod)
           (progn
             (setq
-              f1     (open temp "w")
+              *f1*     (open temp "w")
               shtlst (reverse shtlst)
             )
-            (foreach dwgfil shtlst (write-line dwgfil f1))
-            (setq f1 (close f1))
+            (foreach dwgfil shtlst (write-line dwgfil *f1*))
+            (setq *f1* (close *f1*))
             (setvar "re-init" 16)
           )
         )
@@ -185,9 +185,9 @@
             (strcat "attrib \"" flspec ".dwg\" > " lstfil)
           )
           (setq
-            f1 (open lstfil "r")
+            *f1* (open lstfil "r")
             dwgfil
-             (read-line f1)
+             (read-line *f1*)
             column
              (strlen dwgfil)
           )
@@ -195,7 +195,7 @@
             ((wcmatch dwgfil "* not found *")
              (setq
                column nil
-               f1 (close f1)
+               *f1* (close *f1*)
              )
              (alert
                (princ
@@ -223,11 +223,11 @@
                (setq column (1- column))
              )
              (setq
-               f1     (close f1)
-               f1     (open lstfil "r")
+               *f1*     (close *f1*)
+               *f1*     (open lstfil "r")
                shtlst nil
              )
-             (while (setq dwgfil (read-line f1))
+             (while (setq dwgfil (read-line *f1*))
                (setq
                  dwgfil
                   (substr dwgfil column)
@@ -239,12 +239,12 @@
                )
              )
              (setq
-               f1 (close f1)
-               f1 (open lstfil "w")
+               *f1* (close *f1*)
+               *f1* (open lstfil "w")
              )
              (setq shtlst (reverse shtlst))
-             (foreach dwgfil shtlst (write-line dwgfil f1))
-             (setq f1 (close f1))
+             (foreach dwgfil shtlst (write-line dwgfil *f1*))
+             (setq *f1* (close *f1*))
             )
           )
         )
@@ -253,7 +253,7 @@
         (setq
           lstfil
            (strcat dn ".lst")
-          f1 (open lstfil "w")
+          *f1* (open lstfil "w")
         )
         (while (setq
                  dwgfil
@@ -264,9 +264,9 @@
                     6
                   )
                )
-          (write-line (substr dwgfil 1 (- (strlen dwgfil) 4)) f1)
+          (write-line (substr dwgfil 1 (- (strlen dwgfil) 4)) *f1*)
         )
-        (setq f1 (close f1))
+        (setq *f1* (close *f1*))
        )
      )
     )
@@ -279,10 +279,10 @@
        "SCR"
        2
      )
-    f1 (open lstfil "r")
-    f2 (open (strcat msnameshort ".scr") "w")
+    *f1* (open lstfil "r")
+    *f2* (open (strcat msnameshort ".scr") "w")
     dwgfil
-     (read-line f1)
+     (read-line *f1*)
   ) ;_ end of setq
   (setq column 0)
   (if (wcmatch dwgfil "*:\\*,*\\\\*")
@@ -302,23 +302,23 @@
         (<= 15.0 (atof (getvar "acadver")))
         (= 0 (getvar "sdi"))
       )
-    (princ "sdi 1 " f2)
+    (princ "sdi 1 " *f2*)
   ) ;_ end of if
-  (write-line (strcat "qsave open \"" dwgfil "\"") f2)
+  (write-line (strcat "qsave open \"" dwgfil "\"") *f2*)
   ;;  Write script lines for each drawing.
   (while dwgfil
     ;;  Script line sets newly opened drawing to pre R-12 commands.
     ;;  Other commands for each dwg. may be added or deleted after "cmddia 0".
-    (write-line "filedia 0 cmddia 0" f2)
+    (write-line "filedia 0 cmddia 0" *f2*)
     ;;  Embed selected script file.
     (setq rptscr (open (findfile rsname) "r"))
     (while (setq rdscr (read-line rptscr))
-      (write-line rdscr f2)
+      (write-line rdscr *f2*)
     )
     (close rptscr)
     ;;  Save each drawing.
-    (princ "filedia 1 cmddia 1\nqsave " f2)
-    (setq dwgfil (read-line f1))
+    (princ "filedia 1 cmddia 1\nqsave " *f2*)
+    (setq dwgfil (read-line *f1*))
     ;;  If there is another file to process, open it.
     (if dwgfil
       (setq dwgfil (substr dwgfil column))
@@ -327,7 +327,7 @@
           dwgfil
           (or (findfile dwgfil) (findfile (strcat dwgfil ".dwg")))
         )
-      (write-line (strcat "open \"" dwgfil "\"") f2)
+      (write-line (strcat "open \"" dwgfil "\"") *f2*)
       (setq dwgfil nil)
     ) ;_ end of if
   ) ;_ end while
@@ -335,10 +335,10 @@
         (<= 15.0 (atof (getvar "acadver")))
         (= 0 (getvar "sdi"))
       )
-    (write-line "sdi 0" f2)
+    (write-line "sdi 0" *f2*)
   ) ;_ end of if
-  (close f2)
-  (close f1)
+  (close *f2*)
+  (close *f1*)
   (if del
     (vl-cmdf "sh" (strcat "del \"" msnamelist "\""))
   ) ;_ end of if

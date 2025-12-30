@@ -1,4 +1,4 @@
-﻿(princ "\nConstruction Notes Manager menu utilities ... ")
+﻿(princ "\nConstruction Notes Manager menu utilities loading ... ")
 ;;; ============================================================================
 ;;; HOW TO ADD A NEW CNM/HAWSEDC COMMAND
 ;;; ============================================================================
@@ -246,10 +246,6 @@
 ;;; Must be loaded early so haws-config and other utilities are available.
 (load "edclib")
 
-;;; haws-tip is the tip/evangelism system for HAWS/EDC/CNM.
-;;; It must be loaded before any tips are shown.
-(load "haws-tip")
-
 ;;;===========================================================================
 ;;; REACTOR CALLBACK AUTOLOADER
 ;;;===========================================================================
@@ -308,5 +304,5 @@
 )
 
 (if (not(c:haws-icad-p))(hcnm-placecnmmenu)) ;Do it if not in icad
-(princ "loaded.")
+(princ "\nConstruction Notes Manager menu utilities loaded.")
 (princ)
