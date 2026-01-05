@@ -7595,13 +7595,13 @@ ImportLayerSettings=No
 ;;; BUSINESS LOGIC (documented 2025-10-30):
 ;;; - If TXT1 has content → add underline (%%u for dtext, \L for mtext)
 ;;; - If TXT2 has content → add overline (%%o for dtext, \O for mtext)
-;;; - If EITHER has content → NOTEGAP = "%%u  ", else ""
+;;; - If EITHER has content → NOTEGAP = "%%u ", else ""
 ;;;
 ;;; INPUT: lattribs-cat (concatenated)
 ;;;   '(("NOTETXT1" "text1") ("NOTETXT2" "text2") ("NOTEGAP" ""))
 ;;;
 ;;; OUTPUT: lattribs-cat (formatted)
-;;;   '(("NOTETXT1" "%%utext1") ("NOTETXT2" "%%otext2") ("NOTEGAP" "%%u  "))
+;;;   '(("NOTETXT1" "%%utext1") ("NOTETXT2" "%%otext2") ("NOTEGAP" "%%u "))
 ;;;
 ;;; Used by: lattribs-to-dwg, lattribs-to-dlg
 ;;;
@@ -7680,7 +7680,7 @@ ImportLayerSettings=No
   (setq
     gap-value
      (cond
-       ((or (not txt1-empty-p) (not txt2-empty-p)) "%%u  ")
+       ((or (not txt1-empty-p) (not txt2-empty-p)) "%%u ")
        (t "")
      )
   )

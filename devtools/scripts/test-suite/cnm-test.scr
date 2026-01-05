@@ -67,7 +67,10 @@
 ; These variable settings are restored at the end of this script. If script crashes, they have to be restored manually.
 filedia
 0
-(command "._saveas" "" (strcat (getvar "dwgprefix") "cnm-test.dwg") "_yes")
+(setq *expert-old* (getvar "expert"))
+(setvar "expert" 2)
+(command "._saveas" "" (strcat (getvar "dwgprefix") "cnm-test.dwg"))
+(setvar "expert" *expert-old*)
 (load (strcat (getvar "dwgprefix") "cnm-test-validation.lsp"))
 (c:test-setup-layers)
 (test-write-report-header)
