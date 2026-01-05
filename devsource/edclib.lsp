@@ -66,7 +66,8 @@
     "\nTake CNM with you wherever you work. Share it, share your ideas, and help it grow!"
     "\nCNM is a community project! Make a difference by sharing it and making it better."
     "\nContribute to CNM and report issues at https://github.com/hawstom/cnm"
-    "\nUse CNMALIAS to try the most popular CNM+ commands: FFX/OFFX, LX, R, OO, PJL, LCPX, and EE."
+    "\nUse CNMALIAS to enable popular CNM+ tools like FFX, LX, LCPX, R (ROTATEBASE), NA, OO/XRO, PJL, and CB/VB."
+    "\nDiscover CNM+ tools using the Coolness ratings in CNM-Command-Reference.ods. Enable them all now with CNMALIAS."
   ))
   (setq big-date (* (getvar "DATE") 100000000))
   (setq idx  (rem (fix (* 10000 (- big-date (fix big-date)))) (length msgs)))
@@ -847,7 +848,7 @@
 )
 
 ;;; MIGRATED: Now uses haws-config instead of haws-writecfg
-(defun haws-use-log-local (command-id / log-string)
+(defun haws-use-log-local (command-id)
   (haws-setvar "UseString"
     (haws-use-command-id-to-log-string command-id (haws-use-get-local-log-string))
   )
@@ -859,7 +860,7 @@
   log-string
 )
 
-(defun haws-use-command-id-to-log-string (command-id log-string / max-id)
+(defun haws-use-command-id-to-log-string (command-id log-string)
   (cond
     ((or (not log-string) (= log-string ""))
      (haws-use-initialize-log-string)
@@ -870,18 +871,18 @@
 
 (defun haws-use-log-remote (/ url http bios-date log-data)
   (setq
-    url  "http://www.constructionnotesmanager.com/cnm-log.php"
+    url  "http://www.constructionnotesmanager.com/cnm_log.php"
     http (vlax-create-object "MSXML2.XMLHTTP")
     bios-date (haws-getbiosdate)
     log-data
      (strcat
-       "computer-name="
+       "computer_name="
        (haws-getcomputername)
        "&loginname="
        (getvar "loginname")
-       "&cnm-version="
+       "&cnm_version="
        (haws-unified-version)
-       "&command-log="
+       "&command_log="
        (haws-use-get-local-log-string)
      )
   )
@@ -1572,7 +1573,8 @@
        (setq number (strcat number c))
       )
       ((and
-         (eq c "_")
+         (eq c "-")
+         (= suffix "")
          (= suffix number "")
          (wcmatch (substr s (1+ i) 1) "#")
        )
@@ -1653,7 +1655,7 @@
        )
       )
       ((and
-         (eq c "_")
+         (eq c "-")
          (= number "")
          (not done)
          (wcmatch (substr s (1+ i) 1) "#")
@@ -3550,7 +3552,7 @@
 ;; New location: HKEY_CURRENT_USER\Software\HawsEDC\HAWS\UseString
 (if (/= (getcfg "AppData/HawsEDC/UseLog/UseString") "")
   (progn
-    (setcfg "AppData/HawsEDC/UseLog" "")
+    (setcfg "AppData/HawsEDC/UseLog/UseString" "")
     (princ "\n[Migration] Cleared old USE-LOG location (AppData \U+2192 Registry)")
   )
 )
