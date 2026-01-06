@@ -64,6 +64,8 @@
 ;   - Common failures: Missing objects, wrong coordinates, CVPORT issues
 ;
 ; === SETUP ===
+; As of v5.5.37, cnm only autoloads, which is good progress (previously was front-loaded for its config functions used elsewhere). So we load it here for the config functions used here.
+(load "cnm")
 (haws-tip 10 "This script changes and tries to restore the following variable settings. If it fails to complete, you may need to restore them the way you want them manually.\n\n\t- (setvar \"expert\" 2)\n\t- (hcnm-config-setvar \"BubbleSkipEntryPrompt\" \"0\")")
 filedia
 0
