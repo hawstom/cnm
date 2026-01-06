@@ -363,6 +363,9 @@ INSERT INTO `command` (`command_id`, `command_name`, `command_appgroup`) VALUES
 (335, "hcnm-notesedit-pro", 2),
 (336, "hcnm-cnmqt", 1),
 (337, "hcnm-edit-bubbles", 1),
+(338, "hcnm-replace-bubble", 1),
+(339, "haws-label", -1),
+(340, "hcnm-copy-bubbles", -1),
 (1000, "untracked", 1);
 
 -- --------------------------------------------------------

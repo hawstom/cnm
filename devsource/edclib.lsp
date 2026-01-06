@@ -32,7 +32,7 @@
 ;;; lisputil.lsp
 ;;;This is the current version of HawsEDC and CNM
 (defun haws-unified-version ()
-  "5.5.35"
+  "5.5.36"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 ;;This function returns the current setting of nagmode.
@@ -834,7 +834,6 @@
      (339 -1 "haws-label")
      (340 -1 "hcnm-copy-bubbles")
      ;; Add new commands here
-     (1000 1 "untracked")
    )
 )
 

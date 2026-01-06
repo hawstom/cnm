@@ -2428,7 +2428,7 @@
   (haws-core-restore)
 )
 (defun c:hcnm-cnmqt ()
-  (haws-core-init 338)
+  (haws-core-init 336)
   (hcnm-cnm "Tally")
   (haws-core-restore)
 )
