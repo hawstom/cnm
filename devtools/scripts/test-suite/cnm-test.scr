@@ -64,13 +64,15 @@
 ;   - Common failures: Missing objects, wrong coordinates, CVPORT issues
 ;
 ; === SETUP ===
-; These variable settings are restored at the end of this script. If script crashes, they have to be restored manually.
+(haws-tip 10 "This script changes and tries to restore the following variable settings. If it fails to complete, you may need to restore them the way you want them manually.\n\n\t- (setvar \"expert\" 2)\n\t- (hcnm-config-setvar \"BubbleSkipEntryPrompt\" \"0\")")
 filedia
 0
 (setq *expert-old* (getvar "expert"))
 (setvar "expert" 2)
 (command "._saveas" "" (strcat (getvar "dwgprefix") "cnm-test.dwg"))
 (setvar "expert" *expert-old*)
+(setq *BubbleSkipEntryPrompt-old* (hcnm-config-getvar "BubbleSkipEntryPrompt"))
+(hcnm-config-setvar "BubbleSkipEntryPrompt" "0")
 (load (strcat (getvar "dwgprefix") "cnm-test-validation.lsp"))
 (c:test-setup-layers)
 (test-write-report-header)
@@ -1379,4 +1381,6 @@ filedia
 1
 sdi
 0
+(hcnm-config-setvar "BubbleSkipEntryPrompt" *BubbleSkipEntryPrompt-old*)
+
 ; This is the end of the script. Do not add characters after this comment.
