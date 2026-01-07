@@ -32,36 +32,63 @@
 ;;;   - Readability bias keeps text "right-side up"
 ;;;   - Text height from dimension style (haws-text-height-model)
 
-(defun c:haws-label (/ ent-data ent-name ent-pick ent-type label-text layer-name
-                        layer-table pick-point readability-bias settings text-angle
-                        text-height text-style-key text-style-name text-style-table)
+(defun c:haws-label (/ angle-mode ent-data ent-name ent-pick ent-type label-text layer-name
+                        layer-table pick-point pt1 pt2 readability-bias settings text-angle
+                        text-height text-style-key text-style-name text-style-table user-choice)
   (haws-core-init 339)
   (haws-vsave '("CLAYER"))
+  
+  ;; Initialize angle mode to AUTOMATIC if not already set
+  (if (not (boundp '*haws-label-angle-mode*))
+    (setq *haws-label-angle-mode* "AUTOMATIC")
+  )
   
   (setq settings (haws-label-read-settings))
   (setq readability-bias (car settings)
         text-style-table (cadr settings)
         layer-table (caddr settings))
   
-  (prompt "\nSelect line, arc, or polyline: ")
-  (setq ent-pick (nentsel))
-  (if (not ent-pick)
-    (progn (princ "\nNo entity selected.") (haws-vrstor) (exit))
-  )
+  ;; Convert readability bias to radians once
+  (setq readability-bias (/ (* readability-bias pi) 180.0))
   
-  (setq ent-name (car ent-pick)
-        pick-point (cadr ent-pick)
-        ent-data (entget ent-name)
-        ent-type (cdr (assoc 0 ent-data))
-        layer-name (cdr (assoc 8 ent-data)))
-  
-  (if (not (haws-label-valid-entity-type ent-type))
-    (progn
-      (alert (strcat "Unsupported entity type: " ent-type "\nPlease select a LINE, ARC, or POLYLINE."))
-      (haws-vrstor)
-      (exit)
+  (while T
+    ;; Prompt for object selection with mode change option
+    (setq ent-pick nil)
+    (while (not ent-pick)
+      (initget "Change")
+      (setq ent-pick (nentsel (strcat "\nSelect line, arc, or polyline or [Change mode: Current " *haws-label-angle-mode* "]: ")))
+      
+      (if (= ent-pick "Change")
+        (progn
+          (if (= *haws-label-angle-mode* "MANUAL")
+            (setq *haws-label-angle-mode* "AUTOMATIC")
+            (setq *haws-label-angle-mode* "MANUAL")
+          )
+          (princ (strcat "\nMode changed to " *haws-label-angle-mode*))
+          (setq ent-pick nil)
+        )
+        (if ent-pick
+          (progn
+            (setq ent-name (car ent-pick)
+                  pick-point (cadr ent-pick)
+                  ent-data (entget ent-name)
+                  ent-type (cdr (assoc 0 ent-data)))
+            (if (not (haws-label-valid-entity-type ent-type))
+              (progn
+                (alert (strcat "Unsupported entity type: " ent-type "\nPlease select a LINE, ARC, or POLYLINE."))
+                (setq ent-pick nil)
+              )
+            )
+          )
+        )
+      )
     )
-  )
+    
+    (if (not ent-pick)
+      (progn (princ "\nNo entity selected.") (haws-vrstor) (haws-core-restore) (exit))
+    )
+  
+  (setq layer-name (cdr (assoc 8 ent-data)))
   
   (setq label-text (haws-label-find-label layer-name layer-table))
   (if (not label-text)
@@ -75,12 +102,22 @@
   
   (setq text-style-name (haws-label-apply-style text-style-key text-style-table))
   
-  (setq text-angle (haws-label-calc-angle ent-type ent-data ent-name pick-point))
+  ;; Calculate angle based on stored mode preference
+  (if (= *haws-label-angle-mode* "MANUAL")
+    (progn
+      (setq pt1 (getpoint "\nFirst point for angle: ")
+            pt2 (getpoint pt1 "\nSecond point for angle: "))
+      (if (and pt1 pt2)
+        (setq text-angle (angle pt1 pt2))
+        (setq text-angle (haws-label-calc-angle ent-type ent-data ent-name pick-point))
+      )
+    )
+    (setq text-angle (haws-label-calc-angle ent-type ent-data ent-name pick-point))
+  )
   
   ;; Apply readability bias - flip text if upside-down
   ;; READABILITY-BIAS is the angle threshold (default 110 degrees)
   ;; Text between READABILITY-BIAS and (READABILITY-BIAS + 180) gets flipped
-  (setq readability-bias (/ (* readability-bias pi) 180.0)) ; Convert to radians
   (if (< readability-bias text-angle (+ readability-bias pi))
     (setq text-angle (+ text-angle pi))
   )
@@ -109,6 +146,7 @@
     '(45 . 1.1)                       ; Fill box scale (border offset factor)
     '(441 . 0)                        ; Background fill setting
   ))
+  )
   (haws-vrstor)
   (haws-core-restore)
   (princ)
