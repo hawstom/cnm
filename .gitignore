@@ -22,6 +22,7 @@ Devmenu/VS-DLL/
 devtools/scripts/test-suite/test-results
 devtools/scripts/test-suite/cnm.ini
 devtools/scripts/test-suite/constnot.csv
+devtools/scripts/test-suite/cnm-test.dwg
 devtools/scripts/test-suite/cnm-test.csv
 devtools/scripts/test-suite/cnm-test.not
 devtools/scripts/test-suite/haws-debug-log.md

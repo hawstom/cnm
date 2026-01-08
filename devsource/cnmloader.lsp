@@ -4,7 +4,7 @@
 ;;; ============================================================================
 ;;; 1. Create the canonical command function (DEFUN C:COMMAND_NAME ...) in the appropriate .lsp file.
 ;;; 2. Add a new entry to *HAWS-EDCCOMMANDS* in edclib.LSP to get a tracker id for the command: (<tracker-id> <appgroup> "command-name")
-;;;    - Use the next available sequential id less than 1000. (see comment in edclib.LSP).
+;;;    - Use the next available sequential id. (see comment in edclib.LSP).
 ;;; 3. Add (haws-core-init <tracker-id>) at the top for usage tracking.
 ;;; 3. Add the command and its file to a line in cnmloader.lsp using haws-autoload.
 ;;; 4. Add command aliases to cnmalias.lsp if needed. If nothing else, just strip the "haws-" prefix.

@@ -64,10 +64,17 @@
 ;   - Common failures: Missing objects, wrong coordinates, CVPORT issues
 ;
 ; === SETUP ===
-; These variable settings are restored at the end of this script. If script crashes, they have to be restored manually.
+; As of v5.5.37, cnm only autoloads, which is good progress (previously was front-loaded for its config functions used elsewhere). So we load it here for the config functions used here.
+(load "cnm")
+(haws-tip 10 "This script changes and tries to restore the following variable settings. If it fails to complete, you may need to restore them the way you want them manually.\n\n\t- (setvar \"expert\" 2)\n\t- (hcnm-config-setvar \"BubbleSkipEntryPrompt\" \"0\")")
 filedia
 0
-(command "._saveas" "" (strcat (getvar "dwgprefix") "cnm-test.dwg") "_yes")
+(setq *expert-old* (getvar "expert"))
+(setvar "expert" 2)
+(command "._saveas" "" (strcat (getvar "dwgprefix") "cnm-test.dwg"))
+(setvar "expert" *expert-old*)
+(setq *BubbleSkipEntryPrompt-old* (hcnm-config-getvar "BubbleSkipEntryPrompt"))
+(hcnm-config-setvar "BubbleSkipEntryPrompt" "0")
 (load (strcat (getvar "dwgprefix") "cnm-test-validation.lsp"))
 (c:test-setup-layers)
 (test-write-report-header)
@@ -1371,6 +1378,12 @@ Performance Benchmarks
 Key Notes & QT Tables: Key Notes Table generation validated and QT Table generation validated
 CNM-Demo Coverage (CNM Plus Utilities): haws-contvol, haws-ut, haws-mof, haws-lotnum, haws-newpro (profile drafter)
 Review test-results/cnm-test-report.md for detailed results.
+
+filedia
+1
+sdi
+0
+(hcnm-config-setvar "BubbleSkipEntryPrompt" *BubbleSkipEntryPrompt-old*)
 
 filedia
 1

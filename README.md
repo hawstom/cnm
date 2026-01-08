@@ -21,11 +21,11 @@ Thanks to my AI assistant, I can now implement your ideas fast. Try me!
 # HOW I DEVELOP AND TEST CNM
 1. Run Git Bash Here in the Windows File Explorer context (right-click) menu under hawsedc\develop.
 2. Check 'git status'
-3. 'git commit -am"..."' as needed.
-4. Open any drawing in hawsedc\develop\sandbox or anywhere.
-5. Put hawsedc\develop\devsource at top of AutoCAD Support Files Search Path and in Trusted Locations
-6. If developing menu, unload cnm.cuix and load from source folder.
-7. In AutoCAD command VLISP IDE, open hawsedc\develop\devsource\cnm.prj
-8. Develop and test in VLISP.
-9. Final test using CNM-Demo.scr with a copy (outside source for safety) of CNM-Demo.*
-10. Save, then compile FAS and see hawsedc\compile\README.TXT for compile and distrib instructions.
+3. Put hawsedc\develop\devsource at top of AutoCAD Support Files Search Path and in Trusted Locations
+4. To test, open devtools\scripts\test-suite\cnm-test-start.dwg and run cnm-test.scr.
+5. If developing menu, unload cnm.cuix and load from source folder.
+6. In AutoCAD command VLISP VS Code, open hawsedc\develop folder.
+7. Develop and test in VS Code.
+8. Final test open devtools\scripts\test-suite\cnm-test-start.dwg and run cnm-test.scr.
+9. 'git commit -am"..."' as needed.
+10. Disconnect VS Code debugger, close all files, then run devtools\scripts\compile.lsp and see hawsedc\compile\README.TXT for compile and distrib instructions.
