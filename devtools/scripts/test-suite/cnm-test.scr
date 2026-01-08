@@ -66,6 +66,8 @@
 ; === SETUP ===
 ; As of v5.5.37, cnm only autoloads, which is good progress (previously was front-loaded for its config functions used elsewhere). So we load it here for the config functions used here.
 (load "cnm")
+; Delete debug log from previous test runs
+(if (findfile (strcat (getvar "dwgprefix") "haws-debug-log.md")) (vl-file-delete (strcat (getvar "dwgprefix") "haws-debug-log.md")))
 (haws-tip 10 "This script changes and tries to restore the following variable settings. If it fails to complete, you may need to restore them the way you want them manually.\n\n\t- (setvar \"expert\" 2)\n\t- (hcnm-config-setvar \"BubbleSkipEntryPrompt\" \"0\")")
 filedia
 0
@@ -223,19 +225,22 @@ sta
 (test-validate-auto-text (entlast) "NOTETXT1" "STA 53+00.00" "TEST 1: Sta (Model)")
 (test-validate-xdata (entlast) "NOTETXT1" "Sta" "TEST 1")
 (test-validate-reactor (entlast) "NOTETXT1" "Sta" "TEST 1")
+(setq test-bubble-1-handle (cdr (assoc 5 (entget (entlast)))))
 sdi
 1
 (command "._qsave" "._open" (strcat (getvar "dwgprefix") "cnm-test.dwg"))
 sdi
 0
+(load "cnm")
 (haws-setvar "DebugLevel" "1")
+(load (strcat (getvar "dwgprefix") "cnm-test-validation.lsp"))
 ;(load "haws-clock.lsp")
 ;;
-;; TEST 2: Dia (Model) - Pipe diameter
+;; TEST 2: L (Model) - Pipe length
 ;; Position: 3L-4D = Column 3 Left, Row 4 Down
 ;; Arrow: (10220',20200'), Bubble: (10215',20190')
 ;; Selection: Pipe at (10360',20200') - center X, avoids bubbles/leaders
-;; Expected: 18" diameter
+;; Expected: L=640.00'
 ;; Config: With hooks, no mtext
 ;;
 (hcnm-config-setvar "BubbleHooks" "1")
@@ -245,18 +250,21 @@ HAWS-ELLL
 10215,20190
 2
 .
-dia
+L
 10360,20200
 
-(test-validate-auto-text (entlast) "NOTETXT1" "18\"" "TEST 2: Dia (Model)")
-(test-validate-xdata (entlast) "NOTETXT1" "Dia" "TEST 2")
-(test-validate-reactor (entlast) "NOTETXT1" "Dia" "TEST 2")
+(test-validate-auto-text (entlast) "NOTETXT1" "L=640.00'" "TEST 2: L (Model)")
+(test-validate-xdata (entlast) "NOTETXT1" "L" "TEST 2")
+(test-validate-reactor (entlast) "NOTETXT1" "L" "TEST 2")
+(setq test-bubble-2-handle (cdr (assoc 5 (entget (entlast)))))
 sdi
 1
 (command "._qsave" "._open" (strcat (getvar "dwgprefix") "cnm-test.dwg"))
 sdi
 0
+(load "cnm")
 (haws-setvar "DebugLevel" "1")
+(load (strcat (getvar "dwgprefix") "cnm-test-validation.lsp"))
 ;(load "haws-clock.lsp")
 ;;
 ;; TEST 3: N (Model) - Northing coordinate
@@ -283,7 +291,9 @@ sdi
 (command "._qsave" "._open" (strcat (getvar "dwgprefix") "cnm-test.dwg"))
 sdi
 0
+(load "cnm")
 (haws-setvar "DebugLevel" "1")
+(load (strcat (getvar "dwgprefix") "cnm-test-validation.lsp"))
 ;(load "haws-clock.lsp")
 ;;
 ;; TEST 4: LF (Model) - Linear feet from curb line
@@ -318,7 +328,9 @@ sdi
 (command "._qsave" "._open" (strcat (getvar "dwgprefix") "cnm-test.dwg"))
 sdi
 0
+(load "cnm")
 (haws-setvar "DebugLevel" "1")
+(load (strcat (getvar "dwgprefix") "cnm-test-validation.lsp"))
 ;(load "haws-clock.lsp")
 ;;
 ;; TEST 5: Manual (Model) - Baseline manual text entry
@@ -442,6 +454,7 @@ sta
 (test-validate-auto-text (entlast) "NOTETXT1" "STA 50+00.00" "TEST 9: Sta (Paper)")
 (test-validate-xdata (entlast) "NOTETXT1" "Sta" "TEST 9")
 (test-validate-reactor (entlast) "NOTETXT1" "Sta" "TEST 9")
+(setq test-bubble-9-handle (cdr (assoc 5 (entget (entlast)))))
 ;;
 ;; TEST 10: Off (Paper→Model) - Offset calculation through viewport
 ;; Paper position: 5L column area - no conflict with model tests
@@ -507,10 +520,10 @@ staname
 (test-validate-xdata (entlast) "NOTETXT1" "StaName" "TEST 12")
 (test-validate-reactor (entlast) "NOTETXT1" "StaName" "TEST 12")
 ;;
-;; TEST 13: Dia (Paper→Model) - Pipe diameter through viewport
+;; TEST 13: L (Paper→Model) - Pipe length through viewport
 ;; Paper position: 2L column area at pipe row - no conflict with model tests
 ;; Selection: Pipe in MODEL coordinates (10360',20200') - center X, avoids bubbles
-;; Expected: 18" (property read, no coordinate transform)
+;; Expected: L=640.00' (property read, no coordinate transform)
 ;; Paper (14",10.0") × 20 = Model offset (-80',-40') from center = (10280',20200')
 ;; Config: No hooks, no mtext (return to baseline)
 ;;
@@ -521,12 +534,12 @@ HAWS-ELLL
 13.75,9.5
 13
 .
-dia
+L
 10360,20200
 
-(test-validate-auto-text (entlast) "NOTETXT1" "18\"" "TEST 13: Dia (Paper)")
-(test-validate-xdata (entlast) "NOTETXT1" "Dia" "TEST 13")
-(test-validate-reactor (entlast) "NOTETXT1" "Dia" "TEST 13")
+(test-validate-auto-text (entlast) "NOTETXT1" "L=640.00'" "TEST 13: L (Paper)")
+(test-validate-xdata (entlast) "NOTETXT1" "L" "TEST 13")
+(test-validate-reactor (entlast) "NOTETXT1" "L" "TEST 13")
 ;;
 ;; TEST 14: Slope (Paper→Model) - Pipe slope through viewport
 ;; Paper position: 5R column area at pipe row - no conflict with model tests
@@ -864,6 +877,103 @@ HAWS-DIAL
 2
 STA. 5+22
 5' L
+;;==============================================================================
+;; PHASE D: STRETCH VALIDATION TESTS
+;;==============================================================================
+;; Purpose: Validate that reactors actually update auto-text values
+;; Tests leader stretch, alignment modification, and save/reopen cycles
+;;
+;; CRITICAL: Switch to model space (was in paper space from TEST 17-18)
+._MSPACE
+;;
+;; Find bubbles by insertion coordinates (variables cleared by save/reopen)
+;; TEST 1 bubble at position 2L-2D (model space)
+(haws-debug "\n\n=== PHASE D: Finding bubbles by coordinates ===")
+(setq test-bubble-1 (test-find-bubble-by-coord 10135.0 20270.0 0.0 "TEST 1"))
+;; TEST 2 bubble at position 3L-4D (model space)
+(setq test-bubble-2 (test-find-bubble-by-coord 10215.0 20190.0 0.0 "TEST 2"))
+;; TEST 9 bubble: Paper space bubble - find in paper space
+._PSPACE
+(setq test-bubble-9 (test-find-bubble-by-coord 10.0 8.0 0.0 "TEST 9 (paper)"))
+;; Return to model space for stretch tests
+._MSPACE
+;;
+;; TEST 41: Leader Stretch - Sta bubble (coordinate-based, should update)
+;; Bubble TEST 1 has Station auto-text at position 2L-2D
+;; Arrow point: (10140',20280'), leader will be nearby
+;;
+(haws-debug "\n\n=== TEST 41: Leader Stretch - Station Auto-Text ===")
+(test-stretch-validation-pattern 41 test-bubble-1 "NOTETXT1" "Leader Stretch Sta" 
+                                 '("_C" "10139,20279" "10141,20281" "" "0,1")
+                                 "Station should change when leader moves along alignment"
+                                 T)
+;;
+;; TEST 42: Leader Stretch - Dia bubble (property-based, should NOT update)
+;; Bubble TEST 2 has Diameter auto-text - leader movement shouldn't affect pipe diameter
+;;
+(haws-debug "\n\n=== TEST 42: Leader Stretch - Diameter Auto-Text (should NOT change) ===")
+(test-stretch-validation-pattern 42 test-bubble-2 "NOTETXT1" "Leader Stretch Dia"
+                                 '("_C" "10214,20189" "10216,20191" "" "0,1")
+                                 "Diameter is pipe property, not affected by leader position"
+                                 nil)
+;;
+;; TEST 43: Alignment Stretch - Multiple Sta bubbles should update
+;; Both TEST 1 and TEST 9 bubbles have Sta auto-text
+;;
+(haws-debug "\n\n=== TEST 43: Alignment Modification - All Station Bubbles ===")
+(cond
+  ((and test-bubble-1 test-bubble-9)
+   ;; Capture initial states
+   (setq state1-before (test-capture-reactor-state test-bubble-1 "NOTETXT1"))
+   (setq state9-before (test-capture-reactor-state test-bubble-9 "NOTETXT1"))
+   (setq bubble-1-before (test-get-bubble-text test-bubble-1 "NOTETXT1"))
+   (setq bubble-9-before (test-get-bubble-text test-bubble-9 "NOTETXT1"))
+   (haws-debug (strcat "\nBubble 1 before: " bubble-1-before))
+   (haws-debug (test-format-reactor-state state1-before "BUBBLE 1 STATE BEFORE"))
+   (haws-debug (strcat "\nBubble 9 before: " bubble-9-before))
+   (haws-debug (test-format-reactor-state state9-before "BUBBLE 9 STATE BEFORE"))
+   ;; Stretch alignment end point 1 foot east (changes all stations)
+   (command "._STRETCH" "_C" "10679,20239" "10681,20241" "" "1,0")
+   ;; Capture final states
+   (setq state1-after (test-capture-reactor-state test-bubble-1 "NOTETXT1"))
+   (setq state9-after (test-capture-reactor-state test-bubble-9 "NOTETXT1"))
+   (setq bubble-1-after (test-get-bubble-text test-bubble-1 "NOTETXT1"))
+   (setq bubble-9-after (test-get-bubble-text test-bubble-9 "NOTETXT1"))
+   (haws-debug (strcat "\nBubble 1 after: " bubble-1-after))
+   (haws-debug (test-format-reactor-state state1-after "BUBBLE 1 STATE AFTER"))
+   (haws-debug (strcat "\nBubble 9 after: " bubble-9-after))
+   (haws-debug (test-format-reactor-state state9-after "BUBBLE 9 STATE AFTER"))
+   (test-validate-value-changed "TEST 43a: Alignment - Bubble 1" 
+                                bubble-1-before 
+                                bubble-1-after 
+                                "Station must change when alignment geometry changes"
+                                state1-before
+                                state1-after)
+   (test-validate-value-changed "TEST 43b: Alignment - Bubble 9" 
+                                bubble-9-before 
+                                bubble-9-after 
+                                "Station must change when alignment geometry changes"
+                                state9-before
+                                state9-after)
+   ;; Stretch back to original position
+   (command "._STRETCH" "_C" "10680,20239" "10682,20241" "" "-1,0")
+  )
+  (t
+   (test-write-report-entry "TEST 43: Alignment Modification" "FAIL" 
+                           "Could not find both TEST 1 and TEST 9 bubbles for alignment test")
+  )
+)
+;;
+;; TEST 44: All Bubbles Reactor Health Check
+;; Validate ALL bubbles in drawing have working reactors before save
+;;
+(haws-debug "\n\n=== TEST 44: Pre-Save Reactor Health Check ===")
+(c:test-validate-all-bubbles-react)
+;;
+;; Save drawing for potential manual reopen tests
+(haws-debug "\n\nSaving drawing (for future save/reopen tests)...")
+(command "._QSAVE")
+;;
 ;;
 ;; GENERATE KEY NOTES TABLE
 ;; Command: hcnm-cnmkt (Key Notes Table)
@@ -878,6 +988,15 @@ hcnm-cnmkt
 ;; Check that .not file was created
 ;;
 (c:test-validate-key-table)
+;;
+;; REACTOR DIAGNOSTIC: Check data vs VLR sync after key table generation
+;; This is where reactor regression typically shows up
+;;
+(haws-debug "\n\n=== LOADING REACTOR DIAGNOSTIC ===")
+(load "c:/TGHFiles/programming/hawsedc/develop/devtools/scripts/test-suite/cnm-test-reactor-diagnostic.lsp")
+(haws-debug "\n=== RUNNING REACTOR DIAGNOSTIC ===")
+(c:test-reactor-diagnostic)
+(haws-debug "\n=== REACTOR DIAGNOSTIC COMPLETE ===\n")
 ;;==============================================================================
 ;; PHASE I: QUANTITY TAKEOFF TABLE TESTS
 ;;==============================================================================
@@ -996,7 +1115,7 @@ C-ANNO-HCNM-TEST
 
 ; === PHASE F: PERFORMANCE BENCHMARKS ===
 ; TEST 39: Bubble insertion performance (20 insertions)
-(princ "\n\n=== TEST 39: Bubble Insertion Performance ===")
+(haws-debug "\n\n=== TEST 39: Bubble Insertion Performance ===")
 (setq perf-start-39 (getvar "MILLISECS"))
 ;; Insert 20 bubbles with Station auto-text in grid pattern
 ;; Row 11-12 positions (below CNM-Demo tests)
@@ -1183,7 +1302,7 @@ sta
 ;; End performance test and report
 (c:test-report-insertion-performance perf-start-39 20)
 ; TEST 40: Reactor performance (20 leader stretches)
-(princ "\n\n=== TEST 40: Reactor Update Performance ===")
+(haws-debug "\n\n=== TEST 40: Reactor Update Performance ===")
 (c:test-enable-profiling)
 (setq test-bubble-40 (entlast))
 (setq perf-start-40 (getvar "MILLISECS"))
@@ -1353,13 +1472,16 @@ c
 ;; End reactor performance test and report
 (c:test-report-reactor-performance perf-start-40 20)
 ; === SUMMARY ===
-(c:test-generate-summary-mtext)
 (test-write-report-summary 8 10 42)
 ;; Cleanup: remove project files for next test run
 (c:test-cleanup-project-files)
 (c:test-log-end)
 ; === SUCCESS MESSAGE ===
 ; Place in model space at top of drawing for visibility @ 1/20XP scale
+; Generate truthful summary from actual test results
+; Set TEXTEVAL=1 to evaluate AutoLISP expression in MTEXT
+texteval
+1
 mtext
 10360,20430
 height
@@ -1368,17 +1490,10 @@ justify
 TC
 Width
 0
-CNM TEST SUITE - ALL 42 TESTS COMPLETED SUCCESSFULLY
-Auto-Text Validation
-- 8 model space tests (baseline + SF/SY)
-- 10 paper space tests (VPTRANS coordinate transform)
-Performance Benchmarks
-- Insertion performance (20 bubbles, baseline timing)
-- Reactor performance (20 updates, callback overhead)
-Key Notes & QT Tables: Key Notes Table generation validated and QT Table generation validated
-CNM-Demo Coverage (CNM Plus Utilities): haws-contvol, haws-ut, haws-mof, haws-lotnum, haws-newpro (profile drafter)
-Review test-results/cnm-test-report.md for detailed results.
+(c:test-generate-summary-mtext)
 
+texteval
+0
 filedia
 1
 sdi

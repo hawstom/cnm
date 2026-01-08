@@ -19,7 +19,31 @@
 #### 1.1.3. Workflow Constraints
 - **DO NOT git commit**: Let the human commit. AI prepares files only.
 
-#### 1.1.4. Architecture Checklist (MANDATORY before coding)
+#### 1.1.4. NO SUPERSTITIOUS CODE (NON-NEGOTIABLE CORE VALUE)
+**CRITICAL:** Never, never, never, never add or keep superstitious defensive "doesn't HURT anything" clutter.
+
+**Why this matters:**
+- **"Doesn't HURT anything" is DEEPLY FALSE** - Nonsense code doesn't protect, it confuses
+- **Confusion is FATAL** - To both human and AI productivity and effectiveness
+- **Every line must have justification** - No "just in case" or "defensive" code without specific evidence
+- **False safety is dangerous** - Pretending something is safe when you don't understand it creates technical debt
+- **git saves us** - We can always revert bad changes, so no need for "just in case" code
+
+**Examples of superstitious code:**
+- ❌ Adding error handling "just in case" without understanding what errors are possible or why their naked effects (crashes) are unacceptable.
+- ❌ Adding function reloads after commands (only ._open unloads functions)
+- ❌ Adding validation checks "defensively" without knowing what you're validating
+- ❌ Copying patterns without understanding when they apply
+
+**What to do instead:**
+- ✅ Understand the actual requirements (ask if uncertain)
+- ✅ Write only code you can justify with specific evidence
+- ✅ Remove or ask about code you can't justify or understand (even if it "might" help)
+- ✅ Ask "Why is this needed?" before adding or keeping defensive code
+
+**This is non-negotiable.** Clean, justified code is the only acceptable standard.
+
+#### 1.1.5. Architecture Checklist (MANDATORY before coding)
 
 **ALWAYS ask these questions BEFORE writing code:**
 
@@ -604,21 +628,43 @@ See [standards-03-style.md, Section 1.1.1](../devtools/docs/standards/03-style.m
 
 **CRITICAL:** Autodesk AutoLISP Extension (autodesk.autolispext) is installed in this workspace.
 
-**HUMANS SEE ERRORS AUTOMATICALLY via syntax highlighting. YOU MUST USE `get_errors` TO ACCESS THE SAME INFORMATION.**
+**HUMANS SEE ERRORS AUTOMATICALLY via syntax highlighting. YOU MUST USE VALIDATION TOOLS TO ACCESS THE SAME INFORMATION.**
 
-**Workflow for AutoLISP edits:**
+**MANDATORY Workflow for AutoLISP edits:**
 1. **Before editing:** Run `get_errors` to check current state (MANDATORY)
 2. **Make changes:** Edit using `replace_string_in_file`
-3. **After editing:** Run `get_errors` immediately to validate (MANDATORY)
+3. **After editing:** Run BOTH validation checks IMMEDIATELY (MANDATORY):
+   - `get_errors` for semantic errors
+   - `devtools\scripts\validate-lisp-syntax.ps1` for parenthesis/quote balance
 4. **Fix issues:** If errors found, fix before proceeding
+
+**NEW: Parenthesis Balance Validation**
+
+The AutoLISP Extension does NOT catch unbalanced parentheses reliably. Use the dedicated validator:
+
+```powershell
+powershell -File devtools\scripts\validate-lisp-syntax.ps1 -FilePath "devsource\cnm.lsp"
+```
+
+This script checks:
+- ✓ Balanced opening/closing parentheses
+- ✓ Unclosed strings
+- ✓ Line and column numbers for errors
+- ✓ Works on files of any size
+
+**AI Agent Requirements:**
+- Run validate-lisp-syntax.ps1 after EVERY .lsp edit (no exceptions)
+- Do NOT say "fixed" until validation passes
+- Report exact line/column from validation errors
+- If validation fails, show the error to user and fix immediately
 
 **CRITICAL - Tell the truth:**
 - ❌ NEVER say: "File loads successfully" (you cannot test in AutoCAD)
-- ✅ INSTEAD say: "VS Code shows no errors" or "AutoLISP extension reports no diagnostics"
+- ✅ INSTEAD say: "Validation passes" or "No syntax errors detected"
 - ❌ NEVER claim you tested something you didn't
 - ✅ ALWAYS be explicit about what you verified vs. what requires human testing
 
-**Note:** Even with no VS Code errors, user should test in AutoCAD (extension may not catch all runtime issues).
+**Note:** Even with validation passing, user should test in AutoCAD (validation catches syntax, not runtime logic errors).
 
 #### 4.2.3. AutoLISP Idioms
 

@@ -344,25 +344,22 @@
            (assoc 1003 (cdadr (assoc -3 mvport)))
                                         ;Viewport has vp frozen layers
          )
-         (foreach
-            dxfgroup (cdadr (assoc -3 mvport))
-           (cond
+         (foreach dxfgroup (cdadr (assoc -3 mvport)) 
+           (cond 
              ((= 1003 (car dxfgroup))
               (setq vplayers (cons (cdr dxfgroup) vplayers))
              )
-             )
            )
          )
-       )
-       (setq count (1+ count))
-     )
-   )
-   ;;Get bubbles selection set
-   (setq
-     blkss
-      (ssget "X" (list (cons 0 "INSERT")))
-     i -1
-   )
+        )
+      )
+      (setq count (1+ count))
+    )
+  )
+  ;;Get bubbles selection set
+  (setq blkss (ssget "X" (list (cons 0 "INSERT")))
+        i     -1
+  )
   ;;Remove frozen and off blocks, frozen in current viewport,
   ;;xrefs, and xref dependent blocks from the set
   ;;Remove all blocks not in current space if CTABONLY = 1.
@@ -604,22 +601,21 @@
        ;;and put them into the NOTEQTY variable
        ;;as '(("phase" "qty")...)
        (setq noteqty nil)
-       (while
-         (and
+       (while 
+         (and 
            (setq en (entnext en))
            (= "ATTRIB" (setq et (cdr (assoc 0 (setq el (entget en))))))
          )
-          (setq
-            at (cdr (assoc 2 el))
-            av (cdr (assoc 1 el))
-          )
-          (cond
-            ((= at "TBLTYPE") (setq notetype av))
-            ((= at "TBLNUM") (setq notenum av))
-            ((wcmatch at "TBLQTY*")
-             (setq noteqty (cons (list (substr at 7 1) av) noteqty))
-            )
-          )
+         (setq at (cdr (assoc 2 el))
+               av (cdr (assoc 1 el))
+         )
+         (cond 
+           ((= at "TBLTYPE") (setq notetype av))
+           ((= at "TBLNUM") (setq notenum av))
+           ((wcmatch at "TBLQTY*")
+            (setq noteqty (cons (list (substr at 7 1) av) noteqty))
+           )
+         )
        )
        (setq
          notei
@@ -1726,20 +1722,20 @@
              )
             )
             (t
-             (while
-               (not
-                 (and
-                   (wcmatch
+             (while 
+               (not 
+                 (and 
+                   (wcmatch 
                      (strcase (substr sheet-filename column))
                      (strcase (strcat flspec "`.NOT"))
                    )
-                   (or (= "\\" (substr sheet-filename (1- column) 1))
+                   (or (= "\\" (substr sheet-filename (1- column) 1)) 
                        (= "\\" (substr sheet-filename column 1))
                        (= ":" (substr sheet-filename (1+ column) 1))
                    )
                  )
                )
-                (setq column (1- column))
+               (setq column (1- column))
              )
              (setq
                *f1*              (close *f1*)
@@ -2165,19 +2161,17 @@
              (setq
                numfnd nil
                numfnd
-                (foreach
-                   sheet-quantities all-sheets-quantities
-                  (foreach
-                     phasei
-                     (cdddr
-                       (assoc
-                         notnum
-                         (cdr
-                           (assoc nottyp (caddr sheet-quantities))
-                         )
-                       )
-                     )
-                    (if phasei
+                (foreach sheet-quantities all-sheets-quantities 
+                  (foreach phasei 
+                    (cdddr 
+                      (assoc 
+                        notnum
+                        (cdr 
+                          (assoc nottyp (caddr sheet-quantities))
+                        )
+                      )
+                    )
+                    (if phasei 
                       (setq numfnd notnum)
                     )
                   )
@@ -2645,7 +2639,7 @@
 )
 
 (defun hcnm-error-ambiguous-project-markers
-   (local-project-folder linked-project-folder)
+  (local-project-folder linked-project-folder)
   (alert
     (princ
       (strcat
@@ -2721,7 +2715,7 @@
 )
 
 (defun hcnm-check-moved-project
-   (project-file-name / input1 pnname thisfile-value)
+  (project-file-name / input1 pnname thisfile-value)
   (cond
     ((and
        (setq
@@ -2775,7 +2769,7 @@
 
 ;;as posted the autodesk discussion customization group by Tony Tanzillo
 (defun ale_browseforfolder
-   (prmstr ioptns deffld / shlobj folder fldobj outval)
+  (prmstr ioptns deffld / shlobj folder fldobj outval)
   (setq
     shlobj
      (vla-getinterfaceobject
@@ -3719,7 +3713,7 @@ ImportLayerSettings=No
 )
 
 (defun hcnm-config-defaults-single-scope
-   (scope-key / scope-code scope-list)
+  (scope-key / scope-code scope-list)
   (setq scope-code (hcnm-config-scope-code scope-key))
   (foreach
      entry (cdr (assoc "Var" (hcnm-config-definitions)))
@@ -4215,7 +4209,7 @@ ImportLayerSettings=No
 ;; Excel CSV
 ;; Doesn't do project management except to write txt2 configs to cnm.ini in the same folder as projnotes.
 (defun hcnm-readcf
-   (projnotes / bakprojnotes f1 pnformat rdlin requested-format)
+  (projnotes / bakprojnotes f1 pnformat rdlin requested-format)
   ;;Do a file read to figure out what the file format is.
   ;;For now, assume that a file that has any of the shape keys followed by a comma ("BOX,", etc.) is CSV
   ;;any other file is TXT2
@@ -4611,7 +4605,7 @@ ImportLayerSettings=No
            rdlin
            ";This section shows how to override program size/scale defaults"
          )
-          (setq commentbegin (- iline 2))
+        (setq commentbegin (- iline 2))
        )
        (setq cflist (cons rdlin cflist))
      )
@@ -5100,7 +5094,7 @@ ImportLayerSettings=No
 )
 
 (defun hcnm-change-filename-extension
-   (old-filename new-extension / new-filename)
+  (old-filename new-extension / new-filename)
   (cond
     ((/= (haws-filename-extension old-filename) new-extension)
      (setq
@@ -6122,7 +6116,7 @@ ImportLayerSettings=No
 ;; Bubble note insertion experience outer loop data prompts.
 ;; Get input from user. ename-bubble already exists so that we can do auto text.
 (defun hcnm-bn-get-bubble-data
-   (bubble-data / lattribs ename-bubble p1-ucs num)
+  (bubble-data / lattribs ename-bubble p1-ucs num)
   (setq
     replace-bubble-p
      (hcnm-bn-bubble-data-get
@@ -6269,13 +6263,16 @@ ImportLayerSettings=No
   )
   (hcnm-bn-lattribs-to-dwg ename-bubble attributes)
   ;; Find or reuse leader
+  (haws-debug (list ">>> Finding leader, replace-bubble-p=" (if replace-bubble-p "T" "NIL") " ename-temp=" (vl-princ-to-string ename-temp)))
   (cond
     (replace-bubble-p
      ;; Replace-bubble: reuse old leader (already stretched and associated)
      (setq ename-leader ename-leader-old)
+     (haws-debug (list ">>> Replace-bubble: reused ename-leader-old=" (vl-princ-to-string ename-leader)))
     )
     (t
      ;; New insertion: search for leader starting from last entity before bubble
+     (haws-debug ">>> Searching for leader...")
      (while
        (and
          (/= "LEADER"
@@ -6286,6 +6283,7 @@ ImportLayerSettings=No
        )
      )
      (setq ename-leader ename-temp)
+     (haws-debug (list ">>> Found ename-leader=" (vl-princ-to-string ename-leader) " handle=" (if ename-leader (cdr (assoc 5 (entget ename-leader))) "NIL")))
     )
   )
   ;; Change leader arrowhead if needed.
@@ -6841,7 +6839,7 @@ ImportLayerSettings=No
 ;;==============================================================================
 ;; Ensure p1-world is present in bubble data (computes if missing)
 (defun hcnm-bn-bubble-data-ensure-p1-world
-   (bubble-data / ename-bubble ename-leader p1-ocs p1-world replace-bubble-p)
+  (bubble-data / ename-bubble ename-leader p1-ocs p1-world replace-bubble-p)
   (setq replace-bubble-p (hcnm-bn-bubble-data-get 
                            bubble-data
                            "replace-bubble-p"
@@ -6986,27 +6984,25 @@ ImportLayerSettings=No
   bubble-data
 )
 (defun hcnm-bn-bubble-leader
-   (ename-bubble / elist-bubble ename-330 ename-leader)
+  (ename-bubble / elist-bubble ename-330 ename-leader)
   (setq elist-bubble (entget ename-bubble))
   ;; Get start point
   ;; Find associated leader.
-  (while ;; Check all 330 groups
-         (and
-           (not ename-leader)
-           (setq ename-330 (cdr (assoc 330 elist-bubble)))
-         )
+  (while  ;; Check all 330 groups
+    (and 
+      (not ename-leader)
+      (setq ename-330 (cdr (assoc 330 elist-bubble)))
+    )
     ;; Use the one that refers back to this block. Or move to the next one.
-    (cond
+    (cond 
       ((eq (cdr (assoc 340 (entget ename-330))) ename-bubble)
        (setq ename-leader ename-330)
       )
       (t
-       (setq
-         elist-bubble
-          (cdr
-            (member (assoc 330 elist-bubble) elist-bubble)
-          )
-         ename-leader nil
+       (setq elist-bubble (cdr 
+                            (member (assoc 330 elist-bubble) elist-bubble)
+                          )
+             ename-leader nil
        )
       )
     )
@@ -7069,25 +7065,23 @@ ImportLayerSettings=No
           )
         )
      )
-     (foreach
-        vlaobj-property-new
-        (vlax-invoke vlaobj-block-new 'getdynamicblockproperties)
-       (if (and
-             (setq
-               dyn-props-old-i
-                (assoc
-                  (vlax-get-property
-                    vlaobj-property-new
-                    'propertyname
-                  )
-                  dyn-props-old
-                )
-             )
-             (/= (vlax-get-property vlaobj-property-new 'readonly)
-                 :vlax-true
-             )
+     (foreach vlaobj-property-new 
+       (vlax-invoke vlaobj-block-new 'getdynamicblockproperties)
+       (if 
+         (and 
+           (setq dyn-props-old-i (assoc 
+                                   (vlax-get-property 
+                                     vlaobj-property-new
+                                     'propertyname
+                                   )
+                                   dyn-props-old
+                                 )
            )
-         (vlax-put-property
+           (/= (vlax-get-property vlaobj-property-new 'readonly) 
+               :vlax-true
+           )
+         )
+         (vlax-put-property 
            vlaobj-property-new
            'value
            (cadr dyn-props-old-i)
@@ -7263,7 +7257,7 @@ ImportLayerSettings=No
 ;;; SIMPLE REPLACEMENT - just sets the tag value
 ;;; Smart search/replace is handled by CALLER (eb-get-text for dialog, update-bubble-tag for reactor)
 (defun hcnm-bn-lattribs-put-auto
-   (tag auto-new lattribs ename-bubble / attr)
+  (tag auto-new lattribs ename-bubble / attr)
   ;; Simple replacement - caller handles search/replace logic
   (setq attr (assoc tag lattribs))
   (cond
@@ -7557,7 +7551,7 @@ ImportLayerSettings=No
 ;;; Concatenate 4-element structured lattribs to 2-element format
 ;;; This function is obsolete now that lattribs is always 2-element
 (defun hcnm-bn-lattribs-concat
-   (lattribs / result attr tag concat-value)
+  (lattribs / result attr tag concat-value)
   (alert
     (princ
       "\nDEPRECATED: lattribs-concat called but no longer needed in 2-element architecture"
@@ -7712,7 +7706,7 @@ ImportLayerSettings=No
 ;;; Used by: dwg-to-lattribs (already strips during read)
 ;;;
 (defun hcnm-bn-underover-remove
-   (lattribs / result attr tag value clean-value)
+  (lattribs / result attr tag value clean-value)
   (setq result nil)
   (foreach
      attr lattribs
@@ -10336,17 +10330,17 @@ ImportLayerSettings=No
 ;; Returns association list in 2-element format: (("TAG" "full-text") ...)
 ;; XDATA stores auto-text values separately for search/replace during updates
 ;; Format: (("NOTETXT0" "text") ("NOTETXT1" "text") ("NOTENUM" "123") ...)
-  (defun hcnm-bn-dwg-to-lattribs (ename-bubble / lattribs
+(defun hcnm-bn-dwg-to-lattribs (ename-bubble / lattribs
                                 xdata-alist xdata-raw appname ename-next
                                 etype elist obj-next tag value
-                                field-code
+                                field-code retry-count test-elist
                                )
   (setq
     appname "HCNM-BUBBLE"
     lattribs
-     '()
+    '()
     xdata-alist
-     '()
+    '()
   )
   ;; Step 1: Read XDATA for auto-text values (stored separately from display text)
   (setq xdata-alist (hcnm-xdata-read ename-bubble))
@@ -11348,9 +11342,9 @@ ImportLayerSettings=No
 (defun hcnm-bn-debug-reactor-attachment (auto-type handle-reference handle-leader handle-bubble keys-leader owners data)
   ;; Debug output for reactor attachment (can be disabled by commenting out body)
   (haws-debug (strcat "=== Reactor attachment complete: "
-                     "auto=" auto-type
-                     " ref=" (if handle-reference handle-reference "nil")
-                     " bubble=" handle-bubble
+                     "auto=" (vl-prin1-to-string auto-type)
+                     " ref=" (vl-prin1-to-string handle-reference)
+                     " bubble=" (vl-prin1-to-string handle-bubble)
                      " owners=" (itoa (length owners))
                      " ==="))
 )
@@ -11532,10 +11526,7 @@ ImportLayerSettings=No
                                             )
   (setq
     callbacks
-     '((:vlr-modified . hcnm-bn-reactor-callback)
-       ;; vlr-trace-reaction IS A CANNED CALLBACK PROVIDED BY AUTODESK FOR TESTING. IT PRINTS A MESSAGE. IT CAN BE REMOVED.
-       ;; (:vlr-modified . vlr-trace-reaction)
-      )
+     '((:vlr-modified . hcnm-bn-reactor-callback))
     reactors-old
      (cdar (vlr-reactors :vlr-object-reactor))
     object-leader
@@ -11547,16 +11538,25 @@ ImportLayerSettings=No
     new-owners
      (cond
        ;; If OBJREF is NIL (for N/E/NE), only attach to leader
-       ((and (not objref) object-leader) (list object-leader))
+       ((and (not objref) object-leader) 
+        (haws-debug (strcat "NEW-OWNERS: NIL objref, attaching leader only: " (vla-get-handle object-leader)))
+        (list object-leader))
        ;; If auto-type requires coordinates (leader position matters), attach both objref and leader
-       ((and object-leader (hcnm-bn-auto-type-requires-coordinates-p auto-type))
+       ((and objref object-leader (hcnm-bn-auto-type-requires-coordinates-p auto-type))
+        (haws-debug (strcat "NEW-OWNERS: Coords required, attaching objref + leader: " 
+                            (vla-get-handle objref) " + " (vla-get-handle object-leader)))
         (list objref object-leader)
        )
        ;; Otherwise only attach objref (leader position doesn't matter for this auto-type)
-       (objref (list objref))
+       (objref 
+        (haws-debug (strcat "NEW-OWNERS: No coords needed, attaching objref only: " (vla-get-handle objref)))
+        (list objref))
        ;; ERROR: No valid owners to attach!
        (t 
-        (haws-debug "*** ERROR: No valid owners for reactor attachment (objref=nil, object-leader=nil)")
+        (haws-debug (strcat "*** ERROR: No valid owners for reactor attachment"
+                           " objref=" (if objref "EXISTS" "NIL")
+                           " object-leader=" (if object-leader "EXISTS" "NIL")
+                           " ename-leader=" (if ename-leader (vl-princ-to-string ename-leader) "NIL")))
         nil  ; Return nil to signal error condition
        )
      )
@@ -11657,13 +11657,16 @@ ImportLayerSettings=No
     )
   )
   ;; Now handle reactor attachment/creation based on reactor-old
+  (haws-debug (strcat "VLR-OWNER-ADD: About to process " (itoa (length new-owners)) " owner(s)"))
   (cond
     (reactor-old
      ;; ATTACH THIS OWNER NOTIFIER IF NOT ALREADY ATTACHED.
      (foreach
         owner new-owners
+       (haws-debug (strcat "VLR-OWNER-ADD: Processing owner " (vl-catch-all-apply 'vla-get-handle (list owner))))
        (cond
          ((not (member owner (vlr-owners reactor-old)))
+          (haws-debug "VLR-OWNER-ADD: Owner not in reactor, attempting to add...")
           ;; Validate owner before attempting to add
           (cond
             (owner  ; Only process non-nil owners
@@ -11675,7 +11678,7 @@ ImportLayerSettings=No
                   (haws-debug (strcat "    Error: " (vl-catch-all-error-message owner-add-result)))
                 )
                 (t
-                  (haws-debug (strcat "Adding owner: " (vla-get-handle owner)))
+                  (haws-debug (strcat "SUCCESS: Added owner: " (vla-get-handle owner)))
                 )
               )
             )
@@ -11686,8 +11689,8 @@ ImportLayerSettings=No
          )
          (t
           (haws-debug
-            (list
-              "Owner already attached: "
+            (strcat
+              "VLR-OWNER-ADD: Owner already attached: "
               (vla-get-handle owner)
             )
           )
@@ -11984,6 +11987,15 @@ ImportLayerSettings=No
     updated-any nil  ; Track if we actually updated any bubble
     deleted-handles nil  ; Track bubbles that no longer exist
     corrupted-handles nil  ; Track bubbles with corrupted auto-text
+  )
+  ;; DEBUG: Show what bubbles are registered for this notifier
+  (haws-debug (strcat "[NOTIFIER-UPDATE] Processing notifier " handle-notifier 
+                      " with " (itoa (length bubble-list)) " bubble(s)"))
+  (foreach bubble bubble-list
+    (setq handle-bubble (car bubble))
+    (setq ename-bubble (handent handle-bubble))
+    (haws-debug (strcat "  Bubble " handle-bubble ": " 
+                       (if ename-bubble "EXISTS" "DELETED")))
   )
   ;; USER FEEDBACK: Show recalculation message
   (princ (strcat "\rRecalculating " 

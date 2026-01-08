@@ -1968,7 +1968,7 @@
        (setq messages (list messages))
      )
      ;; Concatenate all strings with ">>> DEBUG: " prefix
-     (setq output (apply 'strcat (cons (itoa (rem (getvar "millisecs") 10000000)) (cons ">>> DEBUG: " messages))))
+     (setq output (apply 'strcat (cons (menucmd "M=$(edtime,$(getvar,date),YYYY-MO-DD HH:MM:SS)") (cons ">>> DEBUG: " messages))))
      (haws-message-log output "haws-debug-log.md")
      output ; Return the output string
     )
