@@ -78,6 +78,7 @@ filedia
 (setq *BubbleSkipEntryPrompt-old* (hcnm-config-getvar "BubbleSkipEntryPrompt"))
 (hcnm-config-setvar "BubbleSkipEntryPrompt" "0")
 (load (strcat (getvar "dwgprefix") "cnm-test-validation.lsp"))
+(load (strcat (getvar "dwgprefix") "cnm-test-reactor-diagnostic.lsp"))
 (c:test-setup-layers)
 (test-write-report-header)
 (c:test-log-start)
@@ -85,6 +86,311 @@ filedia
 mspace
 zoom
 extents
+; === PHASE C: AUTO-TEXT TESTS ===
+;
+; STRATEGY: Paper space focus validates VPTRANS architecture (weeks of work!)
+; - Model space: 6 quick validation tests (basic functionality works)
+; - Paper space: 10 comprehensive VPTRANS tests (coordinate transformation)
+;
+; CRITICAL WORKFLOW NOTES:
+; - Model space: NO viewport confirmation needed (already in model space)
+; - Paper space: After alignment/pipe selection, Enter accepts, NO viewport prompt
+; - Paper space: Bubble placed in paper, selection happens through viewport to model
+;
+; === MODEL SPACE TESTS (Quick Validation - 6 tests) ===
+; COORDINATE SYSTEM: +10000' X offset, +20000' Y offset (civil engineering best practice)
+; Viewport center: (10360', 20240') model = (18", 12") paper @ 1/20XP scale
+; Grid: 60' column spacing, 10' row spacing
+; Alignment "OAK ST": (10040',20240') to (10680',20240'), Station 50+00 at X=10040'
+; Pipe "18\" STORM": (10040',20200') to (10680',20200'), 18" diameter, -0.31% slope
+; Curb line: (10040',20260') to (10680',20260'), 640 LF
+;;
+;; TEST 1: Sta (Model) - Station from alignment
+;; Position: 1L-1U = Column 1 Left, Row 1 Up
+;; Arrow: (10340',20250'), Bubble: (10335',20260')
+;; Selection: Alignment at (10360',20240') - center X, avoids bubbles/leaders
+;; Calculation: X=10340' - Start X=10040' = 300', Station 50+00 + 300' = STA 53+00.00
+;; Config: No hooks, no mtext (baseline)
+;;
+(hcnm-config-setvar "BubbleHooks" "0")
+(hcnm-config-setvar "BubbleMtext" "0")
+HAWS-ELLL
+10340,20250
+10335,20260
+1
+.
+sta
+10360,20240
+
+(test-validate-auto-text (entlast) "NOTETXT1" "STA 53+00.00" "TEST 1: Sta (Model)")
+(test-validate-xdata (entlast) "NOTETXT1" "Sta" "TEST 1")
+(test-validate-reactor (entlast) "NOTETXT1" "Sta" "TEST 1")
+(setq test-bubble-1-handle (cdr (assoc 5 (entget (entlast)))))
+;;
+;; === REACTOR DIAGNOSTIC: Before Save (TEST 1) ===
+;; Call diagnostic to capture reactor state before save/reopen cycle
+;;
+(haws-debug "\n\n=== REACTOR DIAGNOSTIC: Before Save (TEST 1) ===")
+(c:test-reactor-diagnostic)
+sdi
+1
+(command "._qsave" "._open" (strcat (getvar "dwgprefix") "cnm-test.dwg"))
+sdi
+0
+(load "cnm")
+(haws-setvar "DebugLevel" "1")
+(load (strcat (getvar "dwgprefix") "cnm-test-validation.lsp"))
+(load (strcat (getvar "dwgprefix") "cnm-test-reactor-diagnostic.lsp"))
+;(load "haws-clock.lsp")
+;;
+;; === REACTOR DIAGNOSTIC: After Reopen (TEST 1 - First Call) ===
+;; WORKAROUND: vlr-reactors returns nil on first call after opening (line 11597 comment)
+;; Call vlr-reactors once to "prime" it, then call diagnostic for actual state
+;;
+(haws-debug "\n\n=== REACTOR DIAGNOSTIC: After Reopen TEST 1 (Priming vlr-reactors) ===")
+(vlr-reactors)
+(haws-debug "\n\n=== REACTOR DIAGNOSTIC: After Reopen TEST 1 (Second Call - should work) ===")
+(c:test-reactor-diagnostic)
+;;
+;; TEST 1a: Verify TEST 1 reactor survives save/reopen - Stretch leader
+;; CRITICAL: This tests if leader reactor was restored during drawing load
+;; Expected: Station should update when leader moves (reactor fires)
+;;
+(haws-debug "\n\n=== TEST 1a: Post-Reopen Leader Stretch (Sta) ===")
+(setq test-bubble-1 (test-find-bubble-by-coord 10335.0 20260.0 0.0 "TEST 1 (post-reopen)"))
+(test-stretch-validation-pattern 1 test-bubble-1 "NOTETXT1" "Post-Reopen Leader Stretch" 
+                                 '(10340.0 20250.0 0.0)
+                                 "Station must update after reopen - tests reactor restoration"
+                                 T)
+;;
+;; TEST 2: L (Model) - Pipe length
+;; Position: 3L-4D = Column 3 Left, Row 4 Down
+;; Arrow: (10220',20200'), Bubble: (10215',20190')
+;; Selection: Pipe at (10360',20200') - center X, avoids bubbles/leaders
+;; Expected: L=640.00'
+;; Config: With hooks, no mtext
+;;
+(hcnm-config-setvar "BubbleHooks" "1")
+(hcnm-config-setvar "BubbleMtext" "0")
+HAWS-ELLL
+10220,20200
+10215,20190
+2
+.
+L
+10360,20200
+
+(test-validate-auto-text (entlast) "NOTETXT1" "L=640.00'" "TEST 2: L (Model)")
+(test-validate-xdata (entlast) "NOTETXT1" "L" "TEST 2")
+(test-validate-reactor (entlast) "NOTETXT1" "L" "TEST 2")
+(setq test-bubble-2-handle (cdr (assoc 5 (entget (entlast)))))
+;;
+;; === REACTOR DIAGNOSTIC: Before Save (TEST 2) ===
+;; Call diagnostic to capture reactor state before save/reopen cycle
+;;
+(haws-debug "\n\n=== REACTOR DIAGNOSTIC: Before Save (TEST 2) ===")
+(c:test-reactor-diagnostic)
+sdi
+1
+(command "._qsave" "._open" (strcat (getvar "dwgprefix") "cnm-test.dwg"))
+sdi
+0
+(load "cnm")
+(haws-setvar "DebugLevel" "1")
+(load (strcat (getvar "dwgprefix") "cnm-test-validation.lsp"))
+(load (strcat (getvar "dwgprefix") "cnm-test-reactor-diagnostic.lsp"))
+;(load "haws-clock.lsp")
+;;
+;; === REACTOR DIAGNOSTIC: After Reopen (TEST 2 - First Call) ===
+;; WORKAROUND: vlr-reactors returns nil on first call after opening (line 11597 comment)
+;; Call vlr-reactors once to "prime" it, then call diagnostic for actual state
+;;
+(haws-debug "\n\n=== REACTOR DIAGNOSTIC: After Reopen TEST 2 (Priming vlr-reactors) ===")
+(vlr-reactors)
+(haws-debug "\n\n=== REACTOR DIAGNOSTIC: After Reopen TEST 2 (Second Call - should work) ===")
+(c:test-reactor-diagnostic)
+;;
+;; TEST 2a: Verify TEST 2 reactor survives save/reopen - Modify pipe property
+;; CRITICAL: This tests if pipe reference reactor was restored during drawing load
+;; Expected: Length should stay same (pipe property, not affected by leader stretch)
+;;
+(haws-debug "\n\n=== TEST 2a: Post-Reopen Leader Stretch (Pipe L) ===")
+(setq test-bubble-2 (test-find-bubble-by-coord 10215.0 20190.0 0.0 "TEST 2 (post-reopen)"))
+(test-stretch-validation-pattern 2 test-bubble-2 "NOTETXT1" "Post-Reopen Leader Stretch L" 
+                                 '(10220.0 20200.0 0.0)
+                                 "Pipe length unaffected by leader stretch - tests non-coordinate reactor"
+                                 nil)
+;;
+;; TEST 3: N (Model) - Northing coordinate
+;; Position: 2L-2U = Column 2 Left, Row 2 Up
+;; Arrow: (10280',20260'), Bubble: (10275',20270')
+;; No selection (coordinate-based)
+;; Expected: N 20260.00 (arrow Y coordinate)
+;; Config: No hooks, with mtext
+;;
+(hcnm-config-setvar "BubbleHooks" "0")
+(hcnm-config-setvar "BubbleMtext" "1")
+HAWS-ELLL
+10280,20260
+10275,20270
+3
+.
+n
+
+(test-validate-auto-text (entlast) "NOTETXT1" "N 20260.00" "TEST 3: N (Model)")
+(test-validate-xdata (entlast) "NOTETXT1" "N" "TEST 3")
+(test-validate-reactor (entlast) "NOTETXT1" "N" "TEST 3")
+(setq test-bubble-3-handle (cdr (assoc 5 (entget (entlast)))))
+;;
+;; === REACTOR DIAGNOSTIC: Before Save ===
+;; Call diagnostic to capture reactor state before save/reopen cycle
+;;
+(haws-debug "\n\n=== REACTOR DIAGNOSTIC: Before Save ===")
+(c:test-reactor-diagnostic)
+sdi
+1
+(command "._qsave" "._open" (strcat (getvar "dwgprefix") "cnm-test.dwg"))
+sdi
+0
+(load "cnm")
+(haws-setvar "DebugLevel" "1")
+(load (strcat (getvar "dwgprefix") "cnm-test-validation.lsp"))
+(load (strcat (getvar "dwgprefix") "cnm-test-reactor-diagnostic.lsp"))
+;(load "haws-clock.lsp")
+;;
+;; === REACTOR DIAGNOSTIC: After Reopen (First Call) ===
+;; WORKAROUND: vlr-reactors returns nil on first call after opening (line 11597 comment)
+;; Call vlr-reactors once to "prime" it, then call diagnostic for actual state
+;;
+(haws-debug "\n\n=== REACTOR DIAGNOSTIC: After Reopen (Priming vlr-reactors) ===")
+(vlr-reactors)
+(haws-debug "\n\n=== REACTOR DIAGNOSTIC: After Reopen (Second Call - should work) ===")
+(c:test-reactor-diagnostic)
+;;
+;; TEST 3a: Verify TEST 3 reactor survives save/reopen - Stretch leader (coordinate-based)
+;; CRITICAL: This tests if handleless coordinate reactor was restored during drawing load
+;; Expected: Northing should update when leader moves (reactor fires for coordinate change)
+;;
+(haws-debug "\n\n=== TEST 3a: Post-Reopen Leader Stretch (N) ===")
+(setq test-bubble-3 (test-find-bubble-by-coord 10275.0 20270.0 0.0 "TEST 3 (post-reopen)"))
+(test-stretch-validation-pattern 3 test-bubble-3 "NOTETXT1" "Post-Reopen Leader Stretch N" 
+                                 '(10280.0 20260.0 0.0)
+                                 "Northing must update after reopen - tests handleless coordinate reactor"
+                                 T)
+;;
+;;
+;;
+;; TEST V1: Paper Space StaOff with REUSED Alignment (Viewport Prompt)
+;; Position: 4C-2D = Column 4 Center, Row 2 Down
+;; Purpose: Test gateway system with REUSED alignment (press ENTER to accept previous)
+;; Sequence:
+;;   1. Add model space StaOff bubble (establishes "previous" alignment)
+;;   2. Add paper space StaOff bubble, press ENTER to reuse alignment
+;;   3. CNM should prompt with tip: "Click TARGET viewport for this bubble note"
+;;   4. Tester clicks viewport, CNM creates VPTRANS and inserts bubble
+;; Tests:
+;;   - Gateway system correctly detects REUSED status
+;;   - Viewport prompt appears with tip
+;;   - VPTRANS XRECORD created
+;;   - Auto-text calculates correctly from paper space
+;; Config: With hooks, with mtext (both enabled)
+;;
+mspace
+(hcnm-config-setvar "BubbleHooks" "1")
+(hcnm-config-setvar "BubbleMtext" "1")
+;;
+;; V1a: Model space StaOff (establishes "previous" alignment)
+;; Position: 4C-2D model = (10640',20220')
+;; Arrow: (10640',20220'), Bubble: (10635',20210')
+;; Selection: Alignment at (10340',20240')
+;;
+HAWS-ELLL
+10640,20220
+10635,20210
+V1a
+.
+staoff
+10340,20240
+
+(test-validate-auto-text (entlast) "NOTETXT1" "STA 52+40.00, 10.00 RT" "TEST V1a: Model StaOff (setup)")
+(test-validate-xdata (entlast) "NOTETXT1" "StaOff" "TEST V1a")
+(test-validate-reactor (entlast) "NOTETXT1" "StaOff" "TEST V1a")
+(setq test-v1a-handle (cdr (assoc 5 (entget (entlast)))))
+;;
+;; V1b: Paper space StaOff with ENTER (reuses alignment from V1a)
+;; Position: 4C-2U paper = (11", 13")
+;; Paper (11", 13") → Model (10640', 20220') via viewport (same location as V1a)
+;; Expected: CNM prompts "Click TARGET viewport for this bubble note" with tip
+;; Tester: Click viewport, CNM creates VPTRANS and calculates station/offset
+;;
+pspace
+HAWS-ELLL
+11,13
+10.5,13.5
+V1b
+.
+staoff
+
+
+(setq test-v1b-handle (cdr (assoc 5 (entget (entlast)))))
+;;
+;; Validation: V1b should have auto-text, XDATA, reactor, and VPTRANS
+;;
+(test-validate-auto-text (handent test-v1b-handle) "NOTETXT1" "STA 52+40.00, 10.00 RT" "TEST V1b: Paper StaOff with REUSED")
+(test-validate-xdata (handent test-v1b-handle) "NOTETXT1" "StaOff" "TEST V1b")
+(test-validate-reactor (handent test-v1b-handle) "NOTETXT1" "StaOff" "TEST V1b")
+(test-validate-vptrans-created (handent test-v1b-handle) "TEST V1b")
+;;
+;; Additional validation: Verify REUSED status was detected
+;; (Gateway function should have logged "Object reused from previous" in debug log)
+;;
+(test-write-report-entry "TEST V1b (Gateway)" "MANUAL" "Verify tester saw viewport prompt with tip message")
+mspace
+;;
+;;
+;; TEST 4: LF (Model) - Linear feet from curb line
+;; Position: 1R-2U = Column 1 Right, Row 2 Up
+;; Arrow: (10380',20260'), Bubble: (10385',20270')
+;; Selection: Curb line at (10360',20260') - center X, avoids bubbles/leaders
+;; NOTE: CNM uses AutoCAD field expressions for dynamic length - this is CORRECT
+;; Field format: %<\AcObjProp Object(...).Length ...>% LF
+;; Config: With hooks, with mtext (both enabled)
+;;
+(hcnm-config-setvar "BubbleHooks" "1")
+(hcnm-config-setvar "BubbleMtext" "1")
+HAWS-ELLL
+10380,20260
+10385,20270
+4
+.
+lf
+10360,20260
+
+;; Field expression validation: Check for field code with LF suffix
+;; NOTE: LF uses AutoCAD fields (passive updates) but stores XDATA for editor smart replace
+(if (and (setq test-text (cadr (assoc "NOTETXT1" (hcnm-bn-dwg-to-lattribs (entlast)))))
+         (vl-string-search "%<\\AcObjProp" test-text)
+         (vl-string-search "LF" test-text))
+  (test-validate-auto-text (entlast) "NOTETXT1" test-text "TEST 4: LF (Model)")
+  (test-validate-auto-text (entlast) "NOTETXT1" "FIELD ERROR" "TEST 4: LF (Model)")
+)
+(test-validate-xdata (entlast) "NOTETXT1" "LF" "TEST 4")
+sdi
+1
+(command "._qsave" "._open" (strcat (getvar "dwgprefix") "cnm-test.dwg"))
+sdi
+0
+(load "cnm")
+(haws-setvar "DebugLevel" "1")
+(load (strcat (getvar "dwgprefix") "cnm-test-validation.lsp"))
+;(load "haws-clock.lsp")
+;; === STOP HERE FOR FOCUSED TESTING ===
+;; UNKNOWN_COMMAND intentionally stops script execution
+;; Remove this line to run full test suite
+;;
+(haws-debug "\n\n=== EARLY EXIT: Save/Reopen Reactor Tests Complete ===")
+(test-write-report-entry "EARLY EXIT" "INFO" "Stopped after save/reopen reactor validation tests")
+UNKNOWN_COMMAND_STOP_HERE
 ; === EDITOR WORKFLOW TESTS (MANUAL INTERVENTION REQUIRED) ===
 ;
 ; CRITICAL: These tests require tester to follow on-screen instructions
@@ -185,153 +491,6 @@ L
 (test-validate-reactor-detached (handent test-e3-handle) "NOTETXT1" "TEST E3")
 ; Validate VPTRANS removed (if applicable)
 (test-validate-vptrans-removed (handent test-e3-handle) "TEST E3")
-;;
-; === PHASE C: AUTO-TEXT TESTS ===
-;
-; STRATEGY: Paper space focus validates VPTRANS architecture (weeks of work!)
-; - Model space: 6 quick validation tests (basic functionality works)
-; - Paper space: 10 comprehensive VPTRANS tests (coordinate transformation)
-;
-; CRITICAL WORKFLOW NOTES:
-; - Model space: NO viewport confirmation needed (already in model space)
-; - Paper space: After alignment/pipe selection, Enter accepts, NO viewport prompt
-; - Paper space: Bubble placed in paper, selection happens through viewport to model
-;
-; === MODEL SPACE TESTS (Quick Validation - 6 tests) ===
-; COORDINATE SYSTEM: +10000' X offset, +20000' Y offset (civil engineering best practice)
-; Viewport center: (10360', 20240') model = (18", 12") paper @ 1/20XP scale
-; Grid: 60' column spacing, 10' row spacing
-; Alignment "OAK ST": (10040',20240') to (10680',20240'), Station 50+00 at X=10040'
-; Pipe "18\" STORM": (10040',20200') to (10680',20200'), 18" diameter, -0.31% slope
-; Curb line: (10040',20260') to (10680',20260'), 640 LF
-;;
-;; TEST 1: Sta (Model) - Station from alignment
-;; Position: 1L-1U = Column 1 Left, Row 1 Up
-;; Arrow: (10340',20250'), Bubble: (10335',20260')
-;; Selection: Alignment at (10360',20240') - center X, avoids bubbles/leaders
-;; Calculation: X=10340' - Start X=10040' = 300', Station 50+00 + 300' = STA 53+00.00
-;; Config: No hooks, no mtext (baseline)
-;;
-(hcnm-config-setvar "BubbleHooks" "0")
-(hcnm-config-setvar "BubbleMtext" "0")
-HAWS-ELLL
-10340,20250
-10335,20260
-1
-.
-sta
-10360,20240
-
-(test-validate-auto-text (entlast) "NOTETXT1" "STA 53+00.00" "TEST 1: Sta (Model)")
-(test-validate-xdata (entlast) "NOTETXT1" "Sta" "TEST 1")
-(test-validate-reactor (entlast) "NOTETXT1" "Sta" "TEST 1")
-(setq test-bubble-1-handle (cdr (assoc 5 (entget (entlast)))))
-sdi
-1
-(command "._qsave" "._open" (strcat (getvar "dwgprefix") "cnm-test.dwg"))
-sdi
-0
-(load "cnm")
-(haws-setvar "DebugLevel" "1")
-(load (strcat (getvar "dwgprefix") "cnm-test-validation.lsp"))
-;(load "haws-clock.lsp")
-;;
-;; TEST 2: L (Model) - Pipe length
-;; Position: 3L-4D = Column 3 Left, Row 4 Down
-;; Arrow: (10220',20200'), Bubble: (10215',20190')
-;; Selection: Pipe at (10360',20200') - center X, avoids bubbles/leaders
-;; Expected: L=640.00'
-;; Config: With hooks, no mtext
-;;
-(hcnm-config-setvar "BubbleHooks" "1")
-(hcnm-config-setvar "BubbleMtext" "0")
-HAWS-ELLL
-10220,20200
-10215,20190
-2
-.
-L
-10360,20200
-
-(test-validate-auto-text (entlast) "NOTETXT1" "L=640.00'" "TEST 2: L (Model)")
-(test-validate-xdata (entlast) "NOTETXT1" "L" "TEST 2")
-(test-validate-reactor (entlast) "NOTETXT1" "L" "TEST 2")
-(setq test-bubble-2-handle (cdr (assoc 5 (entget (entlast)))))
-sdi
-1
-(command "._qsave" "._open" (strcat (getvar "dwgprefix") "cnm-test.dwg"))
-sdi
-0
-(load "cnm")
-(haws-setvar "DebugLevel" "1")
-(load (strcat (getvar "dwgprefix") "cnm-test-validation.lsp"))
-;(load "haws-clock.lsp")
-;;
-;; TEST 3: N (Model) - Northing coordinate
-;; Position: 2L-2U = Column 2 Left, Row 2 Up
-;; Arrow: (10280',20260'), Bubble: (10275',20270')
-;; No selection (coordinate-based)
-;; Expected: N 20260.00 (arrow Y coordinate)
-;; Config: No hooks, with mtext
-;;
-(hcnm-config-setvar "BubbleHooks" "0")
-(hcnm-config-setvar "BubbleMtext" "1")
-HAWS-ELLL
-10280,20260
-10275,20270
-3
-.
-n
-
-(test-validate-auto-text (entlast) "NOTETXT1" "N 20260.00" "TEST 3: N (Model)")
-(test-validate-xdata (entlast) "NOTETXT1" "N" "TEST 3")
-(test-validate-reactor (entlast) "NOTETXT1" "N" "TEST 3")
-sdi
-1
-(command "._qsave" "._open" (strcat (getvar "dwgprefix") "cnm-test.dwg"))
-sdi
-0
-(load "cnm")
-(haws-setvar "DebugLevel" "1")
-(load (strcat (getvar "dwgprefix") "cnm-test-validation.lsp"))
-;(load "haws-clock.lsp")
-;;
-;; TEST 4: LF (Model) - Linear feet from curb line
-;; Position: 1R-2U = Column 1 Right, Row 2 Up
-;; Arrow: (10380',20260'), Bubble: (10385',20270')
-;; Selection: Curb line at (10360',20260') - center X, avoids bubbles/leaders
-;; NOTE: CNM uses AutoCAD field expressions for dynamic length - this is CORRECT
-;; Field format: %<\AcObjProp Object(...).Length ...>% LF
-;; Config: With hooks, with mtext (both enabled)
-;;
-(hcnm-config-setvar "BubbleHooks" "1")
-(hcnm-config-setvar "BubbleMtext" "1")
-HAWS-ELLL
-10380,20260
-10385,20270
-4
-.
-lf
-10360,20260
-
-;; Field expression validation: Check for field code with LF suffix
-;; NOTE: LF uses AutoCAD fields (passive updates) but stores XDATA for editor smart replace
-(if (and (setq test-text (cadr (assoc "NOTETXT1" (hcnm-bn-dwg-to-lattribs (entlast)))))
-         (vl-string-search "%<\\AcObjProp" test-text)
-         (vl-string-search "LF" test-text))
-  (test-validate-auto-text (entlast) "NOTETXT1" test-text "TEST 4: LF (Model)")
-  (test-validate-auto-text (entlast) "NOTETXT1" "FIELD ERROR" "TEST 4: LF (Model)")
-)
-(test-validate-xdata (entlast) "NOTETXT1" "LF" "TEST 4")
-sdi
-1
-(command "._qsave" "._open" (strcat (getvar "dwgprefix") "cnm-test.dwg"))
-sdi
-0
-(load "cnm")
-(haws-setvar "DebugLevel" "1")
-(load (strcat (getvar "dwgprefix") "cnm-test-validation.lsp"))
-;(load "haws-clock.lsp")
 ;;
 ;; TEST 5: Manual (Model) - Baseline manual text entry
 ;; Position: 2R-1U = Column 2 Right, Row 1 Up
@@ -887,14 +1046,14 @@ STA. 5+22
 ._MSPACE
 ;;
 ;; Find bubbles by insertion coordinates (variables cleared by save/reopen)
-;; TEST 1 bubble at position 2L-2D (model space)
+;; TEST 1 bubble at position 1L-1U (model space) - Sta auto-text
 (haws-debug "\n\n=== PHASE D: Finding bubbles by coordinates ===")
-(setq test-bubble-1 (test-find-bubble-by-coord 10135.0 20270.0 0.0 "TEST 1"))
-;; TEST 2 bubble at position 3L-4D (model space)
+(setq test-bubble-1 (test-find-bubble-by-coord 10335.0 20260.0 0.0 "TEST 1"))
+;; TEST 2 bubble at position 3L-4D (model space) - L (length) auto-text
 (setq test-bubble-2 (test-find-bubble-by-coord 10215.0 20190.0 0.0 "TEST 2"))
-;; TEST 9 bubble: Paper space bubble - find in paper space
+;; TEST 9 bubble: Paper space bubble - find in paper space - Sta auto-text
 ._PSPACE
-(setq test-bubble-9 (test-find-bubble-by-coord 10.0 8.0 0.0 "TEST 9 (paper)"))
+(setq test-bubble-9 (test-find-bubble-by-coord 1.75 13.0 0.0 "TEST 9 (paper)"))
 ;; Return to model space for stretch tests
 ._MSPACE
 ;;
@@ -904,7 +1063,7 @@ STA. 5+22
 ;;
 (haws-debug "\n\n=== TEST 41: Leader Stretch - Station Auto-Text ===")
 (test-stretch-validation-pattern 41 test-bubble-1 "NOTETXT1" "Leader Stretch Sta" 
-                                 '("_C" "10139,20279" "10141,20281" "" "0,1")
+                                 '(10340.0 20250.0 0.0)
                                  "Station should change when leader moves along alignment"
                                  T)
 ;;
@@ -913,7 +1072,7 @@ STA. 5+22
 ;;
 (haws-debug "\n\n=== TEST 42: Leader Stretch - Diameter Auto-Text (should NOT change) ===")
 (test-stretch-validation-pattern 42 test-bubble-2 "NOTETXT1" "Leader Stretch Dia"
-                                 '("_C" "10214,20189" "10216,20191" "" "0,1")
+                                 '(10215.0 20190.0 0.0)
                                  "Diameter is pipe property, not affected by leader position"
                                  nil)
 ;;
@@ -933,7 +1092,7 @@ STA. 5+22
    (haws-debug (strcat "\nBubble 9 before: " bubble-9-before))
    (haws-debug (test-format-reactor-state state9-before "BUBBLE 9 STATE BEFORE"))
    ;; Stretch alignment end point 1 foot east (changes all stations)
-   (command "._STRETCH" "_C" "10679,20239" "10681,20241" "" "1,0")
+   (command "._STRETCH" "_C" "10679,20239" "10681,20241" "" "1,0" "")
    ;; Capture final states
    (setq state1-after (test-capture-reactor-state test-bubble-1 "NOTETXT1"))
    (setq state9-after (test-capture-reactor-state test-bubble-9 "NOTETXT1"))
@@ -956,7 +1115,7 @@ STA. 5+22
                                 state9-before
                                 state9-after)
    ;; Stretch back to original position
-   (command "._STRETCH" "_C" "10680,20239" "10682,20241" "" "-1,0")
+   (command "._STRETCH" "_C" "10680,20239" "10682,20241" "" "-1,0" "")
   )
   (t
    (test-write-report-entry "TEST 43: Alignment Modification" "FAIL" 

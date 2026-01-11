@@ -179,7 +179,7 @@
   )
   (cond
     ((/= s "Function cancelled")
-     (princ (strcat "\nTrapped error: " s))
+     (haws-debug (princ (strcat "\nTrapped error: " s)))
     )
   )
   (while (< 0 (getvar "cmdactive"))
@@ -1959,8 +1959,8 @@
 ;;   (haws-debug "Simple message")
 ;;------------------------------------------------------------------------------
 (defun haws-debug (messages / enabled-p output) 
-  ;; Why not hard-code this? Clocking may be needed on a user's machine with a compiled edclib.lsp.
-  (setq enabled-p (> (atoi (haws-getvar "DebugLevel")) 0))
+  ;; Why not hard-code this? Debugging may be needed on a user's machine with a compiled edclib.lsp.
+  (setq enabled-p T) ;(> (atoi (haws-getvar "DebugLevel")) 0))
   (cond 
     (enabled-p
      ;; Convert single string to list for consistent processing

@@ -1,0 +1,39 @@
+; MINIMAL REACTOR VALIDATION TEST
+; Purpose: Test test-validate-reactor with ONE bubble, see command history for errors
+; Usage: Drag this file into cnm-test.dwg
+(haws-setvar "DebugLevel" "1")
+(if (findfile (strcat (getvar "dwgprefix") "haws-debug-log.md")) (vl-file-delete (strcat (getvar "dwgprefix") "haws-debug-log.md")))
+(load (strcat (getvar "dwgprefix") "cnm-test-validation.lsp"))
+; Create ONE test bubble with Sta auto-text (coordinate-based, should have leader in VLR)
+; Position: Column 2 Left, Row 2 Down
+; Arrow: (10140',20280'), Bubble: (10135',20270')
+mspace
+haws-elll
+10140,20280
+10135,20270
+1
+.
+sta
+10360,20240
+
+HAWS-ELLL
+10280,20230
+10275,20220
+2
+.
+L
+10360,20200
+
+; Now test the validation - THIS IS WHERE IT SHOULD CRASH OR SUCCEED
+(princ "\n===== CALLING test-validate-reactor =====")
+(setq test-bubble (entlast))
+(setq test-result (test-validate-reactor test-bubble "NOTETXT1" "Sta" "MINIMAL TEST"))
+(princ (strcat "\n===== RESULT: " (if test-result "PASS" "FAIL") " ====="))
+; Check report file was written
+(princ "\n===== CHECKING REPORT FILE =====")
+(setq report-path (strcat (getvar "dwgprefix") "test-results\\cnm-test-report.md"))
+(if (findfile report-path)
+  (princ "\nReport file exists")
+  (princ "\nWARNING: Report file NOT found!")
+)
+(princ "\n===== TEST COMPLETE - Review command history above =====")

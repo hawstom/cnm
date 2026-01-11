@@ -6450,7 +6450,7 @@ ImportLayerSettings=No
 ;;==============================================================================
 ;; Get the persistent reactor (or nil if none exists)
 ;; Returns first reactor with "HCNM-BUBBLE" data
-(defun hcnm-bn-get-reactor (/ reactors)
+(defun hcnm-bn-get-reactor (/ reactors reactor-count)
   (setq reactors
     (vl-remove-if-not
       '(lambda (r)
@@ -6460,6 +6460,14 @@ ImportLayerSettings=No
          )
        )
       (cdar (vlr-reactors :vlr-object-reactor))
+    )
+    reactor-count (length reactors)
+  )
+  ;; REPORT if multiple reactors found
+  (if (> reactor-count 1)
+    (progn
+      (haws-debug (strcat "*** PROLIFERATION DETECTED in hcnm-bn-get-reactor: Found " (itoa reactor-count) " reactors ***"))
+      (princ (strcat "\n*** PROLIFERATION: " (itoa reactor-count) " reactors found ***\n"))
     )
   )
   (cond
@@ -8240,196 +8248,6 @@ ImportLayerSettings=No
 ;;   - hcnm-bn-auto-al-offset-to-string: Format offset string
 ;;   - hcnm-bn-auto-al: Main orchestrator (backward compatible)
 
-;; Calculate raw station and offset from alignment and world point
-;; Pure function: No side effects, easily testable
-;; Arguments:
-;;   alignment-object - VLA-OBJECT of Civil 3D alignment
-;;   p1-world - (X Y Z) point in world coordinates
-;; Returns:
-;;   (DRAWSTATION . OFFSET) on success
-;;   NIL on failure
-;; Check if alignment contains only simple geometry (lines/arcs, no spirals)
-;; Returns T if simple (can use offline calculation), nil if complex
-(defun hcnm-bn-alignment-is-simple-p (obj-align / entities has-spiral-p result)
-  (setq result
-    (vl-catch-all-apply
-      '(lambda ()
-        (setq 
-          entities (vlax-get-property obj-align 'Entities)
-          has-spiral-p nil
-        )
-        ;; Iterate through alignment entities checking for spirals
-        (vlax-for entity entities
-          ;; Entity types: 1=Line, 2=Arc, 3=Spiral (Civil 3D API)
-          ;; Check Type property or object name
-          (if (wcmatch 
-                (strcase (vlax-get-property entity 'ObjectName))
-                "*SPIRAL*"
-              )
-            (setq has-spiral-p t)
-          )
-        )
-        ;; Return T if no spirals found
-        (not has-spiral-p)
-      )
-    )
-  )
-  ;; Return result, or nil if error occurred
-  (if (vl-catch-all-error-p result)
-    (progn
-      (haws-debug (strcat "[GEOMETRY CHECK] Error checking alignment geometry: " 
-                         (vl-prin1-to-string result)))
-      nil  ; Assume complex on error (use Civil 3D API)
-    )
-    result
-  )
-)
-
-;;==============================================================================
-;; Offline calculation of station/offset for simple alignments
-;; Uses geometry math instead of Civil 3D API for speed (~100x faster)
-;; Supports: Straight line segments and circular arcs
-;; Returns: (drawstation . offset) or nil if calculation fails
-;;==============================================================================
-(defun hcnm-bn-auto-alignment-calculate-offline (obj-align p1-world / 
-                                                   entities entity cumulative-station
-                                                   entity-type start-point end-point
-                                                   segment-length projection-distance
-                                                   perpendicular-distance drawstation offset
-                                                   result found-segment-p)
-  (setq result
-    (vl-catch-all-apply
-      '(lambda ()
-        (setq 
-          entities (vlax-get-property obj-align 'Entities)
-          cumulative-station 0.0
-          found-segment-p nil
-        )
-        
-        ;; Iterate through alignment entities (lines/arcs)
-        (vlax-for entity entities
-          (if (not found-segment-p)
-            (progn
-              (setq entity-type (vlax-get-property entity 'ObjectName))
-              
-              (cond
-                ;; CASE 1: Straight line segment
-                ((wcmatch (strcase entity-type) "*LINE*")
-                 (setq 
-                   start-point (vlax-get-property entity 'StartPoint)
-                   end-point (vlax-get-property entity 'EndPoint)
-                   segment-length (vlax-get-property entity 'Length)
-                 )
-                 
-                 ;; Convert variant points to lists for AutoLISP geometry functions
-                 (setq 
-                   start-point (list (vlax-variant-value (vlax-safearray-get-element start-point 0))
-                                     (vlax-variant-value (vlax-safearray-get-element start-point 1))
-                                     0.0)
-                   end-point (list (vlax-variant-value (vlax-safearray-get-element end-point 0))
-                                   (vlax-variant-value (vlax-safearray-get-element end-point 1))
-                                   0.0)
-                 )
-                 
-                 ;; Calculate projection of p1-world onto line segment
-                 ;; Vector from start to end
-                 (setq segment-vector (mapcar '- end-point start-point))
-                 
-                 ;; Vector from start to point
-                 (setq point-vector (mapcar '- p1-world start-point))
-                 
-                 ;; Dot product and magnitude
-                 (setq 
-                   dot-product (apply '+ (mapcar '* segment-vector point-vector))
-                   segment-length-sq (apply '+ (mapcar '* segment-vector segment-vector))
-                 )
-                 
-                 ;; Parameter t = how far along segment (0=start, 1=end)
-                 (setq t-param (/ dot-product segment-length-sq))
-                 
-                 ;; Check if projection falls on this segment (0 <= t <= 1)
-                 (cond
-                   ((and (>= t-param 0.0) (<= t-param 1.0))
-                    ;; Point projects onto this segment
-                    (setq 
-                      projection-distance (* t-param segment-length)
-                      drawstation (+ cumulative-station projection-distance)
-                    )
-                    
-                    ;; Calculate perpendicular distance (offset)
-                    ;; Projection point on segment
-                    (setq projection-point 
-                      (mapcar '+ start-point 
-                              (mapcar '(lambda (x) (* x t-param)) segment-vector)))
-                    
-                    ;; Distance from p1-world to projection point
-                    (setq perpendicular-distance (distance p1-world projection-point))
-                    
-                    ;; Determine sign (left/right) using cross product
-                    ;; Cross product Z component: (end-start) × (point-start)
-                    (setq cross-z 
-                      (- (* (- (car end-point) (car start-point))
-                            (- (cadr p1-world) (cadr start-point)))
-                         (* (- (cadr end-point) (cadr start-point))
-                            (- (car p1-world) (car start-point)))))
-                    
-                    ;; Positive cross-z = left, negative = right (standard convention)
-                    (setq offset 
-                      (if (>= cross-z 0.0)
-                        perpendicular-distance     ; Left (positive)
-                        (- perpendicular-distance) ; Right (negative)
-                      ))
-                    
-                    (setq found-segment-p t)
-                   )
-                   (t
-                    ;; Point doesn't project onto this segment, accumulate station
-                    (setq cumulative-station (+ cumulative-station segment-length))
-                   )
-                 )
-                )
-                
-                ;; CASE 2: Circular arc segment
-                ((wcmatch (strcase entity-type) "*ARC*")
-                 ;; TODO: Implement arc projection geometry
-                 ;; For now, skip arc segments (return nil to force Civil 3D API)
-                 (haws-debug "[OFFLINE CALC] Arc segment detected, falling back to Civil 3D API")
-                 (setq found-segment-p nil)
-                 (vlr-break)  ; Exit iteration early
-                )
-                
-                ;; CASE 3: Other geometry (shouldn't happen if is-simple-p worked)
-                (t
-                 (haws-debug (strcat "[OFFLINE CALC] Unexpected entity type: " entity-type))
-                 (setq found-segment-p nil)
-                 (vlr-break)  ; Exit iteration early
-                )
-              )
-            )
-          )
-        )
-        
-        ;; Return result if segment found
-        (if found-segment-p
-          (cons drawstation offset)
-          nil
-        )
-      )
-    )
-  )
-  
-  ;; Handle errors gracefully - return nil to force Civil 3D API fallback
-  (if (vl-catch-all-error-p result)
-    (progn
-      (haws-debug (strcat "[OFFLINE CALC] Error during calculation: " 
-                         (vl-prin1-to-string result)))
-      (haws-debug "[OFFLINE CALC] Falling back to Civil 3D API")
-      nil
-    )
-    result
-  )
-)
-
 (defun hcnm-bn-auto-alignment-calculate
    (alignment-object p1-world / drawstation offset)
   (cond
@@ -8755,84 +8573,56 @@ ImportLayerSettings=No
                                       ref-ocs-2 ref-ocs-3 ref-wcs-1
                                       ref-wcs-2 ref-wcs-3 valid-alignment-p
                                      )
-  (setq
-    obj-align-old
-     (hcnm-config-getvar "BubbleCurrentAlignment")
-    name
-     (cond
-       ((and
-          (= (type obj-align-old) 'vla-object)
-          (not
-            (vl-catch-all-error-p
-              (vl-catch-all-apply
-                'vlax-get-property
-                (list obj-align-old 'name)
-              )
-            )
-          )
-        )
-        (vl-catch-all-apply
-          'vlax-get-property
-          (list obj-align-old 'name)
-        )
-       )
-       (t (setq obj-align-old nil) "")
-     )
-    valid-alignment-p nil
-  )
-  ;; Loop until valid alignment selected or user cancels (ESC)
-  (while (not valid-alignment-p)
-    (setq
-      es-align
-       (nentsel
-         (strcat
-           "\nSelect alignment"
-           (cond
-             ((= name "") ": ")
-             (t (strcat " or <" name ">: "))
-           )
-         )
-       )
+  (setq obj-align-old (hcnm-config-getvar "BubbleCurrentAlignment"))
+  (setq name (if (= (type obj-align-old) 'vla-object)  (vlax-get-property obj-align-old 'name) ""))
+  ;; If there is a previous alignment, allow empty input to reuse previous, else loop until one is selected.
+  (while (not valid-alignment-p) 
+    ;; There is no way for us to distinguish fat-fingering from [Enter] so we have to accept both as "reuse previous" if there is a previous alignment.
+    (if (/= name "") (setq valid-alignment-p t))
+    (setq es-align (nentsel 
+                     (strcat 
+                       "\nSelect alignment"
+                       (cond 
+                         ((= name "") ": ")
+                         (t (strcat " or <" name ">: "))
+                       )
+                     )
+                   )
     )
-    (cond
+    (cond 
       ;; Valid alignment selected
-      ((and
+      ((and 
          es-align
          (= (cdr (assoc 0 (entget (car es-align)))) "AECC_ALIGNMENT")
        )
-       (setq
-         obj-align (vlax-ename->vla-object (car es-align))
-         valid-alignment-p t
+       (setq obj-align         (vlax-ename->vla-object (car es-align))
+             valid-alignment-p t
        )
        (hcnm-config-setvar "BubbleCurrentAlignment" obj-align)
-       ;; Gateway call AFTER validating alignment (only for valid picks)
-       (hcnm-bn-gateways-to-viewport-selection-prompt
-         ename-bubble
-         auto-type
-         nil                              ; obj-target=nil for initial creation
-         "PICKED"                         ; Object was just picked
-         nil                              ; Normal auto-text flow (not super-clearance)
-       )
       )
-      ;; Wrong object type selected
       (es-align
-       (alert
-         "\nSelected object is not an alignment. Try again or press ESC to cancel."
-       )
+       (princ "\nSelected object is not an alignment. Keeping previous alignment.")
+       (setq obj-align obj-align-old)
       )
-      ;; Empty selection - use previous if exists, else loop
-      ((and (not es-align) obj-align-old)
-       (setq
-         obj-align obj-align-old
-         valid-alignment-p t
-       )
+      ((/= name "")
+       (princ "\nNo object selected. Keeping previous alignment.")
+       (setq obj-align obj-align-old)
       )
-      ;; Empty selection with no previous - loop continues
       (t
-       (haws-debug "No object selected and no previous alignment.")
+       (princ "\nNo object selected. Try again.")
       )
     )
   )
+  (hcnm-bn-gateways-to-viewport-selection-prompt
+    ename-bubble
+    auto-type
+    nil                                 ; obj-target=nil for initial creation
+    (if es-align
+      "PICKED"
+      "REUSED"
+    )                                   ; Based on whether user selected something
+    nil
+  )                                     ; Normal auto-text flow (not super-clearance)
   obj-align                             ; Return the alignment object
 )
 ;#endregion
@@ -11232,7 +11022,7 @@ ImportLayerSettings=No
 ;#region Reactors
 
 ;; Check and cleanup reactor proliferation (called at CNM load)
-(defun hcnm-check-reactor-proliferation (/ hcnm-reactors reactor-count)
+(defun hcnm-check-reactor-proliferation (/ hcnm-reactors reactor-count reactor-index reactor reactor-data hcnm-data owner)
   (setq
     hcnm-reactors
      (vl-remove-if-not
@@ -11249,22 +11039,129 @@ ImportLayerSettings=No
   )
   (cond
     ((> reactor-count 1)
-     (haws-debug (strcat "=== REACTOR PROLIFERATION: Found " (itoa reactor-count) " reactors, keeping first, releasing " (itoa (1- reactor-count)) " ==="))
+     (haws-debug (strcat "=== REACTOR PROLIFERATION AT CNM LOAD: Found " (itoa reactor-count) " reactors, keeping first, releasing " (itoa (1- reactor-count)) " ==="))
      ;; ROOT CAUSE: vlr-reactors returns nil on first call after opening drawing
      ;; This causes creation of duplicate reactor, which persists to next session
      ;; SOLUTION: Mark duplicates non-persistent AND remove from current session
+     ;; TGH: Removal is not a solution. We must prevent proliferation.
+     ;;
+     ;; INVESTIGATION (2026-01-09 - cnm-test.scr analysis):
+     ;; Test pattern from haws-debug-log.md (04:19 run):
+     ;;   04:19:50 - NEW REACTOR CREATED (first bubble insertion)
+     ;;   04:19:50 - "MADE PERSISTENT" (only ONE vlr-pers call in entire test!)
+     ;;   04:19:51 - Reactor diagnostic: 1 reactor, synchronized
+     ;;   [SAVE/CLOSE/REOPEN occurs]
+     ;;   04:19:56 - CNM LOAD: PROLIFERATION - Found 2 reactors!
+     ;;   04:20:06 - CNM LOAD: PROLIFERATION - Found 2 reactors! (after 2nd save/reopen)
+     ;;   04:20:17 - CNM LOAD: PROLIFERATION - Found 2 reactors! (after 3rd save/reopen)
+     ;;   04:20:33 - CNM LOAD: PROLIFERATION - Found 2 reactors! (after 4th save/reopen)
+     ;;   04:32:12 - CNM LOAD: Found 1 reactor (correct) (fresh session)
+     ;;
+     ;; KEY FINDING: Proliferation happened DURING save/reopen cycle, NOT during normal ops.
+     ;; Pattern: 1 reactor before save → 2 reactors after reopen → cleanup → repeat
+     ;; This suggested AutoCAD was DUPLICATING the persistent reactor during save or restore.
+     ;;
+     ;; SUCCESS (2026-01-09 - 04:45 run):
+     ;; After implementing detailed proliferation reporting:
+     ;;   04:45:02 - CNM LOAD: Found exactly 1 reactor (correct) ✅
+     ;;   04:45:10 - CNM LOAD: Found exactly 1 reactor (correct) ✅
+     ;;   04:45:22 - CNM LOAD: Found exactly 1 reactor (correct) ✅
+     ;;   04:45:35 - CNM LOAD: Found exactly 1 reactor (correct) ✅
+     ;;   04:48:33 - CNM LOAD: Found exactly 1 reactor (correct) ✅
+     ;;
+     ;; PROLIFERATION ELIMINATED! All 5 save/reopen cycles showed exactly 1 reactor.
+     ;;
+     ;; *** CRITICAL DISCOVERY (2026-01-09 - 04:45 run analysis): ***
+     ;; VLR-OWNERS NOT PERSISTING after save/reopen!
+     ;; Evidence from test diagnostics:
+     ;;   - Before save: \"vlr-owners count: 3\" (insertion succeeded)
+     ;;   - After reopen: \"vlr-owners count: 3\" BUT \"VLR owners: 0\" (list is empty!)
+     ;;   - Reactor exists, data persists, but (vlr-owners reactor) returns empty list
+     ;;   - This is why leaders don't react - they're not attached to the restored reactor
+     ;;
+     ;; ROOT CAUSE: AutoCAD bug - vlr-owner-add owners don't persist across save/reopen
+     ;; Persistent reactors save/restore their DATA but NOT their OWNERS list.
+     ;; On reopen, reactor exists but has zero owners, so no callbacks fire.
+     ;;
+     ;; SOLUTION REQUIRED: Re-attach owners after drawing opens
+     ;; Options:
+     ;;   1. Document reactor callback - scan all bubbles, re-attach owners on open
+     ;;   2. Abandon persistent reactors - rebuild transient reactor on demand
+     ;;   3. Store owner handles in reactor DATA, restore from there
+     ;;
+     ;; ROOT CAUSE CONFIRMED (2026-01-09):
+     ;; vlr-pers is called ONLY ONCE (line 11611) when creating the initial reactor.
+     ;; CNM should NEVER create a second reactor - reactor creation is guarded by reactor-old check.
+     ;; But AutoCAD itself duplicates persistent reactors during save/restore cycle.
+     ;;
+     ;; HYPOTHESIS: AutoCAD bug - persistent reactors get duplicated on restore.
+     ;; Possible causes:
+     ;;   - Multiple restore passes during drawing open
+     ;;   - Reactor owners (VLA-OBJECTs) restored multiple times
+     ;;   - vlr-reactors being called triggers duplicate restoration (unlikely)
+     ;;
+     ;; CURRENT STRATEGY: Detect and cleanup at CNM load time
+     ;;   - Keep first reactor (arbitrary choice, could merge instead)
+     ;;   - Release persistence on duplicates (vlr-pers-release)
+     ;;   - Remove duplicates from session (vlr-remove)
+     ;;   - Report detailed info about each reactor for analysis
+     ;;
+     ;; FUTURE ENHANCEMENT: Merge reactors instead of deleting
+     ;;   - Combine owners from all reactors
+     ;;   - Merge data structures (union of all bubble tracking)
+     ;;   - Create single new reactor with merged state
+     ;;   - This would be safer if duplicates have different owners/data
+     ;;
+     ;; DEBUGGING STRATEGY (2026-01-09):
+     ;; Added proliferation reporting at THREE key access points:
+     ;; 1. CNM load time (here) - catches saved proliferation ✓ WORKING
+     ;; 2. hcnm-bn-get-reactor - catches runtime proliferation (not seen in logs)
+     ;; 3. hcnm-bn-assure-auto-text-has-reactor - catches proliferation during creation (not seen in logs)
+     (princ
+       (strcat
+         "\n\n*** PROLIFERATION AT CNM LOAD: Found "
+         (itoa reactor-count)
+         " reactors - analyzing before cleanup ***\n"
+       )
+     )
+     ;; Report details for each reactor (for debugging)
+     (setq reactor-index 0)
+     (foreach reactor hcnm-reactors
+       (setq reactor-index (1+ reactor-index))
+       (haws-debug (strcat "\n=== REACTOR " (itoa reactor-index) " of " (itoa reactor-count) " ==="))
+       (haws-debug (strcat "  Persistent: " (if (vlr-pers-p reactor) "YES" "NO")))
+       (haws-debug (strcat "  Owners count: " (itoa (length (vlr-owners reactor)))))
+       ;; Report owner handles
+       (foreach owner (vlr-owners reactor)
+         (haws-debug (strcat "    Owner: " (vl-catch-all-apply 'vla-get-handle (list owner))))
+       )
+       ;; Report data structure size
+       (setq reactor-data (vlr-data reactor))
+       (if (and reactor-data (assoc "HCNM-BUBBLE" reactor-data))
+         (progn
+           (setq hcnm-data (cdr (assoc "HCNM-BUBBLE" reactor-data)))
+           (haws-debug (strcat "    Data owners: " (itoa (length hcnm-data))))
+         )
+         (haws-debug "    Data: EMPTY or invalid")
+       )
+     )
+     ;; TODO: Future enhancement - merge reactors instead of deleting
+     ;; Strategy: Combine all owners and data structures from all reactors,
+     ;; then create single new reactor with merged data.
+     ;; For now: Keep first, remove rest (current behavior)
+     (haws-debug "\n=== Cleanup strategy: Keep first reactor, remove rest ===")
      (foreach
         reactor (cdr hcnm-reactors)     ; Keep first, remove rest
        (if (vlr-pers-p reactor)
-         (vlr-pers-release reactor)     ; Prevent saving to DWG
+         (vlr-pers-release reactor)     ; Mark transient to prevent saving
        )
        (vlr-remove reactor)               ; Remove from current session immediately
      )
      (princ
        (strcat
-         "\n*** REACTOR CLEANUP: Released "
+         "*** CLEANUP COMPLETE: Released "
          (itoa (1- reactor-count))
-         " duplicate reactors (will disappear next session) ***\n"
+         " duplicate reactors ***\n\n"
        )
      )
      t                                  ; Return T to indicate cleanup occurred
@@ -11626,6 +11523,13 @@ ImportLayerSettings=No
      (car hcnm-reactors)
   )
   (haws-debug (strcat "=== Reactor search complete: found " (itoa reactor-count) " reactor(s) ==="))
+  ;; REPORT IMMEDIATELY if multiple reactors found
+  (if (> reactor-count 1)
+    (progn
+      (haws-debug (strcat "*** PROLIFERATION DETECTED in assure-auto-text: Found " (itoa reactor-count) " reactors BEFORE cleanup ***"))
+      (princ (strcat "\n*** PROLIFERATION BEFORE CLEANUP: " (itoa reactor-count) " reactors ***\n"))
+    )
+  )
   (cond
     (reactor-old
       (haws-debug "=== reactor-old FOUND - will update existing reactor ===")
@@ -11664,28 +11568,16 @@ ImportLayerSettings=No
      (foreach
         owner new-owners
        (haws-debug (strcat "VLR-OWNER-ADD: Processing owner " (vl-catch-all-apply 'vla-get-handle (list owner))))
+       ;; It looks like persistent reactors may indeed be buggy, 
+       ;; and that rebuilding a transient reactor may be necessary. 
+       ;; I fear that might be unacceptably slow. Alternatively, maybe 
+       ;; I can convince requesters to abandon the idea of reactors and 
+       ;; just rebuild bubbles at the time of making a key notes table.
        (cond
          ((not (member owner (vlr-owners reactor-old)))
           (haws-debug "VLR-OWNER-ADD: Owner not in reactor, attempting to add...")
-          ;; Validate owner before attempting to add
-          (cond
-            (owner  ; Only process non-nil owners
-              (setq owner-add-result (vl-catch-all-apply 'vlr-owner-add (list reactor-old owner)))
-              (cond
-                ((vl-catch-all-error-p owner-add-result)
-                  (haws-debug (strcat "*** ERROR: vlr-owner-add failed for handle: " 
-                                 (vl-catch-all-apply 'vla-get-handle (list owner))))
-                  (haws-debug (strcat "    Error: " (vl-catch-all-error-message owner-add-result)))
-                )
-                (t
-                  (haws-debug (strcat "SUCCESS: Added owner: " (vla-get-handle owner)))
-                )
-              )
-            )
-            (t
-              (haws-debug (strcat "*** ERROR: NIL owner in owners list - skipping reactor attachment"))
-            )
-          )
+          (vlr-owner-add reactor-old owner)
+          (haws-debug (strcat "VLR-OWNER-ADD: Added successfully, reactor now has " (itoa (length (vlr-owners reactor-old))) " owners"))
          )
          (t
           (haws-debug
@@ -11734,7 +11626,9 @@ ImportLayerSettings=No
     )
     ((and new-owners (car new-owners))  ; Only create reactor if we have valid owners (non-nil, non-empty)
      ;; ELSE MAKE REACTOR AND MAKE IT PERSISTENT
-     (haws-debug "=== CREATING NEW REACTOR ===")
+     ;; CRITICAL: This path should ONLY execute when reactor-old is NIL
+     ;; If reactor-old exists, we should NEVER create a new reactor
+     (haws-debug "=== CREATING NEW REACTOR (reactor-old was NIL) ===")
      (setq
        data
         (hcnm-bn-reactor-add-auto
@@ -11896,6 +11790,13 @@ ImportLayerSettings=No
         (cond 
           ;; If notifier has no remaining bubbles, remove it as owner
           ((not (cadr notifier-entry))
+           (haws-debug 
+             (list 
+               "[REACTOR CLEANUP] In hcnm-bn-reactor-callback, notifier " 
+               handle-notifier 
+               " has no remaining bubbles, removing from reactor owners"
+             )
+           )
            (vlr-owner-remove obj-reactor obj-notifier)
           )
         )
@@ -13566,6 +13467,7 @@ ImportLayerSettings=No
             ((and ename-owner (entget ename-owner))
               ;; Owner entity still exists - detach it
               (setq obj-owner (vlax-ename->vla-object ename-owner))
+              (haws-debug (list "DETACH-OWNER: hcnm-bn-reactor-detach-owner is removing from owners handle=" handle-owner))
               (setq detach-result
                 (vl-catch-all-apply 'vlr-owner-remove
                   (list reactor obj-owner)

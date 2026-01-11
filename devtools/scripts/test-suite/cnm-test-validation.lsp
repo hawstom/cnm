@@ -42,31 +42,42 @@
     )
   )
 )
-(defun test-stretch-validation-pattern (test-num bubble-en tag test-desc stretch-cmd reason expect-change / state-before state-after pos-before pos-after value-before value-after)
+(defun test-stretch-validation-pattern (test-num bubble-en tag test-desc arrowhead-pt reason expect-change / state-before state-after pos-before pos-after value-before value-after corner1 corner2)
   ;; DRY pattern for stretch validation tests
   ;; Args:
   ;;   test-num - Test number (e.g., 41)
   ;;   bubble-en - Entity name of bubble
   ;;   tag - Attribute tag (e.g., "NOTETXT1")
   ;;   test-desc - Short description (e.g., "Leader Stretch Sta")
-  ;;   stretch-cmd - List of command arguments for STRETCH
+  ;;   arrowhead-pt - List of arrowhead coordinates (x y z)
   ;;   reason - Expected behavior description
   ;;   expect-change - T if value should change, nil if should stay same
   ;; Returns: nil
+  (haws-debug (strcat "STRETCH-VALIDATION: Starting TEST " (itoa test-num)))
   (cond
+    ((not bubble-en)
+     (haws-debug (strcat "STRETCH-VALIDATION: TEST " (itoa test-num) " - Bubble entity is NIL"))
+     (test-write-report-entry (strcat "TEST " (itoa test-num) ": " test-desc) "FAIL" "Bubble not found for stretch test")
+    )
     (bubble-en
+     (haws-debug (strcat "STRETCH-VALIDATION: TEST " (itoa test-num) " - Bubble found, capturing state..."))
      (setq state-before (test-capture-reactor-state bubble-en tag))
      (setq pos-before (test-get-leader-position bubble-en))
      (setq value-before (test-get-bubble-text bubble-en tag))
      (haws-debug (strcat "\nBefore stretch: " value-before))
      (haws-debug (test-format-reactor-state state-before "REACTOR STATE BEFORE"))
-     (apply 'command (cons "._STRETCH" stretch-cmd))
+     (setq corner1 (list (- (car arrowhead-pt) 1.0) (- (cadr arrowhead-pt) 1.0) 0.0)
+           corner2 (list (+ (car arrowhead-pt) 1.0) (+ (cadr arrowhead-pt) 1.0) 0.0))
+     (haws-debug (strcat "STRETCH-VALIDATION: Executing stretch with 2'x2' crossing at " (vl-princ-to-string arrowhead-pt)))
+     (command "._STRETCH" "_C" corner1 corner2 "" '(0 1 0) "")
+     (haws-debug (strcat "STRETCH-VALIDATION: Stretch complete, capturing new state..."))
      (setq state-after (test-capture-reactor-state bubble-en tag))
      (setq pos-after (test-get-leader-position bubble-en))
      (setq value-after (test-get-bubble-text bubble-en tag))
      (haws-debug (strcat "\nAfter stretch: " value-after))
      (haws-debug (test-format-reactor-state state-after "REACTOR STATE AFTER"))
      (haws-debug (strcat "\nLeader moved from " (rtos (cadr pos-before) 2 2) " to " (rtos (cadr pos-after) 2 2)))
+     (haws-debug (strcat "STRETCH-VALIDATION: Validating result, expect-change=" (if expect-change "T" "nil")))
      (if expect-change
        (test-validate-value-changed (strcat "TEST " (itoa test-num) ": " test-desc)
                                     value-before
@@ -81,9 +92,7 @@
                                       state-before
                                       state-after)
      )
-    )
-    (t
-     (test-write-report-entry (strcat "TEST " (itoa test-num) ": " test-desc) "FAIL" "Bubble not found for stretch test")
+     (haws-debug (strcat "STRETCH-VALIDATION: TEST " (itoa test-num) " complete"))
     )
   )
   (princ)
@@ -309,6 +318,7 @@
                               auto-keys coords-required-p vlr-owners-list vlr-owners-result
                               owner-handle bubble-list bubble-entry
                               en-owner obj-type owner-vla
+                              owner-handle-result owner-name-result
                              )
   ;; Validate reactor is attached correctly for auto-text tag
   ;; Args:
@@ -378,7 +388,8 @@
        (t
         ;; Check if bubble has leader in data structure
         (setq reactor-data (vlr-data reactor))
-        (setq hcnm-data (cadr (assoc "HCNM-BUBBLE" reactor-data)))
+        ;; Use haws-nested-list-get utility (handles uniform list structure)
+        (setq hcnm-data (haws-nested-list-get reactor-data '("HCNM-BUBBLE")))
         (setq leader-in-data-p nil)
         (setq leader-handle nil)
         
@@ -392,7 +403,7 @@
         (haws-debug
           (list
             "REACTOR VALIDATION: Bubble " handle-bubble
-            " leader from DXF 330: " (if leader-handle leader-handle "NIL")
+            " leader from DXF 330: " (if leader-handle (vl-princ-to-string leader-handle) "NIL")
           )
         )
         
@@ -411,30 +422,16 @@
         )
         
         ;; Check if leader is in VLR owners list
-        (setq vlr-owners-result (vl-catch-all-apply 'vlr-owners (list reactor)))
-        (cond
-          ((vl-catch-all-error-p vlr-owners-result)
-           (setq status "FAIL")
-           (setq message (strcat "FAIL: vlr-owners function not available: " (vl-catch-all-error-message vlr-owners-result)))
-           (setq result nil)
-           (setq vlr-owners-list nil)
-          )
-          (t
-           (setq vlr-owners-list vlr-owners-result)
-          )
-        )
+        (setq vlr-owners-list (vlr-owners reactor))
         (setq leader-in-vlr-p nil)
         (cond
           ((and leader-handle vlr-owners-list)
            (foreach owner-vla vlr-owners-list
              (setq owner-handle-result (vl-catch-all-apply 'vla-get-handle (list owner-vla)))
              (cond
-               ((not (vl-catch-all-error-p owner-handle-result))
-                (cond
-                  ((= owner-handle-result leader-handle)
-                   (setq leader-in-vlr-p t)
-                  )
-                )
+               ((and (not (vl-catch-all-error-p owner-handle-result))
+                     (= owner-handle-result leader-handle))
+                (setq leader-in-vlr-p t)
                )
              )
            )
@@ -470,12 +467,10 @@
                  (haws-debug "VLR owners list:")
                  (foreach owner-vla vlr-owners-list
                    (setq owner-handle-result (vl-catch-all-apply 'vla-get-handle (list owner-vla)))
-                   (cond
-                     ((not (vl-catch-all-error-p owner-handle-result))
-                      (haws-debug (strcat "  - " owner-handle-result 
-                                         " (" (vl-catch-all-apply 'vlax-get-property (list owner-vla 'ObjectName)) ")"))
-                     )
-                   )
+                   (setq owner-name-result (vl-catch-all-apply 'vlax-get-property (list owner-vla 'ObjectName)))
+                   (haws-debug (strcat "  - " 
+                                      (if (vl-catch-all-error-p owner-handle-result) "<INVALID>" owner-handle-result)
+                                      " (" (if (vl-catch-all-error-p owner-name-result) "<DELETED>" owner-name-result) ")"))
                  )
                 )
                 (t (haws-debug "VLR owners list is EMPTY"))
@@ -569,7 +564,8 @@
     (t
      ;; Check if bubble handle is in reactor data
      (setq data (vlr-data r))
-     (setq owner-list (cdr (assoc "HCNM-BUBBLE" data)))
+     ;; Use haws-nested-list-get utility (handles uniform list structure)
+     (setq owner-list (haws-nested-list-get data '("HCNM-BUBBLE")))
      ;; owner-list format: '(("owner-handle" (("bubble-handle" . (("tag" . "auto-type"))) ...)) ...)
      ;; Check all owner entries for this bubble handle
      (setq found-p
@@ -943,7 +939,7 @@
 (defun test-get-leader-position (ename-bubble / ename-leader eg-leader pt)
   ;; Get leader arrowhead position
   ;; Returns: (x y z) point or nil
-  (setq ename-leader (hcnm-bn-get-leader ename-bubble))
+  (setq ename-leader (hcnm-bn-get-leader-for-bubble ename-bubble))
   (cond
     (ename-leader
      (setq eg-leader (entget ename-leader))
@@ -960,16 +956,16 @@
   ;; Capture complete reactor state for diagnostic reporting
   ;; Returns: Association list with state information
   (setq handle-bubble (cdr (assoc 5 (entget ename-bubble))))
-  (setq ename-leader (hcnm-bn-get-leader ename-bubble))
+  (setq ename-leader (hcnm-bn-get-leader-for-bubble ename-bubble))
   (setq handle-leader (if ename-leader (cdr (assoc 5 (entget ename-leader))) nil))
   (setq reactor-list (cdar (vlr-reactors :vlr-object-reactor)))
   (setq reactor-old (car (vl-member-if '(lambda (r) (equal (vlr-type r) "HCNM-BUBBLE")) reactor-list)))
   (cond
     (reactor-old
      (setq data (vlr-data reactor-old))
-     (setq owner-list (cadr (assoc "HCNM-BUBBLE" data)))
+     (setq owner-list (haws-nested-list-get data '("HCNM-BUBBLE")))
      (setq vlr-owners (vlr-owners reactor-old))
-     (setq owner-handles (mapcar '(lambda (obj) (vl-catch-all-apply 'vla-get-handle (list obj))) vlr-owners))
+     (setq owner-handles (mapcar '(lambda (obj) (vla-get-handle obj)) vlr-owners))
      (setq leader-in-vlr (if handle-leader (member handle-leader owner-handles) nil))
      (setq leader-in-data (if handle-leader (assoc handle-leader owner-list) nil))
      (setq xdata-alist (hcnm-xdata-read ename-bubble))
@@ -1049,7 +1045,13 @@
                           "  After:  \"" value-after "\""
                           (test-format-reactor-state state-before "STATE BEFORE")
                           (test-format-reactor-state state-after "STATE AFTER")))
-    )state-before state-after / status message)
+    )
+  )
+  (test-write-report-entry test-name status message)
+  (princ (strcat "\n[" status "] " test-name))
+  (if (equal status "PASS") t nil)
+)
+(defun test-validate-value-unchanged (test-name value-before value-after reason state-before state-after / status message)
   ;; Validate that value did NOT change (for non-coordinate auto-text during leader stretch)
   ;; Args:
   ;;   test-name - String test identifier
@@ -1075,13 +1077,7 @@
                           "  Value: \"" value-before "\"\n"
                           "  Reason: " reason
                           (test-format-reactor-state state-before "STATE BEFORE")
-                          (test-format-reactor-state state-after "STATE AFTER")on))
-    )
-    (t
-     (setq status "PASS")
-     (setq message (strcat "Value correctly unchanged\n"
-                          "  Value: \"" value-before "\"\n"
-                          "  Reason: " reason))
+                          (test-format-reactor-state state-after "STATE AFTER")))
     )
   )
   (test-write-report-entry test-name status message)

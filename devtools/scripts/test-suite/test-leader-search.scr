@@ -1,0 +1,22 @@
+;;;; TEST-LEADER-SEARCH.SCR ;;;;
+; Purpose: Debug why ename-leader is nil for alignment Sta auto-text
+; Test: Insert Sta bubble, check debug log for leader search
+(haws-setvar "DebugLevel" "1")
+(if (findfile (strcat (getvar "dwgprefix") "haws-debug-log.md")) (vl-file-delete (strcat (getvar "dwgprefix") "haws-debug-log.md")))
+(princ "\n>>> Starting test-leader-search.scr")
+; Insert Sta bubble at known location
+mspace
+haws-elll
+10140,20280
+10135,20270
+1
+.
+sta
+10360,20240
+
+; Run reactor validation
+(princ "\n>>> Running test-validate-reactor...")
+(setq test-bubble (entlast))
+(setq test-result (test-validate-reactor test-bubble "NOTETXT1" "Sta" "LEADER-SEARCH TEST"))
+(princ (strcat "\n>>> RESULT: " (if test-result "PASS" "FAIL")))
+(princ "\n>>> test-leader-search.scr DONE - check above output")
