@@ -1,6 +1,7 @@
 retired/
 sandbox/
 Devmenu/VS-DLL/
+.vscode/
 *.bak*
 *.backup
 *.dll

@@ -78,7 +78,6 @@ filedia
 (setq *BubbleSkipEntryPrompt-old* (hcnm-config-getvar "BubbleSkipEntryPrompt"))
 (hcnm-config-setvar "BubbleSkipEntryPrompt" "0")
 (load (strcat (getvar "dwgprefix") "cnm-test-validation.lsp"))
-(load (strcat (getvar "dwgprefix") "cnm-test-reactor-diagnostic.lsp"))
 (c:test-setup-layers)
 (test-write-report-header)
 (c:test-log-start)
@@ -86,6 +85,98 @@ filedia
 mspace
 zoom
 extents
+; === EDITOR WORKFLOW TESTS (MANUAL INTERVENTION REQUIRED) ===
+;
+; CRITICAL: These tests require tester to follow on-screen instructions
+; Script auto-pauses at editor dialogs, resumes when tester clicks OK/Save
+;
+; TEST E1: Delimiter-based auto-text insertion (Paper Space + VPTRANS)
+; Position: 1C-1U = Column 1 Center, Row 1 Up
+; Arrow: (7", 13") paper = (10340', 20240') model via viewport
+; Tests: Delimiter replacement and manual text preservation, VPTRANS creation, paper space transform
+; WORKFLOW: Tester clicks StaOff button → dialog prompts for alignment → script provides coordinate (10340,20240)
+; Config: No hooks, with mtext
+;;
+pspace
+(hcnm-config-setvar "BubbleHooks" "0")
+(hcnm-config-setvar "BubbleMtext" "1")
+HAWS-ELLL
+7,13
+6.5,13.5
+E1
+INSTALL AT ```. L=4', A=24', B=6.33'
+Click in Line 1, click StaOff, then OK.
+(setq test-e1-handle (cdr (assoc 5 (entget (entlast)))))
+HAWS-EE
+L
+
+10340,20240
+; Validation after tester completes edit dialog
+(test-validate-auto-text (handent test-e1-handle) "NOTETXT1" "INSTALL AT STA 51+00.00, 20.00 LT. L=4', A=24', B=6.33'" "TEST E1: Delimiter Insertion")
+(test-validate-xdata (handent test-e1-handle) "NOTETXT1" "StaOff" "TEST E1")
+(test-validate-vptrans-created (handent test-e1-handle) "TEST E1")
+; Additional: Verify delimiter was replaced (not just appended)
+(setq e1-text (cadr (assoc "NOTETXT1" (hcnm-bn-dwg-to-lattribs (handent test-e1-handle)))))
+(if (vl-string-search "```" e1-text) (test-write-report-entry "TEST E1 (Delimiter)" "FAIL" "Delimiter not replaced - still present in text") (test-write-report-entry "TEST E1 (Delimiter)" "PASS" "Delimiter correctly replaced with auto-text"))
+;;
+;; TEST E2: Append Dia auto text with StaOff auto-text (Model Space)
+;; Position: 2C-1D = Column 2 Center, Row 1 Down
+;; Arrow: (10280',20230'), Bubble: (10275',20220')
+;; Tests: Smart search/replace (keep auto text), StaOff auto-text, Dia auto-text
+;; WORKFLOW: Tester clicks in Line 1, clicks StaOff button → dialog prompts for alignment → script provides coordinate (10340,20240)
+;; Config: With hooks, with mtext (both enabled)
+;;
+mspace
+(hcnm-config-setvar "BubbleHooks" "1")
+(hcnm-config-setvar "BubbleMtext" "1")
+HAWS-ELLL
+10280,20230
+10275,20220
+E2
+.
+dia
+10360,20200
+Click in Line 1, click StaOff, then OK.
+(setq test-e2-handle (cdr (assoc 5 (entget (entlast)))))
+HAWS-EE
+L
+
+10340,20240
+; Validation after tester completes edit dialog
+(test-validate-auto-text (handent test-e2-handle) "NOTETXT1" "18\"STA 52+40.00, 10.00 RT" "TEST E2: Replace with Auto-Text")
+(test-validate-xdata (handent test-e2-handle) "NOTETXT1" "Dia" "TEST E2")
+; Additional: Verify both auto-texts present (Dia + StaOff appended, not replaced)
+(setq e2-text (cadr (assoc "NOTETXT1" (hcnm-bn-dwg-to-lattribs (handent test-e2-handle)))))
+(if (and (vl-string-search "18\"" e2-text) (vl-string-search "STA" e2-text)) (test-write-report-entry "TEST E2 (Append)" "PASS" "Both Dia and StaOff auto-texts present") (test-write-report-entry "TEST E2 (Append)" "FAIL" "Missing expected auto-text - should have both Dia and StaOff"))
+;;
+;; TEST E3: Clear auto-text and revert to manual (Model Space)
+;; Position: 3C-2D = Column 3 Center, Row 2 Down
+;; Arrow: (10460',20220'), Bubble: (10455',20210')
+;; Tests: XDATA cleanup, manual text replacement
+;; WORKFLOW: Insert with NE auto-text, then manually replace in one edit
+;; Config: No hooks, no mtext (baseline)
+;;
+(hcnm-config-setvar "BubbleHooks" "0")
+(hcnm-config-setvar "BubbleMtext" "0")
+HAWS-ELLL
+10460,20220
+10455,20210
+E3
+.
+ne
+Replace Line 1 text with USER and click OK.
+(setq test-e3-handle (cdr (assoc 5 (entget (entlast)))))
+; Edit: Replace auto-text with manual text
+HAWS-EE
+L
+
+; Validation after tester completes edit dialog
+(test-validate-auto-text (handent test-e3-handle) "NOTETXT1" "USER" "TEST E3: Clear Auto-Text")
+; Validate XDATA cleared
+(setq xdata-e3 (hcnm-xdata-read (handent test-e3-handle)))
+(if (assoc "NOTETXT1" xdata-e3) (test-write-report-entry "TEST E3 (XDATA Cleanup)" "FAIL" (strcat "XDATA not cleared - entry still exists: " (vl-prin1-to-string (assoc "NOTETXT1" xdata-e3)))) (test-write-report-entry "TEST E3 (XDATA Cleanup)" "PASS" "XDATA cleared correctly"))
+; Validate VPTRANS not present (model space)
+(test-validate-vptrans-removed (handent test-e3-handle) "TEST E3")
 ; === PHASE C: AUTO-TEXT TESTS ===
 ;
 ; STRATEGY: Paper space focus validates VPTRANS architecture (weeks of work!)
@@ -124,44 +215,8 @@ sta
 
 (test-validate-auto-text (entlast) "NOTETXT1" "STA 53+00.00" "TEST 1: Sta (Model)")
 (test-validate-xdata (entlast) "NOTETXT1" "Sta" "TEST 1")
-(test-validate-reactor (entlast) "NOTETXT1" "Sta" "TEST 1")
 (setq test-bubble-1-handle (cdr (assoc 5 (entget (entlast)))))
 ;;
-;; === REACTOR DIAGNOSTIC: Before Save (TEST 1) ===
-;; Call diagnostic to capture reactor state before save/reopen cycle
-;;
-(haws-debug "\n\n=== REACTOR DIAGNOSTIC: Before Save (TEST 1) ===")
-(c:test-reactor-diagnostic)
-sdi
-1
-(command "._qsave" "._open" (strcat (getvar "dwgprefix") "cnm-test.dwg"))
-sdi
-0
-(load "cnm")
-(haws-setvar "DebugLevel" "1")
-(load (strcat (getvar "dwgprefix") "cnm-test-validation.lsp"))
-(load (strcat (getvar "dwgprefix") "cnm-test-reactor-diagnostic.lsp"))
-;(load "haws-clock.lsp")
-;;
-;; === REACTOR DIAGNOSTIC: After Reopen (TEST 1 - First Call) ===
-;; WORKAROUND: vlr-reactors returns nil on first call after opening (line 11597 comment)
-;; Call vlr-reactors once to "prime" it, then call diagnostic for actual state
-;;
-(haws-debug "\n\n=== REACTOR DIAGNOSTIC: After Reopen TEST 1 (Priming vlr-reactors) ===")
-(vlr-reactors)
-(haws-debug "\n\n=== REACTOR DIAGNOSTIC: After Reopen TEST 1 (Second Call - should work) ===")
-(c:test-reactor-diagnostic)
-;;
-;; TEST 1a: Verify TEST 1 reactor survives save/reopen - Stretch leader
-;; CRITICAL: This tests if leader reactor was restored during drawing load
-;; Expected: Station should update when leader moves (reactor fires)
-;;
-(haws-debug "\n\n=== TEST 1a: Post-Reopen Leader Stretch (Sta) ===")
-(setq test-bubble-1 (test-find-bubble-by-coord 10335.0 20260.0 0.0 "TEST 1 (post-reopen)"))
-(test-stretch-validation-pattern 1 test-bubble-1 "NOTETXT1" "Post-Reopen Leader Stretch" 
-                                 '(10340.0 20250.0 0.0)
-                                 "Station must update after reopen - tests reactor restoration"
-                                 T)
 ;;
 ;; TEST 2: L (Model) - Pipe length
 ;; Position: 3L-4D = Column 3 Left, Row 4 Down
@@ -182,44 +237,7 @@ L
 
 (test-validate-auto-text (entlast) "NOTETXT1" "L=640.00'" "TEST 2: L (Model)")
 (test-validate-xdata (entlast) "NOTETXT1" "L" "TEST 2")
-(test-validate-reactor (entlast) "NOTETXT1" "L" "TEST 2")
 (setq test-bubble-2-handle (cdr (assoc 5 (entget (entlast)))))
-;;
-;; === REACTOR DIAGNOSTIC: Before Save (TEST 2) ===
-;; Call diagnostic to capture reactor state before save/reopen cycle
-;;
-(haws-debug "\n\n=== REACTOR DIAGNOSTIC: Before Save (TEST 2) ===")
-(c:test-reactor-diagnostic)
-sdi
-1
-(command "._qsave" "._open" (strcat (getvar "dwgprefix") "cnm-test.dwg"))
-sdi
-0
-(load "cnm")
-(haws-setvar "DebugLevel" "1")
-(load (strcat (getvar "dwgprefix") "cnm-test-validation.lsp"))
-(load (strcat (getvar "dwgprefix") "cnm-test-reactor-diagnostic.lsp"))
-;(load "haws-clock.lsp")
-;;
-;; === REACTOR DIAGNOSTIC: After Reopen (TEST 2 - First Call) ===
-;; WORKAROUND: vlr-reactors returns nil on first call after opening (line 11597 comment)
-;; Call vlr-reactors once to "prime" it, then call diagnostic for actual state
-;;
-(haws-debug "\n\n=== REACTOR DIAGNOSTIC: After Reopen TEST 2 (Priming vlr-reactors) ===")
-(vlr-reactors)
-(haws-debug "\n\n=== REACTOR DIAGNOSTIC: After Reopen TEST 2 (Second Call - should work) ===")
-(c:test-reactor-diagnostic)
-;;
-;; TEST 2a: Verify TEST 2 reactor survives save/reopen - Modify pipe property
-;; CRITICAL: This tests if pipe reference reactor was restored during drawing load
-;; Expected: Length should stay same (pipe property, not affected by leader stretch)
-;;
-(haws-debug "\n\n=== TEST 2a: Post-Reopen Leader Stretch (Pipe L) ===")
-(setq test-bubble-2 (test-find-bubble-by-coord 10215.0 20190.0 0.0 "TEST 2 (post-reopen)"))
-(test-stretch-validation-pattern 2 test-bubble-2 "NOTETXT1" "Post-Reopen Leader Stretch L" 
-                                 '(10220.0 20200.0 0.0)
-                                 "Pipe length unaffected by leader stretch - tests non-coordinate reactor"
-                                 nil)
 ;;
 ;; TEST 3: N (Model) - Northing coordinate
 ;; Position: 2L-2U = Column 2 Left, Row 2 Up
@@ -239,45 +257,7 @@ n
 
 (test-validate-auto-text (entlast) "NOTETXT1" "N 20260.00" "TEST 3: N (Model)")
 (test-validate-xdata (entlast) "NOTETXT1" "N" "TEST 3")
-(test-validate-reactor (entlast) "NOTETXT1" "N" "TEST 3")
 (setq test-bubble-3-handle (cdr (assoc 5 (entget (entlast)))))
-;;
-;; === REACTOR DIAGNOSTIC: Before Save ===
-;; Call diagnostic to capture reactor state before save/reopen cycle
-;;
-(haws-debug "\n\n=== REACTOR DIAGNOSTIC: Before Save ===")
-(c:test-reactor-diagnostic)
-sdi
-1
-(command "._qsave" "._open" (strcat (getvar "dwgprefix") "cnm-test.dwg"))
-sdi
-0
-(load "cnm")
-(haws-setvar "DebugLevel" "1")
-(load (strcat (getvar "dwgprefix") "cnm-test-validation.lsp"))
-(load (strcat (getvar "dwgprefix") "cnm-test-reactor-diagnostic.lsp"))
-;(load "haws-clock.lsp")
-;;
-;; === REACTOR DIAGNOSTIC: After Reopen (First Call) ===
-;; WORKAROUND: vlr-reactors returns nil on first call after opening (line 11597 comment)
-;; Call vlr-reactors once to "prime" it, then call diagnostic for actual state
-;;
-(haws-debug "\n\n=== REACTOR DIAGNOSTIC: After Reopen (Priming vlr-reactors) ===")
-(vlr-reactors)
-(haws-debug "\n\n=== REACTOR DIAGNOSTIC: After Reopen (Second Call - should work) ===")
-(c:test-reactor-diagnostic)
-;;
-;; TEST 3a: Verify TEST 3 reactor survives save/reopen - Stretch leader (coordinate-based)
-;; CRITICAL: This tests if handleless coordinate reactor was restored during drawing load
-;; Expected: Northing should update when leader moves (reactor fires for coordinate change)
-;;
-(haws-debug "\n\n=== TEST 3a: Post-Reopen Leader Stretch (N) ===")
-(setq test-bubble-3 (test-find-bubble-by-coord 10275.0 20270.0 0.0 "TEST 3 (post-reopen)"))
-(test-stretch-validation-pattern 3 test-bubble-3 "NOTETXT1" "Post-Reopen Leader Stretch N" 
-                                 '(10280.0 20260.0 0.0)
-                                 "Northing must update after reopen - tests handleless coordinate reactor"
-                                 T)
-;;
 ;;
 ;;
 ;; TEST V1: Paper Space StaOff with REUSED Alignment (Viewport Prompt)
@@ -314,7 +294,6 @@ staoff
 
 (test-validate-auto-text (entlast) "NOTETXT1" "STA 52+40.00, 10.00 RT" "TEST V1a: Model StaOff (setup)")
 (test-validate-xdata (entlast) "NOTETXT1" "StaOff" "TEST V1a")
-(test-validate-reactor (entlast) "NOTETXT1" "StaOff" "TEST V1a")
 (setq test-v1a-handle (cdr (assoc 5 (entget (entlast)))))
 ;;
 ;; V1b: Paper space StaOff with ENTER (reuses alignment from V1a)
@@ -334,11 +313,10 @@ staoff
 
 (setq test-v1b-handle (cdr (assoc 5 (entget (entlast)))))
 ;;
-;; Validation: V1b should have auto-text, XDATA, reactor, and VPTRANS
+;; Validation: V1b should have auto-text, XDATA, and VPTRANS
 ;;
 (test-validate-auto-text (handent test-v1b-handle) "NOTETXT1" "STA 52+40.00, 10.00 RT" "TEST V1b: Paper StaOff with REUSED")
 (test-validate-xdata (handent test-v1b-handle) "NOTETXT1" "StaOff" "TEST V1b")
-(test-validate-reactor (handent test-v1b-handle) "NOTETXT1" "StaOff" "TEST V1b")
 (test-validate-vptrans-created (handent test-v1b-handle) "TEST V1b")
 ;;
 ;; Additional validation: Verify REUSED status was detected
@@ -388,109 +366,7 @@ sdi
 ;; UNKNOWN_COMMAND intentionally stops script execution
 ;; Remove this line to run full test suite
 ;;
-(haws-debug "\n\n=== EARLY EXIT: Save/Reopen Reactor Tests Complete ===")
-(test-write-report-entry "EARLY EXIT" "INFO" "Stopped after save/reopen reactor validation tests")
 UNKNOWN_COMMAND_STOP_HERE
-; === EDITOR WORKFLOW TESTS (MANUAL INTERVENTION REQUIRED) ===
-;
-; CRITICAL: These tests require tester to follow on-screen instructions
-; Script auto-pauses at editor dialogs, resumes when tester clicks OK/Save
-;
-; TEST E1: Delimiter-based auto-text insertion (Paper Space + VPTRANS)
-; Position: 1C-1U = Column 1 Center, Row 1 Up
-; Arrow: (7", 13") paper = (10340', 20240') model via viewport
-; Tests: Delimiter replacement and manual text preservation, VPTRANS creation, paper space transform
-; WORKFLOW: Tester clicks StaOff button → dialog prompts for alignment → script provides coordinate (10340,20240)
-; Config: No hooks, with mtext
-;;
-pspace
-(hcnm-config-setvar "BubbleHooks" "0")
-(hcnm-config-setvar "BubbleMtext" "1")
-HAWS-ELLL
-7,13
-6.5,13.5
-E1
-INSTALL AT ```. L=4', A=24', B=6.33'
-Click in Line 1, click StaOff, then OK.
-(setq test-e1-handle (cdr (assoc 5 (entget (entlast)))))
-HAWS-EE
-L
-
-10340,20240
-; Validation after tester completes edit dialog
-(test-validate-auto-text (handent test-e1-handle) "NOTETXT1" "INSTALL AT STA 51+00.00, 20.00 LT. L=4', A=24', B=6.33'" "TEST E1: Delimiter Insertion")
-(test-validate-xdata (handent test-e1-handle) "NOTETXT1" "StaOff" "TEST E1")
-(test-validate-reactor (handent test-e1-handle) "NOTETXT1" "StaOff" "TEST E1")
-(test-validate-vptrans-created (handent test-e1-handle) "TEST E1")
-; Additional: Verify delimiter was replaced (not just appended)
-(setq e1-text (cadr (assoc "NOTETXT1" (hcnm-bn-dwg-to-lattribs (handent test-e1-handle)))))
-(if (vl-string-search "```" e1-text) (test-write-report-entry "TEST E1 (Delimiter)" "FAIL" "Delimiter not replaced - still present in text") (test-write-report-entry "TEST E1 (Delimiter)" "PASS" "Delimiter correctly replaced with auto-text"))
-;;
-;; TEST E2: Append Dia auto text with StaOff auto-text (Model Space)
-;; Position: 2C-1D = Column 2 Center, Row 1 Down
-;; Arrow: (10280',20230'), Bubble: (10275',20220')
-;; Tests: Smart search/replace (keep auto text), StaOff auto-text, Dia auto-text
-;; WORKFLOW: Tester clicks in Line 1, clicks StaOff button → dialog prompts for alignment → script provides coordinate (10340,20240)
-;; Config: With hooks, with mtext (both enabled)
-;;
-mspace
-(hcnm-config-setvar "BubbleHooks" "1")
-(hcnm-config-setvar "BubbleMtext" "1")
-HAWS-ELLL
-10280,20230
-10275,20220
-E2
-.
-dia
-10360,20200
-Click in Line 1, click StaOff, then OK.
-(setq test-e2-handle (cdr (assoc 5 (entget (entlast)))))
-HAWS-EE
-L
-
-10340,20240
-; Validation after tester completes edit dialog
-(test-validate-auto-text (handent test-e2-handle) "NOTETXT1" "18\"STA 52+40.00, 10.00 RT" "TEST E2: Replace with Auto-Text")
-(test-validate-xdata (handent test-e2-handle) "NOTETXT1" "Dia" "TEST E2")
-(test-validate-reactor (handent test-e2-handle) "NOTETXT1" "Dia" "TEST E2")
-; Additional: Verify both auto-texts present (Dia + StaOff appended, not replaced)
-(setq e2-text (cadr (assoc "NOTETXT1" (hcnm-bn-dwg-to-lattribs (handent test-e2-handle)))))
-(if (and (vl-string-search "18\"" e2-text) (vl-string-search "STA" e2-text)) (test-write-report-entry "TEST E2 (Append)" "PASS" "Both Dia and StaOff auto-texts present") (test-write-report-entry "TEST E2 (Append)" "FAIL" "Missing expected auto-text - should have both Dia and StaOff"))
-;;
-;; TEST E3: Clear auto-text and revert to manual (Model Space)
-;; Position: 3C-2D = Column 3 Center, Row 2 Down
-;; Arrow: (10460',20220'), Bubble: (10455',20210')
-;; Tests: XDATA cleanup, reactor detachment, manual text replacement
-;; WORKFLOW: Insert with NE auto-text, then manually replace in one edit
-;; Config: No hooks, no mtext (baseline)
-;;
-(hcnm-config-setvar "BubbleHooks" "0")
-(hcnm-config-setvar "BubbleMtext" "0")
-HAWS-ELLL
-10460,20220
-10455,20210
-E3
-.
-ne
-Replace Line 1 text with USER and click OK.
-(setq test-e3-handle (cdr (assoc 5 (entget (entlast)))))
-; Edit: Replace auto-text with manual text
-HAWS-EE
-L
-
-; Validation after tester completes edit dialog
-(test-validate-auto-text (handent test-e3-handle) "NOTETXT1" "USER" "TEST E3: Clear Auto-Text")
-; Validate XDATA cleared
-(setq xdata-e3 (hcnm-xdata-read (handent test-e3-handle)))
-(if (assoc "NOTETXT1" xdata-e3) (test-write-report-entry "TEST E3 (XDATA Cleanup)" "FAIL" (strcat "XDATA not cleared - entry still exists: " (vl-prin1-to-string (assoc "NOTETXT1" xdata-e3)))) (test-write-report-entry "TEST E3 (XDATA Cleanup)" "PASS" "XDATA cleared correctly"))
-; Validate reactor detached
-(test-validate-reactor-detached (handent test-e3-handle) "NOTETXT1" "TEST E3")
-; Validate VPTRANS not present (model space)
-(test-validate-vptrans-removed (handent test-e3-handle) "TEST E3")
-; Validate reactor detached
-(test-validate-reactor-detached (handent test-e3-handle) "NOTETXT1" "TEST E3")
-; Validate VPTRANS removed (if applicable)
-(test-validate-vptrans-removed (handent test-e3-handle) "TEST E3")
 ;;
 ;; TEST 5: Manual (Model) - Baseline manual text entry
 ;; Position: 2R-1U = Column 2 Right, Row 1 Up
@@ -527,7 +403,6 @@ name
 
 (test-validate-auto-text (entlast) "NOTETXT1" "OAK ST" "TEST 6: Name (Model)")
 (test-validate-xdata (entlast) "NOTETXT1" "AlName" "TEST 6")
-(test-validate-reactor (entlast) "NOTETXT1" "AlName" "TEST 6")
 ;;
 ;; TEST 7: SF (Model) - Square feet from rectangle
 ;; Position: 4R-3U = Column 4 Right, Row 3 Up (sidewalk row)
@@ -612,7 +487,6 @@ sta
 
 (test-validate-auto-text (entlast) "NOTETXT1" "STA 50+00.00" "TEST 9: Sta (Paper)")
 (test-validate-xdata (entlast) "NOTETXT1" "Sta" "TEST 9")
-(test-validate-reactor (entlast) "NOTETXT1" "Sta" "TEST 9")
 (setq test-bubble-9-handle (cdr (assoc 5 (entget (entlast)))))
 ;;
 ;; TEST 10: Off (Paper→Model) - Offset calculation through viewport
@@ -634,7 +508,6 @@ off
 
 (test-validate-auto-text (entlast) "NOTETXT1" "20.00 LT" "TEST 10: Off (Paper)")
 (test-validate-xdata (entlast) "NOTETXT1" "Off" "TEST 10")
-(test-validate-reactor (entlast) "NOTETXT1" "Off" "TEST 10")
 ;;
 ;; TEST 11: StaOff (Paper→Model) - Combined station and offset
 ;; Paper position: 4L column area - no conflict with model tests
@@ -656,7 +529,6 @@ staoff
 
 (test-validate-auto-text (entlast) "NOTETXT1" "STA 51+20.00, 10.00 LT" "TEST 11: StaOff (Paper)")
 (test-validate-xdata (entlast) "NOTETXT1" "StaOff" "TEST 11")
-(test-validate-reactor (entlast) "NOTETXT1" "StaOff" "TEST 11")
 ;;
 ;; TEST 12: StaName (Paper→Model) - Station plus alignment name
 ;; Paper position: 6R column area - no conflict with model tests
@@ -677,7 +549,6 @@ staname
 
 (test-validate-auto-text (entlast) "NOTETXT1" "STA 56+40.00 OAK ST" "TEST 12: StaName (Paper)")
 (test-validate-xdata (entlast) "NOTETXT1" "StaName" "TEST 12")
-(test-validate-reactor (entlast) "NOTETXT1" "StaName" "TEST 12")
 ;;
 ;; TEST 13: L (Paper→Model) - Pipe length through viewport
 ;; Paper position: 2L column area at pipe row - no conflict with model tests
@@ -698,7 +569,6 @@ L
 
 (test-validate-auto-text (entlast) "NOTETXT1" "L=640.00'" "TEST 13: L (Paper)")
 (test-validate-xdata (entlast) "NOTETXT1" "L" "TEST 13")
-(test-validate-reactor (entlast) "NOTETXT1" "L" "TEST 13")
 ;;
 ;; TEST 14: Slope (Paper→Model) - Pipe slope through viewport
 ;; Paper position: 5R column area at pipe row - no conflict with model tests
@@ -720,7 +590,6 @@ slope
 
 (test-validate-auto-text (entlast) "NOTETXT1" "0.31%" "TEST 14: Slope (Paper)")
 (test-validate-xdata (entlast) "NOTETXT1" "Slope" "TEST 14")
-(test-validate-reactor (entlast) "NOTETXT1" "Slope" "TEST 14")
 ;;
 ;; TEST 15: N (Paper) - VPTRANS CRITICAL! Northing coordinate transform
 ;; Paper arrow position transforms to model Y coordinate
@@ -740,7 +609,6 @@ n
 
 (test-validate-auto-text (entlast) "NOTETXT1" "N 20260.00" "TEST 15: N (Paper)")
 (test-validate-xdata (entlast) "NOTETXT1" "N" "TEST 15")
-(test-validate-reactor (entlast) "NOTETXT1" "N" "TEST 15")
 ;;
 ;; TEST 16: E (Paper) - Easting coordinate transform
 ;; Paper arrow position transforms to model X coordinate
@@ -760,7 +628,6 @@ e
 
 (test-validate-auto-text (entlast) "NOTETXT1" "E 10380.00" "TEST 16: E (Paper)")
 (test-validate-xdata (entlast) "NOTETXT1" "E" "TEST 16")
-(test-validate-reactor (entlast) "NOTETXT1" "E" "TEST 16")
 ;;
 ;; TEST 17: NE (Paper) - Full VPTRANS validation (both coordinates)
 ;; Paper arrow transforms to both model X and Y
@@ -780,7 +647,6 @@ ne
 
 (test-validate-auto-text (entlast) "NOTETXT1" "N 20230.00, E 10440.00" "TEST 17: NE (Paper)")
 (test-validate-xdata (entlast) "NOTETXT1" "NE" "TEST 17")
-(test-validate-reactor (entlast) "NOTETXT1" "NE" "TEST 17")
 ;;
 ;; TEST 18: Manual (Paper) - Baseline manual text in paper space
 ;; Paper position: Right side area
@@ -1036,10 +902,11 @@ HAWS-DIAL
 2
 STA. 5+22
 5' L
+UNKNOWN_COMMAND_TO_STOP_SCRIPT
 ;;==============================================================================
 ;; PHASE D: STRETCH VALIDATION TESTS
 ;;==============================================================================
-;; Purpose: Validate that reactors actually update auto-text values
+;; Purpose: Validate that bnatu actually updates auto-text values
 ;; Tests leader stretch, alignment modification, and save/reopen cycles
 ;;
 ;; CRITICAL: Switch to model space (was in paper space from TEST 17-18)
