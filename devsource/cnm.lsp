@@ -11043,7 +11043,7 @@ ImportLayerSettings=No
   (princ "\nUpdating all bubble note auto-text...")
   
   ;; Collect all INSERTs with HCNM-BUBBLE XDATA
-  (setq ss (ssget "X" (list (cons 0 "INSERT") (cons -3 (list "HCNM-BUBBLE")))))
+  (setq ss (ssget "X" (list (cons 0 "INSERT") (cons -3 (list (list "HCNM-BUBBLE"))))))
   (setq bubble-count 0)
   (setq updated-count 0)
   
