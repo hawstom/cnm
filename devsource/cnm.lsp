@@ -11015,6 +11015,91 @@ ImportLayerSettings=No
   )
 )
 
+;;==============================================================================
+;; c:hcnm-bnatu - Manual Bubble Note Auto-Text Updater (User Command)
+;;==============================================================================
+;; Purpose:
+;;   User command to manually update all bubble note auto-text in the drawing.
+;;   Processes all bubbles with HCNM-BUBBLE XDATA and updates their auto-text fields.
+;;
+;; Usage:
+;;   Command: HCNM-BNATU or alias BUP
+;;   Processes all bubbles in drawing (no selection required)
+;;
+;; Architecture:
+;;   - Collects all INSERTs with HCNM-BUBBLE XDATA
+;;   - Extracts auto-text metadata from each bubble's XDATA
+;;   - Calls hcnm-bn-bnatu-bubble-update for each bubble
+;;   - Similar to reactor callback but manual, whole-drawing scope
+;;
+;; Returns:
+;;   Prints summary of bubbles updated
+;;==============================================================================
+(defun c:hcnm-bnatu ( / 
+                      ss i ename-bubble handle-bubble xdata-alist 
+                      tag-data auto-list tag auto-entry auto-type handle-reference
+                      bubble-count updated-count tag-list
+                     )
+  (princ "\nUpdating all bubble note auto-text...")
+  
+  ;; Collect all INSERTs with HCNM-BUBBLE XDATA
+  (setq ss (ssget "X" (list (cons 0 "INSERT") (cons -3 (list "HCNM-BUBBLE")))))
+  (setq bubble-count 0)
+  (setq updated-count 0)
+  
+  (cond
+    (ss
+     (setq i 0)
+     (while (setq ename-bubble (ssname ss i))
+       (setq handle-bubble (cdr (assoc 5 (entget ename-bubble))))
+       (setq xdata-alist (hcnm-xdata-read ename-bubble))
+       (setq bubble-count (1+ bubble-count))
+       
+       ;; Build tag-list from XDATA in format expected by bnatu-bubble-update
+       ;; Format: ((tag ((auto-type handle-reference) ...)) ...)
+       (setq tag-list '())
+       (foreach tag-data xdata-alist
+         (setq tag (car tag-data))
+         (setq auto-list (cdr tag-data))
+         
+         ;; Convert composite-key XDATA format to update format
+         (cond
+           ;; Composite-key format: (((auto-type . handle) . auto-text) ...)
+           ((and (listp auto-list) (listp (car auto-list)))
+            (setq auto-entry-list '())
+            (foreach composite-entry auto-list
+              (setq auto-type (car (car composite-entry)))
+              (setq handle-reference (cdr (car composite-entry)))
+              ;; Build 2-element list: (auto-type handle-reference)
+              (setq auto-entry-list 
+                (append auto-entry-list (list (list auto-type handle-reference))))
+            )
+            (setq tag-list (append tag-list (list (list tag auto-entry-list))))
+           )
+         )
+       )
+       
+       ;; Update this bubble if it has auto-text
+       (cond
+         (tag-list
+          (hcnm-bn-bnatu-bubble-update handle-bubble "" tag-list)
+          (setq updated-count (1+ updated-count))
+         )
+       )
+       
+       (setq i (1+ i))
+     )
+     
+     (princ (strcat "\nProcessed " (itoa bubble-count) " bubble(s), updated " 
+                    (itoa updated-count) " with auto-text."))
+    )
+    (t
+     (princ "\nNo bubbles found in drawing.")
+    )
+  )
+  (princ)
+)
+
 ;#endregion
 ;#endregion
 

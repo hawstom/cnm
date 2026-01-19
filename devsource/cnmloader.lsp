@@ -95,7 +95,7 @@
                         "haws-cnmmenu" "haws-cnmsetup"
                         "haws-phaseedit" "haws-setnotephases"
                         "haws-ntpurge" "hcnm-setnotesbubblestyle"
-                        "hcnm-cnmoptions")
+                        "hcnm-cnmoptions" "hcnm-bnatu")
 )
 (haws-autoload "insblk"   '("haws-gb" "haws-gc" "haws-invl" "haws-invr" "haws-lotel" "haws-pad"
                             "haws-secb" "haws-secl" "haws-secr" "haws-sect"
