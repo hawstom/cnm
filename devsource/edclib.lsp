@@ -185,19 +185,6 @@
   (while (< 0 (getvar "cmdactive"))
     (vl-cmdf)
   )
-  
-  ;; CRITICAL: Restore BlockReactors flag on error/cancel
-  ;; If error occurs during reactor callback, flag could be stuck at "1"
-  ;; This would permanently block all reactor updates until drawing reload
-  ;; Self-healing: Always restore to "0" on any CNM command error
-  (cond 
-    ((and (boundp 'hcnm-config-setvar)
-          (= (hcnm-config-getvar "BlockReactors") "1")
-     )
-     (hcnm-config-setvar "BlockReactors" "0")
-     (princ "\n[ERROR HANDLER] Restored BlockReactors=0 (self-healing)")
-    )
-  )
   ;; Close files
   ;; Note that symptoms of file pointer clashes (setting a var to another file pointer leaving the original open and unreferenced) include:
   ;; unhandled exceptions, can't reenter autolisp, unwind errors, etc.
@@ -1960,7 +1947,7 @@
 ;;------------------------------------------------------------------------------
 (defun haws-debug (messages / enabled-p output) 
   ;; Why not hard-code this? Debugging may be needed on a user's machine with a compiled edclib.lsp.
-  (setq enabled-p T) ;(> (atoi (haws-getvar "DebugLevel")) 0))
+  (setq enabled-p (> (atoi (haws-getvar "DebugLevel")) 0))
   (cond 
     (enabled-p
      ;; Convert single string to list for consistent processing

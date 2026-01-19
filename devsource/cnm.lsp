@@ -5676,7 +5676,7 @@ ImportLayerSettings=No
   (haws-debug ">>> ABOUT TO CALL hcnm-bn-finish-bubble")
   (hcnm-bn-finish-bubble bubble-data)
   (haws-debug ">>> RETURNED FROM hcnm-bn-finish-bubble")
-  (haws-tip 7 "You can align/move bubble note text lines by moving their ATTDEF objects in the block editor (BEDIT). Save the results to a personal or team CNM customizations location so that you can copy in your versions after every CNM install.\n\nNote that there have been no changes to the bubble note block definition since version 5.0.07 (you can always check your version using HAWS-ABOUT).")
+  (haws-tip 7 "You can customize bubble note text position by moving the ATTDEF objects in the block editor (BEDIT). Save the results to a personal or team CNM customizations location so that you can copy in your versions after every CNM install.\n\nNote that there have been no changes to the bubble note block definition since version 5.0.07 (you can always check your version using HAWS-ABOUT).")
   (hcnm-restore-dimstyle)
   (haws-vrstor)
   (vl-cmdf "._undo" "_e")
@@ -7766,10 +7766,13 @@ ImportLayerSettings=No
      )
     lattribs
      (hcnm-bn-bubble-data-get bubble-data "ATTRIBUTES")
+    string ""
   )
   (cond
     (obj-reference
-     (setq string "Programming error. See command line.")
+     ;; Reference object provided - generate fresh auto-text (no prompt needed)
+     ;; obj-reference is VLA-OBJECT from alignment/pipe/surface
+     (setq string "Programming error - auto-qty should not receive obj-reference")
      (princ
        (strcat
          "\nProgramming error: "
@@ -7778,7 +7781,14 @@ ImportLayerSettings=No
        )
      )
     )
+    (bnatu-context-p
+     ;; BUP context but NO reference provided - skip (fields don't update via bnatu)
+     ;; For dynamic fields (LF/SF/SY), the field expression handles updates automatically
+     ;; XDATA only stores the field text, no reference object
+     (setq string (cond ((assoc tag lattribs) (cadr (assoc tag lattribs))) (t "")))
+    )
     (t
+     ;; Insertion/editing context - prompt user for object selection
      (haws-tip 9 "This auto text uses AutoCAD fields that display as ####. They update on regen or print.")
      (cond
        ((and
@@ -9071,7 +9081,7 @@ ImportLayerSettings=No
   (cond
     ((and
        ename-bubble
-       (not (hcnm-bn-is-on-model-tab ename-bubble))
+       (not (hcnm-bn-is-in-model-space ename-bubble))
        (hcnm-bn-auto-type-is-coordinate-p auto-type)
      )
      ;; Bubble is in paper space and auto-type is coordinate-based - show warning
@@ -9091,13 +9101,13 @@ ImportLayerSettings=No
   (cond
     ((and
        ename-bubble
-       (not (hcnm-bn-is-on-model-tab ename-bubble))
+       (not (hcnm-bn-is-in-model-space ename-bubble))
        (hcnm-bn-auto-type-is-coordinate-p auto-type)
      )
      ;; Bubble is in paper space and auto-type is coordinate-based - show warning
      (haws-tip
        2                                ; Unique tip ID for paper space warning
-       "ALERT: CNM doesn't adjust paper space bubble notes when viewports change.\n\nTo avoid causing chaos when viewports change, auto text for coordinates does not react to viewport view changes.\n\nYou must use the 'Change View' button in the edit dialog (or the future CNMCHGVPORT command) if you want to refresh the viewport association and world coordinates of selected bubble notes."
+       "ALERT: CNM doesn't adjust paper space bubble note coordinates references when viewports change.\n\nTo avoid causing chaos when viewports change, auto text coordinates references do not update with viewport view changes.\n\nYou must use the 'Change View' button in the edit dialog (or the future CNMCHGVPORT command) if you want to refresh the viewport association and world coordinates of selected bubble notes."
      )
     )
   )
@@ -9170,7 +9180,7 @@ ImportLayerSettings=No
      (and
        ename-bubble
        (not
-         (hcnm-bn-is-on-model-tab
+         (hcnm-bn-is-in-model-space
            ename-bubble
          )
        )
@@ -10799,13 +10809,11 @@ ImportLayerSettings=No
 ;;   reactor-callback → THIS FUNCTION → bubble-update → update-bubble-tag
 ;;
 ;; Performance Notes:
-;;   - Parent callback already set BlockReactors="1" (nested callbacks blocked)
 ;;   - Processes ALL bubbles for this notifier in one pass
 ;;   - Each bubble gets ONE combined attribute update (not per-tag)
 ;;
 ;; Side Effects:
 ;;   - Modifies bubble attributes via bubble-update function
-;;   - No flag management (parent callback handles BlockReactors lifecycle)
 ;;
 ;; Data Structure:
 ;;   notifier-entry = (handle-notifier bubble-list)
@@ -11038,19 +11046,23 @@ ImportLayerSettings=No
 (defun c:hcnm-bnatu ( / 
                       ss i ename-bubble handle-bubble xdata-alist 
                       tag-data auto-list tag auto-entry auto-type handle-reference
-                      bubble-count updated-count tag-list
+                      bubble-count updated-count tag-list time-start time-bubble time-total
+                      auto-entry-count total-entries
                      )
   (princ "\nUpdating all bubble note auto-text...")
+  (setq time-start (getvar "MILLISECS"))
   
   ;; Collect all INSERTs with HCNM-BUBBLE XDATA
-  (setq ss (ssget "X" (list (cons 0 "INSERT") (cons -3 (list (list "HCNM-BUBBLE"))))))
+  (setq ss (ssget "X" (list (cons 0 "INSERT") (list -3 (list "HCNM-BUBBLE")))))
   (setq bubble-count 0)
   (setq updated-count 0)
+  (setq total-entries 0)
   
   (cond
     (ss
      (setq i 0)
      (while (setq ename-bubble (ssname ss i))
+       (setq time-bubble (getvar "MILLISECS"))
        (setq handle-bubble (cdr (assoc 5 (entget ename-bubble))))
        (setq xdata-alist (hcnm-xdata-read ename-bubble))
        (setq bubble-count (1+ bubble-count))
@@ -11058,6 +11070,7 @@ ImportLayerSettings=No
        ;; Build tag-list from XDATA in format expected by bnatu-bubble-update
        ;; Format: ((tag ((auto-type handle-reference) ...)) ...)
        (setq tag-list '())
+       (setq auto-entry-count 0)
        (foreach tag-data xdata-alist
          (setq tag (car tag-data))
          (setq auto-list (cdr tag-data))
@@ -11073,6 +11086,7 @@ ImportLayerSettings=No
               ;; Build 2-element list: (auto-type handle-reference)
               (setq auto-entry-list 
                 (append auto-entry-list (list (list auto-type handle-reference))))
+              (setq auto-entry-count (1+ auto-entry-count))
             )
             (setq tag-list (append tag-list (list (list tag auto-entry-list))))
            )
@@ -11084,14 +11098,24 @@ ImportLayerSettings=No
          (tag-list
           (hcnm-bn-bnatu-bubble-update handle-bubble "" tag-list)
           (setq updated-count (1+ updated-count))
+          ;; Progress feedback with timing
+          (setq time-bubble (- (getvar "MILLISECS") time-bubble))
+          (haws-clock-console-log (strcat "  [BUP] Bubble " (itoa bubble-count) "/" (itoa (sslength ss)) 
+                                          " (" (itoa auto-entry-count) " entries): " 
+                                          (itoa time-bubble) "ms"))
+          (setq total-entries (+ total-entries auto-entry-count))
          )
        )
        
        (setq i (1+ i))
      )
      
+     (setq time-total (- (getvar "MILLISECS") time-start))
      (princ (strcat "\nProcessed " (itoa bubble-count) " bubble(s), updated " 
-                    (itoa updated-count) " with auto-text."))
+                    (itoa updated-count) " with auto-text (" 
+                    (itoa total-entries) " auto-text entries)."))
+     (haws-clock-console-log (strcat "[BUP] TOTAL TIME: " (itoa time-total) "ms"))
+     (haws-clock-console-log (strcat "[BUP] AVG per bubble: " (itoa (/ time-total (max bubble-count 1))) "ms"))
     )
     (t
      (princ "\nNo bubbles found in drawing.")
@@ -11128,7 +11152,7 @@ ImportLayerSettings=No
   )
 )
 ;; Helper function to check if entity is on the "Model" tab
-(defun hcnm-bn-is-on-model-tab (ename / layout-name)
+(defun hcnm-bn-is-in-model-space (ename / layout-name)
   (setq layout-name (cdr (assoc 410 (entget ename))))
   (= (strcase layout-name) "MODEL")
 )
@@ -12037,7 +12061,10 @@ ImportLayerSettings=No
     )
   )
 )
-(defun hcnm-bn-eb-save (ename-bubble)
+
+(defun hcnm-bn-eb-save (ename-bubble / xdata-alist tag-data composite-list composite-entry 
+                        auto-type needs-vptrans-p p1-vport cvport
+                        ref-ocs-1 ref-wcs-1 ref-ocs-2 ref-wcs-2 ref-ocs-3 ref-wcs-3)
   ;; NOTE: Tiles already read into lattribs by accept action_tile
   ;; Save attributes (concatenated) and XDATA (auto text only)
   (hcnm-bn-lattribs-to-dwg
@@ -12048,6 +12075,73 @@ ImportLayerSettings=No
   (hcnm-bn-xdata-save
     ename-bubble
     hcnm-bn-eb-lattribs
+  )
+  ;; NEW: Check if we need to capture VPTRANS for paper space coordinate-based auto-text
+  ;; Read back the XDATA we just wrote and check for coordinate-based auto-types
+  (if (not (hcnm-bn-is-in-model-space ename-bubble))
+    (progn
+      (setq xdata-alist (hcnm-xdata-read ename-bubble))
+      (setq needs-vptrans-p nil)
+      ;; Check each tag's auto-text entries
+      (foreach tag-data xdata-alist
+        (setq composite-list (cdr tag-data))
+        (if (and composite-list (listp composite-list))
+          (foreach composite-entry composite-list
+            (if (and (consp composite-entry) (consp (car composite-entry)))
+              (progn
+                (setq auto-type (caar composite-entry))
+                (if (hcnm-bn-auto-type-requires-coordinates-p auto-type)
+                  (setq needs-vptrans-p T)
+                )
+              )
+            )
+          )
+        )
+      )
+      ;; If coordinate auto-text found and no VPTRANS exists, prompt for viewport
+      (if (and
+            needs-vptrans-p
+            (not (hcnm-bn-get-viewport-handle ename-bubble))
+          )
+      ;; If coordinate auto-text found and no VPTRANS exists, prompt for viewport
+      (if (and
+            needs-vptrans-p
+            (not (hcnm-bn-get-viewport-handle ename-bubble))
+          )
+        (progn
+          (princ "\nPaper space coordinate auto-text requires viewport selection.")
+          (princ "\nClick inside target viewport (model space visible through paper space): ")
+          (setq p1-vport (getpoint))
+          (if p1-vport
+            (progn
+              (setq cvport (getvar "CVPORT"))
+              (if (> cvport 0)
+                (progn
+                  ;; Capture viewport transform using 3 reference points
+                  (setq ref-ocs-1 (getpoint "\nFirst reference point (paper space): "))
+                  (setq ref-wcs-1 (trans ref-ocs-1 cvport 0))
+                  (setq ref-ocs-2 (getpoint "\nSecond reference point (paper space): "))
+                  (setq ref-wcs-2 (trans ref-ocs-2 cvport 0))
+                  (setq ref-ocs-3 (getpoint "\nThird reference point (paper space): "))
+                  (setq ref-wcs-3 (trans ref-ocs-3 cvport 0))
+                  ;; Store VPTRANS
+                  (hcnm-bn-set-viewport-transform-xdata
+                    ename-bubble
+                    cvport
+                    ref-ocs-1 ref-wcs-1
+                    ref-ocs-2 ref-wcs-2
+                    ref-ocs-3 ref-wcs-3
+                  )
+                  (princ "\nViewport transform captured.")
+                )
+                (princ "\nWarning: Not in viewport - VPTRANS not captured.")
+              )
+            )
+            (princ "\nViewport selection cancelled - VPTRANS not captured.")
+          )
+        )
+      )
+    )
   )
   -1
 )
@@ -12162,7 +12256,7 @@ ImportLayerSettings=No
   (setq
     on-model-tab-p
      (or (not ename-bubble)
-         (hcnm-bn-is-on-model-tab ename-bubble)
+         (hcnm-bn-is-in-model-space ename-bubble)
      )
   )
   ;; Show delimiter tip and paper space warning if applicable
