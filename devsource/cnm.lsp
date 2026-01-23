@@ -12062,9 +12062,7 @@ ImportLayerSettings=No
   )
 )
 ;; This function is garbage at the moment. Should not be handling VPTRANS prompts, and is doing it wrong.
-(defun hcnm-bn-eb-save (ename-bubble / xdata-alist tag-data composite-list composite-entry 
-                        auto-type needs-vptrans-p p1-vport cvport
-                        ref-ocs-1 ref-wcs-1 ref-ocs-2 ref-wcs-2 ref-ocs-3 ref-wcs-3)
+(defun hcnm-bn-eb-save (ename-bubble)
   ;; NOTE: Tiles already read into lattribs by accept action_tile
   ;; Save attributes (concatenated) and XDATA (auto text only)
   (hcnm-bn-lattribs-to-dwg
@@ -12075,74 +12073,6 @@ ImportLayerSettings=No
   (hcnm-bn-xdata-save
     ename-bubble
     hcnm-bn-eb-lattribs
-  )
-  ;; NEW: Check if we need to capture VPTRANS for paper space coordinate-based auto-text
-  ;; Read back the XDATA we just wrote and check for coordinate-based auto-types
-  (if (not (hcnm-bn-is-in-model-space ename-bubble))
-    (progn
-      (setq xdata-alist (hcnm-xdata-read ename-bubble))
-      (setq needs-vptrans-p nil)
-      ;; Check each tag's auto-text entries
-      (foreach tag-data xdata-alist
-        (setq composite-list (cdr tag-data))
-        (if (and composite-list (listp composite-list))
-          (foreach composite-entry composite-list
-            (if (and (consp composite-entry) (consp (car composite-entry)))
-              (progn
-                (setq auto-type (caar composite-entry))
-                (if (hcnm-bn-auto-type-requires-coordinates-p auto-type)
-                  (setq needs-vptrans-p T)
-                )
-              )
-            )
-          )
-        )
-      )
-      ;; If coordinate auto-text found and no VPTRANS exists, prompt for viewport
-      (if (and
-            needs-vptrans-p
-            (not (hcnm-bn-get-viewport-handle ename-bubble))
-          )
-      )
-      ;; If coordinate auto-text found and no VPTRANS exists, prompt for viewport
-      (if (and
-            needs-vptrans-p
-            (not (hcnm-bn-get-viewport-handle ename-bubble))
-          )
-        (progn
-          (princ "\nPaper space coordinate auto-text requires viewport selection.")
-          (princ "\nClick inside target viewport (model space visible through paper space): ")
-          (setq p1-vport (getpoint))
-          (if p1-vport
-            (progn
-              (setq cvport (getvar "CVPORT"))
-              (if (> cvport 0)
-                (progn
-                  ;; Capture viewport transform using 3 reference points
-                  (setq ref-ocs-1 (getpoint "\nFirst reference point (paper space): "))
-                  (setq ref-wcs-1 (trans ref-ocs-1 cvport 0))
-                  (setq ref-ocs-2 (getpoint "\nSecond reference point (paper space): "))
-                  (setq ref-wcs-2 (trans ref-ocs-2 cvport 0))
-                  (setq ref-ocs-3 (getpoint "\nThird reference point (paper space): "))
-                  (setq ref-wcs-3 (trans ref-ocs-3 cvport 0))
-                  ;; Store VPTRANS
-                  (hcnm-bn-set-viewport-transform-xdata
-                    ename-bubble
-                    cvport
-                    ref-ocs-1 ref-wcs-1
-                    ref-ocs-2 ref-wcs-2
-                    ref-ocs-3 ref-wcs-3
-                  )
-                  (princ "\nViewport transform captured.")
-                )
-                (princ "\nWarning: Not in viewport - VPTRANS not captured.")
-              )
-            )
-            (princ "\nViewport selection cancelled - VPTRANS not captured.")
-          )
-        )
-      )
-    )
   )
   -1
 )
