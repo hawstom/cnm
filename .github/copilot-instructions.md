@@ -13,6 +13,7 @@
 
 #### 1.1.2. AutoLISP-Specific Rules
 - **MANDATORY FUNCTION VERIFICATION**: NEVER use any function without first searching ORIGINAL codebase with grep_search AND verifying with git history that function existed before recent AI changes. If function not found in original CNM code, check official Autodesk documentation with fetch_webpage. See Section 1.5 for complete protocol.
+- **Check parentheses balance**: Use `devtools\scripts\haws-lisp-paren-check.ps1` after AutoLISP edits
 - **Use get_errors tool**: Check syntax after AutoLISP edits. Fix errors before reporting
 - **AutoLISP Common Pitfalls**: See Section 1.4 for AutoLISP/Common Lisp differences and correct AutoLISP idioms.
 
