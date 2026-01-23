@@ -1,15 +1,16 @@
 ; CNM Test Suite - Main Test Script
-; Purpose: Comprehensive regression testing for CNM bubble notes
+; Purpose: Comprehensive regression testing for the entire CNM Plus repository, focusing at the moment on bubble notes auto text and updater.
 ;
 ; Execution: Drag this .scr file into cnm-test-start.dwg
 ;
 ; Config:
 ; Note that all spaces are significant on script lines. You can't pad anything.
+; Deletes file at start.
+; Turn on logging.
 ; This logs all debug messages to (strcat (getvar "dwgprefix") "haws-debug-log.md").
-; This may have unacceptable overhead.
-; You have to delete the file or its contents manually or automatically if you don't want it to keep growing.
+; Logging may have unacceptable overhead.
 (haws-setvar "DebugLevel" "1")
-; This may have unacceptable overhead.
+; Clocking may have unacceptable overhead.
 ;(load "haws-clock.lsp")
 ;
 ; Prerequisites:
@@ -36,10 +37,10 @@
 ;   HAWS-ELLL prompt sequence (bubble insertion):
 ;     Line N:   Command name (HAWS-ELLL)
 ;     Line N+1: Arrow point coordinate
-;     Line N+2: Leader start coordinate
+;     Line N+2: Bubble note insertion point coordinate
 ;     Line N+3: Note number
 ;     Line N+4: Line 1 text response (blank = skip, "." = auto-text, "text" = manual)
-;     Line N+5: [if "." on N+4] Auto-type selection (sta/dia/lf/n/e/etc.)
+;     Line N+5: [if "." on N+4] Auto-type selection. See cnm.lsp:hcnm-bn-get-auto-data-keys function
 ;     Line N+6: [if auto-text needs it] Object selection coordinate or viewport confirmation
 ;     Line N+7: Line 2 text response (blank = skip, "." = auto-text, "text" = manual)
 ;   
