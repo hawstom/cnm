@@ -6362,8 +6362,8 @@ ImportLayerSettings=No
       (apply
         'strcat
         (mapcar
-          '(lambda (x) (strcat " " (car x)))
-          (hcnm-bn-get-auto-data-keys)
+          '(lambda (x) (strcat " " x))
+          (hcnm-bn-get-auto-text-input-keywords-list)
         )
       )
       2
@@ -6383,14 +6383,14 @@ ImportLayerSettings=No
            (apply
              'strcat
              (mapcar
-               '(lambda (x) (strcat "/" (car x)))
-               (hcnm-bn-get-auto-data-keys)
+               '(lambda (x) (strcat "/" x))
+               (hcnm-bn-get-auto-text-input-keywords-list)
              )
            )
            2
          )
          "] <"
-         (car (last (hcnm-bn-get-auto-data-keys)))
+         (last (hcnm-bn-get-auto-text-input-keywords-list))
          ">: "
        )
      )
@@ -6409,7 +6409,7 @@ ImportLayerSettings=No
        bubble-data
         (hcnm-bn-auto-dispatch
           (strcat "NOTETXT" (itoa line-number))
-          (cadr (assoc input (hcnm-bn-get-auto-data-keys)))
+          (hcnm-bn-get-auto-text-display-text input)
           nil        ; obj-reference - will be determined by auto-dispatch
           bubble-data
           nil        ; bnatu-context-p - insertion path
@@ -7451,30 +7451,46 @@ ImportLayerSettings=No
 ;; Used by multiple levels of the insertion user experience 
 ;; including the command prompts and the auto text dispatcher
 ;; Returns list of auto-text type definitions
-;; Structure: (input-key display-type reference-type requires-coordinates)
-;; - input-key: Keyword entered by user (initget format)
-;; - display-type: Canonical type name used in code
+;; Structure: (auto-type input-key display-type reference-type requires-coordinates)
+;; - auto-type: ALL CAPS key used for internal lookups
+;; - input-keyword: Keyword entered by user (initget and getkword format)
+;; - display-text: Canonical type name used in code
 ;; - reference-type: Type of reference object ("AL"=Alignment, "SU"=Surface, nil=none)
-;; - requires-coordinates: T if needs p1-world from leader, nil otherwise
-(defun hcnm-bn-get-auto-data-keys ()
-  '(("LF" "LF" nil nil)                 ; Length (QTY) - user picks objects
-    ("SF" "SF" nil nil)                 ; Square Feet (QTY) - user picks objects
-    ("SY" "SY" nil nil)                 ; Square Yards (QTY) - user picks objects
-    ("STa" "Sta" "AL" t)                ; Station - needs p1-world for alignment query
-    ("Off" "Off" "AL" t)                ; Offset - needs p1-world for alignment query
-    ("stAoff" "StaOff" "AL" t)          ; Station+Offset - needs p1-world for alignment query
-    ("NAme" "AlName" "AL" nil)          ; Alignment Name - no coordinates needed
-    ("STAName" "StaName" "AL" t)        ; Station + Alignment Name - needs p1-world
-    ("N" "N" nil t)                     ; Northing - needs p1-world for coordinate
-    ("E" "E" nil t)                     ; Easting - needs p1-world for coordinate
-    ("NE" "NE" nil t)                   ; Northing+Easting - needs p1-world for coordinate
-    ("Z" "Z" "SU" t)                    ; Elevation - needs p1-world for surface query (unimplemented)
-    ("Dia" "Dia" "PIPE" nil)            ; Pipe Diameter - user selects pipe object
-    ("SLope" "Slope" "PIPE" nil)        ; Pipe Slope - user selects pipe object
-    ("L" "L" "PIPE" nil)                ; Pipe Length - user selects pipe object
-    ("Text" "Text" nil nil)             ; Static text - user enters manually
-    ("ENtry" "ENtry" nil nil)           ; Entry number - static text
+;; - requires-coordinates-p: T if needs p1-world from leader, nil otherwise
+(defun hcnm-bn-auto-text-definitions ()
+  '(("LF" "LF" "LF" nil nil)                 ; Length (QTY) - user picks objects
+    ("SF" "SF" "SF" nil nil)                 ; Square Feet (QTY) - user picks objects
+    ("SY" "SY" "SY" nil nil)                 ; Square Yards (QTY) - user picks objects
+    ("STA" "STa" "Sta" "AL" t)                ; Station - needs p1-world for alignment query
+    ("OFF" "Off" "Off" "AL" t)                ; Offset - needs p1-world for alignment query
+    ("STAOFF" "stAoff" "StaOff" "AL" t)          ; Station+Offset - needs p1-world for alignment query
+    ("NAME" "NAme" "AlName" "AL" nil)          ; Alignment Name - no coordinates needed
+    ("STANAME" "STAName" "StaName" "AL" t)        ; Station + Alignment Name - needs p1-world
+    ("N" "N" "N" nil t)                     ; Northing - needs p1-world for coordinate
+    ("E" "E" "E" nil t)                     ; Easting - needs p1-world for coordinate
+    ("NE" "NE" "NE" nil t)                   ; Northing+Easting - needs p1-world for coordinate
+    ("Z" "Z" "Z" "SU" t)                    ; Elevation - needs p1-world for surface query (unimplemented)
+    ("DIA" "Dia" "Dia" "PIPE" nil)            ; Pipe Diameter - user selects pipe object
+    ("SLOPE" "SLope" "Slope" "PIPE" nil)        ; Pipe Slope - user selects pipe object
+    ("L" "L" "L" "PIPE" nil)                ; Pipe Length - user selects pipe object
+    ("TEXT" "Text" "Text" nil nil)             ; Static text - user enters manually
+    ("ENTRY" "ENtry" "ENtry" nil nil)           ; Entry number - static text
    )
+)
+(defun hcnm-bn-get-auto-text-input-keyword (auto-type)
+  (cadr (assoc (strcase auto-type) (hcnm-bn-auto-text-definitions)))
+)
+(defun hcnm-bn-get-auto-text-display-text (auto-type)
+  (caddr (assoc (strcase auto-type) (hcnm-bn-auto-text-definitions)))
+)
+(defun hcnm-bn-get-auto-text-reference-type (auto-type)
+  (nth 3 (assoc (strcase auto-type) (hcnm-bn-auto-text-definitions)))
+)
+(defun hcnm-bn-auto-text-requires-coordinates-p (auto-type)
+  (nth 4 (assoc (strcase auto-type) (hcnm-bn-auto-text-definitions)))
+)
+(defun hcnm-bn-get-auto-text-input-keywords-list ()
+  (mapcar 'cadr (hcnm-bn-auto-text-definitions))
 )
 ;; hcnm-bn-auto-dispatch is called from command line (insertion) and from edit box (editing) to get string as requested by user. It needs to get not only string, but also data (reference object and reference type).
 ;; 
@@ -8996,24 +9012,6 @@ ImportLayerSettings=No
 ;; These functions determine if an auto-text type requires world coordinates and
 ;; warn users about paper space viewport behavior to prevent drawing issues.
 
-;; Check if auto-type is world-coordinate-based using get-auto-type-keys
-;; Returns: T if auto-type requires world coordinates (Sta/Off/N/E/Z), NIL otherwise
-;; Usage: It's one of the gateways to pass before showing a paper space warning.
-(defun hcnm-bn-auto-type-is-coordinate-p (auto-type / type-def)
-  (setq
-    type-def
-     (car
-       (vl-remove-if-not
-         '(lambda (x) (= (cadr x) auto-type))
-         (hcnm-bn-get-auto-data-keys)
-       )
-     )
-  )
-  (cond
-    (type-def (cadddr type-def))        ; Return 4th element (requires-coordinates)
-    (t nil)
-  )
-)
 ;; User experience interruptions when getting coordinate-based auto-text 
                                         ;  1. Display educational warning about paper space coordinate translation behavior
 ;; Why: Warns users that we've decided not to react to changing viewport views.
@@ -9082,7 +9080,7 @@ ImportLayerSettings=No
     ((and
        ename-bubble
        (not (hcnm-bn-is-in-model-space ename-bubble))
-       (hcnm-bn-auto-type-is-coordinate-p auto-type)
+       (hcnm-bn-auto-text-requires-coordinates-p auto-type)
      )
      ;; Bubble is in paper space and auto-type is coordinate-based - show warning
      (haws-tip
@@ -9102,7 +9100,7 @@ ImportLayerSettings=No
     ((and
        ename-bubble
        (not (hcnm-bn-is-in-model-space ename-bubble))
-       (hcnm-bn-auto-type-is-coordinate-p auto-type)
+       (hcnm-bn-auto-text-requires-coordinates-p auto-type)
      )
      ;; Bubble is in paper space and auto-type is coordinate-based - show warning
      (haws-tip
@@ -9155,7 +9153,7 @@ ImportLayerSettings=No
   ;; Gateway 1: Coordinate-based auto-text
   (setq
     avport-coordinates-gateway-open-p
-     (hcnm-bn-auto-type-is-coordinate-p
+     (hcnm-bn-auto-text-requires-coordinates-p
        auto-type
      )
   )
@@ -10687,42 +10685,14 @@ ImportLayerSettings=No
 
 (defun hcnm-bn-auto-type-requires-coordinates-p (auto-type / keys-entry)
   ;; Returns T if auto-type needs leader position (coordinates), nil otherwise
-  (setq
-    keys-entry
-     (vl-member-if
-       '(lambda (entry)
-          (equal auto-type (cadr entry))
-        )
-       (hcnm-bn-get-auto-data-keys)
-     )
-  )
-  (cond
-    (keys-entry
-     (cadddr (car keys-entry))
-    )
-    (t nil)
-  )
+  (hcnm-bn-auto-text-requires-coordinates-p auto-type)
 )
-(defun hcnm-bn-auto-type-is-reactive-p (auto-type / keys-entry ref-type requires-coords)
+(defun hcnm-bn-auto-type-is-reactive-p (auto-type)
   ;; Returns T if auto-type uses bnatu system, nil for field-based (LF/SF/SY)
   ;; Reactive types have either: reference-type OR requires-coordinates
-  (setq
-    keys-entry
-     (vl-member-if
-       '(lambda (entry)
-          (equal auto-type (cadr entry))
-        )
-       (hcnm-bn-get-auto-data-keys)
-     )
-  )
-  (cond
-    (keys-entry
-     (setq ref-type (caddr (car keys-entry))
-           requires-coords (cadddr (car keys-entry))
-     )
-     (or ref-type requires-coords)  ; Reactive if has reference OR needs coordinates
-    )
-    (t nil)  ; Unknown type = not reactive
+  (or
+    (hcnm-bn-get-auto-text-reference-type auto-type)
+    (hcnm-bn-auto-text-requires-coordinates-p auto-type)
   )
 )
 ;#region bnatu System Core
