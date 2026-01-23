@@ -12061,7 +12061,7 @@ ImportLayerSettings=No
     )
   )
 )
-
+;; This function is garbage at the moment. Should not be handling VPTRANS prompts, and is doing it wrong.
 (defun hcnm-bn-eb-save (ename-bubble / xdata-alist tag-data composite-list composite-entry 
                         auto-type needs-vptrans-p p1-vport cvport
                         ref-ocs-1 ref-wcs-1 ref-ocs-2 ref-wcs-2 ref-ocs-3 ref-wcs-3)
@@ -12103,6 +12103,7 @@ ImportLayerSettings=No
             needs-vptrans-p
             (not (hcnm-bn-get-viewport-handle ename-bubble))
           )
+      )
       ;; If coordinate auto-text found and no VPTRANS exists, prompt for viewport
       (if (and
             needs-vptrans-p
