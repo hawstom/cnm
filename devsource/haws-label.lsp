@@ -31,6 +31,13 @@
 ;;;   - Handles curved polyline segments with bulge geometry
 ;;;   - Readability bias keeps text "right-side up"
 ;;;   - Text height from dimension style (haws-text-height-model)
+;;(vl-acad-defun 'HAWS-MKLAYR)
+
+(defun haws-clock-start (label) nil)
+(defun haws-clock-end (label start-time) nil)
+(defun haws-clock-report (sorted) nil)
+(defun haws-clock-reset () nil)
+(defun haws-clock-console-log (message) nil)
 
 (defun c:haws-label (/ angle-mode ent-data ent-name ent-pick ent-type label-text layer-name
                         layer-table pick-point pt1 pt2 readability-bias settings text-angle
@@ -221,7 +228,7 @@
   (setq style-info (assoc text-style-key text-style-table))
   (if style-info
     (progn
-      (haws-setlayr (list (cadr style-info) "" ""))
+      (haws-mklayr (list (cadr style-info) "" ""))
       (setq style-info (caddr style-info))
       (if (tblsearch "STYLE" style-info)
         (setvar "TEXTSTYLE" style-info)
