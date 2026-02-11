@@ -1,53 +1,35 @@
-﻿	;; Notes: Layer and key names must be upper case.
-("READ-BIAS-DEGREES" 110)
+﻿;;; Configuration settings for haws-label.lsp
+;;;
+;;;
+;; Notes: Layer and key names must be upper case. The script reads the LAYER_NAME entires top-down and will use the last entry that matches the selected object. 
+;; Less specific LAYER_NAMES should be listed before more specific LAYER_NAMES if there are overlapping categories (e.g. WTR-6IN above WTR-6IN-DIP)
+("READ-BIAS-DEGREES" 140)
 ; Table 1: TEXT_STYLE
-; TEXT_STYLE_KEY    LAYER_NAME   TEXT_STYLE_NAME
-("TEXT_STYLE"       "EX"         "TOPO-TEXT-LABELS"   "SEI-3D"       )
-("TEXT_STYLE"       "PROP"       "NOTES"          "SEI-3D"         )
+;; TEXT-STYLE_KEY: The name of your defined label style
+;; LAYER_NAME: The layer the mtext will be placed on
+;; TEXT_STYLE_NAME: The name of the C3D font style the mtext will use
+; 				TEXT_STYLE_KEY    LAYER_NAME   TEXT_STYLE_NAME
+("TEXT-STYLE"       "EX"         "TOPO-TEXT-LABELS"   "SEI-3D"       )
+("TEXT-STYLE"       "PROP"       "NOTES"          "SEI-3D"         )
+("TEXT-STYLE"       "PROP-WTR"       "WTR-TEXT"          "SEI-3D"         )
+("TEXT-STYLE"       "PROP-SWR"       "SWR-TEXT"          "SEI-3D"         )
+("TEXT-STYLE"       "PROP-SD"       "SD-TEXT"          "SEI-3D"         )
 ;; Table 2: 
-;;             LAYER_NAME"       "TEXT_STYLE_KEY" "LABEL_TEXT
-;;                                 !!! You MUST use \" for " !!!
-("LAYER"      "*EX-FIBER*"       "EX"            "fo"              )
-("LAYER"      "*EX-GAS-2IN*"       "EX"            "2\"g"              )
-("LAYER"      "*EX-GAS-3IN*"       "EX"            "3\"g"              )
-("LAYER"      "*EX-GAS-4IN*"       "EX"            "4\"g"              )
-("LAYER"      "*EX-GAS-6IN*"       "EX"            "6\"g"              )
-("LAYER"      "*EX-WTR-4IN*"       "EX"            "4\"w"              )
-("LAYER"      "*EX-WTR-6IN*"       "EX"            "6\"w"              )
-("LAYER"      "*EX-WTR-8IN*"       "EX"            "8\"w"              )
-("LAYER"      "*EX-WTR-12IN*"      "EX"            "12\"w"             )
-("LAYER"      "*EX-WTR-8IN-PVC*"   "EX"            "8\"w pvc"          )
-("LAYER"      "*EX-SWR-10IN*"         "PROP"          "10\"s"            )
-("LAYER"      "*EX-SWR-12IN*"         "PROP"          "12\"s"            )
-("LAYER"      "*EX-SWR-15IN*"         "PROP"          "15\"s"            )
-("LAYER"      "*EX-SWR-16IN*"         "PROP"          "16\"s"            )
-("LAYER"      "*EX-SWR-18IN*"         "PROP"          "18\"s"            )
-("LAYER"      "*EX-SWR-20IN*"         "PROP"          "20\"s"            )
-("LAYER"      "*EX-SWR-24IN*"         "PROP"          "24\"s"            )
-("LAYER"      "*WTR-4IN-DIP"      "PROP"          "4\"W DIP"          )
-("LAYER"      "*WTR-16IN-DIP*"      "PROP"          "16\"W"          )
-("LAYER"      "*WTR-8IN-DIP"      "PROP"          "8\"W DIP"          )
-("LAYER"      "*WTR-10IN-DIP"     "PROP"          "10\"W DIP"         )
-("LAYER"      "*WTR-12IN-DIP"     "PROP"          "12\"W DIP"         )
-("LAYER"      "*WTR-16IN-DIP"     "PROP"          "16\"W DIP"         )
-("LAYER"      "*WTR-18IN-DIP"     "PROP"          "18\"W DIP"         )
-("LAYER"      "*WTR-24IN-DIP"     "PROP"          "24\"W DIP"         )
-("LAYER"      "*WTR-30IN-DIP"     "PROP"          "30\"W DIP"         )
-("LAYER"      "*WTR-36IN-DIP"     "PROP"          "36\"W DIP"         )
-("LAYER"      "*SD-6IN*"           "PROP"          "6\"*SD"           )
-("LAYER"      "*SD-8IN*"           "PROP"          "8\"*SD"           )
-("LAYER"      "*SD-10IN*"          "PROP"          "10\"*SD"          )
-("LAYER"      "*SD-12IN*"          "PROP"          "12\"*SD"          )
-("LAYER"      "*SD-16IN*"          "PROP"          "16\"*SD"          )
-("LAYER"      "*SD-18IN*"          "PROP"          "18\"*SD"          )
-("LAYER"      "*WTR-6IN-DIP*"      "PROP"          "6W DIP"          )
-("LAYER"      "*SWR-10IN*"         "PROP"          "10\"S"            )
-("LAYER"      "*SWR-12IN*"         "PROP"          "12\"S"            )
-("LAYER"      "*SWR-15IN*"         "PROP"          "15\"S"            )
-("LAYER"      "*SWR-16IN*"         "PROP"          "16\"S"            )
-("LAYER"      "*SWR-18IN*"         "PROP"          "18\"S"            )
-("LAYER"      "*SWR-20IN*"         "PROP"          "20\"S"            )
-("LAYER"      "*SWR-24IN*"         "PROP"          "24\"S"            )
-("LAYER"      "*WTR*"              "PROP"          "24\"S"            )
-
+;; LAYER; Used by program
+;; LAYER_NAME: The layer that is pulled from C3D.
+;; TEXT_STYLE_KEY: The TEXT_STYLE that was defined above and the mtext will use.
+;;             "LAYER_NAME"       "TEXT_STYLE_KEY"   "LABEL_TEXT"
+;; Use '#' to indicate the number found in the layer name will be inserted (e.g. "#\"W" on amr6-water|wtr-6in will display "6"W"). The function will drop any "#\" if the layer has no number
+("LAYER"      "*LPS*"       "PROP-SWR"            "#\"S LPS"              )
+("LAYER"      "*WTR*DIP*"   "PROP-WTR"            "#\"W DIP"              )
+("LAYER"      "*WTR*PVC*"   "PROP-WTR"            "#\"W PVC"              )
+("LAYER"      "*WTR*"       "PROP-WTR"            "#\"W"                  )
+("LAYER"      "*SWR*VCP*"   "PROP-SWR"            "#\"S VCP"              )
+("LAYER"      "*SWR*"       "PROP-SWR"            "#\"S"                  )
+("LAYER"      "*SD*"        "PROP-SD"             "#\"SD"                 )
+("LAYER"      "*EX*SWR*"    "EX"                  "#\"s"                  )
+("LAYER"      "*EX*WTR*"    "EX"                  "#\"w"                  )
+("LAYER"      "*EX*SD*"     "EX"                  "#\"sd"                 )
+("LAYER"      "*EX*GAS*"     "EX"                  "#\"g"                 )
+("LAYER"      "*EX*FM*"     "EX"                  "#\"fm"                 )
 ;;                                 !!! You MUST use \" for " !!!

@@ -39,7 +39,57 @@
 (defun haws-clock-reset () nil)
 (defun haws-clock-console-log (message) nil)
 
-(defun c:haws-label (/ angle-mode ent-data ent-name ent-pick ent-type label-text layer-name
+;;; HELPER FUNCTIONS FOR NUMBER EXTRACTION AND SUBSTITUTION
+
+;; haws-ut-extract-number-after-tilde
+;; Extracts the number (all digits) after the LAST tilde (|) in layer name
+;; If no tilde found, returns empty string ""
+;; Input: layer-name (e.g., "amr6-x-water-offsite|12" or "PROP-LPS-2")
+;; Output: number string (e.g., "12") or "" if not found
+(defun haws-label (layer-name / tilde-pos after-tilde char-code number-str)
+  (setq tilde-pos (vl-string-search "|" layer-name))
+  
+  ;; If no tilde found, return empty string
+  (if (not tilde-pos)
+    ""
+    (progn
+      ;; Extract everything after the tilde
+      (setq after-tilde (substr layer-name (+ tilde-pos 2)))  ; +2 to skip tilde and go to next char
+      
+      ;; Extract only numeric characters
+      (setq number-str "")
+      (foreach char (vl-string->list after-tilde)
+        (if (and (>= char 48) (<= char 57))  ; ASCII 48-57 = 0-9
+          (setq number-str (strcat number-str (chr char)))
+        )
+      )
+      number-str
+    )
+  )
+)
+
+;; haws-ut-substitute-number
+;; Replaces "#" in label text with the extracted number
+;; If no number is found (empty string) and text has #", removes both # and "
+;; Input: label-text (e.g., "#\"S LPS" or "#\"g"), number (e.g., "12" or "")
+;; Output: substituted text (e.g., "12\"S LPS" or "g")
+(defun haws-ut-substitute-number (label-text number-str / hash-pos)
+  (if (and label-text (vl-string-search "#" label-text))
+    (progn
+      ;; If number is empty and label has #", remove both characters
+      (if (and (equal number-str "") (vl-string-search "#\"" label-text))
+        (vl-string-subst "" "#\"" label-text)
+        ;; Otherwise just replace # with the number
+        (vl-string-subst number-str "#" label-text)
+      )
+    )
+    label-text
+  )
+)
+
+(defun haws-clock-start (label) nil)
+
+(defun c:haws-ut (/ angle-mode ent-data ent-name ent-pick ent-type label-text layer-name extracted-number
                         layer-table pick-point pt1 pt2 readability-bias settings text-angle
                         text-height text-style-key text-style-name text-style-table user-choice)
   (haws-core-init 339)
@@ -97,14 +147,23 @@
   
   (setq layer-name (cdr (assoc 8 ent-data)))
   
+  (princ (strcat "\nLayer name: " layer-name))
+  
   (setq label-text (haws-label-find-label layer-name layer-table))
   (if (not label-text)
     (progn
-      (alert (strcat "No label defined for layer: " layer-name))
+      (alert (strcat "No label defined for layer: " layer-name "\n\nCheck haws-label-settings.lsp"))
       (haws-vrstor)
       (exit)
     )
   )
+  
+  ;; Extract number after tilde (if any) and substitute "#" in label text
+  (setq extracted-number (haws-ut-extract-number-after-tilde layer-name))
+  ;; Always substitute, even if number is empty (will remove #" if no number found)
+  (setq label-text (haws-ut-substitute-number label-text extracted-number))
+  (princ (strcat "\nLabel text after: " label-text))
+  
   (setq text-style-key (haws-label-find-style-key layer-name layer-table))
   
   (setq text-style-name (haws-label-apply-style text-style-key text-style-table))
@@ -119,14 +178,15 @@
         (setq text-angle (haws-label-calc-angle ent-type ent-data ent-name pick-point))
       )
     )
-    (setq text-angle (haws-label-calc-angle ent-type ent-data ent-name pick-point))
-  )
-  
-  ;; Apply readability bias - flip text if upside-down
-  ;; READABILITY-BIAS is the angle threshold (default 110 degrees)
-  ;; Text between READABILITY-BIAS and (READABILITY-BIAS + 180) gets flipped
-  (if (< readability-bias text-angle (+ readability-bias pi))
-    (setq text-angle (+ text-angle pi))
+    (progn
+      (setq text-angle (haws-label-calc-angle ent-type ent-data ent-name pick-point))
+      ;; Apply readability bias - flip text if upside-down
+      ;; READABILITY-BIAS is the angle threshold (default 110 degrees)
+      ;; Text between READABILITY-BIAS and (READABILITY-BIAS + 180) gets flipped
+      (if (< readability-bias text-angle (+ readability-bias pi))
+        (setq text-angle (+ text-angle pi))
+      )
+    )
   )
   ;; Normalize to 0-2π range
   (while (< text-angle 0) (setq text-angle (+ text-angle (* 2 pi))))
