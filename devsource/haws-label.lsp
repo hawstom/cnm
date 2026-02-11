@@ -18,7 +18,7 @@
 ;;;   3. Text inserted at pick point, aligned with entity
 ;;;
 ;;; Settings File: haws-label-settings.lsp
-;;;   READ-BIAS-DEGREES - Angle threshold for flipping text (default 110)
+;;;   READ-BIAS-DEGREES - Angle threshold for flipping text (default 140)
 ;;;   TEXT-STYLE - (key layer-name style-name) mappings
 ;;;   LAYER - (layer-pattern style-key label-text) mappings
 ;;;     Keys and layer names must be UPPERCASE

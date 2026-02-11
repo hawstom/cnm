@@ -9,11 +9,8 @@
 ;; LAYER_NAME: The layer the mtext will be placed on
 ;; TEXT_STYLE_NAME: The name of the C3D font style the mtext will use
 ; 				TEXT_STYLE_KEY    LAYER_NAME   TEXT_STYLE_NAME
-("TEXT-STYLE"       "EX"         "TOPO-TEXT-LABELS"   "SEI-3D"       )
-("TEXT-STYLE"       "PROP"       "NOTES"          "SEI-3D"         )
-("TEXT-STYLE"       "PROP-WTR"       "WTR-TEXT"          "SEI-3D"         )
-("TEXT-STYLE"       "PROP-SWR"       "SWR-TEXT"          "SEI-3D"         )
-("TEXT-STYLE"       "PROP-SD"       "SD-TEXT"          "SEI-3D"         )
+("TEXT-STYLE"       "EX"         "TOPO-TEXT-LABELS"   "simplex"       )
+("TEXT-STYLE"       "PROP"       "NOTES"          "simplex"         )
 ;; Table 2: 
 ;; LAYER; Used by program
 ;; LAYER_NAME: The layer that is pulled from C3D.
