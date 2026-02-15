@@ -34,13 +34,34 @@
 ; CRITICAL FOR AI AGENTS - Script Line Break Handling:
 ;   Scripts differ from code - EVERY line and space (including blanks) is significant!
 ;   
+;
+; BUBBLE NOTES AUTO TEXT TEST ORGANIZATION
+;
+; 1. Initial properties:
+;    1.1. Alignment: Name "OAK ST", Start point (10040, 20240), End point (10680,20240)
+;    1.2. Pipe: Start point (10040, 20200, 100), End point (10680,20200, 98), Length 640, Slope 0.3125%
+; 2. Elements to test: paper/model, left/right, all (16) auto text types (can do with 8 bubbles or enable more lines per bubble), copy, flip, stretch all coordinate-based arrowheads, stretch alignment and pipe, updater.
+; 3. Bubbles to place:
+;    NUM Col Row Line1   Assertion               Line2 Assertion   COORD-P SPACE X1,Y1        X2,Y2       NOTES
+;    1   1L  3U  NE      10340,20270             TEXT  [SEE NOTES] T       PS    17.0,13.5    16.8,14.0   SELECT TEXT AT (14,12.5) STRING = "CLICK HERE (```), THEN NE, THEN OK."
+;    2   1L  2U  STAOFF  STA 3+00.00, 60.00' LT  ENTRY [SEE NOTES] T       PS    17.0,13.0    16.8,13.5   ENTRY = "CLICK HERE, THEN STAOFF, THEN OK."
+;    3   1L  CEN STANAME STA 3+00.00, OAK ST     OFF   0.00' RT    T       PS    17.0,12.0    16.8,12.5
+;    4   1L  4D  DIA     18"                     SLOPE 0.31%       NIL     PS    17.0,10.0    16.8,9.5
+;    5   1R  3U  SF      3840 SF                 SY    427 SY      NIL     MS    10380,20270  10385,20280
+;    6   1R  2U  LF      640 LF                  N     N 20260.00  T       MS    10380,20260  10385,20270
+;    7   1R  CEN NAME    OAK ST                  STA   STA 3+40.00 T       MS    10380,20240  10385,20250
+;    8   1R  4D  L       L=640'                  E     E 10380.00  T       MS    10380,20200  10385,20190
+; 4. Notes: 
+     4.1. Bubbles 1 and 2 are edited after placement and validation. Then their edits are validated.
+     4.2. The test suite has a custom cnm.ini to force expected behavior for validation. This allows testing on user machines.
+;
 ;   HAWS-ELLL prompt sequence (bubble insertion):
 ;     Line N:   Command name (HAWS-ELLL)
 ;     Line N+1: Arrow point coordinate
 ;     Line N+2: Bubble note insertion point coordinate
 ;     Line N+3: Note number
 ;     Line N+4: Line 1 text response (blank = skip, "." = auto-text, "text" = manual)
-;     Line N+5: [if "." on N+4] Auto-type selection. See cnm.lsp:hcnm-bn-get-auto-data-keys function
+;     Line N+5: [if "." on N+4] Auto-type selection. See cnm.lsp:hcnm-bn-auto-text-definitions function
 ;     Line N+6: [if auto-text needs it] Object selection coordinate or viewport confirmation
 ;     Line N+7: Line 2 text response (blank = skip, "." = auto-text, "text" = manual)
 ;   
@@ -69,7 +90,7 @@
 (load "cnm")
 ; Delete debug log from previous test runs
 (if (findfile (strcat (getvar "dwgprefix") "haws-debug-log.md")) (vl-file-delete (strcat (getvar "dwgprefix") "haws-debug-log.md")))
-(haws-tip 10 "This script changes and tries to restore the following variable settings. If it fails to complete, you may need to restore them the way you want them manually.\n\n\t- (setvar \"expert\" 2)")
+(haws-tip 10 "Script conditions and notes.\n\n1. Changes and tries to restore the following variable settings. If it fails to complete, you may need to restore them the way you want them manually.\n\n\t- (setvar \"expert\" 2).\n\n2. Assumes that bubble prompts are enabled for only Line 1 and Line 2, and that Skip Entry Prompt is turned off.")
 filedia
 0
 (setq *expert-old* (getvar "expert"))
@@ -84,7 +105,7 @@ filedia
 mspace
 zoom
 extents
-; === EDITOR WORKFLOW TESTS (MANUAL INTERVENTION REQUIRED) ===
+; === EDITOR WORKFLOW TESTS (RUN EARLY BECAUSE MANUAL INTERVENTION REQUIRED) ===
 ;
 ; CRITICAL: These tests require tester to follow on-screen instructions
 ; Script auto-pauses at editor dialogs, resumes when tester clicks OK/Save
