@@ -45,7 +45,7 @@ This volume tracks planned features, refactoring initiatives, and project milest
 ## 2.5.2 Moderately Aggressive Standards
 | Standard | Description | Compliance | Next Action |
 |----------|-------------|------------|-------------|
-| S03.4.1.1 | Underscores vs hyphens | ~30% | Major refactoring - start with high-impact symbols |
+| S03.4.1.1 | Hyphens (migrated from underscores) | ~100% | Migration should be complete |
 | S03.5.1.1 | Type prefixes (OBJ_, EN_, _P) | ~60% | Apply to new code, refactor old during edits |
 | S02.4.1.1 | [INITIALS:] comments | ~95% | Already adopted |
 
@@ -249,32 +249,10 @@ This volume tracks planned features, refactoring initiatives, and project milest
 
 **Decision:** [AI: Discuss pros/cons when decision is made - see S02.6.3.1 for decision documentation format]
 
-### 5.2.2 Migrate to Underscores
-**Status:** PLANNED - Per S03.4.1
+### 5.2.2 Delimiter Migration (Completed)
+**Status:** COMPLETED
 
-**Scope:** Moderate aggressiveness
-
-**Strategy:**
-- New code: Always use underscores
-- Refactoring: Convert hyphens to underscores incrementally
-- One symbol per commit for traceability
-- Update all callers atomically
-
-**Example commits:**
-```
-refactor: rename HCNM-LDRBLK-AUTO-PIPE to HCNM_LDRBLK_AUTO_PIPE
-refactor: rename HCNM-CONFIG-GETVAR to HCNM_CONFIG_GETVAR
-```
-
-### 5.2.3 File Naming Migration
-**Status:** PLANNED - Per S03.3.2
-
-**Scope:** Conservative (low priority)
-
-**Current:** hyphens (haws-tip.lsp, haws-qt.lsp)  
-**Target:** underscores (haws_tip.lsp, haws_qt.lsp)
-
-**Strategy:** Rename during refactoring, not as separate task
+Migration from underscores to hyphens is complete. Hyphens are the FIRM standard per S03.4.1, matching AutoLISP community convention.
 
 ## 5.3 Project Notes Editor
 

@@ -7473,8 +7473,8 @@ ImportLayerSettings=No
     ("DIA" "Dia" "Dia" "PIPE" nil)            ; Pipe Diameter - user selects pipe object
     ("SLOPE" "SLope" "Slope" "PIPE" nil)        ; Pipe Slope - user selects pipe object
     ("L" "L" "L" "PIPE" nil)                ; Pipe Length - user selects pipe object
-    ("TEXT" "Text" "Text" nil nil)             ; Static text - user enters manually
-    ("ENTRY" "ENtry" "ENtry" nil nil)           ; Entry number - static text
+    ("TEXT" "Text" "Text" nil nil)             ; Drawing text - user selects text object
+    ("ENTRY" "ENtry" "ENtry" nil nil)           ; Entry text - static text
    )
 )
 (defun hcnm-bn-get-auto-text-input-keyword (auto-type)
