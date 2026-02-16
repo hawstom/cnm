@@ -341,7 +341,7 @@ HCNM_PROJINIT             ; Project INI refresh (disabled by default)
 - Leaders are moved (coordinate updates)
 - Surfaces change (elevation updates)
 
-**Solution:** A manually-invoked updater command recalculates auto-text values from XDATA metadata and reference objects. The updater reads each bubble's XDATA to find auto-text entries, looks up reference objects by handle, recalculates values, and writes updated text back to the bubble attributes.
+**Solution:** The Bubble Note Auto Text Updater (BNATU) is a manually-invoked command that recalculates auto-text values from XDATA metadata and reference objects. The updater reads each bubble's XDATA to find auto-text entries, looks up reference objects by handle, recalculates values, and writes updated text back to the bubble attributes.
 
 **History:** An earlier implementation used a VLR-OBJECT-REACTOR for automatic updates. This was removed in favor of the simpler manual updater approach.
 

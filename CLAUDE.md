@@ -84,6 +84,9 @@ AutoLISP and Common Lisp are unrelated dialects. Do not assume similarity.
 - **XRECORD:** Viewport transforms for paper space bubbles
 - **bubble-data:** Ephemeral alist passed during insertion/editing
 
+### Auto-Text Update System (BNATU)
+The Bubble Note Auto Text Updater (BNATU) is a manually-invoked command that recalculates auto-text values from XDATA metadata and Civil 3D reference objects using the smart replace pattern.
+
 ### Auto-Text Classifications
 - **Handle-based:** Sta/Off/StaOff/AlName/StaName/Dia/Slope/L (stores reference handle)
 - **Handleless:** N/E/NE only (empty handle `""`, coordinate-only)

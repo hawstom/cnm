@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la \"C:\\\\tghfiles\\\\programming\\\\hawsedc\\\\develop\\\\.github\"\" 2>/dev/null || echo \"Directory not found \")"
+    ]
+  }
+}

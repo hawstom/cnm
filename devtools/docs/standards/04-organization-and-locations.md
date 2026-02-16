@@ -134,7 +134,7 @@ Contains:
 - Project notes management
 - Configuration system (HCNM_CONFIG)
 - Edit bubble dialog
-- Reactor system
+- Auto-text update system
 
 [AI: This file should be split (see S06 Roadmap)]
 
@@ -226,7 +226,7 @@ Current state: cnm.lsp is ~8600 lines. Consider splitting into:
 ;;
 ;; Side Effects:
 ;;   - User prompts, file I/O, state changes
-;;   - Reactor attachments
+;;   - Auto-text updates
 ;;   - Space switching
 ;;
 ;; Related:
