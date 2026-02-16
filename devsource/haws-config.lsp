@@ -44,8 +44,10 @@
 ;;; (setq val (haws-config-getvar "MyApp" "ProjectVar" (my-ini-path) "MyApp"))  ; Project scope
 ;;;
 ;;; CONVENTIONS:
-;;; - All public functions use haws-config- prefix (lowercase with hyphens)
-;;; - All private/helper functions use haws-config- prefix (lowercase)
+;;; - All system functions use haws-config- prefix (lowercase with hyphens)
+;;; - Apps MUST NOT use the haws-config- prefix for their own functions
+;;;   to avoid confusion with system functions. Use {app}-config-definitions
+;;;   (e.g., hcnm-config-definitions, myapp-config-definitions).
 ;;; - All local variables explicitly declared in function parameter list
 ;;; - Follows .github/copilot-instructions.md Section 1.2.3
 ;;;

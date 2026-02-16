@@ -27,7 +27,7 @@ HAWS-CONFIG is a generic multi-application configuration system for AutoLISP app
 
 ```lisp
 *haws-config-cache*        ; Multi-app in-memory cache
-*haws-config-definitions*  ; Registered app definitions
+*haws-app-config-definitions*  ; Registered app definitions
 *haws-config-session*      ; Session-scope storage (scope 0)
 ```
 
@@ -45,19 +45,14 @@ HAWS-CONFIG is a generic multi-application configuration system for AutoLISP app
   ("APP2" . <definitions-list>))
 ```
 
-**Config Definition Format**:
+**Config Definition Format** (flat list of tuples):
 ```lisp
+;; Each entry: (var-name default-value scope-code)
+;; Scope codes: 0=Session, 1=Drawing, 2=Project, 3=App, 4=User
 (list
-  (list "Scope"
-    (list "Session" 0)
-    (list "Drawing" 1)
-    (list "Project" 2)
-    (list "App" 3)
-    (list "User" 4))
-  (list "Var"
-    (list "VariableName" "default-value" scope-code)
-    (list "AnotherVar" "default" scope-code)
-    ...))
+  (list "AppFolder" (haws-filename-directory (findfile "cnm.mnl")) 0)
+  (list "ProjectNotes" "constnot.csv" 2)
+  (list "LXXListMode" "yes" 4))
 ```
 
 ---
@@ -80,25 +75,20 @@ Register an application with the config system.
 **Returns**: `T` on success
 
 **Side Effects**:
-- Stores definitions in `*haws-config-definitions*`
+- Stores definitions in `*haws-app-config-definitions*`
 - Initializes app entry in `*haws-config-cache*`
 - Initializes app entry in `*haws-config-session*`
 
 **Example**:
 ```lisp
-(defun my-app-config-definitions ()
+(defun myapp-config-definitions ()
   (list
-    (list "Scope"
-      (list "Session" 0)
-      (list "Project" 2)
-      (list "User" 4))
-    (list "Var"
-      (list "Version" "1.0.0" 0)           ; Session scope
-      (list "ProjectPath" "" 2)            ; Project scope
-      (list "UserPreference" "default" 4)  ; User scope
-      )))
+    (list "Version" "1.0.0" 0)           ; Session scope
+    (list "ProjectPath" "" 2)            ; Project scope
+    (list "UserPreference" "default" 4)  ; User scope
+  ))
 
-(haws-config-register-app "MYAPP" (my-app-config-definitions))
+(haws-config-register-app "MYAPP" (myapp-config-definitions))
 ```
 
 ---
@@ -109,15 +99,16 @@ Get configuration variable value with automatic fallback.
 
 **Signature**:
 ```lisp
-(haws-config-getvar app var scope-code ini-path section)
+(haws-config-getvar app var ini-path section)
 ```
 
 **Parameters**:
 - `app` (string): Application identifier
 - `var` (string): Variable name
-- `scope-code` (integer): Scope code (0=Session, 2=Project, 4=User)
-- `ini-path` (string): Full path to INI file (required for scope 2, optional otherwise)
-- `section` (string): INI section name (required for scope 2, optional otherwise)
+- `ini-path` (string or nil): Full path to INI file (required for Project scope 2, nil otherwise)
+- `section` (string or nil): INI section name (required for Project scope 2, nil otherwise)
+
+**Note**: Scope is auto-looked-up from the app's registered definitions. It is NOT passed as a parameter.
 
 **Returns**: Variable value (string), or default if not found
 
@@ -129,14 +120,14 @@ Get configuration variable value with automatic fallback.
 
 **Examples**:
 ```lisp
-;; Session scope (scope 0) - no INI needed
-(setq version (haws-config-getvar "MYAPP" "Version" 0 nil nil))
+;; Session scope - no INI needed (scope auto-detected from definitions)
+(setq version (haws-config-getvar "MYAPP" "Version" nil nil))
 
-;; Project scope (scope 2) - requires INI path and section
-(setq path (haws-config-getvar "MYAPP" "ProjectPath" 2 "C:/project/config.ini" "MYAPP"))
+;; Project scope - requires INI path and section
+(setq path (haws-config-getvar "MYAPP" "ProjectPath" "C:/project/config.ini" "MYAPP"))
 
-;; User scope (scope 4) - reads from Registry
-(setq pref (haws-config-getvar "MYAPP" "UserPreference" 4 nil nil))
+;; User scope - reads from Registry
+(setq pref (haws-config-getvar "MYAPP" "UserPreference" nil nil))
 ```
 
 ---
@@ -147,16 +138,17 @@ Set configuration variable value with automatic persistence.
 
 **Signature**:
 ```lisp
-(haws-config-setvar app var val scope-code ini-path section)
+(haws-config-setvar app var val ini-path section)
 ```
 
 **Parameters**:
 - `app` (string): Application identifier
 - `var` (string): Variable name
 - `val` (string): Value to set
-- `scope-code` (integer): Scope code (0=Session, 2=Project, 4=User)
-- `ini-path` (string): Full path to INI file (required for scope 2, optional otherwise)
-- `section` (string): INI section name (required for scope 2, optional otherwise)
+- `ini-path` (string or nil): Full path to INI file (required for Project scope 2, nil otherwise)
+- `section` (string or nil): INI section name (required for Project scope 2, nil otherwise)
+
+**Note**: Scope is auto-looked-up from the app's registered definitions. It is NOT passed as a parameter.
 
 **Returns**: The value that was set
 
@@ -169,14 +161,14 @@ Set configuration variable value with automatic persistence.
 
 **Examples**:
 ```lisp
-;; Session scope (scope 0)
-(haws-config-setvar "MYAPP" "Version" "2.0.0" 0 nil nil)
+;; Session scope
+(haws-config-setvar "MYAPP" "Version" "2.0.0" nil nil)
 
-;; Project scope (scope 2)
-(haws-config-setvar "MYAPP" "ProjectPath" "C:/myproject" 2 "C:/project/config.ini" "MYAPP")
+;; Project scope
+(haws-config-setvar "MYAPP" "ProjectPath" "C:/myproject" "C:/project/config.ini" "MYAPP")
 
-;; User scope (scope 4)
-(haws-config-setvar "MYAPP" "UserPreference" "advanced" 4 nil nil)
+;; User scope
+(haws-config-setvar "MYAPP" "UserPreference" "advanced" nil nil)
 ```
 
 ---
@@ -269,30 +261,21 @@ These functions are available but typically not needed by application code:
 
 ### Step 1: Create Config Definitions
 
-Create a function that returns your app's config schema:
+Create a function that returns your app's config schema (flat list of tuples):
 
 ```lisp
 (defun myapp-config-definitions ()
   (list
-    (list "Scope"
-      (list "Session" 0)
-      (list "Drawing" 1)
-      (list "Project" 2)
-      (list "App" 3)
-      (list "User" 4))
-    (list "Var"
-      ;; Session variables (scope 0)
-      (list "AppFolder" "" 0)
-      (list "Version" "1.0.0" 0)
-      
-      ;; Project variables (scope 2)
-      (list "ProjectName" "Untitled" 2)
-      (list "TemplateFile" "default.dwt" 2)
-      
-      ;; User variables (scope 4)
-      (list "UserName" "" 4)
-      (list "ShowTips" "YES" 4)
-      )))
+    ;; Session variables (scope 0)
+    (list "AppFolder" "" 0)
+    (list "Version" "1.0.0" 0)
+    ;; Project variables (scope 2)
+    (list "ProjectName" "Untitled" 2)
+    (list "TemplateFile" "default.dwt" 2)
+    ;; User variables (scope 4)
+    (list "UserName" "" 4)
+    (list "ShowTips" "YES" 4)
+  ))
 ```
 
 ### Step 2: Register on Load
@@ -302,7 +285,7 @@ Register your app when your main file loads:
 ```lisp
 ;; At the end of your main .lsp file
 (if (and haws-config-register-app 
-         (not (assoc "MYAPP" *haws-config-definitions*)))
+         (not (assoc "MYAPP" *haws-app-config-definitions*)))
   (haws-config-register-app "MYAPP" (myapp-config-definitions))
 )
 ```
@@ -312,20 +295,20 @@ Register your app when your main file loads:
 Use getvar/setvar in your code:
 
 ```lisp
-;; Get session variable
-(setq version (haws-config-getvar "MYAPP" "Version" 0 nil nil))
+;; Get session variable (scope auto-detected, no INI needed)
+(setq version (haws-config-getvar "MYAPP" "Version" nil nil))
 
-;; Get project variable
-(setq template (haws-config-getvar "MYAPP" "TemplateFile" 2 
+;; Get project variable (INI path required)
+(setq template (haws-config-getvar "MYAPP" "TemplateFile"
                   (strcat project-path "/config.ini") "MYAPP"))
 
-;; Get user variable
-(setq show-tips (haws-config-getvar "MYAPP" "ShowTips" 4 nil nil))
+;; Get user variable (no INI needed)
+(setq show-tips (haws-config-getvar "MYAPP" "ShowTips" nil nil))
 
 ;; Set values
-(haws-config-setvar "MYAPP" "ProjectName" "My Project" 2 
+(haws-config-setvar "MYAPP" "ProjectName" "My Project"
                     (strcat project-path "/config.ini") "MYAPP")
-(haws-config-setvar "MYAPP" "ShowTips" "NO" 4 nil nil)
+(haws-config-setvar "MYAPP" "ShowTips" "NO" nil nil)
 ```
 
 ### Step 4: Optional - Create Wrapper Functions
@@ -333,28 +316,23 @@ Use getvar/setvar in your code:
 For convenience, create wrapper functions like CNM does:
 
 ```lisp
-(defun myapp-getvar (var / scope ini-path section)
-  ;; Determine scope from definitions
-  (setq scope (myapp-get-var-scope var))
-  
-  ;; Get INI path if needed
-  (cond
-    ((= scope 2)
-     (setq ini-path (myapp-get-project-ini)
-           section "MYAPP")))
-  
-  ;; Call HAWS-CONFIG
-  (haws-config-getvar "MYAPP" var scope ini-path section)
+(defun myapp-getvar (var / scope-code)
+  ;; Check scope to determine if INI path is needed
+  (setq scope-code (haws-config-get-scope "MYAPP" var))
+  (haws-config-getvar
+    "MYAPP" var
+    (if (= scope-code 2) (myapp-get-project-ini) nil)
+    (if (= scope-code 2) "MYAPP" nil)
+  )
 )
 
-(defun myapp-setvar (var val / scope ini-path section)
-  ;; Similar pattern
-  (setq scope (myapp-get-var-scope var))
-  (cond
-    ((= scope 2)
-     (setq ini-path (myapp-get-project-ini)
-           section "MYAPP")))
-  (haws-config-setvar "MYAPP" var val scope ini-path section)
+(defun myapp-setvar (var val / scope-code)
+  (setq scope-code (haws-config-get-scope "MYAPP" var))
+  (haws-config-setvar
+    "MYAPP" var val
+    (if (= scope-code 2) (myapp-get-project-ini) nil)
+    (if (= scope-code 2) "MYAPP" nil)
+  )
 )
 ```
 
@@ -400,12 +378,12 @@ Create a mapping of old variables to new format:
 
 ```lisp
 ;; Old system
-(setq *my-config* 
+(setq *my-config*
   '(("Var1" "value1")
     ("Var2" "value2")))
 
-;; New system - add scope codes
-(list "Var"
+;; New system - add scope codes (flat list of tuples)
+(list
   (list "Var1" "value1" 4)  ; Determine appropriate scope
   (list "Var2" "value2" 2))
 ```
@@ -435,7 +413,7 @@ Maintain backward compatibility:
 ## Troubleshooting
 
 ### Variable Returns Nil
-- Check app is registered: `(assoc "MYAPP" *haws-config-definitions*)`
+- Check app is registered: `(assoc "MYAPP" *haws-app-config-definitions*)`
 - Verify variable exists in definitions
 - Check scope code is correct
 - For scope 2, ensure INI path is valid
@@ -466,63 +444,60 @@ CNM (Construction Notes Manager) was the first application to use HAWS-CONFIG. H
 ```lisp
 (defun hcnm-config-definitions ()
   (list
-    (list "Scope"
-      (list "Session" 0)
-      (list "Drawing" 1)
-      (list "Project" 2)
-      (list "App" 3)
-      (list "User" 4))
-    (list "Var"
-      ;; Session
-      (list "AppFolder" (haws-filename-directory (findfile "cnm.mnl")) 0)
-      
-      ;; Project
-      (list "ProjectNotes" "constnot.csv" 2)
-      (list "NoteTypes" "BOX,CIR,DIA,ELL,HEX,OCT,PEN,REC,SST,TRI" 2)
-      (list "DoCurrentTabOnly" "0" 2)
-      
-      ;; User
-      (list "LXXListMode" "yes" 4)
-      (list "CNMAliasActivation" "0" 4)
-      )))
+    ;; Session
+    (list "AppFolder" (haws-filename-directory (findfile "cnm.mnl")) 0)
+    ;; Project (stored in cnm.ini)
+    (list "ProjectNotes" "constnot.csv" 2)
+    (list "NoteTypes" "BOX,CIR,DIA,ELL,HEX,OCT,PEN,REC,SST,TRI" 2)
+    (list "DoCurrentTabOnly" "0" 2)
+    ;; ... ~50 total variables
+    ;; User (stored in Windows Registry)
+    (list "LXXListMode" "yes" 4)
+    (list "CNMAliasActivation" "0" 4)
+  ))
+;; Registration at end of cnm.lsp:
+(haws-config-register-app "CNM" (hcnm-config-definitions))
 ```
 
 ### CNM Wrapper Functions
 
 ```lisp
-(defun c:hcnm-config-getvar (var / scope ini-name)
-  (setq scope (hcnm-config-var-scope var))
-  (cond
-    ((= scope 2)
-     (setq ini-name (hcnm-ini-name (hcnm-proj)))))
-  (haws-config-getvar "CNM" var scope ini-name "CNM")
+;; Scope check prevents circular dependency:
+;; hcnm-proj → hcnm-initialize-project → hcnm-config-getvar("AppFolder")
+;; AppFolder is scope 0, so we pass nil for ini-path (no hcnm-proj call needed)
+(defun hcnm-config-getvar (var / scope-code)
+  (setq scope-code (haws-config-get-scope "CNM" var))
+  (haws-config-getvar
+    "CNM" var
+    (if (= scope-code 2) (hcnm-ini-name (hcnm-proj)) nil)
+    "CNM"
+  )
 )
 
-(defun c:hcnm-config-setvar (var val / scope ini-name)
-  (setq scope (hcnm-config-var-scope var))
-  (cond
-    ((= scope 2)
-     (setq ini-name (hcnm-ini-name (hcnm-proj)))))
-  (haws-config-setvar "CNM" var val scope ini-name "CNM")
+(defun hcnm-config-setvar (var val / scope-code)
+  (setq scope-code (haws-config-get-scope "CNM" var))
+  (haws-config-setvar
+    "CNM" var val
+    (if (= scope-code 2) (hcnm-ini-name (hcnm-proj)) nil)
+    "CNM"
+  )
 )
 ```
 
-### HAWS App (Shared HawsEDC Configs)
+### HAWS App (Shared HawsEDC Configs in edclib.lsp)
+
+**Note:** `haws-app-config-definitions` name is ambiguous (see §3.3.1 in S05). Rename to `haws-app-config-definitions` is pending.
 
 ```lisp
-(defun haws-config-definitions ()
+(defun haws-app-config-definitions ()
   (list
-    (list "Scope"
-      (list "Session" 0)
-      (list "Drawing" 1)
-      (list "Project" 2)
-      (list "App" 3)
-      (list "User" 4))
-    (list "Var"
-      (list "AppFolder" "" 0)              ; Session scope
-      (list "ImportLayerSettings" "YES" 2) ; Project scope
-      (list "CNMAliasActivation" "2" 4)    ; User scope
-      )))
+    (list "AppFolder" (haws-filename-directory (findfile "cnm.mnl")) 0)  ; Session
+    (list "ImportLayerSettings" "YES" 2)  ; Project
+    (list "CNMAliasActivation" "2" 4)     ; User
+    (list "DebugLevel" "0" 0)             ; Session
+  ))
+;; Registration in edclib.lsp:
+(haws-config-register-app "HAWS" (haws-app-config-definitions))
 ```
 
 ---

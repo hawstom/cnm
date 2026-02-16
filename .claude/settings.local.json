@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(ls -la \"C:\\\\tghfiles\\\\programming\\\\hawsedc\\\\develop\\\\.github\"\" 2>/dev/null || echo \"Directory not found \")"
+      "Bash(ls -la \"C:\\\\tghfiles\\\\programming\\\\hawsedc\\\\develop\\\\.github\"\" 2>/dev/null || echo \"Directory not found \")",
+      "Bash(git ls-tree:*)",
+      "Bash(powershell -File devtools/scripts/haws-lisp-paren-check.ps1 -FilePath \"devsource/edclib.lsp\")",
+      "Bash(powershell -File:*)"
     ]
   }
 }
