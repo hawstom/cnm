@@ -6344,9 +6344,9 @@ ImportLayerSettings=No
     )
     (setq
       skip-entry-p
-       (and skip-entry-p (/= string "ENtry"))
+       (and skip-entry-p (/= string "ENTRY"))
       loop-p
-       (or (not string) (= string "ENtry"))
+       (or (not string) (= string "ENTRY"))
     )
   )
   ;; Return updated bubble-data (contains lattribs + handle-reference + any other metadata)
@@ -6396,10 +6396,10 @@ ImportLayerSettings=No
      )
   )
   (cond
-    ((or (not input) (= input "ENtry"))
-     ;; User chose ENTER or "ENtry" - store in bubble-data
+    ((or (not input) (= input "ENTRY"))
+     ;; User chose ENTER or "ENTRY" - store in bubble-data
      (setq
-       lattribs (hcnm-bn-lattribs-put-element tag "ENtry" lattribs)
+       lattribs (hcnm-bn-lattribs-put-element tag "ENTRY" lattribs)
        bubble-data (hcnm-bn-bubble-data-set bubble-data "ATTRIBUTES" lattribs)
      )
     )
@@ -6409,7 +6409,7 @@ ImportLayerSettings=No
        bubble-data
         (hcnm-bn-auto-dispatch
           (strcat "NOTETXT" (itoa line-number))
-          (hcnm-bn-get-auto-text-display-text input)
+          (hcnm-bn-get-auto-text-auto-type input)
           nil        ; obj-reference - will be determined by auto-dispatch
           bubble-data
           nil        ; bnatu-context-p - insertion path
@@ -7451,10 +7451,10 @@ ImportLayerSettings=No
 ;; Used by multiple levels of the insertion user experience 
 ;; including the command prompts and the auto text dispatcher
 ;; Returns list of auto-text type definitions
-;; Structure: (auto-type input-key display-type reference-type requires-coordinates)
-;; - auto-type: ALL CAPS key used for internal lookups
-;; - input-keyword: Keyword entered by user (initget and getkword format)
-;; - display-text: Canonical type name used in code
+;; Structure: (key input-keyword auto-type display-type reference-type requires-coordinates)
+;; - auto-type: (strcase input-keyword) ALL CAPS key used for internal lookups. Always equals strcase of input-keyword and auto-type.
+;; - input-keyword: Keyword entered by user. Varies from key only in capitalization for input purposes (initget and getkword format).
+;; - dialog-type: Not used in code. Hard coded in edit dialog DCL.
 ;; - reference-type: Type of reference object ("AL"=Alignment, "SU"=Surface, nil=none)
 ;; - requires-coordinates-p: T if needs p1-world from leader, nil otherwise
 (defun hcnm-bn-auto-text-definitions ()
@@ -7464,7 +7464,7 @@ ImportLayerSettings=No
     ("STA" "STa" "Sta" "AL" t)                ; Station - needs p1-world for alignment query
     ("OFF" "Off" "Off" "AL" t)                ; Offset - needs p1-world for alignment query
     ("STAOFF" "stAoff" "StaOff" "AL" t)          ; Station+Offset - needs p1-world for alignment query
-    ("NAME" "NAme" "AlName" "AL" nil)          ; Alignment Name - no coordinates needed
+    ("NAME" "NAme" "Name" "AL" nil)          ; Alignment Name - no coordinates needed
     ("STANAME" "STAName" "StaName" "AL" t)        ; Station + Alignment Name - needs p1-world
     ("N" "N" "N" nil t)                     ; Northing - needs p1-world for coordinate
     ("E" "E" "E" nil t)                     ; Easting - needs p1-world for coordinate
@@ -7477,17 +7477,17 @@ ImportLayerSettings=No
     ("ENTRY" "ENtry" "ENtry" nil nil)           ; Entry text - static text
    )
 )
-(defun hcnm-bn-get-auto-text-input-keyword (auto-type)
-  (cadr (assoc (strcase auto-type) (hcnm-bn-auto-text-definitions)))
+(defun hcnm-bn-get-auto-text-input-keyword (key-insensitive)
+  (cadr (assoc (strcase key-insensitive) (hcnm-bn-auto-text-definitions)))
 )
-(defun hcnm-bn-get-auto-text-display-text (auto-type)
-  (caddr (assoc (strcase auto-type) (hcnm-bn-auto-text-definitions)))
+(defun hcnm-bn-get-auto-text-auto-type (key-insensitive)
+  (strcase key-insensitive)
 )
-(defun hcnm-bn-get-auto-text-reference-type (auto-type)
-  (nth 3 (assoc (strcase auto-type) (hcnm-bn-auto-text-definitions)))
+(defun hcnm-bn-get-auto-text-reference-type (key-insensitive)
+  (nth 3 (assoc (strcase key-insensitive) (hcnm-bn-auto-text-definitions)))
 )
-(defun hcnm-bn-auto-text-requires-coordinates-p (auto-type)
-  (nth 4 (assoc (strcase auto-type) (hcnm-bn-auto-text-definitions)))
+(defun hcnm-bn-auto-text-requires-coordinates-p (key-insensitive)
+  (nth 4 (assoc (strcase key-insensitive) (hcnm-bn-auto-text-definitions)))
 )
 (defun hcnm-bn-get-auto-text-input-keywords-list ()
   (mapcar 'cadr (hcnm-bn-auto-text-definitions))
@@ -7525,7 +7525,7 @@ ImportLayerSettings=No
 ;;;
 ;;; PARAMETERS:
 ;;;   tag - Attribute tag (e.g., "NOTETXT1")
-;;;   auto-type - Auto-text type (e.g., "Sta", "Off", "N", "Dia")
+;;;   auto-type - Auto-text type (e.g., "STA", "OFF", "N", "DIA")
 ;;;   obj-reference - VLA-OBJECT of reference (alignment/pipe/surface) or NIL
 ;;;                   For handle-based types: VLA-OBJECT (never NIL)
 ;;;                   For handleless types (N/E/NE): Always NIL
@@ -7580,7 +7580,7 @@ ImportLayerSettings=No
   (setq
     bubble-data
      (cond
-       ((= auto-type "Text")
+       ((= auto-type "TEXT")
         (hcnm-bn-auto-es
           bubble-data
           tag
@@ -7604,7 +7604,7 @@ ImportLayerSettings=No
           bubble-data tag auto-type "Area" "0.11111111" obj-reference bnatu-context-p
          )
        )
-       ((= auto-type "Sta")
+       ((= auto-type "STA")
         (hcnm-bn-auto-al
           bubble-data
           tag
@@ -7613,7 +7613,7 @@ ImportLayerSettings=No
           bnatu-context-p
         )
        )
-       ((= auto-type "Off")
+       ((= auto-type "OFF")
         (hcnm-bn-auto-al
           bubble-data
           tag
@@ -7622,7 +7622,7 @@ ImportLayerSettings=No
           bnatu-context-p
         )
        )
-       ((= auto-type "StaOff")
+       ((= auto-type "STAOFF")
         (hcnm-bn-auto-al
           bubble-data
           tag
@@ -7631,7 +7631,7 @@ ImportLayerSettings=No
           bnatu-context-p
         )
        )
-       ((= auto-type "AlName")
+       ((= auto-type "NAME")
         (hcnm-bn-auto-al
           bubble-data
           tag
@@ -7640,7 +7640,7 @@ ImportLayerSettings=No
           bnatu-context-p
         )
        )
-       ((= auto-type "StaName")
+       ((= auto-type "STANAME")
         (hcnm-bn-auto-al
           bubble-data
           tag
@@ -7685,7 +7685,7 @@ ImportLayerSettings=No
           bnatu-context-p
         )
        )
-       ((= auto-type "Dia")
+       ((= auto-type "DIA")
         (hcnm-bn-auto-pipe
           bubble-data
           tag
@@ -7694,7 +7694,7 @@ ImportLayerSettings=No
           bnatu-context-p
         )
        )
-       ((= auto-type "Slope")
+       ((= auto-type "SLOPE")
         (hcnm-bn-auto-pipe
           bubble-data
           tag
@@ -8010,7 +8010,7 @@ ImportLayerSettings=No
 ;; Arguments:
 ;;   bubble-data - Bubble data alist
 ;;   TAG - Attribute tag to update
-;;   auto-type - "Sta", "Off", "StaOff", "AlName", or "StaName"
+;;   auto-type - "STA", "OFF", "STAOFF", "NAME", or "STANAME"
 ;;   obj-reference - VLA-OBJECT alignment (if provided), or NIL (will prompt user)
 ;;   bnatu-context-p - T if bnatu callback, NIL if insertion/editing
 ;; Returns: Updated bubble-data with new attribute value
@@ -8049,10 +8049,10 @@ ImportLayerSettings=No
      ;; UX scenario: bnatu invocation - reference from XDATA handle
      (setq obj-align obj-reference)
      (cond
-       ((or (= auto-type "Sta")
-            (= auto-type "Off")
-            (= auto-type "StaOff")
-            (= auto-type "StaName")
+       ((or (= auto-type "STA")
+            (= auto-type "OFF")
+            (= auto-type "STAOFF")
+            (= auto-type "STANAME")
         )
         (setq
           bubble-data
@@ -8081,10 +8081,10 @@ ImportLayerSettings=No
      )
      ;; Now calculate p1-world if needed for coordinate-requiring types (both handle-based AL and handleless N/E/NE)
      (cond
-       ((or (= auto-type "Sta")
-            (= auto-type "Off")
-            (= auto-type "StaOff")
-            (= auto-type "StaName")
+       ((or (= auto-type "STA")
+            (= auto-type "OFF")
+            (= auto-type "STAOFF")
+            (= auto-type "STANAME")
         )
         (setq
           bubble-data
@@ -8101,10 +8101,10 @@ ImportLayerSettings=No
   )
   ;; STEP 2: Calculate station and offset (only needed for coordinate-based types)
   (cond
-    ((or (= auto-type "Sta")
-         (= auto-type "Off")
-         (= auto-type "StaOff")
-         (= auto-type "StaName")
+    ((or (= auto-type "STA")
+         (= auto-type "OFF")
+         (= auto-type "STAOFF")
+         (= auto-type "STANAME")
      )
      ;; Safety check - obj-align must be a valid VLA-OBJECT
      (cond
@@ -8130,7 +8130,7 @@ ImportLayerSettings=No
   )
   ;; STEP 3: Format the result based on auto-type
   (cond
-    ((= auto-type "AlName")
+    ((= auto-type "NAME")
      ;; Alignment name only - no coordinates needed
      (cond
        (obj-align
@@ -8173,16 +8173,16 @@ ImportLayerSettings=No
         (hcnm-bn-auto-al-offset-to-string offset)
        string
         (cond
-          ((= auto-type "Sta") sta-string)
-          ((= auto-type "Off") off-string)
-          ((= auto-type "StaOff")
+          ((= auto-type "STA") sta-string)
+          ((= auto-type "OFF") off-string)
+          ((= auto-type "STAOFF")
            (strcat
              sta-string
              (hcnm-config-getvar "BubbleTextJoinDelSta")
              off-string
            )
           )
-          ((= auto-type "StaName")
+          ((= auto-type "STANAME")
            ;; Station + alignment name
            (setq
              string
@@ -8270,9 +8270,9 @@ ImportLayerSettings=No
                      )
                    )
     )
-    (cond 
+    (cond
       ;; Valid alignment selected
-      ((and 
+      ((and
          es-align
          (= (cdr (assoc 0 (entget (car es-align)))) "AECC_ALIGNMENT")
        )
@@ -8497,7 +8497,7 @@ ImportLayerSettings=No
 ;; Arguments:
 ;;   ename-bubble - Entity name of bubble being edited (required)
 ;;   TAG - Attribute tag being updated (required)
-;;   auto-type - Property type: "Dia", "Slope", or "L" (required)
+;;   auto-type - Property type: "DIA", "SLOPE", or "L" (required)
 ;;
 ;; Returns:
 ;;   VLA-OBJECT of selected pipe, or NIL if selection failed
@@ -8509,7 +8509,7 @@ ImportLayerSettings=No
 ;;   hcnm-bn-auto-pipe
 ;;
 ;; Example:
-;;   (SETQ obj-pipe (hcnm-bn-auto-pipe-get-object ename-bubble "NOTETXT1" "Dia"))
+;;   (SETQ obj-pipe (hcnm-bn-auto-pipe-get-object ename-bubble "NOTETXT1" "DIA"))
 ;;==============================================================================
 (defun hcnm-bn-auto-pipe-get-object (ename-bubble tag auto-type / esapipe obj-pipe 
                                      valid-pipe-p obj-type
@@ -8522,8 +8522,8 @@ ImportLayerSettings=No
         (strcat 
           "\nSelect Civil 3D pipe for "
           (cond 
-            ((= auto-type "Dia") "diameter")
-            ((= auto-type "Slope") "slope")
+            ((= auto-type "DIA") "diameter")
+            ((= auto-type "SLOPE") "slope")
             ((= auto-type "L") "length")
             (t "property")
           )
@@ -8762,7 +8762,7 @@ ImportLayerSettings=No
 ;; Arguments:
 ;;   bubble-data - Bubble data alist (required)
 ;;   TAG - Attribute tag to update (required)
-;;   auto-type - Property type: "Dia", "Slope", or "L" (required)
+;;   auto-type - Property type: "DIA", "SLOPE", or "L" (required)
 ;;   obj-reference - VLA-OBJECT pipe (if provided), or NIL (will prompt user)
 ;;   bnatu-context-p - T if bnatu call, NIL if insertion/editing
 ;;
@@ -8783,7 +8783,7 @@ ImportLayerSettings=No
 ;;
 ;; Example:
 ;;   (SETQ bubble-data
-;;     (hcnm-bn-auto-pipe bubble-data "NOTETXT1" "Dia" NIL NIL)
+;;     (hcnm-bn-auto-pipe bubble-data "NOTETXT1" "DIA" NIL NIL)
 ;;   )
 ;;==============================================================================
 (defun hcnm-bn-auto-pipe (bubble-data tag auto-type obj-reference bnatu-context-p /
@@ -8839,10 +8839,10 @@ ImportLayerSettings=No
        ((not obj-pipe)
         "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
        )
-       ((= auto-type "Dia")
+       ((= auto-type "DIA")
         (hcnm-bn-auto-pipe-dia-to-string obj-pipe)
        )
-       ((= auto-type "Slope")
+       ((= auto-type "SLOPE")
         (hcnm-bn-auto-pipe-slope-to-string obj-pipe)
        )
        ((= auto-type "L")
@@ -9125,7 +9125,7 @@ ImportLayerSettings=No
 ;;
 ;; PARAMETERS:
 ;;   ename-bubble - Entity name of bubble block reference
-;;   auto-type - String: "N", "E", "NE", "Sta", "Off", etc. (for gateway 1 check and warning)
+;;   auto-type - String: "N", "E", "NE", "STA", "OFF", etc. (for gateway 1 check and warning)
 ;;   obj-target - Object reference (alignment) or nil
 ;;   object-reference-status - String indicating how object was obtained:
 ;;     "NO-OBJECT" - No object needed/used (N/E/NE)
@@ -9781,7 +9781,7 @@ ImportLayerSettings=No
 ;; Read bubble data from attributes and XDATA
 ;; Returns association list in 2-element format: (("TAG" "full-text") ...)
 ;; XDATA stores auto-text values separately for search/replace during updates
-;; Format: (("NOTETXT0" "text") ("NOTETXT1" "text") ("NOTENUM" "123") ...)
+;; Format: (("NOTETXT0" "TEXT") ("NOTETXT1" "TEXT") ("NOTENUM" "123") ...)
 (defun hcnm-bn-dwg-to-lattribs (ename-bubble / lattribs
                                 xdata-alist xdata-raw appname ename-next
                                 etype elist obj-next tag value
@@ -10631,7 +10631,7 @@ ImportLayerSettings=No
 
 ;; Save bubble data to attributes and XDATA
 ;; Takes association list in 2-element format (tag text-value)
-;; Format: (("NOTETXT0" "text") ("NOTETXT1" "text") ...)
+;; Format: (("NOTETXT0" "TEXT") ("NOTETXT1" "TEXT") ...)
 ;;
 ;; The HCNM-BUBBLE section of XDATA for a bubble note stores:
 ;; 1. Auto-text values (separately from display attributes)
@@ -10792,7 +10792,7 @@ ImportLayerSettings=No
 ;;
 ;; Example:
 ;;   (hcnm-bn-reactor-notifier-update 
-;;     '("1D235" (("62880" (("NOTETXT1" (("StaOff" "1D235")))))))
+;;     '("1D235" (("62880" (("NOTETXT1" (("STAOFF" "1D235")))))))
 ;;     "1D235"
 ;;   )
 ;;==============================================================================
@@ -10902,8 +10902,8 @@ ImportLayerSettings=No
 ;;         - Call update-bubble-tag to regenerate auto-text
 ;;
 ;; Data Format Migration:
-;;   NEW: auto-list = (("StaOff" "1D235") ("Dia" "1D235"))  ← Multiple auto-texts per tag
-;;   OLD: auto-list = "StaOff"  ← Single string, fallback uses handle-notifier as reference
+;;   NEW: auto-list = (("STAOFF" "1D235") ("DIA" "1D235"))  ← Multiple auto-texts per tag
+;;   OLD: auto-list = "STAOFF"  ← Single string, fallback uses handle-notifier as reference
 ;;        (Prints warning, continues with degraded functionality for leader-based bubbles)
 ;;
 ;; Performance Issues (KNOWN - documented in Section 1.2.1.6):
@@ -10920,8 +10920,8 @@ ImportLayerSettings=No
 ;;   (hcnm-bn-bnatu-bubble-update 
 ;;     "62880"                                    ; bubble handle
 ;;     "1D235"                                    ; notifier handle (alignment)
-;;     '(("NOTETXT1" (("StaOff" "1D235")          ; tag with auto-list
-;;                    ("Dia" "1D235"))))          ; multiple auto-texts per tag
+;;     '(("NOTETXT1" (("STAOFF" "1D235")          ; tag with auto-list
+;;                    ("DIA" "1D235"))))          ; multiple auto-texts per tag
 ;;   )
 ;;==============================================================================
 (defun hcnm-bn-bnatu-bubble-update (handle-bubble handle-notifier tag-list / tag 
@@ -11156,7 +11156,7 @@ ImportLayerSettings=No
 ;; Arguments:
 ;;   ename-bubble - Entity name of bubble
 ;;   tag - Attribute tag (e.g., "NOTETXT1")
-;;   auto-type - Auto-type string (e.g., "StaOff", "Dia")
+;;   auto-type - Auto-type string (e.g., "STAOFF", "DIA")
 ;;   handle-reference - Handle of reference object (alignment/pipe) or ""
 ;;
 ;; Returns:
@@ -11224,7 +11224,7 @@ ImportLayerSettings=No
 ;; Arguments:
 ;;   ename-bubble - Entity name of bubble
 ;;   tag - Attribute tag (e.g., "NOTETXT1")
-;;   auto-type - Auto-type string (e.g., "StaOff", "Dia")
+;;   auto-type - Auto-type string (e.g., "STAOFF", "DIA")
 ;;   handle-reference - Handle of reference object or "" for coordinates
 ;;   auto-text - New auto-text value to store
 ;;
@@ -11240,7 +11240,7 @@ ImportLayerSettings=No
 ;;   Simple format DEPRECATED - all bubbles use composite-key format.
 ;;
 ;; Example:
-;;   (hcnm-bn-xdata-update-one ename-bubble "NOTETXT1" "StaOff" "ABC123" "STA 10+25.50")
+;;   (hcnm-bn-xdata-update-one ename-bubble "NOTETXT1" "STAOFF" "ABC123" "STA 10+25.50")
 ;;==============================================================================
 (defun hcnm-bn-xdata-update-one (ename-bubble tag auto-type handle-reference auto-text / 
                                      xdata-alist tag-xdata composite-key composite-entry tag-entry
@@ -11311,7 +11311,7 @@ ImportLayerSettings=No
 ;; Arguments:
 ;;   ename-bubble - Entity name of bubble
 ;;   tag - Attribute tag (e.g., "NOTETXT1")
-;;   auto-type - Auto-type string (e.g., "StaOff", "Dia")
+;;   auto-type - Auto-type string (e.g., "STAOFF", "DIA")
 ;;   handle-reference - Handle of reference object or "" for coordinates
 ;;
 ;; Returns:
@@ -11380,7 +11380,7 @@ ImportLayerSettings=No
 ;;   ename-reference - Entity name of reference object (or NIL for N/E/NE)
 ;;   lattribs - Current lattribs (2-element format)
 ;;   tag - Attribute tag to update
-;;   auto-type - Auto-type string (e.g., "StaOff", "Dia", "N")
+;;   auto-type - Auto-type string (e.g., "STAOFF", "DIA", "N")
 ;;
 ;; Returns:
 ;;   Updated lattribs with new auto-text value in specified tag
@@ -11423,7 +11423,7 @@ ImportLayerSettings=No
 ;; Arguments:
 ;;   handle-bubble - Handle string of bubble to update
 ;;   tag - Attribute tag to update (e.g., "NOTETXT1", "NOTETXT2")
-;;   auto-type - Auto-type string specifying calculation (e.g., "StaOff", "Dia", "N", "E")
+;;   auto-type - Auto-type string specifying calculation (e.g., "STAOFF", "DIA", "N", "E")
 ;;   handle-reference - Handle of reference object (alignment/pipe/surface) or "" for N/E/NE
 ;;
 ;; Terminology:
@@ -11472,7 +11472,7 @@ ImportLayerSettings=No
 ;;   (hcnm-bn-update-bubble-tag 
 ;;     "62880"      ; bubble handle
 ;;     "NOTETXT1"   ; attribute tag
-;;     "StaOff"     ; auto-type
+;;     "STAOFF"     ; auto-type
 ;;     "1D235"      ; alignment handle
 ;;   )
 ;;==============================================================================
@@ -11635,8 +11635,8 @@ ImportLayerSettings=No
 ;;   If simple format found, hcnm-xdata-read will FAIL LOUDLY (data corruption).
 ;;
 ;; Example:
-;;   XDATA has: (("NOTETXT1" ((("StaOff" . "ABC123") . "STA 10+25.50"))))
-;;   Returns:   (("NOTETXT1" ((("StaOff" . "ABC123") . "STA 10+25.50"))))
+;;   XDATA has: (("NOTETXT1" ((("STAOFF" . "ABC123") . "STA 10+25.50"))))
+;;   Returns:   (("NOTETXT1" ((("STAOFF" . "ABC123") . "STA 10+25.50"))))
 ;;==============================================================================
 (defun hcnm-bn-eb-init-auto-handles (ename-bubble)
   ;; Simply return XDATA directly - no filtering needed
@@ -11752,7 +11752,7 @@ ImportLayerSettings=No
           )
           ;; Use super-clearance path to bypass all gateways and force prompt
           (hcnm-bn-gateways-to-viewport-selection-prompt
-            ename-bubble "Sta"          ; Representative coordinate type for warning message
+            ename-bubble "STA"          ; Representative coordinate type for warning message
             nil                         ; No input object
             nil                         ; No object reference status needed for super-clearance
             "LINK-VIEWPORT"
@@ -12051,18 +12051,18 @@ ImportLayerSettings=No
   '((11 "LF" eb-done)
     (12 "SF" eb-done)
     (13 "SY" eb-done)
-    (14 "Sta" eb-done)
-    (15 "Off" eb-done)
-    (16 "StaOff" eb-done)
-    (17 "AlName" eb-done)
-    (18 "StaName" eb-done)
+    (14 "STA" eb-done)
+    (15 "OFF" eb-done)
+    (16 "STAOFF" eb-done)
+    (17 "NAME" eb-done)
+    (18 "STANAME" eb-done)
     (19 "N" eb-done)
     (20 "E" eb-done)
     (21 "NE" eb-done)
     (22 "Z" eb-done)
-    (23 "Text" eb-done)
-    (25 "Dia" eb-done)
-    (26 "Slope" eb-done)
+    (23 "TEXT" eb-done)
+    (25 "DIA" eb-done)
+    (26 "SLOPE" eb-done)
     (27 "L" eb-done)
    )
 )

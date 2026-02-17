@@ -1,8 +1,8 @@
 # CLAUDE.md - CNM Project Instructions
 
 ## Project Overview
-
-**Construction Notes Manager (CNM)** is an AutoCAD/Civil 3D productivity tool written in AutoLISP, maintained since 1994. It manages construction notes on drawings using "bubble notes" (leader annotations with attribute text) with auto-text including from Civil 3D objects.
+- Languages: AutoLISP (is **not** Common LISP) with DCL. Includes an AutoCAD Script File test suite at devtools\scripts\test-suite.
+- Functionality: ~400 AutoCAD productivity commands. Current efforts are focused mostly on cnm.lsp bubble note auto text creation and updates.
 
 ## Critical Rules
 
@@ -27,7 +27,7 @@ AutoLISP and Common Lisp are unrelated dialects. Do not assume similarity.
 ### Formatting
 - **2-space indentation**, no tabs
 - **Narrow-style indentation** (not wide-style aligned with first arg)
-- **Closing parens** on own line, aligned with opening expression (for defun/cond/loops/4+ line blocks)
+- **Closing parens** on own line, aligned with opening expression (for defun/cond/loops/4+ line blocks). Can be stacked on same line for inner expressions.
 - **No blank lines** anywhere in code files (FIRM, very aggressive schedule)
 - **No closing comments** like `;end defun` or `;end cond`
 
@@ -44,7 +44,7 @@ AutoLISP and Common Lisp are unrelated dialects. Do not assume similarity.
 - **Always declare locals** in `(defun func (args / local1 local2) ...)`
 - **No ad hoc globals** - use `haws-config` system
 - **Globals use `*asterisks*`** (e.g., `*hcnm-config*`)
-- See `.github/authorized-globals.md` for all authorized globals
+- See `.github/authorized-globals.md` for all authorized globals. Ask aggressively about weeding out globals where possible.
 
 ### Comments
 - **Single `;`** for minor inline comments (and `; #region`/`; #endregion` for VS Code folding)
@@ -89,6 +89,9 @@ AutoLISP and Common Lisp are unrelated dialects. Do not assume similarity.
 - **Handleless:** N/E/NE only (empty handle `""`, coordinate-only)
 - **Field-based:** LF/SF/SY (AutoCAD field system, not CNM updater)
 - **Coordinate-based:** Sta/Off/StaOff/StaName/N/E/NE (needs viewport transform in paper space)
+
+### Baseline Reference
+Git commit `63efc0d` (v5.5.17) is a good baseline for the auto-text system before the reactor was added and before AI assistance. None of the XDATA, VPTRANS, or updater data structures existed at that point.
 
 ## Standards Documentation
 

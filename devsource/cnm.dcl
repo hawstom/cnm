@@ -537,15 +537,15 @@ HCNMEditBubble : dialog {
 		: button {label = "Z"; key = "Z";}
 	}
 	: row {
-		: button {label = "Sta"; key = "Sta";}
-		: button {label = "Off"; key = "Off";}
-		: button {label = "StaOff"; key = "StaOff";}
-		: button {label = "Name"; key = "AlName";}
-		: button {label = "StaName"; key = "StaName";}
+		: button {label = "Sta"; key = "STA";}
+		: button {label = "Off"; key = "OFF";}
+		: button {label = "StaOff"; key = "STAOFF";}
+		: button {label = "Name"; key = "NAME";}
+		: button {label = "StaName"; key = "STANAME";}
 	}
 	: row {
-		: button {label = "Dia"; key = "Dia";}
-		: button {label = "Slope"; key = "Slope";}
+		: button {label = "Dia"; key = "DIA";}
+		: button {label = "Slope"; key = "SLOPE";}
 		: button {label = "L"; key = "L";}
 		: button {label = "_"; key = "ClearAuto"; width = 3;}
 	}

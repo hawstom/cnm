@@ -345,6 +345,8 @@ HCNM_PROJINIT             ; Project INI refresh (disabled by default)
 
 **History:** An earlier implementation used a VLR-OBJECT-REACTOR for automatic updates. This was removed in favor of the simpler manual updater approach.
 
+**Baseline reference:** Git commit `63efc0d` (v5.5.17) is a good baseline for the auto-text system before the reactor was added and before AI assistance began. Note that none of the XDATA, VPTRANS, or other data structures required for the updater were in place at that point.
+
 ### 4.2.2 Two Orthogonal Auto-Text Classifications
 
 **Handle-based vs Handleless (CRITICAL - Affects XDATA Storage):**
