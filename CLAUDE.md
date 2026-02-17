@@ -93,6 +93,20 @@ AutoLISP and Common Lisp are unrelated dialects. Do not assume similarity.
 ### Baseline Reference
 Git commit `63efc0d` (v5.5.17) is a good baseline for the auto-text system before the reactor was added and before AI assistance. None of the XDATA, VPTRANS, or updater data structures existed at that point.
 
+### haws-config System (Config Migration)
+- **haws-config.lsp** is the generic multi-app config service; any app can register
+- **Each app owns its definitions:** `hcnm-config-definitions` (CNM), `haws-app-config-definitions` (HAWS app in edclib)
+- **Naming rule:** Apps must not use `haws-config-` prefix for their own functions. HAWS app uses `haws-app-config-definitions` (not `haws-config-definitions`)
+- **Registration:** `(haws-config-register-app "CNM" (hcnm-config-definitions))` at end of cnm.lsp
+- **Actual API signature:** `(haws-config-getvar app var ini-path section)` — scope is auto-looked-up from definitions, NOT passed as parameter
+- **Circular dependency guard:** `hcnm-config-getvar` checks scope BEFORE calling `hcnm-proj`. Session-scope vars (like AppFolder) pass nil for ini-path, avoiding infinite recursion through hcnm-proj → hcnm-initialize-project → hcnm-config-getvar → hcnm-proj
+- **Project INI copy:** When `hcnm-proj` finds no cnm.ini in a drawing's folder, it calls `hcnm-initialize-project`, which copies cnm.ini from AppFolder (the install folder) to the project folder via `haws-file-copy`
+- **Legacy concept system:** `hcnm-concept-*` functions (lines ~3000-3380 of cnm.lsp) are the old multi-app config prototype. Only called by `c:testset`/`c:testget` test functions now. `hcnm-concept-file-copy` is referenced but never defined — dead code path
+- **Unfinished migration:** See cnm.lsp lines 3382-3421 for detailed TODO list. Key items: eliminate CNM-specific duplicates of haws-config helpers, simplify wrappers to pure delegation
+
+### Baseline Reference
+Git commit `63efc0d` (v5.5.17) is a good baseline for the auto-text system before the reactor was added and before AI assistance. None of the XDATA, VPTRANS, or updater data structures existed at that point. Also a good baseline for the pre-haws-config config system (all config logic in cnm.lsp, `c:hcnm-config-getvar` with built-in scope-aware loading).
+
 ## Standards Documentation
 
 For deep dives, read the full standards volumes in `devtools/docs/standards/`:

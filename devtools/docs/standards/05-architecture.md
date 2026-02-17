@@ -162,37 +162,50 @@ This volume documents the core architectural patterns and systems used in HAWSED
 CNM uses a hybrid configuration system: core config functions migrated to haws-config, project management remains CNM-specific.
 
 ### 3.1.2 Migrated to haws-config
-**Status:** COMPLETED
+**Status:** COMPLETED (with scope check fix 2025-11-18)
 
 ```lisp
-(c:hcnm-config-getvar "BubbleTextPrefixSta")  ; Uses haws-config internally
-(c:hcnm-config-setvar "BubbleTextPrefixSta" "STA ")  ; Uses haws-config internally
+;; CNM wrappers (renamed from c:hcnm-config- to hcnm-config- in v5.5.22)
+(hcnm-config-getvar "BubbleTextPrefixSta")      ; Wrapper to haws-config
+(hcnm-config-setvar "BubbleTextPrefixSta" "STA ") ; Wrapper to haws-config
 ```
 
-**Scopes handled by haws-config:**
-- **Session:** In-memory AutoLISP global
-- **User:** AutoCAD's getcfg/setcfg registry
+**All scopes handled by haws-config (including Project):**
+- **Session (0):** In-memory `*haws-config-session*` global
+- **Project (2):** INI file read/write via `ini_readsection`/`ini_writeentry`
+- **User (4):** Windows Registry via `vl-registry-read`/`vl-registry-write`
 
 ### 3.1.3 Remaining CNM-Specific
-**Status:** NOT MIGRATED (performance reasons)
+**Status:** CNM retains project folder management (finding/creating cnm.ini)
 
-**Project Management:**
-- **INI Files:** Project-specific cnm.ini files
-- **HCNM_PROJINIT:** Project scope refresh (disabled by default)
-- **Performance Decision:** INI reads expensive, disabled for performance
-- **User Alert:** CNM Options dialog warns "settings changes made outside dialog require drawing restart"
+**Project Folder Management (CNM-specific, not migrated):**
+- `hcnm-proj` — Finds or creates project root folder for a drawing
+- `hcnm-initialize-project` — Copies cnm.ini from AppFolder to new project folder
+- `hcnm-projinit` — Resets cached project state (called at start of user commands)
+- `hcnm-config-getvar`/`hcnm-config-setvar` — Thin wrappers with scope check
+
+**Critical: Circular Dependency Guard**
+`hcnm-config-getvar` checks scope BEFORE calling `hcnm-proj`:
+```
+hcnm-proj → hcnm-initialize-project → hcnm-config-getvar("AppFolder")
+                                        ↳ scope=0 → passes nil for ini-path → SUCCESS
+                                        ↳ (if scope=2 → would call hcnm-proj → INFINITE LOOP)
+```
+This guard was broken in commit `dac2c4c` (haws-config migration) and restored 2025-11-18.
 
 **Key Functions (CNM-specific):**
 ```lisp
-HCNM_CONFIG_DEFINITIONS    ; Schema for 400+ settings
-HCNM_PROJINIT             ; Project INI refresh (disabled by default)
+hcnm-config-definitions    ; Schema for ~50 CNM settings
+hcnm-projinit              ; Project state reset
+hcnm-proj                  ; Project folder resolution
+hcnm-initialize-project    ; cnm.ini copy from AppFolder to project
 ```
 
 ### 3.1.4 Business Decision: Performance vs Responsiveness
 
 **Trade-off:** External INI edits not reflected immediately vs performance.
 
-**Chosen:** Performance (disabled HCNM_PROJINIT by default)
+**Chosen:** Performance (hcnm-projinit resets cache at each command, triggering fresh reads)
 
 **Rationale:**
 - Most users edit via CNM Options dialog (immediate reflection)
@@ -207,35 +220,81 @@ HCNM_PROJINIT             ; Project INI refresh (disabled by default)
 
 ### 3.2.2 Current Architecture
 ```lisp
-;; CNM functions now use haws-config internally
-(c:hcnm-config-getvar "BubbleTextPrefixSta")   ; Wrapper to haws-config
-(c:hcnm-config-setvar "BubbleTextPrefixSta" "STA ")  ; Wrapper to haws-config
+;; App registration (at load time, end of each app's .lsp file)
+(haws-config-register-app "HAWS" (haws-app-config-definitions))  ; edclib.lsp
+(haws-config-register-app "CNM" (hcnm-config-definitions))      ; cnm.lsp
 
-;; Direct haws-config usage (for new code)
-(haws-config-getvar "CNM" "BubbleTextPrefixSta")
-(haws-config-setvar "CNM" "BubbleTextPrefixSta" "STA ")
+;; Public API (scope auto-looked-up from definitions)
+(haws-config-getvar app var ini-path section)   ; 4 params, NOT 5
+(haws-config-setvar app var val ini-path section)
+
+;; CNM thin wrappers handle ini-path resolution
+(hcnm-config-getvar "BubbleTextPrefixSta")
+;; → checks scope → if Project, calls (hcnm-ini-name (hcnm-proj)) for ini-path
+;; → delegates to (haws-config-getvar "CNM" var ini-path "CNM")
 ```
 
 ### 3.2.3 Multi-App Support
-**Implemented:** Each app gets separate namespace:
+**Implemented:** Each app registers with its own definitions:
 ```lisp
-;; App registration
-(haws-config-register-app "CNM")
-(haws-config-register-app "HAWS_QT")
+(haws-config-register-app "HAWS" (haws-app-config-definitions))  ; edclib shared config
+(haws-config-register-app "CNM" (hcnm-config-definitions))   ; CNM app config
 ```
 
-### 3.2.4 Features Implemented
-- ✅ **Type system:** Explicit integer/boolean/string validation
-- ✅ **Multi-app support:** Separate namespaces per application
-- ✅ **Session/User scopes:** In-memory and registry storage
-- ✅ **Backward compatibility:** CNM wrapper functions maintain API
-- ❌ **Project scope:** Remains in CNM-specific code (performance decision)
+### 3.2.4 Definitions Format
+Each app provides a flat list of `(var-name default-value scope-code)` tuples:
+```lisp
+(defun hcnm-config-definitions ()
+  (list
+    (list "AppFolder" (haws-filename-directory (findfile "cnm.mnl")) 0)
+    (list "ProjectNotes" "constnot.csv" 2)
+    (list "LXXListMode" "yes" 4)))
+```
 
-### 3.2.5 Benefits Realized
-- **Code reuse:** haws-config used by multiple HawsEDC applications
+### 3.2.5 Features Implemented
+- ✅ **Multi-app support:** Separate namespaces per application
+- ✅ **Session/User/Project scopes:** Memory, Registry, and INI storage
+- ✅ **Automatic scope lookup:** Scope determined from definitions, not passed by caller
+- ✅ **Backward compatibility:** CNM wrapper functions maintain API
+- ❌ **Drawing scope (1):** Not yet implemented
+- ❌ **App scope (3):** Not yet implemented
+
+### 3.2.6 Benefits Realized
+- **Code reuse:** haws-config used by HAWS (edclib) and CNM apps
 - **Consistent UX:** Uniform config behavior across apps
-- **Performance:** Optimized for session/user scopes
 - **Maintainability:** Central config logic, not duplicated
+
+## 3.3 Config System: Known Issues and Unfinished Business
+
+### 3.3.1 Naming Ambiguity (TODO)
+`haws-config-` prefix is overloaded:
+- **System API:** `haws-config-register-app`, `haws-config-getvar`, etc.
+- **HAWS app definitions:** `haws-config-definitions` in edclib.lsp
+
+**Problem:** `haws-config-definitions` looked like a system function but was actually the HAWS app's definition list (analogous to `hcnm-config-definitions` for CNM).
+
+**Resolution:** Renamed to `haws-app-config-definitions` (defun + register-app call in edclib.lsp). haws-config.lsp header now warns apps not to use the `haws-config-` prefix for their own functions.
+
+### 3.3.2 Legacy Concept System (Dead Code)
+`hcnm-concept-*` functions (cnm.lsp lines ~3000-3380) are the old multi-app config prototype:
+- Only called by `c:testset`/`c:testget` test commands
+- `hcnm-concept-file-copy` is called but never defined (undefined symbol)
+- `hcnm-concept-getinidefaults` duplicates `hcnm-initialize-project` logic
+- **TODO:** Remove concept system entirely; migrate test functions if needed
+
+### 3.3.3 CNM Config Helper Duplication (TODO)
+Several CNM functions duplicate haws-config functionality. From cnm.lsp lines 3416-3421:
+1. Move generic config helpers to haws-config.lsp
+2. Eliminate CNM-specific duplicates (hcnm-config-entry-*, hcnm-config-scope-eq, etc.)
+3. Simplify wrappers to pure delegation
+4. Document why scope check is needed (prevent circular dependency)
+
+### 3.3.4 API Doc Staleness
+`devtools/docs/api/haws-config-api.md` has stale information:
+- Shows `scope-code` as parameter to getvar/setvar (removed; auto-looked-up now)
+- Shows nested `"Scope"`/`"Var"` definitions format (actual format is flat list)
+- Shows `c:hcnm-config-getvar` (renamed to `hcnm-config-getvar` in v5.5.22)
+- Examples use 5-param getvar call (actual is 4-param)
 
 ---
 <!-- #endregion -->
@@ -341,7 +400,7 @@ HCNM_PROJINIT             ; Project INI refresh (disabled by default)
 - Leaders are moved (coordinate updates)
 - Surfaces change (elevation updates)
 
-**Solution:** A manually-invoked updater command recalculates auto-text values from XDATA metadata and reference objects. The updater reads each bubble's XDATA to find auto-text entries, looks up reference objects by handle, recalculates values, and writes updated text back to the bubble attributes.
+**Solution:** The Bubble Note Auto Text Updater (BNATU) is a manually-invoked command that recalculates auto-text values from XDATA metadata and reference objects. The updater reads each bubble's XDATA to find auto-text entries, looks up reference objects by handle, recalculates values, and writes updated text back to the bubble attributes.
 
 **History:** An earlier implementation used a VLR-OBJECT-REACTOR for automatic updates. This was removed in favor of the simpler manual updater approach.
 

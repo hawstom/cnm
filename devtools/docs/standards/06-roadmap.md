@@ -133,7 +133,6 @@ This volume tracks planned features, refactoring initiatives, and project milest
 **FIRM:** All bugs fixed and tested
 
 **Completed:**
-- ✅ Fixed reactor proliferation bug (ONE reactor for all bubbles)
 - ✅ Cleaned up XDATA mess (42 lines of abandoned planning code)
 - ✅ Fixed SPLIT_ON_NBSP bug (values without delimiters go to PREFIX not AUTO)
 - ✅ System-controlled attributes (NOTENUM, NOTEPHASE, NOTEGAP) always to PREFIX
@@ -234,7 +233,7 @@ This volume tracks planned features, refactoring initiatives, and project milest
 - cnm_core.lsp (commands and main logic)
 - cnm_bubble.lsp (bubble note system)
 - cnm_config.lsp (configuration management)
-- cnm_reactor.lsp (reactor system)
+- cnm_updater.lsp (auto-text update system)
 - cnm_notes.lsp (project notes and quantity takeoff)
 
 **Pros:**

@@ -100,7 +100,7 @@ Defines naming conventions for code (functions, variables, files).
 Defines file structure, folder organization, and where to find things.
 
 ### 2.4.4 Volume 05: Architecture
-Defines major architectural patterns (reactors, config system, delimiters, etc.).
+Defines major architectural patterns (auto-text updater, config system, delimiters, etc.).
 
 ### 2.4.5 Volume 06: Roadmap
 Defines planned features, refactoring goals, and version milestones.

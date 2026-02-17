@@ -266,7 +266,7 @@ Only prefix if type is ambiguous:
 ;; CLEAR (no prefix needed)
 attribute-list
 phase-list
-reactor-list
+updater-list
 bubbles  ; A list of bubble items
 
 ;; ACCEPTABLE (when clarification helps)
@@ -304,7 +304,7 @@ lst-bubbles
 ;; GOOD - clear at a glance
 hcnm-ldrblk-auto-pipe-format-diameter
 bubble-text-prefix-pipe-dia
-hcnm-ldrblk-assure-auto-text-has-reactor
+hcnm-ldrblk-assure-auto-text-has-updater
 ```
 
 ## 6.3 Short Names (Acceptable)
@@ -773,7 +773,7 @@ AutoCAD entity data format:
 '(("NOTETXT1" . "auto-text") ("NOTETXT2" . "auto-text"))
 
 ;; Config settings
-'(("BlockReactors" . "0") ("DebugReactors" . "0"))
+'(("BlockUpdater" . "0") ("DebugUpdater" . "0"))
 ```
 
 ### 12.4.2 Proper Lists
@@ -781,8 +781,9 @@ AutoCAD entity data format:
 ;; lattribs (tag + text, 2-element lists)
 '(("NOTETXT1" "text") ("NOTETXT2" "text"))
 
-;; Reactor data (nested collections)
-'(("HCNM-BUBBLE" (("owner-handle" (("bubble-handle" ...))))))
+;; [AI: Nested reactor data structure below is probably deprecated and
+;; should be removed once confirmed unnecessary for the BNATU updater.]
+;; '(("HCNM-BUBBLE" (("reference-handle" (("bubble-handle" ...))))))
 ```
 
 ## 12.5 Common Pitfall

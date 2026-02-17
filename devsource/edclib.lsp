@@ -3492,7 +3492,7 @@
 ;; HAWS app configuration definitions
 ;; These are shared HawsEDC configuration variables used by edclib.lsp and cnmaliaslib.lsp
 ;;; MOVED UP: Must be defined BEFORE USE LOG section uses it
-(defun haws-config-definitions ()
+(defun haws-app-config-definitions ()
   (list
     (list "AppFolder" (haws-filename-directory (findfile "cnm.mnl")) 0)  ; Session scope - set at load time
     (list "ImportLayerSettings" "YES" 2)  ; Project scope - INI file
@@ -3507,7 +3507,7 @@
 ;;; This allows edclib.lsp and cnmaliaslib.lsp to use HAWS-CONFIG without depending on CNM
 ;;; MOVED UP: Must register BEFORE USE LOG section calls haws-config-getvar
 (if haws-config-register-app
-  (haws-config-register-app "HAWS" (haws-config-definitions))
+  (haws-config-register-app "HAWS" (haws-app-config-definitions))
 )
 (defun haws-setvar (var val / scope-code) 
   ;; Get scope code to avoid calling hcnm-proj for non-Project variables

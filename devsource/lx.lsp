@@ -5,6 +5,7 @@
 (defun c:haws-lx ()
 (haws-core-init 255)
 (princ (haws-evangel-msg))
+(haws-tip 11 "\nTry LXX to edit selected layers in the Layers palette.")
 (haws-xlist 0))
 (defun c:haws-lxx ()
 (haws-core-init 256) (haws-xlist-multi))

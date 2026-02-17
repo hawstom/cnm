@@ -449,9 +449,9 @@ AutoCAD uses multiple coordinate systems with specific canonical relationships:
 
 **Solution:** For paper space bubbles referencing model space objects for coordinate-based auto-text, store viewport number in VPTRANS data (first element of viewport-data list). On updates, correctly transform auto-text coordinates from paper space to model space.
 
-#### 3.2.4. Auto-Text Update System
+#### 3.2.4. Auto-Text Update System (BNATU)
 
-**Quick Reference:** CNM uses a manually-invoked updater command to recalculate auto-text values from XDATA and reference objects. The old VLR-OBJECT-REACTOR system has been removed.
+**Quick Reference:** The Bubble Note Auto Text Updater (BNATU) is a manually-invoked command that recalculates auto-text values from XDATA and reference objects. The old VLR-OBJECT-REACTOR system has been removed.
 
 **REFERENCE** = Object providing calculation data (e.g., alignment for station/offset, pipe for diameter)
 
@@ -795,11 +795,11 @@ AutoLISP lacks standard testing frameworks. Current approach:
 
 - Legacy references removed, clean 2-element architecture implemented
 - `lattribs-split` needs proper XDATA search implementation
-- Reactor cleanup logic incomplete
+- Updater cleanup logic incomplete
 
 #### Related Resources
 
-- **Standards docs:** `standards_05_architecture.md`, `standards_06_lattribs_schema.md`
+- **Standards docs:** `devtools/docs/standards/05-architecture.md`
 - **Issue tracker:** https://github.com/hawstom/cnm/issues
 - **Project:** 20+ year-old codebase, actively maintained for civil engineering customers
 
