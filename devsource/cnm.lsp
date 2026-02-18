@@ -5348,10 +5348,8 @@ ImportLayerSettings=No
 ;;; then wblocking from each D block to the L and R blocks.
 ;;; I make the root entities layer zero so layers.dat truly controls all layers.
 ;;;
-;;; Hint: Toggle the [INSERT] key off to fill in the blanks for a new command.
-;;;       This will keep the columns aligned and easy to read.
 ;;; 
-;;;|COMMAND|LEFT BLK |RIGHT BLK |DRAG BLK |LAYER KEY |DIMSTYLE KEY
+;;; (haws-ldrblk blleft blrght bldrag bllay bldsty)
 ;;; -------------------------------------------------------------------------
 (defun c:haws-tcg ()
   (haws-core-init 208)
@@ -7476,6 +7474,9 @@ ImportLayerSettings=No
 )
 (defun hcnm-bn-auto-text-requires-coordinates-p (key-insensitive)
   (nth 4 (assoc (strcase key-insensitive) (hcnm-bn-auto-text-definitions)))
+)
+(defun hcnm-bn-get-auto-text-auto-types-list ()
+  (mapcar 'car (hcnm-bn-auto-text-definitions))
 )
 (defun hcnm-bn-get-auto-text-input-keywords-list ()
   (mapcar 'cadr (hcnm-bn-auto-text-definitions))
@@ -11575,7 +11576,7 @@ ImportLayerSettings=No
     hcnm-bn-eb-focused-tag "NOTETXT1"
     dclfile
      (load_dialog "cnm.dcl")
-    done-code 2
+    done-code (hcnm-bn-eb-get-done-code "SHOW")
   )
   (haws-debug
     (list
@@ -11625,13 +11626,13 @@ ImportLayerSettings=No
         )
      )
      (haws-debug (list "=== DEBUG: Entering dialog loop..."))
-     (while (> done-code -1)
+     (while (> done-code (hcnm-bn-eb-get-done-code "STOP"))
        (cond
-         ((= done-code 0) (setq done-code (hcnm-edit-bubble-cancel)))
-         ((= done-code 1)
+         ((= done-code (hcnm-bn-eb-get-done-code "CANCEL")) (setq done-code (hcnm-edit-bubble-cancel)))
+         ((= done-code (hcnm-bn-eb-get-done-code "SAVE"))
           (setq done-code (hcnm-bn-eb-save ename-bubble))
          )
-         ((= done-code 2)
+         ((= done-code (hcnm-bn-eb-get-done-code "SHOW"))
           ;; Show the CNM Bubble Note Editor dialog
           (setq
             done-code
@@ -11641,7 +11642,7 @@ ImportLayerSettings=No
              hcnm-bn-eb-focused-tag
           )
          )
-         ((= done-code 29)
+         ((= done-code (hcnm-bn-eb-get-done-code "CHGVIEW"))
           ;; Change View button - clear viewport transformation data and immediately prompt for new association
           (hcnm-bn-clear-viewport-transform-xdata ename-bubble)
           (princ
@@ -11654,14 +11655,14 @@ ImportLayerSettings=No
             nil                         ; No object reference status needed for super-clearance
             "LINK-VIEWPORT"
            )                            ; Super-clearance - bypass all gateways
-          (setq done-code 2)            ; Return to dialog
+          (setq done-code (hcnm-bn-eb-get-done-code "SHOW"))
          )
          (t
           ;; Process clicked action tile (button) other than cancel or save.
           ;; bubble-data-update: This is start point 2 of 2 of the bubble data logic. This one is for the bubble note editing process.
           ;; this is called whenever a dialog auto-text button is clicked.
           (hcnm-bn-eb-get-text ename-bubble done-code tag)
-          (setq done-code 2)
+          (setq done-code (hcnm-bn-eb-get-done-code "SHOW"))
          )
        )
      )
@@ -11674,7 +11675,6 @@ ImportLayerSettings=No
   (haws-core-restore)
   (princ)
 )
-
 (defun hcnm-bn-eb-get-text (ename-bubble done-code tag / auto-string
                             auto-type attr current-text old-auto-text
                             new-text handle-ref tag-handles composite-key
@@ -11683,19 +11683,9 @@ ImportLayerSettings=No
                            )
   (setq
     auto-type
-     (cadr (assoc done-code (hcnm-edit-bubble-done-codes)))
+     (nth (- done-code (hcnm-bn-eb-done-code-auto-text-offset)) (hcnm-bn-get-auto-text-auto-types-list))
   )
   (cond
-    ;; Handle ClearAuto button (code 28)
-    ((= done-code 28)
-     ;; Clear auto-text: remove XDATA and keep only user text
-     ;; NOTE: In 2-element architecture, auto-text is stored in XDATA
-     ;; Dialog shows full concatenated text, XDATA stores search needles
-     ;; Clearing auto means: keep display text as-is, remove XDATA
-     (setq attr (assoc tag hcnm-bn-eb-lattribs))
-     ;; For now, just keep the text as-is (XDATA will be cleared on save)
-     ;; IMPLEMENTATION NOTE: XDATA clearing handled by model layer on save
-    )
     ;; Handle auto-text generation buttons (only if auto-type is valid)
     ((and auto-type (not (= auto-type "")))
      ;; STEP 1: Save current text BEFORE auto-dispatch modifies it
@@ -11847,8 +11837,7 @@ ImportLayerSettings=No
     )
   )
 )
-
-(defun hcnm-edit-bubble-cancel () -1)
+(defun hcnm-edit-bubble-cancel () (hcnm-bn-eb-get-done-code "STOP"))
 ;;; Remove delimiters from lattribs before saving
 ;;; Concatenates prefix+auto+postfix into plain text
 (defun hcnm-bn-eb-remove-delimiters (lattribs / result)
@@ -11928,7 +11917,6 @@ ImportLayerSettings=No
     )
   )
 )
-;; This function is garbage at the moment. Should not be handling VPTRANS prompts, and is doing it wrong.
 (defun hcnm-bn-eb-save (ename-bubble)
   ;; NOTE: Tiles already read into lattribs by accept action_tile
   ;; Save attributes (concatenated) and XDATA (auto text only)
@@ -11943,27 +11931,23 @@ ImportLayerSettings=No
   )
   -1
 )
-(defun hcnm-edit-bubble-done-codes (/ eb-done)
-  (setq eb-done t)
-  '((11 "LF" eb-done)
-    (12 "SF" eb-done)
-    (13 "SY" eb-done)
-    (14 "STA" eb-done)
-    (15 "OFF" eb-done)
-    (16 "STAOFF" eb-done)
-    (17 "NAME" eb-done)
-    (18 "STANAME" eb-done)
-    (19 "N" eb-done)
-    (20 "E" eb-done)
-    (21 "NE" eb-done)
-    (22 "Z" eb-done)
-    (23 "TEXT" eb-done)
-    (25 "DIA" eb-done)
-    (26 "SLOPE" eb-done)
-    (27 "L" eb-done)
-   )
+;; Assigns DONE_DIALOG codes other than the autotext buttons.
+(defun
+   hcnm-bn-eb-get-done-code (key)
+  (cdr
+    (assoc
+      key
+      (list
+        (cons "STOP" -1)
+        (cons "CANCEL" 0)
+        (cons "SAVE" 1)
+        (cons "SHOW" 2)
+        (cons "CHGVIEW" 3)
+      )
+    )
+  )
 )
-
+(defun hcnm-bn-eb-done-code-auto-text-offset () 10)
 ;; ACTION_TILE callback: Update text value in lattribs when user types (2-element)
 ;; User typing replaces the entire text value
 ;; Update text value when user types in dialog field
@@ -12030,19 +12014,7 @@ ImportLayerSettings=No
      )
   )
 )
-
-;;; DEPRECATED - No postfix field in 2-element architecture
-;;; Postfix was only needed in 4-element (prefix auto postfix) structure
-(defun hcnm-bn-eb-update-postfix (tag new-postfix / attr)
-  (alert
-    (princ
-      "\nDEPRECATED: eb-update-postfix called - no postfix in 2-element lattribs"
-    )
-  )
-  ;; Do nothing - no postfix field exists
-)
-
-(defun hcnm-bn-eb-show (dclfile ename-bubble / tag
+(defun hcnm-bn-eb-show (dclfile ename-bubble / i tag
                         value parts prefix auto postfix on-model-tab-p
                         lst-dlg-attributes 
                        )
@@ -12068,7 +12040,7 @@ ImportLayerSettings=No
       (haws-evangel-msg)
     )
   )
-  (mode_tile "ChgView" 0)               ; Always enable
+  (mode_tile "CHGVIEW" 0)               ; Always enable
   (haws-debug (list "=== DEBUG: About to call lattribs-to-dlg..."))
   ;; ARCHITECTURE: Transform clean lattribs to dialog display format (with format codes)
   ;; This is the ONLY place we transform for display
@@ -12105,26 +12077,24 @@ ImportLayerSettings=No
       )
     )
   )
-  ;;Auto text buttons
+  ;;Actions for auto text buttons
+  (setq i (1- (hcnm-bn-eb-done-code-auto-text-offset)))
   (mapcar
-    '(lambda (code)
+    '(lambda (auto-type)
        (action_tile
-         (cadr code)
-         (strcat "(DONE_DIALOG " (itoa (car code)) ")")
+         auto-type
+         (strcat "(DONE_DIALOG " (itoa (setq i (1+ i))) ")")
        )
      )
-    (hcnm-edit-bubble-done-codes)
+    (hcnm-bn-get-auto-text-auto-types-list)
   )
-  ;; Clear Auto Text button
-  (action_tile "ClearAuto" "(DONE_DIALOG 28)")
-  ;; Change View button (paper space only)
-  (action_tile "ChgView" "(DONE_DIALOG 29)")
+  ;; Action for Change View button (paper space only)
+  (action_tile "CHGVIEW" (strcat "(DONE_DIALOG " (itoa (hcnm-bn-eb-get-done-code "CHGVIEW")) ")"))
   ;; CRITICAL: Read tiles into lattribs before closing (action_tile doesn't fire on OK click)
-  (action_tile "accept" "(progn (hcnm-bn-eb-tiles-to-lattribs) (DONE_DIALOG 1))")
-  (action_tile "cancel" "(DONE_DIALOG 0)")
+  (action_tile "accept" (strcat "(progn (hcnm-bn-eb-tiles-to-lattribs) (DONE_DIALOG " (itoa (hcnm-bn-eb-get-done-code "SAVE")) "))"))
+  (action_tile "cancel" (strcat "(DONE_DIALOG " (itoa (hcnm-bn-eb-get-done-code "CANCEL")) ")"))
   (start_dialog)
 )
-
 ;; Split string on delimiter
 ;; Keep this in case users decide to go to a free-form single-field editor later.
 ;; Returns list of substrings split on DELIM
@@ -12140,6 +12110,7 @@ ImportLayerSettings=No
   )
   (append result (list str))
 )
+(princ "Loaded to comment.")
 
 ;; Concatenate prefix, auto, and postfix into a 3-element list structure.
 ;; Uses clean list structure for robust text manipulation.
@@ -13030,6 +13001,9 @@ ImportLayerSettings=No
 (load "ini-edit")
 ;#endregion
 
- ;|ï¿½Visual LISPï¿½ Format Optionsï¿½
+;|ï¿½Visual LISPï¿½ Format Optionsï¿½
+(72 2 40 2 nil "end of " 60 2 1 1 1 nil nil nil T)
+;*** DO NOT add text below the comment! ***|;
+;|«Visual LISP© Format Options»
 (72 2 40 2 nil "end of " 60 2 1 1 1 nil nil nil T)
 ;*** DO NOT add text below the comment! ***|;

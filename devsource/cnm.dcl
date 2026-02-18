@@ -528,13 +528,13 @@ HCNMEditBubble : dialog {
 		}
 	}
 	: row {
+		: button {label = "Text"; key = "TEXT";}
 		: button {label = "LF"; key = "LF";}
 		: button {label = "SF"; key = "SF";}
 		: button {label = "SY"; key = "SY";}
 		: button {label = "N"; key = "N";}
 		: button {label = "E"; key = "E";}
 		: button {label = "NE"; key = "NE";}
-		: button {label = "Z"; key = "Z";}
 	}
 	: row {
 		: button {label = "Sta"; key = "STA";}
@@ -547,10 +547,9 @@ HCNMEditBubble : dialog {
 		: button {label = "Dia"; key = "DIA";}
 		: button {label = "Slope"; key = "SLOPE";}
 		: button {label = "L"; key = "L";}
-		: button {label = "_"; key = "ClearAuto"; width = 3;}
 	}
 	: row {
-		: button {label = "Associate with a different viewport"; key = "ChgView";}
+		: button {label = "Associate with a different viewport"; key = "CHGVIEW";}
 	}
 	: row {
 		: text {
