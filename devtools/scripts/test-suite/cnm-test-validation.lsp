@@ -66,7 +66,7 @@
   (if report-file
     (progn
       (while (setq line (read-line report-file))
-        (if (wcmatch line "**Status:** *")
+        (if (wcmatch line "*Status:*")
           (progn
             (setq status-line (substr line 13))  ; Skip "**Status:** "
             (cond
