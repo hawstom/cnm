@@ -6221,7 +6221,7 @@ ImportLayerSettings=No
 ;;==============================================================================
 ;; Copy viewport transform (VPTRANS XRECORD) from old bubble to new bubble
 ;; Used during replace-bubble operation to preserve paper space coordinate transforms
-(defun hcnm-bn-copy-vptrans (ename-old ename-new / vptrans-data viewport-handle)
+(defun hcnm-bn-copy-vptrans (ename-old ename-new / viewport-handle)
   (cond
     ;; Try NEW format first (viewport handle in XDATA, VPTRANS in viewport's extdict)
     ((setq viewport-handle (hcnm-bn-get-viewport-handle ename-old))
@@ -6230,18 +6230,6 @@ ImportLayerSettings=No
        (list
          "[REPLACE] Copied viewport handle from old bubble to new bubble: "
          viewport-handle
-       )
-     )
-     t
-    )
-    ;; Fall back to OLD format (VPTRANS in bubble's extdict)
-    ((setq vptrans-data (hcnm-xdata-get-vptrans ename-old))
-     ;; Old bubble has VPTRANS - copy to new bubble
-     (hcnm-xdata-set-vptrans ename-new vptrans-data)
-     (haws-debug
-       (list
-         "[REPLACE] Copied VPTRANS from old bubble to new bubble: "
-         (vl-princ-to-string vptrans-data)
        )
      )
      t
@@ -9432,12 +9420,8 @@ ImportLayerSettings=No
      )
     )
     (t
-     ;; LEGACY FALLBACK: Try old location (bubble XRECORD)
-     (setq vptrans-data (hcnm-xdata-get-vptrans ename-bubble))
-     (if vptrans-data
-       (haws-debug "LEGACY: Using VPTRANS from bubble XRECORD (run migration)")
-     )
-     vptrans-data
+     ;; No viewport handle - model space bubble or legacy data
+     nil
     )
   )
 )
@@ -9495,17 +9479,13 @@ ImportLayerSettings=No
      t
     )
     (t
-     ;; FALLBACK: Viewport not found, use old architecture
+     ;; Viewport not found - cannot store VPTRANS
      (haws-debug
        (list
          "WARNING: Viewport #"
          (itoa cvport)
-         " not found - using legacy bubble VPTRANS storage"
+         " not found - cannot store viewport transform"
        )
-     )
-     (hcnm-xdata-set-vptrans
-       ename-bubble
-       (list cvport ref-ocs-1 ref-wcs-1 ref-ocs-2 ref-wcs-2 ref-ocs-3 ref-wcs-3)
      )
      nil
     )
@@ -10037,77 +10017,6 @@ ImportLayerSettings=No
   )
 )
 
-;; Write VPTRANS to XRECORD in extension dictionary
-;; viewport-data: (cvport ref-ocs-1 ref-wcs-1 ref-ocs-2 ref-wcs-2 ref-ocs-3 ref-wcs-3)
-(defun hcnm-vptrans-write (ename-bubble viewport-data / dict-ename xrec-data
-                       cvport ref-points
-                      )
-  (setq dict-ename (hcnm-extdict-get ename-bubble))
-  (cond
-    (viewport-data
-     (setq
-       cvport
-        (car viewport-data)
-       ref-points
-        (cdr viewport-data)
-     )
-     ;; Build XRECORD data list with labeled fields
-     (setq
-       xrec-data
-        (list
-          '(0 . "XRECORD")
-          '(100 . "AcDbXrecord")
-          (cons 70 cvport)
-        )
-     )                                  ; 70 = short integer for cvport
-     ;; Add all 6 reference points as 3D points (code 10)
-     (foreach
-        pt ref-points
-       (setq xrec-data (append xrec-data (list (cons 10 pt))))
-     )
-     ;; Create or update VPTRANS xrecord
-     (dictadd dict-ename "VPTRANS" (entmakex xrec-data))
-     t
-    )
-    (t nil)
-  )
-)
-
-;; Read VPTRANS from XRECORD in extension dictionary  
-;; Returns: (cvport ref-ocs-1 ref-wcs-1 ... ref-wcs-3) or nil
-(defun hcnm-vptrans-read
-   (ename-bubble / dict-ename vptrans-rec cvport ref-points)
-  (setq dict-ename (hcnm-extdict-get ename-bubble))
-  (cond
-    ((and
-       dict-ename
-       (setq vptrans-rec (dictsearch dict-ename "VPTRANS"))
-     )
-     (setq vptrans-rec (entget (cdr (assoc -1 vptrans-rec))))
-     ;; Extract cvport (code 70)
-     (setq cvport (cdr (assoc 70 vptrans-rec)))
-     ;; Extract all points (code 10)
-     (setq ref-points '())
-     (foreach
-        item vptrans-rec
-       (cond
-         ((= (car item) 10)
-          (setq ref-points (append ref-points (list (cdr item))))
-         )
-       )
-     )
-     ;; Return viewport data
-     (cond
-       ((and cvport (= (length ref-points) 6))
-        (cons cvport ref-points)
-       )
-       (t nil)
-     )
-    )
-    (t nil)
-  )
-)
-
 ;;------------------------------------------------------------------------------
 ;; VIEWPORT-CENTRIC VPTRANS FUNCTIONS (New Architecture 2025-11)
 ;;------------------------------------------------------------------------------
@@ -10562,22 +10471,10 @@ ImportLayerSettings=No
   )
 )
 
-;; Update viewport transform (now uses XRECORD)
-;; viewport-data: (cvport ref-ocs-1 ref-wcs-1 ... ref-wcs-3)
-(defun hcnm-xdata-set-vptrans (ename-bubble viewport-data)
-  (hcnm-vptrans-write ename-bubble viewport-data)
-)
-
 ;; Update auto-text (uses XDATA)
 ;; autotext-alist: (("TAG1" . "value1") ("TAG2" . "value2") ...)
 (defun hcnm-xdata-set-autotext (ename-bubble autotext-alist)
   (hcnm-xdata-write ename-bubble autotext-alist)
-)
-
-;; Get viewport transform data (now from XRECORD)
-;; Returns: (cvport ref-ocs-1 ref-wcs-1 ... ref-wcs-3) or nil
-(defun hcnm-xdata-get-vptrans (ename-bubble)
-  (hcnm-vptrans-read ename-bubble)
 )
 
 ;; Get auto-text data (from XDATA)
@@ -12677,20 +12574,34 @@ ImportLayerSettings=No
   differences
 )
 
-;; Command to show XRECORD data for selected bubble
-(defun c:hcnm-debug-xrecord (/ en vptrans)
-  (princ "\nSelect a bubble note to view XRECORD data: ")
+;; Command to show VPTRANS data for selected bubble (viewport-centric)
+(defun c:hcnm-debug-xrecord (/ en viewport-handle en-viewport vptrans)
+  (princ "\nSelect a bubble note to view VPTRANS data: ")
   (setq en (car (entsel)))
   (if en
     (progn
-      (princ "\n=== XRECORD DATA ===")
-      (setq vptrans (hcnm-xdata-get-vptrans en))
-      (princ "\nVPTRANS (viewport transform): ")
-      (if vptrans
-        (princ (vl-prin1-to-string vptrans))
-        (princ "NONE")
+      (princ "\n=== VPTRANS DATA ===")
+      (setq viewport-handle (hcnm-bn-get-viewport-handle en))
+      (princ "\nViewport handle: ")
+      (if viewport-handle
+        (progn
+          (princ viewport-handle)
+          (setq en-viewport (handent viewport-handle))
+          (if en-viewport
+            (progn
+              (setq vptrans (hcnm-vptrans-viewport-read en-viewport))
+              (princ "\nVPTRANS (viewport transform): ")
+              (if vptrans
+                (princ (vl-prin1-to-string vptrans))
+                (princ "NONE (viewport has no VPTRANS)")
+              )
+            )
+            (princ "\n  Viewport entity not found (deleted?)")
+          )
+        )
+        (princ "NONE (model space or no viewport association)")
       )
-      (princ "\n=== END XRECORD ===")
+      (princ "\n=== END VPTRANS ===")
     )
     (princ "\nNo entity selected.")
   )

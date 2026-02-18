@@ -325,42 +325,48 @@ Several CNM functions duplicate haws-config functionality. From cnm.lsp lines 34
 ### 4.1.2 XDATA Storage Patterns
 
 **Two Storage Systems:**
-1. **XDATA** - Auto-text composite keys (small, frequent access)
-2. **XRECORD** - Viewport transforms (large, infrequent access)
+1. **XDATA** - Auto-text composite keys + viewport handle (small, frequent access)
+2. **XRECORD** - Viewport transforms stored on the viewport entity (large, shared across bubbles)
 
 **XDATA Format - Composite Key Storage**
 ```autolisp
 ;; (("TAG" (((auto-type . handle) . "value") ...)) ...)
 (("NOTETXT1" ((("StaOff" . "ABC123") . "STA 10+25.00 OFF 5.0' RT")))
- ("NOTETXT2" ((("N" . "") . "N 123456.78") 
+ ("NOTETXT2" ((("N" . "") . "N 123456.78")
               (("E" . "") . "E 789012.34"))))
 ```
 
-**XRECORD Format - Viewport Transform Storage**
+**Viewport Transform (VPTRANS) - Viewport-Centric Architecture**
 
-**Storage location:** Extension dictionary → `"HCNM"` dict → `"VPTRANS"` xrecord
+**Storage:** Two-part design eliminates redundancy:
+1. **Bubble XDATA** stores only the viewport handle (`"HCNM-VIEWPORT"` key)
+2. **Viewport's ExtDict** stores the VPTRANS XRECORD (shared by all bubbles in that viewport)
 
 **Data structure:** `(cvport ref-ocs-1 ref-wcs-1 ref-ocs-2 ref-wcs-2 ref-ocs-3 ref-wcs-3)`
 - cvport = viewport number (integer)
-- Three 3D point pairs defining affine transformation
+- Three 3D point pairs defining affine transformation (OCS→WCS mapping)
 
-**Service Layer API:**
+**API:**
 ```autolisp
-(hcnm-xdata-get-vptrans ename-bubble)         ; Returns viewport data or nil
-(hcnm-xdata-set-vptrans ename-bubble data)    ; Writes to XRECORD
+;; Viewport handle on bubble
+(hcnm-bn-get-viewport-handle ename-bubble)       ; Returns handle string or nil
+(hcnm-bn-set-viewport-handle ename-bubble handle) ; Stores handle in XDATA
+;; VPTRANS data on viewport
+(hcnm-vptrans-viewport-read en-viewport)          ; Returns data list or nil
+(hcnm-vptrans-viewport-write en-viewport data)    ; Writes to viewport ExtDict
+;; Bridge functions (combine both)
+(hcnm-bn-get-viewport-transform-xdata ename-bubble) ; Handle → viewport → data
+(hcnm-bn-set-viewport-transform-xdata ename-bubble cvport ...) ; Finds viewport, stores both
 ```
 
 **When created:**
-1. User places bubble in paper space with coordinate-based auto-text (N/E/NE)
+1. User places bubble in paper space with coordinate-based auto-text (N/E/NE/Sta/Off/etc.)
 2. User clicks alignment/pipe in paper space for station/offset/diameter
 3. "Change View" button in edit dialog (explicit viewport reassociation)
 
-**When used:** Every updater run for paper space bubbles - transforms leader arrowhead position from paper space OCS to model space WCS.
+**When used:** Every updater run for paper space bubbles with coordinate-based auto-text — transforms leader arrowhead position from paper space OCS to model space WCS.
 
-**Migration note (2025-11-05):**
-- ✅ VPTRANS moved from XDATA to XRECORD (frees ~200 bytes per bubble)
-- ✅ Auto-text remains in XDATA (small, dynamic)
-- ✅ NOTEDATA attribute deprecated (never used)
+**Model space bubbles** do not need VPTRANS (coordinates are already in WCS).
 
 ### 4.1.3 bubble-data Alist
 
