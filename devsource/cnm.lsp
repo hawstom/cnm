@@ -7455,7 +7455,7 @@ ImportLayerSettings=No
     ("N" "N" "N" nil t)                     ; Northing - needs p1-world for coordinate
     ("E" "E" "E" nil t)                     ; Easting - needs p1-world for coordinate
     ("NE" "NE" "NE" nil t)                   ; Northing+Easting - needs p1-world for coordinate
-    ("Z" "Z" "Z" "SU" t)                    ; Elevation - needs p1-world for surface query (unimplemented)
+;;    ("Z" "Z" "Z" "SU" t)                    ; Elevation - needs p1-world for surface query (unimplemented)
     ("DIA" "Dia" "Dia" "PIPE" nil)            ; Pipe Diameter - user selects pipe object
     ("SLOPE" "SLope" "Slope" "PIPE" nil)        ; Pipe Slope - user selects pipe object
     ("L" "L" "L" "PIPE" nil)                ; Pipe Length - user selects pipe object
