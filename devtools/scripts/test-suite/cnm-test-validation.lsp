@@ -90,10 +90,9 @@
       )
       "\\PResults: "
       (itoa pass-count) " PASS, "
-      (itoa fail-count) " FAIL, "
-      (itoa info-count) " INFO"
+      (itoa fail-count) " FAIL"
       "\\P\\PAuto-Text Validation"
-      "\\P- 16 bubble insertions (all 16 auto-text types)"
+      "\\P- 16 bubble insertions (8 with all 16 auto-text types plus 8 legacy)"
       "\\PKey Notes & QT Tables: Key Notes Table generation validated and QT Table generation validated"
       "\\PCNM-Demo Coverage (CNM Plus Utilities): haws-contvol, haws-ut, haws-mof, haws-lotnum, haws-newpro (profile drafter)"
       "\\P\\PReview test-results/cnm-test-report.md for detailed results."
