@@ -280,6 +280,7 @@ SLOPE
 (test-validate-xdata (entlast) "NOTETXT2" "SLOPE" "BUBBLE 4, HEX 1, LINE 2")
 ;;
 ;; === MODEL SPACE BUBBLES 5-8 ===
+(hcnm-config-setvar "BubbleMtext" "1")
 mspace
 ;;
 ;; BUBBLE 5: SF + SY (Model Space, 1R 3U)
@@ -349,6 +350,14 @@ sta
 (test-validate-xdata (entlast) "NOTETXT1" "NAME" "BUBBLE 7, DIA 1, LINE 1")
 (test-validate-auto-text (entlast) "NOTETXT2" "STA 53+40.00" "BUBBLE 7, DIA 1, LINE 2: Sta (Model)")
 (test-validate-xdata (entlast) "NOTETXT2" "STA" "BUBBLE 7, DIA 1, LINE 2")
+;; HCNM-REPLACE-BUBBLE TEST ON BUBBLE 7.
+HCNM-REPLACE-BUBBLE
+last
+10375,20250
+(test-validate-auto-text (entlast) "NOTETXT1" "OAK ST" "REPLACE BUBBLE 7, DIA 1, LINE 1: Name (Model)")
+(test-validate-xdata (entlast) "NOTETXT1" "NAME" "REPLACE BUBBLE 7, DIA 1, LINE 1")
+(test-validate-auto-text (entlast) "NOTETXT2" "STA 53+40.00" "REPLACE BUBBLE 7, DIA 1, LINE 2: Sta (Model)")
+(test-validate-xdata (entlast) "NOTETXT2" "STA" "REPLACE BUBBLE 7, DIA 1, LINE 2")
 ;;
 ;; BUBBLE 8: L + E (Model Space, 1R 4D)
 ;; Arrow: 10380,20200 - on pipe
@@ -370,6 +379,7 @@ e
 (test-validate-xdata (entlast) "NOTETXT1" "L" "BUBBLE 8, OCT 2, LINE 1")
 (test-validate-auto-text (entlast) "NOTETXT2" "E 10380.00" "BUBBLE 8, OCT 2, LINE 2: E (Model)")
 (test-validate-xdata (entlast) "NOTETXT2" "E" "BUBBLE 8, OCT 2, LINE 2")
+(hcnm-config-setvar "BubbleMtext" 0)
 ;; Return to model space for downstream tests
 ;;
 mspace
