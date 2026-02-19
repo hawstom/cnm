@@ -7494,8 +7494,8 @@ ImportLayerSettings=No
 ;; 
 ;; Bubble note editing process from inside out:
 ;; hcnm-bn-auto-dispatch returns lattribs
-;; hcnm-bn-eb-get-text modifies semi-global hcnm-bn-eb-lattribs after adjusting formatting (overline and underline)
-;; hcnm-bn-eb-save calls hcnm-set-attributes to save semi-global hcnm-bn-eb-lattribs
+;; hcnm-bn-eb-get-text modifies hcnm-bn-eb-state after adjusting formatting (overline and underline)
+;; hcnm-bn-eb-save calls hcnm-set-attributes to save from hcnm-bn-eb-state
 ;; hcnm-edit-bubble top level manages editing dialog
 ;;
 ;; Update process from inside out:
@@ -10492,7 +10492,7 @@ ImportLayerSettings=No
 
 ;; Save only XDATA for auto-text (helper for dialog save path)
 ;;
-;; REQUIRES: Semi-global hcnm-bn-eb-auto-handles must be bound (dialog context only)
+;; PARAM: auto-handles - composite-key format from hcnm-bn-eb-state
 ;; WRITES: Composite-key format XDATA (handles + auto-text)
 ;;
 ;; The HCNM-BUBBLE section of XDATA for a bubble note stores:
@@ -10505,22 +10505,21 @@ ImportLayerSettings=No
 ;; Simple format DEPRECATED. Only composite-key format supported.
 ;; bnatu path uses hcnm-bn-xdata-update-one (maintains composite-key format).
 ;; This function is ONLY for dialog save path where semi-global is bound.
-(defun hcnm-bn-xdata-save (ename-bubble lattribs / autotext-alist)
-  ;; Note: hcnm-bn-eb-auto-handles is a semi-global (local to hcnm-edit-bubble)
-  ;; It's always set by hcnm-edit-bubble before calling this function
-  ;; Semi-global being nil/empty is VALID - means user cleared all auto-text
+(defun hcnm-bn-xdata-save (ename-bubble auto-handles / autotext-alist)
+  ;; auto-handles: composite-key format from hcnm-bn-eb-state
+  ;; nil/empty is VALID - means user cleared all auto-text
   (cond
-    ((not hcnm-bn-eb-auto-handles)
-     ;; Semi-global empty - user cleared all auto-text, write empty XDATA
-     (haws-debug (list "XDATA-SAVE: semi-global=EMPTY handle=" (cdr (assoc 5 (entget ename-bubble)))))
+    ((not auto-handles)
+     ;; Empty - user cleared all auto-text, write empty XDATA
+     (haws-debug (list "XDATA-SAVE: auto-handles=EMPTY handle=" (cdr (assoc 5 (entget ename-bubble)))))
      (setq autotext-alist '())
      (hcnm-xdata-set-autotext ename-bubble autotext-alist)
      (haws-debug (list "XDATA-SAVE: wrote-empty-list handle=" (cdr (assoc 5 (entget ename-bubble)))))
     )
     (t
-     ;; Normal case: Write composite-key format from semi-global
-     (setq autotext-alist hcnm-bn-eb-auto-handles)
-     (haws-debug (list "XDATA-SAVE: semi-global=HAS-DATA count=" (itoa (length autotext-alist)) "handle=" (cdr (assoc 5 (entget ename-bubble)))))
+     ;; Normal case: Write composite-key format
+     (setq autotext-alist auto-handles)
+     (haws-debug (list "XDATA-SAVE: auto-handles=HAS-DATA count=" (itoa (length autotext-alist)) "handle=" (cdr (assoc 5 (entget ename-bubble)))))
      (hcnm-xdata-set-autotext ename-bubble autotext-alist)
      (haws-debug (list "XDATA-SAVE: wrote-data handle=" (cdr (assoc 5 (entget ename-bubble)))))
     )
@@ -11510,70 +11509,23 @@ ImportLayerSettings=No
   (haws-editall t)
   (haws-core-restore)
 )
-;;==============================================================================
-;; hcnm-bn-eb-init-auto-handles
-;;==============================================================================
-;; Purpose:
-;;   Initialize semi-global auto-handles from existing XDATA when dialog opens.
-;;   Extracts only composite-key format entries (lists), filters out simple strings.
-;;
-;; Arguments:
-;;   ename-bubble - Entity name of bubble
-;;
-;; Returns:
-;;   Alist in format: (("TAG" ((composite-key . "auto-text") ...)) ...)
-;;
-;; Why:
-;;   Smart replace needs existing auto-text as "search needle". Without this,
-;;   editing a bubble that already has StaOff would have no old-auto-text to replace.
-;;
-;; ARCHITECTURAL NOTE (2025-11-06):
-;;   Simple format DEPRECATED. All bubbles now use composite-key format.
-;;   No filtering needed - hcnm-xdata-read returns composite-key format only.
-;;   If simple format found, hcnm-xdata-read will FAIL LOUDLY (data corruption).
-;;
-;; Example:
-;;   XDATA has: (("NOTETXT1" ((("STAOFF" . "ABC123") . "STA 10+25.50"))))
-;;   Returns:   (("NOTETXT1" ((("STAOFF" . "ABC123") . "STA 10+25.50"))))
-;;==============================================================================
-(defun hcnm-bn-eb-init-auto-handles (ename-bubble)
-  ;; Simply return XDATA directly - no filtering needed
-  ;; If simple format exists, hcnm-xdata-read will alert (data corruption)
-  (hcnm-xdata-read ename-bubble)
-)
-
 (defun hcnm-edit-bubble (ename-bubble / bubble-data dclfile ename-leader
-                     hcnm-bn-eb-lattribs hcnm-bn-eb-auto-handles
-                     return-list tag done-code 
+                     hcnm-bn-eb-state
+                     return-list tag done-code
                     )
   (haws-debug (list "=== DEBUG: Entering hcnm-edit-bubble"))
   (setq
     ename-leader
      (hcnm-bn-bubble-leader ename-bubble)
-    ;; Semi-global variable. Global to the hcnm-bn-eb- functions called from here.
-    ;; Read attributes and XDATA to get prefix/auto/postfix structure
-    hcnm-bn-eb-lattribs
-     (hcnm-bn-dwg-to-lattribs ename-bubble)
-    ;; Semi-global: Track handle associations for auto-texts during editing
-    ;; Format: (("TAG" ((composite-key . "auto-text") ...)) ...)
-    ;; where composite-key = (cons auto-type handle-reference)
-    ;; Initialize from XDATA only when editing DIFFERENT bubble or FIRST time
-    ;; Same bubble dialog reopening preserves accumulated changes from button clicks  
-    hcnm-bn-eb-auto-handles
-     (cond
-       ;; Different bubble or first time - initialize from XDATA
-       ((or (not (boundp 'hcnm-bn-eb-current-bubble))
-            (not (boundp 'hcnm-bn-eb-auto-handles))
-            (/= (cdr (assoc 5 (entget ename-bubble))) hcnm-bn-eb-current-bubble))
-        (setq hcnm-bn-eb-current-bubble (cdr (assoc 5 (entget ename-bubble))))
-        (hcnm-bn-eb-init-auto-handles ename-bubble))
-       ;; Same bubble dialog reopening - keep accumulated changes
-       (t hcnm-bn-eb-auto-handles)
+    ;; Semi-global: Combined edit dialog state for hcnm-bn-eb-* callbacks.
+    ;; Keys: "LATTRIBS" (attribute text), "AUTO-HANDLES" (XDATA composite keys),
+    ;;        "FOCUSED-TAG" (which edit box has focus for auto-text insertion)
+    hcnm-bn-eb-state
+     (list
+       (list "LATTRIBS" (hcnm-bn-dwg-to-lattribs ename-bubble))
+       (list "AUTO-HANDLES" (hcnm-xdata-read ename-bubble))
+       (list "FOCUSED-TAG" "NOTETXT1")
      )
-    ;; Focus tracking - replaces radio button selection
-    ;; Track which edit box has focus for auto-text insertion
-    ;; Default to NOTETXT1 (line 1 is default target)
-    hcnm-bn-eb-focused-tag "NOTETXT1"
     dclfile
      (load_dialog "cnm.dcl")
     done-code (hcnm-bn-eb-get-done-code "SHOW")
@@ -11581,7 +11533,7 @@ ImportLayerSettings=No
   (haws-debug
     (list
           "=== DEBUG: lattribs read, count="
-          (itoa (length hcnm-bn-eb-lattribs))
+          (itoa (length (cadr (assoc "LATTRIBS" hcnm-bn-eb-state))))
           "\n=== DEBUG: dclfile="
           (if dclfile
             (itoa dclfile)
@@ -11591,7 +11543,7 @@ ImportLayerSettings=No
   )
   ;; Validate lattribs before proceeding
   (cond
-    ((not hcnm-bn-eb-lattribs)
+    ((not (cadr (assoc "LATTRIBS" hcnm-bn-eb-state)))
      (alert (princ "\nERROR: Failed to read bubble attributes"))
      (haws-core-restore)
      (princ)
@@ -11639,7 +11591,7 @@ ImportLayerSettings=No
              (hcnm-bn-eb-show dclfile ename-bubble)
             ;; Use focused tag from focus tracking (no radio button needed)
             tag
-             hcnm-bn-eb-focused-tag
+             (cadr (assoc "FOCUSED-TAG" hcnm-bn-eb-state))
           )
          )
          ((= done-code (hcnm-bn-eb-get-done-code "CHGVIEW"))
@@ -11679,7 +11631,7 @@ ImportLayerSettings=No
                             auto-type attr current-text old-auto-text
                             new-text handle-ref tag-handles composite-key
                             existing-entry bubble-data auto-metadata metadata-entry
-                            handle-ref-from-auto
+                            handle-ref-from-auto auto-handles
                            )
   (setq
     auto-type
@@ -11689,7 +11641,7 @@ ImportLayerSettings=No
     ;; Handle auto-text generation buttons (only if auto-type is valid)
     ((and auto-type (not (= auto-type "")))
      ;; STEP 1: Save current text BEFORE auto-dispatch modifies it
-     (setq attr (assoc tag hcnm-bn-eb-lattribs))
+     (setq attr (assoc tag (cadr (assoc "LATTRIBS" hcnm-bn-eb-state))))
      (setq
        current-text
         (if attr
@@ -11699,7 +11651,7 @@ ImportLayerSettings=No
      )
      ;; STEP 2: Get old auto-text from XDATA using composite key
      ;; For existing auto-text, get handle-ref from existing XDATA (semi-global)
-     (setq tag-handles (cdr (assoc tag hcnm-bn-eb-auto-handles)))
+     (setq tag-handles (cdr (assoc tag (cadr (assoc "AUTO-HANDLES" hcnm-bn-eb-state)))))
      (haws-debug (list "=== DEBUG eb-get-text: tag=" tag " auto-type=" auto-type))
      (haws-debug (list "=== DEBUG eb-get-text: tag-handles=" (vl-prin1-to-string tag-handles)))
      (setq handle-ref "")  ; Default for handleless auto-text (N/E/NE)
@@ -11732,16 +11684,23 @@ ImportLayerSettings=No
      ;; Build minimal bubble-data for auto-dispatch
      (setq 
        bubble-data (hcnm-bn-bubble-data-set nil "ename-bubble" ename-bubble)
-       bubble-data (hcnm-bn-bubble-data-set bubble-data "ATTRIBUTES" hcnm-bn-eb-lattribs)
+       bubble-data (hcnm-bn-bubble-data-set bubble-data "ATTRIBUTES" (cadr (assoc "LATTRIBS" hcnm-bn-eb-state)))
      )
      (setq
        bubble-data
         (hcnm-bn-auto-dispatch
           tag auto-type nil bubble-data nil ; nil obj-reference, nil bnatu-context-p (edit dialog insertion)
          )
-       ;; Extract updated lattribs from bubble-data
-       hcnm-bn-eb-lattribs
-        (hcnm-bn-bubble-data-get bubble-data "ATTRIBUTES")
+     )
+     ;; Extract updated lattribs from bubble-data into state
+     (setq hcnm-bn-eb-state
+       (subst
+         (list "LATTRIBS" (hcnm-bn-bubble-data-get bubble-data "ATTRIBUTES"))
+         (assoc "LATTRIBS" hcnm-bn-eb-state)
+         hcnm-bn-eb-state
+       )
+     )
+     (setq
        ;; Extract handle from auto-metadata list (if auto function provided it)
        ;; Metadata format: ((tag auto-type handle auto-text) ...)
        handle-ref-from-auto
@@ -11774,7 +11733,7 @@ ImportLayerSettings=No
         (setq handle-ref handle-ref-from-auto))
      )
      ;; STEP 4: Extract just the auto-text that was generated (plain text, no format codes)
-     (setq attr (assoc tag hcnm-bn-eb-lattribs))
+     (setq attr (assoc tag (cadr (assoc "LATTRIBS" hcnm-bn-eb-state))))
      (setq
        auto-string
         (if attr
@@ -11782,33 +11741,39 @@ ImportLayerSettings=No
           ""
         )
      )
-     ;; STEP 4.5: Store in semi-global using composite key
+     ;; STEP 4.5: Store in state using composite key
      ;; Replace existing entry or append new one
      (setq composite-key (cons auto-type handle-ref))
-     (setq tag-handles (cdr (assoc tag hcnm-bn-eb-auto-handles)))
+     (setq auto-handles (cadr (assoc "AUTO-HANDLES" hcnm-bn-eb-state)))
+     (setq tag-handles (cdr (assoc tag auto-handles)))
      (cond
        (existing-entry  ; Found - REPLACE
         (setq tag-handles (subst (cons composite-key auto-string) existing-entry tag-handles)))
        (t  ; Not found - APPEND
         (setq tag-handles (append tag-handles (list (cons composite-key auto-string))))))
-     
-     (setq
-       hcnm-bn-eb-auto-handles
-        (cond
-          ((assoc tag hcnm-bn-eb-auto-handles)
-           (subst
-             (cons tag tag-handles)
-             (assoc tag hcnm-bn-eb-auto-handles)
-             hcnm-bn-eb-auto-handles
-           )
+     (setq auto-handles
+       (cond
+         ((assoc tag auto-handles)
+          (subst
+            (cons tag tag-handles)
+            (assoc tag auto-handles)
+            auto-handles
           )
-          (t
-           (append
-             hcnm-bn-eb-auto-handles
-             (list (cons tag tag-handles))
-           )
+         )
+         (t
+          (append
+            auto-handles
+            (list (cons tag tag-handles))
           )
-        )
+         )
+       )
+     )
+     (setq hcnm-bn-eb-state
+       (subst
+         (list "AUTO-HANDLES" auto-handles)
+         (assoc "AUTO-HANDLES" hcnm-bn-eb-state)
+         hcnm-bn-eb-state
+       )
      )
      ;; STEP 5: Do smart search/replace using shared function
      (setq
@@ -11819,14 +11784,15 @@ ImportLayerSettings=No
           auto-string
         )
      )
-     ;; STEP 6: Update lattribs with the combined CLEAN text (format codes will be added by lattribs-to-dlg)
-     (setq
-       hcnm-bn-eb-lattribs
-        (subst
-          (list tag new-text)
-          attr
-          hcnm-bn-eb-lattribs
-        )
+     ;; STEP 6: Update lattribs in state with the combined CLEAN text (format codes will be added by lattribs-to-dlg)
+     (setq hcnm-bn-eb-state
+       (subst
+         (list "LATTRIBS"
+           (subst (list tag new-text) attr (cadr (assoc "LATTRIBS" hcnm-bn-eb-state)))
+         )
+         (assoc "LATTRIBS" hcnm-bn-eb-state)
+         hcnm-bn-eb-state
+       )
      )
     )
     ;; Invalid done-code - just ignore
@@ -11922,12 +11888,12 @@ ImportLayerSettings=No
   ;; Save attributes (concatenated) and XDATA (auto text only)
   (hcnm-bn-lattribs-to-dwg
     ename-bubble
-    hcnm-bn-eb-lattribs
+    (cadr (assoc "LATTRIBS" hcnm-bn-eb-state))
   )
-  ;; Save XDATA (FIX: was missing, causing bnatu updates to fail)
+  ;; Save XDATA
   (hcnm-bn-xdata-save
     ename-bubble
-    hcnm-bn-eb-lattribs
+    (cadr (assoc "AUTO-HANDLES" hcnm-bn-eb-state))
   )
   -1
 )
@@ -11951,19 +11917,19 @@ ImportLayerSettings=No
 ;; ACTION_TILE callback: Update text value in lattribs when user types (2-element)
 ;; User typing replaces the entire text value
 ;; Update text value when user types in dialog field
-(defun hcnm-bn-eb-update-text (tag new-value / attr old-value tag-handles updated-handles composite-key auto-text)
+(defun hcnm-bn-eb-update-text (tag new-value / attr old-value auto-handles tag-handles updated-handles composite-key auto-text)
   (haws-debug (list "UPDATE-TEXT: called tag=" tag))
   (if (not new-value) (setq new-value ""))
-  (setq attr (assoc tag hcnm-bn-eb-lattribs))
+  (setq attr (assoc tag (cadr (assoc "LATTRIBS" hcnm-bn-eb-state))))
   (setq old-value (if attr (cadr attr) ""))
-  
-  ;; CRITICAL FIX: If user deleted auto-text, clear from semi-global
+  ;; CRITICAL FIX: If user deleted auto-text, clear from state
   ;; Otherwise stale XDATA gets written on save
+  (setq auto-handles (cadr (assoc "AUTO-HANDLES" hcnm-bn-eb-state)))
   (cond
-    ((and (assoc tag hcnm-bn-eb-auto-handles)  ; Tag has auto-text entries
-          (/= old-value new-value))             ; Text changed
+    ((and (assoc tag auto-handles)      ; Tag has auto-text entries
+          (/= old-value new-value))     ; Text changed
      ;; Check if any auto-text values are missing from new text
-     (setq tag-handles (cdr (assoc tag hcnm-bn-eb-auto-handles)))
+     (setq tag-handles (cdr (assoc tag auto-handles)))
      (setq updated-handles '())
      (foreach handle-entry tag-handles
        (setq composite-key (car handle-entry))
@@ -11979,39 +11945,48 @@ ImportLayerSettings=No
          ;; Else: auto-text deleted by user - don't add to updated list
        )
      )
-     ;; Update semi-global with filtered list
-     (cond
-       (updated-handles
-        ;; Some auto-text remains - update entry
-        (setq hcnm-bn-eb-auto-handles
+     ;; Update state with filtered list
+     (setq auto-handles
+       (cond
+         (updated-handles
+          ;; Some auto-text remains - update entry
           (subst
             (cons tag updated-handles)
-            (assoc tag hcnm-bn-eb-auto-handles)
-            hcnm-bn-eb-auto-handles
+            (assoc tag auto-handles)
+            auto-handles
           )
-        )
-       )
-       (t
-        ;; All auto-text deleted - remove tag entry completely
-        (setq hcnm-bn-eb-auto-handles
+         )
+         (t
+          ;; All auto-text deleted - remove tag entry completely
           (vl-remove
-            (assoc tag hcnm-bn-eb-auto-handles)
-            hcnm-bn-eb-auto-handles
+            (assoc tag auto-handles)
+            auto-handles
           )
-        )
+         )
+       )
+     )
+     (setq hcnm-bn-eb-state
+       (subst
+         (list "AUTO-HANDLES" auto-handles)
+         (assoc "AUTO-HANDLES" hcnm-bn-eb-state)
+         hcnm-bn-eb-state
        )
      )
     )
   )
-  
-  ;; Update lattribs with new value
-  (setq
-    hcnm-bn-eb-lattribs
-     (subst
-       (list tag new-value)             ; Replace with new text value (2-element lattribs)
-       attr
-       hcnm-bn-eb-lattribs
-     )
+  ;; Update lattribs in state with new value
+  (setq hcnm-bn-eb-state
+    (subst
+      (list "LATTRIBS"
+        (subst
+          (list tag new-value)
+          attr
+          (cadr (assoc "LATTRIBS" hcnm-bn-eb-state))
+        )
+      )
+      (assoc "LATTRIBS" hcnm-bn-eb-state)
+      hcnm-bn-eb-state
+    )
   )
 )
 (defun hcnm-bn-eb-show (dclfile ename-bubble / i tag
@@ -12047,7 +12022,7 @@ ImportLayerSettings=No
   (setq
     lst-dlg-attributes
      (hcnm-bn-lattribs-to-dlg
-       hcnm-bn-eb-lattribs
+       (cadr (assoc "LATTRIBS" hcnm-bn-eb-state))
      )
   )
   (haws-debug
@@ -12071,9 +12046,9 @@ ImportLayerSettings=No
     ;; Track focus on ANY interaction (click, type, tab into field)
     (action_tile
       tag
-      (strcat 
-        "(setq hcnm-bn-eb-focused-tag \"" tag "\")"  ; Track focus
-        "(hcnm-bn-eb-update-text \"" tag "\" $value)"  ; Update text (existing logic)
+      (strcat
+        "(setq hcnm-bn-eb-state (subst (list \"FOCUSED-TAG\" \"" tag "\") (assoc \"FOCUSED-TAG\" hcnm-bn-eb-state) hcnm-bn-eb-state))"
+        "(hcnm-bn-eb-update-text \"" tag "\" $value)"
       )
     )
   )
@@ -13004,6 +12979,6 @@ ImportLayerSettings=No
 ;|ï¿½Visual LISPï¿½ Format Optionsï¿½
 (72 2 40 2 nil "end of " 60 2 1 1 1 nil nil nil T)
 ;*** DO NOT add text below the comment! ***|;
-;|«Visual LISP© Format Options»
+;|ï¿½Visual LISPï¿½ Format Optionsï¿½
 (72 2 40 2 nil "end of " 60 2 1 1 1 nil nil nil T)
 ;*** DO NOT add text below the comment! ***|;

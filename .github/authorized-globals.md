@@ -67,7 +67,14 @@
 
 ### Edit Dialog Semi-Globals
 
-**`hcnm-ldrblk-eb-lattribs`**
+**`hcnm-bn-eb-state`**
+- **Purpose:** Combined edit dialog state (lattribs, auto-handles, focused tag)
+- **Type:** Alist with keys "LATTRIBS", "AUTO-HANDLES", "FOCUSED-TAG"
+- **Set in:** `hcnm-edit-bubble` (initialized), `hcnm-bn-eb-get-text`, `hcnm-bn-eb-update-text` (modified)
+- **Scope:** Edit dialog session only
+- **Justification:** DCL dialog callback architecture requires semi-global state. Single variable replaces 4 unauthorized semi-globals.
+
+**`hcnm-ldrblk-eb-lattribs`** *(legacy - old edit dialog, not bubble note editor)*
 - **Purpose:** Bubble attributes being edited in dialog
 - **Type:** lattribs structure `'(("TAG" "prefix" "auto" "postfix") ...)`
 - **Set in:** Edit dialog functions (`hcnm-eb-*`)
@@ -75,7 +82,7 @@
 - **Justification:** DCL dialog callback architecture requires semi-global state
 - **Pattern:** Standard AutoLISP dialog pattern
 
-**`hcnm-ldrblk-eb-ename-bubble`**
+**`hcnm-ldrblk-eb-ename-bubble`** *(legacy - old edit dialog, not bubble note editor)*
 - **Purpose:** Entity name of bubble being edited
 - **Type:** AutoCAD entity name
 - **Set in:** `hcnm-edit-bubble`
@@ -89,7 +96,8 @@
 All authorized globals use `*asterisk-naming*` or `hcnm-prefix-name` conventions:
 
 - **`*hcnm-*`** - Session-scoped cached state (config, project data)
-- **`hcnm-ldrblk-eb-*`** - Dialog semi-globals (DCL callback pattern)
+- **`hcnm-bn-eb-*`** - Bubble note edit dialog semi-globals (DCL callback pattern)
+- **`hcnm-ldrblk-eb-*`** - Legacy edit dialog semi-globals (DCL callback pattern)
 
 ---
 
