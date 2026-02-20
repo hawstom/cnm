@@ -857,18 +857,18 @@
 
 (defun haws-use-log-remote (/ url http bios-date log-data)
   (setq
-    url  "http://www.constructionnotesmanager.com/cnm_log.php"
+    url  "http://www.constructionnotesmanager.com/cnm-log.php"
     http (vlax-create-object "MSXML2.XMLHTTP")
     bios-date (haws-getbiosdate)
     log-data
      (strcat
-       "computer_name="
+       "computer-name="
        (haws-getcomputername)
        "&loginname="
        (getvar "loginname")
-       "&cnm_version="
+       "&cnm-version="
        (haws-unified-version)
-       "&command_log="
+       "&command-log="
        (haws-use-get-local-log-string)
      )
   )
@@ -1559,7 +1559,7 @@
        (setq number (strcat number c))
       )
       ((and
-         (eq c "-")
+         (eq c "_")
          (= suffix "")
          (= suffix number "")
          (wcmatch (substr s (1+ i) 1) "#")
@@ -1641,7 +1641,7 @@
        )
       )
       ((and
-         (eq c "-")
+         (eq c "_")
          (= number "")
          (not done)
          (wcmatch (substr s (1+ i) 1) "#")
