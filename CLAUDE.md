@@ -93,6 +93,8 @@ AutoLISP and Common Lisp are unrelated dialects. Do not assume similarity.
 ### Baseline Reference
 Git commit `63efc0d` (v5.5.17) is a good baseline for the auto-text system before the reactor was added and before AI assistance. None of the XDATA, VPTRANS, or updater data structures existed at that point.
 
+Git commit `88f2578` (v5.5.38) is a good working baseline if code gets hopelessly broken. 
+
 ### haws-config System (Config Migration)
 - **haws-config.lsp** is the generic multi-app config service; any app can register
 - **Each app owns its definitions:** `hcnm-config-definitions` (CNM), `haws-app-config-definitions` (HAWS app in edclib)
@@ -105,7 +107,7 @@ Git commit `63efc0d` (v5.5.17) is a good baseline for the auto-text system befor
 - **Unfinished migration:** See cnm.lsp lines 3382-3421 for detailed TODO list. Key items: eliminate CNM-specific duplicates of haws-config helpers, simplify wrappers to pure delegation
 
 ### Baseline Reference
-Git commit `63efc0d` (v5.5.17) is a good baseline for the auto-text system before the reactor was added and before AI assistance. None of the XDATA, VPTRANS, or updater data structures existed at that point. Also a good baseline for the pre-haws-config config system (all config logic in cnm.lsp, `c:hcnm-config-getvar` with built-in scope-aware loading).
+Git commit `63efc0d` (v5.5.17) is a good baseline for the pre-haws-config config system (all config logic in cnm.lsp, `c:hcnm-config-getvar` with built-in scope-aware loading).
 
 ## Standards Documentation
 
