@@ -1,0 +1,11 @@
+{
+  "files.associations": {
+    "*.lsp": "autolisp",
+    "*.mnl": "autolisp",
+    "*.dcl": "autolispdcl",
+    "*.prj": "autolispprj"
+  },
+  "[autolisp]": {
+    "editor.defaultFormatter": "autodesk.autolispext"
+  }
+}
