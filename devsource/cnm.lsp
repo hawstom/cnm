@@ -6008,7 +6008,7 @@ ImportLayerSettings=No
      )
     )
   )
-  ;; NOTE: XDATA was written by reactor attachment during insertion
+  ;; NOTE: XDATA was written during insertion
   ;; maybe can combine with hcnm-bn-xdata-save that was ONLY for dialog save path (requires semi-global)
   (cond
     ((not replace-bubble-p)
@@ -6676,6 +6676,13 @@ ImportLayerSettings=No
     (t "")
   )
 )
+(defun hcnm-bn-mtext-p (ename-attrib)
+  (eq :vlax-true
+    (vla-get-mtextattribute
+      (vlax-ename->vla-object ename-attrib)
+    )
+  )
+)
 (defun hcnm-bn-change-arrowhead (ename-leader)
   
   (cond
@@ -7262,64 +7269,70 @@ ImportLayerSettings=No
 ;;;
 ;;; Used by: lattribs-to-dlg, lattribs-to-dwg
 ;;;
-(defun hcnm-bn-underover-add (lattribs / bubblemtext underline overline
+(defun hcnm-bn-underover-add (lattribs ename-bubble / ename-next etype elist
+                              atag txt1-mtext-p txt2-mtext-p
                               txt1-attr txt2-attr txt1-empty-p
                               txt2-empty-p txt1-value txt2-value
-                              txt1-clean txt2-clean gap-value result
+                              underline1 overline2 gap-value result
                              )
-  ;; CRITICAL: Strip any existing format codes first to prevent proliferation
-  ;; This handles the case where lattribs already has format codes from a previous pass
   (setq lattribs (hcnm-bn-underover-remove lattribs))
-  ;; Determine format codes based on mtext vs dtext
-  (setq
-    bubblemtext
-     (hcnm-bn-get-mtext-string)
-    underline
-     (cond
-       ((= bubblemtext "") "%%u")
-       (t "\\L")
+  ;; Walk attributes to find per-attribute mtext status
+  (cond
+    (ename-bubble
+     (setq ename-next ename-bubble)
+     (while (and
+              (setq ename-next (entnext ename-next))
+              (/= "SEQEND"
+                (setq etype (cdr (assoc 0 (setq elist (entget ename-next)))))
+              )
+            )
+       (cond
+         ((and (= etype "ATTRIB")
+               (setq atag (cdr (assoc 2 elist)))
+          )
+          (cond
+            ((= atag "NOTETXT1")
+             (setq txt1-mtext-p (hcnm-bn-mtext-p ename-next))
+            )
+            ((= atag "NOTETXT2")
+             (setq txt2-mtext-p (hcnm-bn-mtext-p ename-next))
+            )
+          )
+         )
+       )
      )
-    overline
-     (cond
-       ((= bubblemtext "") "%%o")
-       (t "\\O")
+    )
+    (t
+     (setq
+       txt1-mtext-p (= (hcnm-config-getvar "BubbleMtext") "1")
+       txt2-mtext-p txt1-mtext-p
      )
+    )
   )
-  ;; Get TXT1 and TXT2 attributes
   (setq
-    txt1-attr
-     (assoc "NOTETXT1" lattribs)
-    txt2-attr
-     (assoc "NOTETXT2" lattribs)
+    underline1 (cond (txt1-mtext-p "\\L") (t "%%u"))
+    overline2 (cond (txt2-mtext-p "\\O") (t "%%o"))
   )
-  ;; Check if empty (2-element: just check text value)
   (setq
-    txt1-empty-p
-     (or (not txt1-attr) (= "" (cadr txt1-attr)))
-    txt2-empty-p
-     (or (not txt2-attr) (= "" (cadr txt2-attr)))
+    txt1-attr (assoc "NOTETXT1" lattribs)
+    txt2-attr (assoc "NOTETXT2" lattribs)
   )
-  ;; Add format code to text value if NOT empty
+  (setq
+    txt1-empty-p (or (not txt1-attr) (= "" (cadr txt1-attr)))
+    txt2-empty-p (or (not txt2-attr) (= "" (cadr txt2-attr)))
+  )
   (setq
     txt1-value
      (cond
-       ((not txt1-empty-p)
-        (strcat underline (cadr txt1-attr))
-       )
+       ((not txt1-empty-p) (strcat underline1 (cadr txt1-attr)))
        (t (cadr txt1-attr))
      )
-  )
-  ;; Add format code to text value if NOT empty
-  (setq
     txt2-value
      (cond
-       ((not txt2-empty-p)
-        (strcat overline (cadr txt2-attr))
-       )
+       ((not txt2-empty-p) (strcat overline2 (cadr txt2-attr)))
        (t (cadr txt2-attr))
      )
   )
-  ;; Set NOTEGAP based on whether either line has content
   (setq
     gap-value
      (cond
@@ -7327,7 +7340,6 @@ ImportLayerSettings=No
        (t "")
      )
   )
-  ;; Build result with formatted values (2-element structure)
   (setq result lattribs)
   (setq result (subst (list "NOTETXT1" txt1-value) txt1-attr result))
   (setq result (subst (list "NOTETXT2" txt2-value) txt2-attr result))
@@ -7414,8 +7426,8 @@ ImportLayerSettings=No
 ;;;
 ;;; ARCHITECTURE: Just calls underover-add (preserves 3-part structure for dialog)
 ;;;
-(defun hcnm-bn-lattribs-to-dlg (lattribs)
-  (hcnm-bn-underover-add lattribs)
+(defun hcnm-bn-lattribs-to-dlg (lattribs ename-bubble)
+  (hcnm-bn-underover-add lattribs ename-bubble)
 )
 
 ;;; Transform dialog input back to clean lattribs
@@ -7715,7 +7727,7 @@ ImportLayerSettings=No
 
 ;#region Auto text/mtext
 (defun hcnm-bn-auto-es (bubble-data tag auto-type obj-reference bnatu-context-p / ename
-                        lattribs ename-bubble
+                        lattribs ename-bubble string
                        )
   (setq
     ename-bubble
@@ -7725,26 +7737,34 @@ ImportLayerSettings=No
      )
     lattribs
      (hcnm-bn-bubble-data-get bubble-data "ATTRIBUTES")
-    ename
-     (cond
-       (obj-reference)
-       (t
-        (car
-          (nentsel (strcat "\nSelect object with " auto-type ": "))
-        )
-       )
-     )
   )
-  ;; END hcnm-bn-auto-get-input SUBFUNCTION
-  ;; START hcnm-bn-auto-update SUBFUNCTION
-  (setq
-    lattribs
-     (hcnm-bn-lattribs-put-auto
-       tag
+  (cond
+    (obj-reference
+     ;; Have reference - read its text
+     (setq string (cdr (assoc 1 (entget obj-reference))))
+    )
+    (bnatu-context-p
+     ;; BNATU context, reference deleted - keep existing text
+     (setq string (cond ((assoc tag lattribs) (cadr (assoc tag lattribs))) (t "")))
+    )
+    (t
+     ;; Interactive - prompt user
+     (setq ename
+       (car (nentsel (strcat "\nSelect object with " auto-type ": ")))
+     )
+     (setq string
        (cond
          (ename (cdr (assoc 1 (entget ename))))
          (t "")
        )
+     )
+    )
+  )
+  (setq
+    lattribs
+     (hcnm-bn-lattribs-put-auto
+       tag
+       string
        lattribs
        ename-bubble
      )
@@ -8001,7 +8021,7 @@ ImportLayerSettings=No
 ;;   TAG - Attribute tag to update
 ;;   auto-type - "STA", "OFF", "STAOFF", "NAME", or "STANAME"
 ;;   obj-reference - VLA-OBJECT alignment (if provided), or NIL (will prompt user)
-;;   bnatu-context-p - T if bnatu callback, NIL if insertion/editing
+;;   bnatu-context-p - T if BNATU update, NIL if insertion/editing
 ;; Returns: Updated bubble-data with new attribute value
 (defun hcnm-bn-auto-al (bubble-data tag auto-type obj-reference bnatu-context-p /
                         alignment-name lattribs ename-bubble
@@ -10553,7 +10573,7 @@ ImportLayerSettings=No
   ;; Format: ((1000 "TAG1") (1000 "VALUE1") (1000 "TAG2") (1000 "VALUE2") ...)
   ;; NOTE: This function writes lattribs only. XDATA is managed separately.
   ;; Step 2: Add format codes to text lines (beautifully-architected underover-add!)
-  (setq lattribs-formatted (hcnm-bn-underover-add lattribs))
+  (setq lattribs-formatted (hcnm-bn-underover-add lattribs ename-bubble))
   ;; Step 3: Write formatted values to drawing attributes
   (setq ename-next ename-bubble)
   (while (and
@@ -10592,310 +10612,110 @@ ImportLayerSettings=No
     (hcnm-bn-auto-text-requires-coordinates-p auto-type)
   )
 )
-;#region bnatu System Core
-
-;;==============================================================================
-;; hcnm-bn-bnatu
-;;==============================================================================
-;; Main bnatu function. Updates dependent (should be all) bubbles with fresh auto-text.
-;;
-;; Terminology:
-;;   REFERENCE = Data provider (alignment/pipe/surface, never leader)
-;;
-;;==============================================================================
-(defun hcnm-bn-bnatu ( / 
-                                     key-app data-old data handle-notifier 
-                                     owner-list notifier-entry
-                                     profile-start
-                                    )
-  
-  ;;===========================================================================
-  ;; PROFILING: Start timing bnatu callback
-  ;;===========================================================================
-  (setq profile-start (haws-clock-start "bnatu"))
-  ;;===========================================================================
-  ;; Check all gateways - early exit if any blocked
-  (cond
-    ;; All gates must pass to proceed with update
-    ((and
-       ;; Gateway 2: Notifier object still exists (not erased)
-       (not (vl-catch-all-error-p 
-              (vl-catch-all-apply 'vla-get-handle (list obj-notifier))))
-     )
-     (setq 
-       key-app "HCNM-BUBBLE"
-       handle-notifier (vla-get-handle obj-notifier)
-       owner-list (cadr (assoc key-app data))
-       notifier-entry (assoc handle-notifier owner-list)
-     )
-     ;; DEBUG: Show what triggered this callback
-     (haws-debug (list "[bnatu FIRED] Notifier handle: " handle-notifier 
-                      " Type: " (vla-get-objectname obj-notifier)))
-     
-     ;; Gateway 3: Verify notifier exists in data structure (defensive check)
-     (cond
-       (notifier-entry
-        ;; All gates passed - update all bubbles dependent on this notifier
-        ;; Returns cleaned notifier-entry (may have removed deleted bubbles)
-        ;; For bnatu system, this needs to work differently, possibly make build a list on the fly and then update it.
-        (setq notifier-entry 
-          (hcnm-bn-bnatu-notifier-update notifier-entry handle-notifier))
-        
-        ;; Rebuild owner-list with cleaned notifier-entry
-        (setq owner-list
-          (subst notifier-entry (assoc handle-notifier owner-list) owner-list))
-        
-        ;; Update data structure
-        (setq data (list (list key-app owner-list)))
-        
-       )
-     )
-    )
-  )
-  ;;===========================================================================
-  ;; PROFILING: End timing reactor callback
-  ;;===========================================================================
-  (haws-clock-end "bnatu" profile-start)
-)
-;;==============================================================================
-;; hcnm-bn-bnatu-notifier-update
-;;==============================================================================
-;; Purpose:
-;;   Updates all bubbles that depend on the notifier (the specific owner that triggered callback).
-;;
-;; Arguments:
-;;   notifier-entry - Data structure entry for the notifier (specific owner that triggered event)
-;;                    Format: (handle-notifier ((handle-bubble tag-list) ...))
-;;   handle-notifier - Handle string of the notifier (specific owner, for consistency check)
-;;
-;; Terminology:
-;;   notifier = The specific owner that triggered THIS callback event
-;;   owner = General term (any object attached to reactor: reference OR leader)
-;;
-;; Call Flow:
-;;   reactor-callback → THIS FUNCTION → bubble-update → update-bubble-tag
-;;
-;; Performance Notes:
-;;   - Processes ALL bubbles for this notifier in one pass
-;;   - Each bubble gets ONE combined attribute update (not per-tag)
-;;
-;; Side Effects:
-;;   - Modifies bubble attributes via bubble-update function
-;;
-;; Data Structure:
-;;   notifier-entry = (handle-notifier bubble-list)
-;;   bubble-list = ((handle-bubble tag-list) ...)
-;;   tag-list = ((tag auto-list) ...)
-;;
-;; Example:
-;;   (hcnm-bn-reactor-notifier-update 
-;;     '("1D235" (("62880" (("NOTETXT1" (("STAOFF" "1D235")))))))
-;;     "1D235"
-;;   )
-;;==============================================================================
-(defun hcnm-bn-bnatu-notifier-update (notifier-entry handle-notifier / 
-                                            bubble-list handle-bubble tag-list updated-any
-                                            deleted-handles corrupted-handles update-result 
-                                            cleaned-bubble-list ename-bubble reactor)
-  ;; Extract data from notifier entry
-  (setq
-    handle-notifier (car notifier-entry)
-    bubble-list (cadr notifier-entry)
-    updated-any nil  ; Track if we actually updated any bubble
-    deleted-handles nil  ; Track bubbles that no longer exist
-    corrupted-handles nil  ; Track bubbles with corrupted auto-text
-  )
-  ;; DEBUG: Show what bubbles are registered for this notifier
-  (haws-debug (strcat "[NOTIFIER-UPDATE] Processing notifier " handle-notifier 
-                      " with " (itoa (length bubble-list)) " bubble(s)"))
-  (foreach bubble bubble-list
-    (setq handle-bubble (car bubble))
-    (setq ename-bubble (handent handle-bubble))
-    (haws-debug (strcat "  Bubble " handle-bubble ": " 
-                       (if ename-bubble "EXISTS" "DELETED")))
-  )
-  ;; USER FEEDBACK: Show recalculation message
-  (princ (strcat "\rRecalculating " 
-                 (itoa (length bubble-list)) 
-                 " auto-text bubble" 
-                 (if (> (length bubble-list) 1) "s" "")
-                 "..."))
-  
-  ;; Process each bubble that depends on this notifier
-  (foreach
-     bubble bubble-list
-    (setq
-      handle-bubble (car bubble)
-      tag-list (cadr bubble)
-    )
-    ;; Update this bubble
-    ;; Returns: T (modified), nil (skipped), "DELETED" (erased), "CORRUPTED" (user corrupted auto-text)
-    (setq update-result (hcnm-bn-reactor-bubble-update handle-bubble handle-notifier tag-list))
-    (cond
-      ((equal update-result "DELETED")
-       ;; Bubble erased - add to cleanup list
-       (setq deleted-handles (cons handle-bubble deleted-handles)))
-      ((equal update-result "CORRUPTED")
-       ;; User corrupted auto-text - XDATA already cleared, need reactor refresh
-       (setq corrupted-handles (cons handle-bubble corrupted-handles))
-       (setq updated-any T))  ; Still counts as activity
-      (update-result
-       ;; Bubble modified successfully
-       (setq updated-any T))
-    )
-  )
-  
-  ;; CLEANUP: Remove deleted bubbles from notifier entry by rebuilding list
-  (cond
-    (deleted-handles
-     (princ (strcat "\n[NOTIFIER-UPDATE] Removing " (itoa (length deleted-handles)) " deleted bubble(s) from reactor data"))
-     ;; Filter out deleted bubbles - returns new cleaned list
-     (setq cleaned-bubble-list
-       (vl-remove-if
-         '(lambda (bubble) (member (car bubble) deleted-handles))
-         bubble-list))
-     ;; Update notifier-entry with cleaned list
-     (setq notifier-entry (list handle-notifier cleaned-bubble-list))
-    )
-  )
-  
-  ;; Clear command line message
-  (princ "\r                                                    \r")
-  
-  ;; Return cleaned notifier-entry (callback expects this format)
-  notifier-entry
-)
+;#region bnatu Update Pipeline
 ;;==============================================================================
 ;; hcnm-bn-bnatu-bubble-update
 ;;==============================================================================
 ;; Purpose:
-;;   Updates all auto-text fields in one bubble after the notifier (specific owner)
-;;   triggered a callback. Processes multiple tags and multiple auto-texts per tag.
+;;   Updates all auto-text fields in one bubble. Reads lattribs and XDATA once,
+;;   accumulates changes across all auto-text entries, writes once.
 ;;
 ;; Arguments:
-;;   handle-bubble - Handle string of bubble to update
-;;   handle-notifier - Handle of the notifier (specific owner that triggered callback)
-;;                     Used only for legacy format migration (fallback reference)
-;;   tag-list - List of tags with auto-text entries to update
-;;              Format: ((tag auto-list) ...)
-;;              where auto-list = (("auto-type" "handle-reference") ...) [NEW]
-;;              or auto-list = "auto-type" [OLD - deprecated]
+;;   ename-bubble - Entity name of bubble to update
 ;;
 ;; Call Flow:
-;;   bnatu → notifier-update → THIS FUNCTION → update-bubble-tag (per auto-text)
-;;
-;; Terminology:
-;;   notifier = Specific owner that triggered callback (alignment/pipe/leader)
-;;   reference = Object that provides calculation data (stored in leaf, always alignment/pipe, never leader)
-;;   For most updates: notifier = reference (same object)
-;;   For leader-based updates: notifier = leader, reference = alignment/pipe (extracted from data)
+;;   c:hcnm-bnatu → THIS FUNCTION → update-bubble-tag (per auto-text, no I/O)
 ;;
 ;; Algorithm:
-;;   1. Skip if bubble erased (early exit)
-;;   2. Foreach tag in tag-list:
-;;      a. Check format (new list vs old string)
-;;      b. Foreach auto-entry in auto-list:
-;;         - Extract auto-type and handle-reference
-;;         - Call update-bubble-tag to regenerate auto-text
+;;   1. Read lattribs + XDATA once
+;;   2. Build tag-list from XDATA composite keys
+;;   3. Foreach tag, foreach auto-entry: call update-bubble-tag (accumulates changes)
+;;   4. Write XDATA once, format + write attributes once
 ;;
-;; Data Format Migration:
-;;   NEW: auto-list = (("STAOFF" "1D235") ("DIA" "1D235"))  ← Multiple auto-texts per tag
-;;   OLD: auto-list = "STAOFF"  ← Single string, fallback uses handle-notifier as reference
-;;        (Prints warning, continues with degraded functionality for leader-based bubbles)
-;;
-;; Performance Issues (KNOWN - documented in Section 1.2.1.6):
-;;   - Each update-bubble-tag writes XDATA + attributes independently (non-atomic)
-;;   - FUTURE OPTIMIZATION: Accumulate lattribs changes, write once per bubble after all loops
-;;     Solution: Pass accumulator alist to update-bubble-tag, return updated accumulator,
-;;     write complete lattribs + XDATA atomically after foreach loops complete
-;;
-;; Side Effects:
-;;   - Calls update-bubble-tag which modifies bubble XDATA and attributes (per auto-text!)
-;;   - Prints warnings for old format or unexpected data structure
-;;
-;; Example (new format):
-;;   (hcnm-bn-bnatu-bubble-update 
-;;     "62880"                                    ; bubble handle
-;;     "1D235"                                    ; notifier handle (alignment)
-;;     '(("NOTETXT1" (("STAOFF" "1D235")          ; tag with auto-list
-;;                    ("DIA" "1D235"))))          ; multiple auto-texts per tag
-;;   )
+;; Returns:
+;;   Number of auto-text entries processed, or nil if no auto-text found
 ;;==============================================================================
-(defun hcnm-bn-bnatu-bubble-update (handle-bubble handle-notifier tag-list / tag 
-                                    auto-list auto-entry auto-type handle-reference 
-                                    updated-any ename-bubble update-result
-                                   ) 
-  ;; Check if bubble is active (handent returns nil for user-erased entities)
-  (setq ename-bubble (handent handle-bubble))
-  (setq updated-any nil) ; Track if we actually modified anything
-  (foreach tag-data tag-list 
-    (setq tag       (car tag-data)
-          auto-list (cadr tag-data) ; List of (auto-type reference-handle) 2-element lists
+(defun hcnm-bn-bnatu-bubble-update (ename-bubble /
+                                    tag auto-list auto-entry auto-type handle-reference
+                                    update-result lattribs xdata-alist
+                                    lattribs-old tag-data composite-entry
+                                    auto-entry-list tag-list entry-count
+                                   )
+  (setq
+    lattribs (hcnm-bn-dwg-to-lattribs ename-bubble)
+    lattribs-old lattribs
+    xdata-alist (hcnm-xdata-read ename-bubble)
+    entry-count 0
+  )
+  ;; Build tag-list from XDATA composite keys
+  ;; Format: ((tag ((auto-type handle-reference) ...)) ...)
+  (setq tag-list nil)
+  (foreach tag-data xdata-alist
+    (setq
+      tag (car tag-data)
+      auto-list (cdr tag-data)
     )
-    ;; Check if this is old format (string) or new format (list of 2-element lists)
-    (cond 
-      ;; New format: list of 2-element lists (auto-type reference-handle)
+    (cond
       ((and (listp auto-list) (listp (car auto-list)))
-       (foreach auto-entry auto-list 
-         (setq auto-type        (car auto-entry)
-               handle-reference (cadr auto-entry) ; Second element, not cdr
-         )
-         ;; FUTURE OPTIMIZATION (see Section 1.2.1.6): Accumulate updates, write once per bubble
-         ;; Solution: Return updated lattribs instead of writing. Accumulate across
-         ;; all auto-entries, then write once after foreach loops complete.
-         (setq update-result (hcnm-bn-update-bubble-tag 
-                               handle-bubble
-                               tag
-                               auto-type
-                               handle-reference
-                             )
-         )
-         (cond 
-           ((= update-result "CORRUPTED")
-            ;; User corrupted auto-text - XDATA already removed
-            ;; Signal that reactor refresh is needed for this bubble
-            (setq updated-any "CORRUPTED")
+       (setq auto-entry-list nil)
+       (foreach composite-entry auto-list
+         (setq auto-entry-list
+           (append auto-entry-list
+             (list (list (car (car composite-entry)) (cdr (car composite-entry))))
            )
+         )
+         (setq entry-count (1+ entry-count))
+       )
+       (setq tag-list (append tag-list (list (list tag auto-entry-list))))
+      )
+    )
+  )
+  ;; Process each auto-text entry
+  (cond
+    (tag-list
+     (foreach tag-data tag-list
+       (setq
+         tag (car tag-data)
+         auto-list (cadr tag-data)
+       )
+       (foreach auto-entry auto-list
+         (setq
+           auto-type (car auto-entry)
+           handle-reference (cadr auto-entry)
+         )
+         (setq update-result
+           (hcnm-bn-update-bubble-tag
+             ename-bubble tag auto-type handle-reference lattribs xdata-alist
+           )
+         )
+         (cond
            (update-result
-            ;; Normal update succeeded
-            (setq updated-any T)
+            (setq
+              lattribs (cadr update-result)
+              xdata-alist (caddr update-result)
+            )
            )
          )
        )
-      )
-      ;; Old format: just auto-type string, use handle-notifier as reference
-      ((atom auto-list)
-       (haws-debug 
-         "WARNING: Old reactor data format detected - please re-insert bubble"
+     )
+     ;; Write once: XDATA + formatted attributes
+     (cond
+       ((/= lattribs lattribs-old)
+        (hcnm-xdata-set-autotext ename-bubble xdata-alist)
+        (hcnm-set-attributes ename-bubble (hcnm-bn-underover-add lattribs ename-bubble))
        )
-       (setq update-result (hcnm-bn-update-bubble-tag handle-bubble tag auto-list ; auto-type
-                                                      handle-notifier ; Use notifier as reference (may be wrong for leaders)
-                           )
-       )
-       (cond 
-         ((= update-result "CORRUPTED")
-          (setq updated-any "CORRUPTED")
-         )
-         (update-result
-          (setq updated-any T)
-         )
-       )
-      )
-      (t
-       (haws-debug 
-         (strcat "ERROR: Unexpected reactor data format for tag " tag)
-       )
-      )
+     )
+     entry-count
     )
   )
 )
 
 ;;==============================================================================
-;; c:hcnm-bnatu - Manual Bubble Note Auto-Text Updater (User Command)
+;; c:hcnm-bnatu - Bubble Note Auto-Text Updater (User Command)
 ;;==============================================================================
 ;; Purpose:
-;;   User command to manually update all bubble note auto-text in the drawing.
-;;   Processes all bubbles with HCNM-BUBBLE XDATA and updates their auto-text fields.
+;;   Updates all bubble note auto-text in the drawing.
+;;   Processes all bubbles with HCNM-BUBBLE XDATA.
 ;;
 ;; Usage:
 ;;   Command: HCNM-BNATU or alias BUP
@@ -10903,83 +10723,46 @@ ImportLayerSettings=No
 ;;
 ;; Architecture:
 ;;   - Collects all INSERTs with HCNM-BUBBLE XDATA
-;;   - Extracts auto-text metadata from each bubble's XDATA
-;;   - Calls hcnm-bn-bnatu-bubble-update for each bubble
-;;   - Similar to reactor callback but manual, whole-drawing scope
-;;
-;; Returns:
-;;   Prints summary of bubbles updated
+;;   - Calls hcnm-bn-bnatu-bubble-update for each bubble (reads/writes once per bubble)
 ;;==============================================================================
-(defun c:hcnm-bnatu ( / 
-                      ss i ename-bubble handle-bubble xdata-alist 
-                      tag-data auto-list tag auto-entry auto-type handle-reference
-                      bubble-count updated-count tag-list time-start time-bubble time-total
-                      auto-entry-count total-entries
+(defun c:hcnm-bnatu ( /
+                      ss i ename-bubble
+                      bubble-count updated-count time-start time-bubble time-total
+                      entry-count total-entries
                      )
   (princ "\nUpdating all bubble note auto-text...")
   (setq time-start (getvar "MILLISECS"))
-  
   ;; Collect all INSERTs with HCNM-BUBBLE XDATA
   (setq ss (ssget "X" (list (cons 0 "INSERT") (list -3 (list "HCNM-BUBBLE")))))
-  (setq bubble-count 0)
-  (setq updated-count 0)
-  (setq total-entries 0)
-  
+  (setq
+    bubble-count 0
+    updated-count 0
+    total-entries 0
+  )
   (cond
     (ss
      (setq i 0)
      (while (setq ename-bubble (ssname ss i))
        (setq time-bubble (getvar "MILLISECS"))
-       (setq handle-bubble (cdr (assoc 5 (entget ename-bubble))))
-       (setq xdata-alist (hcnm-xdata-read ename-bubble))
        (setq bubble-count (1+ bubble-count))
-       
-       ;; Build tag-list from XDATA in format expected by bnatu-bubble-update
-       ;; Format: ((tag ((auto-type handle-reference) ...)) ...)
-       (setq tag-list '())
-       (setq auto-entry-count 0)
-       (foreach tag-data xdata-alist
-         (setq tag (car tag-data))
-         (setq auto-list (cdr tag-data))
-         
-         ;; Convert composite-key XDATA format to update format
-         (cond
-           ;; Composite-key format: (((auto-type . handle) . auto-text) ...)
-           ((and (listp auto-list) (listp (car auto-list)))
-            (setq auto-entry-list '())
-            (foreach composite-entry auto-list
-              (setq auto-type (car (car composite-entry)))
-              (setq handle-reference (cdr (car composite-entry)))
-              ;; Build 2-element list: (auto-type handle-reference)
-              (setq auto-entry-list 
-                (append auto-entry-list (list (list auto-type handle-reference))))
-              (setq auto-entry-count (1+ auto-entry-count))
-            )
-            (setq tag-list (append tag-list (list (list tag auto-entry-list))))
-           )
-         )
-       )
-       
-       ;; Update this bubble if it has auto-text
+       (setq entry-count (hcnm-bn-bnatu-bubble-update ename-bubble))
        (cond
-         (tag-list
-          (hcnm-bn-bnatu-bubble-update handle-bubble "" tag-list)
+         (entry-count
           (setq updated-count (1+ updated-count))
-          ;; Progress feedback with timing
           (setq time-bubble (- (getvar "MILLISECS") time-bubble))
-          (haws-clock-console-log (strcat "  [BUP] Bubble " (itoa bubble-count) "/" (itoa (sslength ss)) 
-                                          " (" (itoa auto-entry-count) " entries): " 
-                                          (itoa time-bubble) "ms"))
-          (setq total-entries (+ total-entries auto-entry-count))
+          (haws-clock-console-log
+            (strcat "  [BUP] Bubble " (itoa bubble-count) "/" (itoa (sslength ss))
+                    " (" (itoa entry-count) " entries): "
+                    (itoa time-bubble) "ms")
+          )
+          (setq total-entries (+ total-entries entry-count))
          )
        )
-       
        (setq i (1+ i))
      )
-     
      (setq time-total (- (getvar "MILLISECS") time-start))
-     (princ (strcat "\nProcessed " (itoa bubble-count) " bubble(s), updated " 
-                    (itoa updated-count) " with auto-text (" 
+     (princ (strcat "\nProcessed " (itoa bubble-count) " bubble(s), updated "
+                    (itoa updated-count) " with auto-text ("
                     (itoa total-entries) " auto-text entries)."))
      (haws-clock-console-log (strcat "[BUP] TOTAL TIME: " (itoa time-total) "ms"))
      (haws-clock-console-log (strcat "[BUP] AVG per bubble: " (itoa (/ time-total (max bubble-count 1))) "ms"))
@@ -10990,6 +10773,7 @@ ImportLayerSettings=No
   )
   (princ)
 )
+(defun c:bup () (c:hcnm-bnatu))
 
 ;#endregion
 ;#endregion
@@ -11314,184 +11098,145 @@ ImportLayerSettings=No
 ;; hcnm-bn-update-bubble-tag
 ;;==============================================================================
 ;; Purpose:
-;;   Updates ONE specific auto-text field in a bubble after reference object changes.
-;;   Core bnatu update function - regenerates auto-text and smart-replaces in existing text.
+;;   Updates ONE auto-text field in a bubble. Pure computation - no I/O.
+;;   Accepts pre-read lattribs + xdata-alist, returns accumulated results.
 ;;
 ;; Arguments:
-;;   handle-bubble - Handle string of bubble to update
+;;   ename-bubble - Entity name of bubble
 ;;   tag - Attribute tag to update (e.g., "NOTETXT1", "NOTETXT2")
-;;   auto-type - Auto-type string specifying calculation (e.g., "STAOFF", "DIA", "N", "E")
-;;   handle-reference - Handle of reference object (alignment/pipe/surface) or "" for N/E/NE
+;;   auto-type - Auto-type string (e.g., "STAOFF", "DIA", "N", "E")
+;;   handle-reference - Handle of reference object or "" for N/E/NE
+;;   lattribs - Pre-read lattribs (2-element format)
+;;   xdata-alist - Pre-read XDATA alist
 ;;
-;; Terminology:
-;;   reference = Object that provides calculation data (alignment, pipe, surface)
-;;   For coordinate-based (N/E/NE): handle-reference = "" (uses leader arrowhead position)
-;;   For alignment-based: handle-reference = alignment handle
-;;   For pipe-based: handle-reference = pipe handle
-;;
-;; Call Flow:
-;;   bnatu → update-bubble-tag → THIS FUNCTION (once per auto-text field)
+;; Returns:
+;;   3-element list: (status lattribs xdata-alist) where status is T/nil/"CORRUPTED"
+;;   nil if no change needed
 ;;
 ;; Algorithm (Smart Replace to Preserve User Edits):
-;;   1. Read current attribute text (may include user prefix/postfix edits)
-;;   2. Extract old auto-text from XDATA (the "search needle")
-;;   3. Generate new auto-text via auto-dispatch (recalculate from reference)
-;;   4. Smart replace: find old auto-text in current text, replace with new
-;;   5. Write XDATA (store updated auto-text as new search needle)
-;;   6. Write attributes (save full text with format codes applied)
-;;
-;; Smart Replace Example (User Edits Preserved):
-;;   Current attribute text: "Storm STA 10+25.50 RT"  ← User added prefix/postfix
-;;   Old auto-text (XDATA): "STA 10+25.50"            ← Search needle
-;;   New auto-text (calculated): "STA 11+00.00"       ← Alignment changed
-;;   Result: "Storm STA 11+00.00 RT"                  ← User text preserved!
-;;
-;; Performance Issues (KNOWN - documented in Section 1.2.1.6):
-;;   - Called ONCE PER AUTO-TEXT FIELD (can be 5+ times per bubble if user has N, E, StaOff, Dia, etc.)
-;;   - Each call writes XDATA + attributes independently (NON-ATOMIC - BAD DESIGN!)
-;;   - FUTURE OPTIMIZATION: Refactor to accumulate updates, write once per bubble
-;;     Solution: Change signature to (update-bubble-tag ... lattribs-accumulator),
-;;     return updated accumulator instead of writing. Move write to bubble-update
-;;     after all foreach loops complete. This ensures atomic update of all tags.
-;;
-;; Side Effects:
-;;   - Writes XDATA via hcnm-bn-xdata-update-one (stores new search needle)
-;;   - Writes formatted attributes via hcnm-set-attributes (applies format codes)
-;;   - May alert if bubble not found (defensive error message)
-;;
-;; Edge Cases & Gotchas:
-;;   - If user manually corrupts auto-text in attribute, smart replace fails silently (by design)
-;;   - Multiple identical auto-texts in same tag: only updates first occurrence (known limitation)
-;;   - If reference object erased: auto-dispatch returns NIL, smart replace no-ops gracefully
-;;   - If auto-dispatch fails: attribute unchanged, XDATA unchanged (safe failure mode)
-;;
-;; Example:
-;;   (hcnm-bn-update-bubble-tag 
-;;     "62880"      ; bubble handle
-;;     "NOTETXT1"   ; attribute tag
-;;     "STAOFF"     ; auto-type
-;;     "1D235"      ; alignment handle
-;;   )
+;;   1. Extract old auto-text from passed xdata-alist (search needle)
+;;   2. Generate new auto-text via auto-dispatch
+;;   3. Smart replace in current text
+;;   4. Update lattribs and xdata-alist in returned result (caller writes)
 ;;==============================================================================
-(defun hcnm-bn-update-bubble-tag (handle-bubble tag auto-type handle-reference / 
-                                      ename-bubble ename-reference lattribs lattribs-old
-                                      attr current-text old-auto-text auto-new new-text
-                                      time-start time-read-state time-xdata-read time-generate time-replace
-                                     )
-  ;; Convert handle to entity name - deleted bubbles return nil
-  (setq ename-bubble (handent handle-bubble))
-  (cond
-    ((not ename-bubble) "DELETED")
-    (t
-      ;; STEP 1: Read current state
-      (setq time-start (getvar "MILLISECS"))
-      (setq
-        ename-reference
-          (cond
-            ((= handle-reference "") nil)
-            (t (handent handle-reference))
-          )
-        lattribs-old (hcnm-bn-dwg-to-lattribs ename-bubble)
-        lattribs lattribs-old
-        attr (assoc tag lattribs)
-        current-text (if attr (cadr attr) "")
-      )
-      (setq time-read-state (- (getvar "MILLISECS") time-start))
-      (haws-debug "[AFTER-READ-STATE] About to extract old auto-text from XDATA")
-      ;; STEP 2: Extract old auto-text from XDATA (search needle)
-      (setq time-start (getvar "MILLISECS"))
-      (setq old-auto-text 
-        (hcnm-bn-extract-old-auto-text ename-bubble tag auto-type handle-reference)
-      )
-      (setq time-xdata-read (- (getvar "MILLISECS") time-start))
-      (haws-debug (strcat "[AFTER-XDATA-READ] Extracted old auto-text (" (itoa time-xdata-read) "ms), about to generate new auto-text"))
-      ;; STEP 3: Generate new auto-text via auto-dispatch
-      (setq time-start (getvar "MILLISECS"))
-      (setq lattribs 
-        (hcnm-bn-generate-new-auto-text 
-          ename-bubble ename-reference lattribs tag auto-type
-        )
-      )
-      (setq time-generate (- (getvar "MILLISECS") time-start))
-      (haws-debug (strcat "[AFTER-GENERATE] Generated new auto-text (" (itoa time-generate) "ms), about to smart replace"))
-      ;; STEP 4: Extract generated auto-text (plain, no format codes)
-      (setq
-        attr (assoc tag lattribs)
-        auto-new (if attr (cadr attr) "")
-      )
-      ;; STEP 5: Smart replace - preserve user edits around auto-text
-      (setq time-start (getvar "MILLISECS"))
-      (setq new-text
-        (hcnm-bn-smart-replace-auto current-text old-auto-text auto-new)
-      )
-      (setq time-replace (- (getvar "MILLISECS") time-start))
-      (haws-debug (strcat "[AFTER-REPLACE] Smart replace done (" (itoa time-replace) "ms), about to detect search success"))
-      
-      ;; STEP 5.5: Detect if smart replace actually found old auto-text
-      ;; If user corrupted the text (deleted part of auto-text), search fails
-      ;; In that case, treat it as user text and REMOVE from XDATA
-      (setq search-succeeded-p
-        (cond
-          ;; No old auto-text in XDATA = first time setup, success
-          ((not old-auto-text) T)
-          ;; Delimiter found = success
-          ((vl-string-search "```" current-text) T)
-          ;; Old auto-text found in current text = success
-          ((vl-string-search old-auto-text current-text) T)
-          ;; Empty current text = success (field was empty)
-          ((= current-text "") T)
-          ;; Otherwise = search FAILED (user corrupted auto-text)
-          (t nil)
-        )
-      )
-      
-      ;; STEP 6: Update lattribs with smartly-replaced text
-      (setq lattribs
-        (cond
-          (attr (subst (list tag new-text) attr lattribs))
-          (t (append lattribs (list (list tag new-text))))
-        )
-      )
-      ;; STEP 7: Write to drawing and XDATA
+(defun hcnm-bn-update-bubble-tag (ename-bubble tag auto-type handle-reference
+                                  lattribs xdata-alist /
+                                  ename-reference attr current-text
+                                  old-auto-text auto-new new-text search-succeeded-p
+                                  tag-xdata composite-key composite-entry tag-entry
+                                  remaining-entries
+                                 )
+  ;; Read current text from passed lattribs
+  (setq
+    ename-reference
       (cond
-        (search-succeeded-p
-          ;; Search succeeded - update XDATA with new auto-text
-          (cond
-            ((/= lattribs lattribs-old)
-              ;; Update XDATA for this specific composite key (preserves other auto-text entries)
-              (setq time-start (getvar "MILLISECS"))
-              (hcnm-bn-xdata-update-one ename-bubble tag auto-type handle-reference auto-new)
-              (haws-clock-console-log (strcat "  [PROFILE] XDATA write: " (itoa (- (getvar "MILLISECS") time-start)) "ms"))
-              ;; Format for display (adds underline/overline codes)
-              (setq lattribs (hcnm-bn-underover-add lattribs))
-              ;; Write formatted attributes (uses VLA methods, not entmod)
-              (setq time-start (getvar "MILLISECS"))
-              (hcnm-set-attributes ename-bubble lattribs)
-              (haws-clock-console-log (strcat "  [PROFILE] Attribute write: " (itoa (- (getvar "MILLISECS") time-start)) "ms"))
-              ;; Report timing breakdown
-              (haws-clock-console-log (strcat "  [PROFILE BREAKDOWN] Read state: " (itoa time-read-state) 
-                            "ms, XDATA read: " (itoa time-xdata-read)
-                            "ms, Generate: " (itoa time-generate)
-                            "ms, Replace: " (itoa time-replace) "ms"))
-              T  ; Return T to indicate modification occurred
-            )
-            (t nil)  ; Return nil if no changes
+        ((= handle-reference "") nil)
+        (t (handent handle-reference))
+      )
+    attr (assoc tag lattribs)
+    current-text (if attr (cadr attr) "")
+  )
+  ;; Extract old auto-text from passed xdata-alist (search needle)
+  (setq
+    tag-xdata (cdr (assoc tag xdata-alist))
+    composite-key (cons auto-type handle-reference)
+    old-auto-text
+      (cond
+        ((and tag-xdata (listp tag-xdata) (listp (car tag-xdata)))
+         (cdr (assoc composite-key tag-xdata))
+        )
+        (t nil)
+      )
+  )
+  ;; Generate new auto-text via auto-dispatch
+  (setq lattribs
+    (hcnm-bn-generate-new-auto-text
+      ename-bubble ename-reference lattribs tag auto-type
+    )
+  )
+  ;; Extract generated auto-text (plain, no format codes)
+  (setq
+    attr (assoc tag lattribs)
+    auto-new (if attr (cadr attr) "")
+  )
+  ;; Smart replace - preserve user edits around auto-text
+  (setq new-text
+    (hcnm-bn-smart-replace-auto current-text old-auto-text auto-new)
+  )
+  ;; Detect if smart replace found old auto-text
+  (setq search-succeeded-p
+    (cond
+      ((not old-auto-text) T)
+      ((vl-string-search "```" current-text) T)
+      ((vl-string-search old-auto-text current-text) T)
+      ((= current-text "") T)
+      (t nil)
+    )
+  )
+  ;; Update lattribs with smartly-replaced text
+  (setq lattribs
+    (cond
+      (attr (subst (list tag new-text) attr lattribs))
+      (t (append lattribs (list (list tag new-text))))
+    )
+  )
+  ;; Update xdata-alist (accumulate, caller writes)
+  (cond
+    (search-succeeded-p
+     ;; Update XDATA composite key with new auto-text
+     (setq tag-entry (assoc tag xdata-alist))
+     (setq tag-xdata (cdr tag-entry))
+     (cond
+       ((and tag-xdata (listp tag-xdata) (listp (car tag-xdata)))
+        (setq composite-entry (assoc composite-key tag-xdata))
+        (cond
+          (composite-entry
+           (setq tag-xdata (subst (cons composite-key auto-new) composite-entry tag-xdata))
+          )
+          (t
+           (setq tag-xdata (append tag-xdata (list (cons composite-key auto-new))))
           )
         )
-        (t
-          ;; Search FAILED - user corrupted auto-text, remove from XDATA
-          (haws-debug (strcat "*** WARNING: Auto-text search failed for " tag " - user may have corrupted text"))
-          (haws-debug (strcat "    Old auto-text: \"" (if old-auto-text old-auto-text "nil") "\""))
-          (haws-debug (strcat "    Current text: \"" current-text "\""))
-          (haws-debug (strcat "    Removing from XDATA tracking (treating as user text)"))
-          
-          ;; Remove this auto-text entry from XDATA
-          (hcnm-bn-xdata-remove-one ename-bubble tag auto-type handle-reference)
-          
-          ;; Return special status to signal reactor cleanup needed
-          "CORRUPTED"
+        (setq xdata-alist (subst (cons tag tag-xdata) tag-entry xdata-alist))
+       )
+       (t
+        (setq tag-xdata (list (cons composite-key auto-new)))
+        (cond
+          (tag-entry
+           (setq xdata-alist (subst (cons tag tag-xdata) tag-entry xdata-alist))
+          )
+          (t
+           (setq xdata-alist (append xdata-alist (list (cons tag tag-xdata))))
+          )
         )
-      )
+       )
+     )
+     (list T lattribs xdata-alist)
+    )
+    (t
+     ;; Search FAILED - remove this auto-text entry from xdata-alist
+     (haws-debug (strcat "*** WARNING: Auto-text search failed for " tag " - user may have corrupted text"))
+     (setq tag-entry (assoc tag xdata-alist))
+     (setq tag-xdata (cdr tag-entry))
+     (cond
+       ((and tag-xdata (listp tag-xdata))
+        (setq remaining-entries
+          (vl-remove-if
+            (function (lambda (entry) (equal (car entry) composite-key)))
+            tag-xdata
+          )
+        )
+        (cond
+          (remaining-entries
+           (setq xdata-alist (subst (cons tag remaining-entries) tag-entry xdata-alist))
+          )
+          (t
+           (setq xdata-alist (vl-remove tag-entry xdata-alist))
+          )
+        )
+       )
+     )
+     (list "CORRUPTED" lattribs xdata-alist)
     )
   )
 )
@@ -11727,7 +11472,7 @@ ImportLayerSettings=No
           (t nil)  ; No metadata at all
         )
      )
-     ;; Update handle-ref with value from auto function (overrides reactor lookup)
+     ;; Update handle-ref with value from auto function (overrides XDATA lookup)
      (cond
        (handle-ref-from-auto
         (setq handle-ref handle-ref-from-auto))
@@ -12023,6 +11768,7 @@ ImportLayerSettings=No
     lst-dlg-attributes
      (hcnm-bn-lattribs-to-dlg
        (cadr (assoc "LATTRIBS" hcnm-bn-eb-state))
+       ename-bubble
      )
   )
   (haws-debug
@@ -12085,8 +11831,6 @@ ImportLayerSettings=No
   )
   (append result (list str))
 )
-(princ "Loaded to comment.")
-
 ;; Concatenate prefix, auto, and postfix into a 3-element list structure.
 ;; Uses clean list structure for robust text manipulation.
 (defun hcnm-bn-eb-concat-parts (prefix auto postfix /)
