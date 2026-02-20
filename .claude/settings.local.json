@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la \"C:\\\\tghfiles\\\\programming\\\\hawsedc\\\\develop\\\\.github\"\" 2>/dev/null || echo \"Directory not found \")",
+      "Bash(git ls-tree:*)",
+      "Bash(powershell -File devtools/scripts/haws-lisp-paren-check.ps1 -FilePath \"devsource/edclib.lsp\")",
+      "Bash(powershell -File:*)",
+      "Bash(sort:*)",
+      "WebSearch",
+      "Bash(git log:*)",
+      "WebFetch(domain:help.autodesk.com)",
+      "WebFetch(domain:www.lee-mac.com)",
+      "WebFetch(domain:forums.autodesk.com)",
+      "WebFetch(domain:documentation.help)",
+      "WebFetch(domain:ezdxf.readthedocs.io)"
+    ]
+  }
+}

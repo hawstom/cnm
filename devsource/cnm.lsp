@@ -344,25 +344,22 @@
            (assoc 1003 (cdadr (assoc -3 mvport)))
                                         ;Viewport has vp frozen layers
          )
-         (foreach
-            dxfgroup (cdadr (assoc -3 mvport))
-           (cond
+         (foreach dxfgroup (cdadr (assoc -3 mvport)) 
+           (cond 
              ((= 1003 (car dxfgroup))
               (setq vplayers (cons (cdr dxfgroup) vplayers))
              )
-             )
            )
          )
-       )
-       (setq count (1+ count))
-     )
-   )
-   ;;Get bubbles selection set
-   (setq
-     blkss
-      (ssget "X" (list (cons 0 "INSERT")))
-     i -1
-   )
+        )
+      )
+      (setq count (1+ count))
+    )
+  )
+  ;;Get bubbles selection set
+  (setq blkss (ssget "X" (list (cons 0 "INSERT")))
+        i     -1
+  )
   ;;Remove frozen and off blocks, frozen in current viewport,
   ;;xrefs, and xref dependent blocks from the set
   ;;Remove all blocks not in current space if CTABONLY = 1.
@@ -604,22 +601,21 @@
        ;;and put them into the NOTEQTY variable
        ;;as '(("phase" "qty")...)
        (setq noteqty nil)
-       (while
-         (and
+       (while 
+         (and 
            (setq en (entnext en))
            (= "ATTRIB" (setq et (cdr (assoc 0 (setq el (entget en))))))
          )
-          (setq
-            at (cdr (assoc 2 el))
-            av (cdr (assoc 1 el))
-          )
-          (cond
-            ((= at "TBLTYPE") (setq notetype av))
-            ((= at "TBLNUM") (setq notenum av))
-            ((wcmatch at "TBLQTY*")
-             (setq noteqty (cons (list (substr at 7 1) av) noteqty))
-            )
-          )
+         (setq at (cdr (assoc 2 el))
+               av (cdr (assoc 1 el))
+         )
+         (cond 
+           ((= at "TBLTYPE") (setq notetype av))
+           ((= at "TBLNUM") (setq notenum av))
+           ((wcmatch at "TBLQTY*")
+            (setq noteqty (cons (list (substr at 7 1) av) noteqty))
+           )
+         )
        )
        (setq
          notei
@@ -1726,20 +1722,20 @@
              )
             )
             (t
-             (while
-               (not
-                 (and
-                   (wcmatch
+             (while 
+               (not 
+                 (and 
+                   (wcmatch 
                      (strcase (substr sheet-filename column))
                      (strcase (strcat flspec "`.NOT"))
                    )
-                   (or (= "\\" (substr sheet-filename (1- column) 1))
+                   (or (= "\\" (substr sheet-filename (1- column) 1)) 
                        (= "\\" (substr sheet-filename column 1))
                        (= ":" (substr sheet-filename (1+ column) 1))
                    )
                  )
                )
-                (setq column (1- column))
+               (setq column (1- column))
              )
              (setq
                *f1*              (close *f1*)
@@ -2165,19 +2161,17 @@
              (setq
                numfnd nil
                numfnd
-                (foreach
-                   sheet-quantities all-sheets-quantities
-                  (foreach
-                     phasei
-                     (cdddr
-                       (assoc
-                         notnum
-                         (cdr
-                           (assoc nottyp (caddr sheet-quantities))
-                         )
-                       )
-                     )
-                    (if phasei
+                (foreach sheet-quantities all-sheets-quantities 
+                  (foreach phasei 
+                    (cdddr 
+                      (assoc 
+                        notnum
+                        (cdr 
+                          (assoc nottyp (caddr sheet-quantities))
+                        )
+                      )
+                    )
+                    (if phasei 
                       (setq numfnd notnum)
                     )
                   )
@@ -2483,8 +2477,6 @@
      (hcnm-key-table-from-search
        dn projnotes txtht linspc tblwid phasewid
      )
-     ;; Cleanup reactor data after scanning all bubbles
-     (hcnm-bn-cleanup-all-reactors)
     )
     ((= opt "Import")
      (hcnm-import dn projnotes txtht linspc tblwid phasewid)
@@ -2645,7 +2637,7 @@
 )
 
 (defun hcnm-error-ambiguous-project-markers
-   (local-project-folder linked-project-folder)
+  (local-project-folder linked-project-folder)
   (alert
     (princ
       (strcat
@@ -2721,7 +2713,7 @@
 )
 
 (defun hcnm-check-moved-project
-   (project-file-name / input1 pnname thisfile-value)
+  (project-file-name / input1 pnname thisfile-value)
   (cond
     ((and
        (setq
@@ -2775,7 +2767,7 @@
 
 ;;as posted the autodesk discussion customization group by Tony Tanzillo
 (defun ale_browseforfolder
-   (prmstr ioptns deffld / shlobj folder fldobj outval)
+  (prmstr ioptns deffld / shlobj folder fldobj outval)
   (setq
     shlobj
      (vla-getinterfaceobject
@@ -3031,169 +3023,6 @@
   (hcnm-concept-testgetvar (getstring "\nVariable name: "))
   (haws-core-restore)
 )
-
-;;==============================================================================
-;; C:PRETEST - Clean up before testing bubble notes
-;;==============================================================================
-;; Removes all reactors and deletes all bubbles with HCNM-BUBBLE XDATA
-;; Usage: Type PRETEST at command line before testing
-(defun c:pretest (/ ename ename-next ename-leader xdata count-ms count-ps
-              count-ldr reactors elist is-bubble
-             )
-  (princ "\n=== PRE-TEST CLEANUP ===")
-  (setq
-    count-ms 0
-    count-ps 0
-    count-ldr 0
-  )
-  ;; Step 1: Make all reactors transient (so they won't be saved with drawing)
-  (princ "\nMaking all object reactors transient...")
-  (setq reactors (cdar (vlr-reactors :vlr-object-reactor)))
-  (cond
-    (reactors
-     (foreach reactor reactors (vlr-pers-release reactor) (princ "."))
-     (princ
-       (strcat "\nMade " (itoa (length reactors)) " reactor(s) transient")
-     )
-    )
-    (t (princ "\nNo reactors found"))
-  )
-  ;; Step 2: Erase all bubbles with HCNM-BUBBLE XDATA or matching block names
-  (princ "\nScanning for bubbles...")
-  (setq ename (entnext))
-  (while ename
-    (setq ename-next (entnext ename))   ; Get next before potential deletion
-    ;; Check if entity has HCNM-BUBBLE XDATA or is a bubble block
-    (setq 
-      xdata (assoc -3 (entget ename '("HCNM-BUBBLE")))
-      elist (entget ename)
-      is-bubble (and
-                  (= (cdr (assoc 0 elist)) "INSERT")
-                  (wcmatch (cdr (assoc 2 elist)) "cnm-bubble-*")
-                )
-    )
-    (cond
-      ((or xdata is-bubble)
-       ;; Found a bubble - determine if it's in model or paper space
-       (cond
-         ((hcnm-bn-is-on-model-tab ename)
-          (setq count-ms (1+ count-ms))
-         )
-         (t (setq count-ps (1+ count-ps)))
-       )
-       ;; Find and delete the associated leader first
-       (setq ename-leader (hcnm-bn-bubble-leader ename))
-       (cond
-         (ename-leader
-          (entdel ename-leader)
-          (setq count-ldr (1+ count-ldr))
-         )
-       )
-       ;; Erase the bubble
-       (entdel ename)
-       (princ ".")
-      )
-    )
-    (setq ename ename-next)
-  )
-  ;; Step 3: Report results
-  (princ
-    (strcat
-      "\n\nDeleted "
-      (itoa count-ms)
-      " bubble(s) from Model Space"
-    )
-  )
-  (princ
-    (strcat
-      "\nDeleted "
-      (itoa count-ps)
-      " bubble(s) from Paper Space"
-    )
-  )
-  (princ (strcat "\nDeleted " (itoa count-ldr) " leader(s)"))
-  (princ
-    (strcat
-      "\nTotal: "
-      (itoa (+ count-ms count-ps))
-      " bubble(s) deleted"
-    )
-  )
-  (princ "\n\n=== CLEANUP COMPLETE ===")
-  (princ)
-)
-;[moveme to a better region]
-;;==============================================================================
-;; HCNM-BN-CLEANUP-ALL-REACTORS - Comprehensive reactor/XDATA cleanup
-;;==============================================================================
-;; Purpose:
-;;   Remove all data and XRECORD references where owner is missing from reactor
-;;   Called after SearchandSave to clean up orphaned data
-;;
-;; Business Need:
-;;   - Reactor data can accumulate stale entries when bubbles deleted outside callbacks
-;;   - XDATA can reference deleted alignment/pipe objects
-;;   - XRECORD viewport transforms may reference deleted viewports
-;;   - Drawing bloat from accumulated orphaned data
-;;
-;; Cleanup Strategy (3 tiers):
-;;   1. Immediate: During reactor callbacks (already implemented)
-;;   2. Batch: After SearchandSave scans all bubbles (this function)
-;;   3. Deep: Manual PRETEST command for development
-;;
-;; This function implements Tier 2 (Batch cleanup):
-;;   - Finds THE reactor (should only be one)
-;;   - Removes reactor data entries where owner entities don't exist
-;;   - Removes reactor data entries where bubble entities don't exist
-;;   - Removes XDATA from bubbles where reference handles are invalid
-;;   - Removes XRECORD where viewport doesn't exist
-;;   - Updates reactor data structure atomically
-;;
-;; Returns: T if cleanup occurred, NIL if nothing to clean
-;;==============================================================================
-(defun hcnm-bn-cleanup-all-reactors (/ reactor data cleaned-data cleanup-occurred)
-  (setq cleanup-occurred nil)
-  ;; Step 1: Get THE reactor (fail if multiple found - should never happen)
-  (setq reactor (hcnm-bn-get-reactor))
-  (cond
-    ((not reactor)
-     (haws-debug "Reactor cleanup: No reactor found (no auto-text bubbles in drawing)")
-     nil
-    )
-    (t
-     (haws-debug "Reactor cleanup: Starting comprehensive cleanup")
-     ;; Step 2: Clean reactor data structure (remove deleted owners/bubbles)
-     (setq
-       data (vlr-data reactor)
-       cleaned-data (hcnm-bn-cleanup-reactor-data reactor)
-     )
-     ;; Step 3: Update reactor if data changed
-     (cond
-       ((not (equal data cleaned-data))
-        (vlr-data-set reactor cleaned-data)
-        (setq cleanup-occurred T)
-        (haws-debug "Reactor cleanup: Removed orphaned entries from reactor data")
-       )
-     )
-     ;; Step 4: Clean XDATA/XRECORD from bubbles (future enhancement)
-     ;; TODO: Iterate through all bubbles, remove XDATA with invalid handles
-     ;; TODO: Remove XRECORD where viewport doesn't exist
-     ;; For now, just clean reactor data - XDATA cleanup can be added later
-     
-     (cond
-       (cleanup-occurred
-        (haws-debug "Reactor cleanup: Complete")
-        T
-       )
-       (t
-        (haws-debug "Reactor cleanup: No orphaned data found")
-        nil
-       )
-     )
-    )
-  )
-)
-;[/moveme]
 (defun hcnm-concept-testsetvar (var val)
   (hcnm-concept-setvar
     ;; variable
@@ -3696,9 +3525,7 @@ ImportLayerSettings=No
     (list "BubbleTextPrecisionPipeSlope" "2" 4)
     (list "BubbleTextPrecisionPipeLength" "2" 4)
     (list "BubbleCurrentAlignment" "" 0)
-    (list "BlockReactors" "0" 0)  ; "0"=normal, "1"=block (at arrowhead style change and nested callbacks)
     (list "BubbleArrowIntegralPending" "0" 0)
-    (list "UseOfflineStaOffCalculation" "Yes" 0)  ; "Yes"=fast offline calc for simple alignments, "No"=always use Civil 3D API
   )
 )
 
@@ -3719,7 +3546,7 @@ ImportLayerSettings=No
 )
 
 (defun hcnm-config-defaults-single-scope
-   (scope-key / scope-code scope-list)
+  (scope-key / scope-code scope-list)
   (setq scope-code (hcnm-config-scope-code scope-key))
   (foreach
      entry (cdr (assoc "Var" (hcnm-config-definitions)))
@@ -4215,7 +4042,7 @@ ImportLayerSettings=No
 ;; Excel CSV
 ;; Doesn't do project management except to write txt2 configs to cnm.ini in the same folder as projnotes.
 (defun hcnm-readcf
-   (projnotes / bakprojnotes f1 pnformat rdlin requested-format)
+  (projnotes / bakprojnotes f1 pnformat rdlin requested-format)
   ;;Do a file read to figure out what the file format is.
   ;;For now, assume that a file that has any of the shape keys followed by a comma ("BOX,", etc.) is CSV
   ;;any other file is TXT2
@@ -4611,7 +4438,7 @@ ImportLayerSettings=No
            rdlin
            ";This section shows how to override program size/scale defaults"
          )
-          (setq commentbegin (- iline 2))
+        (setq commentbegin (- iline 2))
        )
        (setq cflist (cons rdlin cflist))
      )
@@ -5100,7 +4927,7 @@ ImportLayerSettings=No
 )
 
 (defun hcnm-change-filename-extension
-   (old-filename new-extension / new-filename)
+  (old-filename new-extension / new-filename)
   (cond
     ((/= (haws-filename-extension old-filename) new-extension)
      (setq
@@ -5521,10 +5348,8 @@ ImportLayerSettings=No
 ;;; then wblocking from each D block to the L and R blocks.
 ;;; I make the root entities layer zero so layers.dat truly controls all layers.
 ;;;
-;;; Hint: Toggle the [INSERT] key off to fill in the blanks for a new command.
-;;;       This will keep the columns aligned and easy to read.
 ;;; 
-;;;|COMMAND|LEFT BLK |RIGHT BLK |DRAG BLK |LAYER KEY |DIMSTYLE KEY
+;;; (haws-ldrblk blleft blrght bldrag bllay bldsty)
 ;;; -------------------------------------------------------------------------
 (defun c:haws-tcg ()
   (haws-core-init 208)
@@ -5842,14 +5667,6 @@ ImportLayerSettings=No
        notetype
      )
   )
-  ;; BLOCK REACTORS during replace-bubble to prevent premature auto-text calculation
-  ;; Problem: ._qlattach modifies leader, triggers reactor, but VPTRANS not copied yet
-  ;; Solution: Block reactor callbacks until after VPTRANS/XDATA copied in finish-bubble
-  (cond
-    ((hcnm-bn-bubble-data-get bubble-data "replace-bubble-p")
-     (hcnm-config-setvar "BlockReactors" "1")
-    )
-  )
   ;; Draw bubble, update bubble-data with P2 and new entities
   (setq bubble-data (hcnm-bn-get-p2-data bubble-data))
   (setq bubble-data (hcnm-bn-draw-bubble bubble-data))
@@ -5857,14 +5674,10 @@ ImportLayerSettings=No
   (haws-debug ">>> ABOUT TO CALL hcnm-bn-finish-bubble")
   (hcnm-bn-finish-bubble bubble-data)
   (haws-debug ">>> RETURNED FROM hcnm-bn-finish-bubble")
-  (haws-tip 7 "You can align/move bubble note text lines by moving their ATTDEF objects in the block editor (BEDIT). Save the results to a personal or team CNM customizations location so that you can copy in your versions after every CNM install.\n\nNote that there have been no changes to the bubble note block definition since version 5.0.07 (you can always check your version using HAWS-ABOUT).")
+  (haws-tip 7 "You can customize bubble note text position by moving the ATTDEF objects in the block editor (BEDIT). Save the results to a personal or team CNM customizations location so that you can copy in your versions after every CNM install.\n\nNote that there have been no changes to the bubble note block definition since version 5.0.07 (you can always check your version using HAWS-ABOUT).")
   (hcnm-restore-dimstyle)
   (haws-vrstor)
   (vl-cmdf "._undo" "_e")
-  
-  ;; DEFENSIVE: Reset BlockReactors flag after insertion completes
-  ;; Ensures stuck flags don't persist across user actions
-  (hcnm-config-setvar "BlockReactors" "0")
   
   (haws-core-restore)
   ;;===========================================================================
@@ -6122,7 +5935,7 @@ ImportLayerSettings=No
 ;; Bubble note insertion experience outer loop data prompts.
 ;; Get input from user. ename-bubble already exists so that we can do auto text.
 (defun hcnm-bn-get-bubble-data
-   (bubble-data / lattribs ename-bubble p1-ucs num)
+  (bubble-data / lattribs ename-bubble p1-ucs num)
   (setq
     replace-bubble-p
      (hcnm-bn-bubble-data-get
@@ -6195,9 +6008,8 @@ ImportLayerSettings=No
      )
     )
   )
-  ;; NOTE: XDATA is written by reactor attachment during insertion
-  ;; hcnm-bn-xdata-save is ONLY for dialog save path (requires semi-global)
-  ;; Validate structure, but don't apply deprecated underover function
+  ;; NOTE: XDATA was written during insertion
+  ;; maybe can combine with hcnm-bn-xdata-save that was ONLY for dialog save path (requires semi-global)
   (cond
     ((not replace-bubble-p)
      ;; Normal insert: read lattribs from bubble-data
@@ -6258,24 +6070,22 @@ ImportLayerSettings=No
      (hcnm-bn-copy-vptrans ename-bubble-old ename-bubble)
      ;; Phase 3: Copy XDATA (auto-text metadata) if exists
      (hcnm-bn-copy-xdata ename-bubble-old ename-bubble)
-     ;; Phase 4: Update reactor data structure (bubble handle old → new)
-     (hcnm-bn-reactor-update-bubble-handle ename-bubble-old ename-bubble)
      ;; Erase old bubble
      (entdel ename-bubble-old)
-     ;; UNBLOCK REACTORS: Now safe to process auto-text updates
-     ;; VPTRANS and XDATA copied, new bubble fully initialized
-     (hcnm-config-setvar "BlockReactors" "0")
     )
   )
   (hcnm-bn-lattribs-to-dwg ename-bubble attributes)
   ;; Find or reuse leader
+  (haws-debug (list ">>> Finding leader, replace-bubble-p=" (if replace-bubble-p "T" "NIL") " ename-temp=" (vl-princ-to-string ename-temp)))
   (cond
     (replace-bubble-p
      ;; Replace-bubble: reuse old leader (already stretched and associated)
      (setq ename-leader ename-leader-old)
+     (haws-debug (list ">>> Replace-bubble: reused ename-leader-old=" (vl-princ-to-string ename-leader)))
     )
     (t
      ;; New insertion: search for leader starting from last entity before bubble
+     (haws-debug ">>> Searching for leader...")
      (while
        (and
          (/= "LEADER"
@@ -6286,6 +6096,7 @@ ImportLayerSettings=No
        )
      )
      (setq ename-leader ename-temp)
+     (haws-debug (list ">>> Found ename-leader=" (vl-princ-to-string ename-leader) " handle=" (if ename-leader (cdr (assoc 5 (entget ename-leader))) "NIL")))
     )
   )
   ;; Change leader arrowhead if needed.
@@ -6293,26 +6104,26 @@ ImportLayerSettings=No
   
   (haws-debug (list ">>> In finish-bubble, replace-bubble-p=" (if replace-bubble-p "T" "NIL")))
   
-  ;; Phase 4: Attach reactors for insertion path auto-text
-  ;; For new insertions, use accumulated metadata from bubble-data to create XDATA and attach reactors
+  ;; Phase 4: Attach xdata for insertion path auto-text
+  ;; For new insertions, use accumulated metadata from bubble-data to create and attach XDATA
   (cond
     ((not replace-bubble-p)  ; Only for new insertions, not replace-bubble
-     (haws-debug ">>> Calling finish-bubble-attach-reactors")
-     (hcnm-bn-finish-bubble-attach-reactors bubble-data ename-bubble ename-leader)
-     (haws-debug ">>> Returned from finish-bubble-attach-reactors")
+     (haws-debug ">>> Calling finish-bubble-attach-xdata")
+     (hcnm-bn-finish-bubble-attach-xdata bubble-data ename-bubble ename-leader)
+     (haws-debug ">>> Returned from finish-bubble-attach-xdata")
     )
     (t
-     (haws-debug ">>> SKIPPING finish-bubble-attach-reactors (replace-bubble)")
+     (haws-debug ">>> SKIPPING finish-bubble-attach-xdata (replace-bubble)")
     )
   )
   (haws-debug ">>> EXITING finish-bubble")
 )
 
 ;;==============================================================================
-;; hcnm-bn-finish-bubble-attach-reactors
+;; hcnm-bn-finish-bubble-attach-xdata
 ;;==============================================================================
 ;; Purpose:
-;;   Process accumulated auto-text metadata from bubble-data and create XDATA + reactors.
+;;   Process accumulated auto-text metadata from bubble-data and create XDATA entries.
 ;;   Uses clean bubble-data approach instead of temporary XDATA storage.
 ;;
 ;; Arguments:
@@ -6322,19 +6133,19 @@ ImportLayerSettings=No
 ;;
 ;; Architecture:
 ;;   Part of insertion path: prompting → auto-dispatch accumulates in bubble-data → finish-bubble → THIS FUNCTION
-;;   Only called for new insertions, not replace-bubble (which preserves existing reactors)
+;;   Only called for new insertions, not replace-bubble (which preserves existing XDATA)
 ;;
 ;; Algorithm:
 ;;   1. Read accumulated metadata from bubble-data "auto-metadata" field
 ;;   2. Convert to proper XDATA composite-key format
-;;   3. Attach reactors for each auto-text entry
+;;   3. Attach XDATA entries for each auto-text entry
 ;;   4. No cleanup needed (bubble-data is ephemeral)
 ;;==============================================================================
-(defun hcnm-bn-finish-bubble-attach-reactors (bubble-data ename-bubble ename-leader / 
+(defun hcnm-bn-finish-bubble-attach-xdata (bubble-data ename-bubble ename-leader / 
                                                    auto-metadata meta-entry tag auto-type 
                                                    handle-reference auto-text
                                                    xdata-alist composite-key objref ename-reference)
-  (haws-debug ">>> ENTERING finish-bubble-attach-reactors")
+  (haws-debug ">>> ENTERING finish-bubble-attach-xdata")
   ;; Read accumulated metadata from bubble-data
   (setq auto-metadata (hcnm-bn-bubble-data-get bubble-data "auto-metadata"))
   
@@ -6365,51 +6176,7 @@ ImportLayerSettings=No
           ;; Build composite key and add to XDATA
           (setq composite-key (cons auto-type handle-reference))
           (setq xdata-alist 
-            (hcnm-bn-add-xdata-entry xdata-alist tag composite-key auto-text))
-          
-          ;; Convert handle to object reference and attach reactor
-          (setq objref
-            (cond
-              ;; Coordinate-based auto-text (N/E/NE) - no reference object
-              ((or (= handle-reference "") (not handle-reference))
-               nil
-              )
-              ;; Handle-based auto-text - convert handle to VLA-OBJECT
-              (t
-               (cond
-                 ((and handle-reference (/= handle-reference ""))
-                  (setq ename-reference (handent handle-reference))
-                  (cond
-                    (ename-reference (vlax-ename->vla-object ename-reference))
-                    (t 
-                     (haws-debug (strcat "Warning: Invalid handle in metadata: " handle-reference))
-                     nil  ; Handle invalid - object may have been deleted
-                    )
-                  )
-                 )
-                 (t 
-                  (haws-debug "Warning: Nil handle-reference in metadata")
-                  nil  ; Handle is nil or empty
-                 )
-               )
-              )
-            )
-          )
-          
-          ;; Attach reactor for this auto-text entry
-          (cond
-            ;; Only attach if we have valid context
-            ((or objref (= handle-reference ""))  ; Valid reference OR coordinate-based
-             (hcnm-bn-assure-auto-text-has-reactor 
-               objref 
-               ename-bubble 
-               ename-leader 
-               tag 
-               auto-type
-             )
-            )
-          )
-         )
+            (hcnm-bn-add-xdata-entry xdata-alist tag composite-key auto-text))         )
        )
      )
      
@@ -6448,30 +6215,11 @@ ImportLayerSettings=No
 )
 
 ;;==============================================================================
-;; REPLACE BUBBLE - Helper Functions for Copying XDATA/XRECORD/Reactor Data
+;; REPLACE BUBBLE - Helper Functions for Copying XDATA/XRECORD Data
 ;;==============================================================================
-;; Get the persistent reactor (or nil if none exists)
-;; Returns first reactor with "HCNM-BUBBLE" data
-(defun hcnm-bn-get-reactor (/ reactors)
-  (setq reactors
-    (vl-remove-if-not
-      '(lambda (r)
-         (and
-           (listp (vlr-data r))
-           (assoc "HCNM-BUBBLE" (vlr-data r))
-         )
-       )
-      (cdar (vlr-reactors :vlr-object-reactor))
-    )
-  )
-  (cond
-    (reactors (car reactors))
-    (t nil)
-  )
-)
 ;; Copy viewport transform (VPTRANS XRECORD) from old bubble to new bubble
 ;; Used during replace-bubble operation to preserve paper space coordinate transforms
-(defun hcnm-bn-copy-vptrans (ename-old ename-new / vptrans-data viewport-handle)
+(defun hcnm-bn-copy-vptrans (ename-old ename-new / viewport-handle)
   (cond
     ;; Try NEW format first (viewport handle in XDATA, VPTRANS in viewport's extdict)
     ((setq viewport-handle (hcnm-bn-get-viewport-handle ename-old))
@@ -6480,18 +6228,6 @@ ImportLayerSettings=No
        (list
          "[REPLACE] Copied viewport handle from old bubble to new bubble: "
          viewport-handle
-       )
-     )
-     t
-    )
-    ;; Fall back to OLD format (VPTRANS in bubble's extdict)
-    ((setq vptrans-data (hcnm-xdata-get-vptrans ename-old))
-     ;; Old bubble has VPTRANS - copy to new bubble
-     (hcnm-xdata-set-vptrans ename-new vptrans-data)
-     (haws-debug
-       (list
-         "[REPLACE] Copied VPTRANS from old bubble to new bubble: "
-         (vl-princ-to-string vptrans-data)
        )
      )
      t
@@ -6522,89 +6258,6 @@ ImportLayerSettings=No
      ;; No XDATA on old bubble - nothing to copy (legacy bubble)
      (haws-debug "[REPLACE] Old bubble has no XDATA (legacy bubble)")
      nil
-    )
-  )
-)
-;; Update reactor data structure: replace old bubble handle with new bubble handle
-;; Used during replace-bubble operation to maintain auto-text reactivity
-;; Leader handle stays the same (stretched, not recreated)
-(defun hcnm-bn-reactor-update-bubble-handle (ename-old ename-new / 
-                                                 reactor handle-old handle-new
-                                                 data key-app owner-list updated-p
-                                                )
-  ;; Get the persistent reactor
-  (setq reactor (hcnm-bn-get-reactor))
-  (cond
-    ((not reactor)
-     ;; No reactor exists - nothing to update (legacy drawing)
-     (haws-debug "[REPLACE] No reactor exists - legacy drawing")
-     nil
-    )
-    (t
-     ;; Reactor exists - update bubble handles in data structure
-     (setq
-       handle-old (vla-get-handle (vlax-ename->vla-object ename-old))
-       handle-new (vla-get-handle (vlax-ename->vla-object ename-new))
-       data (vlr-data reactor)
-       key-app "HCNM-BUBBLE"
-       owner-list (cadr (assoc key-app data))
-       updated-p nil
-     )
-     (haws-debug
-       (list
-         "[REPLACE] Updating reactor data: old handle="
-         handle-old
-         " new handle="
-         handle-new
-       )
-     )
-     ;; Walk through owner-list, find all references to old bubble handle
-     (setq owner-list
-       (mapcar
-         '(lambda (owner-entry / owner-handle bubble-list)
-            (setq
-              owner-handle (car owner-entry)
-              bubble-list (cadr owner-entry)
-            )
-            ;; Check if this owner has the old bubble in its list
-            (cond
-              ((assoc handle-old bubble-list)
-               ;; Found old bubble handle - replace with new
-               (setq
-                 bubble-list
-                  (subst
-                    (cons handle-new (cdr (assoc handle-old bubble-list)))
-                    (assoc handle-old bubble-list)
-                    bubble-list
-                  )
-                 updated-p t
-               )
-               (haws-debug
-                 (list
-                   "[REPLACE] Updated bubble handle under owner: "
-                   owner-handle
-                 )
-               )
-              )
-            )
-            ;; Return possibly-modified owner-entry
-            (list owner-handle bubble-list)
-          )
-         owner-list
-       )
-     )
-     ;; Write updated data back to reactor
-     (cond
-       (updated-p
-        (vlr-data-set reactor (list (list key-app owner-list)))
-        (haws-debug "[REPLACE] Reactor data updated successfully")
-        t
-       )
-       (t
-        (haws-debug "[REPLACE] Old bubble not found in reactor data (legacy)")
-        nil
-       )
-     )
     )
   )
 )
@@ -6677,9 +6330,9 @@ ImportLayerSettings=No
     )
     (setq
       skip-entry-p
-       (and skip-entry-p (/= string "ENtry"))
+       (and skip-entry-p (/= string "ENTRY"))
       loop-p
-       (or (not string) (= string "ENtry"))
+       (or (not string) (= string "ENTRY"))
     )
   )
   ;; Return updated bubble-data (contains lattribs + handle-reference + any other metadata)
@@ -6695,8 +6348,8 @@ ImportLayerSettings=No
       (apply
         'strcat
         (mapcar
-          '(lambda (x) (strcat " " (car x)))
-          (hcnm-bn-get-auto-data-keys)
+          '(lambda (x) (strcat " " x))
+          (hcnm-bn-get-auto-text-input-keywords-list)
         )
       )
       2
@@ -6716,23 +6369,23 @@ ImportLayerSettings=No
            (apply
              'strcat
              (mapcar
-               '(lambda (x) (strcat "/" (car x)))
-               (hcnm-bn-get-auto-data-keys)
+               '(lambda (x) (strcat "/" x))
+               (hcnm-bn-get-auto-text-input-keywords-list)
              )
            )
            2
          )
          "] <"
-         (car (last (hcnm-bn-get-auto-data-keys)))
+         (last (hcnm-bn-get-auto-text-input-keywords-list))
          ">: "
        )
      )
   )
   (cond
-    ((or (not input) (= input "ENtry"))
-     ;; User chose ENTER or "ENtry" - store in bubble-data
+    ((or (not input) (= input "ENTRY"))
+     ;; User chose ENTER or "ENTRY" - store in bubble-data
      (setq
-       lattribs (hcnm-bn-lattribs-put-element tag "ENtry" lattribs)
+       lattribs (hcnm-bn-lattribs-put-element tag "ENTRY" lattribs)
        bubble-data (hcnm-bn-bubble-data-set bubble-data "ATTRIBUTES" lattribs)
      )
     )
@@ -6742,10 +6395,10 @@ ImportLayerSettings=No
        bubble-data
         (hcnm-bn-auto-dispatch
           (strcat "NOTETXT" (itoa line-number))
-          (cadr (assoc input (hcnm-bn-get-auto-data-keys)))
+          (hcnm-bn-get-auto-text-auto-type input)
           nil        ; obj-reference - will be determined by auto-dispatch
           bubble-data
-          nil        ; reactor-context-p - insertion path
+          nil        ; bnatu-context-p - insertion path
         )
      )
     )
@@ -6804,7 +6457,7 @@ ImportLayerSettings=No
 )
 
 ;; Add auto-text metadata entry to bubble-data for insertion path
-;; Accumulates metadata entries that finish-bubble will convert to XDATA/reactors
+;; Accumulates metadata entries that finish-bubble will convert to XDATA
 (defun hcnm-bn-bubble-data-add-auto-metadata (bd tag auto-type handle-reference auto-text / 
                                                   current-metadata new-entry)
   ;; Get current metadata list (may be nil)
@@ -6841,7 +6494,7 @@ ImportLayerSettings=No
 ;;==============================================================================
 ;; Ensure p1-world is present in bubble data (computes if missing)
 (defun hcnm-bn-bubble-data-ensure-p1-world
-   (bubble-data / ename-bubble ename-leader p1-ocs p1-world replace-bubble-p)
+  (bubble-data / ename-bubble ename-leader p1-ocs p1-world replace-bubble-p)
   (setq replace-bubble-p (hcnm-bn-bubble-data-get 
                            bubble-data
                            "replace-bubble-p"
@@ -6986,27 +6639,25 @@ ImportLayerSettings=No
   bubble-data
 )
 (defun hcnm-bn-bubble-leader
-   (ename-bubble / elist-bubble ename-330 ename-leader)
+  (ename-bubble / elist-bubble ename-330 ename-leader)
   (setq elist-bubble (entget ename-bubble))
   ;; Get start point
   ;; Find associated leader.
-  (while ;; Check all 330 groups
-         (and
-           (not ename-leader)
-           (setq ename-330 (cdr (assoc 330 elist-bubble)))
-         )
+  (while  ;; Check all 330 groups
+    (and 
+      (not ename-leader)
+      (setq ename-330 (cdr (assoc 330 elist-bubble)))
+    )
     ;; Use the one that refers back to this block. Or move to the next one.
-    (cond
+    (cond 
       ((eq (cdr (assoc 340 (entget ename-330))) ename-bubble)
        (setq ename-leader ename-330)
       )
       (t
-       (setq
-         elist-bubble
-          (cdr
-            (member (assoc 330 elist-bubble) elist-bubble)
-          )
-         ename-leader nil
+       (setq elist-bubble (cdr 
+                            (member (assoc 330 elist-bubble) elist-bubble)
+                          )
+             ename-leader nil
        )
       )
     )
@@ -7025,21 +6676,22 @@ ImportLayerSettings=No
     (t "")
   )
 )
-(defun hcnm-bn-change-arrowhead (ename-leader / saved-blockreactors)
+(defun hcnm-bn-mtext-p (ename-attrib)
+  (eq :vlax-true
+    (vla-get-mtextattribute
+      (vlax-ename->vla-object ename-attrib)
+    )
+  )
+)
+(defun hcnm-bn-change-arrowhead (ename-leader)
   
   (cond
     ((= (hcnm-config-getvar "BubbleArrowIntegralPending") "1")
-     ;; Save current state and disable reactors during arrowhead change
-     (setq saved-blockreactors (hcnm-config-getvar "BlockReactors"))
-     (hcnm-config-setvar "BlockReactors" "1")
      ;; 18 is "Integral" arrowhead type.
      (vla-put-arrowheadtype
        (vlax-ename->vla-object ename-leader)
        18
      )
-     (hcnm-config-setvar "BubbleArrowIntegralPending" "0")
-     ;; CRITICAL: Always restore previous state
-     (hcnm-config-setvar "BlockReactors" saved-blockreactors)
     )
   )
 )
@@ -7069,25 +6721,23 @@ ImportLayerSettings=No
           )
         )
      )
-     (foreach
-        vlaobj-property-new
-        (vlax-invoke vlaobj-block-new 'getdynamicblockproperties)
-       (if (and
-             (setq
-               dyn-props-old-i
-                (assoc
-                  (vlax-get-property
-                    vlaobj-property-new
-                    'propertyname
-                  )
-                  dyn-props-old
-                )
-             )
-             (/= (vlax-get-property vlaobj-property-new 'readonly)
-                 :vlax-true
-             )
+     (foreach vlaobj-property-new 
+       (vlax-invoke vlaobj-block-new 'getdynamicblockproperties)
+       (if 
+         (and 
+           (setq dyn-props-old-i (assoc 
+                                   (vlax-get-property 
+                                     vlaobj-property-new
+                                     'propertyname
+                                   )
+                                   dyn-props-old
+                                 )
            )
-         (vlax-put-property
+           (/= (vlax-get-property vlaobj-property-new 'readonly) 
+               :vlax-true
+           )
+         )
+         (vlax-put-property 
            vlaobj-property-new
            'value
            (cadr dyn-props-old-i)
@@ -7156,7 +6806,7 @@ ImportLayerSettings=No
 
 ;;; Smart search/replace for auto-text updates
 ;;; Preserves user's manual text (prefix/postfix) while updating auto-generated portion
-;;; Used by both dialog path (eb-get-text) and reactor path (update-bubble-tag)
+;;; Used by dialog path (eb-get-text) and bnatu path (update-bubble-tag)
 ;;;
 ;;; PARAMETERS:
 ;;;   current-text - Full text from attribute (may include format codes like %%u or %%o)
@@ -7261,9 +6911,9 @@ ImportLayerSettings=No
 
 ;;; Update auto-text value in lattribs (2-element architecture)
 ;;; SIMPLE REPLACEMENT - just sets the tag value
-;;; Smart search/replace is handled by CALLER (eb-get-text for dialog, update-bubble-tag for reactor)
+;;; Smart search/replace is handled by CALLER (eb-get-text for dialog, update-bubble-tag for bnatu)
 (defun hcnm-bn-lattribs-put-auto
-   (tag auto-new lattribs ename-bubble / attr)
+  (tag auto-new lattribs ename-bubble / attr)
   ;; Simple replacement - caller handles search/replace logic
   (setq attr (assoc tag lattribs))
   (cond
@@ -7557,7 +7207,7 @@ ImportLayerSettings=No
 ;;; Concatenate 4-element structured lattribs to 2-element format
 ;;; This function is obsolete now that lattribs is always 2-element
 (defun hcnm-bn-lattribs-concat
-   (lattribs / result attr tag concat-value)
+  (lattribs / result attr tag concat-value)
   (alert
     (princ
       "\nDEPRECATED: lattribs-concat called but no longer needed in 2-element architecture"
@@ -7619,64 +7269,70 @@ ImportLayerSettings=No
 ;;;
 ;;; Used by: lattribs-to-dlg, lattribs-to-dwg
 ;;;
-(defun hcnm-bn-underover-add (lattribs / bubblemtext underline overline
+(defun hcnm-bn-underover-add (lattribs ename-bubble / ename-next etype elist
+                              atag txt1-mtext-p txt2-mtext-p
                               txt1-attr txt2-attr txt1-empty-p
                               txt2-empty-p txt1-value txt2-value
-                              txt1-clean txt2-clean gap-value result
+                              underline1 overline2 gap-value result
                              )
-  ;; CRITICAL: Strip any existing format codes first to prevent proliferation
-  ;; This handles the case where lattribs already has format codes from a previous pass
   (setq lattribs (hcnm-bn-underover-remove lattribs))
-  ;; Determine format codes based on mtext vs dtext
-  (setq
-    bubblemtext
-     (hcnm-bn-get-mtext-string)
-    underline
-     (cond
-       ((= bubblemtext "") "%%u")
-       (t "\\L")
+  ;; Walk attributes to find per-attribute mtext status
+  (cond
+    (ename-bubble
+     (setq ename-next ename-bubble)
+     (while (and
+              (setq ename-next (entnext ename-next))
+              (/= "SEQEND"
+                (setq etype (cdr (assoc 0 (setq elist (entget ename-next)))))
+              )
+            )
+       (cond
+         ((and (= etype "ATTRIB")
+               (setq atag (cdr (assoc 2 elist)))
+          )
+          (cond
+            ((= atag "NOTETXT1")
+             (setq txt1-mtext-p (hcnm-bn-mtext-p ename-next))
+            )
+            ((= atag "NOTETXT2")
+             (setq txt2-mtext-p (hcnm-bn-mtext-p ename-next))
+            )
+          )
+         )
+       )
      )
-    overline
-     (cond
-       ((= bubblemtext "") "%%o")
-       (t "\\O")
+    )
+    (t
+     (setq
+       txt1-mtext-p (= (hcnm-config-getvar "BubbleMtext") "1")
+       txt2-mtext-p txt1-mtext-p
      )
+    )
   )
-  ;; Get TXT1 and TXT2 attributes
   (setq
-    txt1-attr
-     (assoc "NOTETXT1" lattribs)
-    txt2-attr
-     (assoc "NOTETXT2" lattribs)
+    underline1 (cond (txt1-mtext-p "\\L") (t "%%u"))
+    overline2 (cond (txt2-mtext-p "\\O") (t "%%o"))
   )
-  ;; Check if empty (2-element: just check text value)
   (setq
-    txt1-empty-p
-     (or (not txt1-attr) (= "" (cadr txt1-attr)))
-    txt2-empty-p
-     (or (not txt2-attr) (= "" (cadr txt2-attr)))
+    txt1-attr (assoc "NOTETXT1" lattribs)
+    txt2-attr (assoc "NOTETXT2" lattribs)
   )
-  ;; Add format code to text value if NOT empty
+  (setq
+    txt1-empty-p (or (not txt1-attr) (= "" (cadr txt1-attr)))
+    txt2-empty-p (or (not txt2-attr) (= "" (cadr txt2-attr)))
+  )
   (setq
     txt1-value
      (cond
-       ((not txt1-empty-p)
-        (strcat underline (cadr txt1-attr))
-       )
+       ((not txt1-empty-p) (strcat underline1 (cadr txt1-attr)))
        (t (cadr txt1-attr))
      )
-  )
-  ;; Add format code to text value if NOT empty
-  (setq
     txt2-value
      (cond
-       ((not txt2-empty-p)
-        (strcat overline (cadr txt2-attr))
-       )
+       ((not txt2-empty-p) (strcat overline2 (cadr txt2-attr)))
        (t (cadr txt2-attr))
      )
   )
-  ;; Set NOTEGAP based on whether either line has content
   (setq
     gap-value
      (cond
@@ -7684,7 +7340,6 @@ ImportLayerSettings=No
        (t "")
      )
   )
-  ;; Build result with formatted values (2-element structure)
   (setq result lattribs)
   (setq result (subst (list "NOTETXT1" txt1-value) txt1-attr result))
   (setq result (subst (list "NOTETXT2" txt2-value) txt2-attr result))
@@ -7712,7 +7367,7 @@ ImportLayerSettings=No
 ;;; Used by: dwg-to-lattribs (already strips during read)
 ;;;
 (defun hcnm-bn-underover-remove
-   (lattribs / result attr tag value clean-value)
+  (lattribs / result attr tag value clean-value)
   (setq result nil)
   (foreach
      attr lattribs
@@ -7771,8 +7426,8 @@ ImportLayerSettings=No
 ;;;
 ;;; ARCHITECTURE: Just calls underover-add (preserves 3-part structure for dialog)
 ;;;
-(defun hcnm-bn-lattribs-to-dlg (lattribs)
-  (hcnm-bn-underover-add lattribs)
+(defun hcnm-bn-lattribs-to-dlg (lattribs ename-bubble)
+  (hcnm-bn-underover-add lattribs ename-bubble)
 )
 
 ;;; Transform dialog input back to clean lattribs
@@ -7794,30 +7449,49 @@ ImportLayerSettings=No
 ;; Used by multiple levels of the insertion user experience 
 ;; including the command prompts and the auto text dispatcher
 ;; Returns list of auto-text type definitions
-;; Structure: (input-key display-type reference-type requires-coordinates)
-;; - input-key: Keyword entered by user (initget format)
-;; - display-type: Canonical type name used in code
+;; Structure: (key input-keyword auto-type display-type reference-type requires-coordinates)
+;; - auto-type: (strcase input-keyword) ALL CAPS key used for internal lookups. Always equals strcase of input-keyword and auto-type.
+;; - input-keyword: Keyword entered by user. Varies from key only in capitalization for input purposes (initget and getkword format).
+;; - dialog-type: Not used in code. Hard coded in edit dialog DCL.
 ;; - reference-type: Type of reference object ("AL"=Alignment, "SU"=Surface, nil=none)
-;; - requires-coordinates: T if needs p1-world from leader, nil otherwise
-(defun hcnm-bn-get-auto-data-keys ()
-  '(("LF" "LF" nil nil)                 ; Length (QTY) - user picks objects
-    ("SF" "SF" nil nil)                 ; Square Feet (QTY) - user picks objects
-    ("SY" "SY" nil nil)                 ; Square Yards (QTY) - user picks objects
-    ("STa" "Sta" "AL" t)                ; Station - needs p1-world for alignment query
-    ("Off" "Off" "AL" t)                ; Offset - needs p1-world for alignment query
-    ("stAoff" "StaOff" "AL" t)          ; Station+Offset - needs p1-world for alignment query
-    ("NAme" "AlName" "AL" nil)          ; Alignment Name - no coordinates needed
-    ("STAName" "StaName" "AL" t)        ; Station + Alignment Name - needs p1-world
-    ("N" "N" nil t)                     ; Northing - needs p1-world for coordinate
-    ("E" "E" nil t)                     ; Easting - needs p1-world for coordinate
-    ("NE" "NE" nil t)                   ; Northing+Easting - needs p1-world for coordinate
-    ("Z" "Z" "SU" t)                    ; Elevation - needs p1-world for surface query (unimplemented)
-    ("Dia" "Dia" "PIPE" nil)            ; Pipe Diameter - user selects pipe object
-    ("SLope" "Slope" "PIPE" nil)        ; Pipe Slope - user selects pipe object
-    ("L" "L" "PIPE" nil)                ; Pipe Length - user selects pipe object
-    ("Text" "Text" nil nil)             ; Static text - user enters manually
-    ("ENtry" "ENtry" nil nil)           ; Entry number - static text
+;; - requires-coordinates-p: T if needs p1-world from leader, nil otherwise
+(defun hcnm-bn-auto-text-definitions ()
+  '(("LF" "LF" "LF" nil nil)                 ; Length (QTY) - user picks objects
+    ("SF" "SF" "SF" nil nil)                 ; Square Feet (QTY) - user picks objects
+    ("SY" "SY" "SY" nil nil)                 ; Square Yards (QTY) - user picks objects
+    ("STA" "STa" "Sta" "AL" t)                ; Station - needs p1-world for alignment query
+    ("OFF" "Off" "Off" "AL" t)                ; Offset - needs p1-world for alignment query
+    ("STAOFF" "stAoff" "StaOff" "AL" t)          ; Station+Offset - needs p1-world for alignment query
+    ("NAME" "NAme" "Name" "AL" nil)          ; Alignment Name - no coordinates needed
+    ("STANAME" "STAName" "StaName" "AL" t)        ; Station + Alignment Name - needs p1-world
+    ("N" "N" "N" nil t)                     ; Northing - needs p1-world for coordinate
+    ("E" "E" "E" nil t)                     ; Easting - needs p1-world for coordinate
+    ("NE" "NE" "NE" nil t)                   ; Northing+Easting - needs p1-world for coordinate
+;;    ("Z" "Z" "Z" "SU" t)                    ; Elevation - needs p1-world for surface query (unimplemented)
+    ("DIA" "Dia" "Dia" "PIPE" nil)            ; Pipe Diameter - user selects pipe object
+    ("SLOPE" "SLope" "Slope" "PIPE" nil)        ; Pipe Slope - user selects pipe object
+    ("L" "L" "L" "PIPE" nil)                ; Pipe Length - user selects pipe object
+    ("TEXT" "Text" "Text" nil nil)             ; Drawing text - user selects text object
+    ("ENTRY" "ENtry" "ENtry" nil nil)           ; Entry text - static text
    )
+)
+(defun hcnm-bn-get-auto-text-input-keyword (key-insensitive)
+  (cadr (assoc (strcase key-insensitive) (hcnm-bn-auto-text-definitions)))
+)
+(defun hcnm-bn-get-auto-text-auto-type (key-insensitive)
+  (strcase key-insensitive)
+)
+(defun hcnm-bn-get-auto-text-reference-type (key-insensitive)
+  (nth 3 (assoc (strcase key-insensitive) (hcnm-bn-auto-text-definitions)))
+)
+(defun hcnm-bn-auto-text-requires-coordinates-p (key-insensitive)
+  (nth 4 (assoc (strcase key-insensitive) (hcnm-bn-auto-text-definitions)))
+)
+(defun hcnm-bn-get-auto-text-auto-types-list ()
+  (mapcar 'car (hcnm-bn-auto-text-definitions))
+)
+(defun hcnm-bn-get-auto-text-input-keywords-list ()
+  (mapcar 'cadr (hcnm-bn-auto-text-definitions))
 )
 ;; hcnm-bn-auto-dispatch is called from command line (insertion) and from edit box (editing) to get string as requested by user. It needs to get not only string, but also data (reference object and reference type).
 ;; 
@@ -7832,18 +7506,18 @@ ImportLayerSettings=No
 ;; 
 ;; Bubble note editing process from inside out:
 ;; hcnm-bn-auto-dispatch returns lattribs
-;; hcnm-bn-eb-get-text modifies semi-global hcnm-bn-eb-lattribs after adjusting formatting (overline and underline)
-;; hcnm-bn-eb-save calls hcnm-set-attributes to save semi-global hcnm-bn-eb-lattribs
+;; hcnm-bn-eb-get-text modifies hcnm-bn-eb-state after adjusting formatting (overline and underline)
+;; hcnm-bn-eb-save calls hcnm-set-attributes to save from hcnm-bn-eb-state
 ;; hcnm-edit-bubble top level manages editing dialog
 ;;
-;; Reactor update process from inside out:
+;; Update process from inside out:
 ;; hcnm-bn-auto-dispatch returns lattribs
 ;; hcnm-bn-update-bubble-tag modifies bubble-data that includes lattribs after adjusting formatting  (overline and underline)
-;; hcnm-bn-reactor-update calls hcnm-bn-update-bubble-tag to update semi-global bubble-data
-;; hcnm-bn-reactor top level manages reactor update
+;; hcnm-bn-bnatu-update calls hcnm-bn-update-bubble-tag to update semi-global bubble-data
+;; hcnm-bn-bnatu top level manages bnatu update
 ;;;
 ;;; PARAMETERS:
-;; obj-target is the target object provided by the reactor callback (not used in insertion/editing)
+;; obj-target is the target object provided by the bnatu (not used in insertion/editing)
 ;; tag is the attribute tag being processed (e.g., "NOTETXT1")
 ;; Returns bubble-data with the requested auto data added.
 ;;;
@@ -7852,16 +7526,16 @@ ImportLayerSettings=No
 ;;;
 ;;; PARAMETERS:
 ;;;   tag - Attribute tag (e.g., "NOTETXT1")
-;;;   auto-type - Auto-text type (e.g., "Sta", "Off", "N", "Dia")
+;;;   auto-type - Auto-text type (e.g., "STA", "OFF", "N", "DIA")
 ;;;   obj-reference - VLA-OBJECT of reference (alignment/pipe/surface) or NIL
 ;;;                   For handle-based types: VLA-OBJECT (never NIL)
 ;;;                   For handleless types (N/E/NE): Always NIL
 ;;;   bubble-data - Bubble data alist
-;;;   reactor-context-p - T if called from reactor, NIL if called from insertion/editing
+;;;   bnatu-context-p - T if called from bnatu, NIL if called from insertion/editing
 ;;;                       Controls whether to prompt user for missing data
 ;;;
 ;;; RETURNS: Updated bubble-data
-(defun hcnm-bn-auto-dispatch (tag auto-type obj-reference bubble-data reactor-context-p /
+(defun hcnm-bn-auto-dispatch (tag auto-type obj-reference bubble-data bnatu-context-p /
                               ename-bubble lattribs time-start
                              )
   ;; Profile start
@@ -7887,7 +7561,7 @@ ImportLayerSettings=No
        lattribs
      )
   )
-  ;; Ensure ename-leader is in bubble-data (needed for reactor attachment)
+  ;; Ensure ename-leader is in bubble-data (needed for bnatu XDATA?)
   (cond
     ((not
        (hcnm-bn-bubble-data-get bubble-data "ename-leader")
@@ -7907,73 +7581,73 @@ ImportLayerSettings=No
   (setq
     bubble-data
      (cond
-       ((= auto-type "Text")
+       ((= auto-type "TEXT")
         (hcnm-bn-auto-es
           bubble-data
           tag
           auto-type
           obj-reference
-          reactor-context-p
+          bnatu-context-p
         )
        )
        ((= auto-type "LF")
         (hcnm-bn-auto-qty
-          bubble-data tag auto-type "Length" "1" obj-reference reactor-context-p
+          bubble-data tag auto-type "Length" "1" obj-reference bnatu-context-p
          )
        )
        ((= auto-type "SF")
         (hcnm-bn-auto-qty
-          bubble-data tag auto-type "Area" "1" obj-reference reactor-context-p
+          bubble-data tag auto-type "Area" "1" obj-reference bnatu-context-p
          )
        )
        ((= auto-type "SY")
         (hcnm-bn-auto-qty
-          bubble-data tag auto-type "Area" "0.11111111" obj-reference reactor-context-p
+          bubble-data tag auto-type "Area" "0.11111111" obj-reference bnatu-context-p
          )
        )
-       ((= auto-type "Sta")
+       ((= auto-type "STA")
         (hcnm-bn-auto-al
           bubble-data
           tag
           auto-type
           obj-reference
-          reactor-context-p
+          bnatu-context-p
         )
        )
-       ((= auto-type "Off")
+       ((= auto-type "OFF")
         (hcnm-bn-auto-al
           bubble-data
           tag
           auto-type
           obj-reference
-          reactor-context-p
+          bnatu-context-p
         )
        )
-       ((= auto-type "StaOff")
+       ((= auto-type "STAOFF")
         (hcnm-bn-auto-al
           bubble-data
           tag
           auto-type
           obj-reference
-          reactor-context-p
+          bnatu-context-p
         )
        )
-       ((= auto-type "AlName")
+       ((= auto-type "NAME")
         (hcnm-bn-auto-al
           bubble-data
           tag
           auto-type
           obj-reference
-          reactor-context-p
+          bnatu-context-p
         )
        )
-       ((= auto-type "StaName")
+       ((= auto-type "STANAME")
         (hcnm-bn-auto-al
           bubble-data
           tag
           auto-type
           obj-reference
-          reactor-context-p
+          bnatu-context-p
         )
        )
        ((= auto-type "N")
@@ -7982,7 +7656,7 @@ ImportLayerSettings=No
           tag
           auto-type
           obj-reference
-          reactor-context-p
+          bnatu-context-p
         )
        )
        ((= auto-type "E")
@@ -7991,7 +7665,7 @@ ImportLayerSettings=No
           tag
           auto-type
           obj-reference
-          reactor-context-p
+          bnatu-context-p
         )
        )
        ((= auto-type "NE")
@@ -8000,7 +7674,7 @@ ImportLayerSettings=No
           tag
           auto-type
           obj-reference
-          reactor-context-p
+          bnatu-context-p
         )
        )
        ((= auto-type "Z")
@@ -8009,25 +7683,25 @@ ImportLayerSettings=No
           tag
           auto-type
           obj-reference
-          reactor-context-p
+          bnatu-context-p
         )
        )
-       ((= auto-type "Dia")
+       ((= auto-type "DIA")
         (hcnm-bn-auto-pipe
           bubble-data
           tag
           auto-type
           obj-reference
-          reactor-context-p
+          bnatu-context-p
         )
        )
-       ((= auto-type "Slope")
+       ((= auto-type "SLOPE")
         (hcnm-bn-auto-pipe
           bubble-data
           tag
           auto-type
           obj-reference
-          reactor-context-p
+          bnatu-context-p
         )
        )
        ((= auto-type "L")
@@ -8036,7 +7710,7 @@ ImportLayerSettings=No
           tag
           auto-type
           obj-reference
-          reactor-context-p
+          bnatu-context-p
         )
        )
      )
@@ -8047,13 +7721,13 @@ ImportLayerSettings=No
   (haws-clock-console-log (strcat "    [PROFILE] Auto-dispatch (" auto-type "): " 
                  (itoa (- (getvar "MILLISECS") time-start)) "ms"))
   ;; Return full bubble-data (contains lattribs + handle-reference + viewport info)
-  ;; This allows callers to extract handle info for XDATA updates and reactor attachment
+  ;; This allows callers to extract handle info for XDATA updates and creation
   bubble-data
 )
 
 ;#region Auto text/mtext
-(defun hcnm-bn-auto-es (bubble-data tag auto-type obj-reference reactor-context-p / ename
-                        lattribs ename-bubble
+(defun hcnm-bn-auto-es (bubble-data tag auto-type obj-reference bnatu-context-p / ename
+                        lattribs ename-bubble string
                        )
   (setq
     ename-bubble
@@ -8063,26 +7737,34 @@ ImportLayerSettings=No
      )
     lattribs
      (hcnm-bn-bubble-data-get bubble-data "ATTRIBUTES")
-    ename
-     (cond
-       (obj-reference)
-       (t
-        (car
-          (nentsel (strcat "\nSelect object with " auto-type ": "))
-        )
-       )
-     )
   )
-  ;; END hcnm-bn-auto-get-input SUBFUNCTION
-  ;; START hcnm-bn-auto-update SUBFUNCTION
-  (setq
-    lattribs
-     (hcnm-bn-lattribs-put-auto
-       tag
+  (cond
+    (obj-reference
+     ;; Have reference - read its text
+     (setq string (cdr (assoc 1 (entget obj-reference))))
+    )
+    (bnatu-context-p
+     ;; BNATU context, reference deleted - keep existing text
+     (setq string (cond ((assoc tag lattribs) (cadr (assoc tag lattribs))) (t "")))
+    )
+    (t
+     ;; Interactive - prompt user
+     (setq ename
+       (car (nentsel (strcat "\nSelect object with " auto-type ": ")))
+     )
+     (setq string
        (cond
          (ename (cdr (assoc 1 (entget ename))))
          (t "")
        )
+     )
+    )
+  )
+  (setq
+    lattribs
+     (hcnm-bn-lattribs-put-auto
+       tag
+       string
        lattribs
        ename-bubble
      )
@@ -8098,7 +7780,7 @@ ImportLayerSettings=No
 ;#endregion
 ;#region Auto quantity (LF/SF/SY)
 (defun hcnm-bn-auto-qty (bubble-data tag auto-type qt-type factor
-                         obj-reference reactor-context-p / lattribs str-backslash input1
+                         obj-reference bnatu-context-p / lattribs str-backslash input1
                          pspace-restore-p ss-p string ename-bubble handle-reference
                         )
   (setq
@@ -8109,10 +7791,13 @@ ImportLayerSettings=No
      )
     lattribs
      (hcnm-bn-bubble-data-get bubble-data "ATTRIBUTES")
+    string ""
   )
   (cond
     (obj-reference
-     (setq string "Programming error. See command line.")
+     ;; Reference object provided - generate fresh auto-text (no prompt needed)
+     ;; obj-reference is VLA-OBJECT from alignment/pipe/surface
+     (setq string "Programming error - auto-qty should not receive obj-reference")
      (princ
        (strcat
          "\nProgramming error: "
@@ -8121,7 +7806,14 @@ ImportLayerSettings=No
        )
      )
     )
+    (bnatu-context-p
+     ;; BUP context but NO reference provided - skip (fields don't update via bnatu)
+     ;; For dynamic fields (LF/SF/SY), the field expression handles updates automatically
+     ;; XDATA only stores the field text, no reference object
+     (setq string (cond ((assoc tag lattribs) (cadr (assoc tag lattribs))) (t "")))
+    )
     (t
+     ;; Insertion/editing context - prompt user for object selection
      (haws-tip 9 "This auto text uses AutoCAD fields that display as ####. They update on regen or print.")
      (cond
        ((and
@@ -8217,7 +7909,7 @@ ImportLayerSettings=No
   ;; FIX: Add auto-metadata for editor smart replace consistency
   ;; ALL auto-text (field-based and static) needs XDATA for editor smart replace
   ;; Handle is always empty ("") because:
-  ;; - Dynamic fields: AutoCAD field system handles updates (not CNM reactors)
+  ;; - Dynamic fields: AutoCAD field system handles updates (not CNM bnatu)
   ;; - Static quantities: No updates needed (calculated once)
   ;; XDATA only purpose: Enable editor to find/replace auto-text (user convenience)
   (setq handle-reference "")
@@ -8238,203 +7930,13 @@ ImportLayerSettings=No
 ;; ALIGNMENT AUTO-TEXT (Sta/Off/StaOff)
 ;;==============================================================================
 ;; Calculates station and offset values from alignment and leader position
-;; Workflow: Get alignment ? Calculate Sta/Off ? Format text ? Attach reactor
+;; Workflow: Get alignment ? Calculate Sta/Off ? Format text ? Attach XDATA
 ;;
 ;; REFACTORED: Split into modular functions for better maintainability
 ;;   - hcnm-bn-auto-alignment-calculate: Pure calculation (testable)
 ;;   - hcnm-bn-auto-al-station-to-string: Format station string
 ;;   - hcnm-bn-auto-al-offset-to-string: Format offset string
 ;;   - hcnm-bn-auto-al: Main orchestrator (backward compatible)
-
-;; Calculate raw station and offset from alignment and world point
-;; Pure function: No side effects, easily testable
-;; Arguments:
-;;   alignment-object - VLA-OBJECT of Civil 3D alignment
-;;   p1-world - (X Y Z) point in world coordinates
-;; Returns:
-;;   (DRAWSTATION . OFFSET) on success
-;;   NIL on failure
-;; Check if alignment contains only simple geometry (lines/arcs, no spirals)
-;; Returns T if simple (can use offline calculation), nil if complex
-(defun hcnm-bn-alignment-is-simple-p (obj-align / entities has-spiral-p result)
-  (setq result
-    (vl-catch-all-apply
-      '(lambda ()
-        (setq 
-          entities (vlax-get-property obj-align 'Entities)
-          has-spiral-p nil
-        )
-        ;; Iterate through alignment entities checking for spirals
-        (vlax-for entity entities
-          ;; Entity types: 1=Line, 2=Arc, 3=Spiral (Civil 3D API)
-          ;; Check Type property or object name
-          (if (wcmatch 
-                (strcase (vlax-get-property entity 'ObjectName))
-                "*SPIRAL*"
-              )
-            (setq has-spiral-p t)
-          )
-        )
-        ;; Return T if no spirals found
-        (not has-spiral-p)
-      )
-    )
-  )
-  ;; Return result, or nil if error occurred
-  (if (vl-catch-all-error-p result)
-    (progn
-      (haws-debug (strcat "[GEOMETRY CHECK] Error checking alignment geometry: " 
-                         (vl-prin1-to-string result)))
-      nil  ; Assume complex on error (use Civil 3D API)
-    )
-    result
-  )
-)
-
-;;==============================================================================
-;; Offline calculation of station/offset for simple alignments
-;; Uses geometry math instead of Civil 3D API for speed (~100x faster)
-;; Supports: Straight line segments and circular arcs
-;; Returns: (drawstation . offset) or nil if calculation fails
-;;==============================================================================
-(defun hcnm-bn-auto-alignment-calculate-offline (obj-align p1-world / 
-                                                   entities entity cumulative-station
-                                                   entity-type start-point end-point
-                                                   segment-length projection-distance
-                                                   perpendicular-distance drawstation offset
-                                                   result found-segment-p)
-  (setq result
-    (vl-catch-all-apply
-      '(lambda ()
-        (setq 
-          entities (vlax-get-property obj-align 'Entities)
-          cumulative-station 0.0
-          found-segment-p nil
-        )
-        
-        ;; Iterate through alignment entities (lines/arcs)
-        (vlax-for entity entities
-          (if (not found-segment-p)
-            (progn
-              (setq entity-type (vlax-get-property entity 'ObjectName))
-              
-              (cond
-                ;; CASE 1: Straight line segment
-                ((wcmatch (strcase entity-type) "*LINE*")
-                 (setq 
-                   start-point (vlax-get-property entity 'StartPoint)
-                   end-point (vlax-get-property entity 'EndPoint)
-                   segment-length (vlax-get-property entity 'Length)
-                 )
-                 
-                 ;; Convert variant points to lists for AutoLISP geometry functions
-                 (setq 
-                   start-point (list (vlax-variant-value (vlax-safearray-get-element start-point 0))
-                                     (vlax-variant-value (vlax-safearray-get-element start-point 1))
-                                     0.0)
-                   end-point (list (vlax-variant-value (vlax-safearray-get-element end-point 0))
-                                   (vlax-variant-value (vlax-safearray-get-element end-point 1))
-                                   0.0)
-                 )
-                 
-                 ;; Calculate projection of p1-world onto line segment
-                 ;; Vector from start to end
-                 (setq segment-vector (mapcar '- end-point start-point))
-                 
-                 ;; Vector from start to point
-                 (setq point-vector (mapcar '- p1-world start-point))
-                 
-                 ;; Dot product and magnitude
-                 (setq 
-                   dot-product (apply '+ (mapcar '* segment-vector point-vector))
-                   segment-length-sq (apply '+ (mapcar '* segment-vector segment-vector))
-                 )
-                 
-                 ;; Parameter t = how far along segment (0=start, 1=end)
-                 (setq t-param (/ dot-product segment-length-sq))
-                 
-                 ;; Check if projection falls on this segment (0 <= t <= 1)
-                 (cond
-                   ((and (>= t-param 0.0) (<= t-param 1.0))
-                    ;; Point projects onto this segment
-                    (setq 
-                      projection-distance (* t-param segment-length)
-                      drawstation (+ cumulative-station projection-distance)
-                    )
-                    
-                    ;; Calculate perpendicular distance (offset)
-                    ;; Projection point on segment
-                    (setq projection-point 
-                      (mapcar '+ start-point 
-                              (mapcar '(lambda (x) (* x t-param)) segment-vector)))
-                    
-                    ;; Distance from p1-world to projection point
-                    (setq perpendicular-distance (distance p1-world projection-point))
-                    
-                    ;; Determine sign (left/right) using cross product
-                    ;; Cross product Z component: (end-start) × (point-start)
-                    (setq cross-z 
-                      (- (* (- (car end-point) (car start-point))
-                            (- (cadr p1-world) (cadr start-point)))
-                         (* (- (cadr end-point) (cadr start-point))
-                            (- (car p1-world) (car start-point)))))
-                    
-                    ;; Positive cross-z = left, negative = right (standard convention)
-                    (setq offset 
-                      (if (>= cross-z 0.0)
-                        perpendicular-distance     ; Left (positive)
-                        (- perpendicular-distance) ; Right (negative)
-                      ))
-                    
-                    (setq found-segment-p t)
-                   )
-                   (t
-                    ;; Point doesn't project onto this segment, accumulate station
-                    (setq cumulative-station (+ cumulative-station segment-length))
-                   )
-                 )
-                )
-                
-                ;; CASE 2: Circular arc segment
-                ((wcmatch (strcase entity-type) "*ARC*")
-                 ;; TODO: Implement arc projection geometry
-                 ;; For now, skip arc segments (return nil to force Civil 3D API)
-                 (haws-debug "[OFFLINE CALC] Arc segment detected, falling back to Civil 3D API")
-                 (setq found-segment-p nil)
-                 (vlr-break)  ; Exit iteration early
-                )
-                
-                ;; CASE 3: Other geometry (shouldn't happen if is-simple-p worked)
-                (t
-                 (haws-debug (strcat "[OFFLINE CALC] Unexpected entity type: " entity-type))
-                 (setq found-segment-p nil)
-                 (vlr-break)  ; Exit iteration early
-                )
-              )
-            )
-          )
-        )
-        
-        ;; Return result if segment found
-        (if found-segment-p
-          (cons drawstation offset)
-          nil
-        )
-      )
-    )
-  )
-  
-  ;; Handle errors gracefully - return nil to force Civil 3D API fallback
-  (if (vl-catch-all-error-p result)
-    (progn
-      (haws-debug (strcat "[OFFLINE CALC] Error during calculation: " 
-                         (vl-prin1-to-string result)))
-      (haws-debug "[OFFLINE CALC] Falling back to Civil 3D API")
-      nil
-    )
-    result
-  )
-)
 
 (defun hcnm-bn-auto-alignment-calculate
    (alignment-object p1-world / drawstation offset)
@@ -8513,15 +8015,15 @@ ImportLayerSettings=No
   )
 )
 ;; Main alignment auto-text function
-;; Orchestrates: get alignment → calculate → format → attach reactor
+;; Orchestrates: get alignment → calculate → format → attach XDATA
 ;; Arguments:
 ;;   bubble-data - Bubble data alist
 ;;   TAG - Attribute tag to update
-;;   auto-type - "Sta", "Off", "StaOff", "AlName", or "StaName"
+;;   auto-type - "STA", "OFF", "STAOFF", "NAME", or "STANAME"
 ;;   obj-reference - VLA-OBJECT alignment (if provided), or NIL (will prompt user)
-;;   reactor-context-p - T if reactor callback, NIL if insertion/editing
+;;   bnatu-context-p - T if BNATU update, NIL if insertion/editing
 ;; Returns: Updated bubble-data with new attribute value
-(defun hcnm-bn-auto-al (bubble-data tag auto-type obj-reference reactor-context-p /
+(defun hcnm-bn-auto-al (bubble-data tag auto-type obj-reference bnatu-context-p /
                         alignment-name lattribs ename-bubble
                         ename-leader sta-off-pair drawstation offset
                         obj-align p1-world pspace-restore-p sta-string
@@ -8549,17 +8051,17 @@ ImportLayerSettings=No
     p1-world
      (hcnm-bn-bubble-data-get bubble-data "p1-world")
   )
-  ;; STEP 1: Get alignment object from reactor or user
+  ;; STEP 1: Get alignment object from bnatu or user
   (cond
     (obj-reference
      ;; Path 1: obj-reference provided (VLA-OBJECT alignment)
-     ;; UX scenario: Reactor callback - reference from XDATA handle
+     ;; UX scenario: bnatu invocation - reference from XDATA handle
      (setq obj-align obj-reference)
      (cond
-       ((or (= auto-type "Sta")
-            (= auto-type "Off")
-            (= auto-type "StaOff")
-            (= auto-type "StaName")
+       ((or (= auto-type "STA")
+            (= auto-type "OFF")
+            (= auto-type "STAOFF")
+            (= auto-type "STANAME")
         )
         (setq
           bubble-data
@@ -8588,10 +8090,10 @@ ImportLayerSettings=No
      )
      ;; Now calculate p1-world if needed for coordinate-requiring types (both handle-based AL and handleless N/E/NE)
      (cond
-       ((or (= auto-type "Sta")
-            (= auto-type "Off")
-            (= auto-type "StaOff")
-            (= auto-type "StaName")
+       ((or (= auto-type "STA")
+            (= auto-type "OFF")
+            (= auto-type "STAOFF")
+            (= auto-type "STANAME")
         )
         (setq
           bubble-data
@@ -8608,10 +8110,10 @@ ImportLayerSettings=No
   )
   ;; STEP 2: Calculate station and offset (only needed for coordinate-based types)
   (cond
-    ((or (= auto-type "Sta")
-         (= auto-type "Off")
-         (= auto-type "StaOff")
-         (= auto-type "StaName")
+    ((or (= auto-type "STA")
+         (= auto-type "OFF")
+         (= auto-type "STAOFF")
+         (= auto-type "STANAME")
      )
      ;; Safety check - obj-align must be a valid VLA-OBJECT
      (cond
@@ -8637,7 +8139,7 @@ ImportLayerSettings=No
   )
   ;; STEP 3: Format the result based on auto-type
   (cond
-    ((= auto-type "AlName")
+    ((= auto-type "NAME")
      ;; Alignment name only - no coordinates needed
      (cond
        (obj-align
@@ -8680,16 +8182,16 @@ ImportLayerSettings=No
         (hcnm-bn-auto-al-offset-to-string offset)
        string
         (cond
-          ((= auto-type "Sta") sta-string)
-          ((= auto-type "Off") off-string)
-          ((= auto-type "StaOff")
+          ((= auto-type "STA") sta-string)
+          ((= auto-type "OFF") off-string)
+          ((= auto-type "STAOFF")
            (strcat
              sta-string
              (hcnm-config-getvar "BubbleTextJoinDelSta")
              off-string
            )
           )
-          ((= auto-type "StaName")
+          ((= auto-type "STANAME")
            ;; Station + alignment name
            (setq
              string
@@ -8747,7 +8249,7 @@ ImportLayerSettings=No
     )
   )
   ;; Step 5: Restore space after calculation is complete
-  ;; (XDATA updates and reactor attachment now handled by caller)
+  ;; (XDATA updates and XDATA attachment now handled by caller)
   (hcnm-bn-space-restore pspace-restore-p)
   ;;===========================================================================
   ;; PROFILING: End timing alignment auto-text generation
@@ -8761,44 +8263,21 @@ ImportLayerSettings=No
                                       ref-ocs-2 ref-ocs-3 ref-wcs-1
                                       ref-wcs-2 ref-wcs-3 valid-alignment-p
                                      )
-  (setq
-    obj-align-old
-     (hcnm-config-getvar "BubbleCurrentAlignment")
-    name
-     (cond
-       ((and
-          (= (type obj-align-old) 'vla-object)
-          (not
-            (vl-catch-all-error-p
-              (vl-catch-all-apply
-                'vlax-get-property
-                (list obj-align-old 'name)
-              )
-            )
-          )
-        )
-        (vl-catch-all-apply
-          'vlax-get-property
-          (list obj-align-old 'name)
-        )
-       )
-       (t (setq obj-align-old nil) "")
-     )
-    valid-alignment-p nil
-  )
-  ;; Loop until valid alignment selected or user cancels (ESC)
-  (while (not valid-alignment-p)
-    (setq
-      es-align
-       (nentsel
-         (strcat
-           "\nSelect alignment"
-           (cond
-             ((= name "") ": ")
-             (t (strcat " or <" name ">: "))
-           )
-         )
-       )
+  (setq obj-align-old (hcnm-config-getvar "BubbleCurrentAlignment"))
+  (setq name (if (= (type obj-align-old) 'vla-object)  (vlax-get-property obj-align-old 'name) ""))
+  ;; If there is a previous alignment, allow empty input to reuse previous, else loop until one is selected.
+  (while (not valid-alignment-p) 
+    ;; There is no way for us to distinguish fat-fingering from [Enter] so we have to accept both as "reuse previous" if there is a previous alignment.
+    (if (/= name "") (setq valid-alignment-p t))
+    (setq es-align (nentsel 
+                     (strcat 
+                       "\nSelect alignment"
+                       (cond 
+                         ((= name "") ": ")
+                         (t (strcat " or <" name ">: "))
+                       )
+                     )
+                   )
     )
     (cond
       ;; Valid alignment selected
@@ -8806,46 +8285,41 @@ ImportLayerSettings=No
          es-align
          (= (cdr (assoc 0 (entget (car es-align)))) "AECC_ALIGNMENT")
        )
-       (setq
-         obj-align (vlax-ename->vla-object (car es-align))
-         valid-alignment-p t
+       (setq obj-align         (vlax-ename->vla-object (car es-align))
+             valid-alignment-p t
        )
        (hcnm-config-setvar "BubbleCurrentAlignment" obj-align)
-       ;; Gateway call AFTER validating alignment (only for valid picks)
-       (hcnm-bn-gateways-to-viewport-selection-prompt
-         ename-bubble
-         auto-type
-         nil                              ; obj-target=nil for initial creation
-         "PICKED"                         ; Object was just picked
-         nil                              ; Normal auto-text flow (not super-clearance)
-       )
       )
-      ;; Wrong object type selected
       (es-align
-       (alert
-         "\nSelected object is not an alignment. Try again or press ESC to cancel."
-       )
+       (princ "\nSelected object is not an alignment. Keeping previous alignment.")
+       (setq obj-align obj-align-old)
       )
-      ;; Empty selection - use previous if exists, else loop
-      ((and (not es-align) obj-align-old)
-       (setq
-         obj-align obj-align-old
-         valid-alignment-p t
-       )
+      ((/= name "")
+       (princ "\nNo object selected. Keeping previous alignment.")
+       (setq obj-align obj-align-old)
       )
-      ;; Empty selection with no previous - loop continues
       (t
-       (haws-debug "No object selected and no previous alignment.")
+       (princ "\nNo object selected. Try again.")
       )
     )
   )
+  (hcnm-bn-gateways-to-viewport-selection-prompt
+    ename-bubble
+    auto-type
+    nil                                 ; obj-target=nil for initial creation
+    (if es-align
+      "PICKED"
+      "REUSED"
+    )                                   ; Based on whether user selected something
+    nil
+  )                                     ; Normal auto-text flow (not super-clearance)
   obj-align                             ; Return the alignment object
 )
 ;#endregion
 ;#region Auto NE
-(defun hcnm-bn-auto-ne (bubble-data tag auto-type obj-reference reactor-context-p / lattribs
+(defun hcnm-bn-auto-ne (bubble-data tag auto-type obj-reference bnatu-context-p / lattribs
                         e ename-bubble ename-leader n ne p1-ocs p1-world
-                        reactor-update-p string
+                        bnatu-update-p string
                        )
   (setq
     lattribs
@@ -8860,8 +8334,8 @@ ImportLayerSettings=No
        bubble-data
        "ename-leader"
      )
-    ;; reactor-context-p = T means reactor callback, NIL means insertion/editing
-    reactor-update-p reactor-context-p
+    ;; bnatu-context-p = T means bnatu, NIL means insertion/editing
+    bnatu-update-p bnatu-context-p
   )
   ;; CRITICAL: Check for leader BEFORE gateway call
   ;; Gateway tries to capture viewport, which is pointless without a leader
@@ -8905,9 +8379,9 @@ ImportLayerSettings=No
   (haws-debug "After gateway call")
   ;; Calculate or get p1-world
   (cond
-    (reactor-update-p
-     ;; Reactor update - recalculate p1-world from current leader position using stored transformation
-     (haws-debug "Reactor update path")
+    (bnatu-update-p
+     ;; bnatu update - recalculate p1-world from current leader position using stored transformation
+     (haws-debug "bnatu update path")
      (setq p1-ocs (hcnm-bn-p1-ocs ename-leader))
      (haws-debug (list "p1-ocs=" (vl-princ-to-string p1-ocs)))
      (setq
@@ -8997,9 +8471,9 @@ ImportLayerSettings=No
   )
   (haws-debug ">>> AFTER bubble-data-set ATTRIBUTES")
   ;; Accumulate auto-text metadata for insertion path (N/E/NE are handleless)
-  ;; Only accumulate during initial creation, not reactor updates
+  ;; Only accumulate during initial creation, not bnatu updates
   (cond
-    ((not reactor-update-p)
+    ((not bnatu-update-p)
      (haws-debug ">>> BEFORE bubble-data-add-auto-metadata")
      (setq
        bubble-data
@@ -9032,7 +8506,7 @@ ImportLayerSettings=No
 ;; Arguments:
 ;;   ename-bubble - Entity name of bubble being edited (required)
 ;;   TAG - Attribute tag being updated (required)
-;;   auto-type - Property type: "Dia", "Slope", or "L" (required)
+;;   auto-type - Property type: "DIA", "SLOPE", or "L" (required)
 ;;
 ;; Returns:
 ;;   VLA-OBJECT of selected pipe, or NIL if selection failed
@@ -9044,7 +8518,7 @@ ImportLayerSettings=No
 ;;   hcnm-bn-auto-pipe
 ;;
 ;; Example:
-;;   (SETQ obj-pipe (hcnm-bn-auto-pipe-get-object ename-bubble "NOTETXT1" "Dia"))
+;;   (SETQ obj-pipe (hcnm-bn-auto-pipe-get-object ename-bubble "NOTETXT1" "DIA"))
 ;;==============================================================================
 (defun hcnm-bn-auto-pipe-get-object (ename-bubble tag auto-type / esapipe obj-pipe 
                                      valid-pipe-p obj-type
@@ -9057,8 +8531,8 @@ ImportLayerSettings=No
         (strcat 
           "\nSelect Civil 3D pipe for "
           (cond 
-            ((= auto-type "Dia") "diameter")
-            ((= auto-type "Slope") "slope")
+            ((= auto-type "DIA") "diameter")
+            ((= auto-type "SLOPE") "slope")
             ((= auto-type "L") "length")
             (t "property")
           )
@@ -9292,21 +8766,20 @@ ImportLayerSettings=No
 ;; Purpose:
 ;;   Main pipe network auto-text orchestrator. Gets pipe object, extracts
 ;;   specified property (diameter/slope/length), formats with config settings,
-;;   and attaches reactor for automatic updates when pipe changes.
+;;   and attaches XDATA for automatic updates when pipe changes.
 ;;
 ;; Arguments:
 ;;   bubble-data - Bubble data alist (required)
 ;;   TAG - Attribute tag to update (required)
-;;   auto-type - Property type: "Dia", "Slope", or "L" (required)
+;;   auto-type - Property type: "DIA", "SLOPE", or "L" (required)
 ;;   obj-reference - VLA-OBJECT pipe (if provided), or NIL (will prompt user)
-;;   reactor-context-p - T if reactor callback, NIL if insertion/editing
+;;   bnatu-context-p - T if bnatu call, NIL if insertion/editing
 ;;
 ;; Returns:
 ;;   Updated bubble-data with new attribute value
 ;;
 ;; Side Effects:
-;;   - Prompts user for pipe selection if not reactor context
-;;   - Attaches VLR-OBJECT-REACTOR to pipe for automatic updates
+;;   - Prompts user for pipe selection if not bnatu context
 ;;   - Switches to model space temporarily if bubble is in paper space
 ;;   - Updates lattribs within bubble-data
 ;;
@@ -9315,14 +8788,14 @@ ImportLayerSettings=No
 ;;   hcnm-bn-auto-pipe-dia-to-string
 ;;   hcnm-bn-auto-pipe-slope-to-string
 ;;   hcnm-bn-auto-pipe-length-to-string
-;;   hcnm-bn-assure-auto-text-has-reactor
+;;   hcnm-bn-assure-auto-text-has-xdata
 ;;
 ;; Example:
 ;;   (SETQ bubble-data
-;;     (hcnm-bn-auto-pipe bubble-data "NOTETXT1" "Dia" NIL NIL)
+;;     (hcnm-bn-auto-pipe bubble-data "NOTETXT1" "DIA" NIL NIL)
 ;;   )
 ;;==============================================================================
-(defun hcnm-bn-auto-pipe (bubble-data tag auto-type obj-reference reactor-context-p /
+(defun hcnm-bn-auto-pipe (bubble-data tag auto-type obj-reference bnatu-context-p /
                           lattribs ename-bubble ename-leader obj-pipe
                           pspace-restore-p string profile-start
                          )
@@ -9350,7 +8823,7 @@ ImportLayerSettings=No
   ;; STEP 1: Get pipe object
   (cond
     (obj-reference
-     ;; Path 1: obj-reference provided (VLA-OBJECT pipe from reactor)
+     ;; Path 1: obj-reference provided (VLA-OBJECT pipe from bnatu)
      (setq obj-pipe obj-reference)
     )
     (t
@@ -9375,10 +8848,10 @@ ImportLayerSettings=No
        ((not obj-pipe)
         "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
        )
-       ((= auto-type "Dia")
+       ((= auto-type "DIA")
         (hcnm-bn-auto-pipe-dia-to-string obj-pipe)
        )
-       ((= auto-type "Slope")
+       ((= auto-type "SLOPE")
         (hcnm-bn-auto-pipe-slope-to-string obj-pipe)
        )
        ((= auto-type "L")
@@ -9420,7 +8893,7 @@ ImportLayerSettings=No
     )
   )
   ;; STEP 4: Restore space after calculation is complete
-  ;; (XDATA updates and reactor attachment now handled by caller)
+  ;; (XDATA updates and attachment now handled by caller)
   (hcnm-bn-space-restore pspace-restore-p)
   ;;===========================================================================
   ;; PROFILING: End timing pipe auto-text generation
@@ -9432,7 +8905,7 @@ ImportLayerSettings=No
 ;#region Auto surface
 ;; Civil 3D Surface query auto-text (Z elevation)
 ;; Currently unimplemented - returns apology message
-(defun hcnm-bn-auto-su (bubble-data tag auto-type obj-reference reactor-context-p / lattribs
+(defun hcnm-bn-auto-su (bubble-data tag auto-type obj-reference bnatu-context-p / lattribs
                         ename-bubble
                        )
   (setq
@@ -9548,31 +9021,13 @@ ImportLayerSettings=No
 ;; These functions determine if an auto-text type requires world coordinates and
 ;; warn users about paper space viewport behavior to prevent drawing issues.
 
-;; Check if auto-type is world-coordinate-based using get-auto-type-keys
-;; Returns: T if auto-type requires world coordinates (Sta/Off/N/E/Z), NIL otherwise
-;; Usage: It's one of the gateways to pass before showing a paper space warning.
-(defun hcnm-bn-auto-type-is-coordinate-p (auto-type / type-def)
-  (setq
-    type-def
-     (car
-       (vl-remove-if-not
-         '(lambda (x) (= (cadr x) auto-type))
-         (hcnm-bn-get-auto-data-keys)
-       )
-     )
-  )
-  (cond
-    (type-def (cadddr type-def))        ; Return 4th element (requires-coordinates)
-    (t nil)
-  )
-)
 ;; User experience interruptions when getting coordinate-based auto-text 
                                         ;  1. Display educational warning about paper space coordinate translation behavior
 ;; Why: Warns users that we've decided not to react to changing viewport views.
 ;; When: When is not critical since this is only an educational tip.
 ;; It's natural to show when we get coordinate-based auto-text for paper space bubbles
 ;; 2. Capture and store viewport transformation matrix for paper space bubble
-;; Why: For bubble Reactor can't recalculate any world-coordinate-based auto text without a transformation
+;; Why: For bubble bnatu can't recalculate any world-coordinate-based auto text without a transformation
 ;; This is the ONLY function that should call hcnm-bn-set-viewport-transform-xdata
 ;; All viewport capture logic is centralized here to maintain architectural clarity
 ;;
@@ -9633,8 +9088,8 @@ ImportLayerSettings=No
   (cond
     ((and
        ename-bubble
-       (not (hcnm-bn-is-on-model-tab ename-bubble))
-       (hcnm-bn-auto-type-is-coordinate-p auto-type)
+       (not (hcnm-bn-is-in-model-space ename-bubble))
+       (hcnm-bn-auto-text-requires-coordinates-p auto-type)
      )
      ;; Bubble is in paper space and auto-type is coordinate-based - show warning
      (haws-tip
@@ -9653,13 +9108,13 @@ ImportLayerSettings=No
   (cond
     ((and
        ename-bubble
-       (not (hcnm-bn-is-on-model-tab ename-bubble))
-       (hcnm-bn-auto-type-is-coordinate-p auto-type)
+       (not (hcnm-bn-is-in-model-space ename-bubble))
+       (hcnm-bn-auto-text-requires-coordinates-p auto-type)
      )
      ;; Bubble is in paper space and auto-type is coordinate-based - show warning
      (haws-tip
        2                                ; Unique tip ID for paper space warning
-       "ALERT: CNM doesn't adjust paper space bubble notes when viewports change.\n\nTo avoid causing chaos when viewports change, auto text for coordinates does not react to viewport view changes.\n\nYou must use the 'Change View' button in the edit dialog (or the future CNMCHGVPORT command) if you want to refresh the viewport association and world coordinates of selected bubble notes."
+       "ALERT: CNM doesn't adjust paper space bubble note coordinates references when viewports change.\n\nTo avoid causing chaos when viewports change, auto text coordinates references do not update with viewport view changes.\n\nYou must use the 'Change View' button in the edit dialog (or the future CNMCHGVPORT command) if you want to refresh the viewport association and world coordinates of selected bubble notes."
      )
     )
   )
@@ -9679,7 +9134,7 @@ ImportLayerSettings=No
 ;;
 ;; PARAMETERS:
 ;;   ename-bubble - Entity name of bubble block reference
-;;   auto-type - String: "N", "E", "NE", "Sta", "Off", etc. (for gateway 1 check and warning)
+;;   auto-type - String: "N", "E", "NE", "STA", "OFF", etc. (for gateway 1 check and warning)
 ;;   obj-target - Object reference (alignment) or nil
 ;;   object-reference-status - String indicating how object was obtained:
 ;;     "NO-OBJECT" - No object needed/used (N/E/NE)
@@ -9699,7 +9154,7 @@ ImportLayerSettings=No
 (defun hcnm-bn-gateways-to-viewport-selection-prompt
    (ename-bubble auto-type obj-reference object-reference-status
     request-type / avport-coordinates-gateway-open-p
-    avport-paperspace-gateway-open-p avport-reactor-gateway-open-p
+    avport-paperspace-gateway-open-p avport-bnatu-gateway-open-p
     avport-xdata-gateway-open-p avport-object-gateway-open-p
     has-super-clearance-p cvport
    )
@@ -9707,7 +9162,7 @@ ImportLayerSettings=No
   ;; Gateway 1: Coordinate-based auto-text
   (setq
     avport-coordinates-gateway-open-p
-     (hcnm-bn-auto-type-is-coordinate-p
+     (hcnm-bn-auto-text-requires-coordinates-p
        auto-type
      )
   )
@@ -9732,7 +9187,7 @@ ImportLayerSettings=No
      (and
        ename-bubble
        (not
-         (hcnm-bn-is-on-model-tab
+         (hcnm-bn-is-in-model-space
            ename-bubble
          )
        )
@@ -9747,12 +9202,12 @@ ImportLayerSettings=No
       )
     )
   )
-  ;; Gateway 3: Not a reactor update (obj-reference is nil during insertion/editing)
-  (setq avport-reactor-gateway-open-p (not obj-reference))
+  ;; Gateway 3: Not a bnatu update (obj-reference is nil during insertion/editing)
+  (setq avport-bnatu-gateway-open-p (not obj-reference))
   (haws-debug
     (list
-      "  Gateway 3 (not-reactor): "
-      (if avport-reactor-gateway-open-p
+      "  Gateway 3 (not-bnatu): "
+      (if avport-bnatu-gateway-open-p
         "OPEN"
         "CLOSED"
       )
@@ -9844,7 +9299,7 @@ ImportLayerSettings=No
     ;; Path 2: All gates open - prompt user
     ((and
        avport-coordinates-gateway-open-p
-       avport-paperspace-gateway-open-p avport-reactor-gateway-open-p
+       avport-paperspace-gateway-open-p avport-bnatu-gateway-open-p
        avport-xdata-gateway-open-p avport-object-gateway-open-p
       )
      (haws-debug "  >>> DECISION: Prompt for viewport (all gates open)")
@@ -9865,7 +9320,7 @@ ImportLayerSettings=No
     ((and
        avport-coordinates-gateway-open-p
        avport-paperspace-gateway-open-p
-       avport-reactor-gateway-open-p
+       avport-bnatu-gateway-open-p
        avport-xdata-gateway-open-p
        (not avport-object-gateway-open-p)
      )
@@ -9986,12 +9441,8 @@ ImportLayerSettings=No
      )
     )
     (t
-     ;; LEGACY FALLBACK: Try old location (bubble XRECORD)
-     (setq vptrans-data (hcnm-xdata-get-vptrans ename-bubble))
-     (if vptrans-data
-       (haws-debug "LEGACY: Using VPTRANS from bubble XRECORD (run migration)")
-     )
-     vptrans-data
+     ;; No viewport handle - model space bubble or legacy data
+     nil
     )
   )
 )
@@ -10012,7 +9463,7 @@ ImportLayerSettings=No
 ;;      - Future: Separate "Change Viewport" command for selection sets (TODO)
 ;;
 ;; IMPORTANT: This function should NEVER be called by:
-;;   - Reactor updates (they should USE existing XDATA, not create new)
+;;   - bnatu updates (they should USE existing XDATA, not create new)
 ;;   - Coordinate calculation helpers (read-only operations)
 ;;   - Any automatic/defensive "let me fix missing data" logic
 ;;
@@ -10049,17 +9500,13 @@ ImportLayerSettings=No
      t
     )
     (t
-     ;; FALLBACK: Viewport not found, use old architecture
+     ;; Viewport not found - cannot store VPTRANS
      (haws-debug
        (list
          "WARNING: Viewport #"
          (itoa cvport)
-         " not found - using legacy bubble VPTRANS storage"
+         " not found - cannot store viewport transform"
        )
-     )
-     (hcnm-xdata-set-vptrans
-       ename-bubble
-       (list cvport ref-ocs-1 ref-wcs-1 ref-ocs-2 ref-wcs-2 ref-ocs-3 ref-wcs-3)
      )
      nil
     )
@@ -10165,7 +9612,7 @@ ImportLayerSettings=No
        (t
         ;; No transformation data stored in XDATA
         ;; This is an error state - coordinate-based auto-text in paper space requires viewport association
-        ;; Do NOT prompt user here - this function may be called by reactors during background updates
+        ;; Do NOT prompt user here - this function may be called by bnatu during updates
         (princ
           "\nError: Viewport transformation data missing. Cannot calculate world coordinates."
         )
@@ -10335,18 +9782,18 @@ ImportLayerSettings=No
 ;; Read bubble data from attributes and XDATA
 ;; Returns association list in 2-element format: (("TAG" "full-text") ...)
 ;; XDATA stores auto-text values separately for search/replace during updates
-;; Format: (("NOTETXT0" "text") ("NOTETXT1" "text") ("NOTENUM" "123") ...)
-  (defun hcnm-bn-dwg-to-lattribs (ename-bubble / lattribs
+;; Format: (("NOTETXT0" "TEXT") ("NOTETXT1" "TEXT") ("NOTENUM" "123") ...)
+(defun hcnm-bn-dwg-to-lattribs (ename-bubble / lattribs
                                 xdata-alist xdata-raw appname ename-next
                                 etype elist obj-next tag value
-                                field-code
+                                field-code retry-count test-elist
                                )
   (setq
     appname "HCNM-BUBBLE"
     lattribs
-     '()
+    '()
     xdata-alist
-     '()
+    '()
   )
   ;; Step 1: Read XDATA for auto-text values (stored separately from display text)
   (setq xdata-alist (hcnm-xdata-read ename-bubble))
@@ -10420,7 +9867,7 @@ ImportLayerSettings=No
   )                                     ; Return validated lattribs
 )
 
-;; Set attributes on a block (used by reactors and other update paths)
+;; Set attributes on a block (used by bnatu and other update paths)
 ;; Takes: ename-block, lattribs in format '(("TAG" "value") ...)
 (defun hcnm-set-attributes (ename-block lattribs / atag elist ename-next
                         etype obj-next
@@ -10588,77 +10035,6 @@ ImportLayerSettings=No
      (dictadd dict-ename "HCNM" hcnm-ename)
      hcnm-ename
     )
-  )
-)
-
-;; Write VPTRANS to XRECORD in extension dictionary
-;; viewport-data: (cvport ref-ocs-1 ref-wcs-1 ref-ocs-2 ref-wcs-2 ref-ocs-3 ref-wcs-3)
-(defun hcnm-vptrans-write (ename-bubble viewport-data / dict-ename xrec-data
-                       cvport ref-points
-                      )
-  (setq dict-ename (hcnm-extdict-get ename-bubble))
-  (cond
-    (viewport-data
-     (setq
-       cvport
-        (car viewport-data)
-       ref-points
-        (cdr viewport-data)
-     )
-     ;; Build XRECORD data list with labeled fields
-     (setq
-       xrec-data
-        (list
-          '(0 . "XRECORD")
-          '(100 . "AcDbXrecord")
-          (cons 70 cvport)
-        )
-     )                                  ; 70 = short integer for cvport
-     ;; Add all 6 reference points as 3D points (code 10)
-     (foreach
-        pt ref-points
-       (setq xrec-data (append xrec-data (list (cons 10 pt))))
-     )
-     ;; Create or update VPTRANS xrecord
-     (dictadd dict-ename "VPTRANS" (entmakex xrec-data))
-     t
-    )
-    (t nil)
-  )
-)
-
-;; Read VPTRANS from XRECORD in extension dictionary  
-;; Returns: (cvport ref-ocs-1 ref-wcs-1 ... ref-wcs-3) or nil
-(defun hcnm-vptrans-read
-   (ename-bubble / dict-ename vptrans-rec cvport ref-points)
-  (setq dict-ename (hcnm-extdict-get ename-bubble))
-  (cond
-    ((and
-       dict-ename
-       (setq vptrans-rec (dictsearch dict-ename "VPTRANS"))
-     )
-     (setq vptrans-rec (entget (cdr (assoc -1 vptrans-rec))))
-     ;; Extract cvport (code 70)
-     (setq cvport (cdr (assoc 70 vptrans-rec)))
-     ;; Extract all points (code 10)
-     (setq ref-points '())
-     (foreach
-        item vptrans-rec
-       (cond
-         ((= (car item) 10)
-          (setq ref-points (append ref-points (list (cdr item))))
-         )
-       )
-     )
-     ;; Return viewport data
-     (cond
-       ((and cvport (= (length ref-points) 6))
-        (cons cvport ref-points)
-       )
-       (t nil)
-     )
-    )
-    (t nil)
   )
 )
 
@@ -10914,7 +10290,7 @@ ImportLayerSettings=No
             )
           )
           ;; Convert legacy format: treat as unknown auto-type with empty handle
-          ;; When this bubble is saved (via reactor or edit dialog), it will write composite-key format
+          ;; When this bubble is saved (via bnatu or edit dialog), it will write composite-key format
           (setq composite-pairs (list (cons (cons "UNKNOWN" "") (car values))))
           (setq pairs (append pairs (list (cons current-tag composite-pairs))))
          )
@@ -11116,22 +10492,10 @@ ImportLayerSettings=No
   )
 )
 
-;; Update viewport transform (now uses XRECORD)
-;; viewport-data: (cvport ref-ocs-1 ref-wcs-1 ... ref-wcs-3)
-(defun hcnm-xdata-set-vptrans (ename-bubble viewport-data)
-  (hcnm-vptrans-write ename-bubble viewport-data)
-)
-
 ;; Update auto-text (uses XDATA)
 ;; autotext-alist: (("TAG1" . "value1") ("TAG2" . "value2") ...)
 (defun hcnm-xdata-set-autotext (ename-bubble autotext-alist)
   (hcnm-xdata-write ename-bubble autotext-alist)
-)
-
-;; Get viewport transform data (now from XRECORD)
-;; Returns: (cvport ref-ocs-1 ref-wcs-1 ... ref-wcs-3) or nil
-(defun hcnm-xdata-get-vptrans (ename-bubble)
-  (hcnm-vptrans-read ename-bubble)
 )
 
 ;; Get auto-text data (from XDATA)
@@ -11148,7 +10512,7 @@ ImportLayerSettings=No
 
 ;; Save only XDATA for auto-text (helper for dialog save path)
 ;;
-;; REQUIRES: Semi-global hcnm-bn-eb-auto-handles must be bound (dialog context only)
+;; PARAM: auto-handles - composite-key format from hcnm-bn-eb-state
 ;; WRITES: Composite-key format XDATA (handles + auto-text)
 ;;
 ;; The HCNM-BUBBLE section of XDATA for a bubble note stores:
@@ -11159,24 +10523,23 @@ ImportLayerSettings=No
 ;;
 ;; ARCHITECTURAL NOTE (2025-11-06):
 ;; Simple format DEPRECATED. Only composite-key format supported.
-;; Reactor path uses hcnm-bn-xdata-update-one (maintains composite-key format).
+;; bnatu path uses hcnm-bn-xdata-update-one (maintains composite-key format).
 ;; This function is ONLY for dialog save path where semi-global is bound.
-(defun hcnm-bn-xdata-save (ename-bubble lattribs / autotext-alist)
-  ;; Note: hcnm-bn-eb-auto-handles is a semi-global (local to hcnm-edit-bubble)
-  ;; It's always set by hcnm-edit-bubble before calling this function
-  ;; Semi-global being nil/empty is VALID - means user cleared all auto-text
+(defun hcnm-bn-xdata-save (ename-bubble auto-handles / autotext-alist)
+  ;; auto-handles: composite-key format from hcnm-bn-eb-state
+  ;; nil/empty is VALID - means user cleared all auto-text
   (cond
-    ((not hcnm-bn-eb-auto-handles)
-     ;; Semi-global empty - user cleared all auto-text, write empty XDATA
-     (haws-debug (list "XDATA-SAVE: semi-global=EMPTY handle=" (cdr (assoc 5 (entget ename-bubble)))))
+    ((not auto-handles)
+     ;; Empty - user cleared all auto-text, write empty XDATA
+     (haws-debug (list "XDATA-SAVE: auto-handles=EMPTY handle=" (cdr (assoc 5 (entget ename-bubble)))))
      (setq autotext-alist '())
      (hcnm-xdata-set-autotext ename-bubble autotext-alist)
      (haws-debug (list "XDATA-SAVE: wrote-empty-list handle=" (cdr (assoc 5 (entget ename-bubble)))))
     )
     (t
-     ;; Normal case: Write composite-key format from semi-global
-     (setq autotext-alist hcnm-bn-eb-auto-handles)
-     (haws-debug (list "XDATA-SAVE: semi-global=HAS-DATA count=" (itoa (length autotext-alist)) "handle=" (cdr (assoc 5 (entget ename-bubble)))))
+     ;; Normal case: Write composite-key format
+     (setq autotext-alist auto-handles)
+     (haws-debug (list "XDATA-SAVE: auto-handles=HAS-DATA count=" (itoa (length autotext-alist)) "handle=" (cdr (assoc 5 (entget ename-bubble)))))
      (hcnm-xdata-set-autotext ename-bubble autotext-alist)
      (haws-debug (list "XDATA-SAVE: wrote-data handle=" (cdr (assoc 5 (entget ename-bubble)))))
     )
@@ -11185,7 +10548,7 @@ ImportLayerSettings=No
 
 ;; Save bubble data to attributes and XDATA
 ;; Takes association list in 2-element format (tag text-value)
-;; Format: (("NOTETXT0" "text") ("NOTETXT1" "text") ...)
+;; Format: (("NOTETXT0" "TEXT") ("NOTETXT1" "TEXT") ...)
 ;;
 ;; The HCNM-BUBBLE section of XDATA for a bubble note stores:
 ;; 1. Auto-text values (separately from display attributes)
@@ -11210,7 +10573,7 @@ ImportLayerSettings=No
   ;; Format: ((1000 "TAG1") (1000 "VALUE1") (1000 "TAG2") (1000 "VALUE2") ...)
   ;; NOTE: This function writes lattribs only. XDATA is managed separately.
   ;; Step 2: Add format codes to text lines (beautifully-architected underover-add!)
-  (setq lattribs-formatted (hcnm-bn-underover-add lattribs))
+  (setq lattribs-formatted (hcnm-bn-underover-add lattribs ename-bubble))
   ;; Step 3: Write formatted values to drawing attributes
   (setq ename-next ename-bubble)
   (while (and
@@ -11235,972 +10598,189 @@ ImportLayerSettings=No
 
 ;#endregion
 ;#endregion
-;#region Reactors
+;#region bnatu
 
-;; Check and cleanup reactor proliferation (called at CNM load)
-(defun hcnm-check-reactor-proliferation (/ hcnm-reactors reactor-count)
-  (setq
-    hcnm-reactors
-     (vl-remove-if-not
-       '(lambda (r)
-          (and
-            (listp (vlr-data r))
-            (assoc "HCNM-BUBBLE" (vlr-data r))
-          )
-        )
-       (cdar (vlr-reactors :vlr-object-reactor))
-     )
-    reactor-count
-     (length hcnm-reactors)
-  )
-  (cond
-    ((> reactor-count 1)
-     (haws-debug (strcat "=== REACTOR PROLIFERATION: Found " (itoa reactor-count) " reactors, keeping first, releasing " (itoa (1- reactor-count)) " ==="))
-     ;; ROOT CAUSE: vlr-reactors returns nil on first call after opening drawing
-     ;; This causes creation of duplicate reactor, which persists to next session
-     ;; SOLUTION: Mark duplicates non-persistent AND remove from current session
-     (foreach
-        reactor (cdr hcnm-reactors)     ; Keep first, remove rest
-       (if (vlr-pers-p reactor)
-         (vlr-pers-release reactor)     ; Prevent saving to DWG
-       )
-       (vlr-remove reactor)               ; Remove from current session immediately
-     )
-     (princ
-       (strcat
-         "\n*** REACTOR CLEANUP: Released "
-         (itoa (1- reactor-count))
-         " duplicate reactors (will disappear next session) ***\n"
-       )
-     )
-     t                                  ; Return T to indicate cleanup occurred
-    )
-    ((= reactor-count 1)
-     (haws-debug "=== REACTOR PROLIFERATION CHECK: Found exactly 1 reactor (correct) ===")
-     nil
-    )
-    (t 
-     (haws-debug "=== REACTOR PROLIFERATION CHECK: Found 0 reactors (no cleanup needed) ===")
-     nil
-    )
-  )
-)
-
-;;Playing with reactors
-(defun hcnm-bn-list-reactors (/ reactors)
-  (setq reactors (cdar (vlr-reactors :vlr-object-reactor)))
-  (foreach
-     reactor reactors
-    ;;(vlax-dump-object REACTOR)
-    (print (vl-prin1-to-string (vlr-data reactor)))
-    (print (vl-prin1-to-string (vlr-reactions reactor)))
-    ;; (vlr-remove REACTOR)
-  )
-)
-;; ABOUT MODIFYING REACTORS: https://help.autodesk.com/view/ACDLT/2025/ENU/?guid=GUID-F6B719E4-537B-42C2-8D22-9A313FE900A0
-;; You can add and remove owners (objects) of a reactor.
-;; You can reset the data of a reactor.
-;; (VLR-REMOVE-ALL :VLR-OBJECT-REACTOR) TO REMOVE ALL
-;; (VLR-DATA (CADAR (VLR-REACTORS :VLR-OBJECT-REACTOR))) IF THERE IS ONLY ONE REACTOR
-;; (VLR-OWNERS (CADAR (VLR-REACTORS :VLR-OBJECT-REACTOR))) IF THERE IS ONLY ONE REACTOR
-;; New structure: KEYS = '("HCNM-BUBBLE" handle-reference handle-bubble TAG)
-;; VALUE = auto-type (just the string)
 (defun hcnm-bn-auto-type-requires-coordinates-p (auto-type / keys-entry)
   ;; Returns T if auto-type needs leader position (coordinates), nil otherwise
-  (setq
-    keys-entry
-     (vl-member-if
-       '(lambda (entry)
-          (equal auto-type (cadr entry))
-        )
-       (hcnm-bn-get-auto-data-keys)
-     )
-  )
-  (cond
-    (keys-entry
-     (cadddr (car keys-entry))
-    )
-    (t nil)
-  )
+  (hcnm-bn-auto-text-requires-coordinates-p auto-type)
 )
-(defun hcnm-bn-auto-type-is-reactive-p (auto-type / keys-entry ref-type requires-coords)
-  ;; Returns T if auto-type uses reactor system, nil for field-based (LF/SF/SY)
+(defun hcnm-bn-auto-type-is-reactive-p (auto-type)
+  ;; Returns T if auto-type uses bnatu system, nil for field-based (LF/SF/SY)
   ;; Reactive types have either: reference-type OR requires-coordinates
-  (setq
-    keys-entry
-     (vl-member-if
-       '(lambda (entry)
-          (equal auto-type (cadr entry))
-        )
-       (hcnm-bn-get-auto-data-keys)
-     )
-  )
-  (cond
-    (keys-entry
-     (setq ref-type (caddr (car keys-entry))
-           requires-coords (cadddr (car keys-entry))
-     )
-     (or ref-type requires-coords)  ; Reactive if has reference OR needs coordinates
-    )
-    (t nil)  ; Unknown type = not reactive
+  (or
+    (hcnm-bn-get-auto-text-reference-type auto-type)
+    (hcnm-bn-auto-text-requires-coordinates-p auto-type)
   )
 )
-(defun hcnm-bn-debug-reactor-attachment (auto-type handle-reference handle-leader handle-bubble keys-leader owners data)
-  ;; Debug output for reactor attachment (can be disabled by commenting out body)
-  (haws-debug (strcat "=== Reactor attachment complete: "
-                     "auto=" auto-type
-                     " ref=" (if handle-reference handle-reference "nil")
-                     " bubble=" handle-bubble
-                     " owners=" (itoa (length owners))
-                     " ==="))
-)
-
-;#region Reactor System Core
+;#region bnatu Update Pipeline
 ;;==============================================================================
-;; Persistent reactor system: ONE reactor per drawing tracks multiple owners
-;; Data: owner → bubble → tag → auto-type → reference-handle
-;;==============================================================================
-
-(defun hcnm-bn-cleanup-reactor-data (reactor / data key-app owner-list cleaned-owner-list owner handle-owner bubble-list cleaned-bubble-list bubble handle-bubble tag-list deleted-bubbles-count deleted-owners-count)
-  ;; Remove entries for deleted bubbles and empty references
-  ;; Returns cleaned data structure
-  (setq
-    data
-     (vlr-data reactor)
-    key-app "HCNM-BUBBLE"
-    owner-list
-     (cadr (assoc key-app data))
-    cleaned-owner-list nil
-    deleted-bubbles-count 0
-    deleted-owners-count 0
-  )
-  ;; Iterate through each reference/leader owner
-  (foreach
-     owner owner-list
-    (setq
-      handle-owner
-       (car owner)
-      bubble-list
-       (cadr owner)
-      cleaned-bubble-list nil
-    )
-    ;; Only process this owner if it still exists
-    ;; handent returns nil for user-erased entities (entdel is esoteric, ignore it)
-    ;; Empty string "" is valid for handleless N/E/NE coordinate-only auto-text
-    (cond
-      ((or (= handle-owner "") (handent handle-owner))
-       ;; Keep only bubbles that still exist
-       (foreach
-          bubble bubble-list
-         (setq
-           handle-bubble
-            (car bubble)
-         )
-         (cond
-           ;; Check if bubble still exists (handent returns nil for user-erased entities)
-           ((handent handle-bubble)
-            (setq
-              cleaned-bubble-list
-               (append cleaned-bubble-list (list bubble))
-            )
-           )
-           (t
-            ;; Bubble was deleted
-            (setq deleted-bubbles-count (1+ deleted-bubbles-count))
-            (haws-debug (strcat "  Removed deleted bubble: " handle-bubble))
-           )
-         )
-       )
-       ;; Only keep this owner if it has remaining bubbles
-       (cond
-         (cleaned-bubble-list
-          (setq
-            cleaned-owner-list
-             (append
-               cleaned-owner-list
-               (list (list handle-owner cleaned-bubble-list))
-             )
-          )
-         )
-         (t
-          ;; Owner has no remaining bubbles
-          (setq deleted-owners-count (1+ deleted-owners-count))
-          (haws-debug (strcat "  Removed owner with no bubbles: " handle-owner))
-         )
-       )
-      )
-      (t
-       ;; Owner itself was deleted
-       (setq deleted-owners-count (1+ deleted-owners-count))
-       (haws-debug (strcat "  Removed deleted owner: " handle-owner))
-      )
-    )
-  )
-  ;; Report cleanup summary
-  (cond
-    ((or (> deleted-bubbles-count 0) (> deleted-owners-count 0))
-     (haws-debug
-       (strcat
-         "Reactor cleanup summary: "
-         (itoa deleted-bubbles-count) " bubble(s), "
-         (itoa deleted-owners-count) " owner(s) removed"
-       )
-     )
-    )
-  )
-  ;; Return cleaned data
-  (list (list key-app cleaned-owner-list))
-)
-
-(defun hcnm-reactor-owner-bubbles (owner-entry)
-  (cond
-    ((and (listp owner-entry) (>= (length owner-entry) 2))
-     (cadr owner-entry))
-    ((not (atom owner-entry))
-     (cadr owner-entry))
-    (t nil)
-  )
-)
-
-(defun hcnm-reactor-bubble-handle (bubble-entry)
-  (cond
-    ((and (listp bubble-entry) (> (length bubble-entry) 0))
-     (car bubble-entry))
-    ((not (atom bubble-entry))
-     (car bubble-entry))
-    (t nil)
-  )
-)
-
-(defun hcnm-reactor-bubble-tags (bubble-entry)
-  (cond
-    ((and (listp bubble-entry) (>= (length bubble-entry) 2))
-     (cadr bubble-entry))
-    ((not (atom bubble-entry))
-     (cadr bubble-entry))
-    (t nil)
-  )
-)
-;;==============================================================================
-;; hcnm-bn-reactor-add-auto
-;;==============================================================================
-;; Adds/updates auto-text entry in reactor data: owner → bubble → tag → auto-type → reference
-;;
-;; Terminology:
-;;   owner = Reactor trigger (reference OR leader)
-;;   reference = Data provider (alignment/pipe/surface, never leader)
-;;   For direct: owner = reference (track object changes)
-;;   For leader: owner = leader, reference = alignment (track leader position + calc from alignment)
-;;
-;; Example: (hcnm-bn-reactor-add-auto data "1D235" "62880" "NOTETXT1" "StaOff" "1D235")
-;;============================================================================================================================================================
-(defun hcnm-bn-reactor-add-auto (data handle-owner handle-bubble tag auto-type handle-reference)
-  (haws-nested-list-update
-    data
-    (list "HCNM-BUBBLE" handle-owner handle-bubble tag auto-type)
-    handle-reference
-  )
-)
-
-;;==============================================================================
-;; hcnm-bn-assure-auto-text-has-reactor
-;;==============================================================================
-;; Ensures bubble auto-text is tracked by persistent reactor. Creates reactor if needed,
-;; attaches owners, updates data structure. Called during insertion/editing.
-;;
-;; ONE reactor per drawing tracks multiple owners (alignments, pipes, surfaces, leaders).
-;; Data: owner → bubble → tag → auto-type → reference-handle
-;;
-;; Owner attachment logic:
-;;   1. NIL objref (N/E/NE only): attach leader only (coordinates from arrowhead)
-;;   2. Coordinate-dependent (Sta/Off/StaOff/N/E/NE/Z): attach BOTH reference AND leader
-;;   3. Otherwise: attach reference only (leader position irrelevant, e.g. Dia/Slope)
-;;
-;; KNOWN ISSUE: vlr-reactors returns nil on first call after opening - retry forces restoration
-;;==============================================================================
-(defun hcnm-bn-assure-auto-text-has-reactor (objref ename-bubble
-                                             ename-leader tag auto-type
-                                             / callbacks data data-old
-                                             reactor handle-bubble
-                                             handle-reference handle-leader
-                                             keys keys-leader
-                                             key-app reactor-old
-                                             reactors-old owner new-owners
-                                             object-leader hcnm-reactors
-                                             reactor-count owner-add-result
-                                             leader-vla-result
-                                            )
-  (setq
-    callbacks
-     '((:vlr-modified . hcnm-bn-reactor-callback)
-       ;; vlr-trace-reaction IS A CANNED CALLBACK PROVIDED BY AUTODESK FOR TESTING. IT PRINTS A MESSAGE. IT CAN BE REMOVED.
-       ;; (:vlr-modified . vlr-trace-reaction)
-      )
-    reactors-old
-     (cdar (vlr-reactors :vlr-object-reactor))
-    object-leader
-     (cond
-       (ename-leader
-        (vlax-ename->vla-object ename-leader)
-       )
-     )
-    new-owners
-     (cond
-       ;; If OBJREF is NIL (for N/E/NE), only attach to leader
-       ((and (not objref) object-leader) (list object-leader))
-       ;; If auto-type requires coordinates (leader position matters), attach both objref and leader
-       ((and object-leader (hcnm-bn-auto-type-requires-coordinates-p auto-type))
-        (list objref object-leader)
-       )
-       ;; Otherwise only attach objref (leader position doesn't matter for this auto-type)
-       (objref (list objref))
-       ;; ERROR: No valid owners to attach!
-       (t 
-        (haws-debug "*** ERROR: No valid owners for reactor attachment (objref=nil, object-leader=nil)")
-        nil  ; Return nil to signal error condition
-       )
-     )
-    key-app "HCNM-BUBBLE"
-    handle-reference
-     (cond
-       (objref (vla-get-handle objref))
-       (t "")
-     )
-    handle-leader
-     (cond
-       (ename-leader
-        (cdr (assoc 5 (entget ename-leader)))
-       )
-       (t nil)
-     )
-    handle-bubble
-     (cdr (assoc 5 (entget ename-bubble)))
-    keys
-     ;; Path: ("HCNM-BUBBLE" reference-handle bubble-handle tag auto-type) -> reference-handle
-     (list "HCNM-BUBBLE" handle-reference handle-bubble tag auto-type)
-    keys-leader
-     (cond
-       ;; Always create leader keys for handleless auto-text (objref=nil)
-       ;; Also create for handle-based auto-text that needs coordinates
-       ((and handle-leader 
-             (or (not objref)  ; Handleless auto-text always needs leader tracking
-                 (hcnm-bn-auto-type-requires-coordinates-p auto-type))) ; Handle-based that needs coordinates
-        (list "HCNM-BUBBLE" handle-leader handle-bubble tag auto-type)
-       )
-       (t nil)
-     )
-    reactor-old
-     nil                                ; Initialize to nil
-  )
-  ;; Get the single HCNM-BUBBLE reactor (should be 0 or 1)
-  (haws-debug "=== Searching for existing HCNM-BUBBLE reactor ===")
-  ;; KNOWN ISSUE: vlr-reactors returns nil on first call after opening drawing with persistent reactors
-  ;; This is AutoCAD internal timing - call twice to force restoration
-  (setq vlr-result (vlr-reactors :vlr-object-reactor))
-  (if (null vlr-result)
-    (progn
-      (haws-debug "=== vlr-reactors returned nil, retrying... ===")
-      (setq vlr-result (vlr-reactors :vlr-object-reactor))
-    )
-  )
-  (setq reactors-old 
-    (if vlr-result
-      (cdar vlr-result)
-      nil
-    )
-  )
-  (setq
-    hcnm-reactors
-     (vl-remove-if-not
-       '(lambda (r)
-          (and
-            (listp (vlr-data r))
-            (assoc key-app (vlr-data r))
-          )
-        )
-       reactors-old
-     )
-    reactor-count
-     (length hcnm-reactors)
-    reactor-old
-     (car hcnm-reactors)
-  )
-  (haws-debug (strcat "=== Reactor search complete: found " (itoa reactor-count) " reactor(s) ==="))
-  (cond
-    (reactor-old
-      (haws-debug "=== reactor-old FOUND - will update existing reactor ===")
-    )
-    (t
-      (haws-debug "=== reactor-old is nil - will create new reactor ===")
-    )
-  )
-  ;; FAIL LOUDLY if multiple reactors (should never happen after CNM load cleanup)
-  (if (> reactor-count 1)
-    (haws-debug
-      (strcat
-        "*** PROGRAMMING ERROR ***\n\n"
-        "Found "
-        (itoa reactor-count)
-        " HCNM-BUBBLE reactors.\n"
-        "This should never happen!\n\n"
-        "Please report this to https://github.com/hawstom/cnm/issues with steps to reproduce.\n"
-      )
-    )
-  )
-  ;; Clean up stale data entries before adding new ones
-  (cond
-    (reactor-old
-     (vlr-data-set
-       reactor-old
-       (hcnm-bn-cleanup-reactor-data reactor-old)
-     )
-    )
-  )
-  ;; Now handle reactor attachment/creation based on reactor-old
-  (cond
-    (reactor-old
-     ;; ATTACH THIS OWNER NOTIFIER IF NOT ALREADY ATTACHED.
-     (foreach
-        owner new-owners
-       (cond
-         ((not (member owner (vlr-owners reactor-old)))
-          ;; Validate owner before attempting to add
-          (cond
-            (owner  ; Only process non-nil owners
-              (setq owner-add-result (vl-catch-all-apply 'vlr-owner-add (list reactor-old owner)))
-              (cond
-                ((vl-catch-all-error-p owner-add-result)
-                  (haws-debug (strcat "*** ERROR: vlr-owner-add failed for handle: " 
-                                 (vl-catch-all-apply 'vla-get-handle (list owner))))
-                  (haws-debug (strcat "    Error: " (vl-catch-all-error-message owner-add-result)))
-                )
-                (t
-                  (haws-debug (strcat "Adding owner: " (vla-get-handle owner)))
-                )
-              )
-            )
-            (t
-              (haws-debug (strcat "*** ERROR: NIL owner in owners list - skipping reactor attachment"))
-            )
-          )
-         )
-         (t
-          (haws-debug
-            (list
-              "Owner already attached: "
-              (vla-get-handle owner)
-            )
-          )
-         )
-       )
-     )
-     ;; UPDATE THE DATA
-     (vlr-data-set
-       reactor-old
-       (setq
-         data
-          (hcnm-bn-reactor-add-auto
-            (vlr-data reactor-old)
-            handle-reference
-            handle-bubble
-            tag
-            auto-type
-            handle-reference
-          )
-       )
-     )
-     ;; If leader is coordinate-dependent, also add leader to data structure
-     (cond
-       (keys-leader
-        (vlr-data-set
-          reactor-old
-          (setq
-            data
-             (hcnm-bn-reactor-add-auto
-               data
-               handle-leader
-               handle-bubble
-               tag
-               auto-type
-               handle-reference
-             )
-          )
-        )
-       )
-     )
-    )
-    ((and new-owners (car new-owners))  ; Only create reactor if we have valid owners (non-nil, non-empty)
-     ;; ELSE MAKE REACTOR AND MAKE IT PERSISTENT
-     (haws-debug "=== CREATING NEW REACTOR ===")
-     (setq
-       data
-        (hcnm-bn-reactor-add-auto
-          nil
-          handle-reference
-          handle-bubble
-          tag
-          auto-type
-          handle-reference
-        )
-     )
-     ;; If leader is coordinate-dependent, also add leader to data structure
-     (cond
-       (keys-leader
-        (setq
-          data
-           (hcnm-bn-reactor-add-auto
-             data
-             handle-leader
-             handle-bubble
-             tag
-             auto-type
-             handle-reference
-           )
-        )
-       )
-     )
-     (setq
-       reactor
-        (vlr-object-reactor
-          new-owners                    ; ATTACHED OWNERS OF REACTOR
-          data
-          callbacks
-        )
-       reactor
-        (vlr-pers reactor)
-     )
-     (haws-debug "=== NEW REACTOR CREATED AND MADE PERSISTENT ===")
-    )
-    (t
-     ;; ERROR: Cannot create reactor without valid owners
-     (haws-debug "*** ERROR: Attempted to create reactor with nil/empty owners list - reactor NOT created")
-     (alert (princ "\n*** CNM ERROR ***\n\nCannot attach reactor: no valid reference objects.\nAuto-text will not update automatically.\n"))
-    )
-  )
-  ;; Debug output (can be disabled by commenting out function body)
-  (hcnm-bn-debug-reactor-attachment
-    auto-type
-    handle-reference
-    handle-leader
-    handle-bubble
-    keys-leader
-    new-owners
-    data
-  )
-)
-;;==============================================================================
-;; REACTOR GATEWAY CHECKS - Return T if gate OPEN, NIL if BLOCKED
-;;==============================================================================
-
-;;==============================================================================
-;; hcnm-bn-reactor-callback
-;;==============================================================================
-;; Main VLR-OBJECT-REACTOR callback. Fires when tracked object (alignment/pipe/surface/leader)
-;; is modified. Updates dependent bubbles with fresh auto-text.
-;;
-;; AUTOLOADER: Stub in cnmloader.lsp loads cnm.lsp before first callback.
-;;
-;; Terminology:
-;;   OWNER = Any object attached to reactor (reference OR leader)
-;;   NOTIFIER = Specific owner that triggered this callback
-;;   REFERENCE = Data provider (alignment/pipe/surface, never leader)
-;;
-;; Gateways (must pass to continue):
-;;   1. BlockReactors="0" (prevents recursion: set="1" during callback, restore="0" at exit)
-;;      - Autodesk guideline: Don't modify reactor-monitored objects inside callbacks
-;;      - Solution: Block nested callbacks, restore at exit
-;;   2. Object not erased (vl-catch-all-apply wrapper handles errors)
-;;   3. Notifier found in reactor data (defensive check for integrity)
-;;      - Should always pass (added via hcnm-bn-assure-auto-text-has-reactor)
-;;      - If fails: Print warning, skip update (self-healing on next run)
-;;==============================================================================
-;; Legacy callback wrappers (migration compatibility)
-;; Reactors created with old naming will call this, which forwards to new function
-(defun hcnm-ldrblk-reactor-callback (obj-notifier obj-reactor parameter-list)
-  (hcnm-bn-reactor-callback obj-notifier obj-reactor parameter-list)
-)
-(defun hcnm-lb-reactor-callback (obj-notifier obj-reactor parameter-list)
-  (hcnm-bn-reactor-callback obj-notifier obj-reactor parameter-list)
-)
-(defun hcnm-bn-reactor-callback (obj-notifier obj-reactor parameter-list / 
-                                     key-app data-old data handle-notifier 
-                                     owner-list notifier-entry block-reactors-current
-                                     profile-start
-                                    )
-  
-  ;;===========================================================================
-  ;; PROFILING: Start timing reactor callback
-  ;;===========================================================================
-  (setq profile-start (haws-clock-start "reactor-callback"))
-  ;;===========================================================================
-  ;; CRITICAL: Prevent nested/recursive callbacks (Autodesk guideline)
-  ;; Problem: Bubble updates within callback trigger :vlr-modified on leader
-  ;; Solution: Block all nested callbacks by setting flag at entry, restore at exit
-  ;; Save current blocker state to honor parent-level blocks
-  (setq block-reactors-current (hcnm-config-getvar "BlockReactors"))
-  
-  ;; DEBUG: Show callback entry with blocker state
-  (haws-debug (list "[CALLBACK START] BlockReactors=" block-reactors-current))
-
-  ;; Check all gateways - early exit if any blocked
-  (cond
-    ;; Gateway 1: Honor parent-level reactor blocker (prevents nested callbacks)
-    ((= block-reactors-current "1") 
-      (haws-debug 
-        "[REACTOR BLOCKED] Gateway1=1 (nested callback blocked by parent)"
-      )
-    )
-    
-    ;; All other gates must pass to proceed with update
-    ((and
-       ;; Gateway 2: Notifier object still exists (not erased)
-       (not (vl-catch-all-error-p 
-              (vl-catch-all-apply 'vla-get-handle (list obj-notifier))))
-     )
-     ;; BLOCK NESTED CALLBACKS: Set flag to prevent recursion
-     ;; Any bubble modifications below will trigger leader :vlr-modified
-     ;; But nested callbacks will hit Gateway 1 and exit immediately
-     (hcnm-config-setvar "BlockReactors" "1")
-     ;; Extract reactor data and find notifier entry
-     (setq 
-       key-app "HCNM-BUBBLE"
-       data-old (vlr-data obj-reactor)
-       data data-old
-       handle-notifier (vla-get-handle obj-notifier)
-       owner-list (cadr (assoc key-app data))
-       notifier-entry (assoc handle-notifier owner-list)
-     )
-     ;; DEBUG: Show what triggered this callback
-     (haws-debug (list "[REACTOR FIRED] Notifier handle: " handle-notifier 
-                      " Type: " (vla-get-objectname obj-notifier)))
-     
-     ;; Gateway 3: Verify notifier exists in data structure (defensive check)
-     (cond
-       (notifier-entry
-        ;; All gates passed - update all bubbles dependent on this notifier
-        ;; Returns cleaned notifier-entry (may have removed deleted bubbles)
-        (setq notifier-entry 
-          (hcnm-bn-reactor-notifier-update notifier-entry handle-notifier))
-        
-        ;; Rebuild owner-list with cleaned notifier-entry
-        (setq owner-list
-          (subst notifier-entry (assoc handle-notifier owner-list) owner-list))
-        
-        ;; Update data structure
-        (setq data (list (list key-app owner-list)))
-        
-        ;; POST-PROCESSING: Cleanup and maintenance
-        (cond 
-          ;; If notifier has no remaining bubbles, remove it as owner
-          ((not (cadr notifier-entry))
-           (vlr-owner-remove obj-reactor obj-notifier)
-          )
-        )
-        (cond
-          ;; If data structure changed, persist the changes
-          ((not (equal data data-old))
-           (vlr-data-set obj-reactor data)
-          )
-        )
-       )
-       (t
-        ;; Gateway 3 failed - data corruption (should never happen)
-        (princ 
-          (strcat 
-            "\nWarning: Notifier "
-            handle-notifier
-            " not found in reactor data"
-            "\nReactor data structure: "
-            (vl-prin1-to-string data)
-          )
-        )
-       )
-     )
-    )
-    ;; Gateway 2 blocked (object erased)
-    (t
-       (haws-debug (list "[REACTOR BLOCKED] Gateway2 failed (object erased or inaccessible)"))  
-    )
-  )
-  
-  ;; SELF-HEALING: Always restore blocker to parent state
-  ;; Rationale: If Gateway 1 blocked (nested callback), we just exit cleanly
-  ;;            If we processed updates, we set flag="1" to block children
-  ;;            Now restore to parent's original state for next user action
-  (haws-debug (list "[CALLBACK END] Restoring BlockReactors=" block-reactors-current))
-  (hcnm-config-setvar "BlockReactors" block-reactors-current)
-  ;;===========================================================================
-  ;; PROFILING: End timing reactor callback
-  ;;===========================================================================
-  (haws-clock-end "reactor-callback" profile-start)
-)
-;;==============================================================================
-;; hcnm-bn-reactor-notifier-update
+;; hcnm-bn-bnatu-bubble-update
 ;;==============================================================================
 ;; Purpose:
-;;   Updates all bubbles that depend on the notifier (the specific owner that triggered callback).
-;;   Called by reactor callback when an alignment, pipe, surface, or leader changes.
+;;   Updates all auto-text fields in one bubble. Reads lattribs and XDATA once,
+;;   accumulates changes across all auto-text entries, writes once.
 ;;
 ;; Arguments:
-;;   notifier-entry - Data structure entry for the notifier (specific owner that triggered event)
-;;                    Format: (handle-notifier ((handle-bubble tag-list) ...))
-;;   handle-notifier - Handle string of the notifier (specific owner, for consistency check)
-;;
-;; Terminology:
-;;   notifier = The specific owner that triggered THIS callback event
-;;   owner = General term (any object attached to reactor: reference OR leader)
+;;   ename-bubble - Entity name of bubble to update
 ;;
 ;; Call Flow:
-;;   reactor-callback → THIS FUNCTION → bubble-update → update-bubble-tag
-;;
-;; Performance Notes:
-;;   - Parent callback already set BlockReactors="1" (nested callbacks blocked)
-;;   - Processes ALL bubbles for this notifier in one pass
-;;   - Each bubble gets ONE combined attribute update (not per-tag)
-;;
-;; Side Effects:
-;;   - Modifies bubble attributes via bubble-update function
-;;   - No flag management (parent callback handles BlockReactors lifecycle)
-;;
-;; Data Structure:
-;;   notifier-entry = (handle-notifier bubble-list)
-;;   bubble-list = ((handle-bubble tag-list) ...)
-;;   tag-list = ((tag auto-list) ...)
-;;
-;; Example:
-;;   (hcnm-bn-reactor-notifier-update 
-;;     '("1D235" (("62880" (("NOTETXT1" (("StaOff" "1D235")))))))
-;;     "1D235"
-;;   )
-;;==============================================================================
-(defun hcnm-bn-reactor-notifier-update (notifier-entry handle-notifier / 
-                                            bubble-list handle-bubble tag-list updated-any
-                                            deleted-handles corrupted-handles update-result 
-                                            cleaned-bubble-list ename-bubble reactor)
-  ;; Extract data from notifier entry
-  (setq
-    handle-notifier (car notifier-entry)
-    bubble-list (cadr notifier-entry)
-    updated-any nil  ; Track if we actually updated any bubble
-    deleted-handles nil  ; Track bubbles that no longer exist
-    corrupted-handles nil  ; Track bubbles with corrupted auto-text
-  )
-  ;; USER FEEDBACK: Show recalculation message
-  (princ (strcat "\rRecalculating " 
-                 (itoa (length bubble-list)) 
-                 " auto-text bubble" 
-                 (if (> (length bubble-list) 1) "s" "")
-                 "..."))
-  
-  ;; NOTE: No flag setting here - parent callback already set BlockReactors="1"
-  ;; This blocks ALL nested callbacks (leader modifications triggered by attribute updates)
-  
-  ;; Process each bubble that depends on this notifier
-  (foreach
-     bubble bubble-list
-    (setq
-      handle-bubble (car bubble)
-      tag-list (cadr bubble)
-    )
-    ;; Update this bubble
-    ;; Returns: T (modified), nil (skipped), "DELETED" (erased), "CORRUPTED" (user corrupted auto-text)
-    (setq update-result (hcnm-bn-reactor-bubble-update handle-bubble handle-notifier tag-list))
-    (cond
-      ((equal update-result "DELETED")
-       ;; Bubble erased - add to cleanup list
-       (setq deleted-handles (cons handle-bubble deleted-handles)))
-      ((equal update-result "CORRUPTED")
-       ;; User corrupted auto-text - XDATA already cleared, need reactor refresh
-       (setq corrupted-handles (cons handle-bubble corrupted-handles))
-       (setq updated-any T))  ; Still counts as activity
-      (update-result
-       ;; Bubble modified successfully
-       (setq updated-any T))
-    )
-  )
-  
-  ;; CLEANUP: Remove deleted bubbles from notifier entry by rebuilding list
-  (cond
-    (deleted-handles
-     (princ (strcat "\n[NOTIFIER-UPDATE] Removing " (itoa (length deleted-handles)) " deleted bubble(s) from reactor data"))
-     ;; Filter out deleted bubbles - returns new cleaned list
-     (setq cleaned-bubble-list
-       (vl-remove-if
-         '(lambda (bubble) (member (car bubble) deleted-handles))
-         bubble-list))
-     ;; Update notifier-entry with cleaned list
-     (setq notifier-entry (list handle-notifier cleaned-bubble-list))
-    )
-  )
-  
-  ;; REACTOR REFRESH: Rebuild reactor tracking for corrupted bubbles
-  ;; This removes orphaned owners and cleans up data structure
-  (cond
-    (corrupted-handles
-      (princ (strcat "\n[NOTIFIER-UPDATE] Refreshing reactor for " (itoa (length corrupted-handles)) " corrupted bubble(s)"))
-      (setq reactor (hcnm-bn-get-reactor))
-      (foreach handle-corrupted corrupted-handles
-        (setq ename-bubble (handent handle-corrupted))
-        (cond
-          (ename-bubble
-            (princ (strcat "\n    Refreshing bubble: " handle-corrupted))
-            (hcnm-bn-eb-reactor-refresh ename-bubble)
-          )
-        )
-      )
-    )
-  )
-  
-  ;; Clear command line message
-  (princ "\r                                                    \r")
-  
-  ;; Return cleaned notifier-entry (callback expects this format)
-  notifier-entry
-)
-;;==============================================================================
-;; hcnm-bn-reactor-bubble-update
-;;==============================================================================
-;; Purpose:
-;;   Updates all auto-text fields in one bubble after the notifier (specific owner)
-;;   triggered a callback. Processes multiple tags and multiple auto-texts per tag.
-;;
-;; Arguments:
-;;   handle-bubble - Handle string of bubble to update
-;;   handle-notifier - Handle of the notifier (specific owner that triggered callback)
-;;                     Used only for legacy format migration (fallback reference)
-;;   tag-list - List of tags with auto-text entries to update
-;;              Format: ((tag auto-list) ...)
-;;              where auto-list = (("auto-type" "handle-reference") ...) [NEW]
-;;              or auto-list = "auto-type" [OLD - deprecated]
-;;
-;; Call Flow:
-;;   reactor-callback → notifier-update → THIS FUNCTION → update-bubble-tag (per auto-text)
-;;
-;; Terminology:
-;;   notifier = Specific owner that triggered callback (alignment/pipe/leader)
-;;   reference = Object that provides calculation data (stored in leaf, always alignment/pipe, never leader)
-;;   For most updates: notifier = reference (same object)
-;;   For leader-based updates: notifier = leader, reference = alignment/pipe (extracted from data)
+;;   c:hcnm-bnatu → THIS FUNCTION → update-bubble-tag (per auto-text, no I/O)
 ;;
 ;; Algorithm:
-;;   1. Skip if bubble erased (early exit)
-;;   2. Foreach tag in tag-list:
-;;      a. Check format (new list vs old string)
-;;      b. Foreach auto-entry in auto-list:
-;;         - Extract auto-type and handle-reference
-;;         - Call update-bubble-tag to regenerate auto-text
+;;   1. Read lattribs + XDATA once
+;;   2. Build tag-list from XDATA composite keys
+;;   3. Foreach tag, foreach auto-entry: call update-bubble-tag (accumulates changes)
+;;   4. Write XDATA once, format + write attributes once
 ;;
-;; Data Format Migration:
-;;   NEW: auto-list = (("StaOff" "1D235") ("Dia" "1D235"))  ← Multiple auto-texts per tag
-;;   OLD: auto-list = "StaOff"  ← Single string, fallback uses handle-notifier as reference
-;;        (Prints warning, continues with degraded functionality for leader-based bubbles)
-;;
-;; Performance Issues (KNOWN - documented in Section 1.2.1.6):
-;;   - Each update-bubble-tag writes XDATA + attributes independently (non-atomic)
-;;   - FUTURE OPTIMIZATION: Accumulate lattribs changes, write once per bubble after all loops
-;;     Solution: Pass accumulator alist to update-bubble-tag, return updated accumulator,
-;;     write complete lattribs + XDATA atomically after foreach loops complete
-;;
-;; Side Effects:
-;;   - Calls update-bubble-tag which modifies bubble XDATA and attributes (per auto-text!)
-;;   - Prints warnings for old format or unexpected data structure
-;;
-;; Example (new format):
-;;   (hcnm-bn-reactor-bubble-update 
-;;     "62880"                                    ; bubble handle
-;;     "1D235"                                    ; notifier handle (alignment)
-;;     '(("NOTETXT1" (("StaOff" "1D235")          ; tag with auto-list
-;;                    ("Dia" "1D235"))))          ; multiple auto-texts per tag
-;;   )
+;; Returns:
+;;   Number of auto-text entries processed, or nil if no auto-text found
 ;;==============================================================================
-(defun hcnm-bn-reactor-bubble-update (handle-bubble handle-notifier tag-list / tag auto-list auto-entry auto-type handle-reference updated-any ename-bubble update-result)
-  ;; Check if bubble is active (handent returns nil for user-erased entities)
-  (setq ename-bubble (handent handle-bubble))
-  (cond
-    ;; Bubble was erased by user - return "DELETED" for cleanup
-    ((not ename-bubble)
-     (haws-debug (list "[REACTOR CLEANUP] Bubble handle " handle-bubble " erased (removing from reactor data)"))
-     "DELETED"
+(defun hcnm-bn-bnatu-bubble-update (ename-bubble /
+                                    tag auto-list auto-entry auto-type handle-reference
+                                    update-result lattribs xdata-alist
+                                    lattribs-old tag-data composite-entry
+                                    auto-entry-list tag-list entry-count
+                                   )
+  (setq
+    lattribs (hcnm-bn-dwg-to-lattribs ename-bubble)
+    lattribs-old lattribs
+    xdata-alist (hcnm-xdata-read ename-bubble)
+    entry-count 0
+  )
+  ;; Build tag-list from XDATA composite keys
+  ;; Format: ((tag ((auto-type handle-reference) ...)) ...)
+  (setq tag-list nil)
+  (foreach tag-data xdata-alist
+    (setq
+      tag (car tag-data)
+      auto-list (cdr tag-data)
     )
-    ;; Bubble is active - process updates
-    (t
-     (setq updated-any nil)  ; Track if we actually modified anything
-     (foreach
-        tag-data tag-list
+    (cond
+      ((and (listp auto-list) (listp (car auto-list)))
+       (setq auto-entry-list nil)
+       (foreach composite-entry auto-list
+         (setq auto-entry-list
+           (append auto-entry-list
+             (list (list (car (car composite-entry)) (cdr (car composite-entry))))
+           )
+         )
+         (setq entry-count (1+ entry-count))
+       )
+       (setq tag-list (append tag-list (list (list tag auto-entry-list))))
+      )
+    )
+  )
+  ;; Process each auto-text entry
+  (cond
+    (tag-list
+     (foreach tag-data tag-list
        (setq
          tag (car tag-data)
-         auto-list (cadr tag-data)  ; List of (auto-type reference-handle) 2-element lists
+         auto-list (cadr tag-data)
        )
-       ;; Check if this is old format (string) or new format (list of 2-element lists)
-       (cond
-         ;; New format: list of 2-element lists (auto-type reference-handle)
-         ((and (listp auto-list) (listp (car auto-list)))
-          (foreach
-             auto-entry auto-list
+       (foreach auto-entry auto-list
+         (setq
+           auto-type (car auto-entry)
+           handle-reference (cadr auto-entry)
+         )
+         (setq update-result
+           (hcnm-bn-update-bubble-tag
+             ename-bubble tag auto-type handle-reference lattribs xdata-alist
+           )
+         )
+         (cond
+           (update-result
             (setq
-              auto-type (car auto-entry)
-              handle-reference (cadr auto-entry)  ; Second element, not cdr
+              lattribs (cadr update-result)
+              xdata-alist (caddr update-result)
             )
-            ;; FUTURE OPTIMIZATION (see Section 1.2.1.6): Accumulate updates, write once per bubble
-            ;; Solution: Return updated lattribs instead of writing. Accumulate across
-            ;; all auto-entries, then write once after foreach loops complete.
-            (setq update-result
-              (hcnm-bn-update-bubble-tag
-                handle-bubble
-                tag
-                auto-type
-                handle-reference
-              )
-            )
-            (cond
-              ((= update-result "CORRUPTED")
-                ;; User corrupted auto-text - XDATA already removed
-                ;; Signal that reactor refresh is needed for this bubble
-                (setq updated-any "CORRUPTED")
-              )
-              (update-result
-                ;; Normal update succeeded
-                (setq updated-any T)
-              )
-            )
-          )
-         )
-         ;; Old format: just auto-type string, use handle-notifier as reference
-         ((atom auto-list)
-          (haws-debug "WARNING: Old reactor data format detected - please re-insert bubble")
-          (setq update-result
-            (hcnm-bn-update-bubble-tag
-              handle-bubble
-              tag
-              auto-list  ; auto-type
-              handle-notifier  ; Use notifier as reference (may be wrong for leaders)
-            )
-          )
-          (cond
-            ((= update-result "CORRUPTED")
-              (setq updated-any "CORRUPTED")
-            )
-            (update-result
-              (setq updated-any T)
-            )
-          )
-         )
-         (t
-          (haws-debug (strcat "ERROR: Unexpected reactor data format for tag " tag))
+           )
          )
        )
      )
-     updated-any  ; Return T if anything was modified, "CORRUPTED" if cleanup needed, NIL otherwise
+     ;; Write once: XDATA + formatted attributes
+     (cond
+       ((/= lattribs lattribs-old)
+        (hcnm-xdata-set-autotext ename-bubble xdata-alist)
+        (hcnm-set-attributes ename-bubble (hcnm-bn-underover-add lattribs ename-bubble))
+       )
+     )
+     entry-count
     )
   )
 )
+
+;;==============================================================================
+;; c:hcnm-bnatu - Bubble Note Auto-Text Updater (User Command)
+;;==============================================================================
+;; Purpose:
+;;   Updates all bubble note auto-text in the drawing.
+;;   Processes all bubbles with HCNM-BUBBLE XDATA.
+;;
+;; Usage:
+;;   Command: HCNM-BNATU or alias BUP
+;;   Processes all bubbles in drawing (no selection required)
+;;
+;; Architecture:
+;;   - Collects all INSERTs with HCNM-BUBBLE XDATA
+;;   - Calls hcnm-bn-bnatu-bubble-update for each bubble (reads/writes once per bubble)
+;;==============================================================================
+(defun c:hcnm-bnatu ( /
+                      ss i ename-bubble
+                      bubble-count updated-count time-start time-bubble time-total
+                      entry-count total-entries
+                     )
+  (princ "\nUpdating all bubble note auto-text...")
+  (setq time-start (getvar "MILLISECS"))
+  ;; Collect all INSERTs with HCNM-BUBBLE XDATA
+  (setq ss (ssget "X" (list (cons 0 "INSERT") (list -3 (list "HCNM-BUBBLE")))))
+  (setq
+    bubble-count 0
+    updated-count 0
+    total-entries 0
+  )
+  (cond
+    (ss
+     (setq i 0)
+     (while (setq ename-bubble (ssname ss i))
+       (setq time-bubble (getvar "MILLISECS"))
+       (setq bubble-count (1+ bubble-count))
+       (setq entry-count (hcnm-bn-bnatu-bubble-update ename-bubble))
+       (cond
+         (entry-count
+          (setq updated-count (1+ updated-count))
+          (setq time-bubble (- (getvar "MILLISECS") time-bubble))
+          (haws-clock-console-log
+            (strcat "  [BUP] Bubble " (itoa bubble-count) "/" (itoa (sslength ss))
+                    " (" (itoa entry-count) " entries): "
+                    (itoa time-bubble) "ms")
+          )
+          (setq total-entries (+ total-entries entry-count))
+         )
+       )
+       (setq i (1+ i))
+     )
+     (setq time-total (- (getvar "MILLISECS") time-start))
+     (princ (strcat "\nProcessed " (itoa bubble-count) " bubble(s), updated "
+                    (itoa updated-count) " with auto-text ("
+                    (itoa total-entries) " auto-text entries)."))
+     (haws-clock-console-log (strcat "[BUP] TOTAL TIME: " (itoa time-total) "ms"))
+     (haws-clock-console-log (strcat "[BUP] AVG per bubble: " (itoa (/ time-total (max bubble-count 1))) "ms"))
+    )
+    (t
+     (princ "\nNo bubbles found in drawing.")
+    )
+  )
+  (princ)
+)
+(defun c:bup () (c:hcnm-bnatu))
 
 ;#endregion
 ;#endregion
 
 ;#region Smart Replace & Update Helpers
 ;;==============================================================================
-;; Helper functions for reactor update path: extract old auto-text, generate new,
+;; Helper functions for bnatu update path: extract old auto-text, generate new,
 ;; smart-replace in user text, write XDATA + attributes.
 ;; These functions preserve user edits while updating auto-text fields.
 ;;==============================================================================
@@ -12223,7 +10803,7 @@ ImportLayerSettings=No
   )
 )
 ;; Helper function to check if entity is on the "Model" tab
-(defun hcnm-bn-is-on-model-tab (ename / layout-name)
+(defun hcnm-bn-is-in-model-space (ename / layout-name)
   (setq layout-name (cdr (assoc 410 (entget ename))))
   (= (strcase layout-name) "MODEL")
 )
@@ -12257,7 +10837,7 @@ ImportLayerSettings=No
 ;; Arguments:
 ;;   ename-bubble - Entity name of bubble
 ;;   tag - Attribute tag (e.g., "NOTETXT1")
-;;   auto-type - Auto-type string (e.g., "StaOff", "Dia")
+;;   auto-type - Auto-type string (e.g., "STAOFF", "DIA")
 ;;   handle-reference - Handle of reference object (alignment/pipe) or ""
 ;;
 ;; Returns:
@@ -12320,12 +10900,12 @@ ImportLayerSettings=No
 ;;==============================================================================
 ;; Purpose:
 ;;   Updates a single auto-text entry in bubble's XDATA without affecting other entries.
-;;   Used by reactor callbacks to update one auto-text field at a time.
+;;   Used by bnatu to update one auto-text field at a time.
 ;;
 ;; Arguments:
 ;;   ename-bubble - Entity name of bubble
 ;;   tag - Attribute tag (e.g., "NOTETXT1")
-;;   auto-type - Auto-type string (e.g., "StaOff", "Dia")
+;;   auto-type - Auto-type string (e.g., "STAOFF", "DIA")
 ;;   handle-reference - Handle of reference object or "" for coordinates
 ;;   auto-text - New auto-text value to store
 ;;
@@ -12333,7 +10913,7 @@ ImportLayerSettings=No
 ;;   T if successful, NIL otherwise
 ;;
 ;; Call Pattern:
-;;   Reactor callback → update-bubble-tag → THIS FUNCTION (one per auto-text field)
+;;   bnatu → update-bubble-tag → THIS FUNCTION (one per auto-text field)
 ;;   Dialog save → hcnm-bn-xdata-save (writes entire semi-global at once)
 ;;
 ;; ARCHITECTURAL NOTE (2025-11-06):
@@ -12341,7 +10921,7 @@ ImportLayerSettings=No
 ;;   Simple format DEPRECATED - all bubbles use composite-key format.
 ;;
 ;; Example:
-;;   (hcnm-bn-xdata-update-one ename-bubble "NOTETXT1" "StaOff" "ABC123" "STA 10+25.50")
+;;   (hcnm-bn-xdata-update-one ename-bubble "NOTETXT1" "STAOFF" "ABC123" "STA 10+25.50")
 ;;==============================================================================
 (defun hcnm-bn-xdata-update-one (ename-bubble tag auto-type handle-reference auto-text / 
                                      xdata-alist tag-xdata composite-key composite-entry tag-entry
@@ -12350,7 +10930,7 @@ ImportLayerSettings=No
   ;;===========================================================================
   ;; PROFILING: Start timing XDATA write (hot path, inherently slow)
   ;;===========================================================================
-  (setq profile-start (haws-clock-start "reactor-xdata-write"))
+  (setq profile-start (haws-clock-start "bnatu-xdata-write"))
   (setq xdata-alist (hcnm-xdata-read ename-bubble))
   (setq tag-entry (assoc tag xdata-alist))
   (setq tag-xdata (cdr tag-entry))
@@ -12398,7 +10978,7 @@ ImportLayerSettings=No
   ;;===========================================================================
   ;; PROFILING: End timing XDATA write
   ;;===========================================================================
-  (haws-clock-end "reactor-xdata-write" profile-start)
+  (haws-clock-end "bnatu-xdata-write" profile-start)
   T
 )
 
@@ -12412,7 +10992,7 @@ ImportLayerSettings=No
 ;; Arguments:
 ;;   ename-bubble - Entity name of bubble
 ;;   tag - Attribute tag (e.g., "NOTETXT1")
-;;   auto-type - Auto-type string (e.g., "StaOff", "Dia")
+;;   auto-type - Auto-type string (e.g., "STAOFF", "DIA")
 ;;   handle-reference - Handle of reference object or "" for coordinates
 ;;
 ;; Returns:
@@ -12481,14 +11061,14 @@ ImportLayerSettings=No
 ;;   ename-reference - Entity name of reference object (or NIL for N/E/NE)
 ;;   lattribs - Current lattribs (2-element format)
 ;;   tag - Attribute tag to update
-;;   auto-type - Auto-type string (e.g., "StaOff", "Dia", "N")
+;;   auto-type - Auto-type string (e.g., "STAOFF", "DIA", "N")
 ;;
 ;; Returns:
 ;;   Updated lattribs with new auto-text value in specified tag
 ;;
 ;; Special Cases:
 ;;   - For N/E/NE (no reference), passes T as sentinel to auto-dispatch
-;;   - For reactor updates, auto-dispatch knows not to prompt user
+;;   - For bnatu updates, auto-dispatch knows not to prompt user
 ;;
 ;; Side Effects:
 ;;   - May read viewport transform data from XDATA
@@ -12508,7 +11088,7 @@ ImportLayerSettings=No
     bubble-data (hcnm-bn-bubble-data-set nil "ename-bubble" ename-bubble)
     bubble-data (hcnm-bn-bubble-data-set bubble-data "ATTRIBUTES" lattribs)
   )
-  ;; Call auto-dispatch to generate new auto-text (reactor context)
+  ;; Call auto-dispatch to generate new auto-text (bnatu context)
   (setq bubble-data (hcnm-bn-auto-dispatch tag auto-type obj-reference bubble-data t))
   ;; Extract lattribs from bubble-data
   (hcnm-bn-bubble-data-get bubble-data "ATTRIBUTES")
@@ -12518,283 +11098,148 @@ ImportLayerSettings=No
 ;; hcnm-bn-update-bubble-tag
 ;;==============================================================================
 ;; Purpose:
-;;   Updates ONE specific auto-text field in a bubble after reference object changes.
-;;   Core reactor update function - regenerates auto-text and smart-replaces in existing text.
+;;   Updates ONE auto-text field in a bubble. Pure computation - no I/O.
+;;   Accepts pre-read lattribs + xdata-alist, returns accumulated results.
 ;;
 ;; Arguments:
-;;   handle-bubble - Handle string of bubble to update
+;;   ename-bubble - Entity name of bubble
 ;;   tag - Attribute tag to update (e.g., "NOTETXT1", "NOTETXT2")
-;;   auto-type - Auto-type string specifying calculation (e.g., "StaOff", "Dia", "N", "E")
-;;   handle-reference - Handle of reference object (alignment/pipe/surface) or "" for N/E/NE
+;;   auto-type - Auto-type string (e.g., "STAOFF", "DIA", "N", "E")
+;;   handle-reference - Handle of reference object or "" for N/E/NE
+;;   lattribs - Pre-read lattribs (2-element format)
+;;   xdata-alist - Pre-read XDATA alist
 ;;
-;; Terminology:
-;;   reference = Object that provides calculation data (alignment, pipe, surface)
-;;   For coordinate-based (N/E/NE): handle-reference = "" (uses leader arrowhead position)
-;;   For alignment-based: handle-reference = alignment handle
-;;   For pipe-based: handle-reference = pipe handle
-;;
-;; Call Flow:
-;;   reactor-callback → notifier-update → bubble-update → THIS FUNCTION (once per auto-text field)
+;; Returns:
+;;   3-element list: (status lattribs xdata-alist) where status is T/nil/"CORRUPTED"
+;;   nil if no change needed
 ;;
 ;; Algorithm (Smart Replace to Preserve User Edits):
-;;   1. Read current attribute text (may include user prefix/postfix edits)
-;;   2. Extract old auto-text from XDATA (the "search needle")
-;;   3. Generate new auto-text via auto-dispatch (recalculate from reference)
-;;   4. Smart replace: find old auto-text in current text, replace with new
-;;   5. Write XDATA (store updated auto-text as new search needle)
-;;   6. Write attributes (save full text with format codes applied)
-;;
-;; Smart Replace Example (User Edits Preserved):
-;;   Current attribute text: "Storm STA 10+25.50 RT"  ← User added prefix/postfix
-;;   Old auto-text (XDATA): "STA 10+25.50"            ← Search needle
-;;   New auto-text (calculated): "STA 11+00.00"       ← Alignment changed
-;;   Result: "Storm STA 11+00.00 RT"                  ← User text preserved!
-;;
-;; Performance Issues (KNOWN - documented in Section 1.2.1.6):
-;;   - Called ONCE PER AUTO-TEXT FIELD (can be 5+ times per bubble if user has N, E, StaOff, Dia, etc.)
-;;   - Each call writes XDATA + attributes independently (NON-ATOMIC - BAD DESIGN!)
-;;   - FUTURE OPTIMIZATION: Refactor to accumulate updates, write once per bubble
-;;     Solution: Change signature to (update-bubble-tag ... lattribs-accumulator),
-;;     return updated accumulator instead of writing. Move write to bubble-update
-;;     after all foreach loops complete. This ensures atomic update of all tags.
-;;
-;; Side Effects:
-;;   - Writes XDATA via hcnm-bn-xdata-update-one (stores new search needle)
-;;   - Writes formatted attributes via hcnm-set-attributes (applies format codes)
-;;   - May alert if bubble not found (defensive error message)
-;;
-;; Edge Cases & Gotchas:
-;;   - If user manually corrupts auto-text in attribute, smart replace fails silently (by design)
-;;   - Multiple identical auto-texts in same tag: only updates first occurrence (known limitation)
-;;   - If reference object erased: auto-dispatch returns NIL, smart replace no-ops gracefully
-;;   - If auto-dispatch fails: attribute unchanged, XDATA unchanged (safe failure mode)
-;;
-;; Example:
-;;   (hcnm-bn-update-bubble-tag 
-;;     "62880"      ; bubble handle
-;;     "NOTETXT1"   ; attribute tag
-;;     "StaOff"     ; auto-type
-;;     "1D235"      ; alignment handle
-;;   )
+;;   1. Extract old auto-text from passed xdata-alist (search needle)
+;;   2. Generate new auto-text via auto-dispatch
+;;   3. Smart replace in current text
+;;   4. Update lattribs and xdata-alist in returned result (caller writes)
 ;;==============================================================================
-(defun hcnm-bn-update-bubble-tag (handle-bubble tag auto-type handle-reference / 
-                                      ename-bubble ename-reference lattribs lattribs-old
-                                      attr current-text old-auto-text auto-new new-text
-                                      time-start time-read-state time-xdata-read time-generate time-replace
-                                     )
-  ;; Convert handle to entity name - deleted bubbles return nil
-  (setq ename-bubble (handent handle-bubble))
-  (cond
-    ((not ename-bubble) "DELETED")
-    (t
-      ;; STEP 1: Read current state
-      (setq time-start (getvar "MILLISECS"))
-      (setq
-        ename-reference
-          (cond
-            ((= handle-reference "") nil)
-            (t (handent handle-reference))
-          )
-        lattribs-old (hcnm-bn-dwg-to-lattribs ename-bubble)
-        lattribs lattribs-old
-        attr (assoc tag lattribs)
-        current-text (if attr (cadr attr) "")
-      )
-      (setq time-read-state (- (getvar "MILLISECS") time-start))
-      (haws-debug "[AFTER-READ-STATE] About to extract old auto-text from XDATA")
-      ;; STEP 2: Extract old auto-text from XDATA (search needle)
-      (setq time-start (getvar "MILLISECS"))
-      (setq old-auto-text 
-        (hcnm-bn-extract-old-auto-text ename-bubble tag auto-type handle-reference)
-      )
-      (setq time-xdata-read (- (getvar "MILLISECS") time-start))
-      (haws-debug (strcat "[AFTER-XDATA-READ] Extracted old auto-text (" (itoa time-xdata-read) "ms), about to generate new auto-text"))
-      ;; STEP 3: Generate new auto-text via auto-dispatch
-      (setq time-start (getvar "MILLISECS"))
-      (setq lattribs 
-        (hcnm-bn-generate-new-auto-text 
-          ename-bubble ename-reference lattribs tag auto-type
-        )
-      )
-      (setq time-generate (- (getvar "MILLISECS") time-start))
-      (haws-debug (strcat "[AFTER-GENERATE] Generated new auto-text (" (itoa time-generate) "ms), about to smart replace"))
-      ;; STEP 4: Extract generated auto-text (plain, no format codes)
-      (setq
-        attr (assoc tag lattribs)
-        auto-new (if attr (cadr attr) "")
-      )
-      ;; STEP 5: Smart replace - preserve user edits around auto-text
-      (setq time-start (getvar "MILLISECS"))
-      (setq new-text
-        (hcnm-bn-smart-replace-auto current-text old-auto-text auto-new)
-      )
-      (setq time-replace (- (getvar "MILLISECS") time-start))
-      (haws-debug (strcat "[AFTER-REPLACE] Smart replace done (" (itoa time-replace) "ms), about to detect search success"))
-      
-      ;; STEP 5.5: Detect if smart replace actually found old auto-text
-      ;; If user corrupted the text (deleted part of auto-text), search fails
-      ;; In that case, treat it as user text and REMOVE from XDATA/reactor
-      (setq search-succeeded-p
-        (cond
-          ;; No old auto-text in XDATA = first time setup, success
-          ((not old-auto-text) T)
-          ;; Delimiter found = success
-          ((vl-string-search "```" current-text) T)
-          ;; Old auto-text found in current text = success
-          ((vl-string-search old-auto-text current-text) T)
-          ;; Empty current text = success (field was empty)
-          ((= current-text "") T)
-          ;; Otherwise = search FAILED (user corrupted auto-text)
-          (t nil)
-        )
-      )
-      
-      ;; STEP 6: Update lattribs with smartly-replaced text
-      (setq lattribs
-        (cond
-          (attr (subst (list tag new-text) attr lattribs))
-          (t (append lattribs (list (list tag new-text))))
-        )
-      )
-      ;; STEP 7: Write to drawing and XDATA
+(defun hcnm-bn-update-bubble-tag (ename-bubble tag auto-type handle-reference
+                                  lattribs xdata-alist /
+                                  ename-reference attr current-text
+                                  old-auto-text auto-new new-text search-succeeded-p
+                                  tag-xdata composite-key composite-entry tag-entry
+                                  remaining-entries
+                                 )
+  ;; Read current text from passed lattribs
+  (setq
+    ename-reference
       (cond
-        (search-succeeded-p
-          ;; Search succeeded - update XDATA with new auto-text
-          (cond
-            ((/= lattribs lattribs-old)
-              ;; Update XDATA for this specific composite key (preserves other auto-text entries)
-              (setq time-start (getvar "MILLISECS"))
-              (hcnm-bn-xdata-update-one ename-bubble tag auto-type handle-reference auto-new)
-              (haws-clock-console-log (strcat "  [PROFILE] XDATA write: " (itoa (- (getvar "MILLISECS") time-start)) "ms"))
-              ;; Format for display (adds underline/overline codes)
-              (setq lattribs (hcnm-bn-underover-add lattribs))
-              ;; Write formatted attributes (uses VLA methods, not entmod)
-              (setq time-start (getvar "MILLISECS"))
-              (hcnm-set-attributes ename-bubble lattribs)
-              (haws-clock-console-log (strcat "  [PROFILE] Attribute write: " (itoa (- (getvar "MILLISECS") time-start)) "ms"))
-              ;; Report timing breakdown
-              (haws-clock-console-log (strcat "  [PROFILE BREAKDOWN] Read state: " (itoa time-read-state) 
-                            "ms, XDATA read: " (itoa time-xdata-read)
-                            "ms, Generate: " (itoa time-generate)
-                            "ms, Replace: " (itoa time-replace) "ms"))
-              T  ; Return T to indicate modification occurred
-            )
-            (t nil)  ; Return nil if no changes
+        ((= handle-reference "") nil)
+        (t (handent handle-reference))
+      )
+    attr (assoc tag lattribs)
+    current-text (if attr (cadr attr) "")
+  )
+  ;; Extract old auto-text from passed xdata-alist (search needle)
+  (setq
+    tag-xdata (cdr (assoc tag xdata-alist))
+    composite-key (cons auto-type handle-reference)
+    old-auto-text
+      (cond
+        ((and tag-xdata (listp tag-xdata) (listp (car tag-xdata)))
+         (cdr (assoc composite-key tag-xdata))
+        )
+        (t nil)
+      )
+  )
+  ;; Generate new auto-text via auto-dispatch
+  (setq lattribs
+    (hcnm-bn-generate-new-auto-text
+      ename-bubble ename-reference lattribs tag auto-type
+    )
+  )
+  ;; Extract generated auto-text (plain, no format codes)
+  (setq
+    attr (assoc tag lattribs)
+    auto-new (if attr (cadr attr) "")
+  )
+  ;; Smart replace - preserve user edits around auto-text
+  (setq new-text
+    (hcnm-bn-smart-replace-auto current-text old-auto-text auto-new)
+  )
+  ;; Detect if smart replace found old auto-text
+  (setq search-succeeded-p
+    (cond
+      ((not old-auto-text) T)
+      ((vl-string-search "```" current-text) T)
+      ((vl-string-search old-auto-text current-text) T)
+      ((= current-text "") T)
+      (t nil)
+    )
+  )
+  ;; Update lattribs with smartly-replaced text
+  (setq lattribs
+    (cond
+      (attr (subst (list tag new-text) attr lattribs))
+      (t (append lattribs (list (list tag new-text))))
+    )
+  )
+  ;; Update xdata-alist (accumulate, caller writes)
+  (cond
+    (search-succeeded-p
+     ;; Update XDATA composite key with new auto-text
+     (setq tag-entry (assoc tag xdata-alist))
+     (setq tag-xdata (cdr tag-entry))
+     (cond
+       ((and tag-xdata (listp tag-xdata) (listp (car tag-xdata)))
+        (setq composite-entry (assoc composite-key tag-xdata))
+        (cond
+          (composite-entry
+           (setq tag-xdata (subst (cons composite-key auto-new) composite-entry tag-xdata))
+          )
+          (t
+           (setq tag-xdata (append tag-xdata (list (cons composite-key auto-new))))
           )
         )
-        (t
-          ;; Search FAILED - user corrupted auto-text, remove from XDATA/reactor
-          (haws-debug (strcat "*** WARNING: Auto-text search failed for " tag " - user may have corrupted text"))
-          (haws-debug (strcat "    Old auto-text: \"" (if old-auto-text old-auto-text "nil") "\""))
-          (haws-debug (strcat "    Current text: \"" current-text "\""))
-          (haws-debug (strcat "    Removing from XDATA and reactor tracking (treating as user text)"))
-          
-          ;; Remove this auto-text entry from XDATA
-          (hcnm-bn-xdata-remove-one ename-bubble tag auto-type handle-reference)
-          
-          ;; Return special status to signal reactor cleanup needed
-          "CORRUPTED"
+        (setq xdata-alist (subst (cons tag tag-xdata) tag-entry xdata-alist))
+       )
+       (t
+        (setq tag-xdata (list (cons composite-key auto-new)))
+        (cond
+          (tag-entry
+           (setq xdata-alist (subst (cons tag tag-xdata) tag-entry xdata-alist))
+          )
+          (t
+           (setq xdata-alist (append xdata-alist (list (cons tag tag-xdata))))
+          )
         )
-      )
+       )
+     )
+     (list T lattribs xdata-alist)
+    )
+    (t
+     ;; Search FAILED - remove this auto-text entry from xdata-alist
+     (haws-debug (strcat "*** WARNING: Auto-text search failed for " tag " - user may have corrupted text"))
+     (setq tag-entry (assoc tag xdata-alist))
+     (setq tag-xdata (cdr tag-entry))
+     (cond
+       ((and tag-xdata (listp tag-xdata))
+        (setq remaining-entries
+          (vl-remove-if
+            (function (lambda (entry) (equal (car entry) composite-key)))
+            tag-xdata
+          )
+        )
+        (cond
+          (remaining-entries
+           (setq xdata-alist (subst (cons tag remaining-entries) tag-entry xdata-alist))
+          )
+          (t
+           (setq xdata-alist (vl-remove tag-entry xdata-alist))
+          )
+        )
+       )
+     )
+     (list "CORRUPTED" lattribs xdata-alist)
     )
   )
 )
-
-;;==============================================================================
-;; Reactor Data Audit System
-;;==============================================================================
-;; Cleans stale reactor data entries for erased bubbles and objects.
-;; Call from key notes table completion for automatic maintenance.
-;;==============================================================================
-
-;; Command to audit and clean stale reactor data
-(defun c:hcnm-audit-reactor-data (/ reactors reactor data owner-entries
-                                 cleaned-entries stale-owners stale-bubbles
-                                 total-before total-after)
-  (princ "\n=== REACTOR DATA AUDIT ===")
-  (setq reactors (cdar (vlr-reactors :vlr-object-reactor)))
-  (foreach r reactors
-    (if (and (listp (vlr-data r)) (assoc "HCNM-BUBBLE" (vlr-data r)))
-      (progn
-        (setq data (vlr-data r)
-              owner-entries (cdr (assoc "HCNM-BUBBLE" data))
-              cleaned-entries '()
-              stale-owners 0
-              stale-bubbles 0
-              total-before (length owner-entries))
-        
-        (princ (strcat "\nAuditing " (itoa total-before) " owner entries..."))
-        
-        ;; Clean each owner entry
-        (foreach owner-entry owner-entries
-          (setq owner-handle (car owner-entry)
-                bubble-entries (cdr owner-entry)
-                cleaned-bubble-entries '())
-          
-          ;; Check if owner-handle is valid string type
-          (cond
-            ((not (= (type owner-handle) 'STR))
-             ;; Corrupted owner entry - remove it
-             (princ (strcat "\n  Removing corrupted owner entry: " 
-               (vl-prin1-to-string owner-handle)))
-             (setq stale-owners (1+ stale-owners))
-            )
-            ((and (not (equal owner-handle ""))
-                  (not (handent owner-handle)))
-             ;; Valid string but stale object - remove it
-             (princ (strcat "\n  Removing stale owner: " owner-handle))
-             (setq stale-owners (1+ stale-owners))
-            )
-            (t
-             ;; Owner exists or is empty string, clean its bubble entries
-             (foreach bubble-entry bubble-entries
-               (setq bubble-handle (car bubble-entry))
-               (if (and (= (type bubble-handle) 'STR)
-                        (handent bubble-handle))
-                 ;; Bubble exists, keep it
-                 (setq cleaned-bubble-entries 
-                   (cons bubble-entry cleaned-bubble-entries))
-                 ;; Bubble is stale, remove it
-                 (progn
-                   (princ (strcat "\n  Removing stale bubble: " 
-                     (if (= (type bubble-handle) 'STR) 
-                       bubble-handle 
-                       (vl-prin1-to-string bubble-handle))))
-                   (setq stale-bubbles (1+ stale-bubbles))
-                 )
-               )
-             )
-             ;; If owner has any remaining bubbles, keep the owner
-             (if cleaned-bubble-entries
-               (setq cleaned-entries
-                 (cons (cons owner-handle (reverse cleaned-bubble-entries)) 
-                       cleaned-entries))
-             )
-            )
-          )
-        )
-        
-        ;; Update reactor data with cleaned entries
-        (setq total-after (length cleaned-entries))
-        (vlr-data-set r (list (cons "HCNM-BUBBLE" (reverse cleaned-entries))))
-        
-        (princ (strcat "\nAudit complete:"))
-        (princ (strcat "\n  Owners before: " (itoa total-before)))
-        (princ (strcat "\n  Owners after: " (itoa total-after)))
-        (princ (strcat "\n  Stale owners removed: " (itoa stale-owners)))
-        (princ (strcat "\n  Stale bubbles removed: " (itoa stale-bubbles)))
-      )
-    )
-  )
-  (princ "\n=== AUDIT COMPLETE ===")
-  (princ)
-)
-
-;; Internal function: audit reactor data (called from key notes table)
-(defun hcnm-audit-reactor-data-internal ()
-  (c:hcnm-audit-reactor-data)
-)
-
 ;#endregion
 
 ;#region Bubble note editor dialog
@@ -12809,78 +11254,31 @@ ImportLayerSettings=No
   (haws-editall t)
   (haws-core-restore)
 )
-;;==============================================================================
-;; hcnm-bn-eb-init-auto-handles
-;;==============================================================================
-;; Purpose:
-;;   Initialize semi-global auto-handles from existing XDATA when dialog opens.
-;;   Extracts only composite-key format entries (lists), filters out simple strings.
-;;
-;; Arguments:
-;;   ename-bubble - Entity name of bubble
-;;
-;; Returns:
-;;   Alist in format: (("TAG" ((composite-key . "auto-text") ...)) ...)
-;;
-;; Why:
-;;   Smart replace needs existing auto-text as "search needle". Without this,
-;;   editing a bubble that already has StaOff would have no old-auto-text to replace.
-;;
-;; ARCHITECTURAL NOTE (2025-11-06):
-;;   Simple format DEPRECATED. All bubbles now use composite-key format.
-;;   No filtering needed - hcnm-xdata-read returns composite-key format only.
-;;   If simple format found, hcnm-xdata-read will FAIL LOUDLY (data corruption).
-;;
-;; Example:
-;;   XDATA has: (("NOTETXT1" ((("StaOff" . "ABC123") . "STA 10+25.50"))))
-;;   Returns:   (("NOTETXT1" ((("StaOff" . "ABC123") . "STA 10+25.50"))))
-;;==============================================================================
-(defun hcnm-bn-eb-init-auto-handles (ename-bubble)
-  ;; Simply return XDATA directly - no filtering needed
-  ;; If simple format exists, hcnm-xdata-read will alert (data corruption)
-  (hcnm-xdata-read ename-bubble)
-)
-
 (defun hcnm-edit-bubble (ename-bubble / bubble-data dclfile ename-leader
-                     hcnm-bn-eb-lattribs hcnm-bn-eb-auto-handles
-                     return-list tag done-code 
+                     hcnm-bn-eb-state
+                     return-list tag done-code
                     )
   (haws-debug (list "=== DEBUG: Entering hcnm-edit-bubble"))
   (setq
     ename-leader
      (hcnm-bn-bubble-leader ename-bubble)
-    ;; Semi-global variable. Global to the hcnm-bn-eb- functions called from here.
-    ;; Read attributes and XDATA to get prefix/auto/postfix structure
-    hcnm-bn-eb-lattribs
-     (hcnm-bn-dwg-to-lattribs ename-bubble)
-    ;; Semi-global: Track handle associations for auto-texts during editing
-    ;; Format: (("TAG" ((composite-key . "auto-text") ...)) ...)
-    ;; where composite-key = (cons auto-type handle-reference)
-    ;; Initialize from XDATA only when editing DIFFERENT bubble or FIRST time
-    ;; Same bubble dialog reopening preserves accumulated changes from button clicks  
-    hcnm-bn-eb-auto-handles
-     (cond
-       ;; Different bubble or first time - initialize from XDATA
-       ((or (not (boundp 'hcnm-bn-eb-current-bubble))
-            (not (boundp 'hcnm-bn-eb-auto-handles))
-            (/= (cdr (assoc 5 (entget ename-bubble))) hcnm-bn-eb-current-bubble))
-        (setq hcnm-bn-eb-current-bubble (cdr (assoc 5 (entget ename-bubble))))
-        (hcnm-bn-eb-init-auto-handles ename-bubble))
-       ;; Same bubble dialog reopening - keep accumulated changes
-       (t hcnm-bn-eb-auto-handles)
+    ;; Semi-global: Combined edit dialog state for hcnm-bn-eb-* callbacks.
+    ;; Keys: "LATTRIBS" (attribute text), "AUTO-HANDLES" (XDATA composite keys),
+    ;;        "FOCUSED-TAG" (which edit box has focus for auto-text insertion)
+    hcnm-bn-eb-state
+     (list
+       (list "LATTRIBS" (hcnm-bn-dwg-to-lattribs ename-bubble))
+       (list "AUTO-HANDLES" (hcnm-xdata-read ename-bubble))
+       (list "FOCUSED-TAG" "NOTETXT1")
      )
-    ;; Focus tracking - replaces radio button selection
-    ;; Track which edit box has focus for auto-text insertion
-    ;; Default to NOTETXT1 (line 1 is default target)
-    hcnm-bn-eb-focused-tag "NOTETXT1"
     dclfile
      (load_dialog "cnm.dcl")
-    done-code 2
+    done-code (hcnm-bn-eb-get-done-code "SHOW")
   )
   (haws-debug
     (list
           "=== DEBUG: lattribs read, count="
-          (itoa (length hcnm-bn-eb-lattribs))
+          (itoa (length (cadr (assoc "LATTRIBS" hcnm-bn-eb-state))))
           "\n=== DEBUG: dclfile="
           (if dclfile
             (itoa dclfile)
@@ -12890,7 +11288,7 @@ ImportLayerSettings=No
   )
   ;; Validate lattribs before proceeding
   (cond
-    ((not hcnm-bn-eb-lattribs)
+    ((not (cadr (assoc "LATTRIBS" hcnm-bn-eb-state)))
      (alert (princ "\nERROR: Failed to read bubble attributes"))
      (haws-core-restore)
      (princ)
@@ -12925,23 +11323,23 @@ ImportLayerSettings=No
         )
      )
      (haws-debug (list "=== DEBUG: Entering dialog loop..."))
-     (while (> done-code -1)
+     (while (> done-code (hcnm-bn-eb-get-done-code "STOP"))
        (cond
-         ((= done-code 0) (setq done-code (hcnm-edit-bubble-cancel)))
-         ((= done-code 1)
+         ((= done-code (hcnm-bn-eb-get-done-code "CANCEL")) (setq done-code (hcnm-edit-bubble-cancel)))
+         ((= done-code (hcnm-bn-eb-get-done-code "SAVE"))
           (setq done-code (hcnm-bn-eb-save ename-bubble))
          )
-         ((= done-code 2)
+         ((= done-code (hcnm-bn-eb-get-done-code "SHOW"))
           ;; Show the CNM Bubble Note Editor dialog
           (setq
             done-code
              (hcnm-bn-eb-show dclfile ename-bubble)
             ;; Use focused tag from focus tracking (no radio button needed)
             tag
-             hcnm-bn-eb-focused-tag
+             (cadr (assoc "FOCUSED-TAG" hcnm-bn-eb-state))
           )
          )
-         ((= done-code 29)
+         ((= done-code (hcnm-bn-eb-get-done-code "CHGVIEW"))
           ;; Change View button - clear viewport transformation data and immediately prompt for new association
           (hcnm-bn-clear-viewport-transform-xdata ename-bubble)
           (princ
@@ -12949,19 +11347,19 @@ ImportLayerSettings=No
           )
           ;; Use super-clearance path to bypass all gateways and force prompt
           (hcnm-bn-gateways-to-viewport-selection-prompt
-            ename-bubble "Sta"          ; Representative coordinate type for warning message
+            ename-bubble "STA"          ; Representative coordinate type for warning message
             nil                         ; No input object
             nil                         ; No object reference status needed for super-clearance
             "LINK-VIEWPORT"
            )                            ; Super-clearance - bypass all gateways
-          (setq done-code 2)            ; Return to dialog
+          (setq done-code (hcnm-bn-eb-get-done-code "SHOW"))
          )
          (t
           ;; Process clicked action tile (button) other than cancel or save.
           ;; bubble-data-update: This is start point 2 of 2 of the bubble data logic. This one is for the bubble note editing process.
           ;; this is called whenever a dialog auto-text button is clicked.
           (hcnm-bn-eb-get-text ename-bubble done-code tag)
-          (setq done-code 2)
+          (setq done-code (hcnm-bn-eb-get-done-code "SHOW"))
          )
        )
      )
@@ -12971,118 +11369,24 @@ ImportLayerSettings=No
     )
   )
   ;; Close the validation cond
-  
-  ;; DEFENSIVE: Reset BlockReactors flag after dialog completes
-  ;; Ensures stuck flags don't persist across user actions
-  (hcnm-config-setvar "BlockReactors" "0")
-  
   (haws-core-restore)
   (princ)
 )
-
-;;; Extract handle from reactor data for a specific tag
-;;; Used to track handle associations during dialog editing
-;;; Returns: handle string or "" if not found/not applicable
-(defun hcnm-bn-get-reactor-handle-for-tag (ename-bubble tag /
-                                           hcnm-reactors reactor
-                                           reactor-data handle-bubble
-                                           handle-ref bubble-entries
-                                           bubble-entry bubble-handle
-                                           tag-entries found-handle
-                                          )
-  (setq
-    handle-bubble
-     (cdr (assoc 5 (entget ename-bubble)))
-    found-handle nil
-  )                                     ; Initialize return value
-  ;; Find the HCNM-BUBBLE reactor
-  (setq
-    hcnm-reactors
-     (vl-remove-if-not
-       '(lambda (r)
-          (and
-            (listp (vlr-data r))
-            (assoc "HCNM-BUBBLE" (vlr-data r))
-          )
-        )
-       (cdar (vlr-reactors :vlr-object-reactor))
-     )
-    reactor
-     (car hcnm-reactors)
-  )
-  (cond
-    (reactor
-     (setq reactor-data (vlr-data reactor))
-     ;; Navigate nested structure: ("HCNM-BUBBLE" (handle-ref (handle-bubble (tag . auto-type))))
-     ;; We need to find the entry where handle-bubble and tag match, then extract handle-ref
-     (setq reactor-data (cdr (assoc "HCNM-BUBBLE" reactor-data)))
-     ;; Now reactor-data is: ((handle-ref1 (handle-bubble1 (tag1 . auto-type1))) ...)
-     (foreach
-        handle-entry reactor-data
-       (setq
-         handle-ref
-          (car handle-entry)
-         bubble-entries
-          (cdr handle-entry)
-       )
-       ;; bubble-entries is: ((handle-bubble1 (tag1 . auto-type1)) ...)
-       (foreach
-          bubble-entry bubble-entries
-         (setq
-           bubble-handle
-            (car bubble-entry)
-           tag-entries
-            (cdr bubble-entry)
-         )
-         ;; Check if this is our bubble
-         (cond
-           ((= bubble-handle handle-bubble)
-            ;; tag-entries is: ((tag1 . auto-type1) ...)
-            (cond
-              ((assoc tag tag-entries)
-               ;; Found our tag! Save the handle-ref from outer loop
-               (setq found-handle handle-ref)
-              )
-            )
-           )
-         )
-       )
-     )
-     ;; Return the found handle (or "" if not found)
-     (if found-handle
-       found-handle
-       ""
-     )
-    )
-    (t "")                              ; No reactor found - return empty string
-  )
-)
-
 (defun hcnm-bn-eb-get-text (ename-bubble done-code tag / auto-string
                             auto-type attr current-text old-auto-text
                             new-text handle-ref tag-handles composite-key
                             existing-entry bubble-data auto-metadata metadata-entry
-                            handle-ref-from-auto
+                            handle-ref-from-auto auto-handles
                            )
   (setq
     auto-type
-     (cadr (assoc done-code (hcnm-edit-bubble-done-codes)))
+     (nth (- done-code (hcnm-bn-eb-done-code-auto-text-offset)) (hcnm-bn-get-auto-text-auto-types-list))
   )
   (cond
-    ;; Handle ClearAuto button (code 28)
-    ((= done-code 28)
-     ;; Clear auto-text: remove XDATA and keep only user text
-     ;; NOTE: In 2-element architecture, auto-text is stored in XDATA
-     ;; Dialog shows full concatenated text, XDATA stores search needles
-     ;; Clearing auto means: keep display text as-is, remove XDATA
-     (setq attr (assoc tag hcnm-bn-eb-lattribs))
-     ;; For now, just keep the text as-is (XDATA will be cleared on save)
-     ;; IMPLEMENTATION NOTE: XDATA clearing handled by model layer on save
-    )
     ;; Handle auto-text generation buttons (only if auto-type is valid)
     ((and auto-type (not (= auto-type "")))
      ;; STEP 1: Save current text BEFORE auto-dispatch modifies it
-     (setq attr (assoc tag hcnm-bn-eb-lattribs))
+     (setq attr (assoc tag (cadr (assoc "LATTRIBS" hcnm-bn-eb-state))))
      (setq
        current-text
         (if attr
@@ -13092,8 +11396,7 @@ ImportLayerSettings=No
      )
      ;; STEP 2: Get old auto-text from XDATA using composite key
      ;; For existing auto-text, get handle-ref from existing XDATA (semi-global)
-     ;; Don't use reactor lookup - that's for insertion, not regeneration
-     (setq tag-handles (cdr (assoc tag hcnm-bn-eb-auto-handles)))
+     (setq tag-handles (cdr (assoc tag (cadr (assoc "AUTO-HANDLES" hcnm-bn-eb-state)))))
      (haws-debug (list "=== DEBUG eb-get-text: tag=" tag " auto-type=" auto-type))
      (haws-debug (list "=== DEBUG eb-get-text: tag-handles=" (vl-prin1-to-string tag-handles)))
      (setq handle-ref "")  ; Default for handleless auto-text (N/E/NE)
@@ -13126,16 +11429,23 @@ ImportLayerSettings=No
      ;; Build minimal bubble-data for auto-dispatch
      (setq 
        bubble-data (hcnm-bn-bubble-data-set nil "ename-bubble" ename-bubble)
-       bubble-data (hcnm-bn-bubble-data-set bubble-data "ATTRIBUTES" hcnm-bn-eb-lattribs)
+       bubble-data (hcnm-bn-bubble-data-set bubble-data "ATTRIBUTES" (cadr (assoc "LATTRIBS" hcnm-bn-eb-state)))
      )
      (setq
        bubble-data
         (hcnm-bn-auto-dispatch
-          tag auto-type nil bubble-data nil ; nil obj-reference, nil reactor-context-p (edit dialog insertion)
+          tag auto-type nil bubble-data nil ; nil obj-reference, nil bnatu-context-p (edit dialog insertion)
          )
-       ;; Extract updated lattribs from bubble-data
-       hcnm-bn-eb-lattribs
-        (hcnm-bn-bubble-data-get bubble-data "ATTRIBUTES")
+     )
+     ;; Extract updated lattribs from bubble-data into state
+     (setq hcnm-bn-eb-state
+       (subst
+         (list "LATTRIBS" (hcnm-bn-bubble-data-get bubble-data "ATTRIBUTES"))
+         (assoc "LATTRIBS" hcnm-bn-eb-state)
+         hcnm-bn-eb-state
+       )
+     )
+     (setq
        ;; Extract handle from auto-metadata list (if auto function provided it)
        ;; Metadata format: ((tag auto-type handle auto-text) ...)
        handle-ref-from-auto
@@ -13162,13 +11472,13 @@ ImportLayerSettings=No
           (t nil)  ; No metadata at all
         )
      )
-     ;; Update handle-ref with value from auto function (overrides reactor lookup)
+     ;; Update handle-ref with value from auto function (overrides XDATA lookup)
      (cond
        (handle-ref-from-auto
         (setq handle-ref handle-ref-from-auto))
      )
      ;; STEP 4: Extract just the auto-text that was generated (plain text, no format codes)
-     (setq attr (assoc tag hcnm-bn-eb-lattribs))
+     (setq attr (assoc tag (cadr (assoc "LATTRIBS" hcnm-bn-eb-state))))
      (setq
        auto-string
         (if attr
@@ -13176,33 +11486,39 @@ ImportLayerSettings=No
           ""
         )
      )
-     ;; STEP 4.5: Store in semi-global using composite key
+     ;; STEP 4.5: Store in state using composite key
      ;; Replace existing entry or append new one
      (setq composite-key (cons auto-type handle-ref))
-     (setq tag-handles (cdr (assoc tag hcnm-bn-eb-auto-handles)))
+     (setq auto-handles (cadr (assoc "AUTO-HANDLES" hcnm-bn-eb-state)))
+     (setq tag-handles (cdr (assoc tag auto-handles)))
      (cond
        (existing-entry  ; Found - REPLACE
         (setq tag-handles (subst (cons composite-key auto-string) existing-entry tag-handles)))
        (t  ; Not found - APPEND
         (setq tag-handles (append tag-handles (list (cons composite-key auto-string))))))
-     
-     (setq
-       hcnm-bn-eb-auto-handles
-        (cond
-          ((assoc tag hcnm-bn-eb-auto-handles)
-           (subst
-             (cons tag tag-handles)
-             (assoc tag hcnm-bn-eb-auto-handles)
-             hcnm-bn-eb-auto-handles
-           )
+     (setq auto-handles
+       (cond
+         ((assoc tag auto-handles)
+          (subst
+            (cons tag tag-handles)
+            (assoc tag auto-handles)
+            auto-handles
           )
-          (t
-           (append
-             hcnm-bn-eb-auto-handles
-             (list (cons tag tag-handles))
-           )
+         )
+         (t
+          (append
+            auto-handles
+            (list (cons tag tag-handles))
           )
-        )
+         )
+       )
+     )
+     (setq hcnm-bn-eb-state
+       (subst
+         (list "AUTO-HANDLES" auto-handles)
+         (assoc "AUTO-HANDLES" hcnm-bn-eb-state)
+         hcnm-bn-eb-state
+       )
      )
      ;; STEP 5: Do smart search/replace using shared function
      (setq
@@ -13213,14 +11529,15 @@ ImportLayerSettings=No
           auto-string
         )
      )
-     ;; STEP 6: Update lattribs with the combined CLEAN text (format codes will be added by lattribs-to-dlg)
-     (setq
-       hcnm-bn-eb-lattribs
-        (subst
-          (list tag new-text)
-          attr
-          hcnm-bn-eb-lattribs
-        )
+     ;; STEP 6: Update lattribs in state with the combined CLEAN text (format codes will be added by lattribs-to-dlg)
+     (setq hcnm-bn-eb-state
+       (subst
+         (list "LATTRIBS"
+           (subst (list tag new-text) attr (cadr (assoc "LATTRIBS" hcnm-bn-eb-state)))
+         )
+         (assoc "LATTRIBS" hcnm-bn-eb-state)
+         hcnm-bn-eb-state
+       )
      )
     )
     ;; Invalid done-code - just ignore
@@ -13231,78 +11548,7 @@ ImportLayerSettings=No
     )
   )
 )
-
-;;==============================================================================
-;; hcnm-bn-eb-attach-reactors
-;;==============================================================================
-;; Purpose:
-;;   Attach reactors for all auto-text entries found in bubble's XDATA.
-;;   Called during edit dialog save to ensure new auto-text gets tracked.
-;;
-;; Arguments:
-;;   ename-bubble - Entity name of bubble
-;;
-;; Why Needed:
-;;   Edit dialog can add new auto-text (like StaName) but doesn't automatically
-;;   attach reactors. Without this, new auto-text won't update when reference
-;;   objects change.
-;;
-;; Algorithm:
-;;   1. Read bubble's XDATA (contains all auto-text entries)
-;;   2. Find bubble's leader (if any)
-;;   3. For each auto-text entry, attach appropriate reactors
-;;==============================================================================
-(defun hcnm-bn-eb-attach-reactors (ename-bubble / xdata-alist ename-leader 
-                                  tag-entry tag auto-entries auto-entry
-                                  composite-key auto-type handle-reference
-                                  objref)
-  ;; Get bubble's leader (needed for coordinate-based auto-text)
-  (setq ename-leader (hcnm-bn-get-leader-for-bubble ename-bubble))
-  
-  ;; Read all auto-text entries from XDATA
-  (setq xdata-alist (hcnm-xdata-read ename-bubble))
-  
-  ;; Process each tag that has auto-text
-  (foreach tag-entry xdata-alist
-    (setq 
-      tag (car tag-entry)
-      auto-entries (cdr tag-entry)
-    )
-    
-    ;; Process each auto-text entry for this tag
-    (foreach auto-entry auto-entries
-      (setq 
-        composite-key (car auto-entry)
-        auto-type (car composite-key)
-        handle-reference (cdr composite-key)
-      )
-      
-      ;; Convert handle to VLA object (or nil for coordinates)
-      (setq objref
-        (cond
-          ((= handle-reference "") nil)  ; Coordinate-based (N/E/NE)
-          (t (vlax-ename->vla-object (handent handle-reference)))  ; Reference object
-        )
-      )
-      
-      ;; Attach reactor for this auto-text entry
-      (cond
-        ;; Only attach if we have valid context
-        ((or objref (= handle-reference ""))  ; Valid reference OR coordinate-based
-         (hcnm-bn-assure-auto-text-has-reactor 
-           objref 
-           ename-bubble 
-           ename-leader 
-           tag 
-           auto-type
-         )
-        )
-      )
-    )
-  )
-)
-
-(defun hcnm-edit-bubble-cancel () -1)
+(defun hcnm-edit-bubble-cancel () (hcnm-bn-eb-get-done-code "STOP"))
 ;;; Remove delimiters from lattribs before saving
 ;;; Concatenates prefix+auto+postfix into plain text
 (defun hcnm-bn-eb-remove-delimiters (lattribs / result)
@@ -13370,381 +11616,6 @@ ImportLayerSettings=No
     )
   )
 )
-;;==============================================================================
-;; hcnm-bn-eb-reactor-refresh
-;;==============================================================================
-;; Purpose:
-;;   Completely refresh reactor tracking for a bubble after edit dialog changes.
-;;   Removes all old tracking, rebuilds from current XDATA.
-;;   This handles cases where user deleted auto-text in dialog.
-;;
-;; Arguments:
-;;   ename-bubble - Entity name of bubble block
-;;
-;; Side Effects:
-;;   - Removes bubble from all reactor tracking data
-;;   - Rebuilds reactor tracking based on current XDATA
-;;   - Detaches orphaned VLA-OBJECT owners (critical for edit cleanup)
-;;==============================================================================
-(defun hcnm-bn-eb-reactor-refresh (ename-bubble / reactor handle-bubble old-owners new-owners xdata-alist rebuild-result orphaned-owners)
-  ;; NOTE: No BlockReactors needed here - parent hcnm-bn-eb-save already blocks
-  ;; This function only modifies reactor internal data, doesn't touch owner objects
-  
-  ;; Get the persistent reactor (may be nil if no reactor exists yet)
-  (setq reactor (hcnm-bn-get-reactor))
-  (setq handle-bubble (vla-get-handle (vlax-ename->vla-object ename-bubble)))
-  
-  ;; Step 1: Collect current owners for this bubble (before removal)
-  (setq old-owners
-    (cond
-      (reactor
-        (hcnm-bn-reactor-get-bubble-owners reactor handle-bubble)
-      )
-      (t '())  ; No reactor = no owners
-    )
-  )
-  
-  ;; Step 2: Remove bubble from all reactor tracking (only if reactor exists)
-  (cond
-    (reactor
-      (hcnm-bn-reactor-remove-bubble-from-data reactor handle-bubble)
-    )
-  )
-  
-  ;; Step 3: Read current XDATA and rebuild reactor tracking
-  (setq xdata-alist (hcnm-xdata-read ename-bubble))
-  (haws-debug (list "REACTOR-REFRESH: xdata-alist=" (if xdata-alist "HAS-DATA" "NIL") "handle=" handle-bubble))
-  (cond
-    (xdata-alist
-      ;; Rebuild reactor tracking from current XDATA
-      ;; This will create a new reactor if none exists
-      (haws-debug (list "REACTOR-REFRESH: Rebuilding from XDATA"))
-      (setq rebuild-result (vl-catch-all-apply 
-                            'hcnm-bn-reactor-rebuild-from-xdata-alist 
-                            (list ename-bubble xdata-alist)))
-      (cond
-        ((vl-catch-all-error-p rebuild-result)
-          (princ "\n*** ERROR: Reactor rebuild failed ***")
-          (princ (strcat "\n*** Error: " (vl-catch-all-error-message rebuild-result)))
-        )
-        (t
-          (princ "\n*** Reactor rebuild succeeded ***")
-          
-          ;; Step 4: Collect new owners after rebuild
-          (setq reactor (hcnm-bn-get-reactor))  ; Refresh reactor reference
-          (setq new-owners
-            (cond
-              (reactor
-                (hcnm-bn-reactor-get-bubble-owners reactor handle-bubble)
-              )
-              (t '())
-            )
-          )
-          
-          ;; Step 5: Detach orphaned owners (in old but not in new)
-          (setq orphaned-owners
-            (vl-remove-if
-              (function (lambda (old-owner) (member old-owner new-owners)))
-              old-owners
-            )
-          )
-          
-          ;; Detach each orphaned owner from reactor
-          (cond
-            (orphaned-owners
-              (princ (strcat "\n*** Detaching " (itoa (length orphaned-owners)) " orphaned owner(s)..."))
-              (foreach orphan-handle orphaned-owners
-                (hcnm-bn-reactor-detach-owner reactor orphan-handle)
-              )
-            )
-          )
-        )
-      )
-    )
-    (t
-      ;; If no XDATA, bubble tracking is simply removed (step 2 was sufficient)
-      ;; But we should detach ALL old owners since bubble has no auto-text
-      (cond
-        ((and reactor old-owners)
-          (princ (strcat "\n*** No XDATA - detaching all " (itoa (length old-owners)) " owner(s)..."))
-          (foreach orphan-handle old-owners
-            (hcnm-bn-reactor-detach-owner reactor orphan-handle)
-          )
-        )
-      )
-    )
-  )
-)
-
-;;==============================================================================
-;; hcnm-bn-reactor-get-bubble-owners
-;;==============================================================================
-;; Purpose:
-;;   Get list of all owner handles that track a specific bubble.
-;;   Used to detect orphaned owners during edit dialog cleanup.
-;;
-;; Arguments:
-;;   reactor - VLR-OBJECT-REACTOR
-;;   handle-bubble - Handle string of bubble to search for
-;;
-;; Returns:
-;;   List of owner handle strings, or NIL if bubble not found
-;;
-;; Example:
-;;   Bubble 2B5BD tracked by pipe 2232D and leader 2B5B8
-;;   Returns: ("2232D" "2B5B8")
-;;==============================================================================
-(defun hcnm-bn-reactor-get-bubble-owners (reactor handle-bubble / data key-app owner-list owners-found handle-owner bubble-list)
-  (setq data (vlr-data reactor))
-  (setq key-app "HCNM-BUBBLE")
-  (setq owner-list (cadr (assoc key-app data)))
-  (setq owners-found '())
-  
-  ;; Search each owner's bubble list
-  (foreach owner-entry owner-list
-    (setq handle-owner (car owner-entry))
-    (setq bubble-list (cadr owner-entry))
-    
-    ;; If this owner tracks our bubble, add to results
-    (cond
-      ((assoc handle-bubble bubble-list)
-        (setq owners-found (cons handle-owner owners-found))
-      )
-    )
-  )
-  
-  owners-found
-)
-
-;;==============================================================================
-;; hcnm-bn-reactor-detach-owner
-;;==============================================================================
-;; Purpose:
-;;   Detach a VLA-OBJECT owner from reactor if no other bubbles need it.
-;;   Called during edit dialog cleanup to remove orphaned owners.
-;;
-;; Arguments:
-;;   reactor - VLR-OBJECT-REACTOR
-;;   handle-owner - Handle string of owner to potentially detach
-;;
-;; Side Effects:
-;;   - Calls vlr-owner-remove if owner has no remaining bubbles
-;;   - Prints debug message if detachment occurs
-;;
-;; Safety:
-;;   - Only detaches if owner entry exists but bubble list is empty
-;;   - Gracefully handles missing owners (no-op)
-;;   - Wraps vlr-owner-remove in error handler (already detached = OK)
-;;==============================================================================
-(defun hcnm-bn-reactor-detach-owner (reactor handle-owner / data key-app owner-list owner-entry bubble-list ename-owner obj-owner detach-result)
-  (setq data (vlr-data reactor))
-  (setq key-app "HCNM-BUBBLE")
-  (setq owner-list (cadr (assoc key-app data)))
-  (setq owner-entry (assoc handle-owner owner-list))
-  
-  (cond
-    (owner-entry
-      ;; Owner exists in data - check if it has any bubbles left
-      (setq bubble-list (cadr owner-entry))
-      (cond
-        ((or (not bubble-list) (null bubble-list) (equal bubble-list '()))
-          ;; No bubbles left - safe to detach VLA-OBJECT
-          (setq ename-owner (handent handle-owner))
-          (cond
-            ((and ename-owner (entget ename-owner))
-              ;; Owner entity still exists - detach it
-              (setq obj-owner (vlax-ename->vla-object ename-owner))
-              (setq detach-result
-                (vl-catch-all-apply 'vlr-owner-remove
-                  (list reactor obj-owner)
-                )
-              )
-              (cond
-                ((vl-catch-all-error-p detach-result)
-                  ;; Already detached or other error - OK, not critical
-                  (princ (strcat "\n    (Note: Owner " handle-owner " already detached or error)"))
-                )
-                (t
-                  ;; Successfully detached
-                  (princ (strcat "\n    Detached VLA-OBJECT: " handle-owner))
-                )
-              )
-            )
-            (t
-              ;; Owner entity erased - AutoCAD already cleaned up VLR attachment
-              (princ (strcat "\n    (Owner " handle-owner " already erased)"))
-            )
-          )
-        )
-        (t
-          ;; Owner still has bubbles - don't detach
-          (princ (strcat "\n    (Owner " handle-owner " still has " (itoa (length bubble-list)) " bubble(s) - keeping)"))
-        )
-      )
-    )
-    (t
-      ;; Owner not in data structure - already cleaned up
-      (princ (strcat "\n    (Owner " handle-owner " not in data - already removed)"))
-    )
-  )
-)
-
-;;==============================================================================
-;; hcnm-bn-reactor-remove-bubble-from-data  
-;;==============================================================================
-;; Purpose:
-;;   Remove a specific bubble from all reactor tracking data.
-;;   This is used when bubble is deleted or needs complete refresh.
-;;
-;; Arguments:
-;;   reactor - VLR-OBJECT-REACTOR  
-;;   handle-bubble - Handle string of bubble to remove
-;;
-;; Side Effects:
-;;   - Modifies reactor's data structure
-;;   - May remove empty owner entries
-;;==============================================================================
-(defun hcnm-bn-reactor-remove-bubble-from-data (reactor handle-bubble / data new-data)
-  (setq data (vlr-data reactor))
-  ;; Use functional approach to remove bubble references
-  (setq new-data (hcnm-bn-reactor-data-remove-bubble data handle-bubble))
-  (vlr-data-set reactor new-data)
-)
-
-;;==============================================================================
-;; hcnm-bn-reactor-data-remove-bubble
-;;==============================================================================
-;; Purpose:
-;;   Functional helper to remove bubble from reactor data structure.
-;;   Returns new data structure with bubble references removed.
-;;
-;; Arguments:
-;;   data - Reactor data structure  
-;;   handle-bubble - Handle string of bubble to remove
-;;
-;; Returns:
-;;   New data structure with bubble removed from all owners
-;;==============================================================================
-(defun hcnm-bn-reactor-data-remove-bubble (data handle-bubble / key-app owner-list new-owner-list)
-  (setq key-app "HCNM-BUBBLE")
-  (setq owner-list (cadr (assoc key-app data)))
-  
-  ;; Remove bubble from each owner, keep owners that still have bubbles
-  (setq new-owner-list
-    (vl-remove-if 
-      'null
-      (mapcar 
-        (function
-          (lambda (owner-entry / handle-owner bubble-list new-bubble-list)
-            (setq handle-owner (car owner-entry))
-            (setq bubble-list (cadr owner-entry))
-            ;; Remove this specific bubble from the owner's bubble list
-            (setq new-bubble-list 
-              (vl-remove-if
-                (function
-                  (lambda (bubble-entry)
-                    (equal (car bubble-entry) handle-bubble)
-                  )
-                )
-                bubble-list
-              )
-            )
-            ;; Only keep owner if it still has bubbles
-            (cond
-              (new-bubble-list
-                (list handle-owner new-bubble-list)
-              )
-              (t nil)  ; Remove empty owner
-            )
-          )
-        )
-        owner-list
-      )
-    )
-  )
-  
-  ;; Return updated data structure
-  (list (list key-app new-owner-list))
-)
-
-;;==============================================================================
-;; hcnm-bn-reactor-rebuild-from-xdata-alist
-;;==============================================================================
-;; Purpose:
-;;   Rebuild reactor tracking for a bubble based on its XDATA.
-;;   This re-creates all the tracking relationships.
-;;   Creates reactor if none exists.
-;;
-;; Arguments:
-;;   ename-bubble - Entity name of bubble
-;;   xdata-alist - XDATA alist (from hcnm-xdata-read)
-;;
-;; Side Effects:
-;;   - Adds reactor tracking for each auto-text in XDATA
-;;   - May create new reactor if none exists
-;;   - May attach new owners to reactor
-;;==============================================================================
-(defun hcnm-bn-reactor-rebuild-from-xdata-alist (ename-bubble xdata-alist / 
-                                                 ename-leader tag-entry tag composite-pairs-list 
-                                                 composite-pair composite-key auto-type handle-reference
-                                                 ref-ename ref-vla
-                                                )
-  ;; Find associated leader (needed for coordinate-based auto-text)
-  (setq ename-leader (hcnm-bn-get-leader-for-bubble ename-bubble))
-  
-  ;; Process each tag's auto-text entries
-  ;; Entry format: (tag . composite-pairs-list)
-  ;; Each composite-pair: ((auto-type . handle) . auto-text)
-  (foreach tag-entry xdata-alist
-    (setq tag (car tag-entry))
-    (setq composite-pairs-list (cdr tag-entry))
-    
-    ;; Process each composite pair for this tag
-    (foreach composite-pair composite-pairs-list
-      (setq composite-key (car composite-pair))
-      (setq auto-type (car composite-key))
-      (setq handle-reference (cdr composite-key))
-      
-      ;; Re-create reactor tracking for this auto-text
-      (cond
-        ((= handle-reference "")
-          ;; Handleless auto-text (N/E/NE/AlName/StaName) - track leader only
-          (cond
-            (ename-leader
-              (hcnm-bn-assure-auto-text-has-reactor
-                nil  ; No reference object
-                ename-bubble
-                ename-leader
-                tag
-                auto-type
-              )
-            )
-          )
-        )
-        (t
-          ;; Handle-based auto-text (StaOff/Dia/Slope) - track reference object
-          (setq ref-ename (vl-catch-all-apply 'handent (list handle-reference)))
-          (cond
-            ((and ref-ename (not (vl-catch-all-error-p ref-ename)) (entget ref-ename))
-              (setq ref-vla (vlax-ename->vla-object ref-ename))
-              (hcnm-bn-assure-auto-text-has-reactor
-                ref-vla
-                ename-bubble
-                ename-leader  
-                tag
-                auto-type
-              )
-            )
-            (t
-              nil  ; Handle not found - skip
-            )
-          )
-        )
-      )
-    )
-  )
-  t  ; Return success
-)
 
 ;; Read all dialog tiles into lattribs semi-global
 ;; Called before dialog closes because action_tile only fires on focus-out,
@@ -13757,66 +11628,53 @@ ImportLayerSettings=No
     )
   )
 )
-(defun hcnm-bn-eb-save (ename-bubble / saved-block-reactors)
-  ;; CRITICAL: Block reactor callbacks during save to prevent infinite recursion
-  (setq saved-block-reactors (hcnm-config-getvar "BlockReactors"))
-  (hcnm-config-setvar "BlockReactors" "1")
+(defun hcnm-bn-eb-save (ename-bubble)
   ;; NOTE: Tiles already read into lattribs by accept action_tile
   ;; Save attributes (concatenated) and XDATA (auto text only)
   (hcnm-bn-lattribs-to-dwg
     ename-bubble
-    hcnm-bn-eb-lattribs
+    (cadr (assoc "LATTRIBS" hcnm-bn-eb-state))
   )
-  ;; Save XDATA (FIX: was missing, causing reactor updates to fail)
+  ;; Save XDATA
   (hcnm-bn-xdata-save
     ename-bubble
-    hcnm-bn-eb-lattribs
+    (cadr (assoc "AUTO-HANDLES" hcnm-bn-eb-state))
   )
-  ;; CRITICAL FIX: Complete reactor refresh for edit dialog changes
-  ;; Problem: Edit dialog can delete auto-text, but old reactor tracking remains
-  ;; Solution: Remove bubble from reactor, then rebuild from current XDATA
-  (hcnm-bn-eb-reactor-refresh ename-bubble)
-  ;; CRITICAL: Always restore flag, even if errors occurred
-  (hcnm-config-setvar "BlockReactors" saved-block-reactors)
   -1
 )
-(defun hcnm-edit-bubble-done-codes (/ eb-done)
-  (setq eb-done t)
-  '((11 "LF" eb-done)
-    (12 "SF" eb-done)
-    (13 "SY" eb-done)
-    (14 "Sta" eb-done)
-    (15 "Off" eb-done)
-    (16 "StaOff" eb-done)
-    (17 "AlName" eb-done)
-    (18 "StaName" eb-done)
-    (19 "N" eb-done)
-    (20 "E" eb-done)
-    (21 "NE" eb-done)
-    (22 "Z" eb-done)
-    (23 "Text" eb-done)
-    (25 "Dia" eb-done)
-    (26 "Slope" eb-done)
-    (27 "L" eb-done)
-   )
+;; Assigns DONE_DIALOG codes other than the autotext buttons.
+(defun
+   hcnm-bn-eb-get-done-code (key)
+  (cdr
+    (assoc
+      key
+      (list
+        (cons "STOP" -1)
+        (cons "CANCEL" 0)
+        (cons "SAVE" 1)
+        (cons "SHOW" 2)
+        (cons "CHGVIEW" 3)
+      )
+    )
+  )
 )
-
+(defun hcnm-bn-eb-done-code-auto-text-offset () 10)
 ;; ACTION_TILE callback: Update text value in lattribs when user types (2-element)
 ;; User typing replaces the entire text value
 ;; Update text value when user types in dialog field
-(defun hcnm-bn-eb-update-text (tag new-value / attr old-value tag-handles updated-handles composite-key auto-text)
+(defun hcnm-bn-eb-update-text (tag new-value / attr old-value auto-handles tag-handles updated-handles composite-key auto-text)
   (haws-debug (list "UPDATE-TEXT: called tag=" tag))
   (if (not new-value) (setq new-value ""))
-  (setq attr (assoc tag hcnm-bn-eb-lattribs))
+  (setq attr (assoc tag (cadr (assoc "LATTRIBS" hcnm-bn-eb-state))))
   (setq old-value (if attr (cadr attr) ""))
-  
-  ;; CRITICAL FIX: If user deleted auto-text, clear from semi-global
+  ;; CRITICAL FIX: If user deleted auto-text, clear from state
   ;; Otherwise stale XDATA gets written on save
+  (setq auto-handles (cadr (assoc "AUTO-HANDLES" hcnm-bn-eb-state)))
   (cond
-    ((and (assoc tag hcnm-bn-eb-auto-handles)  ; Tag has auto-text entries
-          (/= old-value new-value))             ; Text changed
+    ((and (assoc tag auto-handles)      ; Tag has auto-text entries
+          (/= old-value new-value))     ; Text changed
      ;; Check if any auto-text values are missing from new text
-     (setq tag-handles (cdr (assoc tag hcnm-bn-eb-auto-handles)))
+     (setq tag-handles (cdr (assoc tag auto-handles)))
      (setq updated-handles '())
      (foreach handle-entry tag-handles
        (setq composite-key (car handle-entry))
@@ -13832,54 +11690,51 @@ ImportLayerSettings=No
          ;; Else: auto-text deleted by user - don't add to updated list
        )
      )
-     ;; Update semi-global with filtered list
-     (cond
-       (updated-handles
-        ;; Some auto-text remains - update entry
-        (setq hcnm-bn-eb-auto-handles
+     ;; Update state with filtered list
+     (setq auto-handles
+       (cond
+         (updated-handles
+          ;; Some auto-text remains - update entry
           (subst
             (cons tag updated-handles)
-            (assoc tag hcnm-bn-eb-auto-handles)
-            hcnm-bn-eb-auto-handles
+            (assoc tag auto-handles)
+            auto-handles
           )
-        )
-       )
-       (t
-        ;; All auto-text deleted - remove tag entry completely
-        (setq hcnm-bn-eb-auto-handles
+         )
+         (t
+          ;; All auto-text deleted - remove tag entry completely
           (vl-remove
-            (assoc tag hcnm-bn-eb-auto-handles)
-            hcnm-bn-eb-auto-handles
+            (assoc tag auto-handles)
+            auto-handles
           )
-        )
+         )
+       )
+     )
+     (setq hcnm-bn-eb-state
+       (subst
+         (list "AUTO-HANDLES" auto-handles)
+         (assoc "AUTO-HANDLES" hcnm-bn-eb-state)
+         hcnm-bn-eb-state
        )
      )
     )
   )
-  
-  ;; Update lattribs with new value
-  (setq
-    hcnm-bn-eb-lattribs
-     (subst
-       (list tag new-value)             ; Replace with new text value (2-element lattribs)
-       attr
-       hcnm-bn-eb-lattribs
-     )
-  )
-)
-
-;;; DEPRECATED - No postfix field in 2-element architecture
-;;; Postfix was only needed in 4-element (prefix auto postfix) structure
-(defun hcnm-bn-eb-update-postfix (tag new-postfix / attr)
-  (alert
-    (princ
-      "\nDEPRECATED: eb-update-postfix called - no postfix in 2-element lattribs"
+  ;; Update lattribs in state with new value
+  (setq hcnm-bn-eb-state
+    (subst
+      (list "LATTRIBS"
+        (subst
+          (list tag new-value)
+          attr
+          (cadr (assoc "LATTRIBS" hcnm-bn-eb-state))
+        )
+      )
+      (assoc "LATTRIBS" hcnm-bn-eb-state)
+      hcnm-bn-eb-state
     )
   )
-  ;; Do nothing - no postfix field exists
 )
-
-(defun hcnm-bn-eb-show (dclfile ename-bubble / tag
+(defun hcnm-bn-eb-show (dclfile ename-bubble / i tag
                         value parts prefix auto postfix on-model-tab-p
                         lst-dlg-attributes 
                        )
@@ -13891,7 +11746,7 @@ ImportLayerSettings=No
   (setq
     on-model-tab-p
      (or (not ename-bubble)
-         (hcnm-bn-is-on-model-tab ename-bubble)
+         (hcnm-bn-is-in-model-space ename-bubble)
      )
   )
   ;; Show delimiter tip and paper space warning if applicable
@@ -13905,14 +11760,15 @@ ImportLayerSettings=No
       (haws-evangel-msg)
     )
   )
-  (mode_tile "ChgView" 0)               ; Always enable
+  (mode_tile "CHGVIEW" 0)               ; Always enable
   (haws-debug (list "=== DEBUG: About to call lattribs-to-dlg..."))
   ;; ARCHITECTURE: Transform clean lattribs to dialog display format (with format codes)
   ;; This is the ONLY place we transform for display
   (setq
     lst-dlg-attributes
      (hcnm-bn-lattribs-to-dlg
-       hcnm-bn-eb-lattribs
+       (cadr (assoc "LATTRIBS" hcnm-bn-eb-state))
+       ename-bubble
      )
   )
   (haws-debug
@@ -13936,32 +11792,30 @@ ImportLayerSettings=No
     ;; Track focus on ANY interaction (click, type, tab into field)
     (action_tile
       tag
-      (strcat 
-        "(setq hcnm-bn-eb-focused-tag \"" tag "\")"  ; Track focus
-        "(hcnm-bn-eb-update-text \"" tag "\" $value)"  ; Update text (existing logic)
+      (strcat
+        "(setq hcnm-bn-eb-state (subst (list \"FOCUSED-TAG\" \"" tag "\") (assoc \"FOCUSED-TAG\" hcnm-bn-eb-state) hcnm-bn-eb-state))"
+        "(hcnm-bn-eb-update-text \"" tag "\" $value)"
       )
     )
   )
-  ;;Auto text buttons
+  ;;Actions for auto text buttons
+  (setq i (1- (hcnm-bn-eb-done-code-auto-text-offset)))
   (mapcar
-    '(lambda (code)
+    '(lambda (auto-type)
        (action_tile
-         (cadr code)
-         (strcat "(DONE_DIALOG " (itoa (car code)) ")")
+         auto-type
+         (strcat "(DONE_DIALOG " (itoa (setq i (1+ i))) ")")
        )
      )
-    (hcnm-edit-bubble-done-codes)
+    (hcnm-bn-get-auto-text-auto-types-list)
   )
-  ;; Clear Auto Text button
-  (action_tile "ClearAuto" "(DONE_DIALOG 28)")
-  ;; Change View button (paper space only)
-  (action_tile "ChgView" "(DONE_DIALOG 29)")
+  ;; Action for Change View button (paper space only)
+  (action_tile "CHGVIEW" (strcat "(DONE_DIALOG " (itoa (hcnm-bn-eb-get-done-code "CHGVIEW")) ")"))
   ;; CRITICAL: Read tiles into lattribs before closing (action_tile doesn't fire on OK click)
-  (action_tile "accept" "(progn (hcnm-bn-eb-tiles-to-lattribs) (DONE_DIALOG 1))")
-  (action_tile "cancel" "(DONE_DIALOG 0)")
+  (action_tile "accept" (strcat "(progn (hcnm-bn-eb-tiles-to-lattribs) (DONE_DIALOG " (itoa (hcnm-bn-eb-get-done-code "SAVE")) "))"))
+  (action_tile "cancel" (strcat "(DONE_DIALOG " (itoa (hcnm-bn-eb-get-done-code "CANCEL")) ")"))
   (start_dialog)
 )
-
 ;; Split string on delimiter
 ;; Keep this in case users decide to go to a free-form single-field editor later.
 ;; Returns list of substrings split on DELIM
@@ -13977,7 +11831,6 @@ ImportLayerSettings=No
   )
   (append result (list str))
 )
-
 ;; Concatenate prefix, auto, and postfix into a 3-element list structure.
 ;; Uses clean list structure for robust text manipulation.
 (defun hcnm-bn-eb-concat-parts (prefix auto postfix /)
@@ -14004,7 +11857,7 @@ ImportLayerSettings=No
 ;; Mimics AutoCAD COPY command:
 ;; - Select bubbles (filters to CNM bubbles only, ignores leaders/other entities)
 ;; - Creates copies at new location via interactive MOVE command
-;; - Preserves attributes, XDATA, VPTRANS, and reactor attachments
+;; - Preserves attributes, XDATA and VPTRANS attachments
 ;; - Only creates leader copy if source bubble has leader
 ;;==============================================================================
 (defun c:hcnm-copy-bubbles (/ ss ss-bubbles-only ss-copies count-bubbles 
@@ -14092,17 +11945,12 @@ ImportLayerSettings=No
 ;;   Entity name of new bubble, or nil on failure
 ;;
 ;; Business Logic:
-;;   - Blocks reactor callbacks during copy (prevents spurious updates)
 ;;   - Only creates leader copy if source has leader
-;;   - Copies XDATA, VPTRANS, and reactor attachments
+;;   - Copies XDATA and VPTRANS attachments
 ;;==============================================================================
 (defun hcnm-bn-copy-one-bubble (ename-bubble-old displacement / 
                                  obj-old obj-new ename-bubble-new
-                                 ename-leader-old ename-leader-new
-                                 saved-blockreactors)
-  ;; Block reactors during copy to prevent cascade during qlattach
-  (setq saved-blockreactors (hcnm-config-getvar "BlockReactors"))
-  (hcnm-config-setvar "BlockReactors" "1")
+                                 ename-leader-old ename-leader-new)
   ;; Copy bubble block using vla-copy (does NOT copy leader - leader is separate)
   (setq obj-old (vlax-ename->vla-object ename-bubble-old)
         obj-new (vla-copy obj-old)
@@ -14134,12 +11982,9 @@ ImportLayerSettings=No
       )
     )
   )
-  ;; Copy data (XDATA, VPTRANS, reactors)
+  ;; Copy data (XDATA and VPTRANS)
   (hcnm-bn-copy-xdata ename-bubble-old ename-bubble-new)
   (hcnm-bn-copy-vptrans ename-bubble-old ename-bubble-new)
-  (hcnm-bn-copy-reactors ename-bubble-old ename-bubble-new)
-  ;; Restore reactor blocking flag
-  (hcnm-config-setvar "BlockReactors" saved-blockreactors)
   ename-bubble-new
 )
 ;;==============================================================================
@@ -14197,78 +12042,6 @@ ImportLayerSettings=No
     )
   )
 )
-;;==============================================================================
-;; hcnm-bn-copy-reactors - Copy reactor attachments to new bubble
-;;==============================================================================
-;; Purpose:
-;;   Attaches reactors to new bubble based on XDATA from source bubble.
-;;   Processes all auto-text entries and creates appropriate reactor tracking.
-;;
-;; Arguments:
-;;   ename-bubble-old - Source bubble entity name
-;;   ename-bubble-new - Destination bubble entity name
-;;
-;; Returns:
-;;   T on success
-;;
-;; Side Effects:
-;;   - Attaches VLR-OBJECT-REACTOR to reference objects (alignments/pipes)
-;;   - Updates reactor data structure with new bubble handle
-;;==============================================================================
-(defun hcnm-bn-copy-reactors (ename-bubble-old ename-bubble-new / 
-                               xdata-alist composite-key composite-pair composite-pairs-list
-                               tag auto-type handle-reference
-                               auto-text objref ename-reference ename-leader-new)
-  (setq xdata-alist (hcnm-xdata-get-autotext ename-bubble-old))
-  (setq ename-leader-new (hcnm-bn-bubble-leader ename-bubble-new))
-  ;; Process each XDATA entry and attach reactors
-  ;; Entry format: (tag . composite-pairs-list)
-  ;; Each composite-pair: ((auto-type . handle) . auto-text)
-  (foreach entry xdata-alist
-    (setq tag (car entry)
-          composite-pairs-list (cdr entry))
-    ;; Process each composite pair (multiple auto-texts per tag possible)
-    (foreach composite-pair composite-pairs-list
-      (setq composite-key (car composite-pair)
-            auto-type (car composite-key)
-            handle-reference (cdr composite-key))
-      ;; Convert handle to reference object
-      (setq objref
-        (cond
-          ;; Coordinate-based auto-text (N/E/NE) - no reference object
-          ((or (= handle-reference "") (not handle-reference))
-           nil
-          )
-          ;; Handle-based auto-text - convert handle to VLA-OBJECT
-          (t
-           (setq ename-reference (handent handle-reference))
-           (cond
-             (ename-reference
-               (vlax-ename->vla-object ename-reference)
-             )
-             (t
-               nil
-             )
-           )
-          )
-        )
-      )
-      ;; Attach reactor for this auto-text entry
-      (cond
-        ((or objref (= handle-reference ""))
-         (hcnm-bn-assure-auto-text-has-reactor
-           objref
-           ename-bubble-new
-           ename-leader-new
-           tag
-           auto-type
-         )
-        )
-      )
-    ) ;; end foreach composite-pair
-  ) ;; end foreach entry
-  t
-)
 ;#endregion
 ;#region Debug Utilities
 ;;==============================================================================
@@ -14280,8 +12053,8 @@ ImportLayerSettings=No
 ;; USAGE DURING TESTING:
 ;; 1. Insert bubble with auto-text
 ;; 2. Call (hcnm-debug-show-bubble) to see full state
-;; 3. Modify reference object (stretch, move)
-;; 4. Call again to see if reactor updated correctly
+;; 3. Modify reference object (stretch, move). Call bnatu.
+;; 4. Call again to see if bnatu updated correctly
 ;;==============================================================================
 
 ;;==============================================================================
@@ -14309,20 +12082,6 @@ ImportLayerSettings=No
 )
 
 ;;==============================================================================
-;; c:inspect-reactor-state
-;;==============================================================================
-;; Purpose: Basic reactor inspection using only verified functions
-;; Shows current reactor count and basic info
-;;==============================================================================
-(defun c:inspect-reactor-state (/ reactors)
-  (princ "\n=== REACTOR STATE INSPECTION ===")
-  (setq reactors (cdar (vlr-reactors :vlr-object-reactor)))
-  (princ (strcat "\nTotal object reactors: " (itoa (length reactors))))
-  (princ "\nEnd inspection.")
-  (princ)
-)
-
-;;==============================================================================
 ;; EXISTING DEBUG UTILITIES 
 ;;==============================================================================
 
@@ -14334,7 +12093,6 @@ ImportLayerSettings=No
     (progn
       (hcnm-debug-show-lattribs en)
       (hcnm-debug-show-xdata en)
-      (hcnm-debug-show-reactor-info en)
       (hcnm-debug-validate-bubble en)
     )
     (princ "\nNo entity selected.")
@@ -14398,88 +12156,6 @@ ImportLayerSettings=No
   (princ "\n")
 )
 
-;; Show reactor information for this bubble
-(defun hcnm-debug-show-reactor-info (ename-bubble / reactors reactor data
-                                 handle-bubble handle-leader bubble-found
-                                 owner-entries owner-handle bubble-list
-                                 bubble-entry bubble-h bubble-tags ref-entries
-                                 ref-entry
-                                )
-  (princ "\n=== REACTOR INFO ===")
-  (setq
-    handle-bubble (cdr (assoc 5 (entget ename-bubble)))
-    ename-leader (hcnm-bn-bubble-leader ename-bubble)
-    handle-leader (if ename-leader (cdr (assoc 5 (entget ename-leader))) nil)
-    reactors (cdar (vlr-reactors :vlr-object-reactor))
-  )
-  (princ (strcat "\n  Bubble handle: " handle-bubble))
-  (if handle-leader
-    (princ (strcat "\n  Leader handle: " handle-leader))
-    (princ "\n  Leader handle: NONE")
-  )
-  (princ (strcat "\n  Total object reactors: " (itoa (length reactors))))
-  
-  ;; Find HCNM reactor
-  (setq reactor nil)
-  (foreach r reactors
-    (setq data (vlr-data r))
-    (if (and (listp data) (assoc "HCNM-BUBBLE" data))
-      (setq reactor r)
-    )
-  )
-  
-  (if reactor
-    (progn
-      (princ "\n  HCNM-BUBBLE reactor: FOUND")
-      
-      ;; Search for bubble in nested structure: owner → bubble → tags
-      (setq bubble-found nil
-            ref-entries '())
-      (setq owner-entries (cadr (assoc "HCNM-BUBBLE" (vlr-data reactor))))
-      (foreach owner-entry owner-entries
-        (setq owner-handle (car owner-entry)
-              bubble-list (hcnm-reactor-owner-bubbles owner-entry))
-        (foreach bubble-entry bubble-list
-          (setq bubble-h (hcnm-reactor-bubble-handle bubble-entry)
-                bubble-tags (hcnm-reactor-bubble-tags bubble-entry))
-          (if (equal bubble-h handle-bubble)
-            (progn
-              (setq bubble-found t)
-              (setq ref-entries
-                (cons (list owner-handle bubble-h bubble-tags) ref-entries))
-            )
-          )
-        )
-      )
-      
-      (if bubble-found
-        (progn
-          (princ "\n  This bubble in reactor data: YES")
-          (foreach ref-entry (reverse ref-entries)
-            (setq owner-handle (car ref-entry))
-            (princ (strcat
-                    "\n    Owner "
-                    (if (and (= (type owner-handle) 'STR)
-                             (= (strlen owner-handle) 0))
-                      "<handleless>"
-                      (if (= (type owner-handle) 'STR)
-                        owner-handle
-                        (vl-prin1-to-string owner-handle)))
-                    " → bubble " (cadr ref-entry)
-                    " → tags: "
-                    (vl-prin1-to-string (caddr ref-entry))
-                  )
-            )
-          )
-        )
-        (princ "\n  This bubble in reactor data: NO (reactor updates will not run; consider running c:hcnm-audit-reactor-data)")
-      )
-    )
-    (princ "\n  HCNM-BUBBLE reactor: NOT FOUND (reactors disabled or not attached)")
-  )
-  (princ "\n")
-)
-
 ;; Validate bubble structure and report issues
 (defun hcnm-debug-validate-bubble (ename-bubble / lattribs issues)
   (princ "\n=== VALIDATION ===")
@@ -14527,30 +12203,6 @@ ImportLayerSettings=No
   (princ "\n  ✅ Structural checks passed (lattribs parsed, schema valid, XDATA readable, leader present)")
   )
   (princ "\n")
-)
-
-;; Trace reactor callbacks (add to callback for debugging)
-(defun hcnm-debug-trace-reactor (event-name obj-notifier / handle-notifier)
-  (setq
-    handle-notifier
-      (if (vl-catch-all-error-p
-            (vl-catch-all-apply
-              'vla-get-handle
-              (list obj-notifier)
-            )
-          )
-        "ERASED"
-        (vla-get-handle obj-notifier)
-      )
-  )
-  (haws-debug
-    (list
-      "[REACTOR] "
-      event-name
-      " on object "
-      handle-notifier
-    )
-  )
 )
 
 ;; Compare expected vs actual auto-text after update
@@ -14612,162 +12264,37 @@ ImportLayerSettings=No
   differences
 )
 
-;; Command to dump entire reactor data structure
-(defun c:hcnm-debug-reactor-dump (/ reactors reactor data owner-entries
-                                  owner-handle bubble-list bubble-entry
-                                  bubble-h bubble-tags vla-owners
-                                  owner-attached-p owner-ename owner-vla
-                                  vla-owner bubble-ename vptrans-data)
-  (princ "\n=== ENTIRE REACTOR DATA STRUCTURE ===")
-  (setq
-    reactors (cdar (vlr-reactors :vlr-object-reactor))
-  )
-  (princ (strcat "\nTotal object reactors: " (itoa (length reactors))))
-  (foreach r reactors
-    (setq data (vlr-data r))
-    (if (and (listp data) (assoc "HCNM-BUBBLE" data))
-      (progn
-        (princ "\n\nHCNM-BUBBLE reactor found:")
-        (setq owner-entries (cadr (assoc "HCNM-BUBBLE" data)))
-        (princ (strcat "\n  Owner count: " (itoa (length owner-entries))))
-        
-        ;; Get actual VLA-OBJECT owners attached to reactor
-        (setq vla-owners (vlr-owners r))
-        (princ (strcat "\n  VLA-OBJECT attachments: " (itoa (length vla-owners))))
-        
-        (if owner-entries
-          (foreach owner-entry owner-entries
-            (setq owner-handle (car owner-entry)
-                  bubble-list (hcnm-reactor-owner-bubbles owner-entry))
-            ;; Check if this owner handle has actual VLA-OBJECT attachment
-            (setq owner-attached-p nil)
-            (if (and (= (type owner-handle) 'STR) (> (strlen owner-handle) 0))
-              (progn
-                (setq owner-ename (handent owner-handle))
-                (if owner-ename
-                  (progn
-                    (setq owner-vla (vlax-ename->vla-object owner-ename))
-                    (foreach vla-owner vla-owners
-                      (if (equal vla-owner owner-vla)
-                        (setq owner-attached-p t)
-                      )
-                    )
-                  )
-                )
-              )
-            )
-            (princ (strcat "\n  Owner "
-                    (if (and (= (type owner-handle) 'STR)
-                             (= (strlen owner-handle) 0))
-                      "<handleless>"
-                      (if (= (type owner-handle) 'STR)
-                        owner-handle
-                        (vl-prin1-to-string owner-handle)))
-                    (if (and (= (type owner-handle) 'STR) (> (strlen owner-handle) 0))
-                      (if owner-attached-p
-                        " [VLA-ATTACHED]"
-                        (if (handent owner-handle)
-                          " [NOT-ATTACHED]"
-                          " [ERASED]"))
-                      "")))
-            (if bubble-list
-              (foreach bubble-entry bubble-list
-                (setq bubble-h (hcnm-reactor-bubble-handle bubble-entry)
-                      bubble-tags (hcnm-reactor-bubble-tags bubble-entry))
-                (princ (strcat "\n    Bubble "
-                        (if (and bubble-h (= (type bubble-h) 'STR))
-                          bubble-h
-                          (if bubble-h
-                            (vl-prin1-to-string bubble-h)
-                            "<unknown>"))
-                        (if (and bubble-h (= (type bubble-h) 'STR) (not (handent bubble-h)))
-                          " [ERASED]"
-                          "")
-                        ": "))
-                (princ (vl-prin1-to-string bubble-tags))
-                ;; Show VPTRANS XRECORD data if bubble exists
-                (if (and bubble-h (= (type bubble-h) 'STR) (setq bubble-ename (handent bubble-h)))
-                  (progn
-                    (setq vptrans-data (hcnm-xdata-get-vptrans bubble-ename))
-                    (if vptrans-data
-                      (princ (strcat "\n      VPTRANS: viewport=" (itoa (car vptrans-data))
-                                     " points=" (itoa (length (cdr vptrans-data)))))
-                      (princ "\n      VPTRANS: none")
-                    )
-                  )
-                )
-              )
-              (princ "\n    (no bubbles tracked)")
-            )
-          )
-          (princ "\n  (no owners tracked)")
-        )
-        (princ "\n  Raw data structure:")
-        (princ (strcat "\n" (vl-prin1-to-string data)))
-      )
-    )
-  )
-  (princ "\n=== END REACTOR DUMP ===\n")
-  (princ)
-)
-
-;; Command to show XRECORD data for selected bubble
-(defun c:hcnm-debug-xrecord (/ en vptrans)
-  (princ "\nSelect a bubble note to view XRECORD data: ")
+;; Command to show VPTRANS data for selected bubble (viewport-centric)
+(defun c:hcnm-debug-xrecord (/ en viewport-handle en-viewport vptrans)
+  (princ "\nSelect a bubble note to view VPTRANS data: ")
   (setq en (car (entsel)))
   (if en
     (progn
-      (princ "\n=== XRECORD DATA ===")
-      (setq vptrans (hcnm-xdata-get-vptrans en))
-      (princ "\nVPTRANS (viewport transform): ")
-      (if vptrans
-        (princ (vl-prin1-to-string vptrans))
-        (princ "NONE")
+      (princ "\n=== VPTRANS DATA ===")
+      (setq viewport-handle (hcnm-bn-get-viewport-handle en))
+      (princ "\nViewport handle: ")
+      (if viewport-handle
+        (progn
+          (princ viewport-handle)
+          (setq en-viewport (handent viewport-handle))
+          (if en-viewport
+            (progn
+              (setq vptrans (hcnm-vptrans-viewport-read en-viewport))
+              (princ "\nVPTRANS (viewport transform): ")
+              (if vptrans
+                (princ (vl-prin1-to-string vptrans))
+                (princ "NONE (viewport has no VPTRANS)")
+              )
+            )
+            (princ "\n  Viewport entity not found (deleted?)")
+          )
+        )
+        (princ "NONE (model space or no viewport association)")
       )
-      (princ "\n=== END XRECORD ===")
+      (princ "\n=== END VPTRANS ===")
     )
     (princ "\nNo entity selected.")
   )
-  (princ)
-)
-
-;; Command to show what VLA-OBJECTS are actually attached to the reactor
-(defun c:hcnm-debug-reactor-owners (/ reactors reactor owners
-                                   object-name-result handle-result
-                                   name-result)
-  (princ "\n=== REACTOR VLA-OBJECT ATTACHMENTS ===")
-  (setq reactors (cdar (vlr-reactors :vlr-object-reactor)))
-  (foreach r reactors
-    (if (and (listp (vlr-data r)) (assoc "HCNM-BUBBLE" (vlr-data r)))
-      (progn
-        (setq owners (vlr-owners r))
-        (princ (strcat "\nHCNM-BUBBLE reactor has " (itoa (length owners)) " attached objects:"))
-        (foreach obj owners
-          (setq object-name-result (vl-catch-all-apply 'vla-get-objectname (list obj)))
-          (if (vl-catch-all-error-p object-name-result)
-            (princ "\n  Object: <erased>")
-            (progn
-              (princ (strcat "\n  Object type: " object-name-result))
-              (setq handle-result (vl-catch-all-apply 'vla-get-handle (list obj)))
-              (if (vl-catch-all-error-p handle-result)
-                (princ " Handle: <error>")
-                (princ (strcat " Handle: " handle-result))
-              )
-              (if (vlax-property-available-p obj 'Name)
-                (progn
-                  (setq name-result (vl-catch-all-apply 'vla-get-name (list obj)))
-                  (if (not (vl-catch-all-error-p name-result))
-                    (princ (strcat " Name: " name-result))
-                  )
-                )
-              )
-            )
-          )
-        )
-      )
-    )
-  )
-  (princ "\n=== END REACTOR OWNERS ===")
   (princ)
 )
 
@@ -15190,16 +12717,12 @@ ImportLayerSettings=No
   (haws-config-register-app "CNM" (hcnm-config-definitions))
 )
 
-;;; Clean up reactor proliferation on CNM load (Issue #X)
-;;; Persistent reactors can accumulate across drawing saves/loads
-;;; This ensures we start with a clean slate
-(haws-debug "=== CNM LOAD: Checking for reactor proliferation ===")
-(hcnm-check-reactor-proliferation)
-(haws-debug "=== CNM LOAD: Reactor check complete ===")
-
 (load "ini-edit")
 ;#endregion
 
- ;|�Visual LISP� Format Options�
+;|�Visual LISP� Format Options�
+(72 2 40 2 nil "end of " 60 2 1 1 1 nil nil nil T)
+;*** DO NOT add text below the comment! ***|;
+;|�Visual LISP� Format Options�
 (72 2 40 2 nil "end of " 60 2 1 1 1 nil nil nil T)
 ;*** DO NOT add text below the comment! ***|;

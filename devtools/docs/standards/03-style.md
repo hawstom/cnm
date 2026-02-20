@@ -48,7 +48,7 @@ This volume defines naming conventions for all code elements: functions, variabl
 ## 2.3 Scope
 This volume covers:
 - Case conventions (lowercase for symbols)
-- Delimiter style (underscores not hyphens)
+- Delimiter style (hyphens)
 - Type prefixing (obj-, en-, -p suffix)
 - Function naming patterns (verb-noun)
 - Name length guidelines
@@ -116,15 +116,10 @@ The following are intentionally left with their original case (often UPPERCASE):
 ## 3.2 Files and Folders
 
 ### 3.2.1 Standard
-**PLANNED:** lowercase with underscores (migrating from hyphens)
+**FIRM:** lowercase with hyphens
 
 ### 3.2.2 Current State
-Existing files use hyphens (`haws-tip.lsp`). Migrating to underscores (`haws-tip.lsp`) for consistency with symbol naming.
-
-### 3.2.3 Migration Strategy
-- New files: Use underscores
-- Existing files: Rename during refactoring (low priority)
-- Don't force rename unless touching file anyway
+Files use hyphens (`haws-tip.lsp`), consistent with symbol naming convention.
 
 ---
 <!-- #endregion -->
@@ -135,29 +130,26 @@ Existing files use hyphens (`haws-tip.lsp`). Migrating to underscores (`haws-tip
 ## 4.1 Symbols and Functions
 
 ### 4.1.1 Standard
-**FIRM:** Underscores for all symbol delimiters
+**FIRM:** Hyphens for all symbol delimiters
 
 ### 4.1.2 Pros and Cons
-**In favor of hyphens (Pros):**
+**In favor of hyphens (chosen):**
 - Easiest to type (no shift key)
-- Common Lisp standards
-- Autodesk examples
-- Autodesk symbols (with occasional deviations)
-- AutoLISP community consensus practice (though it's an admittedly disorganized and unprofessional community)
+- Common Lisp standard convention
+- Autodesk examples and symbols use hyphens
+- AutoLISP community consensus practice
+- Consistent with Autodesk's own function naming (e.g., `vl-string-trim`, `vlax-get-property`)
 
-**In favor of underscores (Cons):**
+**In favor of underscores (rejected):**
 1. In other languages, `-` means subtract
-2. More editors including VS Code, currently pushed by Autodesk, recognize `_` as symbol continuation (better autocomplete)
-3. Provides visual disambiguation from AutoCAD native functions (which use hyphens)
-4. Slightly more readable word boundaries
+2. More editors including VS Code recognize `_` as symbol continuation (better autocomplete)
+3. Provides visual disambiguation from AutoCAD native functions
 
-**In favor of colons (Cons):**
+**In favor of colons (rejected):**
 - In Common Lisp, colons denote package boundaries (`package:symbol`)
-  - but AutoLISP has no package system, so colons have no semantic role, 
+  - but AutoLISP has no package system, so colons have no semantic role
   - so colons confuse readers who expect Common Lisp conventions
-  - so they would be implemented inconsistently (scattershot adoption)
-  - and they would achieve minimal portability in mixed Lisp environments
-  - because Common Lisp Style Guide warns against using colons outside package contexts
+  - so they would be implemented inconsistently
 
 ### 4.1.3 Hierarchical Example
 ```lisp
@@ -170,23 +162,13 @@ hcnm-ldrblk-auto-pipe-format-diameter
    └──────────────────────────── Namespace
 ```
 
-### 4.1.4 Migration Strategy
-- New code: Always use underscores
-- Refactoring: We aim for about half of our commits to be dedicated to refactoring one or a few symbols.
-- Update all callers atomically (see S03.2.2)
+### 4.1.4 Migration Status
+Migration from underscores to hyphens should be complete. Any remaining underscore-delimited symbols should be renamed to use hyphens.
 
 ## 4.2 Files and Folders
 
 ### 4.2.1 Standard
-**PLANNED:** Underscores (same as symbols for consistency)
-
-### 4.2.2 Pros and Cons
-**Pros:**
-- No technical reason to differ from symbol delimiter style
-- Consistency across code and filenames
-
-**Cons:**
-- Requires renaming existing files (low priority churn)
+**FIRM:** Hyphens (same as symbols for consistency)
 
 ---
 <!-- #endregion -->
@@ -284,7 +266,7 @@ Only prefix if type is ambiguous:
 ;; CLEAR (no prefix needed)
 attribute-list
 phase-list
-reactor-list
+updater-list
 bubbles  ; A list of bubble items
 
 ;; ACCEPTABLE (when clarification helps)
@@ -322,7 +304,7 @@ lst-bubbles
 ;; GOOD - clear at a glance
 hcnm-ldrblk-auto-pipe-format-diameter
 bubble-text-prefix-pipe-dia
-hcnm-ldrblk-assure-auto-text-has-reactor
+hcnm-ldrblk-assure-auto-text-has-updater
 ```
 
 ## 6.3 Short Names (Acceptable)
@@ -335,13 +317,13 @@ hcnm-ldrblk-assure-auto-text-has-reactor
 ### 6.3.2 Examples
 ```lisp
 ;; ACCEPTABLE abbreviations
-auto_type     ; "Automatic text type" - clear in context
+auto-type     ; "Automatic text type" - clear in context
 sta           ; Universal civil engineering abbreviation
 dia           ; Common diameter abbreviation
 off           ; Offset (clear in context)
 
 ;; ACCEPTABLE loop variables
-(foreach i list_items ...)
+(foreach i list-items ...)
 (setq n 0)
 (while (< x 10) ...)
 ```
@@ -357,11 +339,11 @@ Abbreviation is clearer than full word in domain context.
 ### 6.4.3 Examples
 ```lisp
 ;; GOOD - Domain abbreviation improves clarity
-drawstation   ; Better than drawing_station_value
+drawstation   ; Better than drawing-station-value
 
 ;; AVOID - Cryptic abbreviation reduces clarity
-pspace_bbl_p  ; Worse than pspace_bubble_p
-alref         ; Worse than align_reference
+pspace-bbl-p  ; Worse than pspace-bubble-p
+alref         ; Worse than align-reference
 ```
 
 ---
@@ -373,34 +355,34 @@ alref         ; Worse than align_reference
 ## 7.1 Pattern
 
 ### 7.1.1 Standard
-**FIRM:** verb_noun or get/set/update/calculate pattern
+**FIRM:** verb-noun or get/set/update/calculate pattern
 
 **Schedule:** Moderately conservative (well-established pattern, apply to new functions, rename only when refactoring)
 
 ### 7.1.2 Examples
 ```lisp
 ;; CORRECT - Action verbs for clarity
-hcnm_ldrblk_auto_pipe_get_object        ; Retrieves object
-hcnm_ldrblk_auto_pipe_format_diameter   ; Formats value
-hcnm_ldrblk_auto_pipe_calculate_slope   ; Performs calculation
-hcnm_ldrblk_update_bubble_tag            ; Modifies existing
+hcnm-ldrblk-auto-pipe-get-object        ; Retrieves object
+hcnm-ldrblk-auto-pipe-format-diameter   ; Formats value
+hcnm-ldrblk-auto-pipe-calculate-slope   ; Performs calculation
+hcnm-ldrblk-update-bubble-tag            ; Modifies existing
 ```
 
 ## 7.2 Verb Vocabulary
 
 ### 7.2.1 Standard Verbs
-- **get_** - Retrieve data (may prompt user)
-- **set_** - Store data
-- **calculate_** - Perform computation (pure function)
-- **format_** - Convert to display string
-- **update_** - Modify existing data
-- **assure_** - Check and create if missing
-- **validate_** - Check validity
+- **get-** - Retrieve data (may prompt user)
+- **set-** - Store data
+- **calculate-** - Perform computation (pure function)
+- **format-** - Convert to display string
+- **update-** - Modify existing data
+- **assure-** - Check and create if missing
+- **validate-** - Check validity
 
 ## 7.3 Data Flow Functions (Source-to-Destination Pattern)
 
 ### 7.3.1 Standard
-**FIRM:** For functions that move data between representations, use `source_to_destination` pattern with NO verb.
+**FIRM:** For functions that move data between representations, use `source-to-destination` pattern with NO verb.
 
 **Schedule:** Moderately aggressive (apply to new data flow functions immediately, rename existing during refactoring)
 
@@ -409,7 +391,7 @@ Make data flow architecturally visible. Shows exactly what data transformation i
 
 ### 7.3.3 Pattern Structure
 ```
-<namespace>_<source>_to_<destination>
+<namespace>-<source>-to-<destination>
 ```
 
 Where:
@@ -428,15 +410,15 @@ See S05.7 (Architecture Glossary) for full definitions:
 #### Before (Ambiguous Verbs)
 ```lisp
 ;; Unclear direction and destination
-(defun hcnm_save_bubble (bubble_data)           ; Save to WHERE?
+(defun hcnm-save-bubble (bubble-data)           ; Save to WHERE?
   ...
 )
 
-(defun hcnm_read_bubble_data (en_bubble)        ; Read into WHAT?
+(defun hcnm-read-bubble-data (en-bubble)        ; Read into WHAT?
   ...
 )
 
-(defun hcnm_get_bubble_xdata (en_bubble)        ; Get into what format?
+(defun hcnm-get-bubble-xdata (en-bubble)        ; Get into what format?
   ...
 )
 ```
@@ -444,19 +426,19 @@ See S05.7 (Architecture Glossary) for full definitions:
 #### After (Explicit Data Flow)
 ```lisp
 ;; Crystal clear source and destination
-(defun hcnm_lattribs_to_dwg (lattribs en_bubble)      ; lattribs → drawing
+(defun hcnm-lattribs-to-dwg (lattribs en-bubble)      ; lattribs → drawing
   ...
 )
 
-(defun hcnm_dwg_to_lattribs (en_bubble)               ; drawing → lattribs
+(defun hcnm-dwg-to-lattribs (en-bubble)               ; drawing → lattribs
   ...
 )
 
-(defun hcnm_xdata_to_lattribs (en_bubble lattribs)    ; xdata → lattribs
+(defun hcnm-xdata-to-lattribs (en-bubble lattribs)    ; xdata → lattribs
   ...
 )
 
-(defun hcnm_dlg_to_lattribs (lattribs)                ; dialog state → lattribs
+(defun hcnm-dlg-to-lattribs (lattribs)                ; dialog state → lattribs
   ...
 )
 ```
@@ -464,16 +446,16 @@ See S05.7 (Architecture Glossary) for full definitions:
 ### 7.3.6 Additional Examples
 ```lisp
 ;; File operations
-hcnm_file_to_lattribs              ; Import from file
-hcnm_lattribs_to_file              ; Export to file
+hcnm-file-to-lattribs              ; Import from file
+hcnm-lattribs-to-file              ; Export to file
 
 ;; Cross-format conversions
-hcnm_lattribs_to_string            ; Serialize
-hcnm_string_to_lattribs            ; Deserialize
+hcnm-lattribs-to-string            ; Serialize
+hcnm-string-to-lattribs            ; Deserialize
 
 ;; Complex transformations
-hcnm_lattribs_to_table_data        ; Convert for table display
-hcnm_csv_to_lattribs_list          ; Bulk import
+hcnm-lattribs-to-table-data        ; Convert for table display
+hcnm-csv-to-lattribs-list          ; Bulk import
 ```
 
 ### 7.3.7 When to Use This Pattern
@@ -485,24 +467,24 @@ hcnm_csv_to_lattribs_list          ; Bulk import
 - State synchronization
 
 #### DON'T Use For
-- Operations on single representation (use verb_noun instead)
+- Operations on single representation (use verb-noun instead)
 - Calculations that don't transform representation
 - UI actions with side effects
 
 #### Examples
 ```lisp
 ;; CORRECT - Data flow between representations
-hcnm_lattribs_to_dwg              ; Transformation between formats
+hcnm-lattribs-to-dwg              ; Transformation between formats
 
-;; CORRECT - Operation on single representation (verb_noun)
-hcnm_lattribs_underover_gap       ; Modifies lattribs only
-hcnm_lattribs_get                 ; Retrieves from lattribs
-hcnm_lattribs_set                 ; Stores to lattribs
-hcnm_dwg_update_display           ; Modifies drawing only
+;; CORRECT - Operation on single representation (verb-noun)
+hcnm-lattribs-underover-gap       ; Modifies lattribs only
+hcnm-lattribs-get                 ; Retrieves from lattribs
+hcnm-lattribs-set                 ; Stores to lattribs
+hcnm-dwg-update-display           ; Modifies drawing only
 
-;; CORRECT - Calculation (verb_noun)
-hcnm_calculate_station            ; Pure computation
-hcnm_format_diameter              ; String formatting
+;; CORRECT - Calculation (verb-noun)
+hcnm-calculate-station            ; Pure computation
+hcnm-format-diameter              ; String formatting
 ```
 
 ### 7.3.8 Pros and Cons
@@ -522,7 +504,7 @@ hcnm_format_diameter              ; String formatting
 ### 7.3.9 Migration Strategy
 
 #### For New Code
-**FIRM:** Use source_to_destination pattern for all new data flow functions.
+**FIRM:** Use source-to-destination pattern for all new data flow functions.
 
 #### For Existing Code
 - **Rename when refactoring** data flow operations
@@ -532,13 +514,13 @@ hcnm_format_diameter              ; String formatting
 #### Example Migration
 ```lisp
 ;; OLD (before refactoring)
-(defun hcnm_save_bubble (attribute_list en_bubble)
+(defun hcnm-save-bubble (attribute-list en-bubble)
   ; Saves attribute list to drawing entity
   ...
 )
 
 ;; NEW (after refactoring)
-(defun hcnm_lattribs_to_dwg (lattribs en_bubble)
+(defun hcnm-lattribs-to-dwg (lattribs en-bubble)
   ; lattribs → drawing: Writes association list to block attributes
   ...
 )
@@ -557,8 +539,8 @@ Use descriptive names, no special prefix:
 
 ```lisp
 ;; CORRECT
-hcnm_error_not_found "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
-hcnm_default_precision "2"
+hcnm-error-not-found "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
+hcnm-default-precision "2"
 ```
 
 ## 8.2 Global Variables
@@ -568,11 +550,11 @@ Use `*` wrapper if truly global (session lifetime):
 
 ```lisp
 ;; CORRECT - Global session variables
-*hcnm_config*              ; Config cache
-*haws_config_cache*        ; Multi-app config cache
+*hcnm-config*              ; Config cache
+*haws-config-cache*        ; Multi-app config cache
 
 ;; CORRECT - Module-scoped (no asterisks)
-hcnm_eb_attribute_list     ; Edit bubble dialog state
+hcnm-eb-attribute-list     ; Edit bubble dialog state
 ```
 
 ## 8.3 Temporary Variables
@@ -582,14 +564,14 @@ In small scopes, single letters acceptable:
 
 ```lisp
 ;; ACCEPTABLE in 5-line loop
-(foreach i item_list
+(foreach i item-list
   (setq n (1+ n))
 )
 
 ;; AVOID - Too cryptic if used across 50 lines
-(setq a (get_align)
-      s (calc_sta a p)
-      o (calc_off a p)
+(setq a (get-align)
+      s (calc-sta a p)
+      o (calc-off a p)
 )
 ```
 
@@ -625,11 +607,11 @@ In small scopes, single letters acceptable:
 
 ## 9.3 Example Migration Commit
 ```
-refactor: rename hcnm-ldrblk-auto-pipe to hcnm_ldrblk_auto_pipe
+refactor: rename hcnm_ldrblk_auto_pipe to hcnm-ldrblk-auto-pipe
 
 - Updated function definition
 - Updated all 7 call sites
-- Per S03.4.1: moving to underscore delimiters
+- Per S03.4.1: moving to hyphen delimiters
 ```
 
 ---
@@ -641,14 +623,14 @@ refactor: rename hcnm-ldrblk-auto-pipe to hcnm_ldrblk_auto_pipe
 ## 10.1 Good Example
 ```lisp
 ;; CORRECT - Follows all conventions
-(defun hcnm_ldrblk_auto_pipe_format_diameter (obj_pipe / dia_feet dia_inches)
-  (setq dia_feet   (vlax-get-property obj_pipe 'InnerDiameterOrWidth)
-        dia_inches (* dia_feet 12.0)
+(defun hcnm-ldrblk-auto-pipe-format-diameter (obj-pipe / dia-feet dia-inches)
+  (setq dia-feet   (vlax-get-property obj-pipe 'InnerDiameterOrWidth)
+        dia-inches (* dia-feet 12.0)
   )
   (strcat
-    (c:hcnm_config_getvar "BubbleTextPrefixPipeDia")
-    (rtos dia_inches 2 (atoi (c:hcnm_config_getvar "BubbleTextPrecisionPipeDia")))
-    (c:hcnm_config_getvar "BubbleTextPostfixPipeDia")
+    (c:hcnm-config-getvar "BubbleTextPrefixPipeDia")
+    (rtos dia-inches 2 (atoi (c:hcnm-config-getvar "BubbleTextPrecisionPipeDia")))
+    (c:hcnm-config-getvar "BubbleTextPostfixPipeDia")
   )
 )
 ```
@@ -657,7 +639,7 @@ refactor: rename hcnm-ldrblk-auto-pipe to hcnm_ldrblk_auto_pipe
 ```lisp
 ;; AVOID - Multiple convention violations
 (DEFUN FMTDIA (P / D)  ; UPPERCASE not project standard
-  (SETQ D (VLAX-GET-PROPERTY P 'InnerDiameterOrWidth))  ; No obj_ prefix, UPPERCASE
+  (SETQ D (VLAX-GET-PROPERTY P 'InnerDiameterOrWidth))  ; No obj- prefix, UPPERCASE
   (STRCAT (GETVAR "pfx") (RTOS (* D 12) 2 2) (GETVAR "sfx"))  ; Unclear abbreviations
 )
 ```
@@ -694,7 +676,7 @@ refactor: rename hcnm-ldrblk-auto-pipe to hcnm_ldrblk_auto_pipe
 **Example:**
 ```lisp
 ;; CORRECT - No blank lines
-(defun calculate_area (width height / area)
+(defun calculate-area (width height / area)
   (setq area (* width height))
   (if (> area 1000)
     (princ "\nLarge area")
@@ -702,11 +684,11 @@ refactor: rename hcnm-ldrblk-auto-pipe to hcnm_ldrblk_auto_pipe
   )
   area
 )
-(defun calculate_volume (width height depth)
+(defun calculate-volume (width height depth)
   (* width height depth)
 )
 ;; AVOID - Any blank lines
-(defun calculate_area (width height / area)
+(defun calculate-area (width height / area)
 
   (setq area (* width height))
 
@@ -718,7 +700,7 @@ refactor: rename hcnm-ldrblk-auto-pipe to hcnm_ldrblk_auto_pipe
   area
 )
 
-(defun calculate_volume (width height depth)
+(defun calculate-volume (width height depth)
   (* width height depth)
 )
 ```
@@ -791,7 +773,7 @@ AutoCAD entity data format:
 '(("NOTETXT1" . "auto-text") ("NOTETXT2" . "auto-text"))
 
 ;; Config settings
-'(("BlockReactors" . "0") ("DebugReactors" . "0"))
+'(("BlockUpdater" . "0") ("DebugUpdater" . "0"))
 ```
 
 ### 12.4.2 Proper Lists
@@ -799,8 +781,9 @@ AutoCAD entity data format:
 ;; lattribs (tag + text, 2-element lists)
 '(("NOTETXT1" "text") ("NOTETXT2" "text"))
 
-;; Reactor data (nested collections)
-'(("HCNM-BUBBLE" (("owner-handle" (("bubble-handle" ...))))))
+;; [AI: Nested reactor data structure below is probably deprecated and
+;; should be removed once confirmed unnecessary for the BNATU updater.]
+;; '(("HCNM-BUBBLE" (("reference-handle" (("bubble-handle" ...))))))
 ```
 
 ## 12.5 Common Pitfall

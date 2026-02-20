@@ -100,7 +100,7 @@ Defines naming conventions for code (functions, variables, files).
 Defines file structure, folder organization, and where to find things.
 
 ### 2.4.4 Volume 05: Architecture
-Defines major architectural patterns (reactors, config system, delimiters, etc.).
+Defines major architectural patterns (auto-text updater, config system, delimiters, etc.).
 
 ### 2.4.5 Volume 06: Roadmap
 Defines planned features, refactoring goals, and version milestones.
@@ -165,7 +165,7 @@ Wrap sections in VS Code folding markers:
 - Format: `STANDARDS_NN_TITLE_IN_CAPS.md`
 - Example: `STANDARDS_02_AI_HUMAN_COLLABORATION.md`
 - Use Arabic numerals with leading zero: `01`, `02`, ..., `10`, `11`
-- Use underscores as delimiters
+- Use hyphens as delimiters
 - All lowercase for actual filenames: `standards_02_ai_human_collaboration.md`
 
 ### 3.2.2 Volume Numbering
@@ -476,7 +476,7 @@ Use text markers in bold for clarity:
 - **DISCUSS** - Under discussion, not yet decided
 - **REJECTED** - Tried and abandoned (explain why)
 
-Example: **FIRM:** Use underscores not hyphens in function names (see S03.1.1)
+Example: **FIRM:** Use hyphens in function names (see S03.4.1)
 
 ### 7.2.2 Code Status
 - **CORRECT** - Follows conventions

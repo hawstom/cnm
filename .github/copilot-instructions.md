@@ -13,13 +13,38 @@
 
 #### 1.1.2. AutoLISP-Specific Rules
 - **MANDATORY FUNCTION VERIFICATION**: NEVER use any function without first searching ORIGINAL codebase with grep_search AND verifying with git history that function existed before recent AI changes. If function not found in original CNM code, check official Autodesk documentation with fetch_webpage. See Section 1.5 for complete protocol.
+- **Check parentheses balance**: Use `devtools\scripts\haws-lisp-paren-check.ps1` after AutoLISP edits
 - **Use get_errors tool**: Check syntax after AutoLISP edits. Fix errors before reporting
 - **AutoLISP Common Pitfalls**: See Section 1.4 for AutoLISP/Common Lisp differences and correct AutoLISP idioms.
 
 #### 1.1.3. Workflow Constraints
 - **DO NOT git commit**: Let the human commit. AI prepares files only.
 
-#### 1.1.4. Architecture Checklist (MANDATORY before coding)
+#### 1.1.4. NO SUPERSTITIOUS CODE (NON-NEGOTIABLE CORE VALUE)
+**CRITICAL:** Never, never, never, never add or keep superstitious defensive "doesn't HURT anything" clutter.
+
+**Why this matters:**
+- **"Doesn't HURT anything" is DEEPLY FALSE** - Nonsense code doesn't protect, it confuses
+- **Confusion is FATAL** - To both human and AI productivity and effectiveness
+- **Every line must have justification** - No "just in case" or "defensive" code without specific evidence
+- **False safety is dangerous** - Pretending something is safe when you don't understand it creates technical debt
+- **git saves us** - We can always revert bad changes, so no need for "just in case" code
+
+**Examples of superstitious code:**
+- ❌ Adding error handling "just in case" without understanding what errors are possible or why their naked effects (crashes) are unacceptable.
+- ❌ Adding function reloads after commands (only ._open unloads functions)
+- ❌ Adding validation checks "defensively" without knowing what you're validating
+- ❌ Copying patterns without understanding when they apply
+
+**What to do instead:**
+- ✅ Understand the actual requirements (ask if uncertain)
+- ✅ Write only code you can justify with specific evidence
+- ✅ Remove or ask about code you can't justify or understand (even if it "might" help)
+- ✅ Ask "Why is this needed?" before adding or keeping defensive code
+
+**This is non-negotiable.** Clean, justified code is the only acceptable standard.
+
+#### 1.1.5. Architecture Checklist (MANDATORY before coding)
 
 **ALWAYS ask these questions BEFORE writing code:**
 
@@ -62,7 +87,7 @@
 **AI's role:** Help maintain 20-year-old codebase with strict data integrity requirements.
 
 **Recent Milestones:**
-- **2025-11-16**: obj-target refactoring complete - all auto-text functions now use obj-reference + reactor-context-p pattern
+- **2025-11-16**: obj-target refactoring complete - all auto-text functions now use obj-reference pattern
 - **2025-11-16**: Multiple auto-texts per line working (Slope + Off + Sta on same tag)
 - **2025-11-16**: Handle extraction from auto-metadata complete - edit dialog correctly stores alignment/pipe handles
 
@@ -106,9 +131,9 @@ AutoLISP is the primary programming language of CNM. AutoLISP and Common LISP ar
 - `vlax-get-acad-object` - Used in CNM (line 2595)
 - `vlax-release-object` - Used in CNM (line 2603)
 - `vla-get-handle` - Used in CNM (line 6158)
-- `vlr-owner-add` - Used in CNM (line 10777)
-- `vlr-owners` - Used in CNM reactor code
-- `vlr-data` - Used in CNM reactor code
+- `vlr-owner-add` - Historical (reactor system removed)
+- `vlr-owners` - Historical (reactor system removed)
+- `vlr-data` - Historical (reactor system removed)
 
 #### 1.4.3. AI Hallucination Blacklist
 
@@ -137,7 +162,7 @@ AutoLISP is the primary programming language of CNM. AutoLISP and Common LISP ar
 - **Common misconception to avoid:**
   - ❌ WRONG: "Sta/Off have empty handles" (they store alignment handle!)
   - ✅ CORRECT: "N/E/NE have empty handles" (handleless coordinates)
-- **Complete architecture:** See S05.4.2 (Reactive Auto-Text System) for VLR-OBJECT-REACTOR patterns, BlockReactors flag lifecycle, and debugging guidelines
+- **Complete architecture:** See S05.4.2 (Auto-Text Update System) for update algorithm and debugging guidelines
 
 ### 1.6. AI Collaboration Workflow
 
@@ -180,12 +205,12 @@ When encountering complex issues in CNM:
 1. **Start with S05** (devtools/docs/standards/05-architecture.md) to understand system architecture
    - **S05.3**: Config system (hcnm-config-getvar now uses haws-config)
    - **S05.4.1**: Current bubble architecture (lattribs, XDATA, bubble-data)
-   - **S05.4.2**: Reactive auto-text system (VLR-OBJECT-REACTOR patterns)
+   - **S05.4.2**: Auto-text update system
 2. **Check S04** (devtools/docs/standards/04-organization.md) to locate relevant files  
 3. **Use S03** (devtools/docs/standards/03-style.md) for naming/style conventions
 4. **Apply S02** (devtools/docs/standards/02-ai-human-collaboration.md) for AI collaboration patterns
 
-**S05 provides the "30,000 foot view"** that prevents getting lost in implementation details while debugging complex multi-system interactions like reactor issues.
+**S05 provides the "30,000 foot view"** that prevents getting lost in implementation details while debugging complex multi-system interactions.
 
 ---
 
@@ -220,9 +245,9 @@ Civil engineers annotate drawings with dynamic data (station/offset along alignm
 **CNM Solution:**
 - Engineer clicks toolbar, places leader, selects alignment/pipe/surface
 - CNM queries Civil 3D automatically, calculates station/offset
-- Stores reference in XDATA, attaches VLR reactor
-- When alignment shifts, CNM updates all bubble notes automatically
-- No user intervention needed
+- Stores reference in XDATA for later updates
+- When alignment shifts, user runs updater to refresh all bubble notes
+- Batch update keeps all notes current
 
 **Customer Impact (20+ years of feedback):**
 - 80% reduction in note updating time
@@ -266,14 +291,14 @@ CNM loads automatically when AutoCAD starts:
 3. **CNMloader.lsp** (initialization) - Loads immediately:
    - Defines `haws-autoload` function (creates command stubs)
    - Loads core libraries immediately: `edclib.lsp`, `haws-tip.lsp`, `cnmalias.lsp`
-   - Defines autoloader stub for `hcnm-ldrblk-reactor-callback` (persistent reactor support) [TGH 2025-11-12 22:55:44: Update this to new name.]
+   - Defines autoloader stub for updater callback [TGH 2025-11-12 22:55:44: Update this to new name.]
    - Sets up command autoloaders for `cnm.lsp` functions (lazy loading)
 4. **cnm.lsp** - Main CNM functionality, lazy-loaded when user runs first CNM command
 
 **Key points:**
 - Core libraries load immediately via CNMloader.lsp
 - CNM commands use `haws-autoload` pattern: stub loads file on first use
-- Reactor callback has special autoloader stub (reactors fire before commands run)
+- Updater callback has special autoloader stub
 - Do NOT load cnm.lsp eagerly - defeats lazy loading pattern
 
 ---
@@ -329,18 +354,16 @@ CNM ships with bubble notes using block name pattern: `cnm-bubble-[m?]#-[dir]`
 - Command: `c:hcnm-replace-bubble` (also called via notetype=nil path in hcnm-ldrblk-insert)
 - Copies existing bubble to new location using same block definition
 - Preserves all attribute text from source bubble
-- **Legacy mode:** Works with bubbles created before reactive auto-text system
-- **Current limitation:** Does not update reactor data structures or XDATA/XRECORD for auto-text bubbles
-- **Planned upgrade:** See `.ai-plans/copy-replace-bubble-upgrade.md` for reactor/XDATA handling
+- **Legacy mode:** Works with bubbles created before auto-text update system
+- **Current limitation:** Does not update XDATA/XRECORD for auto-text bubbles
+- **Planned upgrade:** See `.ai-plans/copy-replace-bubble-upgrade.md` for XDATA handling
 
-##### 3.2.2.2. Reactive Auto-Text System
-**Status:** Implemented on feat-sunrise branch, debugging regressions
+##### 3.2.2.2. Auto-Text Update System
+**Status:** In development
 
-**What it does:** Auto-text stays synchronized with source objects and follows leader arrowheads via VLR reactors (AutoLISP object event listeners).
+**What it does:** Auto-text is updated by a manually-invoked updater command that recalculates values from XDATA metadata and Civil 3D reference objects.
 
 **Architecture:** Free-form 2-element lattribs with handle-based XDATA supporting multiple auto-texts per line.
-
-**Current work:** Addressing regressions one-by-one for production readiness.
 
 #### 3.2.3. Data Models
 
@@ -355,36 +378,42 @@ CNM ships with bubble notes using block name pattern: `cnm-bubble-[m?]#-[dir]`
 **Key Quick Reference:**
 - **lattribs:** Internal 2-element format `'(("TAG" "text") ...)`
 - **XDATA:** Auto-text storage with composite keys
-- **XRECORD:** Viewport transform data (VPTRANS)
+- **VPTRANS:** Viewport transform stored on viewport entity (bubble stores only viewport handle)
 - **bubble-data:** Alist for passing state during insertion/editing
 
 **See S05.4.2 (XDATA Storage Patterns)** for complete XDATA specifications.
 
-##### 3.2.3.2. XRECORD Format - Viewport Transform Storage
+##### 3.2.3.2. Viewport Transform (VPTRANS) - Viewport-Centric Architecture
 
-**Storage location:** Extension dictionary → `"HCNM"` dict → `"VPTRANS"` xrecord
+**Storage:** Two-part design eliminates redundancy:
+1. **Bubble XDATA** stores only the viewport handle (`"HCNM-VIEWPORT"` key)
+2. **Viewport's ExtDict** stores the VPTRANS XRECORD (shared by all bubbles in that viewport)
 
 **Data structure:** `(cvport ref-ocs-1 ref-wcs-1 ref-ocs-2 ref-wcs-2 ref-ocs-3 ref-wcs-3)`
 - cvport = viewport number (integer)
-- Three 3D point pairs defining affine transformation
+- Three 3D point pairs defining affine transformation (OCS→WCS mapping)
 
-**Service Layer API:**
+**API:**
 ```autolisp
-(hcnm-xdata-get-vptrans ename-bubble)         ; Returns viewport data or nil
-(hcnm-xdata-set-vptrans ename-bubble data)    ; Writes to XRECORD
+;; Viewport handle on bubble
+(hcnm-bn-get-viewport-handle ename-bubble)       ; Returns handle string or nil
+(hcnm-bn-set-viewport-handle ename-bubble handle) ; Stores handle in XDATA
+;; VPTRANS data on viewport
+(hcnm-vptrans-viewport-read en-viewport)          ; Returns data list or nil
+(hcnm-vptrans-viewport-write en-viewport data)    ; Writes to viewport ExtDict
+;; Bridge functions (combine both)
+(hcnm-bn-get-viewport-transform-xdata ename-bubble) ; Handle → viewport → data
+(hcnm-bn-set-viewport-transform-xdata ename-bubble cvport ...) ; Finds viewport, stores both
 ```
 
 **When created:**
-1. User places bubble in paper space with coordinate-based auto-text (N/E/NE)
+1. User places bubble in paper space with coordinate-based auto-text (N/E/NE/Sta/Off/etc.)
 2. User clicks alignment/pipe in paper space for station/offset/diameter
 3. "Change View" button in edit dialog (explicit viewport reassociation)
 
-**When used:** Every reactor update for paper space bubbles - transforms leader arrowhead position from paper space OCS to model space WCS.
+**When used:** Every updater run for paper space bubbles with coordinate-based auto-text — transforms leader arrowhead position from paper space OCS to model space WCS.
 
-**Migration note (2025-11-05):**
-- ✅ VPTRANS moved from XDATA to XRECORD (frees ~200 bytes per bubble)
-- ✅ Auto-text remains in XDATA (small, dynamic)
-- ✅ NOTEDATA attribute deprecated (never used)
+**Model space bubbles** do not need VPTRANS (coordinates are already in WCS).
 
 ##### 3.2.3.3. Coordinate Transformation
 
@@ -418,7 +447,7 @@ AutoCAD uses multiple coordinate systems with specific canonical relationships:
 **Solution:** For paper space bubbles referencing model space objects for coordinate-based auto-text, store 3-point correspondence in XRECORD:
 - 3 reference points in OCS (viewport DCS space)
 - 3 reference points in WCS (model space)
-- Apply affine transformation on reactor updates to get WCS from current leader position
+- Apply affine transformation on updater runs to get WCS from current leader position
 
 ##### 3.2.3.4. Viewport Association
 
@@ -426,125 +455,48 @@ AutoCAD uses multiple coordinate systems with specific canonical relationships:
 
 **Solution:** For paper space bubbles referencing model space objects for coordinate-based auto-text, store viewport number in VPTRANS data (first element of viewport-data list). On updates, correctly transform auto-text coordinates from paper space to model space.
 
-#### 3.2.4. Reactor System
+#### 3.2.4. Auto-Text Update System (BNATU)
 
-**Quick Reference:** CNM uses VLR-OBJECT-REACTOR for automatic bubble updates.
+**Quick Reference:** The Bubble Note Auto Text Updater (BNATU) is a manually-invoked command that recalculates auto-text values from XDATA and reference objects. The old VLR-OBJECT-REACTOR system has been removed.
 
-**Essential Concepts:**
-- **BlockReactors flag:** Prevents infinite recursion (save/restore pattern CRITICAL)
-- **5-level hierarchy:** "HCNM-BUBBLE" → owner → bubble → tag → auto-type → reference
-- **Three-tier cleanup:** Immediate detection, batch cleanup, deep scrub
-- **Orphaned owners:** VLA-OBJECTs in VLR but not in data (causes warnings after edit)
+**REFERENCE** = Object providing calculation data (e.g., alignment for station/offset, pipe for diameter)
 
-**Terminology (CRITICAL):**
-- **OWNER** = Any object in VLR system (reference OR leader)
-- **NOTIFIER** = Specific owner that triggered callback
-- **REFERENCE** = Object providing calculation data (never leader)
-
-**For Complete Documentation:** See S05.4.2 (Reactive Auto-Text System)
-- Section 4.2.3: 5-level data structure hierarchy
-- Section 4.2.4: BlockReactors flag lifecycle and save/restore pattern
-- Section 4.2.7: Orphaned owner cleanup (5-step process)
-- Section 4.2.8: Debugging reactor attachment issues
-- Section 4.2.10: Reactor cleanup flow (all tiers)
-- Section 7.1.6: Reactor system terms (glossary)
-
-**Common Pitfalls:**
-- ❌ Don't mutate data during callback iteration (use vl-remove-if)
-- ❌ Don't skip BlockReactors save/restore pattern
-- ❌ Don't panic over "Notifier not found" immediately after edit (expected VLR lag)
-- ✅ Do use functional updates for concurrent safety
-- ✅ Do follow 5-step orphaned owner cleanup when removing auto-text
-- ✅ Do check S05.4.8 debugging decision tree before investigating warnings
-
-#### 3.2.5. Reactive Auto-Text Implementation
-
-**Status:** Implemented on feat-sunrise branch (November 2025).
-
-**What it does:** Auto-text stays synchronized with source objects and follows leader arrowheads via VLR reactors.
-
-**Architecture:** Free-form 2-element lattribs with handle-based XDATA supporting multiple auto-texts per line.
-
-**For Complete Documentation:** See S05.4 (CNM Bubble Notes Architecture)
-- Section 4.1.5: lattribs structure (2-element format, validation)
-- Section 4.1.6: XDATA storage patterns (composite keys, auto-text format)
-- Section 4.2: Reactive Auto-Text System (complete architecture)
+**For Complete Documentation:** See S05.4.2 (Auto-Text Update System)
 
 **Key Technical Challenges:**
-1. **Paper Space Complexity** - VPTRANS XRECORD for coordinate transformation (see S05.4.1.6)
-2. **Free-Form User Edits** - XDATA search/replace preserves user text (see S05.4.2.5)
-3. **Legacy Migration** - 20+ years of drawings, minimal breaking changes (see S05.4.1)
+1. **Paper Space Complexity** - VPTRANS XRECORD for coordinate transformation
+2. **Free-Form User Edits** - XDATA search/replace preserves user text
+3. **Legacy Migration** - 20+ years of drawings, minimal breaking changes
 
-##### 3.2.5.1. Quick Reference
+##### 3.2.4.1. Quick Reference
 
 **Free-Form User Edits:**
 - Users edit bubbles directly in AutoCAD (bypass dialogs)
 - XDATA stores verbatim auto-text as search needles
-- Search/replace preserves user prefix/postfix text
-- See S05.4.2.5 for complete algorithm
+- Updater uses search/replace to preserve user prefix/postfix text
 
 **Auto-Text Insertion Delimiter:**
 - Triple backtick ` ``` ` marks insertion point
 - No automatic spacing (user controlled)
 - Append if no delimiter (graceful UX)
-- See S05.4.2.5 for complete philosophy
 
-**MVC Architecture:**
+**Edit Architecture:**
 - Dialog = IN-MEMORY until Save
-- Save = ATOMIC write (lattribs + XDATA + reactors)
+- Save = ATOMIC write (lattribs + XDATA)
 - Cancel = SAFE (no writes)
-- See S05.4.2.6 for complete flow diagrams
 
-##### 3.2.5.2. Code Examples
-
-**Free-form edit scenario:**
+##### 3.2.4.2. Smart Replace Example
 
 1. User places bubble with auto-text: `"STA 10+25.50"`
 2. XDATA stores: `'(("NOTETXT1" . "STA 10+25.50"))`
 3. User manually edits in AutoCAD: `"Storm Drain STA 10+25.50 RT"`
 4. XDATA unchanged: `'(("NOTETXT1" . "STA 10+25.50"))`
-5. Alignment shifts, reactor fires:
+5. User runs updater, alignment has shifted:
    - Search for `"STA 10+25.50"` in `"Storm Drain STA 10+25.50 RT"`
-   - Split: `("Storm Drain " "STA 10+25.50" " RT")`
-   - Update: `("Storm Drain " "STA 11+00.00" " RT")`
-   - Concatenate: `"Storm Drain STA 11+00.00 RT"`
+   - Replace: `"Storm Drain STA 11+00.00 RT"`
+   - Update XDATA: `'(("NOTETXT1" . "STA 11+00.00"))`
 
-**Result:** User's prefix/postfix preserved, auto-text updated ✅
-
-**MVC call flow - Insertion:**
-```autolisp
-;; 1. VIEW: Auto-text button clicked
-(hcnm-bn-insert-auto-button tag)
-  ;; 2. CONTROLLER: Route to handler
-  (hcnm-bn-controller-add-auto tag auto-type)
-    ;; 3. MODEL: Generate, store XDATA, attach reactor
-    (hcnm-bn-model-set-auto tag text auto-type)
-```
-
-**MVC call flow - Editing:**
-```autolisp
-;; Dialog operates on IN-MEMORY copy until Save
-(hcnm-bn-eb-open ename)  ; Load lattribs + XDATA
-(hcnm-bn-eb-auto-button tag auto-type)  ; Update dialog field only
-(hcnm-bn-eb-save ename)  ; ATOMIC write: lattribs + XDATA + reactors
-(hcnm-bn-eb-cancel)  ; Safe: no writes, entity unchanged
-```
-
-**Model layer functions:**
-```autolisp
-(defun hcnm-bn-model-set-auto (tag text auto-type)
-  ;; 1. Update lattribs (in-memory)
-  ;; 2. Store XDATA with verbatim value for search
-  ;; 3. Attach reactor (if coords-based, store viewport/transform)
-  ;; 4. Store reference object handle for reactor lookup
-  )
-
-(defun hcnm-bn-model-set-free (tag text)
-  ;; 1. Update lattribs (in-memory)
-  ;; 2. Clear XDATA for this tag
-  ;; 3. Remove reactor (user text doesn't auto-update)
-  )
-```
+**Result:** User's prefix/postfix preserved, auto-text updated
 
 ### 3.3. Key Notes Tables
 
@@ -587,7 +539,7 @@ hcnm-*                    Top-level CNM functions
 └── hcnm-bubbles-*        Bubble Notes subsystem (cohesive, sandboxed)
     ├── hcnm-bubbles-insert-*      Insertion functions
     ├── hcnm-bubbles-eb-*          Edit box (dialog) functions
-    ├── hcnm-bubbles-reactor-*     Reactor (auto-update) functions
+    ├── hcnm-bubbles-update-*      Auto-text update functions
     ├── hcnm-bubbles-xdata-*       XDATA management
     └── hcnm-bubbles-lattribs-*    Attribute list transforms
 ```
@@ -604,21 +556,43 @@ See [standards-03-style.md, Section 1.1.1](../devtools/docs/standards/03-style.m
 
 **CRITICAL:** Autodesk AutoLISP Extension (autodesk.autolispext) is installed in this workspace.
 
-**HUMANS SEE ERRORS AUTOMATICALLY via syntax highlighting. YOU MUST USE `get_errors` TO ACCESS THE SAME INFORMATION.**
+**HUMANS SEE ERRORS AUTOMATICALLY via syntax highlighting. YOU MUST USE VALIDATION TOOLS TO ACCESS THE SAME INFORMATION.**
 
-**Workflow for AutoLISP edits:**
+**MANDATORY Workflow for AutoLISP edits:**
 1. **Before editing:** Run `get_errors` to check current state (MANDATORY)
 2. **Make changes:** Edit using `replace_string_in_file`
-3. **After editing:** Run `get_errors` immediately to validate (MANDATORY)
+3. **After editing:** Run BOTH validation checks IMMEDIATELY (MANDATORY):
+   - `get_errors` for semantic errors
+   - `devtools\scripts\validate-lisp-syntax.ps1` for parenthesis/quote balance
 4. **Fix issues:** If errors found, fix before proceeding
+
+**NEW: Parenthesis Balance Validation**
+
+The AutoLISP Extension does NOT catch unbalanced parentheses reliably. Use the dedicated validator:
+
+```powershell
+powershell -File devtools\scripts\validate-lisp-syntax.ps1 -FilePath "devsource\cnm.lsp"
+```
+
+This script checks:
+- ✓ Balanced opening/closing parentheses
+- ✓ Unclosed strings
+- ✓ Line and column numbers for errors
+- ✓ Works on files of any size
+
+**AI Agent Requirements:**
+- Run validate-lisp-syntax.ps1 after EVERY .lsp edit (no exceptions)
+- Do NOT say "fixed" until validation passes
+- Report exact line/column from validation errors
+- If validation fails, show the error to user and fix immediately
 
 **CRITICAL - Tell the truth:**
 - ❌ NEVER say: "File loads successfully" (you cannot test in AutoCAD)
-- ✅ INSTEAD say: "VS Code shows no errors" or "AutoLISP extension reports no diagnostics"
+- ✅ INSTEAD say: "Validation passes" or "No syntax errors detected"
 - ❌ NEVER claim you tested something you didn't
 - ✅ ALWAYS be explicit about what you verified vs. what requires human testing
 
-**Note:** Even with no VS Code errors, user should test in AutoCAD (extension may not catch all runtime issues).
+**Note:** Even with validation passing, user should test in AutoCAD (validation catches syntax, not runtime logic errors).
 
 #### 4.2.3. AutoLISP Idioms
 
@@ -679,7 +653,7 @@ See [standards-03-style.md, Section 12](../devtools/docs/standards/03-style.md) 
 - **"Use the architecture"** → Refer to lattribs data model and XDATA patterns
 - **"Fail loudly"** → Strict validation with clear alerts
 - **"Obsolete architecture"** → Deprecated legacy formats
-- **"The reactor"** → VLR-OBJECT-REACTOR for auto-updating bubble text
+- **"The updater"** → Manually-invoked command for recalculating auto-text
 - **"Command [name]"** → Always means AutoLISP command function `c:[name]`, not regular function
 - **"cinote:"** → Revise copilot-instructions.md to include that information
 
@@ -769,7 +743,7 @@ See [standards-03-style.md, Section 12](../devtools/docs/standards/03-style.md) 
 
 **Commit strategy:**
 - Commit after completing each phase
-- Mention phase in message: "feat(bubbles): Phase 2 - Add reactor callbacks (issue #X)"
+- Mention phase in message: "feat(bubbles): Phase 2 - Add updater logic (issue #X)"
 - Planning doc stays in `.ai-plans/` (gitignored)
 - Attach to GitHub issue when feature complete
 
@@ -813,11 +787,11 @@ AutoLISP lacks standard testing frameworks. Current approach:
 
 #### Pre-Test Cleanup Command
 
-`(c:pretest)` - Removes all bubble reactors and test bubbles (prevents orphaned reactors)
+`(c:pretest)` - Removes all test bubbles and cleans up test state
 
 ### 5.5. Current Work Status
 
-#### In Progress (feat-sunrise branch)
+#### In Progress
 
 1. **Renaming complete:** lattribs functions have clear, consistent names
 2. **XDATA refactoring:** Search-based parsing with robust auto-text handling
@@ -827,11 +801,11 @@ AutoLISP lacks standard testing frameworks. Current approach:
 
 - Legacy references removed, clean 2-element architecture implemented
 - `lattribs-split` needs proper XDATA search implementation
-- Reactor cleanup logic incomplete
+- Updater cleanup logic incomplete
 
 #### Related Resources
 
-- **Standards docs:** `standards_05_architecture.md`, `standards_06_lattribs_schema.md`
+- **Standards docs:** `devtools/docs/standards/05-architecture.md`
 - **Issue tracker:** https://github.com/hawstom/cnm/issues
 - **Project:** 20+ year-old codebase, actively maintained for civil engineering customers
 

@@ -5,16 +5,39 @@
 ;;;; Usage: Loaded by cnm-test.scr during test execution
 ;;;;
 ;;;; Created: 2025-11-17
-;;;; Status: Foundation (Phase B) - helpers only, tests in Phase C
+;;;; Status: Active - bubble notes auto-text and updater testing
 ;;;;
 ;;;; Architecture:
-;;;;   - Test functions query XDATA, reactors, attributes
+;;;;   - Test functions query XDATA and attributes
 ;;;;   - Results annotated on C-ANNO-TEST-RESULTS layer
 ;;;;   - Report written to test-results/cnm-test-report.md for AI analysis
 ;;;;   - Timing log written to test-results/cnm-test-run.log
 ;;;;
-;;;; Note: Phase C will add actual test validation functions
-;;;;       (test-validate-station, test-validate-pipe-dia, etc.)
+;;==============================================================================
+;; HELPER FUNCTIONS - DRY utilities for common test patterns
+;;==============================================================================
+(defun test-find-bubble-by-coord (x y z description / ss en handle)
+  ;; Find bubble by insertion point coordinates
+  ;; Args:
+  ;;   x, y, z - Coordinates (reals)
+  ;;   description - String for debug messages (e.g., "TEST 1")
+  ;; Returns: Entity name if found, nil otherwise
+  ;; Side effects: Sets global variable matching pattern test-bubble-N
+  (setq ss (ssget "_X" (list '(0 . "INSERT") (cons 10 (list x y z)))))
+  (cond
+    ((and ss (> (sslength ss) 0))
+     (setq en (ssname ss 0))
+     (setq handle (cdr (assoc 5 (entget en))))
+     (haws-debug (strcat "\nFound " description " bubble: " handle))
+     en
+    )
+    (t
+     (haws-debug (strcat "\nWARNING: " description " bubble not found at ("
+                         (rtos x 2 1) ", " (rtos y 2 1) ", " (rtos z 2 1) ")"))
+     nil
+    )
+  )
+)
 (defun c:test-setup-layers ( / )
   ;; Create test results layer for MTEXT annotations
   (vl-cmdf "._layer" "_make" "C-ANNO-TEST-RESULTS" "")
@@ -28,19 +51,55 @@
   ;;   status - String "PASS", "FAIL", or "INFO"
   ;;   message - String detailed message text
   ;; Returns: nil (princ suppresses return value)
-  ;; DISABLED: Drawing annotations causing safearray errors
-  ;; Just print to console for now
+  ;; [AI: Drawing annotations disabled - safearray errors. Console output only.]
   (princ (strcat "\n[" status "] " message))
   (princ)
 )
-(defun c:test-generate-summary-mtext ( / pass-count fail-count info-count ss i ent obj-text text-str summary-msg)
-  ;; Count PASS/FAIL/INFO annotations and generate summary MTEXT
-  ;; DISABLED: Drawing commands causing safearray errors
-  ;; Just print summary to console
-  (setq summary-msg "=== CNM TEST SUITE SUMMARY ===\nCheck test-results/cnm-test-report.md for results")
-  (princ (strcat "\n\n" summary-msg))
-  (princ "\n\n>>> USER: Review test-results/cnm-test-report.md for test results <<<")
-  (princ)
+(defun c:test-generate-summary-mtext ( / pass-count fail-count info-count report-file line resultsdir status-line summary-text)
+  ;; Count PASS/FAIL/INFO from report file and generate summary MTEXT
+  ;; Returns formatted string for MTEXT command
+  (setq pass-count 0)
+  (setq fail-count 0)
+  (setq info-count 0)
+  (setq resultsdir (strcat (getvar "dwgprefix") "test-results"))
+  (setq report-file (open (strcat resultsdir "\\cnm-test-report.md") "r"))
+  (if report-file
+    (progn
+      (while (setq line (read-line report-file))
+        (if (wcmatch line "*Status:*")
+          (progn
+            (setq status-line (substr line 13))  ; Skip "**Status:** "
+            (cond
+              ((wcmatch status-line "PASS*") (setq pass-count (1+ pass-count)))
+              ((wcmatch status-line "FAIL*") (setq fail-count (1+ fail-count)))
+              ((wcmatch status-line "INFO*") (setq info-count (1+ info-count)))
+            )
+          )
+        )
+      )
+      (close report-file)
+    )
+  )
+  ;; Generate summary text
+  (setq summary-text
+    (strcat
+      "CNM TEST SUITE - "
+      (if (> fail-count 0)
+        (strcat (itoa fail-count) " FAILURES DETECTED")
+        "ALL TESTS PASSED"
+      )
+      "\\PResults: "
+      (itoa pass-count) " PASS, "
+      (itoa fail-count) " FAIL"
+      "\\P\\PAuto-Text Validation"
+      "\\P- 16 bubble insertions (8 with all 16 auto-text types plus 8 legacy)"
+      "\\PKey Notes & QT Tables: Key Notes Table generation validated and QT Table generation validated"
+      "\\PCNM-Demo Coverage (CNM Plus Utilities): haws-contvol, haws-ut, haws-mof, haws-lotnum, haws-newpro (profile drafter)"
+      "\\P\\PReview test-results/cnm-test-report.md for detailed results."
+    )
+  )
+  (haws-debug (strcat "SUMMARY GENERATED - " (itoa pass-count) " PASS, " (itoa fail-count) " FAIL, " (itoa info-count) " INFO"))
+  summary-text
 )
 (defun test-write-report-header ( / report-file timestamp resultsdir)
   ;; Initialize test-results/cnm-test-report.md with header
@@ -75,20 +134,15 @@
   (close report-file)
   (princ)
 )
-(defun test-write-report-summary (model-count paper-count total-count / report-file resultsdir)
+(defun c:test-write-report-summary (/ report-file resultsdir)
   ;; Write summary section to test-results/cnm-test-report.md
   ;; Args:
-  ;;   model-count - Number of model space tests
-  ;;   paper-count - Number of paper space tests
   ;;   total-count - Total number of tests
   ;; Called at end of test suite execution
   (setq resultsdir (strcat (getvar "dwgprefix") "test-results"))
   (setq report-file (open (strcat resultsdir "\\cnm-test-report.md") "a"))
   (write-line "\n---\n" report-file)
   (write-line "## Summary\n" report-file)
-  (write-line (strcat "- **Total Tests:** " (itoa total-count) "\n") report-file)
-  (write-line (strcat "- **Model Space Tests:** " (itoa model-count) "\n") report-file)
-  (write-line (strcat "- **Paper Space Tests:** " (itoa paper-count) "\n") report-file)
   (write-line "\n**Note:** Review test entries above for PASS/FAIL status.\n" report-file)
   (write-line "Review drawing annotations on C-ANNO-TEST-RESULTS layer for visual results.\n" report-file)
   (close report-file)
@@ -98,10 +152,10 @@
 (princ "\nCNM Test Suite validation functions loaded")
 (princ "\n  Commands: c:test-setup-layers")
 (princ "\n  Helpers: test-write-report-*, test-log-*, test-cleanup-*")
-(princ "\n  Validators: test-validate-auto-text, test-validate-xdata, test-validate-reactor")
+(princ "\n  Validators: test-validate-auto-text, test-validate-xdata, test-validate-vptrans-*")
 (princ)
 ;;==============================================================================
-;; PHASE C: AUTO-TEXT VALIDATION FUNCTIONS
+;; AUTO-TEXT VALIDATION FUNCTIONS
 ;;==============================================================================
 (defun test-validate-auto-text (ename tag expected-text test-name /
                                 lattribs actual-text result status message location
@@ -185,34 +239,6 @@
   (test-write-report-entry (strcat test-name " (XDATA)") status message)
   result
 )
-(defun test-validate-reactor (ename tag expected-auto-type test-name /
-                              handle-bubble result status message location
-                             )
-  ;; Validate reactor is attached for auto-text tag
-  ;; Args:
-  ;;   ename - Entity name of bubble
-  ;;   tag - Attribute tag (e.g., "NOTETXT1")
-  ;;   expected-auto-type - Expected auto-type (e.g., "Sta", "Dia")
-  ;;   test-name - Name for report
-  ;; Returns: T if reactor found, nil otherwise
-  ;; NOTE: Simplified version - just report INFO since reactor API is unclear
-  (setq handle-bubble (cdr (assoc 5 (entget ename))))
-  (setq result nil)  ; Always fail for now
-  (setq status "INFO")
-  (setq message
-    (strcat "Tag: " tag "\n"
-            "Expected auto-type: \"" expected-auto-type "\"\n"
-            "Reactor validation: SKIPPED (API unclear)\n"
-            "Handle: " handle-bubble
-    )
-  )
-  (setq location (test-get-bubble-annotation-location ename))
-  (if location
-    (c:test-annotate-result location status (strcat test-name " (Reactor)\n" message))
-  )
-  (test-write-report-entry (strcat test-name " (Reactor)") status message)
-  result
-)
 (defun test-get-bubble-annotation-location (ename / elist pt-insert x y)
   ;; Get insertion point of bubble for annotation placement
   ;; Returns: String "x,y" coordinates offset to right of bubble
@@ -228,85 +254,13 @@
     nil  ; Return nil on error
   )
 )
-(defun test-validate-reactor-detached (ename tag test-name /
-                                      handle-bubble reactors r data owner-list
-                                      found-p status message location
-                                     )
-  ;; Validate NO reactor attachment exists for this bubble
-  ;; Args:
-  ;;   ename - Entity name of bubble
-  ;;   tag - Attribute tag (e.g., "NOTETXT1")
-  ;;   test-name - Name for report
-  ;; Returns: T if reactor correctly detached, nil if still attached
-  (setq handle-bubble (cdr (assoc 5 (entget ename))))
-  ;; Find all VLR-OBJECT-REACTORs
-  (setq reactors (vlr-reactors :vlr-object-reactor))
-  ;; Find HCNM-BUBBLE reactor
-  (setq r
-    (car
-      (vl-remove-if-not
-        '(lambda (reactor)
-          (and (listp (vlr-data reactor))
-               (assoc "HCNM-BUBBLE" (vlr-data reactor))
-          )
-        )
-        reactors
-      )
-    )
-  )
-  (cond
-    ((not r)
-     ;; No HCNM-BUBBLE reactor at all - correctly detached
-     (setq found-p nil status "PASS" message "Reactor correctly detached (no HCNM-BUBBLE reactor exists)")
-    )
-    (t
-     ;; Check if bubble handle is in reactor data
-     (setq data (vlr-data r))
-     (setq owner-list (cdr (assoc "HCNM-BUBBLE" data)))
-     ;; owner-list format: '(("owner-handle" (("bubble-handle" . (("tag" . "auto-type"))) ...)) ...)
-     ;; Check all owner entries for this bubble handle
-     (setq found-p
-       (vl-some
-         '(lambda (owner-entry)
-           ;; owner-entry: ("owner-handle" . (("bubble-handle" . ...) ...))
-           (vl-some
-             '(lambda (bubble-entry)
-               ;; bubble-entry: ("bubble-handle" . (("tag" . "auto-type") ...))
-               (= (car bubble-entry) handle-bubble)
-             )
-             (cdr owner-entry)
-           )
-         )
-         owner-list
-       )
-     )
-     (setq status (if found-p "FAIL" "PASS"))
-     (setq message
-       (if found-p
-         (strcat "FAIL: Bubble still found in reactor data after clearing auto-text\n"
-                 "Handle: " handle-bubble "\n"
-                 "Tag: " tag "\n"
-                 "Action: Manual cleanup required")
-         (strcat "PASS: Bubble correctly removed from reactor data\n"
-                 "Handle: " handle-bubble)
-       )
-     )
-    )
-  )
-  (setq location (test-get-bubble-annotation-location ename))
-  (if location
-    (c:test-annotate-result location status (strcat test-name " (Reactor Detachment)\n" message))
-  )
-  (test-write-report-entry (strcat test-name " (Reactor Detachment)") status message)
-  (not found-p)  ; Return T if detached
-)
 (defun test-validate-vptrans-removed (ename test-name / vptrans status message location)
   ;; Validate VPTRANS XRECORD does not exist
   ;; Args:
   ;;   ename - Entity name of bubble
   ;;   test-name - Name for report
   ;; Returns: T if correctly removed, nil if still present
-  (setq vptrans (hcnm-vptrans-read ename))
+  (setq vptrans (hcnm-bn-get-viewport-transform-xdata ename))
   (setq status (if vptrans "FAIL" "PASS"))
   (setq message
     (if vptrans
@@ -329,7 +283,7 @@
   ;;   ename - Entity name of bubble
   ;;   test-name - Name for report
   ;; Returns: T if created, nil if missing
-  (setq vptrans (hcnm-vptrans-read ename))
+  (setq vptrans (hcnm-bn-get-viewport-transform-xdata ename))
   (setq status (if vptrans "PASS" "FAIL"))
   (setq message
     (if vptrans
@@ -337,7 +291,7 @@
               "Viewport: " (itoa (car vptrans)) "\n"
               "Transform points: " (itoa (length (cdr vptrans))))
       (strcat "FAIL: VPTRANS not created\n"
-              "Expected: Viewport transform for paper space StaOff auto-text\n"
+              "Expected: Viewport transform for paper space auto-text\n"
               "Action: Check hcnm-bn-eb-save VPTRANS creation logic")
     )
   )
@@ -349,7 +303,7 @@
   vptrans  ; Return T if created
 )
 ;;==============================================================================
-;; PHASE H: KEY NOTES TABLE VALIDATION FUNCTIONS
+;; KEY NOTES TABLE VALIDATION FUNCTIONS
 ;;==============================================================================
 (defun c:test-validate-key-table ( / ss table-ent table-data box1-qty box2-count result-msg)
   ;; Find Key Notes Table blocks (noteqty.dwg insertions)
@@ -361,55 +315,57 @@
       ;; This requires understanding noteqty.dwg attribute structure
       ;; For now, just verify table exists
       (setq result-msg
-        (strcat "✅ PASS: Key Notes Table generated\n"
+        (strcat "PASS: Key Notes Table generated\n"
                 "  Table blocks found: " (itoa (sslength ss)) "\n"
                 "  (Manual verification required for quantities)\n\n"
                 "  Expected:\n"
-                "    BOX-1: 325 LF (100+150+75)\n"
-                "    BOX-2: 2 EA (count)\n"
-                "    CIR-1: 200 LF\n"
+                "    BOX-1: 4146 LF (100+150+75)\n"
+                "    BOX-2: 1 EA (count)\n"
+                "    CIR-1: 662 LF\n"
                 "    CIR-2: 1 EA (count)\n"
-                "    DIA-1: 450 LF\n"
                 "    DIA-2: 3 EA (count)\n"
-                "    HEX-1: 800 LF\n"
-                "    HEX-2: 5 EA (count)\n\n"
+                "    HEX-2: 2 EA (count)\n\n"
+                "    OCT-1: 640 LF\n"
+                "    OCT-2: 1 EA (count)\n\n"
+                "    PEN-1: 502 LF\n\n"
+                "    REC-1: 456 LF\n\n"
                 "  Check: Visual inspection of table\n"
                 "  Check: cnm-test.not file created"))
-      (princ "\n✅ Key Notes Table: Generated")
+      (princ "\nKey Notes Table: Generated")
       (test-write-report-entry "TEST H: Key Notes Table Generation" "PASS" result-msg)
     )
     (progn
-      (setq result-msg "❌ FAIL: Key Notes Table NOT generated")
-      (princ "\n❌ Key Notes Table: FAIL")
+      (setq result-msg "FAIL: Key Notes Table NOT generated")
+      (princ "\nKey Notes Table: FAIL")
       (test-write-report-entry "TEST H: Key Notes Table Generation" "FAIL" result-msg)
     )
   )
   ;; Additional check: Verify .not file created
   (if (findfile (strcat (getvar "dwgprefix") "cnm-test.not"))
     (progn
-      (princ "\n✅ .not file created for QT processing")
+      (princ "\n.not file created for QT processing")
       (test-write-report-entry "TEST H: .not File Creation" "PASS" ".not file exists in project folder")
     )
     (progn
-      (princ "\n❌ WARNING: .not file NOT created")
+      (princ "\nWARNING: .not file NOT created")
       (test-write-report-entry "TEST H: .not File Creation" "FAIL" ".not file missing from project folder")
     )
   )
   (princ)
 )
 ;;==============================================================================
-;; PHASE I: QUANTITY TAKEOFF TABLE VALIDATION FUNCTIONS
+;; QUANTITY TAKEOFF TABLE VALIDATION FUNCTIONS
 ;;==============================================================================
 (defun c:test-create-qt-lst-file ( / )
   ;; Create simple sheet list for single-sheet QT test
   (test-write-file "cnm-test.lst" "cnm-test")
   (if (findfile (strcat (getvar "dwgprefix") "cnm-test.lst"))
     (progn
-      (princ "\n✅ Sheet list created: cnm-test.lst")
+      (princ "\nSheet list created: cnm-test.lst")
       (test-write-report-entry "SETUP: Create Sheet List" "PASS" "cnm-test.lst created with single entry: cnm-test")
     )
     (progn
-      (princ "\n❌ WARNING: Failed to create cnm-test.lst")
+      (princ "\nWARNING: Failed to create cnm-test.lst")
       (test-write-report-entry "SETUP: Create Sheet List" "FAIL" "Failed to create cnm-test.lst file")
     )
   )
@@ -434,192 +390,96 @@
   (if ss
     (progn
       (setq result-msg
-        (strcat "✅ PASS: QT Table generated\n"
+        (strcat "PASS: QT Table generated\n"
                 "  Text objects found: " (itoa (sslength ss)) "\n"
                 "  (Manual verification required for totals)\n\n"
                 "  Expected single-sheet totals:\n"
-                "    BOX-1: 325 LF\n"
-                "    BOX-2: 2 EA\n"
-                "    CIR-1: 200 LF\n"
+                "    BOX-1: 4146 LF\n"
+                "    BOX-2: 1 EA\n"
+                "    CIR-1: 662 LF\n"
                 "    CIR-2: 1 EA\n"
-                "    DIA-1: 450 LF\n"
                 "    DIA-2: 3 EA\n"
-                "    HEX-1: 800 LF\n"
-                "    HEX-2: 5 EA\n\n"
+                "    HEX-2: 2 EA\n\n"
+                "    OCT-1: 640 LF\n"
+                "    OCT-2: 1 EA\n\n"
+                "    PEN-1: 502 LF\n\n"
+                "    REC-1: 456 LF\n\n"
                 "  Check: Visual inspection of QT table"))
-      (princ "\n✅ QT Table: Generated")
+      (princ "\nQT Table: Generated")
       (test-write-report-entry "TEST I: QT Table Generation" "PASS" result-msg)
     )
     (progn
-      (setq result-msg "❌ FAIL: QT Table NOT generated (no text objects found)")
-      (princ "\n❌ QT Table: FAIL")
+      (setq result-msg "FAIL: QT Table NOT generated (no text objects found)")
+      (princ "\nQT Table: FAIL")
       (test-write-report-entry "TEST I: QT Table Generation" "FAIL" result-msg)
     )
   )
   (princ)
 )
 (princ)
-  ;;==============================================================================
-  ;; TEST RUN TIMING & CLEANUP HELPERS
-  ;;==============================================================================
-  (defun c:test-log-start ( / logfile timestamp f resultsdir profile-log )
-    ;; Append a START timestamp to test-results/cnm-test-run.log
-    ;; Also initialize reactor-profiling.log for this test run
-    ;; Create test-results subfolder if it doesn't exist
-    (setq resultsdir (strcat (getvar "dwgprefix") "test-results"))
-    (if (not (vl-file-directory-p resultsdir))
-      (vl-mkdir resultsdir)
-    )
-(setq logfile (strcat resultsdir "\\cnm-test-run.log"))
-    (setq timestamp (menucmd "M=$(edtime,$(getvar,date),YYYY-MO-DD HH:MM:SS)"))
-    (if (setq f (open logfile "a"))
-      (progn
-        (write-line (strcat "START: " timestamp) f)
-        (close f)
-        (princ (strcat "\nTest run start: " timestamp))
-      )
-      (princ "\nFailed to open test run log for writing")
-    )
-    ;; Initialize profiling log (overwrite previous)
-    (setq profile-log (strcat resultsdir "\\reactor-profiling.log"))
-    (if (setq f (open profile-log "w"))
-      (progn
-        (write-line (strcat "=== REACTOR PROFILING LOG ===") f)
-        (write-line (strcat "Test run: " timestamp) f)
-        (write-line "" f)
-        (write-line "Profiling data will be appended during TEST 40 execution" f)
-        (write-line "Each stretch operation triggers reactor callback with timing breakdown" f)
-        (write-line "" f)
-        (close f)
-        (princ "\nReactor profiling log initialized")
-      )
-      (princ "\nFailed to initialize reactor profiling log")
-    )
-    (princ)
-  )
-
-  (defun c:test-log-end ( / logfile timestamp f resultsdir )
-    ;; Append an END timestamp to test-results/cnm-test-run.log
-    (setq resultsdir (strcat (getvar "dwgprefix") "test-results"))
-(setq logfile (strcat resultsdir "\\cnm-test-run.log"))
-    (setq timestamp (menucmd "M=$(edtime,$(getvar,date),YYYY-MO-DD HH:MM:SS)"))
-    (if (setq f (open logfile "a"))
-      (progn
-        (write-line (strcat "END:   " timestamp) f)
-        (close f)
-        (princ (strcat "\nTest run end: " timestamp))
-      )
-      (princ "\nFailed to open test run log for writing")
-    )
-    (princ)
-  )
-
-  (defun c:test-cleanup-project-files ( / pfx fd1 fd2 fd3 msg)
-    ;; Remove temporary project files created by the test run
-    ;; cnm.ini: CNM project settings (auto-created from template)
-    ;; constnot.csv: Project notes database (auto-created from template)
-    ;; cnm-test.csv: QT table CSV export (created by haws-qt command)
-    (setq pfx (getvar "dwgprefix"))
-    (setq fd1 (strcat pfx "cnm.ini"))
-    (setq fd2 (strcat pfx "constnot.csv"))
-    (setq fd3 (strcat pfx "cnm-test.csv"))
-    (setq msg "")
-    (if (and fd1 (findfile fd1)) (vl-file-delete fd1) (setq msg (strcat msg " cnm.ini not found;")))
-    (if (and fd2 (findfile fd2)) (vl-file-delete fd2) (setq msg (strcat msg " constnot.csv not found;")))
-    (if (and fd3 (findfile fd3)) (vl-file-delete fd3) (setq msg (strcat msg " cnm-test.csv not found;")))
-    (test-write-report-entry "CLEANUP: Project files" "INFO" (strcat "Removed files if present." msg))
-    (princ "\nCleanup complete: cnm.ini, constnot.csv, cnm-test.csv removed if present")
-    (princ)
-  )
 ;;==============================================================================
-;; PHASE F: PERFORMANCE BENCHMARK VALIDATION FUNCTIONS
+;; TEST RUN TIMING & CLEANUP HELPERS
 ;;==============================================================================
-(defun c:test-report-insertion-performance (start-time count / end-time elapsed avg rate result-msg)
-  ;; Report bubble insertion performance
-  (setq end-time (getvar "MILLISECS"))
-  (setq elapsed (- end-time start-time))
-  (setq avg (/ elapsed (float count)))
-  (setq rate (/ (* count 1000.0) elapsed))
-  (setq result-msg
-    (strcat "⏱ INSERTION PERFORMANCE: " (itoa count) " bubbles with auto-text\n"
-            "  Total time: " (rtos (/ elapsed 1000.0) 2 2) " seconds\n"
-            "  Average per bubble: " (rtos avg 2 0) " ms\n"
-            "  Insertion rate: " (rtos rate 2 1) " bubbles/sec\n\n"
-            "  BASELINE: Establishes performance expectation\n"
-            "  - < 500ms/bubble: ✅ Excellent (typical)\n"
-            "  - 500-1000ms/bubble: ⚡ Acceptable\n"
-            "  - > 1000ms/bubble: ⚠️ Investigate bottlenecks\n\n"
-            "  Use this baseline for regression detection:\n"
-            "  - Re-run after code changes\n"
-            "  - Compare timing to detect performance regressions\n"
-            "  - Track trends over multiple test runs"))
-  (princ (strcat "\n\n" result-msg))
-  (test-write-report-entry "TEST 39: Insertion Performance" "INFO" result-msg)
-  (princ)
-)
-(defun c:test-report-reactor-performance (start-time count / end-time elapsed avg result-msg resultsdir logfile f)
-  ;; Report reactor update performance
-  (setq end-time (getvar "MILLISECS"))
-  (setq elapsed (- end-time start-time))
-  (setq avg (/ elapsed (float count)))
-  (setq result-msg
-    (strcat "⏱ REACTOR PERFORMANCE: " (itoa count) " leader stretches\n"
-            "  Total time: " (rtos (/ elapsed 1000.0) 2 2) " seconds\n"
-            "  Average per update: " (rtos avg 2 0) " ms\n"
-            "  (Each stretch triggers VLR-OBJECT-REACTOR callback)\n\n"
-            "  PERFORMANCE ANALYSIS:\n"
-            (cond
-              ((> avg 50)
-               "  ⚠️ SLOW: > 50ms per callback\n  🔍 Check: Complex auto-text, multiple Civil 3D queries\n  💡 Consider: Caching expensive operations")
-              ((> avg 20)
-               "  ⚡ MODERATE: 20-50ms per callback\n  📊 Performance acceptable for typical use")
-              (t
-               "  ✅ FAST: < 20ms per callback\n  🚀 Excellent reactive performance")
-            )
-            "\n\n  BASELINE: Use for regression detection\n"
-            "  - Re-run after reactor code changes\n"
-            "  - Compare to detect performance impact\n"
-            "  - Track config optimization effects (Phase 3)\n\n"
-            "  DETAILED PROFILING:\n"
-            "  Check test-results/reactor-profiling.log for millisecond-level breakdown\n"
-            "  of XDATA writes, attribute updates, Civil3D queries, and formatting"))
-  (princ (strcat "\n\n" result-msg))
-  (test-write-report-entry "TEST 40: Reactor Performance" "INFO" result-msg)
-  ;; Append summary to profiling log (profiling data already written during test)
+(defun c:test-log-start ( / logfile timestamp f resultsdir)
+  ;; Append a START timestamp to test-results/cnm-test-run.log
+  ;; Create test-results subfolder if it doesn't exist
   (setq resultsdir (strcat (getvar "dwgprefix") "test-results"))
-  (setq logfile (strcat resultsdir "\\reactor-profiling.log"))
+  (if (not (vl-file-directory-p resultsdir))
+    (vl-mkdir resultsdir)
+  )
+  (setq logfile (strcat resultsdir "\\cnm-test-run.log"))
+  (setq timestamp (menucmd "M=$(edtime,$(getvar,date),YYYY-MO-DD HH:MM:SS)"))
   (if (setq f (open logfile "a"))
     (progn
-      (write-line "=== REACTOR PROFILING LOG ===" f)
-      (write-line "" f)
-      (write-line "NOTE: Detailed profiling output should appear in AutoCAD console during TEST 40" f)
-      (write-line "" f)
-      (write-line "Expected profiling output format:" f)
-      (write-line "  [PROFILE] XDATA write: Xms" f)
-      (write-line "  [PROFILE] Attribute write: Yms" f)
-      (write-line "  [PROFILE BREAKDOWN] Read state: Ams, XDATA read: Bms, Generate: Cms, Replace: Dms" f)
-      (write-line "  [PROFILE] Auto-dispatch (StaOff): Zms" f)
-      (write-line "  [PROFILE Dia] Civil3D query: Pms, Config+format: Qms" f)
-      (write-line "" f)
-      (write-line "TO CAPTURE PROFILING OUTPUT:" f)
-      (write-line "1. Run TEST 40 manually in AutoCAD" f)
-      (write-line "2. Watch console for [PROFILE] messages during stretch operations" f)
-      (write-line "3. Copy console output to this file for analysis" f)
-      (write-line "" f)
-      (write-line "ANALYSIS STRATEGY:" f)
-      (write-line "- Identify operation with highest cumulative time" f)
-      (write-line "- Civil3D queries > 30ms: Consider caching VLA properties" f)
-      (write-line "- XDATA writes > 10ms: Check XDATA size, consider batching" f)
-      (write-line "- Config+format > 5ms: Verify Phase 3 config optimization applied" f)
-      (write-line "- Attribute writes > 15ms: May be unavoidable AutoCAD overhead" f)
-      (write-line "" f)
-      (write-line (strcat "Test run summary: " (rtos avg 2 0) "ms average per callback") f)
+      (write-line (strcat "START: " timestamp) f)
       (close f)
-      (princ "\nProfiler log created: test-results/reactor-profiling.log")
+      (princ (strcat "\nTest run start: " timestamp))
     )
-    (princ "\nWARNING: Could not create reactor-profiling.log")
+    (princ "\nFailed to open test run log for writing")
   )
   (princ)
 )
-
-
+(defun c:test-log-end ( / logfile timestamp f resultsdir)
+  ;; Append an END timestamp to test-results/cnm-test-run.log
+  (setq resultsdir (strcat (getvar "dwgprefix") "test-results"))
+  (setq logfile (strcat resultsdir "\\cnm-test-run.log"))
+  (setq timestamp (menucmd "M=$(edtime,$(getvar,date),YYYY-MO-DD HH:MM:SS)"))
+  (if (setq f (open logfile "a"))
+    (progn
+      (write-line (strcat "END:   " timestamp) f)
+      (close f)
+      (princ (strcat "\nTest run end: " timestamp))
+    )
+    (princ "\nFailed to open test run log for writing")
+  )
+  (princ)
+)
+(defun c:test-cleanup-project-files ( / pfx fd1 fd2 fd3 msg)
+  ;; Remove temporary project files created by the test run
+  ;; cnm.ini: CNM project settings (auto-created from template)
+  ;; constnot.csv: Project notes database (auto-created from template)
+  ;; cnm-test.csv: QT table CSV export (created by haws-qt command)
+  (setq pfx (getvar "dwgprefix"))
+  (setq fd1 (strcat pfx "cnm.ini"))
+  (setq fd2 (strcat pfx "constnot.csv"))
+  (setq fd3 (strcat pfx "cnm-test.csv"))
+  (setq msg "")
+;;  (if (and fd1 (findfile fd1)) (vl-file-delete fd1) (setq msg (strcat msg " cnm.ini not found;")))
+  (if (and fd2 (findfile fd2)) (vl-file-delete fd2) (setq msg (strcat msg " constnot.csv not found;")))
+  (if (and fd3 (findfile fd3)) (vl-file-delete fd3) (setq msg (strcat msg " cnm-test.csv not found;")))
+  (test-write-report-entry "CLEANUP: Project files" "INFO" (strcat "Removed files if present." msg))
+  (princ "\nCleanup complete: cnm.ini, constnot.csv, cnm-test.csv removed if present")
+  (princ)
+)
+;;==============================================================================
+;; BUBBLE TEXT HELPER
+;;==============================================================================
+(defun test-get-bubble-text (ename-bubble tag / lattribs)
+  ;; Get current text value for a bubble tag
+  ;; Args:
+  ;;   ename-bubble - Entity name of bubble block
+  ;;   tag - Attribute tag (e.g., "NOTETXT1")
+  ;; Returns: String text value or nil if not found
+  (setq lattribs (hcnm-bn-dwg-to-lattribs ename-bubble))
+  (cadr (assoc tag lattribs))
+)

@@ -1,15 +1,16 @@
 ; CNM Test Suite - Main Test Script
-; Purpose: Comprehensive regression testing for CNM bubble notes
+; Purpose: Comprehensive regression testing for the entire CNM Plus repository, focusing at the moment on bubble notes auto text and updater.
 ;
 ; Execution: Drag this .scr file into cnm-test-start.dwg
 ;
 ; Config:
 ; Note that all spaces are significant on script lines. You can't pad anything.
+; Deletes file at start.
+; Turn on logging.
 ; This logs all debug messages to (strcat (getvar "dwgprefix") "haws-debug-log.md").
-; This may have unacceptable overhead.
-; You have to delete the file or its contents manually or automatically if you don't want it to keep growing.
+; Logging may have unacceptable overhead.
 (haws-setvar "DebugLevel" "1")
-; This may have unacceptable overhead.
+; Clocking may have unacceptable overhead.
 ;(load "haws-clock.lsp")
 ;
 ; Prerequisites:
@@ -32,32 +33,78 @@
 ;
 ; CRITICAL FOR AI AGENTS - Script Line Break Handling:
 ;   Scripts differ from code - EVERY line and space (including blanks) is significant!
-;   
-;   HAWS-ELLL prompt sequence (bubble insertion):
-;     Line N:   Command name (HAWS-ELLL)
+;
+;
+; BUBBLE NOTES AUTO TEXT TEST ORGANIZATION
+;
+; 1. Initial properties:
+;    1.1. Alignment: Name "OAK ST", Start point (10040, 20240), End point (10680,20240)
+;    1.2. Pipe: Start point (10040, 20200, 100), End point (10680,20200, 98), Length 640, SLOPE 0.3125%
+;    1.3. Bubble notes insertion grid is defined at test-grid-coordinates.csv
+;    1.4. Viewport translation: Scale 1/20XP, Alignment start PS coordinates 2,12
+; 2. Elements to test: paper/model, left/right, all (16) auto text types (can do with 8 bubbles or enable more lines per bubble), copy, flip, stretch all coordinate-based arrowheads, stretch alignment and pipe, updater.
+; 3. Bubbles to place:
+;    ID  Col Row TYP NUM   Line1   Assertion               Line2 Assertion    COORD-P SPACE X1,Y1        X2,Y2       NOTES
+;    1   1L  3U  BOX 2     NE      N 20270.00, E 10340.00  TEXT  [SEE NOTES]  T       PS    17.0,13.5    16.8,14.0   SELECT TEXT AT (14,12.5) STRING = "CLICK HERE (```), THEN NE, THEN OK."
+;    1E  (post-edit)               N 20270.00, E 10340.00        [SEE NOTES]  T       PS                             Line2 = "CLICK HERE (N 20270.00, E 10340.00), THEN NE, THEN OK."
+;    2   1L  2U  CIR 2     STAOFF  STA 53+00.00, 20.00 LT  ENTRY [SEE NOTES]  T       PS    17.0,13.0    16.8,13.5   Line2 = "CLICK HERE, THEN STAOFF, THEN OK."
+;    2E  (post-edit)               STA 53+00.00, 20.00 LT        [SEE NOTES]  T       PS                             Line2 = "CLICK HERE, THEN STAOFF, THEN OK.STA 53+00.00, 20.00 LT"
+;    3   1L  CEN DIA 2     STANAME STA 53+00.00 OAK ST     OFF   0.00' RT     T       PS    17.0,12.0    16.8,12.5
+;    4   1L  4D  HEX 2     DIA     18"                     SLOPE 0.31%        NIL     PS    17.0,10.0    16.8,9.5
+;    5   1R  3U  BOX 1     SF      3840 SF                 SY    427 SY       NIL     MS    10380,20270  10385,20280
+;    6   1R  2U  CIR 1     LF      640 LF                  N     N 20260.00   T       MS    10380,20260  10385,20270
+;    7   1R  CEN DIA 2     NAME    OAK ST                  STA   STA 53+40.00 T       MS    10380,20240  10385,20250
+;    8   1R  4D  OCT 1     L       L=640'                  E     E 10380.00   T       MS    10380,20200  10385,20190
+; 4. Notes:
+;    4.1. Bubbles 1 and 2 are edited after placement and validation. Then their edits are validated (second validation). Tester simply clicks OK in the editor dialog.
+;    4.2. The test suite has a custom cnm.ini to force expected behavior for validation. This allows testing on user machines.
+;
+;   HAWS-???L prompt sequence (bubble insertion):
+;     Line N:   Command name (HAWS-???L)
 ;     Line N+1: Arrow point coordinate
-;     Line N+2: Leader start coordinate
+;     Line N+2: Bubble note insertion point coordinate
 ;     Line N+3: Note number
 ;     Line N+4: Line 1 text response (blank = skip, "." = auto-text, "text" = manual)
-;     Line N+5: [if "." on N+4] Auto-type selection (sta/dia/lf/n/e/etc.)
-;     Line N+6: [if auto-text needs it] Object selection coordinate or viewport confirmation
-;     Line N+7: Line 2 text response (blank = skip, "." = auto-text, "text" = manual)
-;   
-;   Example - Auto-text on Line 1, skip Line 2:
-;     HAWS-ELLL
+;     Line N+5: [if "." on N+4] Auto-type selection. See cnm.lsp:hcnm-bn-auto-text-definitions function
+;     Line N+6: [if auto-text needs it] Object selection coordinate
+;     Line N+7: [if paper space] Viewport assignment (Enter accepts only viewport in test drawing)
+;     Line N+8: Line 2 text response (blank = skip, "." = auto-text, "text" = manual)
+;
+;   VIEWPORT ASSIGNMENT (paper space only):
+;     Every new paper space bubble note needs a viewport assignment so CNM knows
+;     which viewport to "look through" for model space coordinate tranSForms.
+;     - If the auto-text requires an object selection (Sta/Off/STAOFF/DIA/etc.),
+;       the viewport is determined from the selected object's viewport. No extra prompt.
+;     - If there is NO object to select (N/E/NE), CNM prompts the user to click
+;       the target viewport. In the test drawing there is only one viewport,
+;       so all we need is an extra blank line (Enter) to accept it.
+;     - Model space bubbles never need viewport assignment.
+;
+;   Example - Box bubble note with handle-based coordinate-based auto-text on Line 1, skip Line 2 (model space):
+;     HAWS-BOXL
 ;     850,600      ; Arrow point
 ;     800,600      ; Leader start
 ;     1            ; Note number
 ;     .            ; Line 1: use auto-text
 ;     sta          ; Auto-type selection
-;     800,500      ; Alignment selection
+;     800,500      ; Alignment selection (also determines viewport if paper space)
 ;                  ; Line 2: blank = skip (CRITICAL - don't omit this!)
-;   
+;
+;   Example - Circle bubble note with handleless coordinate-based auto-text (paper space, viewport prompt):
+;     HAWS-CIRL
+;     17.0,13.0    ; Arrow point (paper space coords)
+;     16.75,13.5   ; Leader start (paper space coords)
+;     15           ; Note number
+;     .            ; Line 1: use auto-text
+;     n            ; Auto-type: Northing (no object to select)
+;                  ; Viewport assignment: Enter accepts the one viewport
+;                  ; Line 2: blank = skip
+;
 ;   Common AI mistake: Forgetting Line 2 skip blank after auto-text selection
 ;   Without that blank, script fails or puts unexpected text on Line 2
 ;
 ; Debugging Tips:
-;   - Run one test at a time by copying lines to command line
+;   - Run one test at a time by copying lines to AutoCAD command line
 ;   - Check (entlast) after each HAWS-ELLL to verify bubble created
 ;   - Use (test-validate-auto-text ...) manually to check expected values
 ;   - If script fails, check line number in error message
@@ -66,700 +113,276 @@
 ; === SETUP ===
 ; As of v5.5.37, cnm only autoloads, which is good progress (previously was front-loaded for its config functions used elsewhere). So we load it here for the config functions used here.
 (load "cnm")
-(haws-tip 10 "This script changes and tries to restore the following variable settings. If it fails to complete, you may need to restore them the way you want them manually.\n\n\t- (setvar \"expert\" 2)\n\t- (hcnm-config-setvar \"BubbleSkipEntryPrompt\" \"0\")")
-filedia
+; Delete debug log from previous test runs
+(if (findfile (strcat (getvar "dwgprefix") "haws-debug-log.md")) (vl-file-delete (strcat (getvar "dwgprefix") "haws-debug-log.md")))
+(haws-tip 10 "Script conditions and notes.\n\n1. Changes and tries to restore the following variable settings. If it fails to complete, you may need to restore them the way you want them manually.\n\n\t- (setvar \"expert\" 2).\n\n2. Assumes that bubble prompts are enabled for only Line 1 and Line 2, and that Skip Entry Prompt is turned off.")
+fileDIA
 0
 (setq *expert-old* (getvar "expert"))
 (setvar "expert" 2)
 (command "._saveas" "" (strcat (getvar "dwgprefix") "cnm-test.dwg"))
 (setvar "expert" *expert-old*)
-(setq *BubbleSkipEntryPrompt-old* (hcnm-config-getvar "BubbleSkipEntryPrompt"))
-(hcnm-config-setvar "BubbleSkipEntryPrompt" "0")
 (load (strcat (getvar "dwgprefix") "cnm-test-validation.lsp"))
 (c:test-setup-layers)
 (test-write-report-header)
 (c:test-log-start)
-; Switch to model space (drawing starts on TEST-LAYOUT)
+; Switch to model space for initial zoom (drawing starts on TEST-LAYOUT)
 mspace
 zoom
 extents
-; === EDITOR WORKFLOW TESTS (MANUAL INTERVENTION REQUIRED) ===
 ;
-; CRITICAL: These tests require tester to follow on-screen instructions
-; Script auto-pauses at editor dialogs, resumes when tester clicks OK/Save
+; === BUBBLE NOTES AUTO TEXT TESTS ===
+; 8 planned insertions testing all 16 auto-text types (2 per bubble)
+; See plan at header lines 46-57
+; See notes 4.1 (editor tests) and 4.2 (custom cnm.ini)
 ;
-; TEST E1: Delimiter-based auto-text insertion (Paper Space + VPTRANS)
-; Position: 1C-1U = Column 1 Center, Row 1 Up
-; Arrow: (7", 13") paper = (10340', 20240') model via viewport
-; Tests: Delimiter replacement and manual text preservation, VPTRANS creation, paper space transform
-; WORKFLOW: Tester clicks StaOff button → dialog prompts for alignment → script provides coordinate (10340,20240)
-; Config: No hooks, with mtext
-;;
+; PREREQUISITE: cnm-test-start.dwg must contain a TEXT entity at paper space
+; coordinates (14,12.5) with string "CLICK HERE (```), THEN NE, THEN OK."
+; for the Text auto-type test in Bubble 1 Line 2.
+;
+; === PAPER SPACE BUBBLES 1-4 ===
 pspace
-(hcnm-config-setvar "BubbleHooks" "0")
-(hcnm-config-setvar "BubbleMtext" "1")
-HAWS-ELLL
-7,13
-6.5,13.5
-E1
-INSTALL AT ```. L=4', A=24', B=6.33'
-Click in Line 1, click StaOff, then OK.
-(setq test-e1-handle (cdr (assoc 5 (entget (entlast)))))
-HAWS-EE
-L
-
-10340,20240
-; Validation after tester completes edit dialog
-(test-validate-auto-text (handent test-e1-handle) "NOTETXT1" "INSTALL AT STA 51+00.00, 20.00 LT. L=4', A=24', B=6.33'" "TEST E1: Delimiter Insertion")
-(test-validate-xdata (handent test-e1-handle) "NOTETXT1" "StaOff" "TEST E1")
-(test-validate-reactor (handent test-e1-handle) "NOTETXT1" "StaOff" "TEST E1")
-(test-validate-vptrans-created (handent test-e1-handle) "TEST E1")
-; Additional: Verify delimiter was replaced (not just appended)
-(setq e1-text (cadr (assoc "NOTETXT1" (hcnm-bn-dwg-to-lattribs (handent test-e1-handle)))))
-(if (vl-string-search "```" e1-text) (test-write-report-entry "TEST E1 (Delimiter)" "FAIL" "Delimiter not replaced - still present in text") (test-write-report-entry "TEST E1 (Delimiter)" "PASS" "Delimiter correctly replaced with auto-text"))
 ;;
-;; TEST E2: Append Dia auto text with StaOff auto-text (Model Space)
-;; Position: 2C-1D = Column 2 Center, Row 1 Down
-;; Arrow: (10280',20230'), Bubble: (10275',20220')
-;; Tests: Smart search/replace (keep auto text), StaOff auto-text, Dia auto-text
-;; WORKFLOW: Tester clicks in Line 1, clicks StaOff button → dialog prompts for alignment → script provides coordinate (10340,20240)
-;; Config: With hooks, with mtext (both enabled)
+;; BUBBLE 1: NE + Text (Paper Space, 1L 3U)
+;; Arrow: 17.0,13.5 (PS) = Model (10340,20270)
+;; Bubble: 16.8,14.0
+;; Line 1: NE (handleless → viewport prompt, Enter accepts)
+;; Line 2: Text (select text entity at PS 14,12.5)
+;; COORD-P: T
 ;;
-mspace
-(hcnm-config-setvar "BubbleHooks" "1")
-(hcnm-config-setvar "BubbleMtext" "1")
-HAWS-ELLL
-10280,20230
-10275,20220
-E2
-.
-dia
-10360,20200
-Click in Line 1, click StaOff, then OK.
-(setq test-e2-handle (cdr (assoc 5 (entget (entlast)))))
-HAWS-EE
-L
-
-10340,20240
-; Validation after tester completes edit dialog
-(test-validate-auto-text (handent test-e2-handle) "NOTETXT1" "18\"STA 52+40.00, 10.00 RT" "TEST E2: Replace with Auto-Text")
-(test-validate-xdata (handent test-e2-handle) "NOTETXT1" "Dia" "TEST E2")
-(test-validate-reactor (handent test-e2-handle) "NOTETXT1" "Dia" "TEST E2")
-; Additional: Verify both auto-texts present (Dia + StaOff appended, not replaced)
-(setq e2-text (cadr (assoc "NOTETXT1" (hcnm-bn-dwg-to-lattribs (handent test-e2-handle)))))
-(if (and (vl-string-search "18\"" e2-text) (vl-string-search "STA" e2-text)) (test-write-report-entry "TEST E2 (Append)" "PASS" "Both Dia and StaOff auto-texts present") (test-write-report-entry "TEST E2 (Append)" "FAIL" "Missing expected auto-text - should have both Dia and StaOff"))
-;;
-;; TEST E3: Clear auto-text and revert to manual (Model Space)
-;; Position: 3C-2D = Column 3 Center, Row 2 Down
-;; Arrow: (10460',20220'), Bubble: (10455',20210')
-;; Tests: XDATA cleanup, reactor detachment, manual text replacement
-;; WORKFLOW: Insert with NE auto-text, then manually replace in one edit
-;; Config: No hooks, no mtext (baseline)
-;;
-(hcnm-config-setvar "BubbleHooks" "0")
-(hcnm-config-setvar "BubbleMtext" "0")
-HAWS-ELLL
-10460,20220
-10455,20210
-E3
-.
-ne
-Replace Line 1 text with USER and click OK.
-(setq test-e3-handle (cdr (assoc 5 (entget (entlast)))))
-; Edit: Replace auto-text with manual text
-HAWS-EE
-L
-
-; Validation after tester completes edit dialog
-(test-validate-auto-text (handent test-e3-handle) "NOTETXT1" "USER" "TEST E3: Clear Auto-Text")
-; Validate XDATA cleared
-(setq xdata-e3 (hcnm-xdata-read (handent test-e3-handle)))
-(if (assoc "NOTETXT1" xdata-e3) (test-write-report-entry "TEST E3 (XDATA Cleanup)" "FAIL" (strcat "XDATA not cleared - entry still exists: " (vl-prin1-to-string (assoc "NOTETXT1" xdata-e3)))) (test-write-report-entry "TEST E3 (XDATA Cleanup)" "PASS" "XDATA cleared correctly"))
-; Validate reactor detached
-(test-validate-reactor-detached (handent test-e3-handle) "NOTETXT1" "TEST E3")
-; Validate VPTRANS not present (model space)
-(test-validate-vptrans-removed (handent test-e3-handle) "TEST E3")
-; Validate reactor detached
-(test-validate-reactor-detached (handent test-e3-handle) "NOTETXT1" "TEST E3")
-; Validate VPTRANS removed (if applicable)
-(test-validate-vptrans-removed (handent test-e3-handle) "TEST E3")
-;;
-; === PHASE C: AUTO-TEXT TESTS ===
-;
-; STRATEGY: Paper space focus validates VPTRANS architecture (weeks of work!)
-; - Model space: 6 quick validation tests (basic functionality works)
-; - Paper space: 10 comprehensive VPTRANS tests (coordinate transformation)
-;
-; CRITICAL WORKFLOW NOTES:
-; - Model space: NO viewport confirmation needed (already in model space)
-; - Paper space: After alignment/pipe selection, Enter accepts, NO viewport prompt
-; - Paper space: Bubble placed in paper, selection happens through viewport to model
-;
-; === MODEL SPACE TESTS (Quick Validation - 6 tests) ===
-; COORDINATE SYSTEM: +10000' X offset, +20000' Y offset (civil engineering best practice)
-; Viewport center: (10360', 20240') model = (18", 12") paper @ 1/20XP scale
-; Grid: 60' column spacing, 10' row spacing
-; Alignment "OAK ST": (10040',20240') to (10680',20240'), Station 50+00 at X=10040'
-; Pipe "18\" STORM": (10040',20200') to (10680',20200'), 18" diameter, -0.31% slope
-; Curb line: (10040',20260') to (10680',20260'), 640 LF
-;;
-;; TEST 1: Sta (Model) - Station from alignment
-;; Position: 1L-1U = Column 1 Left, Row 1 Up
-;; Arrow: (10340',20250'), Bubble: (10335',20260')
-;; Selection: Alignment at (10360',20240') - center X, avoids bubbles/leaders
-;; Calculation: X=10340' - Start X=10040' = 300', Station 50+00 + 300' = STA 53+00.00
-;; Config: No hooks, no mtext (baseline)
-;;
-(hcnm-config-setvar "BubbleHooks" "0")
-(hcnm-config-setvar "BubbleMtext" "0")
-HAWS-ELLL
-10340,20250
-10335,20260
-1
-.
-sta
-10360,20240
-
-(test-validate-auto-text (entlast) "NOTETXT1" "STA 53+00.00" "TEST 1: Sta (Model)")
-(test-validate-xdata (entlast) "NOTETXT1" "Sta" "TEST 1")
-(test-validate-reactor (entlast) "NOTETXT1" "Sta" "TEST 1")
-sdi
-1
-(command "._qsave" "._open" (strcat (getvar "dwgprefix") "cnm-test.dwg"))
-sdi
-0
-(haws-setvar "DebugLevel" "1")
-;(load "haws-clock.lsp")
-;;
-;; TEST 2: Dia (Model) - Pipe diameter
-;; Position: 3L-4D = Column 3 Left, Row 4 Down
-;; Arrow: (10220',20200'), Bubble: (10215',20190')
-;; Selection: Pipe at (10360',20200') - center X, avoids bubbles/leaders
-;; Expected: 18" diameter
-;; Config: With hooks, no mtext
-;;
-(hcnm-config-setvar "BubbleHooks" "1")
-(hcnm-config-setvar "BubbleMtext" "0")
-HAWS-ELLL
-10220,20200
-10215,20190
+HAWS-BOXL
+17.0,13.5
+16.8,14.0
 2
 .
-dia
-10360,20200
+ne
 
-(test-validate-auto-text (entlast) "NOTETXT1" "18\"" "TEST 2: Dia (Model)")
-(test-validate-xdata (entlast) "NOTETXT1" "Dia" "TEST 2")
-(test-validate-reactor (entlast) "NOTETXT1" "Dia" "TEST 2")
-sdi
-1
-(command "._qsave" "._open" (strcat (getvar "dwgprefix") "cnm-test.dwg"))
-sdi
-0
-(haws-setvar "DebugLevel" "1")
-;(load "haws-clock.lsp")
-;;
-;; TEST 3: N (Model) - Northing coordinate
-;; Position: 2L-2U = Column 2 Left, Row 2 Up
-;; Arrow: (10280',20260'), Bubble: (10275',20270')
-;; No selection (coordinate-based)
-;; Expected: N 20260.00 (arrow Y coordinate)
-;; Config: No hooks, with mtext
-;;
-(hcnm-config-setvar "BubbleHooks" "0")
-(hcnm-config-setvar "BubbleMtext" "1")
-HAWS-ELLL
-10280,20260
-10275,20270
-3
 .
-n
+text
+14,12.5
+(test-validate-auto-text (entlast) "NOTETXT1" "N 20270.00, E 10340.00" "BUBBLE 1, BOX 1, LINE 1: NE (Paper)")
+(test-validate-xdata (entlast) "NOTETXT1" "NE" "BUBBLE 1, BOX 1, LINE 1")
+(test-validate-auto-text (entlast) "NOTETXT2" "CLICK HERE (```), THEN NE, THEN OK." "BUBBLE 1, BOX 1, LINE 2: Text (Paper)")
+(test-validate-vptrans-created (entlast) "BUBBLE 1, BOX 1")
+;;
+;; === EDITOR WORKFLOW TESTS (Note 4.1, plan entries 1E and 2E) ===
+;; Bubbles 1 and 2 are edited after placement and validation.
+;; CRITICAL: These tests require tester to click OK in the edit dialog.
+;; Script pauses at editor dialog, resumes when tester clicks OK.
+;; Post-edit: Verify values expected after roundtrip through editor.
+;;
+;; EDIT BUBBLE 1 (1E): Editor auto text insertion test
+;; Tester sees edit dialog for Bubble 1. Action: Click in Line 2, then click NE, then click OK.
+;; Expected: Line 1 unchanged. Line 2 per plan.
+;;
+pspace
+;; Invoke editor: pick bubble 1, Enter to end selection
+HAWS-EE
+last
 
-(test-validate-auto-text (entlast) "NOTETXT1" "N 20260.00" "TEST 3: N (Model)")
-(test-validate-xdata (entlast) "NOTETXT1" "N" "TEST 3")
-(test-validate-reactor (entlast) "NOTETXT1" "N" "TEST 3")
-sdi
-1
-(command "._qsave" "._open" (strcat (getvar "dwgprefix") "cnm-test.dwg"))
-sdi
-0
-(haws-setvar "DebugLevel" "1")
-;(load "haws-clock.lsp")
+;; dialog opens. Tester clicks as instructed. Script resumes.
+;; Post-edit validation (1E): verify values expected after roundtrip
+(test-validate-auto-text (entlast) "NOTETXT1" "N 20270.00, E 10340.00" "EDIT 1E, BOX 1, LINE 1: NE preserved after edit")
+(test-validate-xdata (entlast) "NOTETXT1" "NE" "EDIT 1E, BOX 1")
+(test-validate-auto-text (entlast) "NOTETXT2" "CLICK HERE (N 20270.00, E 10340.00), THEN NE, THEN OK." "EDIT 1E, BOX 1, LINE 2: NE inserted at ``` after edit")
+(test-validate-xdata (entlast) "NOTETXT2" "NE" "EDIT 1E, BOX 1, LINE 2")
 ;;
-;; TEST 4: LF (Model) - Linear feet from curb line
-;; Position: 1R-2U = Column 1 Right, Row 2 Up
-;; Arrow: (10380',20260'), Bubble: (10385',20270')
-;; Selection: Curb line at (10360',20260') - center X, avoids bubbles/leaders
-;; NOTE: CNM uses AutoCAD field expressions for dynamic length - this is CORRECT
-;; Field format: %<\AcObjProp Object(...).Length ...>% LF
-;; Config: With hooks, with mtext (both enabled)
+;; BUBBLE 2: STAOFF + Entry (Paper Space, 1L 2U)
+;; Arrow: 17.0,13.0 (PS) = Model (10340,20260)
+;; Bubble: 16.8,13.5
+;; Line 1: STAOFF (alignment selection → determines viewport)
+;; Line 2: Entry (default with no . entry)
+;; COORD-P: T
 ;;
-(hcnm-config-setvar "BubbleHooks" "1")
+HAWS-CIRL
+17.0,13.0
+16.8,13.5
+2
+.
+STAOFF
+10360,20240
+CLICK HERE, THEN STAOFF, THEN OK.
+(test-validate-auto-text (entlast) "NOTETXT1" "STA 53+00.00, 20.00 LT" "BUBBLE 2, CIR 1, LINE 1: STAOFF (Paper)")
+(test-validate-xdata (entlast) "NOTETXT1" "STAOFF" "BUBBLE 2, CIR 1, LINE 1")
+(test-validate-auto-text (entlast) "NOTETXT2" "CLICK HERE, THEN STAOFF, THEN OK." "BUBBLE 2, CIR 1, LINE 2: Manual text entry")
+(test-validate-vptrans-created (entlast) "BUBBLE 2, CIR 1")
+;;
+;; EDIT BUBBLE 2 (2E): Editor auto text appending test
+;; Tester sees edit dialog for Bubble 2. Action: Just click OK.
+;; Expected: Line 1 unchanged. Line 2 per plan.
+;;
+;; Invoke editor: pick bubble 2, Enter to end selection
+HAWS-EE
+last
+
+;; dialog opens. Tester clicks as instructed. Accept previous alignment selection.
+
+;; Tester clicks OK. Script resumes.
+;; Post-edit validation (2E): verify values expected after roundtrip
+(test-validate-auto-text (entlast) "NOTETXT1" "STA 53+00.00, 20.00 LT" "EDIT 2E, CIR 1, LINE 1: STAOFF preserved after edit")
+(test-validate-xdata (entlast) "NOTETXT1" "STAOFF" "EDIT 2E, CIR 1, LINE 1")
+(test-validate-auto-text (entlast) "NOTETXT2" "CLICK HERE, THEN STAOFF, THEN OK.STA 53+00.00, 20.00 LT" "EDIT 2E, CIR 1, LINE 2: STAOFF appended after edit")
+(test-validate-xdata (entlast) "NOTETXT2" "STAOFF" "EDIT 2E, CIR 1, LINE 2")
+;;
+;;
+;; BUBBLE 3: STANAME + OFF (Paper Space, 1L CEN)
+;; Arrow: 17.0,12.0 (PS) = Model (10340,20240) - exactly on alignment
+;; Bubble: 16.8,12.5
+;; Line 1: STANAME (alignment selection → determines viewport)
+;; Line 2: OFF (reuses alignment from Line 1 with Enter)
+;; COORD-P: T
+;;
+HAWS-DIAL
+17.0,12.0
+16.8,12.5
+2
+.
+STANAME
+10360,20240
+.
+off
+
+(test-validate-auto-text (entlast) "NOTETXT1" "STA 53+00.00 OAK ST" "BUBBLE 3, DIA 1, LINE 1: STANAME (Paper)")
+(test-validate-xdata (entlast) "NOTETXT1" "STANAME" "BUBBLE 3, DIA 1, LINE 1")
+(test-validate-auto-text (entlast) "NOTETXT2" "0.00 RT" "BUBBLE 3, DIA 1, LINE 2: OFF (Paper)")
+(test-validate-xdata (entlast) "NOTETXT2" "OFF" "BUBBLE 3, DIA 1, LINE 2")
+(test-validate-vptrans-created (entlast) "BUBBLE 3")
+;; HCNM-REPLACE-BUBBLE TEST ON BUBBLE 3.
+HCNM-REPLACE-BUBBLE
+last
+17.2,11.5
+(test-validate-auto-text (entlast) "NOTETXT1" "STA 53+00.00 OAK ST" "REPLACE BUBBLE 3, DIA 1, LINE 1: STANAME (Paper)")
+(test-validate-xdata (entlast) "NOTETXT1" "STANAME" "REPLACE BUBBLE 3, DIA 1, LINE 1")
+(test-validate-auto-text (entlast) "NOTETXT2" "0.00 RT" "REPLACE BUBBLE 3, DIA 1, LINE 2: OFF (Paper)")
+(test-validate-xdata (entlast) "NOTETXT2" "OFF" "REPLACE BUBBLE 3, DIA 1, LINE 2")
+(test-validate-vptrans-created (entlast) "REPLACE BUBBLE 3")
+;;
+;; BUBBLE 4: DIA + SLOPE (Paper Space, 1L 4D)
+;; Arrow: 17.0,10.0 (PS) = Model (10340,20200) - on pipe row
+;; Bubble: 16.8,9.5
+;; Line 1: DIA (pipe selection → determines viewport)
+;; Line 2: SLOPE (pipe selection again - pipe has no reuse mechanism)
+;; COORD-P: NIL
+;;
+HAWS-HEXL
+17.0,10.0
+16.8,9.5
+2
+.
+DIA
+10360,20200
+.
+SLOPE
+10360,20200
+(test-validate-auto-text (entlast) "NOTETXT1" "18\"" "BUBBLE 4, HEX 1, LINE 1: DIA (Paper)")
+(test-validate-xdata (entlast) "NOTETXT1" "DIA" "BUBBLE 4, HEX 1, LINE 1")
+(test-validate-auto-text (entlast) "NOTETXT2" "0.31%" "BUBBLE 4, HEX 1, LINE 2: SLOPE (Paper)")
+(test-validate-xdata (entlast) "NOTETXT2" "SLOPE" "BUBBLE 4, HEX 1, LINE 2")
+;;
+;; === MODEL SPACE BUBBLES 5-8 ===
 (hcnm-config-setvar "BubbleMtext" "1")
-HAWS-ELLL
+mspace
+;;
+;; BUBBLE 5: SF + SY (Model Space, 1R 3U)
+;; Arrow: 10380,20270
+;; Bubble: 10385,20280
+;; Line 1: SF (field-based, sidewalk rectangle selection at 10360,20272)
+;; Line 2: SY (field-based, same sidewalk rectangle)
+;; COORD-P: NIL
+;;
+HAWS-BOXL
+10380,20270
+10385,20280
+1
+.
+SF
+10360,20272
+.
+SY
+10360,20272
+;; SF field validation: Check for field code with SF suffix
+(if (and (setq test-text (cadr (assoc "NOTETXT1" (hcnm-bn-dwg-to-lattribs (entlast))))) (vl-string-search "%<\\AcObjProp" test-text) (vl-string-search "SF" test-text)) (test-validate-auto-text (entlast) "NOTETXT1" test-text "BUBBLE 5: SF (Model)") (test-validate-auto-text (entlast) "NOTETXT1" "FIELD ERROR" "BUBBLE 5, BOX 2, LINE 1: SF (Model)"))
+(test-validate-xdata (entlast) "NOTETXT1" "SF" "BUBBLE 5, BOX 2, LINE 1")
+;; SY field validation: Check for field code with SY suffix
+(if (and (setq test-text (cadr (assoc "NOTETXT2" (hcnm-bn-dwg-to-lattribs (entlast))))) (vl-string-search "%<\\AcObjProp" test-text) (vl-string-search "SY" test-text)) (test-validate-auto-text (entlast) "NOTETXT2" test-text "BUBBLE 5: SY (Model)") (test-validate-auto-text (entlast) "NOTETXT2" "FIELD ERROR" "BUBBLE 5, BOX 2, LINE 2: SY (Model)"))
+(test-validate-xdata (entlast) "NOTETXT2" "SY" "BUBBLE 5, BOX 2, LINE 2")
+;;
+;; BUBBLE 6: LF + N (Model Space, 1R 2U)
+;; Arrow: 10380,20260
+;; Bubble: 10385,20270
+;; Line 1: LF (field-based, curb line selection at 10360,20260)
+;; Line 2: N (handleless, no selection in MS, uses arrow Y = 20260)
+;; COORD-P: T
+;;
+HAWS-CIRL
 10380,20260
 10385,20270
-4
+1
 .
 lf
 10360,20260
-
-;; Field expression validation: Check for field code with LF suffix
-;; NOTE: LF uses AutoCAD fields (passive updates) but stores XDATA for editor smart replace
-(if (and (setq test-text (cadr (assoc "NOTETXT1" (hcnm-bn-dwg-to-lattribs (entlast)))))
-         (vl-string-search "%<\\AcObjProp" test-text)
-         (vl-string-search "LF" test-text))
-  (test-validate-auto-text (entlast) "NOTETXT1" test-text "TEST 4: LF (Model)")
-  (test-validate-auto-text (entlast) "NOTETXT1" "FIELD ERROR" "TEST 4: LF (Model)")
-)
-(test-validate-xdata (entlast) "NOTETXT1" "LF" "TEST 4")
-sdi
-1
-(command "._qsave" "._open" (strcat (getvar "dwgprefix") "cnm-test.dwg"))
-sdi
-0
-(haws-setvar "DebugLevel" "1")
-;(load "haws-clock.lsp")
+.
+n
+;; LF field validation: Check for field code with LF suffix
+(if (and (setq test-text (cadr (assoc "NOTETXT1" (hcnm-bn-dwg-to-lattribs (entlast))))) (vl-string-search "%<\\AcObjProp" test-text) (vl-string-search "LF" test-text)) (test-validate-auto-text (entlast) "NOTETXT1" test-text "BUBBLE 6: LF (Model)") (test-validate-auto-text (entlast) "NOTETXT1" "FIELD ERROR" "BUBBLE 6, CIR 2, LINE 1: LF (Model)"))
+(test-validate-xdata (entlast) "NOTETXT1" "LF" "BUBBLE 6, CIR 2, LINE 1")
+(test-validate-auto-text (entlast) "NOTETXT2" "N 20260.00" "BUBBLE 6, CIR 2, LINE 2: N (Model)")
+(test-validate-xdata (entlast) "NOTETXT2" "N" "BUBBLE 6, CIR 2, LINE 2")
 ;;
-;; TEST 5: Manual (Model) - Baseline manual text entry
-;; Position: 2R-1U = Column 2 Right, Row 1 Up
-;; Arrow: (10440',20250'), Bubble: (10445',20260')
-;; No selection
-;; Config: No hooks, no mtext (return to baseline)
+;; BUBBLE 7: Name + Sta (Model Space, 1R CEN)
+;; Arrow: 10380,20240 - on alignment
+;; Bubble: 10385,20250
+;; Line 1: Name/AlName (alignment selection at 10360,20240)
+;; Line 2: Sta (reuses alignment from Line 1 with Enter)
+;; COORD-P: T (Sta uses arrow X = 10380, station = 3+40.00)
 ;;
-(hcnm-config-setvar "BubbleHooks" "0")
-(hcnm-config-setvar "BubbleMtext" "0")
-HAWS-ELLL
-10440,20250
-10445,20260
-5
-MODEL MANUAL
-
-(test-validate-auto-text (entlast) "NOTETXT1" "MODEL MANUAL" "TEST 5: Manual (Model)")
-;;
-;; TEST 6: Name (Model) - Alignment name
-;; Position: 3R-CENTER = Column 3 Right, CENTER row (points directly at alignment)
-;; Arrow: (10500',20240'), Bubble: (10505',20250')
-;; Selection: Alignment at (10360',20240') - center X, avoids bubbles/leaders
-;; Expected: "OAK ST" (alignment name property)
-;; Config: With hooks, no mtext
-;;
-(hcnm-config-setvar "BubbleHooks" "1")
-(hcnm-config-setvar "BubbleMtext" "0")
-HAWS-ELLL
-10500,20240
-10505,20250
-6
+HAWS-DIAL
+10380,20240
+10385,20250
+2
 .
 name
 10360,20240
-
-(test-validate-auto-text (entlast) "NOTETXT1" "OAK ST" "TEST 6: Name (Model)")
-(test-validate-xdata (entlast) "NOTETXT1" "AlName" "TEST 6")
-(test-validate-reactor (entlast) "NOTETXT1" "AlName" "TEST 6")
-;;
-;; TEST 7: SF (Model) - Square feet from rectangle
-;; Position: 4R-3U = Column 4 Right, Row 3 Up (sidewalk row)
-;; Arrow: (10560',20270'), Bubble: (10565',20280')
-;; Selection: Sidewalk rectangle at (10360',20272') - center X, top edge
-;; NOTE: CNM uses AutoCAD field expressions for dynamic area - this is CORRECT
-;; Config: No hooks, with mtext
-;;
-(hcnm-config-setvar "BubbleHooks" "0")
-(hcnm-config-setvar "BubbleMtext" "1")
-HAWS-ELLL
-10560,20270
-10565,20280
-7
-.
-sf
-10360,20272
-
-;; Field expression validation: Check for field code with SF suffix
-;; NOTE: SF uses AutoCAD fields (passive updates) but stores XDATA for editor smart replace
-(if (and (setq test-text (cadr (assoc "NOTETXT1" (hcnm-bn-dwg-to-lattribs (entlast)))))
-         (vl-string-search "%<\\AcObjProp" test-text)
-         (vl-string-search "SF" test-text))
-  (test-validate-auto-text (entlast) "NOTETXT1" test-text "TEST 7: SF (Model)")
-  (test-validate-auto-text (entlast) "NOTETXT1" "FIELD ERROR" "TEST 7: SF (Model)")
-)
-(test-validate-xdata (entlast) "NOTETXT1" "SF" "TEST 7")
-;;
-;; TEST 8: SY (Model) - Square yards from rectangle
-;; Position: 5R-3U = Column 5 Right, Row 3 Up (sidewalk row)
-;; Arrow: (10620',20270'), Bubble: (10625',20280')
-;; Selection: Sidewalk rectangle at (10360',20272') - center X, top edge
-;; NOTE: CNM uses AutoCAD field expressions for dynamic area - this is CORRECT
-;; Config: With hooks, with mtext (both enabled)
-;;
-(hcnm-config-setvar "BubbleHooks" "1")
-(hcnm-config-setvar "BubbleMtext" "1")
-HAWS-ELLL
-10620,20270
-10625,20280
-8
-.
-sy
-10360,20272
-
-;; Field expression validation: Check for field code with SY suffix
-;; NOTE: SY uses AutoCAD fields (passive updates) but stores XDATA for editor smart replace
-(if (and (setq test-text (cadr (assoc "NOTETXT1" (hcnm-bn-dwg-to-lattribs (entlast)))))
-         (vl-string-search "%<\\AcObjProp" test-text)
-         (vl-string-search "SY" test-text))
-  (test-validate-auto-text (entlast) "NOTETXT1" test-text "TEST 8: SY (Model)")
-  (test-validate-auto-text (entlast) "NOTETXT1" "FIELD ERROR" "TEST 8: SY (Model)")
-)
-(test-validate-xdata (entlast) "NOTETXT1" "SY" "TEST 8")
-;;
-;; === PAPER SPACE TESTS (VPTRANS Validation - 10 tests) ===
-;; Viewport: Full page 36"×24", center (18",12") paper = (10360',20240') model @ 1/20XP
-;; Paper space grid: Uses same grid spacing as model (3" column, 0.5" row @ paper scale)
-;; CRITICAL: Selection coordinates are MODEL SPACE (CNM switches to mspace)
-;; CRITICAL: N/E/NE require viewport confirmation (blank line = Enter accepts)
-;; Each test validates VPTRANS storage and coordinate transformation
-;; CRITICAL: Paper positions chosen to avoid model space bubble conflicts
-;;
-pspace
-;;
-;; TEST 9: Sta (Paper→Model) - VPTRANS coordinate transform for station
-;; Paper position: 6L column area - no conflict with model tests
-;; Selection: Alignment in MODEL coordinates (10360',20240') - center X, avoids bubbles
-;; Paper (2",12.5") × 20 = Model offset (-320',-5') from center = (10040',20235')
-;; Station at X=10040' = 50+00.00
-;; Config: No hooks, no mtext (baseline)
-;;
-(hcnm-config-setvar "BubbleHooks" "0")
-(hcnm-config-setvar "BubbleMtext" "0")
-HAWS-ELLL
-2.0,12.5
-1.75,13.0
-9
 .
 sta
-10360,20240
 
-(test-validate-auto-text (entlast) "NOTETXT1" "STA 50+00.00" "TEST 9: Sta (Paper)")
-(test-validate-xdata (entlast) "NOTETXT1" "Sta" "TEST 9")
-(test-validate-reactor (entlast) "NOTETXT1" "Sta" "TEST 9")
+(test-validate-auto-text (entlast) "NOTETXT1" "OAK ST" "BUBBLE 7, DIA 1, LINE 1: Name (Model)")
+(test-validate-xdata (entlast) "NOTETXT1" "NAME" "BUBBLE 7, DIA 1, LINE 1")
+(test-validate-auto-text (entlast) "NOTETXT2" "STA 53+40.00" "BUBBLE 7, DIA 1, LINE 2: Sta (Model)")
+(test-validate-xdata (entlast) "NOTETXT2" "STA" "BUBBLE 7, DIA 1, LINE 2")
+;; HCNM-REPLACE-BUBBLE TEST ON BUBBLE 7.
+HCNM-REPLACE-BUBBLE
+last
+10375,20250
+(test-validate-auto-text (entlast) "NOTETXT1" "OAK ST" "REPLACE BUBBLE 7, DIA 1, LINE 1: Name (Model)")
+(test-validate-xdata (entlast) "NOTETXT1" "NAME" "REPLACE BUBBLE 7, DIA 1, LINE 1")
+(test-validate-auto-text (entlast) "NOTETXT2" "STA 53+40.00" "REPLACE BUBBLE 7, DIA 1, LINE 2: Sta (Model)")
+(test-validate-xdata (entlast) "NOTETXT2" "STA" "REPLACE BUBBLE 7, DIA 1, LINE 2")
 ;;
-;; TEST 10: Off (Paper→Model) - Offset calculation through viewport
-;; Paper position: 5L column area - no conflict with model tests
-;; Selection: Alignment in MODEL coordinates (10360',20240') - center X, avoids bubbles
-;; Paper (5",13.0") × 20 = Model offset (-260',+20') from center = (10100',20260')
-;; Offset from alignment Y=20240': 20260'-20240' = 20.00 LT
-;; Config: With hooks, no mtext
+;; BUBBLE 8: L + E (Model Space, 1R 4D)
+;; Arrow: 10380,20200 - on pipe
+;; Bubble: 10385,20190
+;; Line 1: L (pipe selection at 10360,20200)
+;; Line 2: E (handleless, no selection in MS, uses arrow X = 10380)
+;; COORD-P: T
 ;;
-(hcnm-config-setvar "BubbleHooks" "1")
-(hcnm-config-setvar "BubbleMtext" "0")
-HAWS-ELLL
-5.0,13.0
-4.75,13.5
-10
+HAWS-OCTL
+10380,20200
+10385,20190
+1
 .
-off
-10360,20240
-
-(test-validate-auto-text (entlast) "NOTETXT1" "20.00 LT" "TEST 10: Off (Paper)")
-(test-validate-xdata (entlast) "NOTETXT1" "Off" "TEST 10")
-(test-validate-reactor (entlast) "NOTETXT1" "Off" "TEST 10")
-;;
-;; TEST 11: StaOff (Paper→Model) - Combined station and offset
-;; Paper position: 4L column area - no conflict with model tests
-;; Selection: Alignment in MODEL coordinates (10360',20240') - center X, avoids bubbles
-;; Paper (8",12.5") × 20 = Model offset (-200',+10') from center = (10160',20250')
-;; Station: 10160'-10040' = 120' = STA 51+20.00, Offset: 20250'-20240' = 10.00 LT
-;; NOTE: Format specified by CNM.ini BubbleTextFormatStaOff setting
-;; Config: No hooks, with mtext
-;;
-(hcnm-config-setvar "BubbleHooks" "0")
-(hcnm-config-setvar "BubbleMtext" "1")
-HAWS-ELLL
-8.0,12.5
-7.75,13.0
-11
-.
-staoff
-10360,20240
-
-(test-validate-auto-text (entlast) "NOTETXT1" "STA 51+20.00, 10.00 LT" "TEST 11: StaOff (Paper)")
-(test-validate-xdata (entlast) "NOTETXT1" "StaOff" "TEST 11")
-(test-validate-reactor (entlast) "NOTETXT1" "StaOff" "TEST 11")
-;;
-;; TEST 12: StaName (Paper→Model) - Station plus alignment name
-;; Paper position: 6R column area - no conflict with model tests
-;; Selection: Alignment in MODEL coordinates (10360',20240') - center X, avoids bubbles
-;; Paper (34",12.0") × 20 = Model offset (+320',0') from center = (10680',20240')
-;; Station: 10680'-10040' = 640' = STA 56+40.00 (alignment end)
-;; Config: With hooks, with mtext (both enabled)
-;;
-(hcnm-config-setvar "BubbleHooks" "1")
-(hcnm-config-setvar "BubbleMtext" "1")
-HAWS-ELLL
-34.0,12.0
-34.25,12.5
-12
-.
-staname
-10360,20240
-
-(test-validate-auto-text (entlast) "NOTETXT1" "STA 56+40.00 OAK ST" "TEST 12: StaName (Paper)")
-(test-validate-xdata (entlast) "NOTETXT1" "StaName" "TEST 12")
-(test-validate-reactor (entlast) "NOTETXT1" "StaName" "TEST 12")
-;;
-;; TEST 13: Dia (Paper→Model) - Pipe diameter through viewport
-;; Paper position: 2L column area at pipe row - no conflict with model tests
-;; Selection: Pipe in MODEL coordinates (10360',20200') - center X, avoids bubbles
-;; Expected: 18" (property read, no coordinate transform)
-;; Paper (14",10.0") × 20 = Model offset (-80',-40') from center = (10280',20200')
-;; Config: No hooks, no mtext (return to baseline)
-;;
-(hcnm-config-setvar "BubbleHooks" "0")
-(hcnm-config-setvar "BubbleMtext" "0")
-HAWS-ELLL
-14.0,10.0
-13.75,9.5
-13
-.
-dia
+L
 10360,20200
-
-(test-validate-auto-text (entlast) "NOTETXT1" "18\"" "TEST 13: Dia (Paper)")
-(test-validate-xdata (entlast) "NOTETXT1" "Dia" "TEST 13")
-(test-validate-reactor (entlast) "NOTETXT1" "Dia" "TEST 13")
-;;
-;; TEST 14: Slope (Paper→Model) - Pipe slope through viewport
-;; Paper position: 5R column area at pipe row - no conflict with model tests
-;; Selection: Pipe in MODEL coordinates (10360',20200') - center X, avoids bubbles
-;; NOTE: Format specified by CNM.ini BubbleTextFormatSlope setting
-;; Slope calculation: elevation delta / horizontal length
-;; Paper (31",10.0") × 20 = Model offset (+260',-40') from center = (10620',20200')
-;; Config: With hooks, no mtext
-;;
-(hcnm-config-setvar "BubbleHooks" "1")
-(hcnm-config-setvar "BubbleMtext" "0")
-HAWS-ELLL
-31.0,10.0
-31.25,9.5
-14
-.
-slope
-10360,20200
-
-(test-validate-auto-text (entlast) "NOTETXT1" "0.31%" "TEST 14: Slope (Paper)")
-(test-validate-xdata (entlast) "NOTETXT1" "Slope" "TEST 14")
-(test-validate-reactor (entlast) "NOTETXT1" "Slope" "TEST 14")
-;;
-;; TEST 15: N (Paper) - VPTRANS CRITICAL! Northing coordinate transform
-;; Paper arrow position transforms to model Y coordinate
-;; NO selection (coordinate-based), blank line confirms viewport
-;; Expected: Northing = transformed arrow Y coordinate
-;; Config: No hooks, with mtext
-;;
-(hcnm-config-setvar "BubbleHooks" "0")
-(hcnm-config-setvar "BubbleMtext" "1")
-HAWS-ELLL
-17.0,13.0
-16.75,13.5
-15
-.
-n
-
-
-(test-validate-auto-text (entlast) "NOTETXT1" "N 20260.00" "TEST 15: N (Paper)")
-(test-validate-xdata (entlast) "NOTETXT1" "N" "TEST 15")
-(test-validate-reactor (entlast) "NOTETXT1" "N" "TEST 15")
-;;
-;; TEST 16: E (Paper) - Easting coordinate transform
-;; Paper arrow position transforms to model X coordinate
-;; NO selection (coordinate-based), blank line confirms viewport
-;; Expected: Easting = transformed arrow X coordinate
-;; Config: With hooks, with mtext (both enabled)
-;;
-(hcnm-config-setvar "BubbleHooks" "1")
-(hcnm-config-setvar "BubbleMtext" "1")
-HAWS-ELLL
-19.0,11.5
-19.25,11.0
-16
 .
 e
-
-
-(test-validate-auto-text (entlast) "NOTETXT1" "E 10380.00" "TEST 16: E (Paper)")
-(test-validate-xdata (entlast) "NOTETXT1" "E" "TEST 16")
-(test-validate-reactor (entlast) "NOTETXT1" "E" "TEST 16")
-;;
-;; TEST 17: NE (Paper) - Full VPTRANS validation (both coordinates)
-;; Paper arrow transforms to both model X and Y
-;; NO selection (coordinate-based), blank line confirms viewport
-;; Expected: Both northing and easting from transformed arrow position
-;; Config: No hooks, no mtext (return to baseline)
-;;
-(hcnm-config-setvar "BubbleHooks" "0")
-(hcnm-config-setvar "BubbleMtext" "0")
-HAWS-ELLL
-22.0,11.5
-22.25,11.0
-17
-.
-ne
-
-
-(test-validate-auto-text (entlast) "NOTETXT1" "N 20230.00, E 10440.00" "TEST 17: NE (Paper)")
-(test-validate-xdata (entlast) "NOTETXT1" "NE" "TEST 17")
-(test-validate-reactor (entlast) "NOTETXT1" "NE" "TEST 17")
-;;
-;; TEST 18: Manual (Paper) - Baseline manual text in paper space
-;; Paper position: Right side area
-;; No auto-text, no VPTRANS needed
-;; Config: With hooks, no mtext
-;;
-(hcnm-config-setvar "BubbleHooks" "1")
-(hcnm-config-setvar "BubbleMtext" "0")
-HAWS-ELLL
-25.0,11.5
-25.25,11.0
-18
-PAPER MANUAL
-
-(test-validate-auto-text (entlast) "NOTETXT1" "PAPER MANUAL" "TEST 18: Manual (Paper)")
-;;
-;; Return to model space for final phases
+(test-validate-auto-text (entlast) "NOTETXT1" "L=640.00'" "BUBBLE 8, OCT 2, LINE 1: L (Model)")
+(test-validate-xdata (entlast) "NOTETXT1" "L" "BUBBLE 8, OCT 2, LINE 1")
+(test-validate-auto-text (entlast) "NOTETXT2" "E 10380.00" "BUBBLE 8, OCT 2, LINE 2: E (Model)")
+(test-validate-xdata (entlast) "NOTETXT2" "E" "BUBBLE 8, OCT 2, LINE 2")
+(hcnm-config-setvar "BubbleMtext" 0)
+;; Return to model space for downstream tests
 ;;
 mspace
-;;==============================================================================
-;; PHASE H: KEY NOTES TABLE TESTS
-;;==============================================================================
-;;
-;; Purpose: Validate CNM's core workflow - generating Key Notes Tables
-;; Prerequisites: Project notes file managed by CNM (haws-config/hcnm-config)
-;;
-;; IMPORTANT: CNM automatically copies constnot-default.csv from app folder
-;;            to project folder on first use. This tests proper project
-;;            management via haws-config system. Do NOT manually copy!
-;;
-;; TEST 19-26: Place bubbles with quantities for Key Notes Table
-;; Following standard CNM project notes pattern:
-;;   - Note 1 of each shape: LINE1 quantity (sums from line 1 text)
-;;   - Note 2 of each shape: COUNT (counts number of bubbles)
-;;
-;; BOX-1 bubbles with LINE1 quantities (should sum to 325 LF total)
-;;
-;; Position 1: 100 LF
-haws-boxl
-10300,20140
-10295,20150
-1
-100 LF
-
-;; Position 2: 150 LF
-haws-boxl
-10360,20140
-10355,20150
-1
-150 LF
-
-;; Position 3: 75 LF
-haws-boxl
-10420,20140
-10415,20150
-1
-75 LF
-
-;; BOX-2 bubbles (should count to 2 EA)
-;; Position 4
-haws-boxl
-10480,20140
-10475,20150
-2
-
-
-;; Position 5
-haws-boxl
-10540,20140
-10535,20150
-2
-
-
-;; CIR-1 bubbles with quantities (should sum to 200 LF)
-haws-cirl
-10300,20120
-10295,20130
-1
-200 LF
-
-;; CIR-2 bubble (should count to 1 EA)
-haws-cirl
-10360,20120
-10355,20130
-2
-
-
-;; DIA-1 bubbles with quantities (should sum to 450 LF)
-haws-dial
-10420,20120
-10415,20130
-1
-450 LF
-
-;; DIA-2 bubbles (should count to 3 EA)
-haws-dial
-10480,20120
-10475,20130
-2
-
-
-haws-dial
-10540,20120
-10535,20130
-2
-
-
-haws-dial
-10600,20120
-10595,20130
-2
-
-
-;; HEX-1 bubbles with quantities (should sum to 800 LF)
-haws-hexl
-10300,20100
-10295,20110
-1
-800 LF
-
-;; HEX-2 bubbles (should count to 5 EA)
-haws-hexl
-10360,20100
-10355,20110
-2
-
-
-haws-hexl
-10420,20100
-10415,20110
-2
-
-
-haws-hexl
-10480,20100
-10475,20110
-2
-
-
-haws-hexl
-10540,20100
-10535,20110
-2
-
-
-haws-hexl
-10600,20100
-10595,20110
-2
-
-
 ;; PHASE J: CNM-DEMO COVERAGE - CNM PLUS UTILITIES
 ;;==============================================================================
 ;; Source: CNM-Demo.scr (appended with displacement +9800,+20400)
@@ -869,6 +492,7 @@ STA. 5+22
 ;; Command: hcnm-cnmkt (Key Notes Table)
 ;; Prompts for search scope and insertion point
 ;;
+(command "._QSAVE")
 hcnm-cnmkt
 10220,20850
 
@@ -984,7 +608,7 @@ mid
 
 ;;
 ;; TEST 40: haws-newpro (New Profile)
-;; Initialize Profile Drafter system
+;; Initialize Profile Drafter SYstem
 ;;
 haws-newpro
 ;;
@@ -994,372 +618,17 @@ haws-newpro
 set
 C-ANNO-HCNM-TEST
 
-; === PHASE F: PERFORMANCE BENCHMARKS ===
-; TEST 39: Bubble insertion performance (20 insertions)
-(princ "\n\n=== TEST 39: Bubble Insertion Performance ===")
-(setq perf-start-39 (getvar "MILLISECS"))
-;; Insert 20 bubbles with Station auto-text in grid pattern
-;; Row 11-12 positions (below CNM-Demo tests)
-;; Position 1L-11D
-HAWS-ELLL
-10340,20050
-10335,20060
-151
-.
-sta
-10360,20240
-
-;; Position 2L-11D
-HAWS-ELLL
-10400,20050
-10395,20060
-152
-.
-sta
-10360,20240
-
-;; Position 3L-11D
-HAWS-ELLL
-10460,20050
-10455,20060
-153
-.
-sta
-10360,20240
-
-;; Position 1R-11D
-HAWS-ELLL
-10380,20050
-10385,20060
-154
-.
-sta
-10360,20240
-
-;; Position 2R-11D
-HAWS-ELLL
-10440,20050
-10445,20060
-155
-.
-sta
-10360,20240
-
-;; Position 3R-11D
-HAWS-ELLL
-10500,20050
-10505,20060
-156
-.
-sta
-10360,20240
-
-;; Position 1L-12D
-HAWS-ELLL
-10340,20040
-10335,20050
-157
-.
-sta
-10360,20240
-
-;; Position 2L-12D
-HAWS-ELLL
-10400,20040
-10395,20050
-158
-.
-sta
-10360,20240
-
-;; Position 3L-12D
-HAWS-ELLL
-10460,20040
-10455,20050
-159
-.
-sta
-10360,20240
-
-;; Position 1R-12D
-HAWS-ELLL
-10380,20040
-10385,20050
-160
-.
-sta
-10360,20240
-
-;; Position 2R-12D
-HAWS-ELLL
-10440,20040
-10445,20050
-161
-.
-sta
-10360,20240
-
-;; Position 3R-12D
-HAWS-ELLL
-10500,20040
-10505,20050
-162
-.
-sta
-10360,20240
-
-;; Position 1L-13D
-HAWS-ELLL
-10340,20030
-10335,20040
-163
-.
-sta
-10360,20240
-
-;; Position 2L-13D
-HAWS-ELLL
-10400,20030
-10395,20040
-164
-.
-sta
-10360,20240
-
-;; Position 3L-13D
-HAWS-ELLL
-10460,20030
-10455,20040
-165
-.
-sta
-10360,20240
-
-;; Position 1R-13D
-HAWS-ELLL
-10380,20030
-10385,20040
-166
-.
-sta
-10360,20240
-
-;; Position 2R-13D
-HAWS-ELLL
-10440,20030
-10445,20040
-167
-.
-sta
-10360,20240
-
-;; Position 3R-13D
-HAWS-ELLL
-10500,20030
-10505,20040
-168
-.
-sta
-10360,20240
-
-;; Position 1L-14D
-HAWS-ELLL
-10340,20020
-10335,20030
-169
-.
-sta
-10360,20240
-
-;; Position 2L-14D
-HAWS-ELLL
-10400,20020
-10395,20030
-170
-.
-sta
-10360,20240
-
-;; End performance test and report
-(c:test-report-insertion-performance perf-start-39 20)
-; TEST 40: Reactor performance (20 leader stretches)
-(princ "\n\n=== TEST 40: Reactor Update Performance ===")
-(c:test-enable-profiling)
-(setq test-bubble-40 (entlast))
-(setq perf-start-40 (getvar "MILLISECS"))
-;; Stretch 4 leaders in column 1L (notes 151, 157, 163, 169)
-;; All have X=10340, Y ranges from 20020 to 20050
-;; Perform 20 stretches with micro-offsets (0.01' increments in Y)
-;; Stretch 1: Move leaders +0.01' in Y
-stretch
-c
-10339,20019
-10341,20051
-
-0,0.01
-
-;; Stretch 2: Move leaders +0.01' in Y (cumulative +0.02')
-stretch
-c
-10339,20019
-10341,20051
-
-0,0.01
-
-;; Stretch 3
-stretch
-c
-10339,20019
-10341,20051
-
-0,0.01
-
-;; Stretch 4
-stretch
-c
-10339,20019
-10341,20051
-
-0,0.01
-
-;; Stretch 5
-stretch
-c
-10339,20019
-10341,20051
-
-0,0.01
-
-;; Stretch 6
-stretch
-c
-10339,20019
-10341,20051
-
-0,0.01
-
-;; Stretch 7
-stretch
-c
-10339,20019
-10341,20051
-
-0,0.01
-
-;; Stretch 8
-stretch
-c
-10339,20019
-10341,20051
-
-0,0.01
-
-;; Stretch 9
-stretch
-c
-10339,20019
-10341,20051
-
-0,0.01
-
-;; Stretch 10
-stretch
-c
-10339,20019
-10341,20051
-
-0,0.01
-
-;; Stretch 11
-stretch
-c
-10339,20019
-10341,20051
-
-0,0.01
-
-;; Stretch 12
-stretch
-c
-10339,20019
-10341,20051
-
-0,0.01
-
-;; Stretch 13
-stretch
-c
-10339,20019
-10341,20051
-
-0,0.01
-
-;; Stretch 14
-stretch
-c
-10339,20019
-10341,20051
-
-0,0.01
-
-;; Stretch 15
-stretch
-c
-10339,20019
-10341,20051
-
-0,0.01
-
-;; Stretch 16
-stretch
-c
-10339,20019
-10341,20051
-
-0,0.01
-
-;; Stretch 17
-stretch
-c
-10339,20019
-10341,20051
-
-0,0.01
-
-;; Stretch 18
-stretch
-c
-10339,20019
-10341,20051
-
-0,0.01
-
-;; Stretch 19
-stretch
-c
-10339,20019
-10341,20051
-
-0,0.01
-
-;; Stretch 20 (final cumulative offset: +0.20' in Y)
-stretch
-c
-10339,20019
-10341,20051
-
-0,0.01
-
-;; End reactor performance test and report
-(c:test-report-reactor-performance perf-start-40 20)
 ; === SUMMARY ===
-(c:test-generate-summary-mtext)
-(test-write-report-summary 8 10 42)
+test-write-report-summary
 ;; Cleanup: remove project files for next test run
-(c:test-cleanup-project-files)
-(c:test-log-end)
+test-cleanup-project-files
+test-log-end
 ; === SUCCESS MESSAGE ===
 ; Place in model space at top of drawing for visibility @ 1/20XP scale
+; Generate truthful summary from actual test results
+; Set TEXTEVAL=1 to evaluate AutoLISP expression in MTEXT
+texteval
+1
 mtext
 10360,20430
 height
@@ -1368,21 +637,16 @@ justify
 TC
 Width
 0
-CNM TEST SUITE - ALL 42 TESTS COMPLETED SUCCESSFULLY
-Auto-Text Validation
-- 8 model space tests (baseline + SF/SY)
-- 10 paper space tests (VPTRANS coordinate transform)
-Performance Benchmarks
-- Insertion performance (20 bubbles, baseline timing)
-- Reactor performance (20 updates, callback overhead)
-Key Notes & QT Tables: Key Notes Table generation validated and QT Table generation validated
-CNM-Demo Coverage (CNM Plus Utilities): haws-contvol, haws-ut, haws-mof, haws-lotnum, haws-newpro (profile drafter)
-Review test-results/cnm-test-report.md for detailed results.
+(c:test-generate-summary-mtext)
 
+texteval
+0
+fileDIA
+1
+sdi
+0
 filedia
 1
 sdi
 0
-(hcnm-config-setvar "BubbleSkipEntryPrompt" *BubbleSkipEntryPrompt-old*)
-
 ; This is the end of the script. Do not add characters after this comment.

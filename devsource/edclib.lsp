@@ -32,7 +32,7 @@
 ;;; lisputil.lsp
 ;;;This is the current version of HawsEDC and CNM
 (defun haws-unified-version ()
-  "5.5.37"
+  "5.5.38"
 )
 ;;;(SETQ *HAWS-ICADMODE* T);For testing icad mode in acad.
 ;;This function returns the current setting of nagmode.
@@ -179,24 +179,11 @@
   )
   (cond
     ((/= s "Function cancelled")
-     (princ (strcat "\nTrapped error: " s))
+     (haws-debug (princ (strcat "\nTrapped error: " s)))
     )
   )
   (while (< 0 (getvar "cmdactive"))
     (vl-cmdf)
-  )
-  
-  ;; CRITICAL: Restore BlockReactors flag on error/cancel
-  ;; If error occurs during reactor callback, flag could be stuck at "1"
-  ;; This would permanently block all reactor updates until drawing reload
-  ;; Self-healing: Always restore to "0" on any CNM command error
-  (cond 
-    ((and (boundp 'hcnm-config-setvar)
-          (= (hcnm-config-getvar "BlockReactors") "1")
-     )
-     (hcnm-config-setvar "BlockReactors" "0")
-     (princ "\n[ERROR HANDLER] Restored BlockReactors=0 (self-healing)")
-    )
   )
   ;; Close files
   ;; Note that symptoms of file pointer clashes (setting a var to another file pointer leaving the original open and unreferenced) include:
@@ -870,18 +857,18 @@
 
 (defun haws-use-log-remote (/ url http bios-date log-data)
   (setq
-    url  "http://www.constructionnotesmanager.com/cnm_log.php"
+    url  "http://www.constructionnotesmanager.com/cnm-log.php"
     http (vlax-create-object "MSXML2.XMLHTTP")
     bios-date (haws-getbiosdate)
     log-data
      (strcat
-       "computer_name="
+       "computer-name="
        (haws-getcomputername)
        "&loginname="
        (getvar "loginname")
-       "&cnm_version="
+       "&cnm-version="
        (haws-unified-version)
-       "&command_log="
+       "&command-log="
        (haws-use-get-local-log-string)
      )
   )
@@ -1572,7 +1559,7 @@
        (setq number (strcat number c))
       )
       ((and
-         (eq c "-")
+         (eq c "_")
          (= suffix "")
          (= suffix number "")
          (wcmatch (substr s (1+ i) 1) "#")
@@ -1654,7 +1641,7 @@
        )
       )
       ((and
-         (eq c "-")
+         (eq c "_")
          (= number "")
          (not done)
          (wcmatch (substr s (1+ i) 1) "#")
@@ -1959,7 +1946,7 @@
 ;;   (haws-debug "Simple message")
 ;;------------------------------------------------------------------------------
 (defun haws-debug (messages / enabled-p output) 
-  ;; Why not hard-code this? Clocking may be needed on a user's machine with a compiled edclib.lsp.
+  ;; Why not hard-code this? Debugging may be needed on a user's machine with a compiled edclib.lsp.
   (setq enabled-p (> (atoi (haws-getvar "DebugLevel")) 0))
   (cond 
     (enabled-p
@@ -1968,7 +1955,7 @@
        (setq messages (list messages))
      )
      ;; Concatenate all strings with ">>> DEBUG: " prefix
-     (setq output (apply 'strcat (cons (itoa (rem (getvar "millisecs") 10000000)) (cons ">>> DEBUG: " messages))))
+     (setq output (apply 'strcat (cons (menucmd "M=$(edtime,$(getvar,date),YYYY-MO-DD HH:MM:SS)") (cons ">>> DEBUG: " messages))))
      (haws-message-log output "haws-debug-log.md")
      output ; Return the output string
     )
@@ -3505,7 +3492,7 @@
 ;; HAWS app configuration definitions
 ;; These are shared HawsEDC configuration variables used by edclib.lsp and cnmaliaslib.lsp
 ;;; MOVED UP: Must be defined BEFORE USE LOG section uses it
-(defun haws-config-definitions ()
+(defun haws-app-config-definitions ()
   (list
     (list "AppFolder" (haws-filename-directory (findfile "cnm.mnl")) 0)  ; Session scope - set at load time
     (list "ImportLayerSettings" "YES" 2)  ; Project scope - INI file
@@ -3520,7 +3507,7 @@
 ;;; This allows edclib.lsp and cnmaliaslib.lsp to use HAWS-CONFIG without depending on CNM
 ;;; MOVED UP: Must register BEFORE USE LOG section calls haws-config-getvar
 (if haws-config-register-app
-  (haws-config-register-app "HAWS" (haws-config-definitions))
+  (haws-config-register-app "HAWS" (haws-app-config-definitions))
 )
 (defun haws-setvar (var val / scope-code) 
   ;; Get scope code to avoid calling hcnm-proj for non-Project variables
