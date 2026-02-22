@@ -10,29 +10,27 @@
 
 ### Configuration & State Management
 
-**`*hcnm-config*`**
-- **Purpose:** Cached configuration settings from CNM.INI. This is the canonical global for the CNM app.
-- **Type:** Association list `'((var . value) ...)`
-- **Set in:** `hcnm-config-read-all-project` (line 3588, 3590)
-- **Read in:** Throughout codebase via `c:hcnm-config-getvar`
-- **Justification:** Performance - avoid repeated INI file reads
-- **Lifetime:** AutoCAD session (cleared at every by `hcnm-projinit` after every user pause because a third-party editor was acting as a CNM Options editor. When we replace that editor (we have the author's blessing) we can extend the lifetime of this canonical global)
+**`*haws-config*`** *(haws-config.lsp)*
+- **Purpose:** Unified configuration data structure for all registered apps
+- **Type:** Nested alist with sections: Definitions / Cache / Session / ProjectRoots
+- **Set in:** `haws-config-register-app`, `haws-config-set-section`, `haws-config-set-proj-root`
+- **Read in:** Throughout haws-config.lsp; CNM accesses via `hcnm-config-getvar`
+- **Justification:** Central store for multi-app config; eliminates `*hcnm-config*`, `*hcnm-cnmprojectroot*`
+- **Lifetime:** AutoCAD session
 
-**`*hcnm-config-temp*`**
-- **Purpose:** Temporary configuration changes before save
-- **Type:** Association list `'((var val) ...)`
-- **Set in:** `hcnm-config-temp-setvar` (line 3380)
-- **Cleared in:** `hcnm-config-temp-clear` (line 3408)
-- **Justification:** Dialog workflow - accumulate changes, save or cancel. Possibly could be a semi-global as done for the bubble note edit dialog.
+**`*haws-config-cache*`** *(haws-config.lsp)*
+- **Purpose:** Legacy cache variable (reset on load to ensure clean state)
+- **Type:** nil on load
+- **Set in:** Top-level `(setq *haws-config-cache* nil)` in haws-config.lsp
+- **Justification:** Exists only to reset legacy state on reload
+
+**`*haws-config-temp*`** *(haws-config.lsp)*
+- **Purpose:** Per-app pending dialog changes, buffered before save/cancel
+- **Type:** `'(("CNM" (("var1" "val1") ...)) ("APP2" ...) ...)`
+- **Set in:** `haws-config-temp-setvar`
+- **Cleared in:** `haws-config-temp-clear`
+- **Justification:** Dialog workflow — accumulate changes, commit on OK or discard on Cancel
 - **Lifetime:** Single dialog session
-
-**`*hcnm-cnmprojectroot*`**
-- **Purpose:** Cached project root folder path
-- **Type:** String path
-- **Set in:** `hcnm-proj` (line 2547)
-- **Read in:** Project management functions
-- **Justification:** It is superordinate to *hcnm-config*, I think (TGH). But we need to be more rigorous about this one. Performance - avoid repeated folder resolution [TGH 2025-10-31 03:28:07: I think this is a little weasely. We need to steel-man the case for localizing this or incorporating it into `*hcnm-config*`]
-- **Lifetime:** AutoCAD session (cleared by `hcnm-projinit`)
 
 **`*hcnm-cnmprojectnotes*`**
 - **Purpose:** Cached project notes from CSV/TXT file
@@ -49,6 +47,19 @@
 - **Restored in:** `hcnm-restore-dimstyle`
 - **Justification:** User environment restoration [TGH 2025-10-31 03:28:07: I think this is a little weasely. We need to steel-man the case for localizing this or incorporating it into `*hcnm-config*`]
 - **Lifetime:** Single command execution
+
+---
+
+### Layer System
+
+**`*haws:layers*`** *(edclib.lsp)*
+- **Purpose:** Cached layer definitions loaded from `layers.dat` file
+- **Type:** List of layer-data lists `'((layerkey layername color linetype ...) ...)`
+- **Set in:** `haws-getlayr` (reads and parses `layers.dat` on demand), `c:hcnm-cnmlayer` (reset to nil before refresh)
+- **Read in:** `haws-getlayr`, `haws-setlayr`, `c:hcnm-cnmlayer` (iterates via `foreach`)
+- **Justification:** Performance cache — layers.dat is read once per session rather than on each layer lookup
+- **Naming:** Uses `haws:` namespace with colon (edclib convention predating hyphens standard; do not change)
+- **Lifetime:** AutoCAD session (persists until `c:hcnm-cnmlayer` refresh)
 
 ---
 
@@ -88,6 +99,55 @@
 - **Set in:** `hcnm-edit-bubble`
 - **Scope:** Edit dialog session only
 - **Justification:** DCL dialog callback architecture [TGH 2025-10-31 03:28:07: I need to audit this.]
+
+---
+
+### Key Table Ephemeral Dynamic-Scope Variables
+
+The following variables are declared as **locals in `hcnm-key-table-make`** (line ~786) but accessed by its helper functions via AutoLISP dynamic scoping:
+
+| Variable | Type | Role |
+|---|---|---|
+| `column-height` | Real | Current column fill height |
+| `column-height-pending` | Real | Remaining space in column |
+| `icol` | Integer | Current column index |
+| `note-first-line-p` | Boolean | Whether this is the first line of a note |
+| `notdsc` | String | Note description text |
+| `notnum` | List | Note number data |
+| `notqty` | List | Note quantity data |
+| `nottyp` | String | Note type key |
+| `notunt` | String | Note unit text |
+| `phaselist` | List | Phase configuration list |
+| `phasewid` | Real | Phase column width |
+| `qtypt` | Point | Current insertion point |
+| `qtypt1` | Point | Column start point |
+| `tblwid` | Real | Table column width |
+| `txtht` | Real | Text height |
+
+**Helper functions that access these (NO local declarations — by design):**
+- `hcnm-key-table-advance-column` (line ~1171)
+- `hcnm-key-table-advance-down` (line ~1189)
+- `hcnm-key-table-insert-shape` (line ~1202)
+- `hcnm-key-table-insert-text` (line ~1214)
+
+**CRITICAL:** Do NOT add these to the helper function locals lists. That would shadow the caller's variables and break the table drawing logic. This is an intentional AutoLISP dynamic-scoping pattern, identical to how `hcnm-bn-eb-state` works for DCL dialogs.
+
+**Refactor option:** Create a `table-state` alist passed as a parameter (parallel to `bubble-data`). High effort, not currently planned.
+
+---
+
+## Verification Notes (February 2026)
+
+### `*hcnm-config-temp*` Wrapper Functions
+The 4 wrapper functions (`hcnm-config-temp-setvar/getvar/save/clear`) were flagged in the 2026-02-20 globals report as setting `*hcnm-config-temp*`. This was the pre-migration state. Current code (post haws-config migration) delegates purely to `haws-config-temp-*` functions in haws-config.lsp, which use `*haws-config-temp*` internally. No direct reference to `*hcnm-config-temp*` remains in cnm.lsp.
+
+### Checker False Positives
+The globals checker (static analysis) produces false positives for lambda parameters. These are NOT globals:
+- `x` in `hcnm-bn-get-auto-data` and `hcnm-config-project-notes-format` — lambda params in `'(lambda (x) ...)`
+- `index` in `hcnm-bn-lattribs-spec` — lambda param in `'(lambda (index) ...)`
+- `auto-type` in `hcnm-bn-eb-show` — lambda param in `'(lambda (auto-type) ...)`
+- `msg` in `hcnm-bn-lattribs-validate-schema` — lambda param in `'(lambda (msg) ...)`
+- `phase` in `hcnm-getphaselistfromtblqty` — lambda param in `'(lambda (phase) ...)`
 
 ---
 
@@ -136,5 +196,5 @@ The following functions previously lacked `/` declarations but have now been fix
 
 ---
 
-**Last Updated:** October 31, 2025  
-**Audit Status:** ✅ All bubble region functions reviewed and fixed
+**Last Updated:** February 21, 2026
+**Audit Status:** ✅ All bubble region functions reviewed and fixed; globals report 2026-02-20 reviewed and categorized

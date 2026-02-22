@@ -87,9 +87,10 @@
 (if (not *haws-config*)
   (setq *haws-config*
     (list
-      (list "Definitions")  ; App variable schemas
-      (list "Cache")        ; Runtime cache
-      (list "Session")))    ; Session-scope storage
+      (list "Definitions")    ; App variable schemas
+      (list "Cache")          ; Runtime cache
+      (list "Session")        ; Session-scope storage
+      (list "ProjectRoots"))) ; Per-app project folder cache: dotted pairs (app . folder)
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -648,36 +649,31 @@
 (defun haws-config-getvar (app var ini-path section / val setvar-p scope-code start cache-start)
   (setq start (haws-clock-start "config-getvar-total"))
   (setq setvar-p t)
-  
-  ;; Auto-lookup scope from definitions
-  (setq scope-code (haws-config-get-scope app var))
-  (if (not scope-code)
-    (progn
-      (alert
-        (princ
-          (strcat
-            "Fatal error in HAWS-CONFIG-GETVAR:\nVariable not registered\n"
-            "App: " app "\nVar: " var
-          )
-        )
-      )
-      (setq scope-code 0)  ; Fallback to Session to avoid crash
-    )
-  )
-  
-  ;; Try getting from cache first
+  ;; Try cache first — no scope lookup needed on hit
   (setq cache-start (haws-clock-start "config-cache-check"))
   (setq val (haws-config-cache-get app var))
   (haws-clock-end "config-cache-check" cache-start)
-  
   (cond
-    ;; If found in cache, use it
+    ;; Cache hit: skip scope lookup entirely
     (val
      (setq setvar-p nil)
     )
-    ;; Not in cache - need to load from storage
+    ;; Cache miss: auto-lookup scope and load from storage
     (t
-     ;; Load all vars of this scope if cache is empty for this var
+     (setq scope-code (haws-config-get-scope app var))
+     (if (not scope-code)
+       (progn
+         (alert
+           (princ
+             (strcat
+               "Fatal error in HAWS-CONFIG-GETVAR:\nVariable not registered\n"
+               "App: " app "\nVar: " var
+             )
+           )
+         )
+         (setq scope-code 0)  ; Fallback to Session to avoid crash
+       )
+     )
      (cond
        ;; Session scope
        ((= scope-code 0)
@@ -687,30 +683,31 @@
           (setq val (haws-config-get-default app var))
         )
        )
-       ;; Project scope
+       ;; Project scope — batch load all project vars into cache
        ((= scope-code 2)
         (if (and ini-path section)
           (progn
-            ;; Load all project vars into cache (batch operation)
             (foreach
               pair
-               (haws-config-read-all-project app ini-path section)
+              (haws-config-read-all-project app ini-path section)
               (haws-config-cache-set app (car pair) (cadr pair))
             )
-            ;; Now get our specific var from cache
             (setq val (haws-config-cache-get app var))
+            (setq setvar-p nil)  ; batch already populated cache
           )
           ;; No INI path provided, use default
           (setq val (haws-config-get-default app var))
         )
        )
-       ;; User scope
+       ;; User scope — batch load all user vars into cache
        ((= scope-code 4)
-        (setq val (haws-config-read-user app var))
-        (if (not val)
-          ;; Not in registry yet, use default
-          (setq val (haws-config-get-default app var))
+        (foreach
+          pair
+          (haws-config-read-all-user app)
+          (haws-config-cache-set app (car pair) (cadr pair))
         )
+        (setq val (haws-config-cache-get app var))
+        (setq setvar-p nil)  ; cache already populated by foreach
        )
        ;; Other scopes not yet implemented
        (t
@@ -719,12 +716,10 @@
      )
     )
   )
-  
   ;; If we don't have a value yet, use default
   (if (not val)
     (setq val (haws-config-get-default app var))
   )
-  
   ;; If we still don't have a value, that's a fatal error
   (if (not val)
     (alert
@@ -736,12 +731,10 @@
       )
     )
   )
-  
-  ;; Store in cache if needed
+  ;; Store in cache if needed (only for non-batch paths)
   (if (and setvar-p val)
     (haws-config-cache-set app var val)
   )
-  
   (haws-clock-end "config-getvar-total" start)
   val
 )
@@ -800,6 +793,487 @@
   )
   
   val
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; PROJECT MANAGEMENT SYSTEM
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Generic project folder resolver for multi-app use.
+;;;
+;;; CONCEPTS:
+;;;   Local project:  app.ini exists in drawing's folder → that folder is root
+;;;   Linked project: appproj.txt exists → contains path to a different root folder
+;;;   Ambiguous:      Both exist → error
+;;;
+;;; CONVENTION: Each app registered with haws-config-proj MUST define a
+;;;   Session-scope variable named "AppFolder" in its definitions.
+;;;
+;;; *haws-config* "ProjectRoots" section holds dotted pairs (app . folder):
+;;;   '(("CNM" . "C:\\projects\\foo") ("APP2" . "D:\\work\\bar"))
+;;;
+
+;;; haws-config-get-proj-root - Get cached project root for app
+;;; Arguments:
+;;;   app - Application identifier (string)
+;;; Returns:
+;;;   Project root path (string) or nil
+(defun haws-config-get-proj-root (app / roots)
+  (setq roots (haws-config-get-section "ProjectRoots"))
+  (cdr (assoc app roots))
+)
+
+;;; haws-config-set-proj-root - Cache project root for app
+;;; Arguments:
+;;;   app    - Application identifier (string)
+;;;   folder - Project root path (string)
+;;; Returns:
+;;;   folder
+(defun haws-config-set-proj-root (app folder / roots old-entry)
+  (setq roots (haws-config-get-section "ProjectRoots"))
+  (setq old-entry (assoc app roots))
+  (cond
+    (old-entry
+     (setq roots (subst (cons app folder) old-entry roots))
+    )
+    (t
+     (setq roots (cons (cons app folder) roots))
+    )
+  )
+  (haws-config-set-section "ProjectRoots" roots)
+  folder
+)
+
+;;; haws-config-project-ini-name - Get INI filename for app
+;;; Arguments:
+;;;   app - Application identifier (string)
+;;; Returns:
+;;;   Filename string, e.g. "cnm.ini"
+(defun haws-config-project-ini-name (app / )
+  (strcat (strcase app T) ".ini")
+)
+
+;;; haws-config-project-link-name - Get link filename for app
+;;; Arguments:
+;;;   app - Application identifier (string)
+;;; Returns:
+;;;   Filename string, e.g. "cnmproj.txt"
+(defun haws-config-project-link-name (app / )
+  (strcat (strcase app T) "proj.txt")
+)
+
+;;; haws-config-project-folder-to-ini - Build INI path from folder
+;;; Arguments:
+;;;   app    - Application identifier (string)
+;;;   folder - Project folder path (string)
+;;; Returns:
+;;;   Full path to INI file (string)
+(defun haws-config-project-folder-to-ini (app folder / )
+  (strcat folder "\\" (haws-config-project-ini-name app))
+)
+
+;;; haws-config-project-folder-to-link - Build link file path from folder
+;;; Arguments:
+;;;   app    - Application identifier (string)
+;;;   folder - Folder path (string)
+;;; Returns:
+;;;   Full path to link file (string)
+(defun haws-config-project-folder-to-link (app folder / )
+  (strcat folder "\\" (haws-config-project-link-name app))
+)
+
+;;; haws-config-local-project-marker - Check for local INI in a folder
+;;; Arguments:
+;;;   app    - Application identifier (string)
+;;;   dwgdir - Drawing's folder path (string)
+;;; Returns:
+;;;   Full path to INI if found, nil otherwise
+(defun haws-config-local-project-marker (app dwgdir / )
+  (findfile (haws-config-project-folder-to-ini app dwgdir))
+)
+
+;;; haws-config-linked-project-marker - Check for link file in a folder
+;;; Arguments:
+;;;   app    - Application identifier (string)
+;;;   dwgdir - Drawing's folder path (string)
+;;; Returns:
+;;;   Full path to link file if found, nil otherwise
+(defun haws-config-linked-project-marker (app dwgdir / )
+  (findfile (haws-config-project-folder-to-link app dwgdir))
+)
+
+;;; haws-config-check-moved-project - Warn if INI was copied from another project
+;;; Arguments:
+;;;   app              - Application identifier (string)
+;;;   project-ini-file - Full path to app's INI file (string)
+;;; Returns:
+;;;   nil (may call exit on user refusal)
+(defun haws-config-check-moved-project (app project-ini-file / input1 pnname thisfile-value)
+  (cond
+    ((and
+       (setq
+         thisfile-value
+          (ini_readentry project-ini-file (strcase app) "ThisFile")
+       )
+       (setq
+         pnname
+          (ini_readentry project-ini-file (strcase app) "ProjectNotes")
+       )
+       (/= thisfile-value "")
+       (/= thisfile-value project-ini-file)
+     )
+     (alert
+       (princ
+         (strcat
+           "Warning!\nYou are using these project notes:\n\n" pnname
+           "\n\nand the " (haws-config-project-ini-name app) " for this folder says \n\"ThisFile=\""
+           thisfile-value
+           "\n\nIt appears it may have been copied from another project."
+           "\nYou may be about to edit the wrong Project Notes file."
+          )
+       )
+     )
+     (initget "Yes No")
+     (setq input1 (getkword "\nContinue with this file? [Yes/No]: "))
+     (cond
+       ((= input1 "Yes")
+        (ini_writeentry project-ini-file (strcase app) "ThisFile" "")
+       )
+       (t (exit))
+     )
+    )
+  )
+)
+
+;;; haws-config-assure-local-project - Validate local project marker
+;;; Arguments:
+;;;   app          - Application identifier (string)
+;;;   local-marker - Full path to local INI file (string)
+;;; Returns:
+;;;   Project folder path (string)
+(defun haws-config-assure-local-project (app local-marker / )
+  (haws-config-check-moved-project app local-marker)
+  (haws-filename-directory local-marker)
+)
+
+;;; haws-config-assure-linked-project - Validate linked project marker
+;;; Arguments:
+;;;   app           - Application identifier (string)
+;;;   linked-marker - Full path to link file (string)
+;;; Returns:
+;;;   Project folder path (string) or nil
+(defun haws-config-assure-linked-project (app linked-marker / f1 projroot rdlin)
+  (cond
+    ((and
+       (setq f1 (open linked-marker "r"))
+       (progn
+         (while (and (setq rdlin (read-line f1)) (not projroot))
+           (cond
+             ((haws-vlisp-p)
+              (if (vl-file-directory-p rdlin)
+                (setq projroot rdlin)
+              )
+             )
+             (t
+              (if (/= ";" (substr rdlin 1 1))
+                (setq projroot rdlin)
+              )
+             )
+           )
+         )
+         (setq f1 (close f1))
+         projroot
+       )
+     )
+    )
+  )
+  (if (not (findfile (haws-config-project-folder-to-ini app projroot)))
+    (haws-config-initialize-project app projroot)
+  )
+  (haws-config-check-moved-project
+    app
+    (haws-config-project-folder-to-ini app projroot)
+  )
+  (princ
+    (strcat
+      "\nUsing project settings from another folder as directed by "
+      (haws-config-project-link-name app)
+      " in this drawing's folder."
+      " Project settings located at "
+      projroot
+      "\\" (haws-config-project-ini-name app)
+      "."
+    )
+  )
+  projroot
+)
+
+;;; haws-config-initialize-project - Create project INI for a new project folder
+;;; Arguments:
+;;;   app  - Application identifier (string)
+;;;   proj - Project folder path (string)
+;;; Returns:
+;;;   Full path to project INI file (string)
+;;; Side effects:
+;;;   Copies app-folder template INI, or writes hard-coded defaults
+;;;   Always writes ThisFile entry to projini
+(defun haws-config-initialize-project (app proj / appfolder appini projini mark-file-p)
+  (setq projini (haws-config-project-folder-to-ini app proj))
+  (setq appfolder (haws-config-getvar app "AppFolder" nil nil))
+  (cond
+    ((and
+       appfolder
+       (setq appini (findfile (haws-config-project-folder-to-ini app appfolder)))
+     )
+     (if (not (haws-file-copy appini projini))
+       (progn
+         (alert
+           (princ
+             (strcat
+               "Fatal error:\n\nThis drawing must be saved before "
+               app
+               " can be used.\n" app " cannot continue."
+             )
+           )
+         )
+         (exit)
+       )
+     )
+     (alert
+       (princ
+         (strcat
+           app " is copying settings found in\n" appini "\nto\n" projini
+           "\nfor this project."
+          )
+       )
+     )
+     (while (not (findfile projini)))
+     (setq mark-file-p t)
+     projini
+    )
+    (t
+     (alert
+       (princ
+         (strcat
+           app " could not find a settings file in\n" appfolder
+           "\n\nPutting hard-coded defaults in\n" projini
+           "\nfor this project."
+          )
+       )
+     )
+     (foreach entry (haws-config-defaults-single-scope app 2)
+       (ini_writeentry projini (strcase app) (car entry) (cadr entry))
+     )
+     (setq mark-file-p t)
+     projini
+    )
+  )
+  (cond
+    (mark-file-p
+     (ini_writeentry projini (strcase app) "ThisFile" projini)
+    )
+  )
+)
+
+;;; haws-config-proj - Resolve the project root folder for the current drawing
+;;; Arguments:
+;;;   app - Application identifier (string)
+;;; Returns:
+;;;   Project root folder path (string)
+;;; Side effects:
+;;;   Caches result in *haws-config* ProjectRoots section
+;;;   May create new project INI via haws-config-initialize-project
+(defun haws-config-proj (app / dwgdir linked-project-folder linked-project-marker
+                     local-project-folder local-project-marker
+                    )
+  (setq
+    dwgdir
+     (haws-filename-directory (getvar "dwgprefix"))
+    local-project-marker
+     (haws-config-local-project-marker app dwgdir)
+    linked-project-marker
+     (haws-config-linked-project-marker app dwgdir)
+  )
+  (cond
+    (local-project-marker
+     (setq
+       local-project-folder
+        (haws-config-assure-local-project app local-project-marker)
+     )
+    )
+  )
+  (cond
+    (linked-project-marker
+     (setq
+       linked-project-folder
+        (haws-config-assure-linked-project app linked-project-marker)
+     )
+    )
+  )
+  (haws-config-set-proj-root
+    app
+    (cond
+      ;; If project root already cached this session, use it
+      ((haws-config-get-proj-root app))
+      ;; Ambiguous: both local INI and link file exist
+      ((and local-project-marker linked-project-marker)
+       (alert
+         (princ
+           (strcat
+             "Error:\nThis drawing's folder\n" local-project-folder
+             "\nhas both its own project settings ("
+             (haws-config-project-ini-name app)
+             ") and a link ("
+             (haws-config-project-link-name app)
+             ") to a project in another folder:\n"
+             linked-project-folder
+             "\n\n" app
+             " cannot continue. File names will be printed to the command history."
+            )
+         )
+       )
+       (princ
+         (strcat
+           "\nLocal project: "
+           (haws-config-project-folder-to-ini app local-project-folder)
+         )
+       )
+       (princ
+         (strcat
+           "\nLink to another project: "
+           (haws-config-project-folder-to-link app local-project-folder)
+         )
+       )
+       (exit)
+      )
+      ;; Simple single-folder project: INI is in this folder
+      (local-project-marker
+       (haws-config-assure-local-project app local-project-marker)
+      )
+      ;; Multi-folder project: link file points to another folder
+      (linked-project-marker
+       (haws-config-assure-linked-project app linked-project-marker)
+      )
+      ;; New folder: initialize project here
+      (t
+       (alert
+         (princ
+           (strcat "This drawing's folder is new to " app ".")
+         )
+       )
+       (haws-config-initialize-project app dwgdir)
+       dwgdir
+      )
+    )
+  )
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; TEMP CONFIG SYSTEM
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Purpose: Buffer pending dialog changes without writing to INI/registry.
+;;; Usage:   Dialog opens → temp-setvar → OK → temp-save; Cancel → temp-clear
+;;;
+;;; *haws-config-temp* structure:
+;;;   '(("CNM" (("var1" "val1") ("var2" "val2") ...))
+;;;     ("APP2" (...)) ...)
+;;;
+(if (not *haws-config-temp*)
+  (setq *haws-config-temp* nil)
+)
+
+;;; haws-config-temp-setvar - Store a pending change for an app
+;;; Arguments:
+;;;   app - Application identifier (string)
+;;;   var - Variable name (string)
+;;;   val - Pending value (string)
+;;; Returns:
+;;;   val
+(defun haws-config-temp-setvar (app var val / temp-app var-entry new-app new-temp)
+  (setq temp-app (assoc app *haws-config-temp*))
+  (cond
+    (temp-app
+     ;; App entry exists — update or add variable
+     (setq var-entry (assoc var (cdr temp-app)))
+     (setq
+       new-app
+        (cons
+          app
+          (cond
+            (var-entry
+             (subst (list var val) var-entry (cdr temp-app))
+            )
+            (t
+             (cons (list var val) (cdr temp-app))
+            )
+          )
+        )
+     )
+     (setq *haws-config-temp* (subst new-app temp-app *haws-config-temp*))
+    )
+    (t
+     ;; No entry for this app yet — create one
+     (setq *haws-config-temp*
+       (cons (list app (list var val)) *haws-config-temp*)
+     )
+    )
+  )
+  val
+)
+
+;;; haws-config-temp-getvar - Get pending value, falling back to real value
+;;; Arguments:
+;;;   app      - Application identifier (string)
+;;;   var      - Variable name (string)
+;;;   ini-path - For Project scope: full path to INI file (nil otherwise)
+;;;   section  - For Project scope: INI section name (nil otherwise)
+;;; Returns:
+;;;   Pending value if set, otherwise (haws-config-getvar app var ini-path section)
+(defun haws-config-temp-getvar (app var ini-path section / temp-app)
+  (setq temp-app (assoc app *haws-config-temp*))
+  (cond
+    ((and temp-app (cadr (assoc var (cdr temp-app))))
+     (cadr (assoc var (cdr temp-app)))
+    )
+    (t
+     (haws-config-getvar app var ini-path section)
+    )
+  )
+)
+
+;;; haws-config-temp-save - Write all pending changes for an app to real storage
+;;; Arguments:
+;;;   app      - Application identifier (string)
+;;;   ini-path - For Project scope: full path to INI file
+;;;   section  - For Project scope: INI section name
+;;; Returns:
+;;;   nil
+(defun haws-config-temp-save (app ini-path section / temp-app)
+  (setq temp-app (assoc app *haws-config-temp*))
+  (if temp-app
+    (foreach entry (cdr temp-app)
+      (haws-config-setvar
+        app
+        (haws-config-entry-var entry)
+        (haws-config-entry-val entry)
+        ini-path
+        section
+      )
+    )
+  )
+)
+
+;;; haws-config-temp-clear - Discard all pending changes for an app
+;;; Arguments:
+;;;   app - Application identifier (string)
+;;; Returns:
+;;;   nil
+(defun haws-config-temp-clear (app / temp-app)
+  (setq temp-app (assoc app *haws-config-temp*))
+  (if temp-app
+    (setq *haws-config-temp* (vl-remove temp-app *haws-config-temp*))
+  )
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

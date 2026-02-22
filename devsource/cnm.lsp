@@ -70,7 +70,7 @@
 ;;; 1999     v3.20  Improved performance by rewriting code.
 ;#endregion
 ;#region Table from search
-(defun hcnm-getphaselistfromtblqty (/ el en i dsctag noteqtyondisk oldtags
+(defun hcnm-getphaselistfromtblqty (/ el en i j dsctag noteqtyondisk oldtags
                                 phasealias phaselist
                                )
   ;;Check for phasing in qty table block.  Phasing is controlled by presence of TBLQTY? attributes.
@@ -784,11 +784,12 @@
 ;;Puts table at qtypt.
 ;; TGH to use this for TALLY, maybe I just need to read NOTELIST as an argument instead of from a file in this function.
 (defun hcnm-key-table-make (nfsource qtypt qtyset dn txtht notesmaxheight / ctabonly f1 icol
-                        iphase column-height note-first-line-p
-                        column-height-pending nfname notdsc notelist
-                        notetitles notnum notqty nottyp
+                        i-title iphase column-height note-first-line-p
+                        column-height-pending layerkey layerlist layershow
+                        linspc nfname notdsc notelist
+                        notetitles notnum notqty nottyp notspc
                         notunt numfnd phaselist prompteachcol qty qtypt1
-                        rdlin txthttemp typfnd usrvar
+                        phasewid rdlin tblwid txthttemp typfnd usrvar
                        )
   (setq phaselist (hcnm-getphaselistfromtblqty))
   (setvar "attreq" 1)
@@ -1055,7 +1056,7 @@
                                         ; Won't fit
             (/= column-height 0)        ; Not first note in column
           )
-          (hcnm-key_table_advance_column)
+          (hcnm-key-table-advance-column)
          )
        )
        ;; Add any titles
@@ -1102,7 +1103,7 @@
           (cond
             (;; Note won't fit after titles.
              (> (+ column-height-pending column-height) notesmaxheight)
-             (hcnm-key_table_advance_column)
+             (hcnm-key-table-advance-column)
             )
             (;; Note will fit after titles.
              t
@@ -1167,7 +1168,7 @@
 
 
 
-(defun hcnm-key_table_advance_column ()
+(defun hcnm-key-table-advance-column ()
   (setq
     column-height 0
     icol
@@ -1295,8 +1296,8 @@
 ;;Gets drawing info from bubbles or table.
 ;;Saves all in .NOT file for other two routines
 (defun hcnm-key-table-from-search (dn projnotes txtht linspc tblwid phasewid
-                               / el en i notelist qtypt qtyset
-                               tablespace
+                               / el en i notelist notesmaxheight qtypt qtyset
+                               result tablespace
                               )
   (haws-debug "Entering hcnm-key-table-from-search.")  
   (setq
@@ -1584,7 +1585,7 @@
                notprice notqty notspc nottyp notunt numfnd numlist
                pgp-defines-run pgp-filename pgp-file-contents
                pgp-file-line phase phasenumi phases-definition pt1z q
-               qqwid qtypt1 qtyset quwid row1y sheet-filename
+               qty-string qqwid qtypt1 qtyset quwid row1y sheet-filename
                sheet-filenames sheet-file-name sheet-headings
                sheet-list-filename sheet-list-line sheet-quantities
                tablespace total txthttemp usrvar writelist x y z
@@ -2427,7 +2428,7 @@
   (haws-core-restore)
 )
 ;;CNM main function
-(defun hcnm-cnm (opt / cfname dn linspc phasewid tblwid txtht)
+(defun hcnm-cnm (opt / cfname dn linspc phasewid projnotes tblwid txtht)
   ;;Main function
   (haws-vsave '("attdia" "attreq" "clayer" "osmode"))
   (setvar "attdia" 0)
@@ -2503,127 +2504,19 @@
 ;;;
 ;;;================================================================================================================
 
-;; PERFORMANCE OPTIMIZATION (Phase 2): hcnm-projinit function REMOVED
-;; 
-;; Previously cleared caches after user pauses/commands, but this defeated
-;; the session caching performance optimization. With our business decision 
-;; to disclaim 3rd party edits to cnm.ini, cache persistence is appropriate.
-;;
-;; If manual cache clearing is ever needed:
-;; (setq *hcnm-config* nil *hcnm-cnmprojectroot* nil *hcnm-cnmprojectnotes* nil)
-
-
-;;Does nothing but strcat, since the existence of the file
-;;is validated by (hcnm-PROJ)
-(defun hcnm-ini-name (proj)
-  (hcnm-project-folder-to-ini proj)
-)
-
-;; hcnm-PROJ gets a valid project root folder for this drawing's folder.
-;; While it returns the folder only, that folder is qualified to have CNM.INI in it.
-;; It should resolve all errors and user conditions
-;; and return a "drive:\\...\\projroot" path to other functions.
-;;
-;; PERFORMANCE OPTIMIZATION (Phase 2): Session caching via *hcnm-cnmprojectroot*
-;; 
-;; The expensive findfile operations only run when *hcnm-cnmprojectroot* is nil.
-;; Cache persists until AutoCAD session ends or explicitly cleared.
-;;
-;; WHEN CACHE IS CLEARED (rare events):
-;; - First access after AutoCAD startup (cache starts nil)
-;; - User explicitly changes project via project commands (if implemented)
-;; - Drawing changes (AutoCAD may clear session variables)
-;;
-;; WHEN CACHE PERSISTS (normal operation):
-;; - Config variable access (every hcnm-config-getvar/setvar call)
-;; - User pauses, prompts, dialog operations
-;; - Bubble insertion, editing, table generation
-;; - Opening/closing CNM dialogs
-;;
-;; PERFORMANCE IMPACT: 40ms → <1ms for config access (97.5% improvement)
-(defun hcnm-proj (/ dwgdir linked-project-folder linked-project-marker
-              local-project-folder local-project-marker
-             )
-  (setq
-    dwgdir
-     (haws-filename-directory (getvar "dwgprefix"))
-    local-project-marker
-     (hcnm-local-project-marker dwgdir)
-    linked-project-marker
-     (hcnm-linked-project-marker dwgdir)
-  )
-  (cond
-    (local-project-marker
-     (setq
-       local-project-folder
-        (hcnm-assure-local-project
-          local-project-marker
-        )
-     )
-    )
-  )
-  (cond
-    (linked-project-marker
-     (setq
-       linked-project-folder
-        (hcnm-assure-linked-project
-          linked-project-marker
-        )
-     )
-    )
-  )
-  (setq
-    *hcnm-cnmprojectroot*
-     (cond
-       ;;If project is already defined this session, use it.
-       ;;(Assume it's valid.  Calling function should init project if there's been a chance of change or loss by user.)
-       (*hcnm-cnmprojectroot*)
-       ((and
-          local-project-marker
-          linked-project-marker
-        )
-        (hcnm-error-ambiguous-project-markers
-          local-project-folder
-          linked-project-folder
-        )
-       )
-       ;;Else well-formed simple (single-folder) projects. CNM.INI is here.
-       (local-project-marker
-        (hcnm-assure-local-project
-          local-project-marker
-        )
-       )
-       ;;Well-formed complex (multi-folder) projects.  CNMPROJ.TXT is here and
-       ;;we'll make sure it really points to a CNM.INI.
-       (linked-project-marker
-        (hcnm-assure-linked-project
-          linked-project-marker
-        )
-       )
-       ;;Make a project in this drawing's folder.
-       (t
-        (alert
-          (princ
-            (strcat
-              "This drawing's folder is new to CNM."
-            )
-          )
-        )
-        (hcnm-initialize-project dwgdir)
-        dwgdir
-       )
-     )
-  )
-)
-
-(defun hcnm-local-project-marker (dwgdir)
-  (findfile (hcnm-project-folder-to-ini dwgdir))
-)
-
-(defun hcnm-linked-project-marker (dwgdir)
-  (findfile (hcnm-project-folder-to-link dwgdir))
-)
-
+;; Session caching for project root is handled by haws-config-proj via *haws-config* ProjectRoots.
+;; To clear if needed: (haws-config-set-proj-root "CNM" nil)
+(defun hcnm-proj ()                    (haws-config-proj "CNM"))
+(defun hcnm-ini-name (proj)            (haws-config-project-folder-to-ini "CNM" proj))
+(defun hcnm-project-ini-name ()        (haws-config-project-ini-name "CNM"))
+(defun hcnm-project-link-name ()       (haws-config-project-link-name "CNM"))
+(defun hcnm-project-folder-to-ini (f) (haws-config-project-folder-to-ini "CNM" f))
+(defun hcnm-project-folder-to-link (f)(haws-config-project-folder-to-link "CNM" f))
+(defun hcnm-local-project-marker (d)  (haws-config-local-project-marker "CNM" d))
+(defun hcnm-linked-project-marker (d) (haws-config-linked-project-marker "CNM" d))
+(defun hcnm-assure-local-project (m)  (haws-config-assure-local-project "CNM" m))
+(defun hcnm-assure-linked-project (m) (haws-config-assure-linked-project "CNM" m))
+(defun hcnm-check-moved-project (f)   (haws-config-check-moved-project "CNM" f))
 (defun hcnm-error-not-writeable ()
   (alert
     (princ
@@ -2634,134 +2527,6 @@
     )
   )
   (exit)
-)
-
-(defun hcnm-error-ambiguous-project-markers
-  (local-project-folder linked-project-folder)
-  (alert
-    (princ
-      (strcat
-        "Error:\nThis drawing's folder\n" local-project-folder
-        "\nhas both its own project settings (CNM.ini) and a link (in CNMPROJ.TXT) to a project in another folder:\n"
-        linked-project-folder
-        "\n\nCNM cannot continue. File names will be printed to the command history for your use resolving the ambiguity."
-       )
-    )
-  )
-  (princ
-    (strcat
-      "\nLocal project: "
-      (hcnm-project-folder-to-ini local-project-folder)
-    )
-  )
-  (princ
-    (strcat
-      "\nLink to another project: "
-      (hcnm-project-folder-to-link local-project-folder)
-    )
-  )
-  (exit)
-)
-
-
-(defun hcnm-assure-local-project (local-marker-file)
-  (hcnm-check-moved-project local-marker-file)
-  (haws-filename-directory local-marker-file)
-)
-
-(defun hcnm-assure-linked-project (link-marker / f1 projroot rdlin)
-  (cond
-    ((and
-       (setq *f1* (open link-marker "r"))
-       (progn
-         (while (and (setq rdlin (read-line *f1*)) (not projroot))
-           (cond
-             ((haws-vlisp-p)
-              (if (vl-file-directory-p rdlin)
-                (setq projroot rdlin)
-              )
-             )
-             ;;Bricscad option
-             (t
-              (if (/= ";" (substr rdlin 1 1))
-                (setq projroot rdlin)
-              )
-             )
-           )
-         )
-         (setq *f1* (close *f1*))
-         projroot
-       )
-     )
-    )
-  )
-  (if (not (findfile (hcnm-ini-name projroot)))
-    (hcnm-initialize-project projroot)
-  )
-  (hcnm-check-moved-project
-    (hcnm-project-folder-to-ini projroot)
-  )
-  (princ
-    (strcat
-      "\nUsing project settings from another folder as directed by CNMPROJ.TXT in this drawing's folder."
-      "Using project settings from another folder located at "
-      projroot
-      "\\CNM.INI as directed by CNMPROJ.TXT in this drawing's folder."
-    )
-  )
-  projroot
-)
-
-(defun hcnm-check-moved-project
-  (project-file-name / input1 pnname thisfile-value)
-  (cond
-    ((and
-       (setq
-         thisfile-value
-          (ini_readentry
-            project-file-name
-            "CNM"
-            "ThisFile"
-          )
-       )
-       (setq
-         pnname
-          (ini_readentry project-file-name "CNM" "ProjectNotes")
-       )
-       (/= thisfile-value "")
-       (/= thisfile-value project-file-name)
-     )
-     (alert
-       (princ
-         (strcat
-           "Warning!\nYou are using these project notes:\n\n" pnname
-           "\n\nand the CNM.ini for this folder says \n\"ThisFile=\""
-           thisfile-value
-           "\n\nIt appears it may have been copied from another project."
-           "\nYou may be about to edit the wrong Project Notes file."
-          )
-       )
-     )
-     (initget "Yes No")
-     (setq input1 (getkword "\nContinue with this file? [Yes/No]: "))
-     (cond
-       ((= input1 "Yes")
-        (ini_writeentry project-file-name "CNM" "ThisFile" "")
-       )
-       (t (exit))
-     )
-    )
-  )
-)
-
-(defun hcnm-project-ini-name () "cnm.ini")
-(defun hcnm-project-link-name () "cnmproj.txt")
-
-(defun hcnm-project-folder-to-ini (project-folder)
-  (strcat project-folder "\\" (hcnm-project-ini-name))
-)
-(defun hcnm-project-folder-to-link (project-folder)
-  (strcat project-folder "\\" (hcnm-project-link-name))
 )
 
 
@@ -2806,24 +2571,19 @@
 )
 
 ;; Sets the CNM project to the given folder. Includes wizards, alerts, and error checks.
-(defun hcnm-linkproj (proj / dwgdir localproj localprojbak oldlink)
+(defun hcnm-linkproj (proj / current-proj dwgdir localproj localprojbak oldlink)
   (setq
-    dwgdir
-     (haws-filename-directory (getvar "dwgprefix"))
-    *hcnm-cnmprojectroot*
-     (cond
-       (*hcnm-cnmprojectroot*)
-       (dwgdir)
-     )
+    dwgdir (haws-filename-directory (getvar "dwgprefix"))
+    current-proj (or (haws-config-get-proj-root "CNM") dwgdir)
   )
   (cond
     ((not proj)
-     (setq proj (hcnm-browseproj *hcnm-cnmprojectroot*))
+     (setq proj (hcnm-browseproj current-proj))
     )
   )
   (cond
     (proj
-     (setq *hcnm-cnmprojectroot* proj)
+     (haws-config-set-proj-root "CNM" proj)
      (cond
        ((= proj dwgdir)
         (cond
@@ -2837,11 +2597,7 @@
           )
           (t
            (alert
-             (strcat
-               "Project Folder\n"
-               *hcnm-cnmprojectroot*
-               "\nnot changed."
-             )
+             (strcat "Project Folder\n" proj "\nnot changed.")
            )
           )
         )
@@ -2877,13 +2633,9 @@
        )
      )
     )
-    (*hcnm-cnmprojectroot*
+    (current-proj
      (alert
-       (strcat
-         "Project Folder\n"
-         *hcnm-cnmprojectroot*
-         "\nnot changed."
-       )
+       (strcat "Project Folder\n" current-proj "\nnot changed.")
      )
     )
   )
@@ -2938,496 +2690,19 @@
 )
 
 ;#endregion
-;#region Config
-;;;================================================================================================================
-;;;
-;;; Begin Settings Config functions
-;;;
-;;;================================================================================================================
-;;; Multi-app planning thoughts and code
-;;; ===================================================================
-;;;
-;;; 2017 note: Looking over all this 10 years later, I think the best
-;;; path forward is to implement this in CNM.LSP little by little.  Then
-;;; when it is functional, copy it to EDCLIB.
-;;; Most of this code is obsolete, but there are some ideas here I still want to implement.
-;;;
-;;; Begin Settings input/output functions  NOT YET FUNCTIONAL
-;;;
-;;; Should FILE be an argument to HAWS-GETVAR and HAWS-SETVAR?  If
-;;; so,
-;;; how does it affect
-;;; (HAWS-INI)?
-;;; I don't at this moment 2008-09-14 know what the above question means.
-;;;
-;;; I can make these into generic input/output functions,
-;;; but to do so, I need to have the calling application provide the following
-;;; (in its own wrapper function):
-;;; 1.  section name for its section in *HAWS-SETTINGS*
-;;; 2.  app name for ini file name or other storage division
-;;; 3.  scope code indicating the scope of the settings, which determines the method of storage and retrieval: 
-;;;      "a" APPLICATION settings are currently stored in the program folder in a given section of a given ini file
-;;;      "u" USER settings are currently stored in ACAD.CFG with (setcfg)/(getcfg) or the Windows registry
-;;;      "p" PROJECT settings are kept in the current project folder in a given section of a given ini file, with editable defaults in the the program folder
-;;;      "d" DRAWING settings are kept in the current drawing
-;;; 4.  location indicator file name in case we have to find an ini
-;;;     (indicator file can be optionally a fully qualified path)
-;;; 5.  application defaults for all variables
-;;;
-;;; Here's how this can work:
-;;; In the application, you have a function like (app-getvar key)
-;;; Then in that function you pass this general-purpose getvar the key along with the
-;;; application name, application defaults, ini file name, and location test file
-;;;
-;;; PROJECTS
-;;;
-;;; Projects are sets of drawings grouped by folder.  Normally an ini file
-;;; in a folder applies just to the drawings in that folder.
-;;; But multiple folders can use a single project ini file in a project root folder.
-;;; This is controlled by placing a pointer file in all folders other than the project root.
-;;; For CNM, this file was called CNMPROJ.TXT.  I suppose that same convention could be followed
-;;; for other apps by pasting the app key name to "PROJ.TXT".
-;;;
-;;; ===================================================================
-;;; One question or to-do here is the method of initializing (erasing) the settings in the event of a pause when user could edit them.
-;;; On the other hand, it seems common for programs to ignore any changes to settings that are made directly while the program is running.
-;;; This could be turned on an off by the calling application.  See HAWS-REMOVESETTINGS
-;;;
-;;; Settings are stored in *HAWS-SETTINGS*, which is in the likeness
-;;; of multiple ini files:
-;;; I removed the inifile path from here, but maybe it's really needed.
-;;; *HAWS-SETTINGS*
-;;; '("SCOPE"            Every scope may have a different storage mechanism
-;;;    ("APPNAME"        Key Name of an application using a single inifile the settings are stored in
-;;;      (0 . "INIFILE") Known path to settings for this scope and application
-;;;      ("SECTION"      Ini section or path to variable
-;;;        ("VAR"        Ini variable
-;;;         "VAL"        Ini value
-;;;        )
-;;;      )
-;;;    )
-;;;  )
-;;;
-
-;;;Test functions
-(defun c:testset ()
-  (haws-core-init 184)
-  (hcnm-concept-testsetvar
-    (getstring "\nVariable name: ")
-    (getstring "\nValue: ")
-  )
-  (haws-core-restore)
-)
-(defun c:testget ()
-  (haws-core-init 185)
-  (hcnm-concept-testgetvar (getstring "\nVariable name: "))
-  (haws-core-restore)
-)
-(defun hcnm-concept-testsetvar (var val)
-  (hcnm-concept-setvar
-    ;; variable
-    var
-    ;;value
-    val
-    ;; application name for its section in *hcnm-concept-settings*
-    "test"
-    ;; indicator file name for default location of ini or vanilla ini
-    ;; (indicator file can be optionally a fully qualified path)
-    "hawsedc.mnl"
-    ;; ini section
-    "Test"
-    ;; Scope of setting.  Can be "a" (application)  "u" (user)  "p" (project) or "d" (drawing).  Determines where to store and get setting.
-    "a"
-   )
-)
-;;This is a sample wrapper function that an application would use
-;;to call hcnm-concept-getvar.
-(defun hcnm-concept-testgetvar (var)
-  (hcnm-concept-getvar
-    ;;variable
-    var
-    ;; application name for its section in *hcnm-concept-settings*
-    "test"
-    ;; indicator file name for default location of ini or vanilla ini
-    ;; (indicator file can be optionally a fully qualified path)
-    "hawsedc.mnl"
-    ;; ini section
-    "Test"
-    ;; Scope of setting.  Can be "a" (application)  "u" (user)  "p" (project) or "d" (drawing).  Determines where to store and get setting.
-    "a" ;;Fallback defaults
-        '
-         (("1" "1val")
-          ("2" "2val")
-         )
-   )
-)
-
-;; hcnm-concept-ini
-;; Finds INI file
-;; Returns a fully qualified path, that folder is qualified to have
-;; HAWSEDC.INI in it.
-;; It should resolve all errors and user conditions
-;; and return a "drive:\\...\\INIFOLDER" path to other functions.
-
-
-;;; hcnm-concept-inifolder gets a valid INI folder.
-;;; This function is wrong because there isn't a single *hcnm-concept-inifolder* that this function
-;;; can throw around globally.
-(defun hcnm-concept-inifile (app scope testfile / inifile assumedinifolder
-                         assumedinifile
-                        )
-  (cond ((not testfile) (setq testfile (strcat app ".cui"))))
-  (cond
-    ;; Project already defined this session
-    ;; (Assume it's valid.  Calling function should init project
-    ;; if there's been a chance of loss.)
-    ((cdr
-       (assoc
-         0
-         (cdr
-           (assoc app (cdr (assoc scope *hcnm-concept-settings*)))
-         )
-       )
-     )
-    )
-    ;;TGH OK.  Here we need to take the case of each scope and treat them differently
-    ;;App scope ini needs to be searched using testfile in all cases.  Project scope only needs to be search with testfile
-    ;;if project ini isn't found.  But wait, for project scope, you want to know the project ini location, but then
-    ;;if you need to make a project ini from the app default, you have to find the application default ini.
-    ;;so for project scope, there are two ini path building searches.
-    ;;
-    ;;Or try to find inifile in folder with testfile
-    ((and
-       (setq assumedinifolder (findfile testfile))
-       (setq
-         assumedinifolder
-          (hcnm-concept-filename-directory
-            assumedinifolder
-          )
-       )
-       (setq
-         assumedinifile
-          (findfile (strcat assumedinifolder app ".ini"))
-       )
-     )
-     assumedinifile
-    )
-    ;;Or make an ini file in folder with testfile in it or in proj folder
-    ((hcnm-concept-getinidefaults assumedinifolder)
-     assumedinifolder
-    )
-  )
-)
-
-
-;;Gets all settings from an inifile if it can.
-(defun hcnm-concept-getsettings (inifile testfile apporproj)
-  (setq
-    *hcnm-concept-settings*
-     (ini_readini
-       (hcnm-concept-ini
-         (hcnm-concept-inifolder
-           inifile
-           testfile
-         )
-       )
-     )
-  )
-)
-
-;;Sets a variable in the global lisp list and in HAWSEDC.INI
-(defun hcnm-concept-setvar (inifile inisection var val / setting)
-  ;; Call GETVAR before setting var.  Why?  To populate *hcnm-concept-settings*?
-  (hcnm-concept-getvar
-    var inisection inifile testfile apporproj defaults
-   )
-  (hcnm-concept-addvartolist var val inisection inifile)
-  (ini_writeentry
-    (hcnm-concept-ini (hcnm-concept-inifolder))
-    inisection
-    setting
-    val
-  )
-)
-
-;; hcnm-concept-getvar
-;; hcnm-concept-getvar is called by wrapper functions like hcnm-GETVAR or hcnm-concept-edcgetvar
-;; It gets a variable without opening a file if it can.
-;; (Higher calling functions may use functions like hcnm-concept-removesettings 
-;; to remove settings and force a file read.)
-;; hcnm-concept-getvar gets a program setting from
-;; 1. The global *hcnm-concept-settings* list if found
-;; 2. An ini file or other location
-;; 3. reverts to a default value without fail
-;;
-;; INIFILE is an ini filename. Ini file might not be used for a given scope in the current strategy.  
-;; If there is no such ini file found and is needed, hcnm-concept-getvar creates it.
-;; If hcnm-concept-getvar can't create the file, it sends an alert.
-;;
-;; SECTION is the ini section/path/tree path/location the var is in or goes in
-;;
-;; DEFAULTS is a list of defaults in the HawsEDC standard settings format as follows:
-;;  '((VAR1 DEFAULT1)(VAR2 DEFAULT2))
-;;
-;; variable to get
-;; ini section name
-;; ini file name
-;; test file name for location of ini defaults or app based active ini
-;; A flag indicating whether the active settings are to be kept in the
-;; app folder or the project folder ("app" "prj")
-;; application defaults for all variables
-(defun hcnm-concept-getvar (var sect app scope testfile defaults / addtolist
-                        addtoini dir ini setting val
-                       )
-  (setq
-    ;; Does the variable need to be added to the *hcnm-concept-settings* list? Assume yes initially.
-    addtolist
-     t
-    ;; Does the variable need to be added to the appropriate ini file? Assume yes initially
-    addtoini
-     t
-  )
-  ;;Get var list if no var list
-  (if (not *hcnm-concept-settings*)
-    (hcnm-concept-getsettings)
-  )
-  (cond
-    ;;Try getting from list
-    ((setq
-       val
-        (hcnm-concept-vartoval
-          var
-          (cadr
-            (assoc sect (caddr (assoc app *hcnm-concept-settings*)))
-          )
-        )
-     )
-     (setq
-       addtolist nil
-       addtoini nil
-     )
-    )
-    ;;Try getting from ini.
-    ((setq
-       val
-        (ini_readentry app sect setting)
-       addtoini nil
-     )
-    )
-    ;;Get from app ini if not.
-    ((and
-       (setq dir (findfile testfile))
-       (setq
-         ini
-          (findfile
-            (strcat (hcnm-concept-filename-directory dir) "\\" app)
-          )
-       )
-       (setq val (ini_readentry ini sect setting))
-     )
-    )
-    ;;Use default if there is one
-    ((setq val (hcnm-concept-vartoval var defaults)))
-    ;;Otherwise fail.
-    (t
-     (alert
-       (strcat
-         "Fatal error in "
-         sect
-         ":\nCould not initialize the variable\n"
-         var
-       )
-     )
-     (setq
-       addtolist nil
-       addtoini nil
-     )
-    )
-  )
-  (if addtolist
-    (hcnm-concept-addvartolist var val sect app)
-  )
-  (if addtoini
-    (ini_writeentry
-      (hcnm-concept-ini (hcnm-concept-inifolder))
-      app
-      setting
-      val
-    )
-  )
-  val
-)
-
-(defun hcnm-concept-addvartolist (var val inisection inifile)
-  (setq
-    setting
-     (hcnm-concept-vartosetting var)
-    *hcnm-concept-settings*
-     (subst
-       (subst
-         (subst
-           (list setting val)
-           (assoc
-             inisetting
-             (assoc
-               inisection
-               (assoc
-                 inifile
-                 *hcnm-concept-settings*
-               )
-             )
-           )
-           (assoc
-             inisection
-             (assoc
-               inifile
-               *hcnm-concept-settings*
-             )
-           )
-         )
-         (assoc
-           inisection
-           (assoc file *hcnm-concept-settings*)
-         )
-         (assoc inifile *hcnm-concept-settings*)
-       )
-       (assoc inifile *hcnm-concept-settings*)
-       *hcnm-concept-settings*
-     )
-  )
-)
-
-
-;;Gets an entire ini file from app folder
-;;or else writes defaults to a fresh ini.
-;;Doesn't add to existing ini.
-;;Returns ini file name.
-(defun hcnm-concept-getinidefaults (proj / app appini projini)
-  (alert
-    (princ
-      (strcat
-        "Note: Program settings not found in program folder\n"
-        proj
-        "\n\nUsing default settings."
-      )
-    )
-  )
-  (setq projini (strcat proj "\\" "cnm.ini"))
-  (cond
-    ((and
-       (setq app (hcnm-config-getvar "AppFolder"))
-       (setq
-         appini
-          (findfile
-            (strcat
-              (hcnm-concept-filename-directory app)
-              "\\"
-              "cnm.ini"
-            )
-          )
-       )
-       (hcnm-concept-file-copy appini projini)
-     )
-     (while (not (findfile projini)))
-     projini
-    )
-    (t
-     (setq *f2* (open projini "w"))
-     (princ
-       "[CNM]
-ProjectNotes=constnot.csv
-ProjectNotesEditor=csv
-NoteTypes=BOX,CIR,DIA,ELL,HEX,OCT,PEN,REC,SST,TRI
-DoCurrentTabOnly=0
-PhaseAlias1=1
-PhaseAlias2=2
-PhaseAlias3=3
-PhaseAlias4=4
-PhaseAlias5=5
-PhaseAlias6=6
-PhaseAlias7=7
-PhaseAlias8=8
-PhaseAlias9=9
-InsertTablePhases=No
-TableWidth=65
-PhaseWidthAdd=9
-DescriptionWrap=9999
-LineSpacing=1.5
-NoteSpacing=3
-NumberToDescriptionWidth=2.5
-DescriptionToQuantityWidth=56
-QuantityToQuantityWidth=9
-QuantityToUnitsWidth=1
-ShowKeyTableTitleShapes=1
-ShowKeyTableGrid=0
-ShowKeyTableQuantities=1
-BubbleHooks=1
-ImportLayerSettings=No
-"      *f2*
-     )
-     (setq *f2* (close *f2*))
-     projini
-    )
-  )
-)
-
-;;Saves *hcnm-concept-settings* to the requested inifile
-(defun hcnm-concept-savesettingstoini (inifile testfile apporproj)
-  (ini_writesection
-    (hcnm-concept-ini (hcnm-concept-inifolder inifile testfile))
-    inifile
-    *hcnm-concept-settings*
-  )
-)
-;;;================================================================================================================
-;;; End multi-app planning thoughts and code
 ;#region CNM Configuration System
 ;;;================================================================================================================
 ;;;
-;;; CNM CONFIGURATION SYSTEM - MIGRATION STATUS (Issue #11)
+;;; CNM CONFIGURATION SYSTEM (Issue #11 - migration complete)
 ;;;
-;;; LEGACY ARCHITECTURE (commit 8bbcdac, pre-HAWS-CONFIG):
-;;;   - All config logic lived in cnm.lsp
-;;;   - c:hcnm-config-getvar had built-in caching via *hcnm-config*
-;;;   - Checked cache FIRST, then scope, then loaded appropriate scope reader
-;;;   - Session-scope loader (hcnm-config-read-all-session) did NOT call hcnm-proj
-;;;   - Project-scope loader (hcnm-config-read-all-project) called hcnm-proj
-;;;   - This prevented circular dependency: hcnm-proj → hcnm-initialize-project → 
-;;;     getvar("AppFolder") → Session loader (no hcnm-proj call) → success
+;;; ARCHITECTURE: All generic config infrastructure lives in haws-config.lsp.
+;;; This section contains only CNM-specific wrappers and definitions.
 ;;;
-;;; HAWS-CONFIG MIGRATION (commit dac2c4c, Issue #11):
-;;;   - INTENT: Move ALL config logic to haws-config.lsp
-;;;   - INTENT: Leave only definitions + thin getvar/setvar wrappers in cnm.lsp
-;;;   - REALITY: Partial migration left confusing hybrid
-;;;   - PROBLEM: Wrappers blindly called hcnm-proj for ALL scopes → circular dependency
-;;;   - FIX (2025-11-18): Added scope checks to wrappers (legacy guard restored)
+;;; CRITICAL: hcnm-config-getvar/setvar check scope BEFORE calling hcnm-proj.
+;;; Session-scope vars (like AppFolder) pass nil for ini-path, preventing
+;;; infinite recursion: hcnm-proj → hcnm-initialize-project → getvar → hcnm-proj
 ;;;
-;;; CURRENT STATE (confusing hybrid - needs cleanup):
-;;;   - hcnm-config-definitions: CNM variable definitions (GOOD - stays in cnm.lsp)
-;;;   - hcnm-config-getvar/setvar: Thin wrappers with scope checks (GOOD - minimal)
-;;;   - hcnm-config-defaults: Should move to haws-config or be eliminated
-;;;   - hcnm-config-defaults-single-scope: Should move to haws-config
-;;;   - hcnm-config-scope-code: Should move to haws-config or be eliminated
-;;;   - hcnm-config-scope-eq: Should move to haws-config or be eliminated
-;;;   - hcnm-config-entry-*: Should move to haws-config (already duplicated there)
-;;;   - hcnm-config-read-user: Should be eliminated (haws-config handles this)
-;;;   - hcnm-config-write-project: Should be eliminated (haws-config handles this)
-;;;
-;;; TODO (complete HAWS-CONFIG migration):
-;;;   1. Move generic config helper functions to haws-config.lsp
-;;;   2. Eliminate CNM-specific duplicates of haws-config functions
-;;;   3. Simplify wrappers to pure delegation (definitions + scope check only)
-;;;   4. Document why scope check is needed (prevent circular dependency)
-;;;   5. Consider moving project folder logic into haws-config (multi-app benefit)
-;;;
-;;; DEFINITIONS STRUCTURE:
-;;;   - CONFIG: Name of the app (e.g., "CNM")
-;;;   - DEFINITIONS: List of variable definitions
-;;;   - scope-key: String name (e.g., "User", "Project", "Session")
-;;;   - scope-code: Integer (0=Session, 1=Drawing, 2=Project, 3=App, 4=User)
-;;;   - ENTRY: Single variable definition: (var-name default-value scope-code)
-;;;   - VAR: String name of a variable
-;;;   - VAL: String value of a variable
+;;; SCOPE CODES: 0=Session 2=Project 4=User (see haws-config.lsp for full docs)
 ;;;
 ;;;================================================================================================================
 (defun hcnm-config-definitions (/)
@@ -3529,161 +2804,26 @@ ImportLayerSettings=No
   )
 )
 
-;; Strips scope stuff and returns just defaults list
-(defun hcnm-config-defaults ()
-  (cond
-    (*hcnm-config-defaults*)
-    ((mapcar
-       '(lambda (var) (hcnm-config-entry-strip-scope var))
-       (hcnm-config-definitions)
-     )
-    )
-  )
-)
-
-(defun hcnm-config-entry-strip-scope (entry)
-  (reverse (cdr (reverse entry)))
-)
-
-(defun hcnm-config-defaults-single-scope
-  (scope-key / scope-code scope-list)
-  (setq scope-code (hcnm-config-scope-code scope-key))
-  (foreach
-     entry (cdr (assoc "Var" (hcnm-config-definitions)))
-    (cond
-      ((= (hcnm-config-entry-scope-code entry) scope-code)
-       (setq
-         scope-list
-          (cons
-            (hcnm-config-entry-strip-scope entry)
-            scope-list
-          )
-       )
-      )
-    )
-  )
-  (reverse scope-list)
-)
-
-(defun hcnm-config-scope-code (scope-key)
-  (cadr
-    (assoc
-      scope-key
-      (cdr (assoc "Scope" (hcnm-config-definitions)))
-    )
-  )
-)
-
-(defun hcnm-config-scope-eq (var scope-key)
-  (= (hcnm-config-entry-scope-code
-       (assoc var (cdr (assoc "Var" (hcnm-config-definitions))))
-     )
-     (hcnm-config-scope-code scope-key)
-  )
-)
-
-(defun hcnm-config-entry-var (entry) (car entry))
-
-(defun hcnm-config-entry-val (entry) (cadr entry))
-
-(defun hcnm-config-entry-scope-code (entry) (caddr entry))
-
-(defun hcnm-config-get-default (var)
-  (hcnm-config-entry-val (assoc var (hcnm-config-defaults)))
-)
-
-(defun hcnm-config-read-all (/ ini_configs)
-  (append
-    (hcnm-config-read-all-user)
-    (hcnm-config-read-all-project)
-  )
-)
-(defun hcnm-config-read-all-user (/)
-  ;; This function doesn't need to setq an ini_configs since it does hcnm-config-read-user var by var.
-  (mapcar
-    '(lambda (entry / var val)
-       (setq
-         var (hcnm-config-entry-var entry)
-         val (hcnm-config-read-user var)
-       )
-       (list var val)
-     )
-    (hcnm-config-defaults-single-scope "User")
-  )
-)
-
-(defun hcnm-config-read-all-project (/ ini_configs)
-  (setq ini_configs (ini_readsection (hcnm-ini-name (hcnm-proj)) "CNM"))
-  (mapcar
-    '(lambda (entry / var val)
-       (setq
-         var (hcnm-config-entry-var entry)
-         val (hcnm-config-entry-val (assoc var ini_configs))
-       )
-       (list var val)
-     )
-    (hcnm-config-defaults-single-scope "Project")
-  )
-)
-
-(defun hcnm-config-read-all-session (/ ini_configs)
-  ;; Maybe this function can do what hcnm-config-read-all-user does; it doesn't need to setq an ini_configs since it does hcnm-config-read-user var by var.
-  (setq ini_configs *hcnm-config-session*)
-  (mapcar
-    '(lambda (entry / var val)
-       (setq
-         var (hcnm-config-entry-var entry)
-         val (hcnm-config-entry-val (assoc var ini_configs))
-       )
-       (list var val)
-     )
-    (hcnm-config-defaults-single-scope "Session")
-  )
-)
 
 ;;;Sets a variable in a temporary global lisp list
 (defun hcnm-config-temp-setvar (var val)
-  (cond
-    ((assoc var *hcnm-config-temp*)
-     (setq
-       *hcnm-config-temp*
-        (subst
-          (list var val)
-          (assoc var *hcnm-config-temp*)
-          *hcnm-config-temp*
-        )
-     )
-    )
-    (t
-     (setq *hcnm-config-temp* (cons (list var val) *hcnm-config-temp*))
-    )
+  (haws-config-temp-setvar "CNM" var val)
+)
+(defun hcnm-config-temp-getvar (var / scope-code)
+  ;; Scope guard: only call hcnm-proj for Project-scope vars (prevents circular dep)
+  (setq scope-code (haws-config-get-scope "CNM" var))
+  (haws-config-temp-getvar
+    "CNM"
+    var
+    (if (= scope-code 2) (hcnm-ini-name (hcnm-proj)) nil)
+    "CNM"
   )
 )
-
-;;;Gets a variable in a temporary global lisp list
-;;;If it's not present there, gets real value.
-(defun hcnm-config-temp-getvar (var)
-  (cond
-    ((cadr (assoc var *hcnm-config-temp*)))
-    (t (hcnm-config-getvar var))
-  )
-)
-
-
-;;;Saves the global list of temporary configs in the real global lisp list and in CNM.INI
 (defun hcnm-config-temp-save ()
-  (foreach
-     entry *hcnm-config-temp*
-    (hcnm-config-setvar
-      (hcnm-config-entry-var entry)
-      (hcnm-config-entry-val entry)
-    )
-  )
+  (haws-config-temp-save "CNM" (hcnm-ini-name (hcnm-proj)) "CNM")
 )
-
-;;;Saves the global list of temporary configs in the real global lisp list and in CNM.INI
 (defun hcnm-config-temp-clear ()
-  (setq *hcnm-config-temp* nil)
+  (haws-config-temp-clear "CNM")
 )
 
 ;;; ================================================================================================
@@ -3761,115 +2901,9 @@ ImportLayerSettings=No
   val
 )
 
-(defun hcnm-config-read-user (var /)
-  (cond
-    ((haws-vlisp-p)
-     (vl-registry-read
-       "HKEY_CURRENT_USER\\Software\\HawsEDC\\CNM"
-       var
-     )
-    )
-    (t nil)
-  )
-)
 
-(defun hcnm-config-write-user (var val)
-  (cond
-    ((haws-vlisp-p)
-     (vl-registry-write
-       "HKEY_CURRENT_USER\\Software\\HawsEDC\\CNM"
-       var
-       val
-     )
-    )
-  )
-)
+(defun hcnm-initialize-project (proj) (haws-config-initialize-project "CNM" proj))
 
-(defun hcnm-config-read-session (var /)
-  (cadr (assoc var *hcnm-config-session*))
-)
-
-(defun hcnm-config-write-session (var val)
-  (setq
-    *hcnm-config-session*
-     (cond
-       ((assoc var *hcnm-config-session*)
-        (subst
-          (list var val)
-          (assoc var *hcnm-config-session*)
-          *hcnm-config-session*
-        )
-       )
-       (t
-        (cons (list var val) *hcnm-config-session*)
-       )
-     )
-  )
-)
-
-;;Gets an entire ini file (per CNM forum) from app folder
-;;or else writes defaults to a fresh ini.
-;;Doesn't add to existing ini.
-;;Returns ini file name.
-(defun hcnm-initialize-project (proj / app appini projini mark-file-p)
-  (setq projini (hcnm-project-folder-to-ini proj))
-  (cond
-    ((and
-       (setq app (hcnm-config-getvar "AppFolder"))
-       (setq appini (findfile (hcnm-project-folder-to-ini app)))
-     )
-     (if (not (haws-file-copy appini projini))
-       (hcnm-error-not-writeable)
-     )
-     (alert
-       (princ
-         (strcat
-           "CNM is copying settings found in\n" appini "\nto\n" projini
-           "\nfor this project."
-          )
-       )
-     )
-     (while (not (findfile projini)))
-     (setq mark-file-p t)
-     projini
-    )
-    (t
-     (alert
-       (princ
-         (strcat
-           "CNM could not find a settings file in\n" app
-           "\n\nPutting hard-coded defaults in\n" projini
-           "\nfor this project."
-          )
-       )
-     )
-     (setq *hcnm-config* (hcnm-config-defaults-single-scope "Project"))
-     (hcnm-config-write-project proj)
-     (setq *hcnm-config* (hcnm-config-defaults))
-     (setq mark-file-p t)
-     projini
-    )
-  )
-  (cond
-    (mark-file-p
-     (ini_writeentry projini "CNM" "ThisFile" projini)
-    )
-  )
-)
-
-;;Saves *hcnm-CONFIG* to this project's ini
-(defun hcnm-config-write-project (proj)
-  (ini_writesection
-    (hcnm-ini-name
-      (cond
-        (proj)
-        ((hcnm-proj))
-      )
-    )
-    "CNM"
-    *hcnm-config*
-  )
-)
 
 (defun hcnm-set-dimstyle (key / dsty)
   ;;Set dimstyle as requested by calling function and set by user
@@ -4042,7 +3076,7 @@ ImportLayerSettings=No
 ;; Excel CSV
 ;; Doesn't do project management except to write txt2 configs to cnm.ini in the same folder as projnotes.
 (defun hcnm-readcf
-  (projnotes / bakprojnotes f1 pnformat rdlin requested-format)
+  (projnotes / bakprojnotes pnformat rdlin requested-format)
   ;;Do a file read to figure out what the file format is.
   ;;For now, assume that a file that has any of the shape keys followed by a comma ("BOX,", etc.) is CSV
   ;;any other file is TXT2
@@ -4170,7 +3204,7 @@ ImportLayerSettings=No
 )
 
 (defun hcnm-readcftxt2 (projnotes / alertnote alerttitle cfitem cflist
-                    cflist2 commentbegin f1 filev42 iline ininame nottyp
+                    cflist2 commentbegin filev42 iline ininame nottyp
                     rdlin val1 val2 var varlist n notdesc notnum typwc
                    )
   (setq
@@ -4465,7 +3499,7 @@ ImportLayerSettings=No
 )
 
 
-(defun hcnm-readcfcsv (projnotes / cflist f1 notdscstr nottyp rdlin typwc val
+(defun hcnm-readcfcsv (projnotes / cflist notdscstr nottyp rdlin typwc val
                    var wrap
                   )
   (setq
@@ -4554,7 +3588,7 @@ ImportLayerSettings=No
 )
 
 (defun hcnm-wrap-description (notdscstr wrap / character-i i i-endline
-                          i-newline-prev i-newword-prev inword-p
+                          i-newline i-newline-prev i-newword-prev inword-p
                           need-wrap-p notdsclst word-provided-p
                           wrap-exceeded-p
                          )
@@ -5935,7 +4969,8 @@ ImportLayerSettings=No
 ;; Bubble note insertion experience outer loop data prompts.
 ;; Get input from user. ename-bubble already exists so that we can do auto text.
 (defun hcnm-bn-get-bubble-data
-  (bubble-data / lattribs ename-bubble p1-ucs num)
+  (bubble-data / bubble-data-lattribs ename-bubble ename-bubble-old
+   lattribs num p1-ucs replace-bubble-p)
   (setq
     replace-bubble-p
      (hcnm-bn-bubble-data-get
@@ -9535,7 +8570,7 @@ ImportLayerSettings=No
 ;; This allows coordinate transformation without switching viewports
 ;; If bubble is on Model tab, no viewport processing needed
 (defun hcnm-bn-p1-world (ename-leader p1-ocs ename-bubble / elist-leader
-                         layout-name pspace-current-p on-model-tab-p
+                         layout-name p1-world pspace-current-p on-model-tab-p
                          transform-data cvport-stored ref-ocs-1
                          ref-wcs-1 ref-ocs-2 ref-wcs-2 ref-ocs-3
                          ref-wcs-3
@@ -11620,7 +10655,7 @@ ImportLayerSettings=No
 ;; Read all dialog tiles into lattribs semi-global
 ;; Called before dialog closes because action_tile only fires on focus-out,
 ;; not when user types and immediately clicks OK
-(defun hcnm-bn-eb-tiles-to-lattribs ()
+(defun hcnm-bn-eb-tiles-to-lattribs (/ tag tile-value)
   (foreach tag '("NOTENUM" "NOTEPHASE" "NOTEGAP" "NOTETXT1" "NOTETXT2" "NOTETXT3" "NOTETXT4" "NOTETXT5" "NOTETXT6" "NOTETXT0")
     (setq tile-value (get_tile tag))
     (if tile-value

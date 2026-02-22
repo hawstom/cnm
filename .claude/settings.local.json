@@ -12,7 +12,8 @@
       "WebFetch(domain:www.lee-mac.com)",
       "WebFetch(domain:forums.autodesk.com)",
       "WebFetch(domain:documentation.help)",
-      "WebFetch(domain:ezdxf.readthedocs.io)"
+      "WebFetch(domain:ezdxf.readthedocs.io)",
+      "Bash(awk:*)"
     ]
   }
 }
