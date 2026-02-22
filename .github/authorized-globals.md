@@ -18,12 +18,6 @@
 - **Justification:** Central store for multi-app config; eliminates `*hcnm-config*`, `*hcnm-cnmprojectroot*`
 - **Lifetime:** AutoCAD session
 
-**`*haws-config-cache*`** *(haws-config.lsp)*
-- **Purpose:** Legacy cache variable (reset on load to ensure clean state)
-- **Type:** nil on load
-- **Set in:** Top-level `(setq *haws-config-cache* nil)` in haws-config.lsp
-- **Justification:** Exists only to reset legacy state on reload
-
 **`*haws-config-temp*`** *(haws-config.lsp)*
 - **Purpose:** Per-app pending dialog changes, buffered before save/cancel
 - **Type:** `'(("CNM" (("var1" "val1") ...)) ("APP2" ...) ...)`
@@ -40,14 +34,6 @@
 - **Justification:** Performance - avoid repeated file parsing [TGH 2025-10-31 03:28:07: Would there be value in trying to incorporate this into `*hcnm-config*`?]
 - **Lifetime:** AutoCAD session (cleared by `hcnm-projinit`)
 
-**`*hcnm-dimstyleold*`**
-- **Purpose:** Saved dimension style before CNM changes it
-- **Type:** String (dimension style name)
-- **Set in:** `hcnm-set-dimstyle` (line 3632)
-- **Restored in:** `hcnm-restore-dimstyle`
-- **Justification:** User environment restoration [TGH 2025-10-31 03:28:07: I think this is a little weasely. We need to steel-man the case for localizing this or incorporating it into `*hcnm-config*`]
-- **Lifetime:** Single command execution
-
 ---
 
 ### Layer System
@@ -63,19 +49,6 @@
 
 ---
 
-### Paper Space Management (Under Review)
-
-⚠️ **`*hcnm-pspace-restore-needed*`**
-- **Purpose:** Flag indicating need to restore paper space after model space operations
-- **Type:** Boolean (T/nil)
-- **Set in:** `hcnm-ldrblk-get-target-vport` (line 7642)
-- **Cleared in:** `hcnm-ldrblk-insert` (line 5280)
-- **Status:** ⚠️ **TEMPORARY** - Marked for refactoring (see TGH comment line 5277)
-- **Issue:** Ad hoc global, should use bubble-data or config system
-- **Recommendation:** Refactor to use bubble-data parameter passing
-
----
-
 ### Edit Dialog Semi-Globals
 
 **`hcnm-bn-eb-state`**
@@ -84,21 +57,6 @@
 - **Set in:** `hcnm-edit-bubble` (initialized), `hcnm-bn-eb-get-text`, `hcnm-bn-eb-update-text` (modified)
 - **Scope:** Edit dialog session only
 - **Justification:** DCL dialog callback architecture requires semi-global state. Single variable replaces 4 unauthorized semi-globals.
-
-**`hcnm-ldrblk-eb-lattribs`** *(legacy - old edit dialog, not bubble note editor)*
-- **Purpose:** Bubble attributes being edited in dialog
-- **Type:** lattribs structure `'(("TAG" "prefix" "auto" "postfix") ...)`
-- **Set in:** Edit dialog functions (`hcnm-eb-*`)
-- **Scope:** Edit dialog session only
-- **Justification:** DCL dialog callback architecture requires semi-global state
-- **Pattern:** Standard AutoLISP dialog pattern
-
-**`hcnm-ldrblk-eb-ename-bubble`** *(legacy - old edit dialog, not bubble note editor)*
-- **Purpose:** Entity name of bubble being edited
-- **Type:** AutoCAD entity name
-- **Set in:** `hcnm-edit-bubble`
-- **Scope:** Edit dialog session only
-- **Justification:** DCL dialog callback architecture [TGH 2025-10-31 03:28:07: I need to audit this.]
 
 ---
 
@@ -157,25 +115,6 @@ All authorized globals use `*asterisk-naming*` or `hcnm-prefix-name` conventions
 
 - **`*hcnm-*`** - Session-scoped cached state (config, project data)
 - **`hcnm-bn-eb-*`** - Bubble note edit dialog semi-globals (DCL callback pattern)
-- **`hcnm-ldrblk-eb-*`** - Legacy edit dialog semi-globals (DCL callback pattern)
-
----
-
-## Audit Results
-
-### Functions with Local Variable Declarations Added (October 31, 2025)
-
-The following functions previously lacked `/` declarations but have now been fixed:
-
-1. ✅ `hcnm-ldrblk-bubble-data-set` - Added `/ ` (line 5700)
-2. ✅ `hcnm-ldrblk-change-arrowhead` - Added `/ ` (line 5822)
-3. ✅ `hcnm-ldrblk-lattribs-validate-and-underover` - Added `/ ` (line 5971)
-4. ✅ `hcnm-ldrblk-lattribs-validate` - Added `/ ` (line 5988)
-5. ✅ `hcnm-ldrblk-space-restore` - Added `/ ` (line 7417)
-6. ✅ `hcnm-ldrblk-warn-pspace-coordinates` - Added `/ ` (line 7493)
-7. ✅ `hcnm-ldrblk-eb-save` - Added `/ ` (line 8897)
-
-**Note:** Some simple wrapper/pure functions intentionally omit `/` because they have no local variables and contain no `setq` statements. This is safe AutoLISP practice.
 
 ---
 
@@ -196,5 +135,5 @@ The following functions previously lacked `/` declarations but have now been fix
 
 ---
 
-**Last Updated:** February 21, 2026
-**Audit Status:** ✅ All bubble region functions reviewed and fixed; globals report 2026-02-20 reviewed and categorized
+**Last Updated:** February 22, 2026
+**Audit Status:** ✅ Dead globals eliminated: *haws-config-cache*, *hcnm-dimstyleold*, *hcnm-pspace-restore-needed*, hcnm-ldrblk-eb-*

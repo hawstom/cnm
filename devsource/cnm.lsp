@@ -2432,7 +2432,7 @@
   (haws-core-restore)
 )
 ;;CNM main function
-(defun hcnm-cnm (opt / cfname dn linspc phasewid projnotes tblwid txtht)
+(defun hcnm-cnm (opt / cfname dimstyle-save dn linspc phasewid projnotes tblwid txtht)
   ;;Main function
   (haws-vsave '("attdia" "attreq" "clayer" "osmode"))
   (setvar "attdia" 0)
@@ -2458,7 +2458,7 @@
     )
   )
   ;;Set user's desired dimstyle.
-  (hcnm-set-dimstyle "NotesKeyTableDimstyle")
+  (setq dimstyle-save (hcnm-set-dimstyle "NotesKeyTableDimstyle"))
   (setq
     dn (haws-getdnpath)
     projnotes
@@ -2491,7 +2491,7 @@
     )
   )
   ;;Restore old dimstyle
-  (hcnm-restore-dimstyle)
+  (hcnm-restore-dimstyle dimstyle-save)
   (haws-vrstor)
   (haws-core-restore)
   (princ)
@@ -2899,8 +2899,9 @@
 (defun hcnm-initialize-project (proj) (haws-config-initialize-project "CNM" proj))
 
 
-(defun hcnm-set-dimstyle (key / dsty)
+(defun hcnm-set-dimstyle (key / dsty old-style)
   ;;Set dimstyle as requested by calling function and set by user
+  ;;Returns the previous dimstyle name (or nil if no change made), for use with hcnm-restore-dimstyle.
   ;;First, get dimstyle name
   (setq dsty (hcnm-config-getvar key))
   ;;Second, if the style is TCGLeader and doesn't already exist, set the _DotSmall ldrblk.
@@ -2912,18 +2913,19 @@
      (vl-cmdf "._dim1" "_dimldrblk" "_DotSmall")
     )
   )
-  ;;Third, if the desired style exists, save current style for later, then restore the desired style.
+  ;;Third, if the desired style exists, save current style and restore the desired style. Return saved name.
   (cond
     ((and (/= key "") (tblsearch "DIMSTYLE" dsty))
-     (setq *hcnm-dimstyleold* (getvar "dimstyle"))
+     (setq old-style (getvar "dimstyle"))
      (vl-cmdf "._dimstyle" "_restore" dsty)
+     old-style
     )
   )
 )
-(defun hcnm-restore-dimstyle ()
+(defun hcnm-restore-dimstyle (old-style)
   (cond
-    (*hcnm-dimstyleold*
-     (vl-cmdf "._dimstyle" "_restore" *hcnm-dimstyleold*)
+    (old-style
+     (vl-cmdf "._dimstyle" "_restore" old-style)
     )
   )
 )
@@ -4391,7 +4393,7 @@
 )
 
 (defun haws-ldrblk (blleft blrght bldrag bllay bldsty / apold as associate-p
-                ang auold blgf blline blk dsty dstyold dtold el en enblk
+                ang auold blgf blline blk dimstyle-save dsty dstyold dtold el en enblk
                 endrag fixhook fixphase fixtxt3 i p1 p2 p3 p4 p5 p6 p7
                 p8 pfound r1 ds ts left num txt1 txt2 ang1 ang2 fixorder
                 osmold
@@ -4411,7 +4413,7 @@
        (t)
      )
   )
-  (hcnm-set-dimstyle (strcat bldsty "Dimstyle"))
+  (setq dimstyle-save (hcnm-set-dimstyle (strcat bldsty "Dimstyle")))
   (setvar "osmode" 0)
   (haws-setlayr bllay)
   (setq p1 (getpoint "\nStart point for leader:"))
@@ -4498,7 +4500,7 @@
       ""
     )
   )
-  (hcnm-restore-dimstyle)
+  (hcnm-restore-dimstyle dimstyle-save)
   (haws-vrstor)
   (vl-cmdf "._undo" "_e")
   (haws-core-restore)
@@ -4555,7 +4557,7 @@
 )
 
 (defun hcnm-bn-insert (notetype / blockname bubble-data bubblehooks
-                       ename-bubble-old replace-bubble-p th
+                       dimstyle-save ename-bubble-old replace-bubble-p th
                        profile-start bubble-data-lattribs
                       )
   ;;===========================================================================
@@ -4605,7 +4607,7 @@
     )
   )
   (vl-cmdf "._undo" "_g")
-  (hcnm-set-dimstyle "NotesLeaderDimstyle")
+  (setq dimstyle-save (hcnm-set-dimstyle "NotesLeaderDimstyle"))
   (setq
     bubblehooks
      (hcnm-config-getvar "BubbleHooks")
@@ -4701,10 +4703,9 @@
   (hcnm-bn-finish-bubble bubble-data)
   (haws-debug ">>> RETURNED FROM hcnm-bn-finish-bubble")
   (haws-tip 7 "You can customize bubble note text position by moving the ATTDEF objects in the block editor (BEDIT). Save the results to a personal or team CNM customizations location so that you can copy in your versions after every CNM install.\n\nNote that there have been no changes to the bubble note block definition since version 5.0.07 (you can always check your version using HAWS-ABOUT).")
-  (hcnm-restore-dimstyle)
+  (hcnm-restore-dimstyle dimstyle-save)
   (haws-vrstor)
   (vl-cmdf "._undo" "_e")
-  
   (haws-core-restore)
   ;;===========================================================================
   ;; PROFILING: End timing bubble insertion

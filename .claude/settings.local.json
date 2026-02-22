@@ -25,7 +25,9 @@
       "Bash(for f in edclib.lsp lisputil.lsp haws-label.lsp xroffset.lsp layersav.lsp mscript.lsp profiles.lsp)",
       "Bash(do echo \"=== $f ===\")",
       "Bash(done)",
-      "Bash(powershell -ExecutionPolicy Bypass -File 'C:\\\\TGHFiles\\\\programming\\\\hawsedc\\\\develop\\\\devtools\\\\scripts\\\\run-validation.ps1')"
+      "Bash(powershell -ExecutionPolicy Bypass -File 'C:\\\\TGHFiles\\\\programming\\\\hawsedc\\\\develop\\\\devtools\\\\scripts\\\\run-validation.ps1')",
+      "Bash(for global in \"*haws-config*\" \"*hcnm-cnmprojectnotes*\" \"*hcnm-dimstyleold*\" \"*haws:layers*\" \"*hcnm-pgp-aliases*\" \"*hcnm-cnmaliasloaded*\" \"*hcnm-activation-preference*\" \"*haws-cel:settings*\" \"*haws-cv-method*\" \"*haws-cv-interval*\" \"*haws-layers-made*\" \"*haws-icadmode*\" \"*haws-vstr*\" \"*haws-clock-data*\" \"*haws-label-angle-mode*\" \"*haws-qt-instances*\" \"*haws-elvscl*\" \"*haws-dimlay*\" \"*haws-xrosetupdone*\" \"*haws-biosdatefull*\")",
+      "Bash(do echo \"=== $global ===\")"
     ]
   }
 }

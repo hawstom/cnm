@@ -1,8 +1,5 @@
 (princ "\nHaws-config functions ... ")
 
-;; Reset configuration cache on load (clean slate for testing)
-(setq *haws-config-cache* nil)
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; HAWS-CONFIG - Generic Multi-Application Configuration System
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -23,7 +20,7 @@
 ;;; explanations of when to use each scope.
 ;;;
 ;;; ARCHITECTURE:
-;;; - Multi-app cache: *haws-config-cache* stores config for all registered apps
+;;; - Multi-app cache: "Cache" section of *haws-config* stores config for all registered apps
 ;;; - Fallback chain: Memory → INI file → Defaults
 ;;; - App registration: Each app registers its variable list on load
 ;;;

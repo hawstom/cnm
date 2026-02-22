@@ -19,7 +19,6 @@
 ;;;
 ;;; BEFORE (Old Way - Multiple Globals):
 ;;;   *haws-config-definitions* = '(...)
-;;;   *haws-config-cache* = '(...)
 ;;;   *haws-config-session* = '(...)
 ;;;
 ;;; AFTER (New Way - Single Global):
