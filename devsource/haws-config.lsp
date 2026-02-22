@@ -965,7 +965,7 @@
 (defun haws-config-assure-linked-project (app linked-marker / f1 projroot rdlin)
   (cond
     ((and
-       (setq f1 (open linked-marker "r"))
+       (setq f1 (haws-open linked-marker "r"))
        (progn
          (while (and (setq rdlin (read-line f1)) (not projroot))
            (cond
@@ -981,7 +981,7 @@
              )
            )
          )
-         (setq f1 (close f1))
+         (haws-close f1)
          projroot
        )
      )

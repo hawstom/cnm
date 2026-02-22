@@ -15,7 +15,17 @@
       "WebFetch(domain:ezdxf.readthedocs.io)",
       "Bash(awk:*)",
       "Bash(powershell -Command:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(Get-Content -Raw \"C:\\\\TGHFiles\\\\programming\\\\hawsedc\\\\develop\\\\devsource\\\\xroffset.lsp\")",
+      "Bash(Get-Content \"C:\\\\TGHFiles\\\\programming\\\\hawsedc\\\\develop\\\\devsource\\\\mscript.lsp\")",
+      "Bash(Select-Object -First 50)",
+      "Bash(/tmp/fix_mscript2.ps1:*)",
+      "Bash(/tmp/fix_mscript3.ps1:*)",
+      "Bash(/tmp/fix_mscript4.ps1:*)",
+      "Bash(for f in edclib.lsp lisputil.lsp haws-label.lsp xroffset.lsp layersav.lsp mscript.lsp profiles.lsp)",
+      "Bash(do echo \"=== $f ===\")",
+      "Bash(done)",
+      "Bash(powershell -ExecutionPolicy Bypass -File 'C:\\\\TGHFiles\\\\programming\\\\hawsedc\\\\develop\\\\devtools\\\\scripts\\\\run-validation.ps1')"
     ]
   }
 }

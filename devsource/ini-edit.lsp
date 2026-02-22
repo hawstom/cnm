@@ -110,7 +110,7 @@
 )
 
 (defun ini_writeentry (inifile section entry val / ofile ini sec)
-(if (not (findfile inifile)) (progn (setq ofile (open inifile "w")) (close ofile)))
+(if (not (findfile inifile)) (progn (setq ofile (haws-open inifile "w")) (haws-close ofile)))
 (if (and (= 'STR (type section)) (/= "[" (substr section 1 1))) (setq section (strcat "[" section "]")))
 (if (setq ofile (findfile inifile))
 	(progn
@@ -122,7 +122,7 @@
 					(setq sec (cons section (reverse (cons (list entry val) (reverse (cdr sec))))))
 				)
 				(setq ini (subst sec (assoc section ini) ini))
-				(setq ofile (open ofile "w"))
+				(setq ofile (haws-open ofile "w"))
 				(if ofile (progn
 					(mapcar
 						'(lambda (x)
@@ -137,17 +137,17 @@
 						)
 						ini
 					)
-					(close ofile)
+					(haws-close ofile)
 				))
 			)
 			(t
-				(setq ofile (open ofile "a"))
+				(setq ofile (haws-open ofile "a"))
 				(if ofile
 					(progn
 						(write-line "" ofile);Revised formatting bug by TGH 2/17/05
 					        (write-line section ofile)
 					        (princ (strcat entry "=" val) ofile)
-						(close ofile)
+						(haws-close ofile)
 					)
 				)
 			)
@@ -159,7 +159,7 @@
 )
 
 (defun ini_writesection (inifile section entrylist / entry ofile ini sec)
-(if (not (findfile inifile)) (progn (setq ofile (open inifile "w")) (close ofile)))
+(if (not (findfile inifile)) (progn (setq ofile (haws-open inifile "w")) (haws-close ofile)))
 (if (and (= 'STR (type section)) (/= "[" (substr section 1 1))) (setq section (strcat "[" section "]")))
 (if (setq ofile (findfile inifile))
 	(progn
@@ -173,7 +173,7 @@
 				)
 			   )
 				(setq ini (subst sec (assoc section ini) ini))
-				(setq ofile (open ofile "w"))
+				(setq ofile (haws-open ofile "w"))
 				(if ofile (progn
 					(mapcar
 						'(lambda (x)
@@ -188,12 +188,12 @@
 						)
 						ini
 					)
-					(close ofile)
+					(haws-close ofile)
 				))
-			   
+
 			)
 			(t
-				(setq ofile (open ofile "a"))
+				(setq ofile (haws-open ofile "a"))
 				(if ofile
 					(progn
 						(if ini (write-line "" ofile));Revised formatting bug by TGH 2/17/05
@@ -201,7 +201,7 @@
 						(foreach entry entrylist
 					        (write-line (strcat (car entry) "=" (cadr entry)) ofile)
 						)
-						(close ofile)
+						(haws-close ofile)
 					)
 				)
 			)
@@ -225,7 +225,7 @@
 (defun ini_readini (inifile / ofile line section result)
 (if (findfile inifile)
 	(progn
-		(setq ofile (open (findfile inifile) "r"))
+		(setq ofile (haws-open (findfile inifile) "r"))
 		(if ofile (progn
 			(while (and (setq line (read-line ofile)) (/= "[" (substr line 1 1))))
 			(while (and line (= "[" (substr line 1 1)))
@@ -237,7 +237,7 @@
 				)
 				(setq result (cons (reverse section) result))
 			)
-			(close ofile)
+			(haws-close ofile)
 		))
 	)
 	(alert (princ (strcat inifile "\nnot found.")))

@@ -95,10 +95,10 @@
   (haws-deprecation-01 "errrst")
 )
 (defun haws-errrst ()
-  (setq ucsp nil ucspp nil enm nil *f1* nil *f2* nil *error* olderr olderr nil)
+  (setq ucsp nil ucspp nil enm nil *error* olderr olderr nil)
 )
 (defun haws-core-restore ()
-  (setq ucsp nil ucspp nil enm nil *f1* nil *f2* nil *error* olderr olderr nil)
+  (setq ucsp nil ucspp nil enm nil *error* olderr olderr nil)
 )
 ;;; END ERROR HANDLER
 
@@ -233,10 +233,10 @@
       ( (and (= (strcase ftype) "W") (findfile fname))
         (initget "Yes No")
         (if (= (getkword "File already exists.  Overwrite?<Y/N>:") "Yes")
-          (setq file (open fname ftype))
+          (setq file (haws-open fname ftype))
         )
       )
-      (t (setq file (open fname ftype)))
+      (t (setq file (haws-open fname ftype)))
     )
     (if
       (not file)
@@ -316,7 +316,7 @@
 ;;; MKLAYR sub-function defines and makes current a layer for another routine.
 ;;;  Usage: (mklayr (list "laname" "lacolr" "laltyp"))
 ;;;  Use empty quotes for default color and linetype (eg. (mklay (list "AZ" "" ""))
-  (defun haws-getusl (/ rdlin temp)
+  (defun haws-getusl (/ f3 i rdlin temp)
     (setq temp (findfile"layers.dat"))
     (cond
       (temp
@@ -326,16 +326,16 @@
       ((prompt "\nLayer settings file not found.") (exit))
     )
     (setq
-      *f3* (open temp "r")
+      f3 (haws-open temp "r")
       i 0
     )
-    (while (setq rdlin (read-line *f3*))
+    (while (setq rdlin (read-line f3))
       (princ "\rReading line ")(princ (setq i (1+ i)))
       (if (= 'LIST (type (setq temp (read rdlin))))
         (setq *haws:layers* (cons temp *haws:layers*))
       )
     )
-    (setq *f3* (close *f3*))
+    (setq f3 (haws-close f3))
   )
 (defun haws-getlayr ( key / temp)
   (if (not *haws:layers*)(haws-getusl))
