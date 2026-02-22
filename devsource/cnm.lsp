@@ -1,4 +1,4 @@
-;#region Header comments
+﻿;#region Header comments
 ;;; CONSTRUCTION NOTES MANAGER
 ;;;
 ;; Ensure Visual LISP extensions are loaded
@@ -710,38 +710,38 @@
        )
        ".not"
      )
-    *f2* (open nfname "w")
+    f2 (haws-open nfname "w")
   )
   ;;Write NOTELIST to the work file
-  (princ "(" *f2*)
-  (prin1 (car notelist) *f2*)
-  (princ "(" *f2*)
+  (princ "(" f2)
+  (prin1 (car notelist) f2)
+  (princ "(" f2)
   (foreach
      nottyp (cadr notelist)
-    (princ "(" *f2*)
-    (prin1 (car nottyp) *f2*)
+    (princ "(" f2)
+    (prin1 (car nottyp) f2)
     (foreach
        notnum (cdr nottyp)
-      (princ "(" *f2*)
-      (prin1 (car notnum) *f2*)
-      (prin1 (cadr notnum) *f2*)
-      (prin1 (caddr notnum) *f2*)
+      (princ "(" f2)
+      (prin1 (car notnum) f2)
+      (prin1 (cadr notnum) f2)
+      (prin1 (caddr notnum) f2)
       (foreach
          noteqty (cdddr notnum)
         (cond
-          ((= (type noteqty) 'str) (prin1 noteqty *f2*))
-          (noteqty (prin1 (rtos noteqty 2 8) *f2*))
-          ((princ "nil " *f2*))
+          ((= (type noteqty) 'str) (prin1 noteqty f2))
+          (noteqty (prin1 (rtos noteqty 2 8) f2))
+          ((princ "nil " f2))
         )
-        *f2*
+        f2
       )
-      (princ ")" *f2*)                    ;End of notnum
+      (princ ")" f2)                    ;End of notnum
     )
-    (princ ")" *f2*)                      ;End of nottyp
+    (princ ")" f2)                      ;End of nottyp
   )
-  (princ "))" *f2*)                       ;End of (cadr noteqty) and noteqty
+  (princ "))" f2)                       ;End of (cadr noteqty) and noteqty
   (setq
-    *f2* (close *f2*)
+    f2 (haws-close f2)
        ;;Close notes file for this drawing (program work file)
   )
   (princ
@@ -783,7 +783,7 @@
 ;;Uses the qty block.
 ;;Puts table at qtypt.
 ;; TGH to use this for TALLY, maybe I just need to read NOTELIST as an argument instead of from a file in this function.
-(defun hcnm-key-table-make (nfsource qtypt qtyset dn txtht notesmaxheight / ctabonly f1 icol
+(defun hcnm-key-table-make (nfsource qtypt qtyset dn txtht notesmaxheight / ctabonly f1 f2 icol
                         i-title iphase column-height note-first-line-p
                         column-height-pending layerkey layerlist layershow
                         linspc nfname notdsc notelist
@@ -807,10 +807,10 @@
     (setq nfname (getfiled "Select Drawing and Layout" "" "NOT" 0))
   )
   (setq
-    *f1* (open nfname "r")
+    f1 (haws-open nfname "r")
     notelist
-     (read (read-line *f1*))
-    *f1* (close *f1*)
+     (read (read-line f1))
+    f1 (haws-close f1)
   )
   ;;Check that we got a valid NOTELIST from file.
   (if (/= (type notelist) 'list)
@@ -1168,6 +1168,7 @@
 
 
 
+;;Shared locals from hcnm-key-table-make (only caller): column-height icol phaselist phasewid qtypt qtypt1 tblwid txtht
 (defun hcnm-key-table-advance-column ()
   (setq
     column-height 0
@@ -1186,6 +1187,7 @@
   )
 )
 
+;;Shared locals from hcnm-key-table-make (only caller): column-height column-height-pending qtypt txtht
 (defun hcnm-key-table-advance-down (space / down-height)
   (setq
     down-height
@@ -1199,6 +1201,7 @@
   )
 )
 
+;;Shared locals from hcnm-key-table-make (only caller): nottyp qtypt txtht
 (defun hcnm-key-table-insert-shape ()
   (vl-cmdf
     "._insert"
@@ -1211,6 +1214,7 @@
   )
 )
 
+;;Shared locals from hcnm-key-table-make (only caller): notdsc note-first-line-p notnum notqty nottyp notunt qtypt txtht
 (defun hcnm-key-table-insert-text ()
 ;;;All this stuff is to make the attribute order insensitive.
 ;;;    (setvar "attreq" 0)
@@ -1580,7 +1584,7 @@
 ;;   put the qtys.  Use "" for any unused phases on a sheet.
 ;;   '((shti (typj (notek qty1 qty2 qtyk))))
 (defun hcnm-tally (dn projnotes txtht linspc tblwid phasewid / allnot
-               all-sheets-quantities col1x column dqwid el f1 flspec i
+               all-sheets-quantities col1x column dqwid el f1 f2 flspec i
                input ndwid notdesc notetitles note-first-line-p notnum
                notprice notqty notspc nottyp notunt numfnd numlist
                pgp-defines-run pgp-filename pgp-file-contents
@@ -1650,9 +1654,9 @@
            (strcat dn ".lst")
           pgp-filename
            (findfile "acad.pgp")
-          *f1* (open pgp-filename "r")
+          f1 (haws-open pgp-filename "r")
         )
-        (while (setq pgp-file-line (read-line *f1*))
+        (while (setq pgp-file-line (read-line f1))
           (if (= "RUN," (substr pgp-file-line 1 4))
             (setq pgp-defines-run t)
           )
@@ -1670,18 +1674,18 @@
              (cons pgp-file-line pgp-file-contents)
           )
         )
-        (setq *f1* (close *f1*))
+        (setq f1 (haws-close f1))
         (if (not pgp-defines-run)
           (progn
             (setq
-              *f1*                (open pgp-filename "w")
+              f1                (haws-open pgp-filename "w")
               pgp-file-contents (reverse pgp-file-contents)
             )
             (foreach
                pgp-file-line pgp-file-contents
-              (write-line pgp-file-line *f1*)
+              (write-line pgp-file-line f1)
             )
-            (setq *f1* (close *f1*))
+            (setq f1 (haws-close f1))
             (setvar "re-init" 16)
           )
         )
@@ -1700,9 +1704,9 @@
              )
           )
           (setq
-            *f1* (open sheet-list-filename "r")
+            f1 (haws-open sheet-list-filename "r")
             sheet-filename
-             (read-line *f1*)
+             (read-line f1)
             column
              (strlen sheet-filename)
           )
@@ -1710,7 +1714,7 @@
             ((wcmatch sheet-filename "* not found *")
              (setq
                column nil
-               *f1* (close *f1*)
+               f1 (haws-close f1)
              )
              (alert
                (princ
@@ -1739,11 +1743,11 @@
                (setq column (1- column))
              )
              (setq
-               *f1*              (close *f1*)
-               *f1*              (open sheet-list-filename "r")
+               f1              (haws-close f1)
+               f1              (haws-open sheet-list-filename "r")
                sheet-filenames nil
              )
-             (while (setq sheet-filename (read-line *f1*))
+             (while (setq sheet-filename (read-line f1))
                (setq
                  sheet-filename
                   (substr sheet-filename column)
@@ -1759,15 +1763,15 @@
                )
              )
              (setq
-               *f1* (close *f1*)
-               *f1* (open sheet-list-filename "w")
+               f1 (haws-close f1)
+               f1 (haws-open sheet-list-filename "w")
              )
              (setq sheet-filenames (reverse sheet-filenames))
              (foreach
                 sheet-filename sheet-filenames
-               (write-line sheet-filename *f1*)
+               (write-line sheet-filename f1)
              )
-             (setq *f1* (close *f1*))
+             (setq f1 (haws-close f1))
             )
           )
         )
@@ -1776,7 +1780,7 @@
         (setq
           sheet-list-filename
            (strcat dn ".lst")
-          *f1* (open sheet-list-filename "w")
+          f1 (haws-open sheet-list-filename "w")
         )
         (while (setq
                  sheet-filename
@@ -1789,10 +1793,10 @@
                )
           (write-line
             (substr sheet-filename 1 (- (strlen sheet-filename) 4))
-            *f1*
+            f1
           )
         )
-        (setq *f1* (close *f1*))
+        (setq f1 (haws-close f1))
        )
      ) ;_ end cond
     )
@@ -1846,10 +1850,10 @@
 ;;;  Read all .NOT's into a master all-sheets-quantities
 ;;;  Add phases from all .NOTs to the list if not already there.  And if aliases in conflict, alert user.
 ;;;
-  (setq *f1* (open sheet-list-filename "r"))
+  (setq f1 (haws-open sheet-list-filename "r"))
   (princ "\n")
   (while (and
-           (setq sheet-list-line (read-line *f1*))
+           (setq sheet-list-line (read-line f1))
            (/= "" sheet-list-line)
          )
     ;;Read in this sheet's notelist '( ((alias number phase)) ((type1 (notenum txtlines countmethod qty1...))))
@@ -1871,16 +1875,16 @@
           )
          )
        )
-      *f2* (open sheet-file-name "r")
+      f2 (haws-open sheet-file-name "r")
       sheet-quantities
-       (read (read-line *f2*))
+       (read (read-line f2))
       all-sheets-quantities
        (cons
          (cons sheet-file-name sheet-quantities)
          all-sheets-quantities
        )
     )
-    (if (read-line *f2*)
+    (if (read-line f2)
       (alert
         (princ
           (strcat
@@ -1891,7 +1895,7 @@
         )
       )
     )
-    (setq *f2* (close *f2*))
+    (setq f2 (haws-close f2))
     ;;Set all phases discovered.
     ;;In .NOT files, phases are ("alias" order "number"), but here they are ("number" order "alias")
     (foreach
@@ -1943,7 +1947,7 @@
       )
     )
   )
-  (setq *f1* (close *f1*))
+  (setq f1 (haws-close f1))
   ;;Condense list to standard phases-definition format: '((phasej j aliasj)...)
   ;;and renumber for only sheets being tallied.
   (setq i 0)
@@ -2046,8 +2050,8 @@
   )
   (setvar "osmode" 0)
   ;;Write column headings to the file
-  (setq *f2* (haws-open (strcat dn ".csv") "w"))
-  (princ "TYPE,NO,ITEM,UNIT,PRICE," *f2*)
+  (setq f2 (haws-open (strcat dn ".csv") "w"))
+  (princ "TYPE,NO,ITEM,UNIT,PRICE," f2)
   ;; Price and cost
   (setq sheet-headings "")
   (foreach
@@ -2073,7 +2077,7 @@
       )
     )
   )
-  (princ sheet-headings *f2*)
+  (princ sheet-headings f2)
   (foreach
      phase phases-definition
     (princ
@@ -2092,10 +2096,10 @@
         (caddr phase)
         ","
       )
-      *f2*
+      f2
     )
   )
-  (write-line "" *f2*)
+  (write-line "" f2)
   (if qtyset
     (vl-cmdf "._erase" qtyset "")
   )
@@ -2193,7 +2197,7 @@
               (haws-mktext "ML" (list x y z) txtht 0 (cadr notetitle))
             )
             (setq y (- y (* txtht linspc)))
-            (write-line (cadr notetitle) *f2*)
+            (write-line (cadr notetitle) f2)
           )
           (setq
             y     (- y (* txtht (- notspc linspc)))
@@ -2384,17 +2388,17 @@
            (progn
              (setq notdesc "")
              (foreach y x (setq notdesc (strcat notdesc "\n" y)))
-             (princ (haws-mkfld (substr notdesc 2) ",") *f2*)
+             (princ (haws-mkfld (substr notdesc 2) ",") f2)
            )
-           (princ (strcat x ",") *f2*)
+           (princ (strcat x ",") f2)
          )
        )
        (setq writelist nil)
-       (write-line "" *f2*)
+       (write-line "" f2)
       )
     )
   )
-  (setq *f2* (close *f2*))
+  (setq f2 (haws-close f2))
   (prompt
     (strcat "\nUsed project notes file found at " projnotes)
   )
@@ -2670,8 +2674,8 @@
 
 ;;Makes a project root reference file CNMPROJ.TXT in this drawing's folder
 ;;Returns nil.
-(defun hcnm-makeprojtxt (projdir dwgdir)
-  (setq *f2* (open (hcnm-project-folder-to-link dwgdir) "w"))
+(defun hcnm-makeprojtxt (projdir dwgdir / f2)
+  (setq f2 (haws-open (hcnm-project-folder-to-link dwgdir) "w"))
   (princ
     (strcat
       ";For simple projects, all project drawings are in one folder, 
@@ -2684,9 +2688,9 @@
 ;the Project Root Folder, given below:
 "     projdir
     )
-    *f2*
+    f2
   )
-  (setq *f2* (close *f2*))
+  (setq f2 (haws-close f2))
 )
 
 ;#endregion
@@ -2700,7 +2704,7 @@
 ;;;
 ;;; CRITICAL: hcnm-config-getvar/setvar check scope BEFORE calling hcnm-proj.
 ;;; Session-scope vars (like AppFolder) pass nil for ini-path, preventing
-;;; infinite recursion: hcnm-proj → hcnm-initialize-project → getvar → hcnm-proj
+;;; infinite recursion: hcnm-proj â†’ hcnm-initialize-project â†’ getvar â†’ hcnm-proj
 ;;;
 ;;; SCOPE CODES: 0=Session 2=Project 4=User (see haws-config.lsp for full docs)
 ;;;
@@ -2838,16 +2842,6 @@
 ;;;   - haws-config-getvar retrieves from Session cache (no project path needed)
 ;;;   - SUCCESS - no circular dependency!
 ;;;
-;;; WITHOUT scope check (bug introduced in commit dac2c4c):
-;;;   - Wrapper blindly calls (hcnm-ini-name (hcnm-proj)) for ALL variables
-;;;   - This evaluates hcnm-proj BEFORE haws-config can check scope or cache
-;;;   - Causes infinite recursion: hcnm-proj → initialize → getvar → hcnm-proj → ...
-;;;
-;;; LEGACY BEHAVIOR (commit 8bbcdac):
-;;;   - c:hcnm-config-getvar checked (hcnm-config-scope-eq var "Session") FIRST
-;;;   - Only called hcnm-proj if variable was Project-scope
-;;;   - This pattern restored here (2025-11-18) to fix circular dependency
-;;;
 ;;; ================================================================================================
 
 ;;;Sets a variable in the global lisp list and in CNM.INI
@@ -2878,7 +2872,7 @@
   (setq start (haws-clock-start "cnm-config-getvar-wrapper"))
   ;; Get scope code to avoid calling hcnm-proj for non-Project variables
   ;; This prevents circular dependency during project initialization:
-  ;; hcnm-proj → hcnm-initialize-project → hcnm-config-getvar("AppFolder") → hcnm-proj
+  ;; hcnm-proj â†’ hcnm-initialize-project â†’ hcnm-config-getvar("AppFolder") â†’ hcnm-proj
   ;; AppFolder is Session-scope (0), so it doesn't need project path
   (setq scope-code (haws-config-get-scope "CNM" var))
   ;; Call haws-config with appropriate parameters
@@ -3076,7 +3070,7 @@
 ;; Excel CSV
 ;; Doesn't do project management except to write txt2 configs to cnm.ini in the same folder as projnotes.
 (defun hcnm-readcf
-  (projnotes / bakprojnotes pnformat rdlin requested-format)
+  (projnotes / bakprojnotes f1 pnformat rdlin requested-format)
   ;;Do a file read to figure out what the file format is.
   ;;For now, assume that a file that has any of the shape keys followed by a comma ("BOX,", etc.) is CSV
   ;;any other file is TXT2
@@ -3087,8 +3081,8 @@
       "\nand evaluating the need for format conversion."
     )
   )
-  (setq *f1* (open projnotes "r"))
-  (while (and (not pnformat) (setq rdlin (read-line *f1*)))
+  (setq f1 (haws-open projnotes "r"))
+  (while (and (not pnformat) (setq rdlin (read-line f1)))
     (haws-debug "Reading a line of existing project notes.")
     (cond
       ((= ";" (substr rdlin 1 1))
@@ -3104,7 +3098,7 @@
   )
   (haws-debug "Finished detecting existing project notes format.")
   (setq
-    *f1* (close *f1*)
+    f1 (haws-close f1)
     requested-format
      (hcnm-config-project-notes-format)
   )
@@ -3204,15 +3198,15 @@
 )
 
 (defun hcnm-readcftxt2 (projnotes / alertnote alerttitle cfitem cflist
-                    cflist2 commentbegin filev42 iline ininame nottyp
+                    cflist2 commentbegin f1 f2 filev42 iline ininame nottyp
                     rdlin val1 val2 var varlist n notdesc notnum typwc
                    )
   (setq
     typwc
-     (hcnm-config-getvar "NoteTypes") ; Get typwc (which may open *f1*) before opening *f1*
-    *f1* (open projnotes "r")
+     (hcnm-config-getvar "NoteTypes") ; Get typwc (which may open f1) before opening f1
+    f1 (haws-open projnotes "r")
   )
-  (while (setq rdlin (read-line *f1*))
+  (while (setq rdlin (read-line f1))
     (cond
       ;;Comment
       ((= ";" (substr rdlin 1 1))
@@ -3380,7 +3374,7 @@
       )
     )
   )
-  (setq *f1* (close *f1*))
+  (setq f1 (haws-close f1))
   (if alerttitle
     (alert
       (princ
@@ -3450,11 +3444,11 @@
        )
      )
      (setq
-       *f1* (open projnotes "r")
+       f1 (haws-open projnotes "r")
        cflist nil
        iline 0
      )
-     (while (setq rdlin (read-line *f1*))
+     (while (setq rdlin (read-line f1))
        (setq iline (1+ iline))
        ;;If the line is recognizable as a vestige of version 4.1 config settings,
        ;;make a note of it for adding a comment.
@@ -3477,39 +3471,39 @@
        (setq cflist (cons rdlin cflist))
      )
      (setq
-       *f1*    (close *f1*)
-       *f2*    (open projnotes "w")
+       f1    (haws-close f1)
+       f2    (haws-open projnotes "w")
        iline 0
      )
-     (write-line "SET CNMVERSION 4.2" *f2*)
+     (write-line "SET CNMVERSION 4.2" f2)
      (foreach
         cfitem (reverse cflist)
        (if (= iline commentbegin)
          (write-line
            ";The variable settings section below is not used by CNM 4.2.\n;All variables except TXTHT (optional) and CNMVERSION are in CNM.INI.\n;You can use TXTHT to vary text heights from one line to the next.\n;CNM uses the current DIMTXT for the whole table if TXTHT is omitted,\n;."
-           *f2*
+           f2
          )
        )
        (setq iline (1+ iline))
-       (write-line cfitem *f2*)
+       (write-line cfitem f2)
      )
-     (setq *f2* (close *f2*))
+     (setq f2 (haws-close f2))
     )
   )
 )
 
 
-(defun hcnm-readcfcsv (projnotes / cflist notdscstr nottyp rdlin typwc val
+(defun hcnm-readcfcsv (projnotes / cflist f1 notdscstr nottyp rdlin typwc val
                    var wrap
                   )
   (setq
     wrap
      (atoi (hcnm-config-getvar "DescriptionWrap"))
     typwc
-     (hcnm-config-getvar "NoteTypes") ; Get typwc (which may open *f1*) before opening *f1*
-    *f1* (open projnotes "r")
+     (hcnm-config-getvar "NoteTypes") ; Get typwc (which may open f1) before opening f1
+    f1 (haws-open projnotes "r")
   )
-  (while (setq rdlin (read-line *f1*))
+  (while (setq rdlin (read-line f1))
     (cond
       ;;Comment
       ((= ";" (substr rdlin 1 1))
@@ -3583,7 +3577,7 @@
       )
     )
   )
-  (setq *f1* (close *f1*))
+  (setq f1 (haws-close f1))
   (setq *hcnm-cnmprojectnotes* (reverse cflist))
 )
 
@@ -3751,7 +3745,7 @@
 )
 |;
 
-(defun hcnm-writecftxt2 (projnotes / i item nottyp nottxt nottxtnew)
+(defun hcnm-writecftxt2 (projnotes / f2 i item nottyp nottxt nottxtnew)
   (alert
     (princ
       (strcat
@@ -3761,27 +3755,27 @@
       )
     )
   )
-  (setq *f2* (open projnotes "w"))
+  (setq f2 (haws-open projnotes "w"))
   (foreach
      item *hcnm-cnmprojectnotes*
     (cond
       ;;Comment
-      ((= 0 (car item)) (write-line (strcat ";" (cdr item)) *f2*))
+      ((= 0 (car item)) (write-line (strcat ";" (cdr item)) f2))
       ;;Set variable (TXTHT only at this time)
       ((= 1 (car item))
-       (write-line (strcat "SET " (cadr item) " " (caddr item)) *f2*)
+       (write-line (strcat "SET " (cadr item) " " (caddr item)) f2)
       )
       ;;Title
       ((= 2 (car item))
        (if (/= nottyp (setq nottyp (cadr item)))
-         (write-line nottyp *f2*)
+         (write-line nottyp f2)
        )
-       (write-line (strcat "TITLE " (caddr item)) *f2*)
+       (write-line (strcat "TITLE " (caddr item)) f2)
       )
       ;;Note
       ((= 3 (car item))
        (if (/= nottyp (setq nottyp (cadr item)))
-         (write-line nottyp *f2*)
+         (write-line nottyp f2)
        )
        (princ
          (strcat
@@ -3791,20 +3785,20 @@
            (nth 4 item)
            "\n"
          )
-         *f2*
+         f2
        )
        (foreach
           item (cdr (nth 5 item))
-         (princ (strcat "     " item "\n") *f2*)
+         (princ (strcat "     " item "\n") f2)
        )
       )
     )
   )
-  (setq *f2* (close *f2*))
+  (setq f2 (haws-close f2))
   *hcnm-cnmprojectnotes*
 )
 
-(defun hcnm-writecfcsv (projnotes / desc descline item nottyp)
+(defun hcnm-writecfcsv (projnotes / desc descline f2 item nottyp)
   (alert
     (princ
       (strcat
@@ -3814,7 +3808,7 @@
       )
     )
   )
-  (setq *f2* (open projnotes "w"))
+  (setq f2 (haws-open projnotes "w"))
   (foreach
      item *hcnm-cnmprojectnotes*
     (cond
@@ -3829,15 +3823,15 @@
            ",N/A,"
            (haws-mkfld (cdr item) ",")
          )
-         *f2*
+         f2
        )
       )
       ((= 1 (car item))
-       (write-line (strcat "SET," (cadr item) "," (caddr item)) *f2*)
+       (write-line (strcat "SET," (cadr item) "," (caddr item)) f2)
       )
       ((= 2 (car item))
        (setq nottyp (cadr item))
-       (write-line (strcat nottyp ",TITLE," (caddr item) ",,") *f2*)
+       (write-line (strcat nottyp ",TITLE," (caddr item) ",,") f2)
       )
       ((= 3 (car item))
        (setq
@@ -3861,12 +3855,12 @@
            ","
            (nth 4 item)
          )
-         *f2*
+         f2
        )
       )
     )
   )
-  (setq *f2* (close *f2*))
+  (setq f2 (haws-close f2))
   *hcnm-cnmprojectnotes*
 )
 
@@ -3915,9 +3909,8 @@
   (setq
     noteseditor
      (hcnm-config-getvar "ProjectNotesEditor")
-    ;; wcmatch is legacy hack to be removed when 4.2.29 is deprecated and replaced with translation/conversion on getvar.
     cnmedit-p
-     (wcmatch (strcase noteseditor) "*CNM*")
+     (wcmatch (strcase noteseditor) "*CNM*") ; detect CNM editor from raw ini string
   )
   (if cnmedit-p
     (haws-core-init 335)
@@ -3994,9 +3987,8 @@
   (setq
     *haws:layers* nil
     layerseditor
-     ;; wcmatch is legacy hack to be removed when 4.2.29 is deprecated and replaced with translation/conversion on getvar.
      (cond
-       ((wcmatch
+       ((wcmatch                            ; detect CNM editor from raw ini string
           (strcase (hcnm-config-getvar "LayersEditor"))
           "*CNM*"
         )
@@ -4053,7 +4045,7 @@
 
 ;;SETNOTEPHASES
 ;;Sets the number of phases for this drawing or this folder.
-(defun c:haws-setnotephases (/ cflist opt1 phases rdlin)
+(defun c:haws-setnotephases (/ cflist f1 opt1 phases rdlin)
   (haws-core-init 194)
   (initget 1 "Drawing Project")
   (setq
@@ -4086,10 +4078,10 @@
     )
     ((= opt1 "Project")
      (setq
-       *f1*     (open (hcnm-projnotes) "r")
+       f1     (haws-open (hcnm-projnotes) "r")
        cflist nil
      )
-     (while (setq rdlin (read-line *f1*))
+     (while (setq rdlin (read-line f1))
        (cond
          ;;If there is a SET PHASES line already, remove it.
          ((and
@@ -4102,14 +4094,14 @@
        )
      )
      (setq
-       *f1* (close *f1*)
+       f1 (haws-close f1)
        cflist
         ;;Put the SET PHASES line at the beginning of the file.
         (cons (strcat "SET PHASES " phases) (reverse cflist))
-       *f1* (open (hcnm-projnotes) "W")
+       f1 (haws-open (hcnm-projnotes) "W")
      )
-     (foreach rdlin cflist (write-line rdlin *f1*))
-     (setq *f1* (close *f1*))
+     (foreach rdlin cflist (write-line rdlin f1))
+     (setq f1 (haws-close f1))
     )
   )
   (haws-core-restore)
@@ -5167,7 +5159,7 @@
 ;;   ename-leader - Entity name of leader (for coordinate-based auto-text)
 ;;
 ;; Architecture:
-;;   Part of insertion path: prompting → auto-dispatch accumulates in bubble-data → finish-bubble → THIS FUNCTION
+;;   Part of insertion path: prompting â†’ auto-dispatch accumulates in bubble-data â†’ finish-bubble â†’ THIS FUNCTION
 ;;   Only called for new insertions, not replace-bubble (which preserves existing XDATA)
 ;;
 ;; Algorithm:
@@ -6218,69 +6210,15 @@
 ;;; the underover logic requires seeing TXT1 AND TXT2 together to make decisions.
 
 ;;; ============================================================================
-;;; DATA STRUCTURE TRANSFORMATIONS
-;;; ============================================================================
-
-;;; Concatenate structured lattribs into flat strings
-;;;
-;;; PURPOSE: Transform lattribs from structured (prefix/auto/postfix) to
-;;;          concatenated (single string per tag) format.
-;;;
-;;; INPUT: lattribs (structured)
-;;;   '(("NOTETXT1" "prefix" "auto" "postfix")
-;;;     ("NOTETXT2" "prefix" "auto" "postfix")
-;;;     ("NOTEGAP" "" "" ""))
-;;;
-;;; OUTPUT: lattribs-cat (concatenated)
-;;;   '(("NOTETXT1" "prefixautopostfix")
-;;;     ("NOTETXT2" "prefixautopostfix")
-;;;     ("NOTEGAP" ""))
-;;;
-;;; NOTE: This is pure data transformation, no business logic.
-;;;
-;;; DEPRECATED - No longer needed in 2-element architecture
-;;; Concatenate 4-element structured lattribs to 2-element format
-;;; This function is obsolete now that lattribs is always 2-element
-(defun hcnm-bn-lattribs-concat
-  (lattribs / result attr tag concat-value)
-  (alert
-    (princ
-      "\nDEPRECATED: lattribs-concat called but no longer needed in 2-element architecture"
-    )
-  )
-  ;; Return as-is (already 2-element)
-  lattribs
-)
-
-;;; Split concatenated lattribs using xdata delimiters
-;;;
-;;; PURPOSE: Transform lattribs from concatenated (single string) back to
-;;;          structured (prefix/auto/postfix) format using xdata delimiters.
-;;;
-;;; INPUT: 
-;;;   lattribs-cat - Concatenated format '(("NOTETXT1" "prefixautopostfix") ...)
-;;;   xdata-alist - XDATA from drawing with delimiter positions
-;;;
-;;; OUTPUT: lattribs (structured)
-;;;   '(("NOTETXT1" "prefix" "auto" "postfix") ...)
-;;;
-;;; NOTE: This is pure data transformation, no business logic.
-;;;       Uses XDATA search-based parsing for robust auto-text extraction.
-;;;
-;;; DEPRECATED - No longer needed in 2-element architecture
-;;; This function is obsolete now that we use search-based XDATA parsing
-
-
-;;; ============================================================================
 ;;; UNDEROVER FORMAT CODE LOGIC (Business Logic)
 ;;; ============================================================================
 
 ;;; Add format codes to concatenated strings
 ;;;
 ;;; BUSINESS LOGIC (documented 2025-10-30):
-;;; - If TXT1 has content → add underline (%%u for dtext, \L for mtext)
-;;; - If TXT2 has content → add overline (%%o for dtext, \O for mtext)
-;;; - If EITHER has content → NOTEGAP = "%%u ", else ""
+;;; - If TXT1 has content â†’ add underline (%%u for dtext, \L for mtext)
+;;; - If TXT2 has content â†’ add overline (%%o for dtext, \O for mtext)
+;;; - If EITHER has content â†’ NOTEGAP = "%%u ", else ""
 ;;;
 ;;; INPUT: lattribs-cat (concatenated)
 ;;;   '(("NOTETXT1" "text1") ("NOTETXT2" "text2") ("NOTEGAP" ""))
@@ -6446,7 +6384,7 @@
   result
 )
 
-;;; DATA FLOW FUNCTIONS: lattribs ← → dlg
+;;; DATA FLOW FUNCTIONS: lattribs â† â†’ dlg
 ;;;
 ;;; These functions transform between clean lattribs (internal format) and
 ;;; dialog display format (with format codes visible).
@@ -7050,7 +6988,7 @@
   )
 )
 ;; Main alignment auto-text function
-;; Orchestrates: get alignment → calculate → format → attach XDATA
+;; Orchestrates: get alignment â†’ calculate â†’ format â†’ attach XDATA
 ;; Arguments:
 ;;   bubble-data - Bubble data alist
 ;;   TAG - Attribute tag to update
@@ -7387,14 +7325,14 @@
          "\nto determine the point location."
          "\n"
          "\nPossible causes:"
-         "\n  • Bubble was inserted manually (not via CNM commands)"
-         "\n  • Leader was deleted after bubble creation"
-         "\n  • Bubble was copied without its leader"
+         "\n  â€¢ Bubble was inserted manually (not via CNM commands)"
+         "\n  â€¢ Leader was deleted after bubble creation"
+         "\n  â€¢ Bubble was copied without its leader"
          "\n"
          "\nSolution:"
-         "\n  • Use CNM insertion commands (BOXL, CIRL, etc.) which create"
+         "\n  â€¢ Use CNM insertion commands (BOXL, CIRL, etc.) which create"
          "\n    bubble and leader together"
-         "\n  • Or use non-coordinate auto-text types (text, mtext, quantities)"
+         "\n  â€¢ Or use non-coordinate auto-text types (text, mtext, quantities)"
        )
      )
      ;; Set string to NOT FOUND and skip all coordinate calculation
@@ -8436,7 +8374,7 @@
 ;; Returns list: (CVPORT ref-ocs-1 ref-wcs-1 ref-ocs-2 ref-wcs-2 ref-ocs-3 ref-wcs-3) or NIL
 (defun hcnm-bn-get-viewport-transform-xdata (ename-bubble / viewport-handle en-viewport vptrans-data)
   ;; NEW ARCHITECTURE (2025-11): Get VPTRANS from viewport, not bubble
-  ;; Try new location first (viewport handle → viewport XRECORD)
+  ;; Try new location first (viewport handle â†’ viewport XRECORD)
   (setq viewport-handle (hcnm-bn-get-viewport-handle ename-bubble))
   (cond
     (viewport-handle
@@ -8481,8 +8419,6 @@
     )
   )
 )
-
-;; DEPRECATED: Old function - use hcnm-bn-get-viewport-transform-xdata instead
 
 ;; Set viewport transformation matrix in bubble's XDATA
 ;; Stores CVPORT and 3 pairs of reference points (OCS and WCS)
@@ -9542,7 +9478,7 @@
 ;#endregion
 
 ;;==============================================================================
-;; LEGACY WRAPPERS - Maintain existing API during transition
+;; XDATA AND ATTRIBUTE WRITE - Dialog save path
 ;;==============================================================================
 
 ;; Save only XDATA for auto-text (helper for dialog save path)
@@ -9659,7 +9595,7 @@
 ;;   ename-bubble - Entity name of bubble to update
 ;;
 ;; Call Flow:
-;;   c:hcnm-bnatu → THIS FUNCTION → update-bubble-tag (per auto-text, no I/O)
+;;   c:hcnm-bnatu â†’ THIS FUNCTION â†’ update-bubble-tag (per auto-text, no I/O)
 ;;
 ;; Algorithm:
 ;;   1. Read lattribs + XDATA once
@@ -9948,8 +9884,8 @@
 ;;   T if successful, NIL otherwise
 ;;
 ;; Call Pattern:
-;;   bnatu → update-bubble-tag → THIS FUNCTION (one per auto-text field)
-;;   Dialog save → hcnm-bn-xdata-save (writes entire semi-global at once)
+;;   bnatu â†’ update-bubble-tag â†’ THIS FUNCTION (one per auto-text field)
+;;   Dialog save â†’ hcnm-bn-xdata-save (writes entire semi-global at once)
 ;;
 ;; ARCHITECTURAL NOTE (2025-11-06):
 ;;   This function ALWAYS writes composite-key format.
@@ -11233,9 +11169,9 @@
   (if issues
     (progn
       (princ "\n  ISSUES FOUND:")
-      (foreach issue issues (princ (strcat "\n    ❌ " issue)))
+      (foreach issue issues (princ (strcat "\n    âŒ " issue)))
     )
-  (princ "\n  ✅ Structural checks passed (lattribs parsed, schema valid, XDATA readable, leader present)")
+  (princ "\n  âœ… Structural checks passed (lattribs parsed, schema valid, XDATA readable, leader present)")
   )
   (princ "\n")
 )
@@ -11293,7 +11229,7 @@
         (princ (strcat "\n      Actual:   \"" (caddr diff) "\""))
       )
     )
-    (princ "\n  ✅ All auto-text values match expected")
+    (princ "\n  âœ… All auto-text values match expected")
   )
   (princ "\n")
   differences
@@ -11473,8 +11409,8 @@
               (princ "\n  VERIFIED: XRECORD successfully stored and retrieved!")
               (princ (strcat "\n  Data: cvport=" (itoa (car verify-data)) 
                             ", points=" (itoa (length (cdr verify-data)))))
-              (princ "\n\n  ✓ Phase 1 Task 1: Can write VPTRANS to viewport ExtDict")
-              (princ "\n  ✓ Phase 1 Task 2: Can read VPTRANS from viewport ExtDict")
+              (princ "\n\n  âœ“ Phase 1 Task 1: Can write VPTRANS to viewport ExtDict")
+              (princ "\n  âœ“ Phase 1 Task 2: Can read VPTRANS from viewport ExtDict")
               (princ "\n\n  PERSISTENCE TEST: VPTRANS left in viewport for save/load testing")
               (princ "\n  Instructions:")
               (princ "\n    1. Save drawing now")
@@ -11755,9 +11691,6 @@
 (load "ini-edit")
 ;#endregion
 
-;|�Visual LISP� Format Options�
-(72 2 40 2 nil "end of " 60 2 1 1 1 nil nil nil T)
-;*** DO NOT add text below the comment! ***|;
-;|�Visual LISP� Format Options�
+;|Visual LISP Format Options
 (72 2 40 2 nil "end of " 60 2 1 1 1 nil nil nil T)
 ;*** DO NOT add text below the comment! ***|;

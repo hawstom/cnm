@@ -13,7 +13,9 @@
       "WebFetch(domain:forums.autodesk.com)",
       "WebFetch(domain:documentation.help)",
       "WebFetch(domain:ezdxf.readthedocs.io)",
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(grep:*)"
     ]
   }
 }
