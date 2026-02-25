@@ -1,0 +1,1 @@
+(haws-debug (list "Test unattended system debug write: " "SUCCESS"))

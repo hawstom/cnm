@@ -1,0 +1,18 @@
+; Load needed because cnmchgvport is not yet added to cnmloaded.lsp.
+(load "cnm")
+(haws-setvar "DebugLevel" "1")
+;;(load (strcat (getvar "dwgprefix") "cnm-unattended-tests"))
+pspace
+;; Zooming extents is needed because we can't activate a viewport that is not on the screen.
+zoom
+extents
+cnmchgvport
+;; This location selects test bubble note 2 from cnm-test.scr
+16.65,13.5
+
+;; Viewport 2 is the original insertion target viewport. Viewport 3 is the alternate viewport.
+'cvport
+3
+
+quit
+yes

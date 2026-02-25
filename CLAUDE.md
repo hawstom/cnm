@@ -126,21 +126,36 @@ Also see:
 
 ## Testing
 
-### Debugging Without AutoCAD (IMPORTANT - use these strategies)
-AutoLISP runs inside AutoCAD, which the AI agent cannot interact with directly. **Do not guess at runtime behavior.** Use these strategies to get real data:
+### Unattended AutoCAD Tests (CRITICAL - AI must use these)
+**The AI agent can run AutoCAD tests directly.** This is the primary code/test/debug tool. Do not guess at runtime behavior — run the tests, read the log, fix, repeat.
 
-1. **haws-debug instrumentation:** Insert `(haws-debug (list "label: " (vl-princ-to-string value)))` calls at key points in the code under investigation. Ask the human to run the test suite (or any drawing operation). Then read `devtools/scripts/test-suite/haws-debug-log.md` to analyze actual runtime values. Debug logging requires `(haws-setvar "DebugLevel" "1")` (already set in `cnm-test.scr`). The log writes to `(strcat (getvar "dwgprefix") "haws-debug-log.md")`.
+**Run:** `devtools/scripts/test-suite/cnm-unattended-tests.bat` via Bash tool (run in background, wait for completion).
 
-2. **Unattended AutoCAD scripts:** Create a short `.scr` file (no dialogs) and run AutoCAD Core Console headlessly:
-   ```
-   "C:\Program Files\Autodesk\AutoCAD 2025\accoreconsole.exe" /i drawing.dwg /s script.scr /l en-US
-   ```
-   The script can load code, run functions, write results via `haws-debug`, and quit: `(load "my-test") (quit)`. This enables the AI agent to run tests without human interaction. **Future opportunity:** a `devtools/scripts/haws-unit-tests.lsp` loaded by a minimal script like `(haws-setvar "DebugLevel" "1") (load "haws-unit-tests") quit yes` could provide repeatable automated tests.
+**Files:** The `.bat`/`.scr`/`.lsp`/`.dwg` quartet lives at `devtools/scripts/test-suite/cnm-unattended-tests.*`:
+- `.bat` — launches `acad.exe` with Civil 3D profile, `/b` flag runs the `.scr` automatically
+- `.scr` — AutoCAD script: loads cnm.lsp, sets DebugLevel=1, runs commands, quits without saving. The script can optionally load the `.lsp` file (see commented-out line 4) for programmatic tests
+- `.lsp` — AutoLISP stub for unit tests and programmatic verification. Use this for calling functions directly, asserting return values, or running logic that would be awkward as script prompt responses. Loaded from the `.scr` via `(load (strcat (getvar "dwgprefix") "cnm-unattended-tests"))`. The `.scr` handles command-prompt interaction (simulating user input); the `.lsp` handles programmatic tests (calling functions, checking results, writing debug output)
+- `.dwg` — test drawing with pre-placed bubbles and viewports (AI cannot see contents directly — ask human for help understanding drawing contents or adding test geometry)
 
-3. **When to use each approach:**
-   - **Quick hypothesis testing:** Add haws-debug calls, ask human to test, read the log
-   - **Systematic/repeatable verification:** Write a short unattended script
-   - **Complex interactive scenarios:** Must rely on human testing with debug instrumentation
+**Script syntax:** `.scr` files feed lines to AutoCAD prompts sequentially. `'cvport` (with `'` prefix) = transparent command during prompts. Empty line = pressing Enter. End with `quit` + `yes`.
+
+**Workflow:**
+1. Clear `devtools/scripts/test-suite/haws-debug-log.md` before each run
+2. Run the `.bat` via Bash (background, wait for exit code 0)
+3. Read `haws-debug-log.md` to analyze results
+4. Fix code, re-run — full code/test/debug cycle without human involvement
+
+**To add new tests:** Edit the `.scr` to add commands. If you need new test geometry, viewports, or bubble configurations in the `.dwg`, ask the human — they can set up the drawing and explain its contents.
+
+**Results:** `haws-debug` calls in the code write timestamped entries to `haws-debug-log.md` in the drawing's folder. Use `(haws-debug (list "label: " (vl-princ-to-string value)))` to instrument code.
+
+### haws-debug Instrumentation
+Insert `(haws-debug (list "label: " (vl-princ-to-string value)))` at key points. Requires `(haws-setvar "DebugLevel" "1")` (already set in test scripts). Log writes to `(strcat (getvar "dwgprefix") "haws-debug-log.md")`.
+
+### When to Use Each Approach
+- **Default (most cases):** Add haws-debug calls, run unattended `.bat`, read log, iterate
+- **New test scenarios:** Edit `.scr`, ask human to update `.dwg` if needed, run `.bat`
+- **Complex interactive scenarios (dialogs, etc.):** Ask human to test with debug instrumentation
 
 ### Test Suite
 - Test script: open `devtools/scripts/test-suite/cnm-test-start.dwg` and run `cnm-test.scr`

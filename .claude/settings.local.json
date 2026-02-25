@@ -39,7 +39,9 @@
       "Bash(\"/c/Users/tomha/AppData/Local/Programs/Python/Python312/python.exe\" -u -c \":*)",
       "Bash(\"/c/Users/tomha/AppData/Local/Programs/Python/Python312/python.exe\":*)",
       "WebFetch(domain:entercad.ru)",
-      "WebFetch(domain:docs.autodesk.com)"
+      "WebFetch(domain:docs.autodesk.com)",
+      "Bash(\"C:\\\\Program Files\\\\Autodesk\\\\AutoCAD 2026\\\\acad.exe\":*)",
+      "Bash(devtools/scripts/test-suite/cnm-unattended-tests.bat:*)"
     ]
   }
 }

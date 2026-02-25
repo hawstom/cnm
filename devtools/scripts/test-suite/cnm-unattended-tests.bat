@@ -1,0 +1,1 @@
+"C:\Program Files\Autodesk\AutoCAD 2026\acad.exe" "C:\TGHFiles\programming\hawsedc\develop\devtools\scripts\test-suite\cnm-unattended-tests.dwg" /ld "C:\Program Files\Autodesk\AutoCAD 2026\AecBase.dbx" /p "<<C3D_Imperial>>" /product C3D /language en-US /nologo /nossm /b "C:\TGHFiles\programming\hawsedc\develop\devtools\scripts\test-suite\cnm-unattended-tests.scr"

@@ -8015,6 +8015,11 @@
 ;;
 ;; This captures 3 reference points to calculate rotation, scale, and translation
 ;; Returns T if successful, NIL if failed
+;; WHY: trans() requires model space active in correct viewport. This function
+;; captures the paper-space-DCS -> model-WCS mapping and stores it so
+;; hcnm-bn-p1-world can calculate p1-world WITHOUT activating the viewport.
+;; WHEN: Only during capture (user has activated target viewport in model space).
+;; WHERE: VPTRANS -> viewport ExtDict XRECORD; viewport handle -> bubble HCNM-VIEWPORT XDATA.
 (defun hcnm-bn-capture-viewport-transform (ename-bubble cvport /
                                            ref-ocs-1 ref-ocs-2 ref-ocs-3
                                            ref-wcs-1 ref-wcs-2 ref-wcs-3
@@ -8177,6 +8182,9 @@
     )
   )
   ;; Gateway 3: Not a bnatu update (obj-reference is nil during insertion/editing)
+  ;; NOTE: For handleless types (N/E/NE), obj-reference is always nil, so this
+  ;; gateway cannot distinguish bnatu from insertion. It works only because
+  ;; Gateway 4 (viewport handle exists) catches bnatu calls. Fragile - revisit.
   (setq avport-bnatu-gateway-open-p (not obj-reference))
   (haws-debug
     (list
@@ -8503,9 +8511,10 @@
 
 
 ;; RETURNS p1-world GIVEN p1-ocs
-;; Uses viewport transformation data from bubble's XDATA if available
-;; This allows coordinate transformation without switching viewports
-;; If bubble is on Model tab, no viewport processing needed
+;; Uses STORED VPTRANS (no trans() needed, no viewport activation needed).
+;; Input: p1-ocs from leader entget DXF 10 (paper space WCS coords)
+;; Output: p1-world (model space WCS coords) via barycentric interpolation
+;; If bubble is on Model tab, p1-ocs IS p1-world (no transform needed).
 (defun hcnm-bn-p1-world (ename-leader p1-ocs ename-bubble / elist-leader
                          layout-name p1-world pspace-current-p on-model-tab-p
                          transform-data cvport-stored ref-ocs-1
@@ -8528,6 +8537,12 @@
     ((not on-model-tab-p)
      ;; Bubble is on a layout tab - need viewport processing
      ;; Try to get viewport transformation data from XDATA
+     (haws-debug
+       (list "p1-world: paper space bubble, p1-ocs="
+         (vl-princ-to-string p1-ocs)
+         " vp-handle=" (if ename-bubble (vl-princ-to-string (hcnm-bn-get-viewport-handle ename-bubble)) "no-bubble")
+       )
+     )
      (setq
        transform-data
         (cond
@@ -8538,6 +8553,11 @@
           )
           (t nil)
         )
+     )
+     (haws-debug
+       (list "p1-world: transform-data="
+         (if transform-data "FOUND" "NIL")
+       )
      )
      (cond
        (transform-data
@@ -9046,8 +9066,20 @@
         pt ref-points
        (setq xrec-data (append xrec-data (list (cons 10 pt))))
      )
-     ;; Create or update VPTRANS xrecord in viewport's extension dictionary
+     ;; Remove existing VPTRANS if present, then create new
+     ;; dictadd alone may not reliably overwrite existing entries
+     (cond
+       ((dictsearch dict-ename "VPTRANS")
+        (dictremove dict-ename "VPTRANS")
+        (haws-debug (list "vptrans-viewport-write: removed old VPTRANS from dict"))
+       )
+     )
      (dictadd dict-ename "VPTRANS" (entmakex xrec-data))
+     (haws-debug
+       (list "vptrans-viewport-write: wrote cvport=" (itoa cvport)
+         " with " (itoa (length ref-points)) " ref points"
+       )
+     )
      t
     )
     (t nil)
@@ -9619,6 +9651,11 @@
     xdata-alist (hcnm-xdata-read ename-bubble)
     entry-count 0
   )
+  (haws-debug
+    (list "bnatu-bubble-update: xdata-alist = "
+      (vl-princ-to-string xdata-alist)
+    )
+  )
   ;; Build tag-list from XDATA composite keys
   ;; Format: ((tag ((auto-type handle-reference) ...)) ...)
   (setq tag-list nil)
@@ -9640,6 +9677,12 @@
        )
        (setq tag-list (append tag-list (list (list tag auto-entry-list))))
       )
+    )
+  )
+  (haws-debug
+    (list "bnatu-bubble-update: tag-list = "
+      (vl-princ-to-string tag-list)
+      " entry-count = " (itoa entry-count)
     )
   )
   ;; Process each auto-text entry
@@ -9666,6 +9709,14 @@
               lattribs (cadr update-result)
               xdata-alist (caddr update-result)
             )
+            (haws-debug
+              (list "bnatu-bubble-update: tag " tag " type " auto-type " updated OK")
+            )
+           )
+           (t
+            (haws-debug
+              (list "bnatu-bubble-update: tag " tag " type " auto-type " returned nil")
+            )
            )
          )
        )
@@ -9673,8 +9724,12 @@
      ;; Write once: XDATA + formatted attributes
      (cond
        ((not (equal lattribs lattribs-old))
+        (haws-debug (list "bnatu-bubble-update: lattribs CHANGED, writing to dwg"))
         (hcnm-xdata-set-autotext ename-bubble xdata-alist)
         (hcnm-set-attributes ename-bubble (hcnm-bn-underover-add lattribs ename-bubble))
+       )
+       (t
+        (haws-debug (list "bnatu-bubble-update: lattribs UNCHANGED, skipping write"))
        )
      )
      entry-count
@@ -9747,6 +9802,53 @@
 )
 (defun c:bup () (c:hcnm-bnatu))
 ;;==============================================================================
+;; hcnm-bn-change-viewport-association - Change a bubble's viewport and update
+;;==============================================================================
+;; VIEWPORT CHANGE FLOW:
+;; 1. User activates target viewport (model space must be active)
+;; 2. trans() captures paper-space-DCS -> model-WCS mapping
+;; 3. Mapping stored as VPTRANS on viewport (shared by all bubbles in that viewport)
+;; 4. Viewport handle stored on bubble (per-bubble, points to viewport)
+;; 5. hcnm-bn-bnatu-bubble-update recalculates coordinate-based auto-text:
+;;    - Reads viewport handle from bubble -> finds viewport -> reads VPTRANS
+;;    - Applies stored transform: p1-ocs -> p1-world (NO trans() call needed)
+;;    - Recalculates STA/OFF/N/E etc. from new p1-world
+;;    - Smart-replaces old auto-text with new in attribute text
+;;
+;; Used by: CHGVIEW button (edit dialog) and c:cnmchgvport (bulk command)
+;; Returns: new viewport handle (string) or nil if failed
+(defun hcnm-bn-change-viewport-association (ename-bubble / pspace-p new-handle)
+  (hcnm-bn-tip-explain-avport-selection ename-bubble "STA")
+  ;; Switch to model space so user can activate a viewport
+  (setq pspace-p (hcnm-bn-space-set-model))
+  (getstring "\nSet the TARGET viewport active and press ENTER to continue: ")
+  (haws-debug
+    (list "change-viewport-association: CVPORT=" (itoa (getvar "CVPORT")))
+  )
+  ;; Capture VPTRANS while still in target viewport context (before restoring space)
+  (hcnm-bn-capture-viewport-transform ename-bubble (getvar "CVPORT"))
+  (hcnm-bn-space-restore pspace-p)
+  (hcnm-bn-tip-warn-pspace-no-react ename-bubble "STA")
+  ;; Verify capture succeeded
+  (setq new-handle (hcnm-bn-get-viewport-handle ename-bubble))
+  (haws-debug
+    (list "change-viewport-association: new-handle="
+      (if new-handle new-handle "NIL")
+    )
+  )
+  ;; Recalculate all coordinate-based auto-text with new viewport VPTRANS
+  (cond
+    (new-handle
+     (hcnm-bn-bnatu-bubble-update ename-bubble)
+     new-handle
+    )
+    (t
+     (princ "\nViewport capture failed. No changes made.")
+     nil
+    )
+  )
+)
+;;==============================================================================
 ;; c:cnmchgvport - Bulk viewport reassociation for paper space bubble notes
 ;;==============================================================================
 ;; Purpose:
@@ -9758,7 +9860,7 @@
 ;;   Select bubble note inserts, then activate target viewport when prompted.
 ;;==============================================================================
 (defun c:cnmchgvport
-   (/ ss i en qualifying new-handle pspace-p bubble-count skip-model skip-nonbubble)
+   (/ ss i en qualifying new-handle bubble-count skip-model skip-nonbubble)
   (setq ss (ssget '((0 . "INSERT"))))
   (cond
     ((not ss)
@@ -9800,29 +9902,17 @@
         )
        )
        (t
-        ;; Show selection tip, then capture VPTRANS while in target viewport context
-        (hcnm-bn-tip-explain-avport-selection (car qualifying) "STA")
-        (setq pspace-p (hcnm-bn-space-set-model))
-        (getstring "\nSet the TARGET viewport active and press ENTER to continue: ")
-        ;; Capture VPTRANS while still in target viewport context (before restoring space)
-        (hcnm-bn-capture-viewport-transform (car qualifying) (getvar "CVPORT"))
-        (hcnm-bn-space-restore pspace-p)
-        (hcnm-bn-tip-warn-pspace-no-react (car qualifying) "STA")
-        (setq new-handle (hcnm-bn-get-viewport-handle (car qualifying)))
+        ;; First bubble: full viewport change with user prompting
+        (setq new-handle (hcnm-bn-change-viewport-association (car qualifying)))
         (cond
           ((not new-handle)
            (princ "\nViewport capture failed or cancelled. No changes made.")
           )
           (t
-           (setq bubble-count 0)
-           (foreach en qualifying
-             (cond
-               ((not (equal en (car qualifying)))
-                ;; Set new viewport handle for bubbles after the first
-                (hcnm-bn-set-viewport-handle en new-handle)
-               )
-             )
-             ;; Recalculate coordinate-based auto-text for all qualifying bubbles
+           (setq bubble-count 1)
+           ;; Remaining bubbles: just set handle and update (no prompting needed)
+           (foreach en (cdr qualifying)
+             (hcnm-bn-set-viewport-handle en new-handle)
              (hcnm-bn-bnatu-bubble-update en)
              (setq bubble-count (1+ bubble-count))
            )
@@ -10219,6 +10309,12 @@
         (t nil)
       )
   )
+  (haws-debug
+    (list "update-bubble-tag: tag=" tag " type=" auto-type
+      " old-auto-text=" (if old-auto-text old-auto-text "NIL")
+      " current-text=" current-text
+    )
+  )
   ;; Generate new auto-text via auto-dispatch
   (setq lattribs
     (hcnm-bn-generate-new-auto-text
@@ -10229,6 +10325,11 @@
   (setq
     attr (assoc tag lattribs)
     auto-new (if attr (cadr attr) "")
+  )
+  (haws-debug
+    (list "update-bubble-tag: auto-new=" auto-new
+      " differs=" (if (equal old-auto-text auto-new) "NO" "YES")
+    )
   )
   ;; Smart replace - preserve user edits around auto-text
   (setq new-text
@@ -10411,19 +10512,22 @@
           )
          )
          ((= done-code (hcnm-bn-eb-get-done-code "CHGVIEW"))
-          ;; Change View button - prompt user to activate new target viewport, then capture VPTRANS.
-          ;; Note: do NOT clear XDATA here - hcnm-bn-set-viewport-handle overwrites old handle,
-          ;; and HCNM-BUBBLE XDATA must survive for hcnm-bn-bnatu-bubble-update to work.
-          (hcnm-bn-tip-explain-avport-selection ename-bubble "STA")
-          ;; Switch to model space so user can activate a viewport
-          (setq pspace-p (hcnm-bn-space-set-model))
-          (getstring "\nSet the TARGET viewport active and press ENTER to continue: ")
-          ;; Capture VPTRANS while still in target viewport context (before restoring space)
-          (hcnm-bn-capture-viewport-transform ename-bubble (getvar "CVPORT"))
-          (hcnm-bn-space-restore pspace-p)
-          (hcnm-bn-tip-warn-pspace-no-react ename-bubble "STA")
-          ;; Recalculate all coordinate-based auto-text with new viewport VPTRANS
-          (hcnm-bn-bnatu-bubble-update ename-bubble)
+          ;; VIEWPORT CHANGE FLOW (from edit dialog):
+          ;; 1. User activates target viewport (model space must be active)
+          ;; 2. trans() captures paper-space-DCS -> model-WCS mapping
+          ;; 3. Mapping stored as VPTRANS on viewport (shared by all bubbles in that viewport)
+          ;; 4. Viewport handle stored on bubble (per-bubble, points to viewport)
+          ;; 5. hcnm-bn-bnatu-bubble-update recalculates coordinate-based auto-text:
+          ;;    - Reads viewport handle from bubble -> finds viewport -> reads VPTRANS
+          ;;    - Applies stored transform: p1-ocs -> p1-world (NO trans() call needed)
+          ;;    - Recalculates STA/OFF/N/E etc. from new p1-world
+          ;;    - Smart-replaces old auto-text with new in attribute text
+          (haws-debug
+            (list "=== CHGVIEW: Starting viewport change for bubble "
+              (cdr (assoc 5 (entget ename-bubble)))
+            )
+          )
+          (hcnm-bn-change-viewport-association ename-bubble)
           ;; Reload dialog state so SHOW re-opens with fresh values
           (setq hcnm-bn-eb-state
             (list
