@@ -27,7 +27,19 @@
       "Bash(done)",
       "Bash(powershell -ExecutionPolicy Bypass -File 'C:\\\\TGHFiles\\\\programming\\\\hawsedc\\\\develop\\\\devtools\\\\scripts\\\\run-validation.ps1')",
       "Bash(for global in \"*haws-config*\" \"*hcnm-cnmprojectnotes*\" \"*hcnm-dimstyleold*\" \"*haws:layers*\" \"*hcnm-pgp-aliases*\" \"*hcnm-cnmaliasloaded*\" \"*hcnm-activation-preference*\" \"*haws-cel:settings*\" \"*haws-cv-method*\" \"*haws-cv-interval*\" \"*haws-layers-made*\" \"*haws-icadmode*\" \"*haws-vstr*\" \"*haws-clock-data*\" \"*haws-label-angle-mode*\" \"*haws-qt-instances*\" \"*haws-elvscl*\" \"*haws-dimlay*\" \"*haws-xrosetupdone*\" \"*haws-biosdatefull*\")",
-      "Bash(do echo \"=== $global ===\")"
+      "Bash(do echo \"=== $global ===\")",
+      "Bash(git -C \"C:/TGHFiles/programming/hawsedc/develop\" diff --stat HEAD)",
+      "Bash(git -C \"C:/TGHFiles/programming/hawsedc/develop\" stash:*)",
+      "Bash(git -C \"C:/TGHFiles/programming/hawsedc/develop\" stash pop:*)",
+      "Bash(python3:*)",
+      "Bash(xxd:*)",
+      "Bash(/tmp/fix2.ps1:*)",
+      "Bash(git -C \"C:\\\\TGHFiles\\\\programming\\\\hawsedc\\\\develop\" diff devsource/cnm.lsp)",
+      "Bash(\"/c/Users/tomha/AppData/Local/Programs/Python/Python312/python.exe\" -u -c:*)",
+      "Bash(\"/c/Users/tomha/AppData/Local/Programs/Python/Python312/python.exe\" -u -c \":*)",
+      "Bash(\"/c/Users/tomha/AppData/Local/Programs/Python/Python312/python.exe\":*)",
+      "WebFetch(domain:entercad.ru)",
+      "WebFetch(domain:docs.autodesk.com)"
     ]
   }
 }

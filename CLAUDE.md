@@ -19,7 +19,7 @@ AutoLISP and Common Lisp are unrelated dialects. Do not assume similarity.
 
 ### Workflow Constraints
 - **DO NOT git commit** unless explicitly asked - let the human commit
-- **DO NOT claim "fixed" or "loads successfully"** - say "validation passes" or "no syntax errors detected" (Claude cannot test in AutoCAD without preparing an unattended script)
+- **DO NOT claim "fixed" or "loads successfully"** - say "validation passes" or "no syntax errors detected". Use haws-debug instrumentation or unattended scripts (see Testing section) to get real runtime data before drawing conclusions
 - **Run paren validation** after every .lsp edit: `powershell -File devtools\scripts\haws-lisp-paren-check.ps1 -FilePath "devsource\<file>.lsp"` and `powershell -File devtools\scripts\validate-lisp-syntax.ps1 -FilePath "devsource\<file>.lsp"`
 
 ## Code Style
@@ -123,7 +123,24 @@ Also see:
 - `devtools/docs/api/haws-config-api.md` - Config system API reference
 
 ## Testing
-- No unit test framework yet - manual testing in AutoCAD
+
+### Debugging Without AutoCAD (IMPORTANT - use these strategies)
+AutoLISP runs inside AutoCAD, which the AI agent cannot interact with directly. **Do not guess at runtime behavior.** Use these strategies to get real data:
+
+1. **haws-debug instrumentation:** Insert `(haws-debug (list "label: " (vl-princ-to-string value)))` calls at key points in the code under investigation. Ask the human to run the test suite (or any drawing operation). Then read `devtools/scripts/test-suite/haws-debug-log.md` to analyze actual runtime values. Debug logging requires `(haws-setvar "DebugLevel" "1")` (already set in `cnm-test.scr`). The log writes to `(strcat (getvar "dwgprefix") "haws-debug-log.md")`.
+
+2. **Unattended AutoCAD scripts:** Create a short `.scr` file (no dialogs) and run AutoCAD Core Console headlessly:
+   ```
+   "C:\Program Files\Autodesk\AutoCAD 2025\accoreconsole.exe" /i drawing.dwg /s script.scr /l en-US
+   ```
+   The script can load code, run functions, write results via `haws-debug`, and quit: `(load "my-test") (quit)`. This enables the AI agent to run tests without human interaction. **Future opportunity:** a `devtools/scripts/haws-unit-tests.lsp` loaded by a minimal script like `(haws-setvar "DebugLevel" "1") (load "haws-unit-tests") quit yes` could provide repeatable automated tests.
+
+3. **When to use each approach:**
+   - **Quick hypothesis testing:** Add haws-debug calls, ask human to test, read the log
+   - **Systematic/repeatable verification:** Write a short unattended script
+   - **Complex interactive scenarios:** Must rely on human testing with debug instrumentation
+
+### Test Suite
 - Test script: open `devtools/scripts/test-suite/cnm-test-start.dwg` and run `cnm-test.scr`
 - `(c:pretest)` removes test bubbles and cleans up test state before testing
 - Always validate syntax and never claim anything is fixed

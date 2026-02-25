@@ -9672,7 +9672,7 @@
      )
      ;; Write once: XDATA + formatted attributes
      (cond
-       ((/= lattribs lattribs-old)
+       ((not (equal lattribs lattribs-old))
         (hcnm-xdata-set-autotext ename-bubble xdata-alist)
         (hcnm-set-attributes ename-bubble (hcnm-bn-underover-add lattribs ename-bubble))
        )
@@ -9746,6 +9746,105 @@
   (princ)
 )
 (defun c:bup () (c:hcnm-bnatu))
+;;==============================================================================
+;; c:cnmchgvport - Bulk viewport reassociation for paper space bubble notes
+;;==============================================================================
+;; Purpose:
+;;   Reassociates a user-selected set of paper space bubble notes to a new
+;;   viewport and recalculates coordinate-based auto-text for each.
+;;
+;; Usage:
+;;   Command: CNMCHGVPORT
+;;   Select bubble note inserts, then activate target viewport when prompted.
+;;==============================================================================
+(defun c:cnmchgvport
+   (/ ss i en qualifying new-handle pspace-p bubble-count skip-model skip-nonbubble)
+  (setq ss (ssget '((0 . "INSERT"))))
+  (cond
+    ((not ss)
+     (princ "\nNo objects selected.")
+    )
+    (t
+     (setq
+       i 0
+       qualifying nil
+       skip-model 0
+       skip-nonbubble 0
+     )
+     ;; Collect qualifying (paper space + HCNM-BUBBLE XDATA) bubbles
+     (while (< i (sslength ss))
+       (setq en (ssname ss i))
+       (cond
+         ((not (hcnm-xdata-read en))
+          (setq skip-nonbubble (1+ skip-nonbubble))
+         )
+         ((hcnm-bn-is-in-model-space en)
+          (setq skip-model (1+ skip-model))
+         )
+         (t
+          (setq qualifying (append qualifying (list en)))
+         )
+       )
+       (setq i (1+ i))
+     )
+     (cond
+       ((not qualifying)
+        (princ
+          (strcat
+            "\nNo qualifying paper space bubble notes found. ("
+            (itoa skip-model)
+            " model space, "
+            (itoa skip-nonbubble)
+            " non-bubble skipped)"
+          )
+        )
+       )
+       (t
+        ;; Show selection tip, then capture VPTRANS while in target viewport context
+        (hcnm-bn-tip-explain-avport-selection (car qualifying) "STA")
+        (setq pspace-p (hcnm-bn-space-set-model))
+        (getstring "\nSet the TARGET viewport active and press ENTER to continue: ")
+        ;; Capture VPTRANS while still in target viewport context (before restoring space)
+        (hcnm-bn-capture-viewport-transform (car qualifying) (getvar "CVPORT"))
+        (hcnm-bn-space-restore pspace-p)
+        (hcnm-bn-tip-warn-pspace-no-react (car qualifying) "STA")
+        (setq new-handle (hcnm-bn-get-viewport-handle (car qualifying)))
+        (cond
+          ((not new-handle)
+           (princ "\nViewport capture failed or cancelled. No changes made.")
+          )
+          (t
+           (setq bubble-count 0)
+           (foreach en qualifying
+             (cond
+               ((not (equal en (car qualifying)))
+                ;; Set new viewport handle for bubbles after the first
+                (hcnm-bn-set-viewport-handle en new-handle)
+               )
+             )
+             ;; Recalculate coordinate-based auto-text for all qualifying bubbles
+             (hcnm-bn-bnatu-bubble-update en)
+             (setq bubble-count (1+ bubble-count))
+           )
+           (princ
+             (strcat
+               "\nCNMCHGVPORT: Updated "
+               (itoa bubble-count)
+               " bubble(s). Skipped: "
+               (itoa skip-model)
+               " model space, "
+               (itoa skip-nonbubble)
+               " non-bubble."
+             )
+           )
+          )
+        )
+       )
+     )
+    )
+  )
+  (princ)
+)
 
 ;#endregion
 ;#endregion
@@ -10227,7 +10326,7 @@
   (haws-core-restore)
 )
 (defun hcnm-edit-bubble (ename-bubble / bubble-data dclfile ename-leader
-                     hcnm-bn-eb-state
+                     hcnm-bn-eb-state pspace-p
                      return-list tag done-code
                     )
   (haws-debug (list "=== DEBUG: Entering hcnm-edit-bubble"))
@@ -10312,18 +10411,27 @@
           )
          )
          ((= done-code (hcnm-bn-eb-get-done-code "CHGVIEW"))
-          ;; Change View button - clear viewport transformation data and immediately prompt for new association
-          (hcnm-bn-clear-viewport-transform-xdata ename-bubble)
-          (princ
-            "\nViewport association cleared. Please select the new target viewport."
+          ;; Change View button - prompt user to activate new target viewport, then capture VPTRANS.
+          ;; Note: do NOT clear XDATA here - hcnm-bn-set-viewport-handle overwrites old handle,
+          ;; and HCNM-BUBBLE XDATA must survive for hcnm-bn-bnatu-bubble-update to work.
+          (hcnm-bn-tip-explain-avport-selection ename-bubble "STA")
+          ;; Switch to model space so user can activate a viewport
+          (setq pspace-p (hcnm-bn-space-set-model))
+          (getstring "\nSet the TARGET viewport active and press ENTER to continue: ")
+          ;; Capture VPTRANS while still in target viewport context (before restoring space)
+          (hcnm-bn-capture-viewport-transform ename-bubble (getvar "CVPORT"))
+          (hcnm-bn-space-restore pspace-p)
+          (hcnm-bn-tip-warn-pspace-no-react ename-bubble "STA")
+          ;; Recalculate all coordinate-based auto-text with new viewport VPTRANS
+          (hcnm-bn-bnatu-bubble-update ename-bubble)
+          ;; Reload dialog state so SHOW re-opens with fresh values
+          (setq hcnm-bn-eb-state
+            (list
+              (list "LATTRIBS" (hcnm-bn-dwg-to-lattribs ename-bubble))
+              (list "AUTO-HANDLES" (hcnm-xdata-read ename-bubble))
+              (list "FOCUSED-TAG" (cadr (assoc "FOCUSED-TAG" hcnm-bn-eb-state)))
+            )
           )
-          ;; Use super-clearance path to bypass all gateways and force prompt
-          (hcnm-bn-gateways-to-viewport-selection-prompt
-            ename-bubble "STA"          ; Representative coordinate type for warning message
-            nil                         ; No input object
-            nil                         ; No object reference status needed for super-clearance
-            "LINK-VIEWPORT"
-           )                            ; Super-clearance - bypass all gateways
           (setq done-code (hcnm-bn-eb-get-done-code "SHOW"))
          )
          (t
