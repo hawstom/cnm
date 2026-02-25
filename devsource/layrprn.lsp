@@ -42,7 +42,7 @@
   )
   (setq lyr_list (acad_strlsort lyr_list))
   (prompt "\nGenerating report...")
-  (setq file (open (strcat (haws-getdnpath) ".TXT") "w"))
+  (setq file (haws-open (strcat (haws-getdnpath) ".TXT") "w"))
   (write-line (strcat "Current Date: "(_today)) file)
   (write-line (strcat "Current Time: "(_time)) file)
   (write-line (strcat "Current User: "(strcase(getvar"loginname"))) file)
@@ -77,7 +77,7 @@
     )
     (write-line status file)
   )
-  (close file)
+  (haws-close file)
   (prompt "\rGenerating report...DONE!")
   (princ)
 ); end lp.lsp

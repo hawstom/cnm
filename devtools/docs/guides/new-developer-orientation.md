@@ -6,13 +6,6 @@ https://github.com/
 2. Install Git for Windows.
 https://git-scm.com/install/windows
 
-3. Install VS Code. 
-At the AutoCAD command prompt:
-
-a. Type LISPSYS 1 to be sure you are in VS Code mode. If it was 0, you must restart AutoCAD.
-b. Type ```VLISP``` (Visual LISP) or ```VLIDE``` (Visual Lisp Integrated Design Environment); these are equivalent. This command is your gateway to our project.
-c. Follow the instructions until you are looking at the VS Code editor with the AutoLISP Extension installed.
-
 # Clone Git
 1. To your github account.
 

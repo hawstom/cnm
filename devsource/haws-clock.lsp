@@ -1,7 +1,7 @@
 ;;;==============================================================================
 ;;; HAWS PERFORMANCE TIMING SYSTEM
 ;;;==============================================================================
-;;; Copyright © 2025 Thomas Gail Haws
+;;; Copyright ï¿½ 2025 Thomas Gail Haws
 ;;; 
 ;;; PURPOSE:
 ;;;   Performance timing for development and profiling.
@@ -107,7 +107,7 @@
           label-totals))
       (setq label-totals
         (cons (list label 1 elapsed) label-totals))))
-  (if (setq f (open log-path "w"))
+  (if (setq f (haws-open log-path "w"))
     (progn
       (write-line (strcat "HawsEDC Performance Timing Log - " 
                           (menucmd "M=$(edtime,$(getvar,date),YYYY-MO-DD HH:MM:SS)"))
@@ -128,7 +128,7 @@
                       (itoa avg-time) "ms avg")
               f)))
         (write-line "No timing data collected." f))
-      (close f)
+      (haws-close f)
       T)
     nil))
 ;;; Display timing summary to console AND write to file
@@ -178,10 +178,10 @@
 ;;; Write custom message to log file (append mode)
 (defun haws-clock-console-log (message / log-path f)
   (setq log-path (strcat (getvar "dwgprefix") "haws-clock.log"))
-  (if (setq f (open log-path "a"))
+  (if (setq f (haws-open log-path "a"))
     (progn
       (write-line message f)
-      (close f)
+      (haws-close f)
       T)
     nil)
 )

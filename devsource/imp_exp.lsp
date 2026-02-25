@@ -5,7 +5,7 @@
   (if (= just nil) (setq tsize 0.156 lspace 0.375 just "L"))
   (if (= efnam nil) (setq efnam ""))
   (setq efnam (getfiled "Select ASCII Import File" "" "" 4))
-  (setq efpnt (open efnam "r"))
+  (setq efpnt (haws-open efnam "r"))
   (if (= efnam nil)
     (princ (strcat "\n"(chr 34) efnam (chr 34) ": Can't open file"))
     (progn
@@ -47,7 +47,7 @@
         (setq p1 (list (car p1) (- (cadr p1) lspace)))
         (setq crntl (read-line efpnt))
       )
-      (close efpnt)
+      (haws-close efpnt)
     )
   )
   (princ)
@@ -57,11 +57,11 @@
   (setq oce (getvar "cmdecho"))
   (setvar "cmdecho" 0)
   (setq a (getstring "\nEnter the file name: "))
-  (setq b (open a "r"))
+  (setq b (haws-open a "r"))
   (if b
     (progn
       (princ "\nFile already exists.")
-      (close b)
+      (haws-close b)
       (initget "Y N")
       (setq x (getkword "\nWould you like to over-write? <N> "))
       (if (= x "Y") (write-it))
@@ -73,7 +73,7 @@
 )
 
 (defun write-it ()
-  (setq c (open a "w"))
+  (setq c (haws-open a "w"))
   (prompt "\nFile now open")
   (prompt "\nPick items in order to write to file")
   (setq d 0)
@@ -86,7 +86,7 @@
     (write-line i c)
     (setq d (+ 1 d))
   )
-  (close c)
+  (haws-close c)
 )
 
 (defun c:haws-imp_exp ()

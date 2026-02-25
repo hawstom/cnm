@@ -190,22 +190,6 @@
   ;; unhandled exceptions, can't reenter autolisp, unwind errors, etc.
   ;; New way: haws-close-all managed list
   (haws-close-all)
-  ;; Old way: close globals. Many functions in many files for decades used this old close-on-error strategy. Will have to migrate gradually. 
-  ;;   1. Replace (open) and (close) with haws versions. This is pretty safe.
-  ;;   2. Add a local declaration to all f1, f2, f3. Some will need to be shared-locals (semi-globals). Handle with care. Better to miss some than to declare locals where sharing with parent functions is needed (indicated when the present function doesn't open and close the file). TGH started this on 2025-12-04.
-  ;;   3. After great care with step 2, remove * from *f1*, *f2*, and *f3* to make them local.
-  (mapcar
-    '(lambda (file-pointer)
-      (if (= (type (eval file-pointer)) 'file)
-        (set file-pointer (close (eval file-pointer)))
-      )      
-    )
-    '(
-      *f1* ; reader (outer or long-term) file handle
-      *f2* ; writer (inner or shorter term) file handle
-      *f3* ; extra quick (no logs inside; instant term) file handle for logs and getlayr's getusl function
-    )
-  )
   ;;Versional housekeeping
   (if (/= 'subr (type command-s)) (setq command-s command))
   (if (= 8 (logand (getvar "undoctl") 8))
@@ -243,8 +227,6 @@
     ucsp nil
     ucspp nil
     enm nil
-    f1 nil
-    *f2* nil
     *error* olderr
     olderr nil
   )
@@ -1095,10 +1077,10 @@
        (if (= (getkword "File already exists.  Overwrite? [Y/N]:")
               "Yes"
            )
-         (setq f1 (open fname ftype))
+         (setq f1 (haws-open fname ftype))
        )
       )
-      (t (setq f1 (open fname ftype)))
+      (t (setq f1 (haws-open fname ftype)))
     )
     (if (not f1)
       (prompt
@@ -1709,7 +1691,7 @@
 ;; CAUTION: May not return the same value as vl-file-copy.
 ;;
 ;;(vl-acad-defun 'HAWS-FILE-COPY)
-(defun haws-file-copy (source destination / rdlin return)
+(defun haws-file-copy (source destination / f1 f2 rdlin return)
   (setq return t)
   (cond
     ((and (= (substr (getvar "DWGNAME") 1 7) "Drawing") (wcmatch destination (strcat (getvar "DWGPREFIX") "*")) (wcmatch (getvar "ACADVER") "*BricsCAD"))
@@ -1719,18 +1701,18 @@
     )
   )
   (cond
-    ((haws-vlisp-p) 
+    ((haws-vlisp-p)
      (vl-file-copy source destination))
     (t
-     (if (not(setq f1 (open source "r")))
+     (if (not(setq f1 (haws-open source "r")))
        (setq return nil)
      )
-     (if (not (and return (setq *f2* (open destination "w"))))
+     (if (not (and return (setq f2 (haws-open destination "w"))))
        (setq return nil)
      )
-     (while (setq rdlin (read-line f1)) (write-line rdlin *f2*))
-     (setq f1 (close f1))
-     (setq *f2* (close *f2*))
+     (while (setq rdlin (read-line f1)) (write-line rdlin f2))
+     (setq f1 (haws-close f1))
+     (setq f2 (haws-close f2))
      return
     )
   )
@@ -1967,13 +1949,13 @@
 ;;       file-name - Name of log file (e.g., "haws-clocking.log")
 ;; Returns: T if successful, nil if failed to write
 ;; Usage: (haws-message-log "Message to log" "custom-log.txt")
-(defun haws-message-log (message file-name / profile-path config-value) 
-  (cond 
-    ((and 
-       (setq *f3* (open (strcat (getvar "dwgprefix") file-name) "a"))
-       (write-line message *f3*)
+(defun haws-message-log (message file-name / f3 profile-path config-value)
+  (cond
+    ((and
+       (setq f3 (haws-open (strcat (getvar "dwgprefix") file-name) "a"))
+       (write-line message f3)
      )
-     (setq *f3* (close *f3*))
+     (setq f3 (haws-close f3))
      T
     )
     (T nil)
@@ -2134,7 +2116,8 @@
   (princ "\nExpecting ((\"TAG1\" \"value1\") (\"TAG2\" \"value2\")) we get ")
   (print (haws-nested-list-get data '("ATTRIBUTES")))
   (princ)
-);; HAWS-FILE-OPEN
+)
+;; HAWS-FILE-OPEN
 ;;
 ;; If a write directive file is locked, allows user to provide an alternate filename to open.
 ;;
@@ -2358,7 +2341,7 @@
 ;; HAWS-SETLAYR skips settings if layer already created this session.
 ;; Usage: (haws-setlayr laopt), where laopt is either a layer key string or a list of (laname lacolr laltyp)
 ;; Use empty quotes for default color and linetype (eg. (setlayr (list "AZ" "" ""))
-(defun haws-getusl (/ i rdlin temp)
+(defun haws-getusl (/ f3 i rdlin temp)
   (setq temp (findfile "layers.dat"))
   (cond
     (temp
@@ -2369,17 +2352,17 @@
     ((prompt "\nLayer settings file not found.") (exit))
   )
   (setq
-    *f3* (open temp "r")
+    f3 (haws-open temp "r")
     i  0
   )
-  (while (setq rdlin (read-line *f3*))
+  (while (setq rdlin (read-line f3))
     (princ "\rReading line ")
     (princ (setq i (1+ i)))
     (if (= 'LIST (type (setq temp (read rdlin))))
       (setq *haws:layers* (cons temp *haws:layers*))
     )
   )
-  (setq *f3* (close *f3*))
+  (setq f3 (haws-close f3))
 )
 ;;(vl-acad-defun 'HAWS-GETLAYR)
 (defun haws-getlayr (key / temp)
@@ -2819,16 +2802,16 @@
 ;; substitute
 ;;
 ;;(vl-acad-defun 'HAWS-PRIN1-TO-STRING)
-(defun haws-prin1-to-string (atomx / f1 *f2* string)
+(defun haws-prin1-to-string (atomx / f1 f2 string)
   (cond
     ((haws-vlisp-p) (vl-prin1-to-string atomx))
     (t
-     (setq *f2* (open "hawsprin1.tmp" "w"))
-     (prin1 atomx *f2*)
-     (setq *f2* (close *f2*))
-     (setq f1 (open "hawsprin1.tmp" "r"))
+     (setq f2 (haws-open "hawsprin1.tmp" "w"))
+     (prin1 atomx f2)
+     (setq f2 (haws-close f2))
+     (setq f1 (haws-open "hawsprin1.tmp" "r"))
      (setq string (read-line f1))
-     (setq f1 (close f1))
+     (setq f1 (haws-close f1))
      string
     )
   )

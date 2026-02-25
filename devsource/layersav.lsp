@@ -13,42 +13,42 @@
 (defun 	 c:haws-las (/ f1 fname layer count mvsset mvlist layers)
 	(haws-core-init 238) ;_ end of if
 	(setq
-		*f1* (if (= (getvar "filedia") 1)
-				 (open (getfiled "Layer settings file" (haws-getdnpath) "lyr" 1) "w")
+		f1 (if (= (getvar "filedia") 1)
+				 (haws-open (getfiled "Layer settings file" (haws-getdnpath) "lyr" 1) "w")
 				 (car (haws-getfil "Layer settings file" (haws-getdnpath) "w" "lyr"))
 			 ) ;_ end of if
 		count	0
 		mvsset
 		 (ssget "X" (list (cons 0 "VIEWPORT")))
 	) ;_ end of setq
-	(while (setq layer (tblnext "LAYER" (not layer))) (prin1 layer *f1*) (princ (chr 10) *f1*))
+	(while (setq layer (tblnext "LAYER" (not layer))) (prin1 layer f1) (princ (chr 10) f1))
 	(if	mvsset
 		(while (setq mvport (ssname mvsset count))
 			(setq mvport (entget mvport '("ACAD")))
 			(cond
 				((assoc 1003 (cdadr (assoc -3 mvport)))
-				 (prin1 (list (assoc 10 mvport) (assoc 40 mvport) (assoc 41 mvport)) *f1*)
-				 (princ (chr 10) *f1*)
+				 (prin1 (list (assoc 10 mvport) (assoc 40 mvport) (assoc 41 mvport)) f1)
+				 (princ (chr 10) f1)
 				 (setq
 					 i 0
 					 layers
 						(cdadr (assoc -3 mvport))
 				 ) ;_ end of setq
 				 (while	(setq layer (nth (setq i (1+ i)) layers))
-					 (cond ((= 1003 (car layer)) (prin1 (list layer) *f1*) (princ (chr 10) *f1*)))
+					 (cond ((= 1003 (car layer)) (prin1 (list layer) f1) (princ (chr 10) f1)))
 				 ) ;_ end of while
 				)
 			) ;_ end of cond
 			(setq count (1+ count))
 		) ;_ end of while
 	) ;_ end of if
-	(setq *f1* (close *f1*))
+	(setq f1 (haws-close f1))
 	(haws-core-restore) ;_ end of if
 	(princ)
 )																				;end defun LAS
 
 ;;Dialogue box function to restore layer settings saved by previous function.
-(defun 	 c:haws-lar (/ mvsset laline)
+(defun 	 c:haws-lar (/ f1 mvsset laline)
 	(haws-core-init 239) ;_ end of if
 	(haws-resfun)
 	(haws-vsave '("clayer" "cmdecho" "regenmode" "tilemode"))
@@ -56,21 +56,21 @@
 	(setvar "cmdecho" 0)
 	(setvar "regenmode" 0)
 	(setq
-		*f1* (if (= (getvar "filedia") 1)
-				 (open (getfiled "Layer settings file" (haws-getdnpath) "lyr" 0) "r")
+		f1 (if (= (getvar "filedia") 1)
+				 (haws-open (getfiled "Layer settings file" (haws-getdnpath) "lyr" 0) "r")
 				 (car (haws-getfil "Layer settings file" (haws-getdnpath) "r" "lyr"))
 			 ) ;_ end of if
 	) ;_ end of setq
 	(prompt "\nNow getting layer settings from file.  Please wait.  ")
 	(vl-cmdf "._layer" "_un" "0,defpoints" "_t" "0,defpoints" "_on" "0,defpoints" "_s" "0")
-	(while (and (setq laline (read-line *f1*)) (= "LAYER" (cdr (assoc 0 (setq laline (read laline))))))
+	(while (and (setq laline (read-line f1)) (= "LAYER" (cdr (assoc 0 (setq laline (read laline))))))
 		(haws-restla laline)
 	) ;_ end of while
 	(vl-cmdf "")
 	(if	laline
 		(haws-restvp)
 	) ;_ end of if
-	(setq *f1* (close *f1*))
+	(setq f1 (haws-close f1))
 	(setvar "regenmode" 1)
 	(if	ltfail
 		(prompt
@@ -180,7 +180,7 @@
 					 )
 					 ((assoc 1003 laline) (cond (mvpt (setq lalist (strcat lalist (cdr (assoc 1003 laline)) ",")))))
 				 ) ;_ end of cond
-				 (setq laline (read-line *f1*))
+				 (setq laline (read-line f1))
 				 (if laline
 					 (setq laline (read laline))
 				 ) ;_ end of if
