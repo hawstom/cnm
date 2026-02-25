@@ -104,12 +104,12 @@ $content = Get-Content $FilePath -Raw -ErrorAction Stop
 $result = Test-LispBalance -Content $content -FileName (Split-Path $FilePath -Leaf)
 
 if ($result.Valid) {
-    Write-Host "✓ $FilePath - Syntax valid (parentheses and quotes balanced)" -ForegroundColor Green
+    Write-Host "[OK] $FilePath - Syntax valid (parentheses and quotes balanced)" -ForegroundColor Green
     exit 0
 } else {
-    Write-Host "✗ $FilePath - Syntax errors found:" -ForegroundColor Red
-    foreach ($error in $result.Errors) {
-        Write-Host "  $error" -ForegroundColor Red
+    Write-Host "[FAIL] $FilePath - Syntax errors found:" -ForegroundColor Red
+    foreach ($err in $result.Errors) {
+        Write-Host "  $err" -ForegroundColor Red
     }
     exit 1
 }

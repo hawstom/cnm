@@ -41,7 +41,8 @@
       "WebFetch(domain:entercad.ru)",
       "WebFetch(domain:docs.autodesk.com)",
       "Bash(\"C:\\\\Program Files\\\\Autodesk\\\\AutoCAD 2026\\\\acad.exe\":*)",
-      "Bash(devtools/scripts/test-suite/cnm-unattended-tests.bat:*)"
+      "Bash(devtools/scripts/test-suite/cnm-unattended-tests.bat:*)",
+      "Bash(head:*)"
     ]
   }
 }
