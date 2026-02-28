@@ -1,6 +1,13 @@
-(if
-  (not haws-mklayr)
-  (load "CNMloader")
-  (PRINC "\nSkipping CNMloader.lsp.  Already loaded.")
+(princ "\nLoading CNM menu utilities (0001)...")
+(apply
+  '(lambda (/ fname)
+    (cond
+      (haws-mklayr (princ "\nSkipping CNMloader.lsp.  Already loaded."))
+      ((not (setq fname (findfile "cnmloader.lsp"))) (princ "\nCNM cannot load because cnmloader.lsp is not in the AutoCAD Support Files Search Path."))
+      (t (load fname))
+    )
+  )
+  nil
 )
+(princ "\nCNM menu utilities loaded.")
 (princ)

@@ -190,7 +190,7 @@
 (haws-autoload "copyrot"  '("haws-copyrot" "haws-copyrotdrag"))
 (haws-autoload "chcoord"  '("haws-chcoord"))
 (haws-autoload "cmpro"    '("haws-cmpro"))
-(haws-autoload "lengthen"  '("haws-lengthen"))
+(haws-autoload "lengthen" '("haws-lengthen"))
 (haws-autoload "mfillet"  '("haws-mf"))
 (haws-autoload "moffset"  '("haws-mof"))
 (haws-autoload "mscript"  '("haws-mscr"))
@@ -218,7 +218,7 @@
                             "haws-fdt" "haws-ib" "haws-il" "haws-io" "haws-ir" "haws-it"
                             "haws-llt" "haws-mbt" "haws-mvl" "haws-mvu" "haws-ose" "haws-osi" "haws-osm" 
                             "haws-osn" "haws-proto" "haws-protox" "haws-pslt" "haws-rga"
-                            "haws-qt" "haws-uf" "haws-uf0" "haws-uf1")
+                            "haws-qt" "haws-uf" "haws-uf0" "haws-uf1" "haws-vsr")
 )
 (haws-autoload "clean"    '("haws-clean"))
 (haws-autoload "funky"    '("haws-funky"))

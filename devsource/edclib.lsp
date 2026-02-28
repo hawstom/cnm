@@ -2371,8 +2371,8 @@
             ;; This logic was added to interact with CNMEdit.exe, a third-party project notes editor
             ;; that undertook to edit cnm.ini project settings and layers.dat layer settings.
             ;; Per the author of CNMEdit.exe, it is time to replace it with something else.
-            ((= (haws-config-getvar "HAWS" "ImportLayerSettings" (hcnm-ini-name (hcnm-proj)) "HAWS") "Yes")
-             (haws-config-setvar "HAWS" "ImportLayerSettings" "No" (hcnm-ini-name (hcnm-proj)) "HAWS")
+            ((= (haws-getvar "ImportLayerSettings") "Yes")
+             (haws-setvar "ImportLayerSettings" "No")
              (setq *haws-layers-made* nil) ; Clear cache to force recreation
              t
             )
