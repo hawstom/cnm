@@ -1216,49 +1216,6 @@
 
 ;;Shared locals from hcnm-key-table-make (only caller): notdsc note-first-line-p notnum notqty nottyp notunt qtypt txtht
 (defun hcnm-key-table-insert-text ()
-;;;All this stuff is to make the attribute order insensitive.
-;;;    (setvar "attreq" 0)
-;;;       (VL-CMDF
-;;;  "._insert" "NOTEQTY" "non"
-;;;  QTYPT
-;;;    "_Scale"
-;;;    TXTHT
-;;;    "_Rotate"
-;;;    "0"
-;;; )
-;;;      ;;Change attribute values
-;;;     (SETQ EN (ENTLAST))
-;;;    (WHILE (AND
-;;;  (SETQ EN (ENTNEXT EN))
-;;;  (/= "SEQEND" (CDR (ASSOC 0 (SETQ EL (ENTGET EN)))))
-;;;       )
-;;;  (COND
-;;;    ((= "ATTRIB" (CDR (ASSOC 0 EL)))
-;;;     (SETQ
-;;;       ATAG
-;;;     (CDR (ASSOC 2 EL))
-;;;       AVAL
-;;;     (COND
-;;;       ((= ATAG "TBLTYPE") NOTTYP)
-;;;       ((= ATAG "TBLNUM") (CAR NOTNUM))
-;;;       ((= ATAG "TBLDSC") NOTDSC)
-;;;       ((= ATAG "DELTA")
-;;;        (VL-STRING-SUBST "%%d" "d" (ANGTOS DELTA 1 4))
-;;;       )
-;;;       ((= ATAG "CHORD") (RTOS (* 2 RAD (SIN DOVER2)) 2 2))
-;;;       ((= ATAG "TANGENT")
-;;;        (RTOS (* RAD (/ (SIN DOVER2) (COS DOVER2))) 2 2)
-;;;       )
-;;;       ((= ATAG "BEARING")
-;;;        (VL-STRING-SUBST "%%d" "d" (ANGTOS BEARING 4 4))
-;;;       )
-;;;     )
-;;;     )
-;;;     (ENTMOD (SUBST (CONS 1 AVAL) (ASSOC 1 EL) EL))
-;;;     (ENTUPD EN)
-;;;    )
-;;;  )
-;;;    )
   (vl-cmdf
     "._insert"
     "NOTEQTY"
@@ -2535,7 +2492,7 @@
 
 
 ;;as posted the autodesk discussion customization group by Tony Tanzillo
-(defun ale_browseforfolder
+(defun ale-browseforfolder
   (prmstr ioptns deffld / shlobj folder fldobj outval)
   (setq
     shlobj
@@ -2648,7 +2605,7 @@
 (defun hcnm-browseproj (oldproj)
   (cond
     ((haws-vlisp-p)
-     (ale_browseforfolder (hcnm-shorten-path oldproj 50) 48 "")
+     (ale-browseforfolder (hcnm-shorten-path oldproj 50) 48 "")
     )
     (t
      (haws-filename-directory
@@ -2809,19 +2766,20 @@
 )
 
 
+;;; hcnm-config-ini-path - Returns ini path for Project-scope vars, nil otherwise.
+;;; Scope check prevents circular dependency: hcnm-proj -> hcnm-initialize-project
+;;; -> hcnm-config-getvar("AppFolder") -> hcnm-proj. Session-scope vars like
+;;; AppFolder pass nil, breaking the cycle.
+(defun hcnm-config-ini-path (var / scope-code)
+  (setq scope-code (haws-config-get-scope "CNM" var))
+  (if (= scope-code 2) (hcnm-ini-name (hcnm-proj)) nil)
+)
 ;;;Sets a variable in a temporary global lisp list
 (defun hcnm-config-temp-setvar (var val)
   (haws-config-temp-setvar "CNM" var val)
 )
-(defun hcnm-config-temp-getvar (var / scope-code)
-  ;; Scope guard: only call hcnm-proj for Project-scope vars (prevents circular dep)
-  (setq scope-code (haws-config-get-scope "CNM" var))
-  (haws-config-temp-getvar
-    "CNM"
-    var
-    (if (= scope-code 2) (hcnm-ini-name (hcnm-proj)) nil)
-    "CNM"
-  )
+(defun hcnm-config-temp-getvar (var)
+  (haws-config-temp-getvar "CNM" var (hcnm-config-ini-path var) "CNM")
 )
 (defun hcnm-config-temp-save ()
   (haws-config-temp-save "CNM" (hcnm-ini-name (hcnm-proj)) "CNM")
@@ -2830,67 +2788,20 @@
   (haws-config-temp-clear "CNM")
 )
 
-;;; ================================================================================================
-;;; HCNM-CONFIG-SETVAR / HCNM-CONFIG-GETVAR - CNM Configuration Wrappers
-;;; ================================================================================================
-;;;
-;;; CRITICAL: Scope check BEFORE calling hcnm-proj prevents circular dependency:
-;;;   - hcnm-proj (finds/creates project) calls hcnm-initialize-project
-;;;   - hcnm-initialize-project calls (hcnm-config-getvar "AppFolder")
-;;;   - AppFolder is Session-scope (0), NOT Project-scope (2)
-;;;   - Wrapper checks scope FIRST, passes nil instead of calling hcnm-proj
-;;;   - haws-config-getvar retrieves from Session cache (no project path needed)
-;;;   - SUCCESS - no circular dependency!
-;;;
-;;; ================================================================================================
 
 ;;;Sets a variable in the global lisp list and in CNM.INI
-;;; UPDATED: Now uses HAWS-CONFIG library (Issue #11)
-(defun hcnm-config-setvar (var val / scope-code)
-  ;; Get scope code to avoid calling hcnm-proj for non-Project variables
-  (setq scope-code (haws-config-get-scope "CNM" var))
-  ;; Call haws-config with appropriate parameters
-  (haws-config-setvar
-    "CNM"                               ; app
-    var                                 ; var
-    val                                 ; val
-    ;; Only call hcnm-proj for Project-scope variables (scope 2)
-    (if (= scope-code 2)
-      (hcnm-ini-name (hcnm-proj))       ; ini-path for Project scope
-      nil                               ; no ini-path needed for other scopes
-    )
-    "CNM"                               ; section for Project scope
-  )
+(defun hcnm-config-setvar (var val)
+  (haws-config-setvar "CNM" var val (hcnm-config-ini-path var) "CNM")
 )
 
 
-;;; hcnm-config-getvar  
-;;; Var is case sensitive
-;;; UPDATED: Now uses HAWS-CONFIG library (Issue #11)
-(defun hcnm-config-getvar (var / val start scope-code)
-  ;; PROFILING: Start timing CNM config wrapper
+;;; hcnm-config-getvar (case sensitive)
+(defun hcnm-config-getvar (var / val start)
   (setq start (haws-clock-start "cnm-config-getvar-wrapper"))
-  ;; Get scope code to avoid calling hcnm-proj for non-Project variables
-  ;; This prevents circular dependency during project initialization:
-  ;; hcnm-proj â†’ hcnm-initialize-project â†’ hcnm-config-getvar("AppFolder") â†’ hcnm-proj
-  ;; AppFolder is Session-scope (0), so it doesn't need project path
-  (setq scope-code (haws-config-get-scope "CNM" var))
-  ;; Call haws-config with appropriate parameters
   (setq
     val
-     (haws-config-getvar
-       "CNM"                            ; app
-       var                              ; var
-       ;; Only call hcnm-proj for Project-scope variables (scope 2)
-       ;; Session/Drawing/App/User scopes don't need project path
-       (if (= scope-code 2)
-         (hcnm-ini-name (hcnm-proj))    ; ini-path for Project scope
-         nil                            ; no ini-path needed for other scopes
-       )
-       "CNM"                            ; section for Project scope
-     )
+     (haws-config-getvar "CNM" var (hcnm-config-ini-path var) "CNM")
   )
-  ;; PROFILING: End timing CNM config wrapper
   (haws-clock-end "cnm-config-getvar-wrapper" start)
   val
 )
@@ -3397,23 +3308,6 @@
           "\nthat came before any shape.\n\nThe note(s) will never be found or printed."
         )
       )
-    )
-  )
-  ;;Put configs from v4 Project Notes into CNM.INI and alert.
-  (cond
-    ((and (not filev42) varlist)
-     (alert
-       (princ
-         "\nCNM is moving project settings from version 4.1 Project Notes to CNM.INI."
-       )
-     )
-     (foreach
-        entry varlist
-       (hcnm-config-setvar
-         (hcnm-config-entry-var entry)
-         (hcnm-config-entry-val entry)
-       )
-     )
     )
   )
   (setq *hcnm-cnmprojectnotes* (reverse cflist))
@@ -7126,6 +7020,9 @@
         )
         (cond
           ((vl-catch-all-error-p string)
+           (haws-debug
+             (list "hcnm-bn-auto-al NAME error: " (vl-princ-to-string string))
+           )
            (setq
              string
               "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
@@ -7134,6 +7031,9 @@
         )
        )
        (t
+        (haws-debug
+          (list "hcnm-bn-auto-al NAME NOT FOUND: obj-align=" (vl-princ-to-string obj-align))
+        )
         (setq
           string "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
         )
@@ -7186,7 +7086,9 @@
      )                                  ; End SETQ
     )                                   ; End first branch of outer COND
     (t
-     ;; Calculation failed - couldn't get coordinates or invalid alignment
+     (haws-debug
+       (list "hcnm-bn-auto-alignment NOT FOUND: tag=" tag " auto-type=" auto-type)
+     )
      (setq string "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
     )
   )                                     ; End outer COND
@@ -7337,6 +7239,9 @@
        )
      )
      ;; Set string to NOT FOUND and skip all coordinate calculation
+     (haws-debug
+       (list "hcnm-bn-auto-ne NOT FOUND: no leader, ename-bubble=" (vl-princ-to-string ename-bubble))
+     )
      (setq string "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
     )
     (t
@@ -7416,6 +7321,9 @@
     )
     (t
      ;; p1-world is NIL - couldn't get world coordinates
+     (haws-debug
+       (list "hcnm-bn-auto-ne NOT FOUND: p1-world is nil, ename-bubble=" (vl-princ-to-string ename-bubble))
+     )
      (setq string "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
     )
   )
@@ -7577,6 +7485,9 @@
   (setq time-civil3d-query (- (getvar "MILLISECS") time-start))
   (cond
     ((vl-catch-all-error-p dia-value)
+     (haws-debug
+       (list "hcnm-bn-auto-pipe-dia-to-string NOT FOUND: " (vl-princ-to-string dia-value))
+     )
      (princ
        (strcat
          "\nError getting diameter: "
@@ -7645,6 +7556,9 @@
   (setq time-civil3d-query (- (getvar "MILLISECS") time-start))
   (cond
     ((vl-catch-all-error-p slope-value)
+     (haws-debug
+       (list "hcnm-bn-auto-pipe-slope-to-string NOT FOUND: " (vl-princ-to-string slope-value))
+     )
      (princ
        (strcat
          "\nError getting slope: "
@@ -7710,6 +7624,9 @@
   )
   (cond
     ((vl-catch-all-error-p length-value)
+     (haws-debug
+       (list "hcnm-bn-auto-pipe-length-to-string NOT FOUND: " (vl-princ-to-string length-value))
+     )
      (princ
        (strcat
          "\nError getting length: "
@@ -7820,6 +7737,9 @@
     string
      (cond
        ((not obj-pipe)
+        (haws-debug
+          (list "hcnm-bn-auto-pipe NOT FOUND: obj-pipe is nil, auto-type=" (vl-princ-to-string auto-type))
+        )
         "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
        )
        ((= auto-type "DIA")
@@ -8011,7 +7931,7 @@
 ;;      - When editing bubble and switching to coordinate-based auto-text  
 ;;   2. Viewport linking (explicit user actions)
 ;;      - "Change View" button in edit dialog
-;;      - Future: CNMCHGVPORT command for selection sets (TODO)
+;;      - CNMCHGVPORT command for selection sets
 ;;
 ;; This captures 3 reference points to calculate rotation, scale, and translation
 ;; Returns T if successful, NIL if failed
@@ -8093,7 +8013,7 @@
      ;; Bubble is in paper space and auto-type is coordinate-based - show warning
      (haws-tip
        2                                ; Unique tip ID for paper space warning
-       "ALERT: CNM doesn't adjust paper space bubble note coordinates references when viewports change.\n\nTo avoid causing chaos when viewports change, auto text coordinates references do not update with viewport view changes.\n\nYou must use the 'Change View' button in the edit dialog (or the future CNMCHGVPORT command) if you want to refresh the viewport association and world coordinates of selected bubble notes."
+       "ALERT: CNM doesn't adjust paper space bubble note coordinates references when viewports change.\n\nTo avoid causing chaos when viewports change, auto text coordinates references do not update with viewport view changes.\n\nYou must use the 'Change View' button in the edit dialog (or the CNMCHGVPORT command) if you want to refresh the viewport association and world coordinates of selected bubble notes."
      )
     )
   )
@@ -8273,6 +8193,7 @@
        ename-bubble
        (hcnm-bn-get-target-vport)
      )
+     (hcnm-bn-space-restore t)
      (hcnm-bn-tip-warn-pspace-no-react
        ename-bubble
        auto-type
@@ -8293,6 +8214,7 @@
        ename-bubble
        (hcnm-bn-get-target-vport)
      )
+     (hcnm-bn-space-restore t)
      (hcnm-bn-tip-warn-pspace-no-react
        ename-bubble
        auto-type
@@ -8322,15 +8244,13 @@
   )
   (princ)                               ; Return nil with clean output (this is a side-effect procedure)
 )
-;; Gets the target viewport from user. This would only be called because we needed it before we could determine it automatically or when user clicks the button to change association.
-;; NOTE: Warning should be shown BEFORE calling this function (via hcnm-bn-tip-warn-pspace-no-react)
-;; NOTE: This function does NOT restore space - caller must handle that after capturing transformation matrix
-(defun hcnm-bn-get-target-vport (/ input pspace-restore-p)
-  (setq pspace-restore-p (hcnm-bn-space-set-model))
+;; Switches to model space and prompts user to activate target viewport.
+;; Returns CVPORT. Leaves model space active so caller can capture VPTRANS
+;; (trans() requires model space active in target viewport).
+(defun hcnm-bn-get-target-vport (/)
+  (hcnm-bn-space-set-model)
   (getstring "\nSet the TARGET viewport active and press ENTER to continue: ")
-  (setq input (getvar "CVPORT"))        ; Capture the viewport ID
-  (hcnm-bn-space-restore pspace-restore-p)
-  input                                 ; Return the viewport ID
+  (getvar "CVPORT")
 )
 ;; Apply affine transformation using 3-point correspondence
 ;; Given 3 OCS points and their corresponding 3 WCS points, transform any OCS point to WCS
@@ -8879,9 +8799,6 @@
        )
        (setq obj-next (vlax-ename->vla-object ename-next))
        (vla-put-textstring obj-next (cadr (assoc atag lattribs)))
-       ;; UPDATEFIELD commented out to avoid "0 field(s) found/updated" messages
-       ;; May be necessary for some bubble types - uncomment if needed
-                                        ;(COND ((= (hcnm-bn-get-mtext-string) "")(VL-CMDF "._updatefield" ename-next "")))
       )
     )
   )

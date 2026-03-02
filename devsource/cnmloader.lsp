@@ -47,12 +47,6 @@
     )
   )
 )
-
-
-;The haws-autoload function loads a file
-;when one of the listed commands are invoked.
-;None of the files is loaded until a command calls it.
-
 ;;---------------Profiles Section---------------
 (haws-autoload "eop"      '("haws-eop"))
 (haws-autoload "profiles" '("haws-ellabel" "haws-elv" "haws-grb" "haws-grc" "haws-grd" "haws-lst" "haws-newpro"
