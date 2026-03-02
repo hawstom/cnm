@@ -815,18 +815,19 @@
 )
 (defun haws-use-log-remote (/ url http bios-date log-data)
   (setq
-    url  "http://www.constructionnotesmanager.com/cnm-log.php"
+    ;; The underscores in this function cannot be changed to hyphens.
+    url  "http://www.constructionnotesmanager.com/cnm_log.php"
     http (vlax-create-object "MSXML2.XMLHTTP")
     bios-date (haws-getbiosdate)
     log-data
      (strcat
-       "computer-name="
+       "computer_name="
        (haws-getcomputername)
        "&loginname="
        (getvar "loginname")
-       "&cnm-version="
+       "&cnm_version="
        (haws-unified-version)
-       "&command-log="
+       "&command_log="
        (haws-use-get-local-log-string)
      )
   )
