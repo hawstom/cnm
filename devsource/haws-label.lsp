@@ -46,7 +46,7 @@
 ;; If no tilde found, returns empty string ""
 ;; Input: layer-name (e.g., "amr6-x-water-offsite|12" or "PROP-LPS-2")
 ;; Output: number string (e.g., "12") or "" if not found
-(defun haws-label (layer-name / tilde-pos after-tilde char-code number-str)
+(defun haws-ut-extract-number-after-tilde (layer-name / tilde-pos after-tilde char-code number-str)
   (setq tilde-pos (vl-string-search "|" layer-name))
   
   ;; If no tilde found, return empty string
@@ -89,7 +89,7 @@
 
 (defun haws-clock-start (label) nil)
 
-(defun c:haws-ut (/ angle-mode ent-data ent-name ent-pick ent-type label-text layer-name extracted-number
+(defun c:haws-label (/ angle-mode ent-data ent-name ent-pick ent-type label-text layer-name extracted-number
                         layer-table pick-point pt1 pt2 readability-bias settings text-angle
                         text-height text-style-key text-style-name text-style-table user-choice)
   (haws-core-init 339)

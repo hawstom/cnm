@@ -17,13 +17,13 @@
 ;; TEXT_STYLE_KEY: The TEXT_STYLE that was defined above and the mtext will use.
 ;;             "LAYER_NAME"       "TEXT_STYLE_KEY"   "LABEL_TEXT"
 ;; Use '#' to indicate the number found in the layer name will be inserted (e.g. "#\"W" on amr6-water|wtr-6in will display "6"W"). The function will drop any "#\" if the layer has no number
-("LAYER"      "*LPS*"       "PROP-SWR"            "#\"S LPS"              )
-("LAYER"      "*WTR*DIP*"   "PROP-WTR"            "#\"W DIP"              )
-("LAYER"      "*WTR*PVC*"   "PROP-WTR"            "#\"W PVC"              )
-("LAYER"      "*WTR*"       "PROP-WTR"            "#\"W"                  )
-("LAYER"      "*SWR*VCP*"   "PROP-SWR"            "#\"S VCP"              )
-("LAYER"      "*SWR*"       "PROP-SWR"            "#\"S"                  )
-("LAYER"      "*SD*"        "PROP-SD"             "#\"SD"                 )
+("LAYER"      "*LPS*"       "PROP"            "#\"S LPS"              )
+("LAYER"      "*WTR*DIP*"   "PROP"            "#\"W DIP"              )
+("LAYER"      "*WTR*PVC*"   "PROP"            "#\"W PVC"              )
+("LAYER"      "*WTR*"       "PROP"            "#\"W"                  )
+("LAYER"      "*SWR*VCP*"   "PROP"            "#\"S VCP"              )
+("LAYER"      "*SWR*"       "PROP"            "#\"S"                  )
+("LAYER"      "*SD*"        "PROP"             "#\"SD"                 )
 ("LAYER"      "*EX*SWR*"    "EX"                  "#\"s"                  )
 ("LAYER"      "*EX*WTR*"    "EX"                  "#\"w"                  )
 ("LAYER"      "*EX*SD*"     "EX"                  "#\"sd"                 )
