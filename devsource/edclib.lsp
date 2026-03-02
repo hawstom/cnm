@@ -32,7 +32,7 @@
 ;;; lisputil.lsp
 ;;;This is the current version of HawsEDC and CNM
 (defun haws-unified-version ()
-  "5.5.38"
+  "5.5.39"
 )
 ;;This function returns the current setting of nagmode.
 ;;Elizabeth asked me to give her a version with no nag mode (direct to fail).
@@ -45,7 +45,7 @@
 ;;; Layer caching for performance optimization
 (setq *haws-layers-made* nil) ; Tracks layers created in current drawing session
 (defun haws-copyright ()
-  "Copyright 2025 Thomas Gail Haws"
+  "Copyright 2026 Thomas Gail Haws"
 )
 ;; Returns a random CNM evangelism message for tips/prompts (sharing-focused)
 (defun haws-evangel-msg (/ big-date msgs idx)
