@@ -101,10 +101,17 @@
       (setq result nil)
     )
   )
-  ;; Check haws-getstringx availability  
+  ;; Check haws-getstringx availability
   (if (not (type haws-getstringx))
     (progn
       (alert "haws-getstringx not available - check edclib.lsp")
+      (setq result nil)
+    )
+  )
+  ;; Check vlisp-compile is bound - requires VLIDE command to have been run this session
+  (if (not (boundp 'vlisp-compile))
+    (progn
+      (alert (princ "FATAL: vlisp-compile is not available. Run the VLIDE command at the AutoCAD prompt first (you can close the Visual LISP window afterward), then retry compilation."))
       (setq result nil)
     )
   )
