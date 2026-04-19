@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell *)",
+      "Bash(rm -f ../devtools/scripts/test-suite/haws-debug-log.md)",
+      "Bash(./cnm-unattended-tests.bat)"
+    ]
+  }
+}

@@ -2715,6 +2715,7 @@
     (list "NotesLeaderDimstyle" "" 2)
     (list "NotesKeyTableDimstyle" "" 2)
     (list "TCGLeaderDimstyle" "TCG Leader" 2)
+    (list "BubbleTextNotFound" "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!" 0)
     (list "BubbleTextLine1PromptP" "1" 4)
     (list "BubbleTextLine2PromptP" "1" 4)
     (list "BubbleTextLine3PromptP" "0" 4)
@@ -6444,6 +6445,45 @@
      )
     )
   )
+  ;; Gate: coordinate-based auto-text (STA/OFF/STAOFF/STANAME/N/E/NE/Z)
+  ;; requires a leader to compute p1-world. Without one, per-type handlers
+  ;; silently return BubbleTextNotFound. Short-circuit here with a user tip.
+  (cond
+    ((and (hcnm-bn-auto-text-requires-coordinates-p auto-type)
+          (not (hcnm-bn-bubble-data-get bubble-data "ename-leader")))
+     (haws-tip
+       6
+       (strcat
+         "Cannot calculate coordinates for this bubble note!"
+         "\n"
+         "\nThis bubble has no associated leader."
+         "\nCoordinate-based auto-text (N/E/NE/Sta/Off) requires a leader"
+         "\nto determine the point location."
+         "\n"
+         "\nPossible causes:"
+         "\n  - Bubble was inserted manually (not via CNM commands)"
+         "\n  - Leader was deleted after bubble creation"
+         "\n  - Bubble was copied without its leader"
+         "\n"
+         "\nSolution:"
+         "\n  - Use CNM insertion commands (BOXL, CIRL, etc.) which create"
+         "\n    bubble and leader together"
+         "\n  - Or use non-coordinate auto-text types (text, mtext, quantities)"
+       )
+     )
+     (setq
+       lattribs
+        (hcnm-bn-lattribs-put-auto
+          tag
+          (hcnm-getvar "BubbleTextNotFound")
+          lattribs
+          ename-bubble
+        )
+       bubble-data
+        (hcnm-bn-bubble-data-set bubble-data "ATTRIBUTES" lattribs)
+     )
+    )
+    (t
   ;; NOTE: Auto-text handlers requiring coordinates (auto-ne handleless, auto-al handle-based, auto-su handle-based) each call helpers
   ;; in a parallel way to get AVPORT and p1-world at the top of their function body
   (setq
@@ -6584,6 +6624,8 @@
      )
     lattribs
      (hcnm-bn-bubble-data-get bubble-data "ATTRIBUTES")
+  )
+    )
   )
   ;; Report auto-dispatch timing
   (haws-clock-console-log (strcat "    [PROFILE] Auto-dispatch (" auto-type "): " 
@@ -7023,10 +7065,7 @@
            (haws-debug
              (list "hcnm-bn-auto-al NAME error: " (vl-princ-to-string string))
            )
-           (setq
-             string
-              "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
-           )
+           (setq string (hcnm-getvar "BubbleTextNotFound"))
           )
         )
        )
@@ -7034,9 +7073,7 @@
         (haws-debug
           (list "hcnm-bn-auto-al NAME NOT FOUND: obj-align=" (vl-princ-to-string obj-align))
         )
-        (setq
-          string "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
-        )
+        (setq string (hcnm-getvar "BubbleTextNotFound"))
        )
      )
     )
@@ -7089,7 +7126,7 @@
      (haws-debug
        (list "hcnm-bn-auto-alignment NOT FOUND: tag=" tag " auto-type=" auto-type)
      )
-     (setq string "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
+     (setq string (hcnm-getvar "BubbleTextNotFound"))
     )
   )                                     ; End outer COND
   ;; Step 4: Save the formatted string to the attribute list and update bubble-data
@@ -7213,48 +7250,13 @@
     ;; bnatu-context-p = T means bnatu, NIL means insertion/editing
     bnatu-update-p bnatu-context-p
   )
-  ;; CRITICAL: Check for leader BEFORE gateway call
-  ;; Gateway tries to capture viewport, which is pointless without a leader
-  (cond
-    ((not ename-leader)
-     ;; No leader - can't calculate coordinates
-     (haws-tip
-       6  ; Tip ID from haws-tip-registry.csv: "No leader for coordinate-based auto-text"
-       (strcat
-         "Cannot calculate coordinates for this bubble note!"
-         "\n"
-         "\nThis bubble has no associated leader."
-         "\nCoordinate-based auto-text (N/E/NE/Sta/Off) requires a leader"
-         "\nto determine the point location."
-         "\n"
-         "\nPossible causes:"
-         "\n  â€¢ Bubble was inserted manually (not via CNM commands)"
-         "\n  â€¢ Leader was deleted after bubble creation"
-         "\n  â€¢ Bubble was copied without its leader"
-         "\n"
-         "\nSolution:"
-         "\n  â€¢ Use CNM insertion commands (BOXL, CIRL, etc.) which create"
-         "\n    bubble and leader together"
-         "\n  â€¢ Or use non-coordinate auto-text types (text, mtext, quantities)"
-       )
-     )
-     ;; Set string to NOT FOUND and skip all coordinate calculation
-     (haws-debug
-       (list "hcnm-bn-auto-ne NOT FOUND: no leader, ename-bubble=" (vl-princ-to-string ename-bubble))
-     )
-     (setq string "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
-    )
-    (t
-     ;; Normal flow - has leader, proceed with gateway and coordinate calculation
-     ;; Ensure viewport transform is captured if needed (gateway architecture)
-     ;; MUST happen BEFORE p1-world calculation below, which depends on viewport transform
-     (haws-debug "Before gateway call")
-     (hcnm-bn-gateways-to-viewport-selection-prompt
-    ;; N/E/NE don't use reference objects
-    ename-bubble auto-type obj-reference "NO-OBJECT"
-    ;; Normal auto-text flow (not super-clearance)                               
-    nil
-   )                                    
+  ;; Leader presence is guaranteed by the gate in hcnm-bn-auto-dispatch.
+  ;; Ensure viewport transform is captured if needed (gateway architecture)
+  ;; MUST happen BEFORE p1-world calculation below, which depends on viewport transform
+  (haws-debug "Before gateway call")
+  (hcnm-bn-gateways-to-viewport-selection-prompt
+    ename-bubble auto-type obj-reference "NO-OBJECT" nil
+  )
   (haws-debug "After gateway call")
   ;; Calculate or get p1-world
   (cond
@@ -7324,12 +7326,9 @@
      (haws-debug
        (list "hcnm-bn-auto-ne NOT FOUND: p1-world is nil, ename-bubble=" (vl-princ-to-string ename-bubble))
      )
-     (setq string "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!")
+     (setq string (hcnm-getvar "BubbleTextNotFound"))
     )
   )
-  ;; NOTE: Handle and metadata accumulation now happens at end of function after auto-text is generated
-     )  ; End (t ...) branch - normal flow with leader
-  )  ; End outer (cond ...) - leader check
   ;; END hcnm-bn-auto-get-input SUBFUNCTION
   ;; START hcnm-bn-auto-update SUBFUNCTION
   (haws-debug ">>> BEFORE lattribs-put-auto")
@@ -7494,7 +7493,7 @@
          (vl-princ-to-string dia-value)
        )
      )
-     "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
+     (setq string (hcnm-getvar "BubbleTextNotFound"))
     )
     (t
      ;; Civil 3D returns diameter in drawing units (typically feet for US)
@@ -7565,7 +7564,7 @@
          (vl-princ-to-string slope-value)
        )
      )
-     "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
+     (setq string (hcnm-getvar "BubbleTextNotFound"))
     )
     (t
      ;; Civil 3D returns slope as decimal (e.g., 0.02 for 2%)
@@ -7633,7 +7632,7 @@
          (vl-princ-to-string length-value)
        )
      )
-     "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
+     (setq string (hcnm-getvar "BubbleTextNotFound"))
     )
     (t
      (strcat
@@ -7740,7 +7739,7 @@
         (haws-debug
           (list "hcnm-bn-auto-pipe NOT FOUND: obj-pipe is nil, auto-type=" (vl-princ-to-string auto-type))
         )
-        "!!!!!!!!!!!!!!!!!NOT FOUND!!!!!!!!!!!!!!!!!!!!!!!"
+        (setq string (hcnm-getvar "BubbleTextNotFound"))
        )
        ((= auto-type "DIA")
         (hcnm-bn-auto-pipe-dia-to-string obj-pipe)
@@ -7999,10 +7998,11 @@
   )
 )
 
-;; Queue a paper space coordinate warning tip to be shown after any modal dialogs close
-;; This is necessary because you can't show a modal dialog from inside another modal dialog
-;; Show paper space coordinate warning tip
-;; Can be called from anywhere - shows tip immediately
+;; HIDDEN: This tip warned that the (now-removed) reactor doesn't update paper
+;; space coordinate auto-text on viewport changes. With no reactor, the warning
+;; makes no UX sense — auto-text only updates when the user invokes BNATU. All
+;; callsites are commented out. Preserve the function and tip 2 in the registry
+;; for the day a reactor (or equivalent automatic updater) returns.
 (defun hcnm-bn-tip-warn-pspace-no-react (ename-bubble auto-type /)
   (cond
     ((and
@@ -8010,9 +8010,8 @@
        (not (hcnm-bn-is-in-model-space ename-bubble))
        (hcnm-bn-auto-text-requires-coordinates-p auto-type)
      )
-     ;; Bubble is in paper space and auto-type is coordinate-based - show warning
      (haws-tip
-       2                                ; Unique tip ID for paper space warning
+       2
        "ALERT: CNM doesn't adjust paper space bubble note coordinates references when viewports change.\n\nTo avoid causing chaos when viewports change, auto text coordinates references do not update with viewport view changes.\n\nYou must use the 'Change View' button in the edit dialog (or the CNMCHGVPORT command) if you want to refresh the viewport association and world coordinates of selected bubble notes."
      )
     )
@@ -8194,10 +8193,8 @@
        (hcnm-bn-get-target-vport)
      )
      (hcnm-bn-space-restore t)
-     (hcnm-bn-tip-warn-pspace-no-react
-       ename-bubble
-       auto-type
-     )
+     ;; Tip hidden: see hcnm-bn-tip-warn-pspace-no-react (no reactor exists)
+     ;; (hcnm-bn-tip-warn-pspace-no-react ename-bubble auto-type)
     )
     ;; Path 2: All gates open - prompt user
     ((and
@@ -8215,10 +8212,8 @@
        (hcnm-bn-get-target-vport)
      )
      (hcnm-bn-space-restore t)
-     (hcnm-bn-tip-warn-pspace-no-react
-       ename-bubble
-       auto-type
-     )
+     ;; Tip hidden: see hcnm-bn-tip-warn-pspace-no-react (no reactor exists)
+     ;; (hcnm-bn-tip-warn-pspace-no-react ename-bubble auto-type)
     )
     ;; Path 3: Only object gateway closed - use CVPORT without prompting
     ((and
@@ -9745,7 +9740,8 @@
   ;; Capture VPTRANS while still in target viewport context (before restoring space)
   (hcnm-bn-capture-viewport-transform ename-bubble (getvar "CVPORT"))
   (hcnm-bn-space-restore pspace-p)
-  (hcnm-bn-tip-warn-pspace-no-react ename-bubble "STA")
+  ;; Tip hidden: see hcnm-bn-tip-warn-pspace-no-react (no reactor exists)
+  ;; (hcnm-bn-tip-warn-pspace-no-react ename-bubble "STA")
   ;; Verify capture succeeded
   (setq new-handle (hcnm-bn-get-viewport-handle ename-bubble))
   (haws-debug
@@ -10398,13 +10394,8 @@
        (strcat
          "About Editing with Auto Text and Delimiters\n\n"
          "CNM does its best to keep your existing auto text straight if you don't touch it. It adds new auto text at the end of your free form text unless you indicate the desired insertion location with \"```\" (three backquotes usually on the same key as ~ tilde).\n\n"
-       )
-     )
-     (haws-tip
-       5                                ; Unique tip ID for auto-text editing explanation
-       (strcat
-         "Understanding each other: CNM gives you free-form user edits with the following reasonable expectations:\n\n"
-         "  - CNM keeps a separate hidden copy of your auto text in your bubble note's XDATA and uses it to identify your auto text for updates in the event your reference object or your arrowhead changes.\n"
+         "How Auto Text Works:\n\nCNM gives you free-form user edits with the following reasonable expectations:\n"
+         "  - CNM stores a separate hidden copy of your auto text on your bubble note (using XDATA) and uses that to identify your auto text for updates in the event your reference object or your arrowhead changes.\n"
          "  - Any text you add remains intact, and any auto text you respect updates correctly.\n"
          "  - If you change CNM Project settings that affect auto text format, the next update reflects those changes as long as you do not change individual auto text manually.\n"
          "  - If you completely delete (or fat-finger-corrupt) auto text or change its format (eg. adding prefixes/suffixes), it does not get acted on or restored at the next update.\n"
@@ -10850,10 +10841,10 @@
          (hcnm-bn-is-in-model-space ename-bubble)
      )
   )
-  ;; Show delimiter tip and paper space warning if applicable
-  ;; EXECUTIVE: The general disclaimer in the edit dialog is sufficient.
-  ;; When user actually adds coordinate auto-text (Sta/Off/etc), they get
-  ;; the detailed dismissable tip via hcnm-bn-tip-warn-pspace-no-react.
+  ;; Show delimiter tip
+  ;; (Paper space coordinate-update warning was historically shown here via
+  ;; hcnm-bn-tip-warn-pspace-no-react, but the reactor it referred to no longer
+  ;; exists. See that function's comment for context.)
   (set_tile
     "Message"
     (strcat
