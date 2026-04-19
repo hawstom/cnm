@@ -244,7 +244,7 @@
 ;;;CNMALIAS.LSP has short names for all the commands.
 (cond
   ((not *hcnm-cnmaliasloaded*)
-   (if(= (load "cnmalias.lsp" "failed") "failed")(alert "Couldn't find cnmalias.lsp command aliases."))
+   (if (= (load "cnmalias" "failed") "failed") (alert "Couldn't find cnmalias.lsp command aliases."))
   )
   (t (princ "\nSkipping cnmalias.lsp command aliases.  Already loaded."))
 )

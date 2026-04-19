@@ -1,4 +1,4 @@
-(princ "\nLoading CNM menu utilities (0001)...")
+(princ "\nLoading CNM menu utilities ...")
 (apply
   '(lambda (/ fname)
     (cond

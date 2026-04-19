@@ -1,4 +1,4 @@
-﻿;;; Command aliases for all CNM commands.
+;;; Command aliases for all CNM commands.
 ;;; To change a command name to your liking,
 ;;; Just change the Alias.
 ;;; It's strongly recommended to copy only the commands you change
@@ -16,7 +16,7 @@
 ;;; (hcnm-define-command-alias '("Command" "Alias" "ActivationGroup" "Message"))
 (hcnm-define-command-alias '("Aperture" "AP" "Custompgp" ""))
 (hcnm-define-command-alias '("LayMCur" "AS" "Custompgp" "Use Y for improved flow (AS/CL/CHM -> Y/YY/YYY)."))
-(hcnm-define-command-alias '("ArcText" "AT" "Custompgp"))
+(hcnm-define-command-alias '("ArcText" "AT" "Custompgp" ""))
 (hcnm-define-command-alias '("Break" "B" "Custompgp" ""))
 (hcnm-define-command-alias '("Block" "BL" "Custompgp" ""))
 (hcnm-define-command-alias '("Rectang" "BX" "Custompgp" ""))
@@ -64,7 +64,6 @@
 ;;; All of these can be disabled as a group using the CNMAlias command.
 ;;; They can also be converted to custom ACAD.PGP aliases with help from the same command.
 ;;; (hcnm-define-command-alias '("Command" "Alias" "ActivationGroup" "Message"))
-
 (hcnm-define-command-alias '("-Insert" "-I" "Standardpgp" ""))
 (hcnm-define-command-alias '("-Wblock" "-W" "Standardpgp" ""))
 (hcnm-define-command-alias '("-Xref" "-XR" "Standardpgp" ""))
@@ -442,6 +441,6 @@
 
 ;;;---------------Set a flag that aliases have been loaded
 (setq *hcnm-cnmaliasloaded* t)
- ;|�Visual LISP� Format Options�
+;|�Visual LISP� Format Options�
 (132 2 40 2 nil "end of " 100 2 1 1 1 nil nil nil t)
 ;*** DO NOT add text below the comment! ***|;

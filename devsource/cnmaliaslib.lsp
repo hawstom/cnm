@@ -1,4 +1,4 @@
-﻿(setq
+(setq
   *hcnm-activation-preference*
    (atoi
      (haws-getvar "CNMAliasActivation")
