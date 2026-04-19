@@ -378,19 +378,19 @@
   )
 )
 
-;;; TODO: It would be good for somebody who understands this function to improve the symbol names for readability.
-(defun haws-cel:update-linked-elevation-field (enamecontour enamemtext / dict egmtext enamemtextvla flst newstr)
-  (setq egmtext (entget enamecontour))
+(defun haws-cel:update-linked-elevation-field (en-contour en-mtext / dict eg-field new-field-string obj-mtext)
+  ;; Walk the mtext's extension dictionary to its ACAD_FIELD entry, then rewrite
+  ;; the field expression (DXF 2) to link this mtext to the contour's Elevation.
   (setq
     dict
      (vlax-vla-object->ename
        (vla-getextensiondictionary
-         (vlax-ename->vla-object enamemtext)
+         (vlax-ename->vla-object en-mtext)
        )
      )
   )
   (setq
-    flst
+    eg-field
      (entget
        (cdr
          (assoc
@@ -401,19 +401,19 @@
      )
   )
   (setq
-    newstr
+    new-field-string
      (strcat
        "%<\\AcObjProp Object(%<\\_ObjId "
        (itoa
-         (vla-get-objectid (vlax-ename->vla-object enamecontour))
+         (vla-get-objectid (vlax-ename->vla-object en-contour))
        )
        ">%).Elevation \\f \"%lu2%pr"(itoa(haws-cel:getvar "LabelPrecision"))"\">%"
      )
   )
-  (setq flst (subst (cons 2 newstr) (assoc 2 flst) flst))
-  (entmod flst)
-  (setq enamemtextvla (vlax-ename->vla-object enamemtext))
-  (vla-put-textstring enamemtextvla (vla-fieldcode enamemtextvla))
+  (setq eg-field (subst (cons 2 new-field-string) (assoc 2 eg-field) eg-field))
+  (entmod eg-field)
+  (setq obj-mtext (vlax-ename->vla-object en-mtext))
+  (vla-put-textstring obj-mtext (vla-fieldcode obj-mtext))
 )
 ;;; ============================================================================
 ;;; Settings stuff.  Last part of code; not fun to read for new project member.

@@ -3,7 +3,13 @@
     "allow": [
       "Bash(powershell *)",
       "Bash(rm -f ../devtools/scripts/test-suite/haws-debug-log.md)",
-      "Bash(./cnm-unattended-tests.bat)"
+      "Bash(./cnm-unattended-tests.bat)",
+      "Bash(cmd.exe //c cnm-unattended-tests.bat)",
+      "Bash(cmd.exe *)",
+      "Bash(git -C /c/TGHFiles/programming/hawsedc/develop log --all --oneline -- devsource/lee-mac.lsp)",
+      "Bash(git -C /c/TGHFiles/programming/hawsedc/develop log --all --oneline -S \"lm:unformat\" -i)",
+      "Bash(git *)",
+      "Bash(> /c/TGHFiles/programming/hawsedc/develop/devtools/scripts/test-suite/haws-debug-log.md)"
     ]
   }
 }

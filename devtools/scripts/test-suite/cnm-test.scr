@@ -45,8 +45,8 @@
 ; 2. Elements to test: paper/model, left/right, all (16) auto text types (can do with 8 bubbles or enable more lines per bubble), copy, flip, stretch all coordinate-based arrowheads, stretch alignment and pipe, updater.
 ; 3. Bubbles to place:
 ;    ID  Col Row TYP NUM   Line1   Assertion               Line2 Assertion    COORD-P SPACE X1,Y1        X2,Y2       NOTES
-;    1   1L  3U  BOX 2     NE      N 20270.00, E 10340.00  TEXT  [SEE NOTES]  T       PS    17.0,13.5    16.8,14.0   SELECT TEXT AT (14,12.5) STRING = "CLICK HERE (```), THEN NE, THEN OK."
-;    1E  (post-edit)               N 20270.00, E 10340.00        [SEE NOTES]  T       PS                             Line2 = "CLICK HERE (N 20270.00, E 10340.00), THEN NE, THEN OK."
+;    1   1L  3U  BOX 2     NE      N 20270.00, E 10340.00  TEXT  [SEE NOTES]  T       PS    17.0,13.5    16.8,14.0   SELECT MTEXT AT (14,12.5) STRING (post-entmod) = "{\LCLICK HERE\l} (```), THEN NE, THEN %<\AcVar Filename>% OK." -- exercises haws-mtext-unformat strip + field preservation.
+;    1E  (post-edit)               N 20270.00, E 10340.00        [SEE NOTES]  T       PS                             Line2 = "CLICK HERE (N 20270.00, E 10340.00), THEN NE, THEN %<\AcVar Filename>% OK."
 ;    2   1L  2U  CIR 2     STAOFF  STA 53+00.00, 20.00 LT  ENTRY [SEE NOTES]  T       PS    17.0,13.0    16.8,13.5   Line2 = "CLICK HERE, THEN STAOFF, THEN OK."
 ;    2E  (post-edit)               STA 53+00.00, 20.00 LT        [SEE NOTES]  T       PS                             Line2 = "CLICK HERE, THEN STAOFF, THEN OK.STA 53+00.00, 20.00 LT"
 ;    3   1L  CEN DIA 2     STANAME STA 53+00.00 OAK ST     OFF   0.00' RT     T       PS    17.0,12.0    16.8,12.5
@@ -136,12 +136,18 @@ extents
 ; See plan at header lines 46-57
 ; See notes 4.1 (editor tests) and 4.2 (custom cnm.ini)
 ;
-; PREREQUISITE: cnm-test-start.dwg must contain a TEXT entity at paper space
-; coordinates (14,12.5) with string "CLICK HERE (```), THEN NE, THEN OK."
-; for the Text auto-type test in Bubble 1 Line 2.
+; PREREQUISITE: cnm-test-start.dwg must contain an MTEXT entity at paper space
+; coordinates (14,12.5). Initial content is irrelevant - the test below
+; overwrites its DXF group 1 with format codes + a field reference to exercise
+; haws-mtext-unformat strip and field-preservation (see edclib.lsp; rolled back
+; at commit 63efc0d, restored with field-safe wrapper).
 ;
 ; === PAPER SPACE BUBBLES 1-4 ===
 pspace
+;; Inject MText codes + field into source MTEXT. The capture path in
+;; hcnm-bn-auto-es should strip codes (BubbleMtext != "1") and preserve the
+;; field. The assertion at line 165 below verifies both behaviors.
+(test-modify-mtext-at 14.0 12.5 "{\\LCLICK HERE\\l} (```), THEN NE, THEN %<\\AcVar Filename>% OK.")
 ;;
 ;; BUBBLE 1: NE + Text (Paper Space, 1L 3U)
 ;; Arrow: 17.0,13.5 (PS) = Model (10340,20270)
@@ -162,7 +168,7 @@ text
 14,12.5
 (test-validate-auto-text (entlast) "NOTETXT1" "N 20270.00, E 10340.00" "BUBBLE 1, BOX 1, LINE 1: NE (Paper)")
 (test-validate-xdata (entlast) "NOTETXT1" "NE" "BUBBLE 1, BOX 1, LINE 1")
-(test-validate-auto-text (entlast) "NOTETXT2" "CLICK HERE (```), THEN NE, THEN OK." "BUBBLE 1, BOX 1, LINE 2: Text (Paper)")
+(test-validate-auto-text (entlast) "NOTETXT2" "CLICK HERE (```), THEN NE, THEN %<\\AcVar Filename>% OK." "BUBBLE 1, BOX 1, LINE 2: Text strip+field (Paper)")
 (test-validate-vptrans-created (entlast) "BUBBLE 1, BOX 1")
 ;;
 ;; === EDITOR WORKFLOW TESTS (Note 4.1, plan entries 1E and 2E) ===
@@ -184,7 +190,7 @@ last
 ;; Post-edit validation (1E): verify values expected after roundtrip
 (test-validate-auto-text (entlast) "NOTETXT1" "N 20270.00, E 10340.00" "EDIT 1E, BOX 1, LINE 1: NE preserved after edit")
 (test-validate-xdata (entlast) "NOTETXT1" "NE" "EDIT 1E, BOX 1")
-(test-validate-auto-text (entlast) "NOTETXT2" "CLICK HERE (N 20270.00, E 10340.00), THEN NE, THEN OK." "EDIT 1E, BOX 1, LINE 2: NE inserted at ``` after edit")
+(test-validate-auto-text (entlast) "NOTETXT2" "CLICK HERE (N 20270.00, E 10340.00), THEN NE, THEN %<\\AcVar Filename>% OK." "EDIT 1E, BOX 1, LINE 2: NE inserted at ``` after edit, field preserved")
 (test-validate-xdata (entlast) "NOTETXT2" "NE" "EDIT 1E, BOX 1, LINE 2")
 ;;
 ;; BUBBLE 2: STAOFF + Entry (Paper Space, 1L 2U)

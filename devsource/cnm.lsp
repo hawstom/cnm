@@ -6670,6 +6670,17 @@
      )
     )
   )
+  ;; Strip MText codes when destination bubble is dtext (BubbleMtext != "1").
+  ;; wcmatch gate skips the regex machinery when no backslash codes are present.
+  (cond
+    ((and
+       string
+       (/= (hcnm-config-getvar "BubbleMtext") "1")
+       (wcmatch string "*\\*")
+     )
+     (setq string (haws-mtext-unformat string))
+    )
+  )
   (setq
     lattribs
      (hcnm-bn-lattribs-put-auto
@@ -9859,46 +9870,10 @@
 ;; These functions preserve user edits while updating auto-text fields.
 ;;==============================================================================
 
-;; Helper function to check if a bubble has a specific leader
-(defun hcnm-bn-bubble-has-leader
-   (handle-bubble handle-leader / ename-bubble ename-leader)
-  (setq ename-bubble (handent handle-bubble))
-  (cond
-    (ename-bubble
-     (setq ename-leader (hcnm-bn-bubble-leader ename-bubble))
-     (cond
-       (ename-leader
-        (= handle-leader (cdr (assoc 5 (entget ename-leader))))
-       )
-       (t nil)
-     )
-    )
-    (t nil)
-  )
-)
 ;; Helper function to check if entity is on the "Model" tab
 (defun hcnm-bn-is-in-model-space (ename / layout-name)
   (setq layout-name (cdr (assoc 410 (entget ename))))
   (= (strcase layout-name) "MODEL")
-)
-
-;; Helper function to find the leader associated with a bubble
-(defun hcnm-bn-get-leader-for-bubble (ename-bubble / bubble-data leaders leader-ename)
-  ;; Search for leaders that reference this bubble
-  ;; This is a simplified implementation - in practice, you might want to
-  ;; store the leader-bubble association more explicitly
-  (setq bubble-data (entget ename-bubble))
-  (setq leaders (ssget "X" '((0 . "LEADER"))))
-  (cond
-    (leaders
-     ;; Check each leader to see if it references this bubble
-     ;; For now, return the first leader found (simplified)
-     ;; TODO: Implement proper leader-bubble association lookup
-     (setq leader-ename (ssname leaders 0))
-     leader-ename
-    )
-    (t nil)  ; No leader found
-  )
 )
 
 ;;==============================================================================

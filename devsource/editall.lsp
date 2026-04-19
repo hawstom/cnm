@@ -22,6 +22,7 @@
       ((= etype "TEXT") (vl-cmdf "._TEXTEDIT" obj1 ""))
       ((= etype "MTEXT") (vl-cmdf "._TEXTEDIT" obj1 ""))
       ((= etype "DIMENSION") (vl-cmdf "._TEXTEDIT" obj1 ""))
+      ((= etype "MULTILEADER") (vl-cmdf "._TEXTEDIT" obj1 ""))
       ((or cnm-p
            (wcmatch
              (vla-get-effectivename (vlax-ename->vla-object obj1))

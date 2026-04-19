@@ -32,7 +32,7 @@
 ;;; lisputil.lsp
 ;;;This is the current version of HawsEDC and CNM
 (defun haws-unified-version ()
-  "5.5.40"
+  "5.5.41"
 )
 ;;This function returns the current setting of nagmode.
 ;;Elizabeth asked me to give her a version with no nag mode (direct to fail).
@@ -2486,6 +2486,49 @@
 
 (defun haws-text-height-model ()
   (* (getvar "DIMTXT") (haws-dwgscale))
+)
+;;; Strip MText formatting codes while preserving %<...>% field codes.
+;;; lm:unformat's regex shreds field-code interiors (\F, \A, etc. inside fields),
+;;; so we extract field spans to sentinels, strip codes, then restore fields.
+(defun haws-mtext-unformat (str / start end field fields sentinel i processed result)
+  (setq fields nil i 0 processed str)
+  (while
+    (and
+      (setq start (vl-string-search "%<" processed))
+      (setq end (vl-string-search ">%" processed start))
+    )
+    (setq
+      field (substr processed (1+ start) (- (+ end 2) start))
+      fields (cons field fields)
+      sentinel (strcat "\001" (itoa i) "\001")
+      processed (strcat
+                  (substr processed 1 start)
+                  sentinel
+                  (substr processed (+ end 3))
+                )
+      i (1+ i)
+    )
+  )
+  (cond
+    ((setq result (lm:unformat processed nil))
+     (setq fields (reverse fields) i 0)
+     (foreach field fields
+       (setq sentinel (strcat "\001" (itoa i) "\001"))
+       (while (setq start (vl-string-search sentinel result))
+         (setq result
+           (strcat
+             (substr result 1 start)
+             field
+             (substr result (+ start 1 (strlen sentinel)))
+           )
+         )
+       )
+       (setq i (1+ i))
+     )
+     result
+    )
+    (t str)
+  )
 )
 
 (defun haws-mktext (j i h r s / ent jx jy)

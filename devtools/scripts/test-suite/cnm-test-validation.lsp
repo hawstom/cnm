@@ -38,6 +38,31 @@
     )
   )
 )
+(defun test-modify-mtext-at (x y new-content / ss i e ip found)
+  ;; Overwrite DXF group 1 of the MTEXT nearest to (x, y). Used to inject
+  ;; format codes and field references into test MTEXT sources without
+  ;; requiring a human to edit the drawing. Returns the entity name if
+  ;; modified, nil otherwise.
+  (setq ss (ssget "_X" '((0 . "MTEXT"))) i -1 found nil)
+  (while (and (not found) ss (< (setq i (1+ i)) (sslength ss)))
+    (setq e (ssname ss i) ip (cdr (assoc 10 (entget e))))
+    (cond
+      ((and ip (< (abs (- (car ip) x)) 1.0) (< (abs (- (cadr ip) y)) 1.0))
+       (entmod (subst (cons 1 new-content) (assoc 1 (entget e)) (entget e)))
+       (setq found e)
+      )
+    )
+  )
+  (cond
+    (found
+     (haws-debug (strcat "\ntest-modify-mtext-at: set DXF 1 of MTEXT near ("
+                         (rtos x 2 1) ", " (rtos y 2 1) ")")))
+    (t
+     (haws-debug (strcat "\nWARNING: test-modify-mtext-at: no MTEXT near ("
+                         (rtos x 2 1) ", " (rtos y 2 1) ")")))
+  )
+  found
+)
 (defun c:test-setup-layers ( / )
   ;; Create test results layer for MTEXT annotations
   (vl-cmdf "._layer" "_make" "C-ANNO-TEST-RESULTS" "")

@@ -20,7 +20,7 @@ AutoLISP and Common Lisp are unrelated dialects. Do not assume similarity.
 ### Workflow Constraints
 - **DO NOT git commit** unless explicitly asked - let the human commit
 - **DO NOT claim "fixed" or "loads successfully"** - say "validation passes" or "no syntax errors detected". Use haws-debug instrumentation or unattended scripts (see Testing section) to get real runtime data before drawing conclusions
-- **Run paren validation** after every .lsp edit: `powershell -File devtools\scripts\haws-lisp-paren-check.ps1 -FilePath "devsource\<file>.lsp"` and `powershell -File devtools\scripts\validate-lisp-syntax.ps1 -FilePath "devsource\<file>.lsp"`
+- **Run paren validation** after every .lsp edit. The validation scripts live at `devtools\scripts\` (paths below are relative to the repo root `develop\` — run from there, or prepend the absolute path if your cwd is `devsource\` or elsewhere): `powershell -File devtools\scripts\haws-lisp-paren-check.ps1 -FilePath "devsource\<file>.lsp"` and `powershell -File devtools\scripts\validate-lisp-syntax.ps1 -FilePath "devsource\<file>.lsp"`
 
 ## Code Style
 
