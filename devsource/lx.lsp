@@ -5,7 +5,7 @@
 (defun c:haws-lx ()
 (haws-core-init 255)
 (princ (haws-evangel-msg))
-(haws-tip 11 "\nTry LXX to edit selected layers in the Layers palette.")
+(haws-tip 11 "Select OK to continue with the LX command to list objects in an XREF.\n\nHINT:  Do you know about LXX? If you want the ability to also immediately show selected layers in the Layers palette, try LXX.")
 (haws-xlist 0))
 (defun c:haws-lxx ()
 (haws-core-init 256) (haws-xlist-multi))
