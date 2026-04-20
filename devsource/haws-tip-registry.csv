@@ -54,7 +54,7 @@ tip-id,reservation,note
 2,CNM,Paper space coordinates warning
 3,CNM,Auto-text and delimiter explanation
 4,CNM,AVPORT selection explanation
-5,CNM,
+5,CNM,Tip system introduction
 6,CNM,No leader for coordinate-based auto-text
 7,CNM,Aligning bubble text by editing ATTDEFs in block editor
 8,CNM,Deployment advisory
