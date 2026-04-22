@@ -5745,13 +5745,17 @@
 ;;;
 ;;; SEARCH PRIORITY:
 ;;;   1. Delimiter ``` in clean text - REPLACE delimiter
-;;;   2. Old auto-text from XDATA in clean text - REPLACE old value
-;;;   3. Fallback - APPEND WITHOUT SPACE (user must use delimiter for control)
+;;;   2. AcObjProp field code in current text - REPLACE entire field expression
+;;;      (ObjId changes between sessions so exact-string search cannot be used)
+;;;   3. Old auto-text from XDATA in clean text - REPLACE old value
+;;;   4. Fallback - APPEND WITHOUT SPACE (user must use delimiter for control)
 ;;;
 ;;; SIDE EFFECTS: None (pure function)
 (defun hcnm-bn-smart-replace-auto (current-text old-auto-text
                                    new-auto-text / clean-current-text
-                                   pos new-text
+                                   pos new-text field-start field-end
+                                   before-field
+                                   hcnm-search-pos hcnm-last-found hcnm-found
                                   )
   ;; Strip format codes from current text for clean searching
   (setq clean-current-text current-text)
@@ -5771,7 +5775,13 @@
      (setq clean-current-text (substr clean-current-text 4))
     )
   )
-  ;; Search priority: 1) Delimiter, 2) Old XDATA value, 3) Append (no space)
+  ;; Search priority:
+  ;;   1) Delimiter (``` marker)
+  ;;   2) AcObjProp field expression - structural replace, ObjId-agnostic
+  ;;   3) Old XDATA value exact match
+  ;;   4) Empty field
+  ;;   5) Corruption detection
+  ;;   6) Fallback append
   (setq
     new-text
      (cond
@@ -5781,23 +5791,52 @@
           (substr clean-current-text 1 pos)
           new-auto-text
           (if (> (strlen clean-current-text) (+ pos 3))
-                                        ; Skip "```" (3 chars)
             (substr clean-current-text (+ pos 4))
-                                        ; +4 to skip delimiter
             ""
           )
         )
        )
-       ;; Priority 2: If old auto-text found in XDATA, replace it
+       ;; Priority 2: AcObjProp field present in current text.
+       ;;
+       ;; AutoCAD reassigns ObjIds on every session open, so the ObjId stored in
+       ;; XDATA at insertion time never matches the one lm:fieldcode reads back.
+       ;; We therefore locate the field structurally instead of by value:
+       ;;
+       ;;   before-field = text before %<\AcObjProp  (user prefix, usually "")
+       ;;   field body   = %<\AcObjProp...>%          (replaced by new-auto-text)
+       ;;   discarded    = anything after the last >%  (the postfix e.g. " LF" is
+       ;;                  already embedded inside new-auto-text, so the literal
+       ;;                  trailing " LF" left in current-text must be dropped)
+       ;;
+       ;; Result: before-field + new-auto-text  (no suffix appended)
+       ((setq field-start (vl-string-search "%<\\AcObjProp" clean-current-text))
+        ;; Find the LAST >% - the outermost field closer.
+        ;; Nested sub-fields (%<\_ObjId ...>%) also contain >%, so we must not
+        ;; stop at the first occurrence.
+        (setq hcnm-search-pos 0
+              hcnm-last-found nil)
+        (while (setq hcnm-found
+                 (vl-string-search ">%" clean-current-text hcnm-search-pos))
+          (setq hcnm-last-found hcnm-found
+                hcnm-search-pos (1+ hcnm-found))
+        )
+        (setq field-end hcnm-last-found)
+        (if (and field-end (> field-end field-start))
+          (progn
+            (setq before-field (substr clean-current-text 1 field-start))
+            ;; Intentionally drop everything after the last >% (field-end).
+            ;; new-auto-text already contains the postfix (e.g. " LF"); appending
+            ;; what follows >% in current-text would duplicate it.
+            (strcat before-field new-auto-text)
+          )
+          ;; Fallback: field markers malformed, replace whole thing
+          new-auto-text
+        )
+       )
+       ;; Priority 3: If old auto-text found in XDATA, replace it exactly
        ((and
           old-auto-text
-          (setq
-            pos
-             (vl-string-search
-               old-auto-text
-               clean-current-text
-             )
-          )
+          (setq pos (vl-string-search old-auto-text clean-current-text))
         )
         (strcat
           (substr clean-current-text 1 pos)
@@ -5805,30 +5844,24 @@
           (if (> (strlen clean-current-text)
                  (+ pos (strlen old-auto-text))
               )
-            (substr
-              clean-current-text
-              (+ pos (strlen old-auto-text) 1)
-            )
+            (substr clean-current-text (+ pos (strlen old-auto-text) 1))
             ""
           )
         )
        )
-       ;; Priority 3: Empty field - just use auto-text
+       ;; Priority 4: Empty field
        ((= clean-current-text "") new-auto-text)
-       ;; Priority 4: Safety check - if current text looks like corrupted auto-text, replace entirely
-       ((or 
-          ;; Current text contains multiple auto-text patterns (corruption detected)
+       ;; Priority 5: Corruption detection
+       ((or
           (and (vl-string-search "STA " clean-current-text)
                (vl-string-search "LT" clean-current-text)
-               (> (strlen clean-current-text) 30))  ; Suspiciously long
-          ;; Current text is just coordinate/offset fragments
+               (> (strlen clean-current-text) 30))
           (wcmatch clean-current-text "*.* LT")
           (wcmatch clean-current-text "*.* RT")
         )
-        ;; Replace entire field with new auto-text (don't append to corruption)
         new-auto-text
        )
-       ;; Fallback: append WITHOUT space (user must add space or use delimiter)
+       ;; Fallback: append WITHOUT space
        (t (strcat clean-current-text new-auto-text))
      )
   )
@@ -6731,9 +6764,9 @@
      )
     )
     (bnatu-context-p
-     ;; BUP context - field-based types (LF/SF/SY) update via AutoCAD's field engine on REGEN.
-     ;; lm:fieldcode now strips any %<\_FldIdx N>% suffix AutoCAD appends after save/reopen,
-     ;; so current lattribs already contains the clean field code.  Return it as-is.
+     ;; BUP context but NO reference provided - skip (fields don't update via bnatu)
+     ;; For dynamic fields (LF/SF/SY), the field expression handles updates automatically
+     ;; XDATA only stores the field text, no reference object
      (setq string (cond ((assoc tag lattribs) (cadr (assoc tag lattribs))) (t "")))
     )
     (t
@@ -8925,8 +8958,6 @@
        (setq en (dictsearch (cdr (assoc -1 en)) "TEXT"))
        (setq fd (entget (cdr (assoc 360 en))))
      )
-     ;; Resolve the field code: substitute _FldIdx 0 with the resolved field body,
-     ;; and ObjIdx 0 with the actual ObjId.
      (setq raw-code
        (if (vl-string-search "\\_FldIdx " (cdr (assoc 2 en)))
          (vl-string-subst
@@ -8947,10 +8978,9 @@
          (cdr (assoc 2 en))
        )
      )
-     ;; AutoCAD appends "%<\_FldIdx N>%" to the wrapper field code after the first
-     ;; save/reopen cycle.  Strip everything from that marker onward so that
-     ;; lm:fieldcode always returns the same clean string regardless of how many
-     ;; sessions the drawing has been through.
+     ;; AutoCAD appends "%<\_FldIdx N>%" to the wrapper field after the first
+     ;; save/reopen cycle. Strip from that marker onward so the returned string
+     ;; is always the same clean expression regardless of session count.
      (setq fldidx-pos (vl-string-search "%<\\_FldIdx " raw-code))
      (if fldidx-pos
        (substr raw-code 1 fldidx-pos)
