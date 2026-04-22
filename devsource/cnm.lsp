@@ -2725,6 +2725,7 @@
     (list "BubbleTextLine0PromptP" "0" 4)
     (list "BubbleSkipEntryPrompt" "0" 4)
     (list "BubbleOffsetDropSign" "1" 2)
+    (list "BubbleStreetNameCapitalize" "1" 2)
     (list "BubbleTextPrefixLF" "" 2)
     (list "BubbleTextPrefixSF" "" 2)
     (list "BubbleTextPrefixSY" "" 2)
@@ -5615,6 +5616,8 @@
        (vlax-ename->vla-object ename-leader)
        18
      )
+     ;; Reset the flag so it only applies once
+     (hcnm-config-setvar "BubbleArrowIntegralPending" "0")
     )
   )
 )
@@ -6728,9 +6731,9 @@
      )
     )
     (bnatu-context-p
-     ;; BUP context but NO reference provided - skip (fields don't update via bnatu)
-     ;; For dynamic fields (LF/SF/SY), the field expression handles updates automatically
-     ;; XDATA only stores the field text, no reference object
+     ;; BUP context - field-based types (LF/SF/SY) update via AutoCAD's field engine on REGEN.
+     ;; lm:fieldcode now strips any %<\_FldIdx N>% suffix AutoCAD appends after save/reopen,
+     ;; so current lattribs already contains the clean field code.  Return it as-is.
      (setq string (cond ((assoc tag lattribs) (cadr (assoc tag lattribs))) (t "")))
     )
     (t
@@ -6877,6 +6880,65 @@
   )
 )
 
+;;==============================================================================
+;; hcnm-bn-format-with-trailing-zeros
+;;==============================================================================
+;; Purpose:
+;;   Formats a number with preserved trailing zeros based on precision setting.
+;;   Avoids the issue where rtos drops trailing zeros (e.g., 187.80 becomes 187.8).
+;;
+;; Arguments:
+;;   value - Number to format (required)
+;;   precision - Decimal places to display (required)
+;;
+;; Returns: Formatted string with trailing zeros preserved (e.g., "187.80")
+;;
+;; Example:
+;;   (hcnm-bn-format-with-trailing-zeros 187.8 2) => "187.80"
+;;   (hcnm-bn-format-with-trailing-zeros 100 2) => "100.00"
+;;==============================================================================
+(defun hcnm-bn-format-with-trailing-zeros (value precision / formatted decimal-pos 
+                                            current-decimals padding i)
+  (setq formatted (rtos value 2 precision))
+  (cond
+    ((= precision 0)
+     ;; No decimal places requested
+     formatted
+    )
+    (t
+     ;; Check if decimal point exists in formatted string
+     (setq decimal-pos (vl-string-search "." formatted))
+     (cond
+       (decimal-pos
+        ;; Decimal point found - count existing decimals
+        (setq current-decimals (- (strlen formatted) decimal-pos 1))
+        (cond
+          ((< current-decimals precision)
+           ;; Pad with zeros
+           (setq i (- precision current-decimals))
+           (setq padding "")
+           (repeat i
+             (setq padding (strcat padding "0"))
+           )
+           (strcat formatted padding)
+          )
+          (t formatted)
+        )
+       )
+       (t
+        ;; No decimal point - add it and pad with zeros
+        (setq i 0)
+        (setq padding "")
+        (repeat precision
+          (setq padding (strcat padding "0"))
+        )
+        (strcat formatted "." padding)
+       )
+     )
+    )
+  )
+)
+
 ;; Format station value with config-based prefix/postfix
 ;; Arguments:
 ;;   alignment-object - VLA-OBJECT to get station string with equations
@@ -6920,10 +6982,9 @@
       )
       (t (hcnm-config-getvar "BubbleTextPrefixOff+"))
     )
-    ;; Format number with configured precision
-    (rtos
+    ;; Format number with configured precision, preserving trailing zeros
+    (hcnm-bn-format-with-trailing-zeros
       offset-value
-      2
       (atoi (hcnm-config-getvar "BubbleTextPrecisionOff+"))
     )
     ;; Postfix depends on offset direction
@@ -7126,7 +7187,15 @@
              ((vl-catch-all-error-p string)
               (setq string sta-string)  ; If name fails, just use station
              )
-             (t (setq string (strcat sta-string " " string)))
+             (t (setq string 
+                  (cond
+                    ((= (hcnm-config-getvar "BubbleStreetNameCapitalize") "1")
+                     (strcase (strcat sta-string " " string))
+                    )
+                    (t (strcat sta-string " " string))
+                  )
+                )
+             )
            )
            string
           )
@@ -7514,9 +7583,8 @@
      (setq result
        (strcat
          (hcnm-config-getvar "BubbleTextPrefixPipeDia")
-         (rtos
+         (hcnm-bn-format-with-trailing-zeros
            dia-inches
-           2
            (atoi (hcnm-config-getvar "BubbleTextPrecisionPipeDia"))
          )
          (hcnm-config-getvar "BubbleTextPostfixPipeDia")
@@ -7585,9 +7653,8 @@
      (setq result
        (strcat
          (hcnm-config-getvar "BubbleTextPrefixPipeSlope")
-         (rtos
+         (hcnm-bn-format-with-trailing-zeros
            slope-percent
-           2
            (atoi (hcnm-config-getvar "BubbleTextPrecisionPipeSlope"))
          )
          (hcnm-config-getvar "BubbleTextPostfixPipeSlope")
@@ -7648,9 +7715,8 @@
     (t
      (strcat
        (hcnm-config-getvar "BubbleTextPrefixPipeLength")
-       (rtos
+       (hcnm-bn-format-with-trailing-zeros
          length-value
-         2
          (atoi
            (hcnm-config-getvar "BubbleTextPrecisionPipeLength")
          )
@@ -7858,9 +7924,8 @@
 (defun hcnm-bn-auto-rtos (number key)
   (strcat
     (hcnm-config-getvar (strcat "BubbleTextPrefix" key))
-    (rtos
+    (hcnm-bn-format-with-trailing-zeros
       number
-      2
       (atoi
         (hcnm-config-getvar (strcat "BubbleTextPrecision" key))
       )
@@ -8848,7 +8913,7 @@
   )
   lattribs
 )
-(defun lm:fieldcode (en / fd id)
+(defun lm:fieldcode (en / fd id raw-code fldidx-pos)
   (cond
     ((and
        (wcmatch
@@ -8860,23 +8925,36 @@
        (setq en (dictsearch (cdr (assoc -1 en)) "TEXT"))
        (setq fd (entget (cdr (assoc 360 en))))
      )
-     (if (vl-string-search "\\_FldIdx " (cdr (assoc 2 en)))
-       (vl-string-subst
-         (if (setq id (cdr (assoc 331 fd)))
-           (vl-string-subst
-             (strcat
-               "ObjId "
-               (itoa (vla-get-objectid (vlax-ename->vla-object id)))
+     ;; Resolve the field code: substitute _FldIdx 0 with the resolved field body,
+     ;; and ObjIdx 0 with the actual ObjId.
+     (setq raw-code
+       (if (vl-string-search "\\_FldIdx " (cdr (assoc 2 en)))
+         (vl-string-subst
+           (if (setq id (cdr (assoc 331 fd)))
+             (vl-string-subst
+               (strcat
+                 "ObjId "
+                 (itoa (vla-get-objectid (vlax-ename->vla-object id)))
+               )
+               "ObjIdx 0"
+               (cdr (assoc 2 fd))
              )
-             "ObjIdx 0"
              (cdr (assoc 2 fd))
            )
-           (cdr (assoc 2 fd))
+           "\\_FldIdx 0"
+           (cdr (assoc 2 en))
          )
-         "\\_FldIdx 0"
          (cdr (assoc 2 en))
        )
-       (cdr (assoc 2 en))
+     )
+     ;; AutoCAD appends "%<\_FldIdx N>%" to the wrapper field code after the first
+     ;; save/reopen cycle.  Strip everything from that marker onward so that
+     ;; lm:fieldcode always returns the same clean string regardless of how many
+     ;; sessions the drawing has been through.
+     (setq fldidx-pos (vl-string-search "%<\\_FldIdx " raw-code))
+     (if fldidx-pos
+       (substr raw-code 1 fldidx-pos)
+       raw-code
      )
     )
   )
@@ -11625,6 +11703,7 @@
   (hcnm-config-set-action-tile "BubbleTextLine0PromptP")
   (hcnm-config-set-action-tile "BubbleSkipEntryPrompt")
   (hcnm-config-set-action-tile "BubbleOffsetDropSign")
+  (hcnm-config-set-action-tile "BubbleStreetNameCapitalize")
   (hcnm-config-set-action-tile "BubbleTextPrefixLF")
   (hcnm-config-set-action-tile "BubbleTextPrefixSF")
   (hcnm-config-set-action-tile "BubbleTextPrefixSY")

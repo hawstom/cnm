@@ -209,6 +209,10 @@ HCNMBubble : dialog {
 			key = "BubbleOffsetDropSign";
 			label = "Drop offset sign";
 		}
+		: toggle {
+			key = "BubbleStreetNameCapitalize";
+			label = "Capitalize street names";
+		}
 		: row {
 			: column {
 				: text {label = "Option ->";}
