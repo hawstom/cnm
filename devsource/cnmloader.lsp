@@ -1,4 +1,4 @@
-﻿(princ "\nConstruction Notes Manager menu utilities loading ... ")
+﻿(princ "\nCNM autoloader cnmloader.lsp loading ... ")
 ;;; ============================================================================
 ;;; HOW TO ADD A NEW CNM/HAWSEDC COMMAND
 ;;; ============================================================================
@@ -234,22 +234,34 @@
 ;;; Load legacy library
 ;; LISPUTIL.LSP has library functions for legacy routines some legacy users have. 
 ;; Since some of its contents conflict with edclib, edclib must be loaded before lisputil so that edclib has precedence.
-(if (not haws-errdef) (load "lisputil"))
+(cond
+  ((not haws-errdef) 
+    (princ "\nLoading lisputil from cnmloader.lsp.")
+    (load "lisputil")
+  )
+)
 
 ;;; edclib is the common core library for HawsEDC and CNM.
 ;;; Must be loaded early so haws-config and other utilities are available.
+(princ "\nLoading edclib from cnmloader.lsp.")
 (load "edclib")
 
 ;;;Load aliases
 ;;;CNMALIAS.LSP has short names for all the commands.
 (cond
   ((not *hcnm-cnmaliasloaded*)
+   (princ "\nLoading cnmalias from cnmloader.lsp.")   
    (if (= (load "cnmalias" "failed") "failed") (alert "Couldn't find cnmalias.lsp command aliases."))
   )
   (t (princ "\nSkipping cnmalias.lsp command aliases.  Already loaded."))
 )
 ;;;The following line loads user.lsp if found.
-(if (setq temp(findfile "user.lsp"))(load temp))
+(cond
+  ((setq temp(findfile "user.lsp"))
+    (princ "\nLoading user.lsp from cnmloader.lsp.")   
+    (load temp)
+  )
+)
 ;;;You can put personally preferred routines in user.lsp.
 ;;;It is suggested that you keep a user.lsp in a reserved user support files folder
 ;;;added to AutoCAD's Support Files Search Path.
@@ -276,5 +288,5 @@
 )
 
 (if (not(c:haws-icad-p))(hcnm-placecnmmenu)) ;Do it if not in icad
-(princ "\nConstruction Notes Manager menu utilities loaded.")
+(princ "\nCNM autoloader cnmloader.lsp loaded.")
 (princ)

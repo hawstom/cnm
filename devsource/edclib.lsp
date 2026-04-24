@@ -1,5 +1,5 @@
 ;#region HEAD
-(princ "\nHawsEDC library functions loading ... ")
+(princ "\nHawsEDC library functions in edclib loading ... ")
 ;;;
 ;;; ICAD compatibility issues:
 ;;;
@@ -32,7 +32,7 @@
 ;;; lisputil.lsp
 ;;;This is the current version of HawsEDC and CNM
 (defun haws-unified-version ()
-  "5.5.43"
+  "5.5.44"
 )
 ;;This function returns the current setting of nagmode.
 ;;Elizabeth asked me to give her a version with no nag mode (direct to fail).
@@ -3465,7 +3465,7 @@
 
 ;#endregion
 
-(princ "\nHawsEDC library functions loaded.")
+(princ "\nHawsEDC library functions in edclib loaded.")
 (princ)
 ;|\U+FFFDVisual LISP\U+FFFD Format Options\U+FFFD
 (72 2 40 2 nil "end of " 60 2 2 2 1 nil nil nil t)

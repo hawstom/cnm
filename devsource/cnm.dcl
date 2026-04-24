@@ -210,8 +210,8 @@ HCNMBubble : dialog {
 			label = "Drop offset sign";
 		}
 		: toggle {
-			key = "BubbleStreetNameCapitalize";
-			label = "Capitalize street names";
+			key = "BubbleStreetNameAllCaps";
+			label = "ALL CAPS street names";
 		}
 		: row {
 			: column {

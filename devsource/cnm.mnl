@@ -1,13 +1,13 @@
-(princ "\nLoading CNM menu utilities ...")
+(princ "\nAutoCAD is automatically loading cnm.mnl from the same folder as cnm.cuix ...")
 (apply
   '(lambda (/ fname)
     (cond
-      (haws-mklayr (princ "\nSkipping CNMloader.lsp.  Already loaded."))
+      (haws-mklayr (princ "\nSkipping CNMLoader.lsp.  Already loaded."))
       ((not (setq fname (findfile "cnmloader.lsp"))) (princ "\nCNM cannot load because cnmloader.lsp is not in the AutoCAD Support Files Search Path."))
-      (t (load fname))
+      (t (princ (strcat "\nLoading " fname " from cnm.mnl."))(load fname))
     )
   )
   nil
 )
-(princ "\nCNM menu utilities loaded.")
+(princ "\ncnm.mnl loaded.")
 (princ)

@@ -2725,7 +2725,7 @@
     (list "BubbleTextLine0PromptP" "0" 4)
     (list "BubbleSkipEntryPrompt" "0" 4)
     (list "BubbleOffsetDropSign" "1" 2)
-    (list "BubbleStreetNameCapitalize" "1" 2)
+    (list "BubbleStreetNameAllCaps" "1" 2)
     (list "BubbleTextPrefixLF" "" 2)
     (list "BubbleTextPrefixSF" "" 2)
     (list "BubbleTextPrefixSY" "" 2)
@@ -7222,7 +7222,7 @@
              )
              (t (setq string 
                   (cond
-                    ((= (hcnm-config-getvar "BubbleStreetNameCapitalize") "1")
+                    ((= (hcnm-config-getvar "BubbleStreetNameAllCaps") "1")
                      (strcase (strcat sta-string " " string))
                     )
                     (t (strcat sta-string " " string))
@@ -11733,7 +11733,7 @@
   (hcnm-config-set-action-tile "BubbleTextLine0PromptP")
   (hcnm-config-set-action-tile "BubbleSkipEntryPrompt")
   (hcnm-config-set-action-tile "BubbleOffsetDropSign")
-  (hcnm-config-set-action-tile "BubbleStreetNameCapitalize")
+  (hcnm-config-set-action-tile "BubbleStreetNameAllCaps")
   (hcnm-config-set-action-tile "BubbleTextPrefixLF")
   (hcnm-config-set-action-tile "BubbleTextPrefixSF")
   (hcnm-config-set-action-tile "BubbleTextPrefixSY")
