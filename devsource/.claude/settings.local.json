@@ -9,7 +9,11 @@
       "Bash(git -C /c/TGHFiles/programming/hawsedc/develop log --all --oneline -- devsource/lee-mac.lsp)",
       "Bash(git -C /c/TGHFiles/programming/hawsedc/develop log --all --oneline -S \"lm:unformat\" -i)",
       "Bash(git *)",
-      "Bash(> /c/TGHFiles/programming/hawsedc/develop/devtools/scripts/test-suite/haws-debug-log.md)"
+      "Bash(> /c/TGHFiles/programming/hawsedc/develop/devtools/scripts/test-suite/haws-debug-log.md)",
+      "WebSearch",
+      "WebFetch(domain:www.wsp.com)",
+      "WebFetch(domain:www.westonandsampson.com)",
+      "WebFetch(domain:westwoodps.com)"
     ]
   }
 }

@@ -385,7 +385,7 @@ e
 (test-validate-xdata (entlast) "NOTETXT1" "L" "BUBBLE 8, OCT 2, LINE 1")
 (test-validate-auto-text (entlast) "NOTETXT2" "E 10380.00" "BUBBLE 8, OCT 2, LINE 2: E (Model)")
 (test-validate-xdata (entlast) "NOTETXT2" "E" "BUBBLE 8, OCT 2, LINE 2")
-(hcnm-config-setvar "BubbleMtext" 0)
+(hcnm-config-setvar "BubbleMtext" "0")
 ;; Return to model space for downstream tests
 ;;
 mspace

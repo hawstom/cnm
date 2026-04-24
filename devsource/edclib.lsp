@@ -32,7 +32,7 @@
 ;;; lisputil.lsp
 ;;;This is the current version of HawsEDC and CNM
 (defun haws-unified-version ()
-  "5.5.44"
+  "5.5.45"
 )
 ;;This function returns the current setting of nagmode.
 ;;Elizabeth asked me to give her a version with no nag mode (direct to fail).
