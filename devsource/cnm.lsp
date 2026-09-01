@@ -4708,6 +4708,10 @@
   (cond
     ;; If it's not a new insertion, don't draw a leader.
     (ename-bubble-old
+     ;; New insert uses CLAYER. NOTESLDR was set in hcnm-bn-insert; restore
+     ;; the old bubble's layer so replace does not send the new block to
+     ;; C-ANNO-HCNM-BUBL while the reused leader stays on (e.g.) NOPLOT.
+     (setvar "clayer" (cdr (assoc 8 (entget ename-bubble-old))))
      (setq auold (getvar "aunits"))
      (setvar "aunits" 3)
      (vl-cmdf
