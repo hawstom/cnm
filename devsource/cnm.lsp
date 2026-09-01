@@ -3823,20 +3823,26 @@
     (cnmedit-p
      (startapp
        (strcat
-         "\""
+         "cmd /c start \"\" \""
          (hcnm-config-getvar "AppFolder")
-         "\\CNMEdit.exe"
-         "\" "
-         "\""
+         "\\CNMEdit.exe\" \""
          pnname
-         "\" "
-         "\""
+         "\" \""
          (hcnm-proj)
          "\\cnm.ini\""
        )
      )
     )
-    (t (vl-cmdf "._SH" (strcat "\"" pnname "\"")))
+    (t
+     (vl-cmdf
+       "._SH"
+       (strcat
+         "cmd /c start \"\" \""
+         pnname
+         "\""
+       )
+     )
+    )
   )
   (haws-core-restore)
   (princ)
@@ -3867,9 +3873,10 @@
      )
      (vl-file-rename old-filename new-filename)
      (hcnm-config-setvar "ProjectNotes" new-filename)
+     new-filename
     )
+    (t old-filename)
   )
-  new-filename
 )
 
 ;#endregion
@@ -4701,6 +4708,10 @@
   (cond
     ;; If it's not a new insertion, don't draw a leader.
     (ename-bubble-old
+     ;; New insert uses CLAYER. NOTESLDR was set in hcnm-bn-insert; restore
+     ;; the old bubble's layer so replace does not send the new block to
+     ;; C-ANNO-HCNM-BUBL while the reused leader stays on (e.g.) NOPLOT.
+     (setvar "clayer" (cdr (assoc 8 (entget ename-bubble-old))))
      (setq auold (getvar "aunits"))
      (setvar "aunits" 3)
      (vl-cmdf
@@ -8101,7 +8112,7 @@
      ;; Bubble is in paper space and auto-type is coordinate-based - show warning
      (haws-tip
        4                                ; Unique tip ID for AVPORT selection explanation
-       "You must tell CNM which viewport this bubble note belongs to.\n\nEvery new paper space bubble note with coordinate-based auto-text needs this information unless you are currently choosing a reference object through a viewport. Providing this response is a little faster than selecting the reference object again because you don't need to pay close attention for this."
+       "You must tell CNM which viewport this bubble note belongs to. EVERY new bubble note with a coordinate-based auto-text needs this action when you choose to use the previous reference object.\n\nThis is a little faster than selecting the reference object again because you don't need to pay close attention."
      )
     )
   )
@@ -8961,7 +8972,7 @@
      (setq raw-code
        (if (vl-string-search "\\_FldIdx " (cdr (assoc 2 en)))
          (vl-string-subst
-           (if (and (setq id (cdr (assoc 331 fd))) (entget id))
+           (if (setq id (cdr (assoc 331 fd)))
              (vl-string-subst
                (strcat
                  "ObjId "
@@ -10427,6 +10438,7 @@
                      return-list tag done-code
                     )
   (haws-debug (list "=== DEBUG: Entering hcnm-edit-bubble"))
+  (hcnm-check-moved-project (hcnm-proj))
   (setq
     ename-leader
      (hcnm-bn-bubble-leader ename-bubble)
