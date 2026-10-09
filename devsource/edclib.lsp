@@ -59,7 +59,7 @@
     "\nCNM Bubble notes now offer auto text that reacts to leader and reference object changes."
     "\nDid you see LABEL (HAWS-LABEL), our new utility research pipe labeler? Edit haws-label-settings.lsp."
     "\nYou can open a suggestion or bug issue at at https://github.com/hawstom/cnm by registering at Github."
-    "\nThe latest upgrades to CNM were made possible by AI! (VS Code IDE > Copilot AI agent > Claude Sonnet 4.5 model)"
+    "\nThe latest upgrades to CNM were made possible by AI."
     "\nGive back to CNM. Contact Tom to learn how you can be an AI-supported imagineer."
     "\nGet involved with CNM at https://github.com/hawstom/cnm"
     "\nTake CNM with you wherever you work. Share it, share your ideas, and help it grow!"
