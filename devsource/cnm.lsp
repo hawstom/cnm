@@ -260,6 +260,24 @@
 ;;;    '(((phasej j aliasj)...)((typi(notenumi qtyopti qtyi1[nil if not found] qtyij[nil if not found])...)...))
 ;;; Then saves all the notes and quantities for drawing in file nfname.
 ;;;
+;;; Returns the .not file name for the key notes table on the current tab.
+;;; Appends "-<layout>" when DoCurrentTabOnly=1 or when the table is made on a layout,
+;;; so each layout gets its own .not even when its bubbles are in model space
+;;; and are filtered by viewport layer freezing. Model tab with DoCurrentTabOnly=0 uses dn.not.
+(defun hcnm-key-table-get-not-filename (dn)
+  (strcat
+    dn
+    (if
+      (or
+        (= "1" (hcnm-config-getvar "DoCurrentTabOnly"))
+        (/= "Model" (getvar "CTAB"))
+      )
+      (strcat "-" (getvar "CTAB"))
+      ""
+    )
+    ".not"
+  )
+)
 ;;;Set up list from CONSTNOT.TXT and NOTEQTY block.
 (defun hcnm-key-table-searchandsave (dn projnotes qtypt / aliaslist at attributes
                                  av blki blkss count ctabonly el en et i
@@ -702,14 +720,7 @@
   ;;Save notelist to file
   (setq
     nfname
-     (strcat
-       dn
-       (if ctabonly
-         (strcat "-" (getvar "CTAB"))
-         ""
-       )
-       ".not"
-     )
+     (hcnm-key-table-get-not-filename dn)
     f2 (haws-open nfname "w")
   )
   ;;Write NOTELIST to the work file
@@ -783,7 +794,7 @@
 ;;Uses the qty block.
 ;;Puts table at qtypt.
 ;; TGH to use this for TALLY, maybe I just need to read NOTELIST as an argument instead of from a file in this function.
-(defun hcnm-key-table-make (nfsource qtypt qtyset dn txtht notesmaxheight / ctabonly f1 f2 icol
+(defun hcnm-key-table-make (nfsource qtypt qtyset dn txtht notesmaxheight / f1 f2 icol
                         i-title iphase column-height note-first-line-p
                         column-height-pending layerkey layerlist layershow
                         linspc nfname notdsc notelist
@@ -793,17 +804,8 @@
                        )
   (setq phaselist (hcnm-getphaselistfromtblqty))
   (setvar "attreq" 1)
-  (setq ctabonly (= (hcnm-config-getvar "DoCurrentTabOnly") "1"))
   (if (= nfsource "E")
-    (setq
-      nfname
-       (cond
-         (ctabonly
-          (findfile (strcat dn "-" (getvar "CTAB") ".not"))
-         )
-         (t (findfile (strcat dn ".not")))
-       )
-    )
+    (setq nfname (findfile (hcnm-key-table-get-not-filename dn)))
     (setq nfname (getfiled "Select Drawing and Layout" "" "NOT" 0))
   )
   (setq

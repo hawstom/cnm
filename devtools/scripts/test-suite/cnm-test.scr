@@ -497,7 +497,9 @@ STA. 5+22
 ;; GENERATE KEY NOTES TABLE
 ;; Command: hcnm-cnmkt (Key Notes Table)
 ;; Prompts for search scope and insertion point
+;; KT runs on TEST-LAYOUT, so it writes cnm-test-TEST-LAYOUT.not
 ;;
+(c:test-remove-not-files)
 (command "._QSAVE")
 hcnm-cnmkt
 10220,20850
@@ -513,7 +515,7 @@ hcnm-cnmkt
 ;;==============================================================================
 ;;
 ;; Create cnm-test.lst (sheet list for QT command)
-;; Single-sheet test: cnm-test.dwg -> cnm-test.not
+;; Single-sheet test: cnm-test.dwg TEST-LAYOUT -> cnm-test-TEST-LAYOUT.not
 ;;
 (c:test-create-qt-lst-file)
 ;;

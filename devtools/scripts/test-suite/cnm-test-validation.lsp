@@ -355,7 +355,7 @@
                 "    PEN-1: 502 LF\n\n"
                 "    REC-1: 456 LF\n\n"
                 "  Check: Visual inspection of table\n"
-                "  Check: cnm-test.not file created"))
+                "  Check: cnm-test-TEST-LAYOUT.not file created"))
       (princ "\nKey Notes Table: Generated")
       (test-write-report-entry "TEST H: Key Notes Table Generation" "PASS" result-msg)
     )
@@ -366,28 +366,45 @@
     )
   )
   ;; Additional check: Verify .not file created
-  (if (findfile (strcat (getvar "dwgprefix") "cnm-test.not"))
-    (progn
-      (princ "\n.not file created for QT processing")
-      (test-write-report-entry "TEST H: .not File Creation" "PASS" ".not file exists in project folder")
+  ;; KT made on a layout appends the layout name; c:test-remove-not-files deletes both names before KT
+  (cond
+    ((findfile (strcat (getvar "dwgprefix") "cnm-test.not"))
+     (princ "\nWARNING: .not file has no layout suffix")
+     (test-write-report-entry "TEST H: .not File Creation" "FAIL" "KT on TEST-LAYOUT wrote cnm-test.not instead of cnm-test-TEST-LAYOUT.not")
     )
-    (progn
-      (princ "\nWARNING: .not file NOT created")
-      (test-write-report-entry "TEST H: .not File Creation" "FAIL" ".not file missing from project folder")
+    ((findfile (strcat (getvar "dwgprefix") "cnm-test-TEST-LAYOUT.not"))
+     (princ "\n.not file created for QT processing")
+     (test-write-report-entry "TEST H: .not File Creation" "PASS" "cnm-test-TEST-LAYOUT.not exists in project folder")
     )
+    (t
+     (princ "\nWARNING: .not file NOT created")
+     (test-write-report-entry "TEST H: .not File Creation" "FAIL" "cnm-test-TEST-LAYOUT.not missing from project folder")
+    )
+  )
+  (princ)
+)
+(defun c:test-remove-not-files ( / not-name)
+  ;; Remove .not files from earlier runs so TEST H sees only this run's KT output
+  (foreach
+     not-name '("cnm-test.not" "cnm-test-TEST-LAYOUT.not")
+    (setq not-name (strcat (getvar "dwgprefix") not-name))
+    (if (findfile not-name) (vl-file-delete not-name))
   )
   (princ)
 )
 ;;==============================================================================
 ;; QUANTITY TAKEOFF TABLE VALIDATION FUNCTIONS
 ;;==============================================================================
-(defun c:test-create-qt-lst-file ( / )
-  ;; Create simple sheet list for single-sheet QT test
-  (test-write-file "cnm-test.lst" "cnm-test")
+(defun c:test-create-qt-lst-file ( / csv-name)
+  ;; Remove last run's QT CSV so test-validate-qt-csv sees only this run's output
+  (setq csv-name (strcat (getvar "dwgprefix") "cnm-test.csv"))
+  (if (findfile csv-name) (vl-file-delete csv-name))
+  ;; Create simple sheet list for single-sheet QT test (KT ran on TEST-LAYOUT)
+  (test-write-file "cnm-test.lst" "cnm-test-TEST-LAYOUT")
   (if (findfile (strcat (getvar "dwgprefix") "cnm-test.lst"))
     (progn
       (princ "\nSheet list created: cnm-test.lst")
-      (test-write-report-entry "SETUP: Create Sheet List" "PASS" "cnm-test.lst created with single entry: cnm-test")
+      (test-write-report-entry "SETUP: Create Sheet List" "PASS" "cnm-test.lst created with single entry: cnm-test-TEST-LAYOUT")
     )
     (progn
       (princ "\nWARNING: Failed to create cnm-test.lst")
@@ -439,7 +456,52 @@
       (test-write-report-entry "TEST I: QT Table Generation" "FAIL" result-msg)
     )
   )
+  (test-validate-qt-csv)
   (princ)
+)
+(defun test-validate-qt-csv ( / csv-name data-line f header lst-name missing sheet)
+  ;; QT writes <dwgname>.csv with a quantity column per sheet in the .lst
+  ;; Header column for a sheet is "<FULL PATH>\<SHEET>.NOT (SINGLE PHASE)" or "... PHASE n"
+  (setq
+    csv-name (strcat (getvar "dwgprefix") "cnm-test.csv")
+    lst-name (strcat (getvar "dwgprefix") "cnm-test.lst")
+    missing ""
+  )
+  (cond
+    ((not (findfile csv-name))
+     (princ "\nQT CSV: FAIL")
+     (test-write-report-entry "TEST I: QT CSV Export" "FAIL" "FAIL: cnm-test.csv was not created")
+    )
+    (t
+     (setq
+       f (open csv-name "r")
+       header (read-line f)
+       data-line (read-line f)
+       f (close f)
+       f (open lst-name "r")
+     )
+     (while (setq sheet (read-line f))
+       (if (not (wcmatch header (strcat "*\\" (strcase sheet) ".NOT (*")))
+         (setq missing (strcat missing " " sheet))
+       )
+     )
+     (setq f (close f))
+     (cond
+       ((/= missing "")
+        (princ "\nQT CSV: FAIL")
+        (test-write-report-entry "TEST I: QT CSV Export" "FAIL" (strcat "FAIL: CSV header has no column for sheet(s):" missing "\n  Header: " header))
+       )
+       ((not data-line)
+        (princ "\nQT CSV: FAIL")
+        (test-write-report-entry "TEST I: QT CSV Export" "FAIL" (strcat "FAIL: CSV has a header but no rows\n  Header: " header))
+       )
+       (t
+        (princ "\nQT CSV: PASS")
+        (test-write-report-entry "TEST I: QT CSV Export" "PASS" (strcat "PASS: cnm-test.csv has a column for every sheet in cnm-test.lst\n  Header: " header))
+       )
+     )
+    )
+  )
 )
 (princ)
 ;;==============================================================================
@@ -479,21 +541,19 @@
   )
   (princ)
 )
-(defun c:test-cleanup-project-files ( / pfx fd1 fd2 fd3 msg)
+(defun c:test-cleanup-project-files ( / pfx fd1 fd2 msg)
   ;; Remove temporary project files created by the test run
   ;; cnm.ini: CNM project settings (auto-created from template)
   ;; constnot.csv: Project notes database (auto-created from template)
-  ;; cnm-test.csv: QT table CSV export (created by haws-qt command)
+  ;; cnm-test.csv (QT export) is kept for inspection; c:test-create-qt-lst-file removes it before the next QT
   (setq pfx (getvar "dwgprefix"))
   (setq fd1 (strcat pfx "cnm.ini"))
   (setq fd2 (strcat pfx "constnot.csv"))
-  (setq fd3 (strcat pfx "cnm-test.csv"))
   (setq msg "")
 ;;  (if (and fd1 (findfile fd1)) (vl-file-delete fd1) (setq msg (strcat msg " cnm.ini not found;")))
   (if (and fd2 (findfile fd2)) (vl-file-delete fd2) (setq msg (strcat msg " constnot.csv not found;")))
-  (if (and fd3 (findfile fd3)) (vl-file-delete fd3) (setq msg (strcat msg " cnm-test.csv not found;")))
   (test-write-report-entry "CLEANUP: Project files" "INFO" (strcat "Removed files if present." msg))
-  (princ "\nCleanup complete: cnm.ini, constnot.csv, cnm-test.csv removed if present")
+  (princ "\nCleanup complete: constnot.csv removed if present")
   (princ)
 )
 ;;==============================================================================
