@@ -146,35 +146,26 @@
   )
 )
 
-(defun haws-distrib-replace-version-string (content new-version / old-pattern new-pattern)
-  "Replace version string in file content"
-  ;; Pattern: look for "5.5.18" or similar version in haws-unified-version function
-  ;; This is a simplified approach - may need refinement
-  (setq old-pattern (haws-unified-version))  ; Current version
-  (setq new-pattern new-version)
-  
-  ;; Simple string replacement (may need enhancement for robustness)
-  (haws-string-replace content 
-    (strcat "\"" old-pattern "\"")
-    (strcat "\"" new-pattern "\"")
-  )
-)
-
-(defun haws-string-replace (str old-substr new-substr / pos result)
-  "Replace all occurrences of old-substr with new-substr in str"
-  ;; Simple implementation - could use more sophisticated approach
-  (setq pos (vl-string-search old-substr str))
-  (if pos
-    (strcat
-      (substr str 1 pos)
-      new-substr
-      (haws-string-replace 
-        (substr str (+ pos (strlen old-substr) 1))
-        old-substr
-        new-substr
-      )
+(defun haws-distrib-replace-version-string (content new-version / old-pattern pos)
+  "Replace the version string inside the haws-unified-version function only"
+  ;; Replacing every quoted copy of the current version in the file corrupted
+  ;; unrelated strings whenever they matched (e.g. "1" became "5.5.46" in v5.5.46).
+  ;; So start the search at the haws-unified-version defun and replace one occurrence.
+  (setq old-pattern (strcat "\"" (haws-unified-version) "\""))
+  (if
+    (and
+      (setq pos (vl-string-search "(defun haws-unified-version ()" content))
+      (setq pos (vl-string-search old-pattern content pos))
     )
-    str
+    (strcat
+      (substr content 1 pos)
+      "\"" new-version "\""
+      (substr content (+ pos (strlen old-pattern) 1))
+    )
+    (progn
+      (alert (princ (strcat "Error: Cannot find " old-pattern " in haws-unified-version in edclib.lsp. Version not updated.")))
+      content
+    )
   )
 )
 

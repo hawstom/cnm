@@ -32,7 +32,7 @@
 ;;; lisputil.lsp
 ;;;This is the current version of HawsEDC and CNM
 (defun haws-unified-version ()
-  "5.5.46"
+  "5.5.47"
 )
 ;;This function returns the current setting of nagmode.
 ;;Elizabeth asked me to give her a version with no nag mode (direct to fail).
@@ -1803,8 +1803,8 @@
 (haws-unit-test
   'haws-nested-list-update
   '(
-    (((1 . ((11 . "A")(12 . ((121 . "B")(122 . ((1221 . "C")))))))) (1 12 1221 "5.5.46")
-    ((1 . ((11 . "A")(12 . ((121 . "B")(122 . ((1221 . "5.5.46"))))))))
+    (((1 . ((11 . "A")(12 . ((121 . "B")(122 . ((1221 . "C")))))))) (1 12 1221 "1")
+    ((1 . ((11 . "A")(12 . ((121 . "B")(122 . ((1221 . "1"))))))))
     )
   )
 )
@@ -3418,7 +3418,7 @@
     (list "ImportLayerSettings" "YES" 2)  ; Project scope - INI file
     (list "CNMAliasActivation" "2" 4)  ; User scope - Registry
     (list "UseString" "" 4)  ; User scope - Registry (usage telemetry)
-    (list "DebugLevel" "0" 0)  ; "0"=off, "5.5.46"=on (debug logging)
+    (list "DebugLevel" "0" 0)  ; "0"=off, "1"=on (debug logging)
     (list "OpenFiles" '(("" ("" ""))) 0)  ; '((file-name (mode file-pointer)))
   )
 )
